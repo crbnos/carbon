@@ -6,7 +6,6 @@ Carbon is the open-source operating system for manufacturing.
 
 ![Carbon Architecture](https://github.com/user-attachments/assets/ed6dc66b-e9cb-435e-b5a9-9daf933f4a1d)
 
-
 Features:
 
 - [x] ERP
@@ -85,12 +84,12 @@ The API documentation is located in the ERP app at `/x/api/js/intro`. It is auto
 Navigate to settings in the ERP to generate an API key. If you're self-hosting you can also use the supabase service key instead of the public key for root access. In that case you don't needto include the `carbon-key` header.
 
 ```ts
-import { Database } from '@carbon/database'
-import { createClient } from '@supabase/supabase-js'
+import { Database } from "@carbon/database";
+import { createClient } from "@supabase/supabase-js";
 
-const apiKey = process.env.CARBON_API_KEY
-const apiUrl = process.env.CARBON_API_URL
-const publicKey = process.env.CARBON_PUBLIC_KEY
+const apiKey = process.env.CARBON_API_KEY;
+const apiUrl = process.env.CARBON_API_URL;
+const publicKey = process.env.CARBON_PUBLIC_KEY;
 
 const carbon = createClient<Database>(apiUrl, publicKey, {
   global: {
@@ -107,15 +106,18 @@ const { data, error } = await carbon.from("item").select("*");
 ### From the Monorepo
 
 ```tsx
-import { getCarbonServiceRole } from "@carbon/auth"
+import { getCarbonServiceRole } from "@carbon/auth";
 const carbon = getCarbonServiceRole();
 
 // returns all items across companies
 const { data, error } = await carbon.from("item").select("*");
 
 // returns items from a specific company
-const companyId = 'xyz';
-const { data, error } = await carbon.from("item").select("*").eq("companyId", companyId);
+const companyId = "xyz";
+const { data, error } = await carbon
+  .from("item")
+  .select("*")
+  .eq("companyId", companyId);
 ```
 
 ## Local Development
@@ -220,8 +222,6 @@ For example, to run test command in the `@carbon/react` package you can run:
 ```
 $ npm run test -w @carbon/react
 ```
-
-
 
 ### Restoring a Production Database Locally
 
