@@ -31,7 +31,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs): FormActionData {
   assertIsPost(request);
+  console.log("callback action");
   const { companyId } = await requirePermissions(request, {});
+  console.log("companyId", companyId);
 
   const validation = await validator(callbackValidator).validate(
     await request.formData()
@@ -54,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 
   const user = await getUserByEmail(authSession.email);
   if (user?.data) {
-    throw redirect(path.to.resetPassword, {
+    return redirect(path.to.resetPassword, {
       headers: {
         "Set-Cookie": await commitAuthSession(request, {
           authSession,
@@ -62,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
       },
     });
   } else {
-    throw redirect(
+    return redirect(
       path.to.root,
       await flash(request, error(user.error, "User not found"))
     );

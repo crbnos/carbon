@@ -186,7 +186,7 @@ export async function signInWithEmail(email: string, password: string) {
   if (!data.session || error) return null;
   const companies = await getCompaniesForUser(client, data.user.id);
 
-  return makeAuthSession(data.session, companies?.[0] ?? 1);
+  return makeAuthSession(data.session, companies?.[0]);
 }
 
 export async function refreshAccessToken(

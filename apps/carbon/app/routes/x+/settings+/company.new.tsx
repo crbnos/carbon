@@ -11,10 +11,7 @@ import {
   insertCompany,
   seedCompany,
 } from "~/modules/settings";
-import {
-  addUserToCompany,
-  getPermissionCacheKey,
-} from "~/modules/users/users.server";
+import { getPermissionCacheKey } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { updateCompanySession } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
@@ -71,11 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Fatal: failed to get location ID");
   }
 
-  const [userToCompany, job] = await Promise.all([
-    addUserToCompany(client, {
-      userId,
-      companyId,
-    }),
+  const [job] = await Promise.all([
     insertEmployeeJob(client, {
       id: userId,
       companyId,
@@ -83,11 +76,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }),
     redis.del(getPermissionCacheKey(userId)),
   ]);
-
-  if (userToCompany.error) {
-    logger.error(userToCompany.error);
-    throw new Error("Fatal: failed to add user to company");
-  }
 
   if (job.error) {
     logger.error(job.error);
