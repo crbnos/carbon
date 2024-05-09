@@ -2,8 +2,7 @@ import { Checkbox, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -53,9 +52,7 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns ]);
-
-
+  }, [customColumns]);
 
   const renderContextMenu = useCallback(
     (row: Currency) => {
@@ -67,7 +64,7 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
               navigate(`${path.to.currency(row.id)}?${params.toString()}`);
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Currency
           </MenuItem>
           <MenuItem
@@ -78,7 +75,7 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
               );
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete Currency
           </MenuItem>
         </>

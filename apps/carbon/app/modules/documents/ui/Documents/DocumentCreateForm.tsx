@@ -2,7 +2,7 @@ import { File, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
-import { BsUpload } from "react-icons/bs";
+import { LuUpload } from "react-icons/lu";
 import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
@@ -59,7 +59,7 @@ const DocumentCreateForm = () => {
   };
 
   return (
-    <File leftIcon={<BsUpload />} onChange={uploadFile}>
+    <File leftIcon={<LuUpload />} onChange={uploadFile}>
       Upload
     </File>
   );

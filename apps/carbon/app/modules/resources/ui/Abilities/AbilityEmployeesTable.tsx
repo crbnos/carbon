@@ -8,8 +8,7 @@ import {
 import { useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import type { AbilityEmployees } from "~/modules/resources";
@@ -127,7 +126,7 @@ const AbilityEmployeesTable = ({
               navigate(path.to.employeeAbility(abilityId, row.id));
             }}
           >
-            <DropdownMenuIcon icon={<BsFillPenFill />} />
+            <DropdownMenuIcon icon={<LuPencil />} />
             Edit Employee Ability
           </MenuItem>
           <MenuItem
@@ -136,7 +135,7 @@ const AbilityEmployeesTable = ({
               navigate(path.to.deleteEmployeeAbility(abilityId, row.id));
             }}
           >
-            <DropdownMenuIcon icon={<IoMdTrash />} />
+            <DropdownMenuIcon icon={<LuTrash />} />
             Delete Employee Ability
           </MenuItem>
         </>

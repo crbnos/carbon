@@ -25,7 +25,7 @@ export default function Page() {
 function Hero() {
   return (
     <>
-      <div className="my-24 sm:my-12 flex flex-col space-y-8 max-w-2xl mx-auto text-center">
+      <div className="my-12 sm:my-36 flex flex-col space-y-8 max-w-2xl mx-auto text-center">
         <div className="text-center mb-4">
           <div className="fancy-button rounded-full w-fit mx-auto relative">
             <Link href="https://www.loom.com/share/7b2dccab3d404b84aa8f08e5bfa21d16?sid=251f4f0e-4d04-4ec2-bb60-7376454e3172">

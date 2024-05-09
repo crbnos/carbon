@@ -1,5 +1,5 @@
 import { useParams } from "@remix-run/react";
-import { BsBank, BsListCheck } from "react-icons/bs";
+import { LuFileText, LuList } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -23,14 +23,14 @@ export function useSalesOrderSidebar({
     {
       name: "Summary",
       to: path.to.salesOrderDetails(orderId),
-      icon: BsBank,
+      icon: LuFileText,
       shortcut: "Command+Shift+s",
     },
     {
       name: "Lines",
       to: path.to.salesOrderLines(orderId),
       count: lines,
-      icon: BsListCheck,
+      icon: LuList,
       shortcut: "Command+Shift+l",
       role: ["employee", "customer"],
     },

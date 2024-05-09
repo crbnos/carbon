@@ -3,7 +3,7 @@ import { formatDate } from "@carbon/utils";
 import { Link, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
+import { LuPencil } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -177,7 +177,7 @@ const SuppliersTable = memo(
       () => (row: Supplier) =>
         (
           <MenuItem onClick={() => navigate(path.to.supplier(row.id!))}>
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Supplier
           </MenuItem>
         ),

@@ -1,11 +1,11 @@
 import { useParams } from "@remix-run/react";
 import {
-  BsBank,
-  BsCreditCard,
-  BsFillPersonLinesFill,
-  BsFillPinMapFill,
-  BsTruck,
-} from "react-icons/bs";
+  LuBuilding,
+  LuContact,
+  LuCreditCard,
+  LuMapPin,
+  LuTruck,
+} from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -24,7 +24,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
     {
       name: "Details",
       to: path.to.supplierDetails(supplierId),
-      icon: BsBank,
+      icon: LuBuilding,
       shortcut: "Command+Shift+d",
     },
     {
@@ -32,7 +32,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       to: path.to.supplierContacts(supplierId),
       role: ["employee"],
       count: contacts,
-      icon: BsFillPersonLinesFill,
+      icon: LuContact,
       shortcut: "Command+Shift+c",
     },
     {
@@ -40,21 +40,21 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       to: path.to.supplierLocations(supplierId),
       role: ["employee", "supplier"],
       count: locations,
-      icon: BsFillPinMapFill,
+      icon: LuMapPin,
       shortcut: "Command+Shift+l",
     },
     {
       name: "Payments",
       to: path.to.supplierPayment(supplierId),
       role: ["employee"],
-      icon: BsCreditCard,
+      icon: LuCreditCard,
       shortcut: "Command+Shift+p",
     },
     {
       name: "Shipping",
       to: path.to.supplierShipping(supplierId),
       role: ["employee"],
-      icon: BsTruck,
+      icon: LuTruck,
       shortcut: "Command+Shift+s",
     },
   ].filter(

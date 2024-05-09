@@ -21,7 +21,7 @@ import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { BsDownload, BsThreeDotsVertical, BsUpload } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -136,7 +136,7 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => navigate("delete")}>
-                    <DropdownMenuIcon icon={<IoMdTrash />} />
+                    <DropdownMenuIcon icon={<LuTrash />} />
                     Delete Line
                   </DropdownMenuItem>
                   <DropdownMenuItem disabled>

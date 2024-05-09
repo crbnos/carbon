@@ -2,13 +2,12 @@ import { Avatar, Enumerable, HStack, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Ability, Partner } from "~/modules/resources";
 import { useSuppliers } from "~/stores";
-import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 
 type PartnersTableProps = {
@@ -95,7 +94,7 @@ const PartnersTable = memo(({ data, count, abilities }: PartnersTableProps) => {
               );
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Partner
           </MenuItem>
           <MenuItem
@@ -108,7 +107,7 @@ const PartnersTable = memo(({ data, count, abilities }: PartnersTableProps) => {
               );
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete Partner
           </MenuItem>
         </>

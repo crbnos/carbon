@@ -9,8 +9,7 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Abilities, AbilityDatum } from "~/modules/resources";
@@ -124,7 +123,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
               navigate(path.to.ability(row.id));
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Ability
           </MenuItem>
           <MenuItem
@@ -133,7 +132,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
               navigate(path.to.deleteAbility(row.id));
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete Ability
           </MenuItem>
         </>

@@ -10,8 +10,7 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useFetchers } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
-import { BsFillPenFill, BsPin, BsPinFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuPin, LuTrash } from "react-icons/lu";
 import { MdCallReceived } from "react-icons/md";
 import {
   EmployeeAvatar,
@@ -88,7 +87,7 @@ const PurchaseOrdersTable = memo(
                   <input type="hidden" name="id" value={row.original.id!} />
                   <input type="hidden" name="favorite" value="unfavorite" />
                   <button type="submit">
-                    <BsPinFill
+                    <LuPin
                       className="text-yellow-400 cursor-pointer h-4 w-4"
                       type="submit"
                     />
@@ -103,7 +102,7 @@ const PurchaseOrdersTable = memo(
                   <input type="hidden" name="id" value={row.original.id!} />
                   <input type="hidden" name="favorite" value="favorite" />
                   <button type="submit">
-                    <BsPin
+                    <LuPin
                       className="text-yellow-400 cursor-pointer h-4 w-4"
                       type="submit"
                     />
@@ -268,7 +267,7 @@ const PurchaseOrdersTable = memo(
             disabled={!permissions.can("view", "purchasing")}
             onClick={() => edit(row)}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit
           </MenuItem>
 
@@ -292,7 +291,7 @@ const PurchaseOrdersTable = memo(
               deletePurchaseOrderModal.onOpen();
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete
           </MenuItem>
         </>

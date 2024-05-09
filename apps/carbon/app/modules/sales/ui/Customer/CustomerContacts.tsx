@@ -9,8 +9,8 @@ import {
 } from "@carbon/react";
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import { useCallback, useState } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdAdd, IoMdTrash } from "react-icons/io";
+import { IoMdAdd } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Contact, New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -40,7 +40,7 @@ const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
         label: permissions.can("update", "sales")
           ? "Edit Contact"
           : "View Contact",
-        icon: <BsFillPenFill />,
+        icon: <LuPencil />,
         onClick: () => {
           navigate(contact.id);
         },
@@ -49,7 +49,7 @@ const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
       if (permissions.can("delete", "sales")) {
         actions.push({
           label: "Delete Contact",
-          icon: <IoMdTrash />,
+          icon: <LuTrash />,
           onClick: () => {
             setSelectedContact(contact);
             deleteContactModal.onOpen();

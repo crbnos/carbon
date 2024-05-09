@@ -19,9 +19,9 @@ import { Reorder } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { AiOutlineNumber } from "react-icons/ai";
 import { BiText } from "react-icons/bi";
-import { BsCalendarDate, BsFillPenFill, BsToggleOn } from "react-icons/bs";
+import { BsCalendarDate, BsToggleOn } from "react-icons/bs";
 import { CgProfile } from "react-icons/cg";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { MdOutlineDragIndicator } from "react-icons/md";
 import { New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
@@ -117,12 +117,12 @@ const AttributeCategoryDetail = ({
       <>
         <MenuItem asChild>
           <Link to={attributeId}>
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Attribute
           </Link>
         </MenuItem>
         <MenuItem onClick={() => onDelete(attributeMap[attributeId])}>
-          <MenuIcon icon={<IoMdTrash />} />
+          <MenuIcon icon={<LuTrash />} />
           Delete Attribute
         </MenuItem>
       </>

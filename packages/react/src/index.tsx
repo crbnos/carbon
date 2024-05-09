@@ -190,6 +190,11 @@ import {
 } from "./Popover";
 import { Progress } from "./Progress";
 import { RadioGroup, RadioGroupItem } from "./Radio";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "./Resizable";
 import { ScrollArea, ScrollBar } from "./ScrollArea";
 import {
   Select,
@@ -203,6 +208,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./Select";
+import { Skeleton } from "./Skeleton";
 import { Spinner } from "./Spinner";
 import { Status } from "./Status";
 import { Switch } from "./Switch";
@@ -393,6 +399,9 @@ export {
   Progress,
   RadioGroup,
   RadioGroupItem,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
   ScrollArea,
   ScrollBar,
   Select,
@@ -405,6 +414,7 @@ export {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
+  Skeleton,
   Spinner,
   Status,
   Switch,

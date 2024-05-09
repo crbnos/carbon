@@ -9,8 +9,7 @@ import {
 } from "@carbon/react";
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import { useCallback, useState } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Address, New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -38,7 +37,7 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
       if (permissions.can("update", "sales")) {
         actions.push({
           label: "Edit Location",
-          icon: <BsFillPenFill />,
+          icon: <LuPencil />,
           onClick: () => {
             navigate(location.id);
           },
@@ -47,7 +46,7 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
       if (permissions.can("delete", "sales")) {
         actions.push({
           label: "Delete Location",
-          icon: <IoMdTrash />,
+          icon: <LuTrash />,
           onClick: () => {
             setSelectedLocation(location);
             deleteLocationModal.onOpen();

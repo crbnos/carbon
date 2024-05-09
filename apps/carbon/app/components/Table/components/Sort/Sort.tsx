@@ -18,6 +18,7 @@ import {
 import { Reorder } from "framer-motion";
 import { BsChevronDown, BsSortUp } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
+import { LuArrowUpDown } from "react-icons/lu";
 import { MdOutlineDragIndicator } from "react-icons/md";
 import { useSort } from "./useSort";
 
@@ -42,7 +43,7 @@ const Sort = ({ columnAccessors }: SortProps) => {
           aria-label="Sort"
           title="Sort"
           variant={hasNoSorts ? "ghost" : "secondary"}
-          icon={<BsSortUp />}
+          icon={<LuArrowUpDown />}
           className={cn(hasNoSorts && "!border-dashed border-border")}
         />
       </PopoverTrigger>

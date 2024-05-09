@@ -3,8 +3,7 @@ import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -204,7 +203,7 @@ const PurchaseInvoicesTable = memo(
             disabled={!permissions.can("view", "invoicing")}
             onClick={() => navigate(path.to.purchaseInvoice(row.id!))}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit
           </MenuItem>
           <MenuItem
@@ -216,7 +215,7 @@ const PurchaseInvoicesTable = memo(
               closePurchaseInvoiceModal.onOpen();
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete
           </MenuItem>
         </>

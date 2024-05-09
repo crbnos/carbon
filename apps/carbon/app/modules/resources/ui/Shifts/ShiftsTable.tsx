@@ -2,12 +2,11 @@ import { Badge, Enumerable, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Shift, ShiftLocation } from "~/modules/resources";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import type { Shift, ShiftLocation } from "~/modules/resources";
 import { path } from "~/utils/path";
 
 type ShiftsTableProps = {
@@ -94,7 +93,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
               navigate(`${path.to.shift(row.id!)}?${params.toString()}}`);
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Shift
           </MenuItem>
           <MenuItem
@@ -103,7 +102,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
               navigate(`${path.to.deleteShift(row.id!)}?${params.toString()}`);
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete Shift
           </MenuItem>
         </>

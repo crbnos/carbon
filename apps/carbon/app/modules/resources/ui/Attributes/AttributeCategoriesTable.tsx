@@ -9,8 +9,8 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { BiAddToQueue } from "react-icons/bi";
-import { BsFillPenFill, BsListUl } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { BsListUl } from "react-icons/bs";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -129,14 +129,14 @@ const AttributeCategoriesTable = memo(
                 navigate(path.to.attributeCategory(row.id));
               }}
             >
-              <MenuIcon icon={<BsFillPenFill />} />
+              <MenuIcon icon={<LuPencil />} />
               Edit Attribute Category
             </MenuItem>
             <MenuItem
               disabled={row.protected || !permissions.can("delete", "users")}
               onClick={() => onDelete(row)}
             >
-              <MenuIcon icon={<IoMdTrash />} />
+              <MenuIcon icon={<LuTrash />} />
               Delete Category
             </MenuItem>
           </>

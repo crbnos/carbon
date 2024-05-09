@@ -16,8 +16,8 @@ import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useCallback, useEffect, useMemo, useState } from "react";
-import { BsFilter } from "react-icons/bs";
 import { IoMdAdd } from "react-icons/io";
+import { LuListFilter } from "react-icons/lu";
 import { MdClose } from "react-icons/md";
 import type { ColumnFilter, Option } from "./types";
 import { useFilters } from "./useFilters";
@@ -130,7 +130,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
             </Button>
           ) : (
             <Button
-              rightIcon={<BsFilter />}
+              rightIcon={<LuListFilter />}
               role="combobox"
               ref={ref}
               variant="secondary"

@@ -15,8 +15,7 @@ import {
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { MdMoreHoriz } from "react-icons/md";
 import { New } from "~/components";
 import {
@@ -96,14 +95,14 @@ const PurchaseInvoiceLines = () => {
                     onClick={() => navigate(row.original.id)}
                     disabled={!isEditable || !canEdit}
                   >
-                    <DropdownMenuIcon icon={<BsFillPenFill />} />
+                    <DropdownMenuIcon icon={<LuPencil />} />
                     Edit Line
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate(`delete/${row.original.id}`)}
                     disabled={!isEditable || !canDelete}
                   >
-                    <DropdownMenuIcon icon={<IoMdTrash />} />
+                    <DropdownMenuIcon icon={<LuTrash />} />
                     Delete Line
                   </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -3,7 +3,7 @@ import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
+import { LuPencil } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -171,7 +171,7 @@ const ServicesTable = memo(
       // eslint-disable-next-line react/display-name
       return (row: Service) => (
         <MenuItem onClick={() => navigate(path.to.part(row.id!))}>
-          <MenuIcon icon={<BsFillPenFill />} />
+          <MenuIcon icon={<LuPencil />} />
           Edit Service
         </MenuItem>
       );

@@ -1,14 +1,15 @@
-import { AiOutlinePartition } from "react-icons/ai";
 import {
-  BsCartDash,
-  BsCartPlus,
-  BsCreditCard,
-  BsPeopleFill,
-  BsShieldLock,
-} from "react-icons/bs";
-import { HiOutlineCube, HiOutlineDocumentDuplicate } from "react-icons/hi";
-import { LuSettings2 } from "react-icons/lu";
-import { TbPigMoney } from "react-icons/tb";
+  LuBox,
+  LuComponent,
+  LuCreditCard,
+  LuFiles,
+  LuLandmark,
+  LuReceipt,
+  LuSettings,
+  LuShield,
+  LuShoppingCart,
+  LuUsers,
+} from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
@@ -21,7 +22,7 @@ export function useModules() {
       permission: "parts",
       name: "Parts",
       to: path.to.partsSearch,
-      icon: AiOutlinePartition,
+      icon: LuComponent,
     },
     // {
     //   permission: "jobs",
@@ -33,7 +34,7 @@ export function useModules() {
       permission: "inventory",
       name: "Inventory",
       to: path.to.receipts,
-      icon: HiOutlineCube,
+      icon: LuBox,
     },
     // {
     //   permission: "scheduling",
@@ -51,19 +52,19 @@ export function useModules() {
       permission: "sales",
       name: "Sales",
       to: path.to.quotes,
-      icon: BsCartPlus,
+      icon: LuReceipt,
     },
     {
       permission: "purchasing",
       name: "Purchasing",
       to: path.to.purchaseOrders,
-      icon: BsCartDash,
+      icon: LuShoppingCart,
     },
     {
       permission: "documents",
       name: "Documents",
       to: path.to.documents,
-      icon: HiOutlineDocumentDuplicate,
+      icon: LuFiles,
     },
     // {
     //   permission: "messages",
@@ -75,31 +76,31 @@ export function useModules() {
       permission: "accounting",
       name: "Accounting",
       to: path.to.chartOfAccounts,
-      icon: TbPigMoney,
+      icon: LuLandmark,
     },
     {
       permission: "invoicing",
       name: "Invoicing",
       to: path.to.purchaseInvoices,
-      icon: BsCreditCard,
+      icon: LuCreditCard,
     },
     {
       permission: "resources",
       name: "Resources",
       to: path.to.people,
-      icon: BsPeopleFill,
+      icon: LuUsers,
     },
     {
       permission: "users",
       name: "Users",
       to: path.to.employeeAccounts,
-      icon: BsShieldLock,
+      icon: LuShield,
     },
     {
       permission: "settings",
       name: "Settings",
       to: path.to.company,
-      icon: LuSettings2,
+      icon: LuSettings,
     },
   ];
 

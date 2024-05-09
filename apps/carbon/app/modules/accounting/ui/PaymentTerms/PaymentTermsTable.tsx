@@ -2,15 +2,14 @@ import { Enumerable, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { useCustomColumns } from "~/hooks/useCustomColumns";
 import {
   paymentTermsCalculationMethod,
   type PaymentTerm,
 } from "~/modules/accounting";
-import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 
 type PaymentTermsTableProps = {
@@ -68,7 +67,6 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
     return [...defaultColumns, ...customColumns];
   }, [params, customColumns]);
 
-
   const renderContextMenu = useCallback(
     (row: PaymentTerm) => {
       return (
@@ -79,7 +77,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
               navigate(`${path.to.paymentTerm(row.id)}?${params.toString()}`);
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Payment Term
           </MenuItem>
           <MenuItem
@@ -90,7 +88,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
               );
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete Payment Term
           </MenuItem>
         </>

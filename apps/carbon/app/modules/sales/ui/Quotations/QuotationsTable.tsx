@@ -9,8 +9,7 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useFetchers, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
-import { BsFillPenFill, BsPin, BsPinFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuPin, LuTrash } from "react-icons/lu";
 import {
   CustomerAvatar,
   EmployeeAvatar,
@@ -80,8 +79,8 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
                 <input type="hidden" name="id" value={row.original.id!} />
                 <input type="hidden" name="favorite" value="unfavorite" />
                 <button type="submit">
-                  <BsPinFill
-                    className="text-yellow-400 cursor-pointer h-4 w-4"
+                  <LuPin
+                    className="cursor-pointer w-4 h-4 outline-primary/50 fill-yellow-400"
                     type="submit"
                   />
                 </button>
@@ -95,8 +94,8 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
                 <input type="hidden" name="id" value={row.original.id!} />
                 <input type="hidden" name="favorite" value="favorite" />
                 <button type="submit">
-                  <BsPin
-                    className="text-yellow-400 cursor-pointer h-4 w-4"
+                  <LuPin
+                    className="cursor-pointer w-4 h-4 text-muted-foreground"
                     type="submit"
                   />
                 </button>
@@ -267,7 +266,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
     return (row: Quotation) => (
       <>
         <MenuItem onClick={() => navigate(path.to.quote(row.id!))}>
-          <MenuIcon icon={<BsFillPenFill />} />
+          <MenuIcon icon={<LuPencil />} />
           Edit
         </MenuItem>
         <MenuItem
@@ -277,7 +276,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
             deleteQuotationModal.onOpen();
           }}
         >
-          <MenuIcon icon={<IoMdTrash />} />
+          <MenuIcon icon={<LuTrash />} />
           Delete
         </MenuItem>
       </>

@@ -1,5 +1,4 @@
-import { BsBank } from "react-icons/bs";
-import { PiShareNetworkFill } from "react-icons/pi";
+import { LuFileText, LuShare2 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { ServiceType } from "~/modules/parts/types";
 import type { Role } from "~/types";
@@ -10,14 +9,14 @@ export function useServiceSidebar(type: ServiceType) {
     {
       name: "Details",
       to: "details",
-      icon: BsBank,
+      icon: LuFileText,
     },
     {
       name: "Suppliers",
       to: "suppliers",
       isDisabled: type === "Internal",
       role: ["employee", "supplier"],
-      icon: PiShareNetworkFill,
+      icon: LuShare2,
     },
   ].filter(
     (item) =>

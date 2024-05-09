@@ -15,8 +15,7 @@ import {
 } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { useState } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { ConfirmDelete } from "~/components/Modals";
 import { useUrlParams } from "~/hooks";
 import type { WorkCellTypeDetailType } from "~/modules/resources";
@@ -87,13 +86,13 @@ const WorkCellTypeDetail = ({
                       <ActionMenu>
                         <DropdownMenuItem asChild>
                           <Link to={workCell.id}>
-                            <DropdownMenuIcon icon={<BsFillPenFill />} />
+                            <DropdownMenuIcon icon={<LuPencil />} />
                             Edit Cell
                           </Link>
                         </DropdownMenuItem>
                         {/* @ts-ignore */}
                         <DropdownMenuItem onClick={() => onDelete(workCell)}>
-                          <DropdownMenuIcon icon={<IoMdTrash />} />
+                          <DropdownMenuIcon icon={<LuTrash />} />
                           Delete Cell
                         </DropdownMenuItem>
                       </ActionMenu>

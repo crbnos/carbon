@@ -10,8 +10,8 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { BiAddToQueue } from "react-icons/bi";
-import { BsFillCheckCircleFill, BsFillPenFill, BsListUl } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { BsFillCheckCircleFill, BsListUl } from "react-icons/bs";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -126,14 +126,14 @@ const WorkCellTypesTable = memo(({ data, count }: WorkCellTypesTableProps) => {
             navigate(`${path.to.workCellType(row.id)}?${params?.toString()}`);
           }}
         >
-          <MenuIcon icon={<BsFillPenFill />} />
+          <MenuIcon icon={<LuPencil />} />
           Edit Work Cell Type
         </MenuItem>
         <MenuItem
           disabled={!permissions.can("delete", "users")}
           onClick={() => onDelete(row)}
         >
-          <MenuIcon icon={<IoMdTrash />} />
+          <MenuIcon icon={<LuTrash />} />
           Delete Work Cell Type
         </MenuItem>
       </>

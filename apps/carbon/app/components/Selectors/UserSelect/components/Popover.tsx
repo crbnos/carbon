@@ -80,7 +80,7 @@ const Popover = ({ children }: PropsWithChildren) => {
     <div
       {...popoverProps}
       ref={popoverRef}
-      className="absolute w-full mt-1 px-2 bg-popover text-popover-foreground shadow-sm border border-border rounded-md min-w-[240px]"
+      className="absolute w-full mt-1 px-2 bg-popover text-popover-foreground shadow-sm border border-border rounded-md min-w-[240px] z-50"
     >
       {children}
     </div>

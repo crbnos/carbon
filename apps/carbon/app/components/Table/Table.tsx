@@ -469,7 +469,7 @@ const Table = <T extends object>({
       >
         <div
           className={cn(
-            "grid w-full h-full",
+            "grid w-full h-full overflow-auto",
             withColumnOrdering ? "grid-cols-[auto_1fr]" : "grid-cols-1"
           )}
         >

@@ -19,7 +19,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BsPlus } from "react-icons/bs";
+import { LuPlus } from "react-icons/lu";
 import type {
   EditableTableCellComponent,
   Position,
@@ -431,7 +431,7 @@ const Grid = <T extends object>({
               >
                 <Td colSpan={24}>
                   <HStack className="items-start h-6">
-                    <BsPlus className="text-muted-foreground h-6 w-6" />
+                    <LuPlus className="text-muted-foreground h-6 w-6" />
                   </HStack>
                 </Td>
               </Tr>

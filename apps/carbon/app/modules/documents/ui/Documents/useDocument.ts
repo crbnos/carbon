@@ -20,6 +20,7 @@ export const useDocument = () => {
     (doc: DocumentType) => {
       return (
         !permissions.can("delete", "documents") ||
+        // @ts-ignore
         !doc.writeGroups?.some((group) => user?.groups.includes(group))
       );
     },
@@ -30,6 +31,7 @@ export const useDocument = () => {
     (document: DocumentType) => {
       return (
         !permissions.can("update", "documents") ||
+        // @ts-ignore
         !document.writeGroups?.some((group) => user?.groups.includes(group))
       );
     },
@@ -91,6 +93,13 @@ export const useDocument = () => {
       await insertTransaction(doc, "Download");
     },
     [supabase, insertTransaction]
+  );
+
+  const view = useCallback(
+    (document: DocumentType) => {
+      navigate(`${path.to.documentView(document.id)}/?${params}`);
+    },
+    [navigate, params]
   );
 
   const edit = useCallback(
@@ -195,6 +204,7 @@ export const useDocument = () => {
     isImage,
     isPdf,
     label,
+    view,
     makePreview,
     removeLabel,
     setLabel,

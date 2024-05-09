@@ -6,8 +6,7 @@ import {
   DropdownMenuTrigger,
   IconButton,
 } from "@carbon/react";
-import { BiHelpCircle } from "react-icons/bi";
-import { BsChatSquare } from "react-icons/bs";
+import { LuHelpCircle, LuMessageSquare } from "react-icons/lu";
 
 const HelpMenu = () => {
   return (
@@ -16,7 +15,7 @@ const HelpMenu = () => {
         <IconButton
           className="hidden sm:flex"
           aria-label="Help"
-          icon={<BiHelpCircle />}
+          icon={<LuHelpCircle />}
           variant="ghost"
         />
       </DropdownMenuTrigger>
@@ -27,7 +26,7 @@ const HelpMenu = () => {
             target="_blank"
             rel="noreferrer"
           >
-            <DropdownMenuIcon icon={<BiHelpCircle />} />
+            <DropdownMenuIcon icon={<LuHelpCircle />} />
             Help
           </a>
         </DropdownMenuItem>
@@ -37,7 +36,7 @@ const HelpMenu = () => {
             target="_blank"
             rel="noreferrer"
           >
-            <DropdownMenuIcon icon={<BsChatSquare />} />
+            <DropdownMenuIcon icon={<LuMessageSquare />} />
             Feedback
           </a>
         </DropdownMenuItem>

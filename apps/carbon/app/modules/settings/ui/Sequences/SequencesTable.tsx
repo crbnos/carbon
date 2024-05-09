@@ -2,7 +2,7 @@ import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
+import { LuPencil } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Sequence } from "~/modules/settings";
@@ -67,7 +67,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
               );
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Sequence
           </MenuItem>
         </>

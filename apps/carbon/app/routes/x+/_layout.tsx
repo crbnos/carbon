@@ -116,7 +116,7 @@ export default function AuthenticatedRoute() {
           <div className="min-h-full flex flex-col">
             <div className="flex-none" />
             <div className="h-screen min-h-[0px] basis-0 flex-1">
-              <div className="flex h-full">
+              <div className="flex h-full ">
                 <IconSidebar />
                 <div className="flex w-full h-full">
                   <div className="w-full h-full flex-1 overflow-hidden">

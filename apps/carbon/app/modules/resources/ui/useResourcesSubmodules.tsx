@@ -1,14 +1,16 @@
+import { FaPeopleArrows } from "react-icons/fa";
 import {
-  BsCalendar2Check,
-  BsFillPinMapFill,
-  BsPeopleFill,
-  BsStopwatch,
-} from "react-icons/bs";
-import { FaPeopleArrows, FaPeopleCarry } from "react-icons/fa";
-import { FaListCheck } from "react-icons/fa6";
-import { GiOrganigram, GiSkills } from "react-icons/gi";
-import { MdDashboardCustomize } from "react-icons/md";
-import { TbCrane } from "react-icons/tb";
+  LuCalendarClock,
+  LuCalendarHeart,
+  LuGroup,
+  LuHammer,
+  LuHardHat,
+  LuListChecks,
+  LuMapPin,
+  LuNetwork,
+  LuShapes,
+  LuUsers,
+} from "react-icons/lu";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -19,12 +21,12 @@ const resourcesRoutes: RouteGroup[] = [
       {
         name: "People",
         to: path.to.people,
-        icon: <BsPeopleFill />,
+        icon: <LuUsers />,
       },
       {
         name: "Contractors",
         to: path.to.contractors,
-        icon: <FaPeopleCarry />,
+        icon: <LuHardHat />,
       },
       {
         name: "Partners",
@@ -34,12 +36,12 @@ const resourcesRoutes: RouteGroup[] = [
       {
         name: "Work Cells",
         to: path.to.workCells,
-        icon: <MdDashboardCustomize />,
+        icon: <LuGroup />,
       },
       {
         name: "Equipment",
         to: path.to.equipment,
-        icon: <TbCrane />,
+        icon: <LuShapes />,
       },
     ],
   },
@@ -49,32 +51,32 @@ const resourcesRoutes: RouteGroup[] = [
       {
         name: "Abilities",
         to: path.to.abilities,
-        icon: <GiSkills />,
+        icon: <LuHammer />,
       },
       {
         name: "Attributes",
         to: path.to.attributes,
-        icon: <FaListCheck />,
+        icon: <LuListChecks />,
       },
       {
         name: "Departments",
         to: path.to.departments,
-        icon: <GiOrganigram />,
+        icon: <LuNetwork />,
       },
       {
         name: "Holidays",
         to: path.to.holidays,
-        icon: <BsCalendar2Check />,
+        icon: <LuCalendarHeart />,
       },
       {
         name: "Locations",
         to: path.to.locations,
-        icon: <BsFillPinMapFill />,
+        icon: <LuMapPin />,
       },
       {
         name: "Shifts",
         to: path.to.shifts,
-        icon: <BsStopwatch />,
+        icon: <LuCalendarClock />,
       },
     ],
   },

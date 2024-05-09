@@ -237,6 +237,8 @@ export const path = {
       generatePath(`${x}/resources/departments/${id}`),
     departments: `${x}/resources/departments`,
     document: (id: string) => generatePath(`${x}/documents/search/${id}`),
+    documentView: (id: string) =>
+      generatePath(`${x}/documents/search/view/${id}`),
     documents: `${x}/documents/search`,
     documentFavorite: `${x}/documents/favorite`,
     documentRestore: (id: string) =>

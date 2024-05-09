@@ -9,8 +9,7 @@ import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -255,7 +254,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               );
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Receipt
           </MenuItem>
           <MenuItem
@@ -269,7 +268,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               deleteReceiptModal.onOpen();
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete Receipt
           </MenuItem>
         </>

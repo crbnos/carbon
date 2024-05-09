@@ -8,7 +8,7 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
+import { LuPencil } from "react-icons/lu";
 import { Avatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { AttributeCategory, Person } from "~/modules/resources";
@@ -196,7 +196,7 @@ const PeopleTable = memo(
                   )
                 }
               >
-                <MenuIcon icon={<BsFillPenFill />} />
+                <MenuIcon icon={<LuPencil />} />
                 Edit Employee
               </MenuItem>
             );

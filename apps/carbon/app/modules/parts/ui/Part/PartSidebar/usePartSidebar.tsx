@@ -1,9 +1,14 @@
 import { useParams } from "@remix-run/react";
 import { BiListCheck } from "react-icons/bi";
-import { BsBank, BsBarChartLineFill, BsCartDash } from "react-icons/bs";
-import { HiOutlineCube } from "react-icons/hi";
-import { IoPricetagsOutline } from "react-icons/io5";
-import { PiMoneyFill, PiShareNetworkFill } from "react-icons/pi";
+import {
+  LuBox,
+  LuFileBarChart,
+  LuFileText,
+  LuReceipt,
+  LuShare2,
+  LuShoppingCart,
+  LuTags,
+} from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { PartReplenishmentSystem } from "~/modules/parts/types";
 import type { Role } from "~/types";
@@ -18,7 +23,7 @@ export function usePartSidebar(replenishment: PartReplenishmentSystem) {
     {
       name: "Details",
       to: path.to.partDetails(partId),
-      icon: BsBank,
+      icon: LuFileText,
       shortcut: "Command+Shift+d",
     },
     {
@@ -26,7 +31,7 @@ export function usePartSidebar(replenishment: PartReplenishmentSystem) {
       to: path.to.partPurchasing(partId),
       isDisabled: replenishment === "Make",
       role: ["employee", "supplier"],
-      icon: BsCartDash,
+      icon: LuShoppingCart,
       shortcut: "Command+Shift+p",
     },
     {
@@ -34,7 +39,7 @@ export function usePartSidebar(replenishment: PartReplenishmentSystem) {
       to: path.to.partSuppliers(partId),
       isDisabled: replenishment === "Make",
       role: ["employee", "supplier"],
-      icon: PiShareNetworkFill,
+      icon: LuShare2,
       shortcut: "Command+Shift+s",
     },
     {
@@ -49,28 +54,28 @@ export function usePartSidebar(replenishment: PartReplenishmentSystem) {
       name: "Costing",
       to: path.to.partCosting(partId),
       role: ["employee", "supplier"],
-      icon: IoPricetagsOutline,
+      icon: LuTags,
       shortcut: "Command+Shift+c",
     },
     {
       name: "Planning",
       to: path.to.partPlanning(partId),
       role: ["employee"],
-      icon: BsBarChartLineFill,
+      icon: LuFileBarChart,
       shortcut: "Command+Shift+p",
     },
     {
       name: "Inventory",
       to: path.to.partInventory(partId),
       role: ["employee", "supplier"],
-      icon: HiOutlineCube,
+      icon: LuBox,
       shortcut: "Command+Shift+i",
     },
     {
       name: "Sale Price",
       to: path.to.partSalePrice(partId),
       role: ["employee", "customer"],
-      icon: PiMoneyFill,
+      icon: LuReceipt,
       shortcut: "Command+Shift+x",
     },
   ].filter(

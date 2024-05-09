@@ -1,7 +1,10 @@
-import { BsPeopleFill, BsPersonBadge } from "react-icons/bs";
-import { GrGroup } from "react-icons/gr";
-import { IoGitPullRequestOutline } from "react-icons/io5";
-import { PiShareNetworkFill } from "react-icons/pi";
+import {
+  LuContainer,
+  LuFileBadge2,
+  LuGroup,
+  LuUserSquare,
+  LuUsers,
+} from "react-icons/lu";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -12,22 +15,22 @@ const usersRoutes: RouteGroup[] = [
       {
         name: "Employees",
         to: path.to.employeeAccounts,
-        icon: <BsPeopleFill />,
+        icon: <LuUsers />,
       },
       {
         name: "Customers",
         to: path.to.customerAccounts,
-        icon: <IoGitPullRequestOutline />,
+        icon: <LuUserSquare />,
       },
       {
         name: "Suppliers",
         to: path.to.supplierAccounts,
-        icon: <PiShareNetworkFill />,
+        icon: <LuContainer />,
       },
       {
         name: "Groups",
         to: path.to.groups,
-        icon: <GrGroup />,
+        icon: <LuGroup />,
       },
     ],
   },
@@ -37,7 +40,7 @@ const usersRoutes: RouteGroup[] = [
       {
         name: "Employee Types",
         to: path.to.employeeTypes,
-        icon: <BsPersonBadge />,
+        icon: <LuFileBadge2 />,
       },
     ],
   },

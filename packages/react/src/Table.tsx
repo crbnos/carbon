@@ -5,7 +5,7 @@ import { cn } from "./utils/cn";
 
 const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="w-full overflow-auto">
+    <div className="w-full">
       <table
         ref={ref}
         className={cn("w-full caption-bottom text-sm", className)}
@@ -53,7 +53,7 @@ const Tr = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElement>>(
     <tr
       ref={ref}
       className={cn(
-        "bg-card border-b border-border transition-colors data-[state=selected]:bg-muted",
+        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
         className
       )}
       {...props}

@@ -10,8 +10,8 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { BiAddToQueue } from "react-icons/bi";
-import { BsFillCheckCircleFill, BsFillPenFill, BsListUl } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { BsFillCheckCircleFill, BsListUl } from "react-icons/bs";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -44,8 +44,7 @@ const EquipmentTypesTable = memo(
       deleteModal.onClose();
     };
 
-    const customColumns =
-      useCustomColumns<EquipmentType>("equipmentType");
+    const customColumns = useCustomColumns<EquipmentType>("equipmentType");
     const columns = useMemo<ColumnDef<EquipmentType>[]>(() => {
       const defaultColumns: ColumnDef<EquipmentType>[] = [
         {
@@ -126,14 +125,14 @@ const EquipmentTypesTable = memo(
               navigate(path.to.equipmentType(row.id));
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Equipment Type
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "users")}
             onClick={() => onDelete(row)}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete Equipment Type
           </MenuItem>
         </>

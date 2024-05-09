@@ -1,4 +1,4 @@
-import { BsBank, BsListCheck } from "react-icons/bs";
+import { LuFileText, LuList } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 
@@ -12,7 +12,7 @@ export function usePurchaseInvoiceSidebar({ lines = 0 }: Props) {
     {
       name: "Summary",
       to: "details",
-      icon: BsBank,
+      icon: LuFileText,
       shortcut: "Command+Shift+s",
       role: ["employee"],
     },
@@ -20,7 +20,7 @@ export function usePurchaseInvoiceSidebar({ lines = 0 }: Props) {
       name: "Lines",
       to: "lines",
       count: lines,
-      icon: BsListCheck,
+      icon: LuList,
       shortcut: "Command+Shift+l",
       role: ["employee"],
     },

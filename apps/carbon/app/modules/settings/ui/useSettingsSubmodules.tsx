@@ -1,7 +1,5 @@
-import { CgSync } from "react-icons/cg";
-import { GoNumber } from "react-icons/go";
+import { LuFactory, LuSheet, LuWorkflow } from "react-icons/lu";
 import { MdOutlineDashboardCustomize } from "react-icons/md";
-import { TbBuildingFactory2 } from "react-icons/tb";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -14,7 +12,7 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         name: "Company",
         to: path.to.company,
         role: "employee",
-        icon: <TbBuildingFactory2 />,
+        icon: <LuFactory />,
       },
     ],
   },
@@ -31,13 +29,13 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         name: "Integrations",
         to: path.to.integrations,
         role: "employee",
-        icon: <CgSync />,
+        icon: <LuWorkflow />,
       },
       {
         name: "Sequences",
         to: path.to.sequences,
         role: "employee",
-        icon: <GoNumber />,
+        icon: <LuSheet />,
       },
     ],
   },

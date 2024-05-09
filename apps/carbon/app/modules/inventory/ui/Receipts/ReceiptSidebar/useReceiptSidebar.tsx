@@ -1,6 +1,5 @@
 import { useParams } from "@remix-run/react";
-import { BsBank, BsListCheck } from "react-icons/bs";
-import { PiMoneyFill } from "react-icons/pi";
+import { LuFileText, LuList, LuStickyNote } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { ReceiptLine } from "~/modules/inventory/types";
 import type { Note } from "~/modules/shared";
@@ -18,7 +17,7 @@ export function useReceiptSidebar(
     {
       name: "Details",
       to: "details",
-      icon: BsBank,
+      icon: LuFileText,
       shortcut: "Command+Shift+d",
     },
     {
@@ -26,7 +25,7 @@ export function useReceiptSidebar(
       to: "lines",
       role: ["employee"],
       count: lines.length,
-      icon: BsListCheck,
+      icon: LuList,
       shortcut: "Command+Shift+l",
     },
 
@@ -35,7 +34,7 @@ export function useReceiptSidebar(
       to: "notes",
       role: ["employee"],
       count: notes.length,
-      icon: PiMoneyFill,
+      icon: LuStickyNote,
       shortcut: "Command+Shift+n",
     },
   ].filter(

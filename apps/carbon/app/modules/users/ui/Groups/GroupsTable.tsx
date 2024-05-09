@@ -8,8 +8,7 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Group } from "~/modules/users";
@@ -90,7 +89,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
               navigate(path.to.group(row.id));
             }}
           >
-            <DropdownMenuIcon icon={<BsFillPenFill />} />
+            <DropdownMenuIcon icon={<LuPencil />} />
             Edit Group
           </MenuItem>
           <MenuItem
@@ -104,7 +103,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
               navigate(path.to.deleteGroup(row.id));
             }}
           >
-            <DropdownMenuIcon icon={<IoMdTrash />} />
+            <DropdownMenuIcon icon={<LuTrash />} />
             Delete Group
           </MenuItem>
         </>

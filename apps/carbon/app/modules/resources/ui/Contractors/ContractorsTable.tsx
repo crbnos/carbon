@@ -2,8 +2,7 @@ import { Avatar, Enumerable, HStack, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -121,7 +120,7 @@ const ContractorsTable = memo(
                 );
               }}
             >
-              <MenuIcon icon={<BsFillPenFill />} />
+              <MenuIcon icon={<LuPencil />} />
               Edit Contractor
             </MenuItem>
             <MenuItem
@@ -134,7 +133,7 @@ const ContractorsTable = memo(
                 );
               }}
             >
-              <MenuIcon icon={<IoMdTrash />} />
+              <MenuIcon icon={<LuTrash />} />
               Delete Contractor
             </MenuItem>
           </>

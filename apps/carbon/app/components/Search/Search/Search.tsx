@@ -27,6 +27,7 @@ import { BiListCheck } from "react-icons/bi";
 import { BsCartDash, BsCartPlus } from "react-icons/bs";
 import { CgProfile } from "react-icons/cg";
 import { HiOutlineDocumentDuplicate } from "react-icons/hi";
+import { LuSearch } from "react-icons/lu";
 import { PiShareNetworkFill } from "react-icons/pi";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { useModules } from "~/components/Layout/Navigation/useModules";
@@ -272,7 +273,7 @@ const SearchButton = () => {
   return (
     <div className="hidden sm:block">
       <Button
-        leftIcon={<RxMagnifyingGlass />}
+        leftIcon={<LuSearch />}
         variant="secondary"
         className="w-[145px] px-2 text-muted-foreground "
         onClick={searchModal.onOpen}

@@ -2,8 +2,8 @@ import { Enumerable, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill, BsPeopleFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { BsPeopleFill } from "react-icons/bs";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -58,7 +58,7 @@ const CustomerStatusesTable = memo(
                 );
               }}
             >
-              <MenuIcon icon={<BsFillPenFill />} />
+              <MenuIcon icon={<LuPencil />} />
               Edit Customer Status
             </MenuItem>
             <MenuItem
@@ -69,7 +69,7 @@ const CustomerStatusesTable = memo(
                 );
               }}
             >
-              <MenuIcon icon={<IoMdTrash />} />
+              <MenuIcon icon={<LuTrash />} />
               Delete Customer Status
             </MenuItem>
           </>

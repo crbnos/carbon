@@ -9,17 +9,17 @@ import { Link, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { BiAddToQueue } from "react-icons/bi";
-import { BsFillPenFill, BsListUl } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { BsListUl } from "react-icons/bs";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { useCustomColumns } from "~/hooks/useCustomColumns";
 import {
   accountClassTypes,
   incomeBalanceTypes,
   type AccountCategory,
 } from "~/modules/accounting";
-import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 
 type AccountCategoriesTableProps = {
@@ -111,7 +111,6 @@ const AccountCategoriesTable = memo(
       return [...defaultColumns, ...customColumns];
     }, [params, customColumns]);
 
-
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
         if (!row.id) return null;
@@ -146,14 +145,14 @@ const AccountCategoriesTable = memo(
                 navigate(path.to.accountingCategory(row.id!));
               }}
             >
-              <MenuIcon icon={<BsFillPenFill />} />
+              <MenuIcon icon={<LuPencil />} />
               Edit Account Category
             </MenuItem>
             <MenuItem
               disabled={!permissions.can("delete", "users")}
               onClick={() => onDelete(row)}
             >
-              <MenuIcon icon={<IoMdTrash />} />
+              <MenuIcon icon={<LuTrash />} />
               Delete Account Category
             </MenuItem>
           </>

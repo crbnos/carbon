@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   VStack,
 } from "@carbon/react";
-import { BsPinMapFill } from "react-icons/bs";
+import { LuMapPin } from "react-icons/lu";
 import type { Action } from "~/types";
 
 type AddressProps = {
@@ -24,7 +24,7 @@ const Address = ({ address, actions }: AddressProps) => {
   }`;
   return (
     <div className="grid w-full gap-4 grid-cols-[auto_1fr_auto]">
-      <BsPinMapFill className="w-8 h-8" />
+      <LuMapPin className="w-8 h-8" />
       <VStack spacing={0}>
         <p className="font-bold line-clamp-1">{location}</p>
         <p className="text-sm text-muted-foreground line-clamp-1">

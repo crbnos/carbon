@@ -16,8 +16,8 @@ import {
 } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { useState } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdAdd, IoMdTrash } from "react-icons/io";
+import { IoMdAdd } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { ConfirmDelete } from "~/components/Modals";
 
 import { useUrlParams } from "~/hooks";
@@ -76,12 +76,12 @@ const AccountCategoryDetail = ({
                     <ActionMenu>
                       <DropdownMenuItem asChild>
                         <Link to={`${subcategory.id}?${params.toString()}`}>
-                          <DropdownMenuIcon icon={<BsFillPenFill />} />
+                          <DropdownMenuIcon icon={<LuPencil />} />
                           Edit Subcategory
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onDelete(subcategory)}>
-                        <DropdownMenuIcon icon={<IoMdTrash />} />
+                        <DropdownMenuIcon icon={<LuTrash />} />
                         Delete Subcategory
                       </DropdownMenuItem>
                     </ActionMenu>

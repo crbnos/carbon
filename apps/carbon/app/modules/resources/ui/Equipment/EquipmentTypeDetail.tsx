@@ -15,8 +15,7 @@ import {
 } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { useState } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdAdd, IoMdTrash } from "react-icons/io";
+import { LuPencil, LuPlus, LuTrash } from "react-icons/lu";
 import { ConfirmDelete } from "~/components/Modals";
 import { useUrlParams } from "~/hooks";
 import type { EquipmentTypeDetailType } from "~/modules/resources";
@@ -81,12 +80,12 @@ const EquipmentTypeDetail = ({
                       <ActionMenu>
                         <DropdownMenuItem asChild>
                           <Link to={equipment.id}>
-                            <DropdownMenuIcon icon={<BsFillPenFill />} />
+                            <DropdownMenuIcon icon={<LuPencil />} />
                             Edit Unit
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onDelete(equipment)}>
-                          <DropdownMenuIcon icon={<IoMdTrash />} />
+                          <DropdownMenuIcon icon={<LuTrash />} />
                           Delete Unit
                         </DropdownMenuItem>
                       </ActionMenu>
@@ -97,7 +96,7 @@ const EquipmentTypeDetail = ({
             )}
           </DrawerBody>
           <DrawerFooter>
-            <Button asChild leftIcon={<IoMdAdd />} size="md">
+            <Button asChild leftIcon={<LuPlus />} size="md">
               <Link to={`new?${params.toString()}`}>New Equipment</Link>
             </Button>
           </DrawerFooter>

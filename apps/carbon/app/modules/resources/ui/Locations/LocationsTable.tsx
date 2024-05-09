@@ -2,8 +2,7 @@ import { Enumerable, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { BsFillPenFill } from "react-icons/bs";
-import { IoMdTrash } from "react-icons/io";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -72,7 +71,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
               navigate(`${path.to.location(row.id)}?${params.toString()}`);
             }}
           >
-            <MenuIcon icon={<BsFillPenFill />} />
+            <MenuIcon icon={<LuPencil />} />
             Edit Location
           </MenuItem>
           <MenuItem
@@ -83,7 +82,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
               );
             }}
           >
-            <MenuIcon icon={<IoMdTrash />} />
+            <MenuIcon icon={<LuTrash />} />
             Delete Location
           </MenuItem>
         </>
