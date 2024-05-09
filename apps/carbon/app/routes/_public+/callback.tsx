@@ -31,9 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs): FormActionData {
   assertIsPost(request);
-  console.log("callback action");
   const { companyId } = await requirePermissions(request, {});
-  console.log("companyId", companyId);
 
   const validation = await validator(callbackValidator).validate(
     await request.formData()

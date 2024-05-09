@@ -19,7 +19,7 @@ export default function Page() {
       </p>
 
       <h2 className="text-xl font-semibold sm:text-lg lg:text-2xl xl:text-3xl">
-        Open Source
+        Source Available
       </h2>
       <p>
         We've built Carbon for our past selves. And we've open-sourced it
