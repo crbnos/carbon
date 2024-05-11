@@ -1075,13 +1075,17 @@ export async function getSalesOrder(
 
 export async function getSalesOrders(
   client: SupabaseClient<Database>,
+  companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
     status: string | null;
     customerId: string | null;
   }
 ) {
-  let query = client.from("salesOrders").select("*", { count: "exact" });
+  let query = client
+    .from("salesOrders")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(
