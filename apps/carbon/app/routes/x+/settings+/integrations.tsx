@@ -1,23 +1,38 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
-import { useIntegrations } from "~/hooks/useIntegrations";
-import { IntegrationsList } from "~/modules/settings";
+import { redirect, type LoaderFunctionArgs } from "@remix-run/node";
+import { Outlet, useLoaderData } from "@remix-run/react";
+import { IntegrationsList, getIntegrations } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import { path } from "~/utils/path";
+import { error } from "~/utils/result";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "settings",
   });
 
-  return null;
+  const integrations = await getIntegrations(client, companyId);
+  if (integrations.error) {
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(integrations.error, "Failed to load integrations")
+      )
+    );
+  }
+
+  return {
+    integrations: integrations.data ?? [],
+  };
 }
 
 export default function IntegrationsRoute() {
-  const { list } = useIntegrations();
+  const { integrations } = useLoaderData<typeof loader>();
 
   return (
     <>
-      <IntegrationsList integrations={list} />
+      <IntegrationsList integrations={integrations} />
       <Outlet />
     </>
   );

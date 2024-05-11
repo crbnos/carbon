@@ -21,7 +21,7 @@ const job = triggerClient.defineJob({
     let exchangeRatesClient: ExchangeRatesClient | undefined;
 
     const integrations = await supabaseClient
-      .from("integration")
+      .from("companyIntegration")
       .select("active, metadata, companyId")
       .eq("id", "exchange-rates-v1");
 
@@ -30,14 +30,13 @@ const job = triggerClient.defineJob({
       return;
     }
 
+    await io.logger.info(`💵 Exchange Rates Job: ${payload.lastTimestamp}`);
     for await (const integration of integrations.data) {
       const integrationMetadata = exchangeRatesFormValidator.safeParse(
         integration?.metadata
       );
 
       if (!integrationMetadata.success || integration?.active !== true) return;
-
-      await io.logger.info(`💵 Exchange Rates Job: ${payload.lastTimestamp}`);
 
       try {
         if (!hasRates) {
@@ -84,13 +83,12 @@ const job = triggerClient.defineJob({
           await io.logger.error(JSON.stringify(error));
           return;
         }
-
-        io.logger.log("Success");
       } catch (err) {
         // TODO: notify someone
         await io.logger.error(JSON.stringify(err));
       }
     }
+    io.logger.log("Success");
   },
 });
 

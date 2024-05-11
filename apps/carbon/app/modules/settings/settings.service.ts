@@ -57,6 +57,16 @@ export async function getCompany(
   };
 }
 
+export async function getCompanyIntegrations(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("companyIntegration")
+    .select("*")
+    .eq("companyId", companyId);
+}
+
 export async function getCurrentSequence(
   client: SupabaseClient<Database>,
   table: string,
@@ -125,12 +135,14 @@ export async function getCustomFieldsTables(
 
 export async function getIntegration(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
   return client
-    .from("integration")
+    .from("integrations")
     .select("*")
     .eq("id", id)
+    .eq("companyId", companyId)
     .eq("visible", true)
     .single();
 }
@@ -140,7 +152,7 @@ export async function getIntegrations(
   companyId: string
 ) {
   return client
-    .from("integration")
+    .from("integrations")
     .select("*")
     .eq("companyId", companyId)
     .eq("visible", true)
@@ -279,17 +291,17 @@ export async function updateCompany(
   return client.from("company").update(sanitize(company)).eq("id", companyId);
 }
 
-export async function updateIntegration(
+export async function upsertIntegration(
   client: SupabaseClient<Database>,
   update: {
     id: string;
     active: boolean;
     metadata: Json;
+    companyId: string;
     updatedBy: string;
   }
 ) {
-  const { id, ...data } = update;
-  return client.from("integration").update(data).eq("id", id);
+  return client.from("companyIntegration").upsert([update]);
 }
 
 export async function updateLogo(

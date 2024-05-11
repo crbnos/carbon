@@ -6,7 +6,7 @@ import NProgress from "nprogress";
 import { useEffect } from "react";
 import { IconSidebar, Topbar } from "~/components/Layout";
 import { SupabaseProvider, getSupabase } from "~/lib/supabase";
-import { getCompanies, getIntegrations } from "~/modules/settings";
+import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
 import { RealtimeDataProvider } from "~/modules/shared";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
 import {
@@ -56,7 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ] = await Promise.all([
     getCompanies(client, userId),
     getCustomFieldsSchemas(client, { companyId }),
-    getIntegrations(client, companyId),
+    getCompanyIntegrations(client, companyId),
     getUser(client, userId),
     getUserClaims(userId),
     getUserGroups(client, userId),

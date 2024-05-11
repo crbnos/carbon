@@ -28,7 +28,7 @@ function Hero() {
       <div className="my-12 sm:my-36 flex flex-col space-y-8 max-w-2xl mx-auto text-center">
         <div className="text-center mb-4">
           <div className="fancy-button rounded-full w-fit mx-auto relative">
-            <Link href="https://www.loom.com/share/7b2dccab3d404b84aa8f08e5bfa21d16?sid=251f4f0e-4d04-4ec2-bb60-7376454e3172">
+            <Link href="https://www.loom.com/share/7eb03a5e4d4d4836b34f173805fb7403?sid=7ed308d0-8d59-4230-a3f1-137aae3c24da">
               <Button
                 className="border-border rounded-full"
                 variant="secondary"

@@ -7,7 +7,7 @@ import {
   apiKey,
   getIntegration,
   resendFormValidator,
-  updateIntegration,
+  upsertIntegration,
 } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -21,11 +21,11 @@ const defaultValue = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "settings",
   });
 
-  const integration = await getIntegration(client, "resend");
+  const integration = await getIntegration(client, "resend", companyId);
   if (integration.error) {
     throw redirect(
       path.to.integrations,
@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     integration: validIntegration.success
       ? {
-          active: integration.data?.active,
+          active: integration.data?.active ?? false,
           ...validIntegration.data,
         }
       : defaultValue,
@@ -50,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings",
   });
 
@@ -64,12 +64,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { active, ...data } = validation.data;
 
-  const update = await updateIntegration(client, {
+  const update = await upsertIntegration(client, {
     id: "resend",
     active,
     metadata: {
       ...data,
     },
+    companyId,
     updatedBy: userId,
   });
   if (update.error) {

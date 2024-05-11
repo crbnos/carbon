@@ -11,7 +11,6 @@ import {
   fiscalYearSettings,
   groupCompanyTemplate,
   groups,
-  integrations,
   paymentTerms,
   postingGroupInventory,
   postingGroupPurchasing,
@@ -222,16 +221,6 @@ serve(async (req: Request) => {
       await trx
         .insertInto("fiscalYearSettings")
         .values([{ ...fiscalYearSettings, companyId }])
-        .execute();
-
-      await trx
-        .insertInto("integration")
-        .values(integrations.map((i) => ({ ...i, companyId })))
-        .execute();
-
-      await trx
-        .insertInto("customFieldTable")
-        .values(customFields.map((cf) => ({ ...cf, companyId })))
         .execute();
 
       const user = await supabaseClient

@@ -11,7 +11,7 @@ const LoomDemo = () => {
     >
       <iframe
         title="Carbon ERP Walkthrough"
-        src="https://www.loom.com/embed/7b2dccab3d404b84aa8f08e5bfa21d16?sid=178453fa-df5d-46b7-9c72-68a9b9e5158e"
+        src="https://www.loom.com/share/7eb03a5e4d4d4836b34f173805fb7403?sid=7ed308d0-8d59-4230-a3f1-137aae3c24da"
         frameBorder={0}
         allowFullScreen
         style={{
