@@ -72,7 +72,7 @@ const DrawerBody = ({
 DrawerBody.displayName = "DrawerBody";
 
 const sheetVariants = cva(
-  "fixed flex flex-col z-50 scale-100 bg-card opacity-100 shadow-lg border border-border overflow-y-auto transition-all duration-100 focus-visible:outline-none focus-visible:ring-0",
+  "fixed flex flex-col z-50 scale-100 bg-card opacity-100 shadow-lg border border-border transition-all duration-100 focus-visible:outline-none focus-visible:ring-0",
   {
     variants: {
       position: {
