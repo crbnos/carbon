@@ -25,7 +25,7 @@ const Breadcrumbs = forwardRef<
       className={cn("reset flex", className)}
       {...props}
     >
-      <ol className="inline-flex items-center">{clones}</ol>
+      <ol className="inline-flex items-center space-x-1">{clones}</ol>
     </nav>
   );
 });

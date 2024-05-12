@@ -134,6 +134,18 @@ export async function getEmployeeTypes(
   return query;
 }
 
+export async function getInvitable(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("employeesAcrossCompanies")
+    .select("*")
+    .eq("active", true)
+    .not("companyId", "cs", `{"${companyId}"}`)
+    .order("lastName");
+}
+
 export async function getModules(client: SupabaseClient<Database>) {
   return client.from("modules").select("name").order("name");
 }

@@ -13,3 +13,16 @@ CREATE OR REPLACE VIEW "employees" WITH(SECURITY_INVOKER=true) AS
   INNER JOIN "employee" e
     ON e.id = u.id
   WHERE u.active = TRUE;
+
+CREATE OR REPLACE VIEW "employeesAcrossCompanies" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+    e.id,
+    e.email,
+    e."firstName", 
+    e."lastName", 
+    e.name, 
+    e."avatarUrl", 
+    e.active,
+    array_agg(e."companyId") as "companyId"
+  FROM "employees" e
+  GROUP BY e.id, e.email, e."firstName", e."lastName", e.name, e."avatarUrl", e.active;

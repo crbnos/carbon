@@ -34,6 +34,7 @@ serve(async (req: Request) => {
   try {
     if (!id) throw new Error("Payload is missing id");
     if (!userId) throw new Error("Payload is missing userId");
+
     const companyId = id as string;
     const supabaseClient = getSupabaseServiceRole(
       req.headers.get("Authorization")
