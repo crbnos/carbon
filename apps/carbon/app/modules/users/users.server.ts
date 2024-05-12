@@ -806,11 +806,10 @@ async function setUserPermissions(
   permissions: Record<string, string[]>
 ) {
   const user = await client
-    .from("user")
+    .from("userPermission")
     .select("permissions")
     .eq("id", userId)
-    .single();
-  if (user.error) return user;
+    .maybeSingle();
 
   const currentPermissions = (user.data?.permissions ?? {}) as Record<
     string,
@@ -827,9 +826,8 @@ async function setUserPermissions(
   });
 
   return client
-    .from("user")
-    .update({ permissions: newPermissions })
-    .eq("id", userId);
+    .from("userPermission")
+    .upsert({ id: userId, permissions: newPermissions });
 }
 
 export async function updateEmployee(
@@ -985,7 +983,7 @@ export async function updatePermissions(
     }
 
     const permissionsUpdate = await getSupabaseServiceRole()
-      .from("user")
+      .from("userPermission")
       .update({ permissions: updatedPermissions })
       .eq("id", id);
     if (permissionsUpdate.error)

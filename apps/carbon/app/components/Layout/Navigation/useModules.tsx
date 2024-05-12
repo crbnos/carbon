@@ -51,7 +51,7 @@ export function useModules() {
     {
       permission: "sales",
       name: "Sales",
-      to: path.to.quotes,
+      to: path.to.salesOrders,
       icon: LuReceipt,
     },
     {

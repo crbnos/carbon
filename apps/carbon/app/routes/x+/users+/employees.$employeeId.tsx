@@ -3,6 +3,7 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import { getSupabaseServiceRole } from "~/lib/supabase";
 import type { CompanyPermission } from "~/modules/users";
 import {
   EmployeePermissionsForm,
@@ -23,7 +24,7 @@ import { path } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "users",
     role: "employee",
   });
@@ -31,6 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { employeeId } = params;
   if (!employeeId) throw notFound("employeeId not found");
 
+  const client = getSupabaseServiceRole();
   const [rawClaims, employee, employeeTypes] = await Promise.all([
     getClaims(client, employeeId),
     getEmployee(client, employeeId, companyId),

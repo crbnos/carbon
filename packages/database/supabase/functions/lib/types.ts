@@ -16059,7 +16059,6 @@ export type Database = {
           fullName: string | null
           id: string
           lastName: string
-          permissions: Json | null
           updatedAt: string | null
         }
         Insert: {
@@ -16072,7 +16071,6 @@ export type Database = {
           fullName?: string | null
           id: string
           lastName: string
-          permissions?: Json | null
           updatedAt?: string | null
         }
         Update: {
@@ -16085,7 +16083,6 @@ export type Database = {
           fullName?: string | null
           id?: string
           lastName?: string
-          permissions?: Json | null
           updatedAt?: string | null
         }
         Relationships: []
@@ -16490,6 +16487,50 @@ export type Database = {
             foreignKeyName: "userAttributeValue_valueUser_fkey"
             columns: ["valueUser"]
             isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      userPermission: {
+        Row: {
+          id: string
+          permissions: Json | null
+        }
+        Insert: {
+          id: string
+          permissions?: Json | null
+        }
+        Update: {
+          id?: string
+          permissions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "userPermission_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userPermission_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userPermission_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userPermission_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },

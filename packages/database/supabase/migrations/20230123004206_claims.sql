@@ -34,7 +34,7 @@ CREATE OR REPLACE FUNCTION get_my_permission(claim text) RETURNS "jsonb"
     AS $$
     DECLARE permissions jsonb;
     BEGIN
-      select coalesce(permissions->claim, null) from public.user into permissions where id = auth.uid()::text;
+      select coalesce(permissions->claim, null) from public."userPermission" into permissions where id = auth.uid()::text;
         return permissions;
       
     END;
@@ -66,7 +66,7 @@ CREATE OR REPLACE FUNCTION get_permission_companies(claim text) RETURNS text[]
     DECLARE retval text[];
     BEGIN
       -- TODO: (current_setting('request.jwt.claims', true)::jsonb)->'app_metadata'->
-      select jsonb_to_text_array(coalesce(permissions->claim, '[]')) from public.user into retval where id = auth.uid()::text;
+      select jsonb_to_text_array(coalesce(permissions->claim, '[]')) from public."userPermission" into retval where id = auth.uid()::text;
         return retval;
       
     END;
@@ -91,7 +91,7 @@ CREATE OR REPLACE FUNCTION has_company_permission(claim text, company text) RETU
       permission_value text[];
     BEGIN
       -- TODO: (current_setting('request.jwt.claims', true)::jsonb)->'app_metadata'->claim
-      SELECT jsonb_to_text_array(coalesce(permissions->claim, '[]')) INTO permission_value FROM public.user WHERE id = auth.uid()::text;
+      SELECT jsonb_to_text_array(coalesce(permissions->claim, '[]')) INTO permission_value FROM public."userPermission" WHERE id = auth.uid()::text;
       IF permission_value IS NULL THEN
         return false;
       ELSIF '0' = ANY(permission_value::text[]) THEN
@@ -111,7 +111,7 @@ CREATE OR REPLACE FUNCTION has_any_company_permission(claim text) RETURNS "bool"
       permission_value text[];
     BEGIN
       
-      SELECT jsonb_to_text_array(coalesce(permissions->claim, '[]')) INTO permission_value FROM public.user WHERE id = auth.uid()::text;
+      SELECT jsonb_to_text_array(coalesce(permissions->claim, '[]')) INTO permission_value FROM public."userPermission" WHERE id = auth.uid()::text;
       IF permission_value IS NULL THEN
         return false;
       ELSIF array_length(permission_value, 1) > 0 THEN
@@ -140,7 +140,7 @@ CREATE OR REPLACE FUNCTION get_claims(uid text) RETURNS "jsonb"
     DECLARE perms jsonb;
     BEGIN
       select raw_app_meta_data from auth.users into claims where id = uid::uuid;
-      select permissions from public.user into perms where id = uid::text;
+      select permissions from "userPermission" into perms where id = uid::text;
         return (claims || perms)::jsonb;
       
     END;

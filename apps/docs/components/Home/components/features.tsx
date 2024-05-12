@@ -20,7 +20,7 @@ const features = [
       "Built on best open-source technologies for incredible performance and security.",
   },
   {
-    name: "Open Source",
+    name: "Open Core",
     icon: HiCode,
     description:
       "Unlike other open-source ERPs, you can use Carbon to build your own proprietary systems.",

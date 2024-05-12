@@ -224,7 +224,7 @@ serve(async (req: Request) => {
         .execute();
 
       const user = await supabaseClient
-        .from("user")
+        .from("userPermission")
         .select("permissions")
         .eq("id", userId)
         .single();
@@ -263,7 +263,7 @@ serve(async (req: Request) => {
       });
 
       const { error } = await supabaseClient
-        .from("user")
+        .from("userPermission")
         .update({ permissions: newPermissions })
         .eq("id", userId);
       if (error) throw new Error(error.message);

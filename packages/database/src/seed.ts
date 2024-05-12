@@ -52,10 +52,17 @@ async function seed() {
       email: admin.email,
       firstName: admin.firstName,
       lastName: admin.lastName,
-      permissions,
     },
   ]);
   if (upsertAdmin.error) throw upsertAdmin.error;
+
+  const upsertPermissions = await supabaseAdmin.from("userPermission").upsert([
+    {
+      id: id,
+      permissions,
+    },
+  ]);
+  if (upsertPermissions.error) throw upsertPermissions.error;
 
   // give the admin user all the claims
   await supabaseAdmin.auth.admin.updateUserById(id, {

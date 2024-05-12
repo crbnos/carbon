@@ -8,12 +8,13 @@ description: Conventions for permissions in Carbon ERP
 There are two types of permissions in the system:
 
 1. **Role permissions** - These are permissions that are specific to a role. These are in the `auth.users` and included in the JWT.
-2. **Module permissions** - These are permissions that are specific to a module. The are store in the `public.user` table.
+2. **Module permissions** - These are permissions that are specific to a module. They are stored in the `public.userPermission` table.
 
 For example, customers may be able to view the sales module, but a customer role limits the data to only their own sales, where an employee with the same permission can view all sales.
 
 Each user has a **role**, which may be one of the following:
 
+- `owner`
 - `employee`
 - `customer`
 - `supplier`
