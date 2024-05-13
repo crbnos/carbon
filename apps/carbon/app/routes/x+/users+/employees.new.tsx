@@ -63,6 +63,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function () {
   const { invitable } = useLoaderData<typeof loader>();
-  console.log(invitable);
-  return <CreateEmployeeModal />;
+
+  return <CreateEmployeeModal invitable={invitable} />;
 }

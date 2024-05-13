@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/redis";
 import { redirect } from "@remix-run/node";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";
@@ -64,7 +64,7 @@ export async function createCustomerAccount(
   const user = await getUserByEmail(email);
   if (user.data) {
     // TODO: user already exists -- send company invite
-    await addUserToCompany(client, { userId: user.data.id, companyId });
+    // await addUserToCompany(client, { userId: user.data.id, companyId });
     return error(
       null,
       "User already exists. Adding to team not implemented yet."
@@ -163,7 +163,6 @@ export async function createEmployeeAccount(
     companyId: string;
   }
 ): Promise<Result> {
-  // TODO: convert to transaction and call this at the end of the transaction
   const employeeTypePermissions = await getPermissionsByEmployeeType(
     client,
     employeeType
@@ -174,22 +173,23 @@ export async function createEmployeeAccount(
       "Failed to get employee type permissions"
     );
 
-  const user = await getUserByEmail(email);
+  const permissions = makePermissionsFromEmployeeType(employeeTypePermissions);
+  const supabaseAdmin = getSupabaseServiceRole();
 
+  const user = await getUserByEmail(email);
+  let userExists = false;
+
+  let userId = "";
   if (user.data) {
-    // TODO: user already exists -- send company invite
-    await addUserToCompany(client, { userId: user.data.id, companyId });
-    return error(
-      null,
-      "User already exists. Adding to team not implemented yet."
-    );
+    userExists = true;
+    userId = user.data.id;
   } else {
     const invitation = await sendInviteByEmail(email);
 
     if (invitation.error)
       return error(invitation.error.message, "Failed to send invitation email");
 
-    const userId = invitation.data.user.id;
+    userId = invitation.data.user.id;
 
     const insertUser = await createUser(client, {
       id: userId,
@@ -204,53 +204,50 @@ export async function createEmployeeAccount(
 
     if (!insertUser.data)
       return error(insertUser, "No data returned from create user");
-
-    const supabaseAdmin = getSupabaseServiceRole();
-    const permissions = makePermissionsFromEmployeeType(
-      employeeTypePermissions
-    );
-
-    const [createEmployee, userToCompany, claimsUpdate, permissionsUpdate] =
-      await Promise.all([
-        insertEmployee(client, {
-          id: insertUser.data[0].id,
-          employeeTypeId: employeeType,
-          companyId,
-        }),
-        addUserToCompany(client, { userId, companyId }),
-        setUserClaims(supabaseAdmin, userId, {
-          role: "employee",
-        }),
-        setUserPermissions(supabaseAdmin, userId, permissions),
-      ]);
-
-    if (createEmployee.error) {
-      await deleteAuthAccount(userId);
-      return error(createEmployee.error, "Failed to create a employee account");
-    }
-
-    if (userToCompany.error) {
-      await deleteAuthAccount(userId);
-      return error(userToCompany.error, "Failed to add user to company");
-    }
-
-    if (claimsUpdate.error) {
-      await deleteAuthAccount(userId);
-      if (claimsUpdate.error) {
-        return error(claimsUpdate.error, "Failed to udpate user claims");
-      }
-    }
-
-    if (permissionsUpdate.error) {
-      await deleteAuthAccount(userId);
-      return error(
-        permissionsUpdate.error,
-        "Failed to update user permissions"
-      );
-    }
-
-    return success("Employee account created");
   }
+
+  const [createEmployee, userToCompany, permissionsUpdate, claimsUpdate] =
+    await Promise.all([
+      insertEmployee(client, {
+        id: userId,
+        employeeTypeId: employeeType,
+        companyId,
+      }),
+      addUserToCompany(client, { userId, companyId }),
+      setUserPermissions(supabaseAdmin, userId, permissions),
+      userExists
+        ? new Promise<PostgrestResponse<unknown>>((resolve) =>
+            // @ts-ignore
+            resolve({ data: null, error: null })
+          )
+        : setUserClaims(supabaseAdmin, userId, {
+            role: "employee",
+          }),
+    ]);
+
+  if (createEmployee.error) {
+    if (!userExists) await deleteAuthAccount(userId);
+    return error(createEmployee.error, "Failed to create a employee account");
+  }
+
+  if (userToCompany.error) {
+    if (!userExists) await deleteAuthAccount(userId);
+    return error(userToCompany.error, "Failed to add user to company");
+  }
+
+  if (claimsUpdate.error) {
+    if (!userExists) await deleteAuthAccount(userId);
+    if (claimsUpdate.error) {
+      return error(claimsUpdate.error, "Failed to udpate user claims");
+    }
+  }
+
+  if (permissionsUpdate.error) {
+    if (!userExists) await deleteAuthAccount(userId);
+    return error(permissionsUpdate.error, "Failed to update user permissions");
+  }
+
+  return success("Employee account created");
 }
 
 export async function createSupplierAccount(
@@ -281,7 +278,7 @@ export async function createSupplierAccount(
   const user = await getUserByEmail(email);
   if (user.data) {
     // TODO: user already exists -- send company invite
-    await addUserToCompany(client, { userId: user.data.id, companyId });
+    // await addUserToCompany(client, { userId: user.data.id, companyId });
     return error(
       null,
       "User already exists. Adding to team not implemented yet."
