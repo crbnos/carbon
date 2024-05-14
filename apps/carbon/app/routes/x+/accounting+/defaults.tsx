@@ -7,9 +7,11 @@ import { useRouteData } from "~/hooks";
 import type { AccountListItem } from "~/modules/accounting";
 import {
   AccountDefaultsForm,
-  defaultAcountValidator,
+  defaultBalanceSheetAccountValidator,
+  defaultIncomeAcountValidator,
   getDefaultAccounts,
-  updateDefaultAccounts,
+  updateDefaultBalanceSheetAccounts,
+  updateDefaultIncomeAccounts,
 } from "~/modules/accounting";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -53,33 +55,68 @@ export async function action({ request }: ActionFunctionArgs) {
     create: "accounting",
   });
 
-  const validation = await validator(defaultAcountValidator).validate(
-    await request.formData()
-  );
+  const formData = await request.formData();
+  const intent = formData.get("intent") as string;
 
-  if (validation.error) {
-    return validationError(validation.error);
-  }
+  if (intent === "income") {
+    const validation = await validator(defaultIncomeAcountValidator).validate(
+      formData
+    );
 
-  const updateDefaults = await updateDefaultAccounts(client, {
-    ...validation.data,
-    companyId,
-    updatedBy: userId,
-  });
-  if (updateDefaults.error) {
-    return json(
-      {},
-      await flash(
-        request,
-        error(updateDefaults.error, "Failed to update default accounts")
-      )
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const updateDefaults = await updateDefaultIncomeAccounts(client, {
+      ...validation.data,
+      companyId,
+      updatedBy: userId,
+    });
+    if (updateDefaults.error) {
+      return json(
+        {},
+        await flash(
+          request,
+          error(updateDefaults.error, "Failed to update default accounts")
+        )
+      );
+    }
+
+    throw redirect(
+      path.to.accountingDefaults,
+      await flash(request, success("Updated income statement accounts"))
+    );
+  } else if (intent === "balance") {
+    const validation = await validator(
+      defaultBalanceSheetAccountValidator
+    ).validate(formData);
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const updateDefaults = await updateDefaultBalanceSheetAccounts(client, {
+      ...validation.data,
+      companyId,
+      updatedBy: userId,
+    });
+    if (updateDefaults.error) {
+      return json(
+        {},
+        await flash(
+          request,
+          error(updateDefaults.error, "Failed to update default accounts")
+        )
+      );
+    }
+
+    throw redirect(
+      path.to.accountingDefaults,
+      await flash(request, success("Updated balance sheet accounts"))
     );
   }
 
-  throw redirect(
-    path.to.accountingDefaults,
-    await flash(request, success("Updated default accounts"))
-  );
+  throw new Error(`Invalid intent: ${intent}`);
 }
 
 export default function AccountDefaultsRoute() {

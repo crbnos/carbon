@@ -57,13 +57,13 @@ const accountingRoutes: AuthenticatedRouteGroup[] = [
         role: "employee",
       },
       {
-        name: "Account Defaults",
-        to: path.to.accountingDefaults,
+        name: "Currencies",
+        to: path.to.currencies,
         role: "employee",
       },
       {
-        name: "Currencies",
-        to: path.to.currencies,
+        name: "Default Accounts",
+        to: path.to.accountingDefaults,
         role: "employee",
       },
       {

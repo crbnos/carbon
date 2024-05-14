@@ -216,7 +216,70 @@ export const currencyValidator = z.object({
   isBaseCurrency: zfd.checkbox(),
 });
 
-export const defaultAcountValidator = z.object({
+export const defaultBalanceSheetAccountValidator = z.object({
+  inventoryAccount: z.string().min(1, {
+    message: "Inventory account is required",
+  }),
+  inventoryInterimAccrualAccount: z.string().min(1, {
+    message: "Inventory interim accrual account is required",
+  }),
+  inventoryReceivedNotInvoicedAccount: z.string().min(1, {
+    message: "Inventory received not invoiced account is required",
+  }),
+  inventoryInvoicedNotReceivedAccount: z.string().min(1, {
+    message: "Inventory invoiced not received account is required",
+  }),
+  inventoryShippedNotInvoicedAccount: z.string().min(1, {
+    message: "Inventory shipped not invoiced account is required",
+  }),
+  workInProgressAccount: z.string().min(1, {
+    message: "Work in progress account is required",
+  }),
+  receivablesAccount: z.string().min(1, {
+    message: "Receivables account is required",
+  }),
+  bankCashAccount: z.string().min(1, {
+    message: "Bank cash account is required",
+  }),
+  bankLocalCurrencyAccount: z.string().min(1, {
+    message: "Bank local currency account is required",
+  }),
+  bankForeignCurrencyAccount: z.string().min(1, {
+    message: "Bank foreign currency account is required",
+  }),
+  assetAquisitionCostAccount: z.string().min(1, {
+    message: "Aquisition cost account is required",
+  }),
+  assetAquisitionCostOnDisposalAccount: z.string().min(1, {
+    message: "Aquisition cost on disposal account is required",
+  }),
+  accumulatedDepreciationAccount: z.string().min(1, {
+    message: "Accumulated depreciation account is required",
+  }),
+  accumulatedDepreciationOnDisposalAccount: z.string().min(1, {
+    message: "Accumulated depreciation on disposal account is required",
+  }),
+  prepaymentAccount: z.string().min(1, {
+    message: "Prepayment account is required",
+  }),
+  payablesAccount: z.string().min(1, {
+    message: "Payables account is required",
+  }),
+  salesTaxPayableAccount: z.string().min(1, {
+    message: "Sales tax payable account is required",
+  }),
+  purchaseTaxPayableAccount: z.string().min(1, {
+    message: "Purchase tax payable account is required",
+  }),
+  reverseChargeSalesTaxPayableAccount: z.string().min(1, {
+    message: "Reverse charge sales tax payable account is required",
+  }),
+  retainedEarningsAccount: z.string().min(1, {
+    message: "Retained earnings account is required",
+  }),
+});
+
+export const defaultIncomeAcountValidator = z.object({
   salesAccount: z.string().min(1, { message: "Sales account is required" }),
   salesDiscountAccount: z.string().min(1, {
     message: "Sales discount account is required",
@@ -271,66 +334,6 @@ export const defaultAcountValidator = z.object({
   }),
   roundingAccount: z.string().min(1, {
     message: "Rounding account is required",
-  }),
-  assetAquisitionCostAccount: z.string().min(1, {
-    message: "Aquisition cost account is required",
-  }),
-  assetAquisitionCostOnDisposalAccount: z.string().min(1, {
-    message: "Aquisition cost on disposal account is required",
-  }),
-  accumulatedDepreciationAccount: z.string().min(1, {
-    message: "Accumulated depreciation account is required",
-  }),
-  accumulatedDepreciationOnDisposalAccount: z.string().min(1, {
-    message: "Accumulated depreciation on disposal account is required",
-  }),
-  inventoryAccount: z.string().min(1, {
-    message: "Inventory account is required",
-  }),
-  inventoryInterimAccrualAccount: z.string().min(1, {
-    message: "Inventory interim accrual account is required",
-  }),
-  inventoryReceivedNotInvoicedAccount: z.string().min(1, {
-    message: "Inventory received not invoiced account is required",
-  }),
-  inventoryInvoicedNotReceivedAccount: z.string().min(1, {
-    message: "Inventory invoiced not received account is required",
-  }),
-  inventoryShippedNotInvoicedAccount: z.string().min(1, {
-    message: "Inventory shipped not invoiced account is required",
-  }),
-  workInProgressAccount: z.string().min(1, {
-    message: "Work in progress account is required",
-  }),
-  receivablesAccount: z.string().min(1, {
-    message: "Receivables account is required",
-  }),
-  bankCashAccount: z.string().min(1, {
-    message: "Bank cash account is required",
-  }),
-  bankLocalCurrencyAccount: z.string().min(1, {
-    message: "Bank local currency account is required",
-  }),
-  bankForeignCurrencyAccount: z.string().min(1, {
-    message: "Bank foreign currency account is required",
-  }),
-  prepaymentAccount: z.string().min(1, {
-    message: "Prepayment account is required",
-  }),
-  payablesAccount: z.string().min(1, {
-    message: "Payables account is required",
-  }),
-  salesTaxPayableAccount: z.string().min(1, {
-    message: "Sales tax payable account is required",
-  }),
-  purchaseTaxPayableAccount: z.string().min(1, {
-    message: "Purchase tax payable account is required",
-  }),
-  reverseChargeSalesTaxPayableAccount: z.string().min(1, {
-    message: "Reverse charge sales tax payable account is required",
-  }),
-  retainedEarningsAccount: z.string().min(1, {
-    message: "Retained earnings account is required",
   }),
 });
 

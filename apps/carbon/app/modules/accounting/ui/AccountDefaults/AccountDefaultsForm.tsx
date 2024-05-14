@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
   HStack,
@@ -14,17 +13,25 @@ import {
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useNavigate } from "@remix-run/react";
-import type { z } from "zod";
-import { Select, Submit } from "~/components/Form";
+import { z } from "zod";
+import { Hidden, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { AccountListItem } from "~/modules/accounting";
-import { defaultAcountValidator } from "~/modules/accounting";
+import {
+  defaultBalanceSheetAccountValidator,
+  defaultIncomeAcountValidator,
+} from "~/modules/accounting";
 import { path } from "~/utils/path";
+
+const defaultUnion = z.union([
+  defaultBalanceSheetAccountValidator,
+  defaultIncomeAcountValidator,
+]);
 
 type AccountDefaultsFormProps = {
   balanceSheetAccounts: AccountListItem[];
   incomeStatementAccounts: AccountListItem[];
-  initialValues: z.infer<typeof defaultAcountValidator>;
+  initialValues: z.infer<typeof defaultUnion>;
 };
 
 const AccountDefaultsForm = ({
@@ -48,32 +55,36 @@ const AccountDefaultsForm = ({
     label: `${c.number} - ${c.name}`,
   }));
 
+  const initialIncomeStatementValues =
+    defaultIncomeAcountValidator.safeParse(initialValues);
+  const initialBalanceSheetValues =
+    defaultBalanceSheetAccountValidator.safeParse(initialValues);
+
   return (
     <Card>
-      <ValidatedForm
-        validator={defaultAcountValidator}
-        method="post"
-        action={path.to.accountingDefaults}
-        defaultValues={initialValues}
-        style={{
-          width: "100%",
-        }}
-      >
-        <CardHeader>
-          <CardTitle>Account Defaults</CardTitle>
-          <CardDescription>
-            These accounts are used in the absence of a more specific account
-            from a posting group
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="income">
-            <TabsList>
-              <TabsTrigger value="income">Income Statement</TabsTrigger>
-              <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
-            </TabsList>
+      <CardHeader>
+        <CardTitle>Default Accounts</CardTitle>
+        <CardDescription>
+          These accounts are used in the absence of a more specific account from
+          a posting group
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="income">
+          <TabsList>
+            <TabsTrigger value="income">Income Statement</TabsTrigger>
+            <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="income" className="py-6">
+          <TabsContent value="income" className="py-6">
+            <ValidatedForm
+              validator={defaultIncomeAcountValidator}
+              method="post"
+              action={path.to.accountingDefaults}
+              defaultValues={initialIncomeStatementValues.data}
+              className="w-full flex flex-col space-y-4"
+            >
+              <Hidden name="intent" value="income" />
               <div className="grid gap-y-4 gap-x-8 grid-cols-1 md:grid-cols-2">
                 <Select
                   name="salesAccount"
@@ -174,8 +185,23 @@ const AccountDefaultsForm = ({
                   options={incomeStatementAccountOptions}
                 />
               </div>
-            </TabsContent>
-            <TabsContent value="balance" className="py-6">
+              <HStack>
+                <Submit isDisabled={isDisabled}>Save</Submit>
+                <Button size="md" variant="solid" onClick={onClose}>
+                  Cancel
+                </Button>
+              </HStack>
+            </ValidatedForm>
+          </TabsContent>
+          <TabsContent value="balance" className="py-6">
+            <ValidatedForm
+              validator={defaultBalanceSheetAccountValidator}
+              method="post"
+              action={path.to.accountingDefaults}
+              defaultValues={initialBalanceSheetValues.data}
+              className="w-full flex flex-col space-y-4"
+            >
+              <Hidden name="intent" value="balance" />
               <div className="grid gap-y-4 gap-x-8 grid-cols-1 md:grid-cols-2">
                 <Select
                   name="inventoryAccount"
@@ -282,18 +308,16 @@ const AccountDefaultsForm = ({
                   options={balanceSheetAccountOptions}
                 />
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter>
-          <HStack>
-            <Submit isDisabled={isDisabled}>Save</Submit>
-            <Button size="md" variant="solid" onClick={onClose}>
-              Cancel
-            </Button>
-          </HStack>
-        </CardFooter>
-      </ValidatedForm>
+              <HStack>
+                <Submit isDisabled={isDisabled}>Save</Submit>
+                <Button size="md" variant="solid" onClick={onClose}>
+                  Cancel
+                </Button>
+              </HStack>
+            </ValidatedForm>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
     </Card>
   );
 };

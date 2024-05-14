@@ -10,7 +10,8 @@ import type {
   accountSubcategoryValidator,
   accountValidator,
   currencyValidator,
-  defaultAcountValidator,
+  defaultBalanceSheetAccountValidator,
+  defaultIncomeAcountValidator,
   fiscalYearSettingsValidator,
   partLedgerValidator,
   paymentTermValidator,
@@ -660,9 +661,22 @@ export async function insertPartLedger(
   return client.from("partLedger").insert([partEntry]);
 }
 
-export async function updateDefaultAccounts(
+export async function updateDefaultBalanceSheetAccounts(
   client: SupabaseClient<Database>,
-  defaultAccounts: z.infer<typeof defaultAcountValidator> & {
+  defaultAccounts: z.infer<typeof defaultBalanceSheetAccountValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("accountDefault")
+    .update(defaultAccounts)
+    .eq("companyId", defaultAccounts.companyId);
+}
+
+export async function updateDefaultIncomeAccounts(
+  client: SupabaseClient<Database>,
+  defaultAccounts: z.infer<typeof defaultIncomeAcountValidator> & {
     companyId: string;
     updatedBy: string;
   }
@@ -744,7 +758,6 @@ export async function upsertAccountSubcategory(
   client: SupabaseClient<Database>,
   accountSubcategory:
     | (Omit<z.infer<typeof accountSubcategoryValidator>, "id"> & {
-        companyId: string;
         createdBy: string;
         customFields?: Json;
       })
