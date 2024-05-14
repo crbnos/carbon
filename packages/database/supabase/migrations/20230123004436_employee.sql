@@ -38,7 +38,7 @@ CREATE OR REPLACE VIEW "companies" AS
     FROM "userToCompany" uc
     INNER JOIN "company" c
       ON c.id = uc."companyId"
-    INNER JOIN "employee" e
+    LEFT JOIN "employee" e
       ON e.id = uc."userId" AND e."companyId" = uc."companyId"
-    INNER JOIN "employeeType" et
+    LEFT JOIN "employeeType" et
       ON et.id = e."employeeTypeId";

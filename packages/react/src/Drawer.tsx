@@ -11,6 +11,7 @@ import { forwardRef } from "react";
 
 import { MdClose } from "react-icons/md";
 
+import { ClientOnly } from "./ClientOnly";
 import { cn } from "./utils/cn";
 
 const Drawer = DialogPrimitive.Root;
@@ -182,20 +183,24 @@ const DrawerContent = forwardRef<
     },
     ref
   ) => (
-    <DrawerPortal position={position} container={container}>
-      {overlay && <DrawerOverlay />}
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(sheetVariants({ position, size }), className)}
-        {...props}
-      >
-        {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-          <MdClose className="h-6 w-6" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      </DialogPrimitive.Content>
-    </DrawerPortal>
+    <ClientOnly fallback={null}>
+      {() => (
+        <DrawerPortal position={position} container={container}>
+          {overlay && <DrawerOverlay />}
+          <DialogPrimitive.Content
+            ref={ref}
+            className={cn(sheetVariants({ position, size }), className)}
+            {...props}
+          >
+            {children}
+            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+              <MdClose className="h-6 w-6" />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          </DialogPrimitive.Content>
+        </DrawerPortal>
+      )}
+    </ClientOnly>
   )
 );
 DrawerContent.displayName = DialogPrimitive.Content.displayName;

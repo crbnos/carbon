@@ -599,6 +599,9 @@ function makeCustomerPermissions(companyId: string) {
   // TODO: this should be more dynamic
   const permissions: Record<string, string[]> = {
     documents_view: [companyId],
+    documents_create: [companyId],
+    documents_udpate: [companyId],
+    documents_delete: [companyId],
     jobs_view: [companyId],
     sales_view: [companyId],
     parts_view: [companyId],
@@ -766,6 +769,9 @@ function makeSupplierPermissions(companyId: string) {
   // TODO: this should be more dynamic
   const permissions: Record<string, string[]> = {
     documents_view: [companyId],
+    documents_create: [companyId],
+    documents_udpate: [companyId],
+    documents_delete: [companyId],
     purchasing_view: [companyId],
     parts_view: [companyId],
   };

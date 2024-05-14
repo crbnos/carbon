@@ -138,7 +138,7 @@ const features = [
       "Built on best open-source technologies for incredible performance and security.",
   },
   {
-    name: "Permissive License",
+    name: "Self-Hostable",
     icon: HiCode,
     description:
       "Unlike other open-source ERPs, you can use Carbon to build your own proprietary systems.",
@@ -152,7 +152,7 @@ const features = [
   {
     name: "Realtime",
     icon: BsLightningCharge,
-    description: "All data can be updated in realtime across applications.",
+    description: "All data can be accessed in realtime across applications.",
   },
   {
     name: "Manufacturing",
@@ -160,10 +160,9 @@ const features = [
     description: "Carbon has first-class support for American manufacturing.",
   },
   {
-    name: "Single Tenant",
+    name: "Multi-Company",
     icon: HiFingerPrint,
-    description:
-      "You're not sharing databases with other companies. Your database is yours. Take it anytime.",
+    description: "Manage mutliple companies with ease, all in one place.",
   },
 ] as const;
 
