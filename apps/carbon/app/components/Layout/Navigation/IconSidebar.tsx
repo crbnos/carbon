@@ -3,12 +3,12 @@ import { Link, useMatches } from "@remix-run/react";
 import { noop } from "@tanstack/react-table";
 import { forwardRef, type AnchorHTMLAttributes } from "react";
 import { BsFillHexagonFill } from "react-icons/bs";
+import { LuUserCircle } from "react-icons/lu";
 import { z } from "zod";
 import { useOptimisticLocation } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
 import { useModules } from "./useModules";
-import { LuUserCircle } from "react-icons/lu";
 
 export const ModuleHandle = z.object({
   module: z.string(),
@@ -122,7 +122,7 @@ const NavigationIconLink = forwardRef<
       "hover:bg-secondary active:",
       `${
         isActive
-          ? "dark:bg-primary/10 bg-muted text-primary shadow-sm hover:text-primary hover:bg-primary/20 dark:shadow-inner"
+          ? "bg-primary/10 text-primary shadow-sm hover:text-primary hover:bg-primary/20 dark:shadow-inner"
           : "hover:text-foreground"
       }`,
       "group/item",

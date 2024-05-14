@@ -30,7 +30,7 @@ const daysInMonths: Record<number, number> = {
 
 export async function getCurrentAccountingPeriod<T>(
   client: SupabaseClient<Database>,
-  companyId: number,
+  companyId: string,
   db: Kysely<DB>
 ) {
   // const d = today(getLocalTimeZone());

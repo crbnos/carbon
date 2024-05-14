@@ -21,8 +21,7 @@ CREATE TABLE "fiscalYearSettings" (
 
   CONSTRAINT "fiscalYearSettings_pkey" PRIMARY KEY ("companyId"),
   CONSTRAINT "fiscalYearSettings_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "fiscalYearSettings_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE RESTRICT,
-  CONSTRAINT "fiscalYear_id_unique" UNIQUE ("companyId")
+  CONSTRAINT "fiscalYearSettings_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE RESTRICT
 );
 
 CREATE TYPE "accountingPeriodStatus" AS ENUM (

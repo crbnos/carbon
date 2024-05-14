@@ -697,7 +697,7 @@ export async function updateFiscalYearSettings(
   return client
     .from("fiscalYearSettings")
     .update(sanitize(fiscalYearSettings))
-    .eq("id", fiscalYearSettings.companyId);
+    .eq("companyId", fiscalYearSettings.companyId);
 }
 
 export async function upsertAccount(

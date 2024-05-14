@@ -5,7 +5,7 @@ import { interpolateSequenceDate } from "../lib/utils.ts";
 export async function getNextSequence(
   trx: Transaction<DB>,
   tableName: string,
-  companyId: number
+  companyId: string
 ) {
   // get current purchase invoice sequence number
   const sequence = await trx
