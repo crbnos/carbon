@@ -25,6 +25,7 @@ import { flash, requireAuthSession } from "~/services/session.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
+import { insertEmployeeJob } from "../resources";
 
 export async function addUserToCompany(
   client: SupabaseClient<Database>,
@@ -206,28 +207,42 @@ export async function createEmployeeAccount(
       return error(insertUser, "No data returned from create user");
   }
 
-  const [createEmployee, userToCompany, permissionsUpdate, claimsUpdate] =
-    await Promise.all([
-      insertEmployee(client, {
-        id: userId,
-        employeeTypeId: employeeType,
-        companyId,
-      }),
-      addUserToCompany(client, { userId, companyId }),
-      setUserPermissions(supabaseAdmin, userId, permissions),
-      userExists
-        ? new Promise<PostgrestResponse<unknown>>((resolve) =>
-            // @ts-ignore
-            resolve({ data: null, error: null })
-          )
-        : setUserClaims(supabaseAdmin, userId, {
-            role: "employee",
-          }),
-    ]);
+  const [
+    employeeInsert,
+    jobInsert,
+    userToCompany,
+    permissionsUpdate,
+    claimsUpdate,
+  ] = await Promise.all([
+    insertEmployee(client, {
+      id: userId,
+      employeeTypeId: employeeType,
+      companyId,
+    }),
+    insertEmployeeJob(client, {
+      id: userId,
+      companyId,
+    }),
+    addUserToCompany(client, { userId, companyId }),
+    setUserPermissions(supabaseAdmin, userId, permissions),
+    userExists
+      ? new Promise<PostgrestResponse<unknown>>((resolve) =>
+          // @ts-ignore
+          resolve({ data: null, error: null })
+        )
+      : setUserClaims(supabaseAdmin, userId, {
+          role: "employee",
+        }),
+  ]);
 
-  if (createEmployee.error) {
+  if (employeeInsert.error) {
     if (!userExists) await deleteAuthAccount(userId);
-    return error(createEmployee.error, "Failed to create a employee account");
+    return error(employeeInsert.error, "Failed to create a employee account");
+  }
+
+  if (jobInsert.error) {
+    if (!userExists) await deleteAuthAccount(userId);
+    return error(jobInsert.error, "Failed to create a job");
   }
 
   if (userToCompany.error) {

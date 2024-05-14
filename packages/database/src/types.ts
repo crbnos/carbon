@@ -19307,28 +19307,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "employeeJob_companyId_fkey"
+            foreignKeyName: "employee_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employeeJob_companyId_fkey"
+            foreignKeyName: "employee_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employeeJob_companyId_fkey"
+            foreignKeyName: "employee_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "employeeJob_companyId_fkey"
+            foreignKeyName: "employee_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"

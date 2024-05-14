@@ -24,7 +24,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "resources",
   });
 
@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!personId) throw new Error("Could not find personId");
 
   const [employeeSummary] = await Promise.all([
-    getEmployeeSummary(client, personId),
+    getEmployeeSummary(client, personId, companyId),
   ]);
 
   if (employeeSummary.error) {

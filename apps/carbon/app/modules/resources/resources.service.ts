@@ -402,12 +402,14 @@ export async function getEmployeeJob(
 
 export async function getEmployeeSummary(
   client: SupabaseClient<Database>,
-  employeeId: string
+  employeeId: string,
+  companyId: string
 ) {
   return client
     .from("employeeSummary")
     .select("*")
     .eq("id", employeeId)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -915,7 +917,7 @@ export async function insertEmployeeJob(
   job: {
     id: string;
     companyId: string;
-    locationId: string;
+    locationId?: string;
   }
 ) {
   return client.from("employeeJob").insert(job).select("*").single();
