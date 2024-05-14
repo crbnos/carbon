@@ -23,12 +23,12 @@ export function formatDate(
   options?: Intl.DateTimeFormatOptions
 ) {
   if (!dateString) return "";
-  const date = new Date(parseDate(dateString).toString());
+  const date = parseDate(dateString);
 
   return new Intl.DateTimeFormat(
     undefined,
     options || defaultFormatOptions
-  ).format(date);
+  ).format(date.toDate(getLocalTimeZone()));
 }
 
 export function formatTimeAgo(isoString: string) {
