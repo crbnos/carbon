@@ -21,7 +21,7 @@ import { error, success } from "~/utils/result";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "inventory",
   });
 
@@ -51,6 +51,8 @@ export async function action({ request }: ActionFunctionArgs) {
     currentReceipt.data.sourceDocumentId !== data.sourceDocumentId ||
     currentReceipt.data.locationId !== data.locationId;
 
+  console.log("receiptDataHasChanged", receiptDataHasChanged);
+
   if (receiptDataHasChanged) {
     const serviceRole = getSupabaseServiceRole();
     switch (data.sourceDocument) {
@@ -59,6 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
           id: string;
         }>("create-receipt-from-purchase-order", {
           body: {
+            companyId,
             locationId: data.locationId,
             purchaseOrderId: data.sourceDocumentId,
             receiptId: id,

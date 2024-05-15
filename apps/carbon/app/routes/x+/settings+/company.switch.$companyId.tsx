@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await destroyAuthSession(request);
   }
 
-  throw redirect(path.to.authenticatedRoot, {
+  throw redirect(requestReferrer(request) ?? path.to.authenticatedRoot, {
     headers: {
       "Set-Cookie": await updateCompanySession(request, companyId!),
     },

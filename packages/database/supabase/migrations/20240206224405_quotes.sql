@@ -16,7 +16,7 @@ CREATE TABLE "quote" (
   "quoteId" TEXT NOT NULL,
   "revisionId" INTEGER NOT NULL DEFAULT 0,
   "ownerId" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
+  "name" TEXT,
   "status" "quoteStatus" NOT NULL DEFAULT 'Draft',
   "quoteDate" DATE,
   "expirationDate" DATE,

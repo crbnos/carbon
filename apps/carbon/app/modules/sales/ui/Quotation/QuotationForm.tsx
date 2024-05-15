@@ -80,7 +80,7 @@ const QuotationForm = ({ initialValues }: QuotationFormProps) => {
               />
               <Input
                 name="name"
-                label="Name"
+                label="Customer Reference"
                 helperText={
                   isEditing ? undefined : "The name of the RFQ or a description"
                 }

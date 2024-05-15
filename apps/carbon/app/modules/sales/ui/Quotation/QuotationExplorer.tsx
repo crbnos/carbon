@@ -545,6 +545,14 @@ const QuotationExplorer = () => {
       <VStack className="h-full w-full p-2">
         <div className="w-full h-full overflow-auto" role="tree">
           {renderBillOfMaterial(tree)}
+          {quote && Array.isArray(quote.lines) && quote.lines.length === 0 && (
+            <div className="flex flex-col space-y-2 py-16 text-muted-foreground items-center justify-center text-center">
+              <span className="text-sm">No quote lines</span>
+              <Button onClick={() => navigate(path.to.newQuoteLine(id))}>
+                Add Quote Line
+              </Button>
+            </div>
+          )}
         </div>
       </VStack>
     </>

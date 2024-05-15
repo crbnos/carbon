@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { standardFactorType } from "../shared/types";
 import { currencyCodes } from "../accounting";
+import { standardFactorType } from "../shared/types";
 
 export const customerValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -72,7 +72,7 @@ export const quoteStatusType = [
 export const quotationValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string(),
   customerId: z.string().min(36, { message: "Customer is required" }),
   customerLocationId: zfd.text(z.string().optional()),
   customerContactId: zfd.text(z.string().optional()),

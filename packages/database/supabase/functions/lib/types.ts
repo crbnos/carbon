@@ -10723,7 +10723,7 @@ export type Database = {
           expirationDate: string | null
           id: string
           locationId: string | null
-          name: string
+          name: string | null
           notes: string | null
           quoteDate: string | null
           quoteId: string
@@ -10745,7 +10745,7 @@ export type Database = {
           expirationDate?: string | null
           id?: string
           locationId?: string | null
-          name: string
+          name?: string | null
           notes?: string | null
           quoteDate?: string | null
           quoteId: string
@@ -10767,7 +10767,7 @@ export type Database = {
           expirationDate?: string | null
           id?: string
           locationId?: string | null
-          name?: string
+          name?: string | null
           notes?: string | null
           quoteDate?: string | null
           quoteId?: string

@@ -15,13 +15,15 @@ import { error } from "~/utils/result";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "resources",
   });
 
   const validation = await validator(attributeCategoryValidator).validate(
     await request.formData()
   );
+
+  console.log({ data: validation.data });
 
   if (validation.error) {
     return validationError(validation.error);
@@ -32,6 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const createAttributeCategory = await insertAttributeCategory(client, {
     name,
     public: isPublic,
+    companyId,
     createdBy: userId,
   });
   if (createAttributeCategory.error) {

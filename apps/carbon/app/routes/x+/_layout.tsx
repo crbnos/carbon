@@ -130,8 +130,8 @@ export default function AuthenticatedRoute() {
                 </div>
               </div>
             </div>
-            <Toaster position="bottom-right" />
           </div>
+          <Toaster richColors position="bottom-right" />
         </TooltipProvider>
       </RealtimeDataProvider>
     </SupabaseProvider>

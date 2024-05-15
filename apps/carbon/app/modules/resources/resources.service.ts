@@ -902,6 +902,7 @@ export async function insertAttributeCategory(
   attributeCategory: {
     name: string;
     public: boolean;
+    companyId: string;
     createdBy: string;
   }
 ) {
