@@ -68,7 +68,13 @@ const SearchModal = ({
   const [loading, setLoading] = useState(false);
 
   const [input, setInput] = useState("");
-  const [debouncedInput] = useDebounce(input, 500);
+  const debounceSearch = useDebounce((q: string) => {
+    if (q) {
+      getSearchResults(q);
+    } else {
+      setSearchResults([]);
+    }
+  }, 500);
 
   useEffect(() => {
     if (isOpen) {
@@ -118,16 +124,9 @@ const SearchModal = ({
     [company.id, supabase]
   );
 
-  useEffect(() => {
-    if (debouncedInput) {
-      getSearchResults(debouncedInput);
-    } else {
-      setSearchResults([]);
-    }
-  }, [debouncedInput, getSearchResults]);
-
   const onInputChange = (value: string) => {
     setInput(value);
+    debounceSearch(value);
   };
 
   const onSelect = async (route: Route) => {

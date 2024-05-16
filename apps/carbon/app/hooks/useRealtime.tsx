@@ -37,13 +37,7 @@ export function useRealtime(table: string, filter?: string) {
     return () => {
       if (channel) supabase?.removeChannel(channel);
     };
-  }, [
-    revalidator.revalidate,
-    supabase,
-    table,
-    filter,
-    accessToken,
-    revalidator,
-    company.id,
-  ]);
+    // Don't put the revalidator in the deps array
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, table, filter, accessToken, company.id]);
 }

@@ -1,11 +1,8 @@
-import { FaPeopleArrows } from "react-icons/fa";
 import {
   LuCalendarClock,
   LuCalendarHeart,
   LuGroup,
   LuHammer,
-  LuHardHat,
-  LuListChecks,
   LuMapPin,
   LuNetwork,
   LuShapes,
@@ -23,16 +20,16 @@ const resourcesRoutes: RouteGroup[] = [
         to: path.to.people,
         icon: <LuUsers />,
       },
-      {
-        name: "Contractors",
-        to: path.to.contractors,
-        icon: <LuHardHat />,
-      },
-      {
-        name: "Partners",
-        to: path.to.partners,
-        icon: <FaPeopleArrows />,
-      },
+      // {
+      //   name: "Contractors",
+      //   to: path.to.contractors,
+      //   icon: <LuHardHat />,
+      // },
+      // {
+      //   name: "Partners",
+      //   to: path.to.partners,
+      //   icon: <FaPeopleArrows />,
+      // },
       {
         name: "Work Cells",
         to: path.to.workCells,
@@ -53,11 +50,11 @@ const resourcesRoutes: RouteGroup[] = [
         to: path.to.abilities,
         icon: <LuHammer />,
       },
-      {
-        name: "Attributes",
-        to: path.to.attributes,
-        icon: <LuListChecks />,
-      },
+      // {
+      //   name: "Attributes",
+      //   to: path.to.attributes,
+      //   icon: <LuListChecks />,
+      // },
       {
         name: "Departments",
         to: path.to.departments,

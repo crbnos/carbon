@@ -91,7 +91,7 @@ export async function getEmployees(
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.ilike("fullName", `%${args.search}%`);
+    query = query.ilike("name", `%${args.search}%`);
   }
 
   query = setGenericQueryFilters(query, args, [

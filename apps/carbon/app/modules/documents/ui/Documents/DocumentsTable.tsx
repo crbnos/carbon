@@ -355,6 +355,8 @@ const DocumentsTable = memo(
           cell: (item) => formatDate(item.getValue<string>()),
         },
       ];
+      // Don't put the revalidator in the deps array
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
       extensions,
       labelOptions,
@@ -362,7 +364,6 @@ const DocumentsTable = memo(
       onFavorite,
       onLabel,
       people,
-      revalidator,
       setLabel,
       view,
     ]);

@@ -1,29 +1,24 @@
-import { useEffect, useState } from "react";
+import { useRef } from "react";
 
-export default function useDebounce<T = any>(
-  value: T,
+/**
+ * A function that you call with a debounce delay, the function will only be called after the delay has passed
+ *
+ * @param fn The function to debounce
+ * @param delay In ms
+ */
+export default function useDebounce<T extends (...args: any[]) => any>(
+  fn: T,
   delay: number
-): [T, boolean] {
-  // State and setters for debounced value
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  let [isDebouncing, setDebouncing] = useState(false);
-  useEffect(
-    () => {
-      // Update debounced value after delay
-      setDebouncing(true);
-      const handler = setTimeout(() => {
-        setDebouncing(false);
+) {
+  const timeout = useRef<ReturnType<typeof setTimeout>>();
 
-        setDebouncedValue(value);
-      }, delay);
-      // Cancel the timeout if value changes (also on delay change or unmount)
-      // This is how we prevent debounced value from updating if value is changed ...
-      // .. within the delay period. Timeout gets cleared and restarted.
-      return () => {
-        clearTimeout(handler);
-      };
-    },
-    [value, delay] // Only re-call effect if value or delay changes
-  );
-  return [debouncedValue, isDebouncing];
+  return (...args: Parameters<T>) => {
+    if (timeout.current) {
+      clearTimeout(timeout.current);
+    }
+
+    timeout.current = setTimeout(() => {
+      fn(...args);
+    }, delay);
+  };
 }

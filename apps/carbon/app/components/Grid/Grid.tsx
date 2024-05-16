@@ -11,7 +11,7 @@ import {
   useEscape,
   useMount,
 } from "@carbon/react";
-import { clip } from "@carbon/utils";
+import { clamp } from "@carbon/utils";
 import type { ColumnDef, ColumnOrderState } from "@tanstack/react-table";
 import {
   flexRender,
@@ -252,10 +252,10 @@ const Grid = <T extends object>({
             }
           }
         } else {
-          x1 = clip(x1, 0, lastColumn);
+          x1 = clamp(x1, 0, lastColumn);
         }
 
-        y1 = clip(y1, 0, lastRow);
+        y1 = clamp(y1, 0, lastRow);
 
         return [x1, y1];
       };
