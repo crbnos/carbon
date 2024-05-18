@@ -1,99 +1,206 @@
 import {
   Badge,
-  Heading,
+  Button,
+  ClientOnly,
   Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+  InputGroup,
+  InputLeftElement,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
+  Slider,
+  Switch,
   cn,
   useDebounce,
-  useKeyboardShortcuts,
+  useInitialDimensions,
 } from "@carbon/react";
+import { formatDurationMilliseconds, lerp } from "@carbon/utils";
 import type { Location } from "@remix-run/react";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@remix-run/server-runtime";
 import type { Virtualizer } from "@tanstack/react-virtual";
-import {
-  formatDurationMilliseconds,
-  millisecondsToNanoseconds,
-  nanosecondsToMilliseconds,
-} from "@trigger.dev/core/v3";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronUp,
+  LuSearch,
   LuZoomIn,
   LuZoomOut,
 } from "react-icons/lu";
-
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import {
   ShowParentIcon,
   ShowParentIconSelected,
 } from "~/assets/icons/ShowParentIcon";
 import tileBgPath from "~/assets/images/error-banner-tile@2x.png";
 
-import { PageBody } from "~/components/layout/AppLayout";
+import {
+  Paragraph,
+  SpanTitle,
+  eventBackgroundClassName,
+} from "~/components/Temporary";
+import { RunIcon } from "~/components/Temporary/RunIcon";
 
 import {
-  NavBar,
-  PageAccessories,
-  PageTitle,
-} from "~/components/primitives/PageHeader";
-import { Paragraph } from "~/components/primitives/Paragraph";
-
-import { lerp } from "@carbon/utils";
+  TaskRunStatusIcon,
+  runStatusClassNameColor,
+} from "~/components/Temporary/TaskRunStatus";
+import type { RunEvent } from "~/components/Temporary/types";
 import * as Timeline from "~/components/Timeline";
 import type { UseTreeStateOutput } from "~/components/TreeView/TreeView";
 import { TreeView, useTree } from "~/components/TreeView/TreeView";
 import type { NodesState } from "~/components/TreeView/reducer";
-import { Property, PropertyTable } from "~/components/primitives/PropertyTable";
-import { ShortcutKey, variants } from "~/components/primitives/ShortcutKey";
-import { Slider } from "~/components/primitives/Slider";
-import { Switch } from "~/components/primitives/Switch";
-import { RunIcon } from "~/components/runs/v3/RunIcon";
-import {
-  SpanTitle,
-  eventBackgroundClassName,
-} from "~/components/runs/v3/SpanTitle";
-import {
-  TaskRunStatusIcon,
-  runStatusClassNameColor,
-} from "~/components/runs/v3/TaskRunStatus";
-import { useInitialDimensions } from "~/hooks/useInitialDimensions";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
-import type { Shortcut } from "~/hooks/useShortcutKeys";
-import { useShortcutKeys } from "~/hooks/useShortcutKeys";
 import { useUser } from "~/hooks/useUser";
-import type { RunEvent } from "~/presenters/v3/RunPresenter.server";
 import { requirePermissions } from "~/services/auth/auth.server";
-import { setResizableRunSettings } from "~/services/resizablePanel";
-import { path } from "~/utils/path";
-import { v3RunPath, v3RunSpanPath } from "~/utils/pathBuilder";
-import { SpanView } from "../resources.orgs.$organizationSlug.projects.v3.$projectParam.runs.$runParam.spans.$spanParam/route";
+import {
+  getResizableRunSettings,
+  setResizableRunSettings,
+} from "~/utils/resizablePanel";
 
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId, userId } = await requirePermissions(request, {
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  await requirePermissions(request, {
     view: "scheduling",
   });
 
-  console.log({ companyId, userId });
+  const resizeSettings = await getResizableRunSettings(request);
 
-  return {
-    data: [],
-  };
-};
+  return typedjson({
+    trace: {
+      events: [
+        {
+          id: "1",
+          parentId: undefined,
+          hasChildren: true,
+          children: ["2", "3"],
+          level: 0,
+          data: {
+            duration: 21000,
+            offset: 0,
+            level: "TRACE",
+            message: "F01234",
+            isPartial: true,
+            isRoot: true,
+            isError: false,
+            style: {
+              icon: "job",
+            },
+          },
+        },
+        {
+          id: "2",
+          parentId: "1",
+          hasChildren: true,
+          children: ["4"],
+          level: 1,
+          data: {
+            duration: 10000,
+            offset: 0,
+            level: "TRACE",
+            message: "Plasma",
+            isPartial: false,
+            isRoot: false,
+            isError: false,
+            style: {
+              variant: "primary",
+              icon: "operation",
+            },
+          },
+        },
+        {
+          id: "4",
+          parentId: "2",
+          hasChildren: false,
+          children: [],
+          level: 2,
+          data: {
+            duration: 10000,
+            offset: 0,
+            level: "TRACE",
+            message: "Timecard",
+            isPartial: false,
+            isRoot: false,
+            isError: false,
+            style: {
+              variant: "primary",
+              icon: "timecard",
+              accessory: {
+                style: "person",
+                items: [
+                  {
+                    text: "Anne Barbin",
+                  },
+                ],
+              },
+            },
+          },
+        },
+        {
+          id: "3",
+          parentId: "1",
+          hasChildren: true,
+          children: ["5"],
+          level: 1,
+          data: {
+            duration: 8000,
+            offset: 13000,
+            level: "TRACE",
+            message: "Bend",
+            isPartial: true,
+            isRoot: false,
+            isError: false,
+            style: {
+              variant: "primary",
+              icon: "operation",
+            },
+          },
+        },
+        {
+          id: "5",
+          parentId: "3",
+          hasChildren: false,
+          children: [],
+          level: 2,
+          data: {
+            duration: 8000,
+            offset: 13000,
+            level: "TRACE",
+            message: "Timecard",
+            isPartial: true,
+            isRoot: false,
+            isError: false,
+            style: {
+              variant: "primary",
+              icon: "timecard",
+              accessory: {
+                style: "person",
+                items: [
+                  {
+                    text: "Brad Barbin",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ] as RunEvent[],
+      parentRunFriendlyId: "",
+      duration: 21000,
+      rootSpanStatus: "completed" as const,
+      rootStartedAt: new Date(),
+    },
+    resizeSettings,
+  });
+}
 
 function getSpanId(location: Location<any>): string | undefined {
   const search = new URLSearchParams(location.search);
   return search.get("span") ?? undefined;
 }
 
-export default function Page() {
-  const { data } = useLoaderData<typeof loader>();
+export default function LiveView() {
+  const { trace, resizeSettings } = useTypedLoaderData<typeof loader>();
   const user = useUser();
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
@@ -111,36 +218,13 @@ export default function Page() {
   }, 250);
 
   return (
-    <>
-      <NavBar>
-        <PageTitle
-          backButton={{
-            to: path.to.authenticatedRoot,
-            text: "Jobs",
-          }}
-          title={`Job #${1234}`}
-        />
-        <PageAccessories>
-          <PropertyTable>
-            <Property label="ID">
-              <div className="flex items-center gap-2">
-                <Paragraph variant="extra-small/bright/mono">ID</Paragraph>
-              </div>
-            </Property>
-            <Property label="Trace ID">
-              <div className="flex items-center gap-2">
-                <Paragraph variant="extra-small/bright/mono">
-                  Trace ID
-                </Paragraph>
-              </div>
-            </Property>
-          </PropertyTable>
-        </PageAccessories>
-      </NavBar>
-      <PageBody scrollable={false}>
-        <div
-          className={cn("grid h-full max-h-full grid-cols-1 overflow-hidden")}
-        >
+    <div
+      className={cn(
+        "grid h-full max-h-full grid-cols-1 overflow-hidden bg-background"
+      )}
+    >
+      <ClientOnly fallback={null}>
+        {() => (
           <ResizablePanelGroup
             direction="horizontal"
             className="h-full max-h-full"
@@ -181,17 +265,17 @@ export default function Page() {
                 minSize={30}
                 defaultSize={resizeSettings.layout?.[1]}
               >
-                <SpanView
-                  runParam={run.friendlyId}
-                  spanId={selectedSpanId}
-                  closePanel={() => replaceSearchParam("span")}
-                />
+                {/* <SpanView
+              runParam={run.friendlyId}
+              spanId={selectedSpanId}
+              closePanel={() => replaceSearchParam("span")}
+            /> */}
               </ResizablePanel>
             )}
           </ResizablePanelGroup>
-        </div>
-      </PageBody>
-    </>
+        )}
+      </ClientOnly>
+    </div>
   );
 }
 
@@ -201,7 +285,7 @@ type TasksTreeViewProps = {
   parentRunFriendlyId?: string;
   onSelectedIdChanged: (selectedId: string | undefined) => void;
   totalDuration: number;
-  rootSpanStatus: "executing" | "completed" | "failed";
+  rootSpanStatus: "inprogress" | "completed" | "todo" | "cancelled";
   rootStartedAt: Date | undefined;
 };
 
@@ -215,7 +299,7 @@ function TasksTreeView({
   rootStartedAt,
 }: TasksTreeViewProps) {
   const [filterText, setFilterText] = useState("");
-  const [errorsOnly, setErrorsOnly] = useState(false);
+  const [wipOnly, setWipOnly] = useState(false);
   const [showDurations, setShowDurations] = useState(false);
   const [scale, setScale] = useState(0);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -242,11 +326,11 @@ function TasksTreeView({
     estimatedRowHeight: () => 32,
     parentRef,
     filter: {
-      value: { text: filterText, errorsOnly },
+      value: { text: filterText, wipOnly },
       fn: (value, node) => {
-        const nodePassesErrorTest =
-          (value.errorsOnly && node.data.isError) || !value.errorsOnly;
-        if (!nodePassesErrorTest) return false;
+        const isWIP = (value.wipOnly && node.data.isPartial) || !value.wipOnly;
+
+        if (!isWIP) return false;
 
         if (value.text === "") return true;
         if (
@@ -261,14 +345,20 @@ function TasksTreeView({
 
   return (
     <div className="grid h-full grid-rows-[2.5rem_1fr_3.25rem] overflow-hidden">
-      <div className="mx-3 flex items-center justify-between gap-2 border-b border-grid-dimmed">
+      <div className="flex items-center justify-between gap-2 border-b border-border">
         <SearchField onChange={setFilterText} />
         <div className="flex items-center gap-2">
           <Switch
             variant="small"
-            label="Errors only"
-            checked={errorsOnly}
-            onCheckedChange={(e) => setErrorsOnly(e.valueOf())}
+            label="In Process Only"
+            checked={wipOnly}
+            onCheckedChange={(e) => setWipOnly(e.valueOf())}
+          />
+          <Switch
+            variant="small"
+            label="Show Durations"
+            checked={showDurations}
+            onCheckedChange={(e) => setShowDurations(e.valueOf())}
           />
         </div>
       </div>
@@ -288,15 +378,11 @@ function TasksTreeView({
         >
           <div className="grid h-full grid-rows-[2rem_1fr] overflow-hidden">
             <div className="flex items-center pr-2">
-              {parentRunFriendlyId ? (
+              {parentRunFriendlyId && (
                 <ShowParentLink runFriendlyId={parentRunFriendlyId} />
-              ) : (
-                <Paragraph variant="small" className="flex-1 text-charcoal-500">
-                  This is the root task
-                </Paragraph>
               )}
               <LiveReloadingStatus
-                rootSpanCompleted={rootSpanStatus !== "executing"}
+                rootSpanCompleted={rootSpanStatus !== "inprogress"}
               />
             </div>
             <TreeView
@@ -314,8 +400,8 @@ function TasksTreeView({
                     className={cn(
                       "flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
                       state.selected
-                        ? "bg-grid-dimmed hover:bg-grid-bright"
-                        : "bg-transparent hover:bg-grid-dimmed"
+                        ? "bg-muted hover:bg-muted/90"
+                        : "bg-transparent hover:bg-muted/90"
                     )}
                     onClick={() => {
                       selectNode(node.id);
@@ -332,7 +418,7 @@ function TasksTreeView({
                       <div
                         className={cn(
                           "flex h-8 w-4 items-center",
-                          node.hasChildren && "hover:bg-charcoal-600"
+                          node.hasChildren && "hover:bg-accent"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -350,9 +436,9 @@ function TasksTreeView({
                       >
                         {node.hasChildren ? (
                           state.expanded ? (
-                            <LuChevronDown className="h-4 w-4 text-charcoal-400" />
+                            <LuChevronDown className="h-4 w-4 text-gray-400" />
                           ) : (
-                            <LuChevronUp className="h-4 w-4 text-charcoal-400" />
+                            <LuChevronUp className="h-4 w-4 text-gray-400" />
                           )
                         ) : (
                           <div className="h-8 w-4" />
@@ -364,12 +450,13 @@ function TasksTreeView({
                       <div className="flex items-center gap-2 overflow-x-hidden">
                         <RunIcon
                           name={node.data.style?.icon}
-                          spanName={node.data.message}
                           className="h-4 min-h-4 w-4 min-w-4"
                         />
                         <NodeText node={node} />
                         {node.data.isRoot && (
-                          <Badge variant="outline">Root</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            Job
+                          </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-1">
@@ -409,8 +496,9 @@ function TasksTreeView({
           />
         </ResizablePanel>
       </ResizablePanelGroup>
-      <div className="flex items-center justify-between gap-2 border-t border-grid-dimmed px-2">
+      <div className="flex items-center justify-between gap-2 border-t border-border px-2">
         <div className="grow @container">
+          {/*
           <div className="hidden items-center gap-4 @[42rem]:flex">
             <KeyboardShortcuts
               expandAllBelowDepth={expandAllBelowDepth}
@@ -419,11 +507,11 @@ function TasksTreeView({
               setShowDurations={setShowDurations}
             />
           </div>
-          <div className="@[42rem]:hidden">
+           <div className="@[42rem]:hidden">
             <Popover>
               <PopoverTrigger>Shortcuts</PopoverTrigger>
               <PopoverContent
-                className="min-w-[20rem] overflow-y-auto p-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-charcoal-600"
+                className="min-w-[20rem] overflow-y-auto p-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
                 align="start"
               >
                 <Heading size="h3">Keyboard shortcuts</Heading>
@@ -437,14 +525,14 @@ function TasksTreeView({
                 </div>
               </PopoverContent>
             </Popover>
-          </div>
+          </div> */}
         </div>
         <div className="flex items-center gap-4">
           <Slider
-            variant={"tertiary"}
+            variant="primary"
             className="w-20"
-            LeadingIcon={LuZoomOut}
-            TrailingIcon={LuZoomIn}
+            leftIcon={<LuZoomOut />}
+            rightIcon={<LuZoomIn />}
             value={[scale]}
             onValueChange={(value) => setScale(value[0])}
             min={0}
@@ -496,30 +584,28 @@ function TimelineView({
   const minTimelineWidth = initialTimelineDimensions?.width ?? 300;
   const maxTimelineWidth = minTimelineWidth * 10;
 
-  //we want to live-update the duration if the root span is still executing
+  //we want to live-update the duration if the root span is still in progress
   const [duration, setDuration] = useState(totalDuration);
   useEffect(() => {
-    if (rootSpanStatus !== "executing" || !rootStartedAt) {
+    if (rootSpanStatus !== "inprogress" || !rootStartedAt) {
       setDuration(totalDuration);
       return;
     }
 
     const interval = setInterval(() => {
-      setDuration(
-        millisecondsToNanoseconds(Date.now() - rootStartedAt.getTime())
-      );
-    }, 500);
+      setDuration(Date.now() - rootStartedAt.getTime());
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [totalDuration, rootSpanStatus]);
 
   return (
     <div
-      className="h-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-charcoal-600"
+      className="h-full overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
       ref={timelineContainerRef}
     >
       <Timeline.Root
-        durationMs={nanosecondsToMilliseconds(duration * 1.05)}
+        durationMs={duration * 1.05}
         scale={scale}
         className="h-full overflow-hidden"
         minWidth={minTimelineWidth}
@@ -563,14 +649,14 @@ function TimelineView({
                   );
                 }}
               </Timeline.EquallyDistribute>
-              {rootSpanStatus !== "executing" && (
+              {rootSpanStatus !== "inprogress" && (
                 <Timeline.Point
-                  ms={nanosecondsToMilliseconds(duration)}
+                  ms={duration}
                   className={cn(
                     "relative bottom-[2px] text-xxs",
                     rootSpanStatus === "completed"
-                      ? "text-success"
-                      : "text-error"
+                      ? "text-emerald-500"
+                      : "text-destructive"
                   )}
                 >
                   {(ms) => (
@@ -591,13 +677,13 @@ function TimelineView({
                   return (
                     <Timeline.Point
                       ms={ms}
-                      className={"h-full border-r border-grid-dimmed"}
+                      className={"h-full border-r border-muted"}
                     />
                   );
                 }}
               </Timeline.EquallyDistribute>
               <Timeline.Point
-                ms={nanosecondsToMilliseconds(duration)}
+                ms={duration}
                 className={cn(
                   "h-full border-r",
                   rootSpanStatus === "completed"
@@ -616,20 +702,20 @@ function TimelineView({
                 return (
                   <Timeline.Point
                     ms={ms}
-                    className={"h-full border-r border-grid-dimmed"}
+                    className={"h-full border-r border-muted"}
                   />
                 );
               }}
             </Timeline.EquallyDistribute>
             {/* The completed line  */}
-            {rootSpanStatus !== "executing" && (
+            {rootSpanStatus !== "inprogress" && (
               <Timeline.Point
-                ms={nanosecondsToMilliseconds(duration)}
+                ms={duration}
                 className={cn(
                   "h-full border-r",
                   rootSpanStatus === "completed"
-                    ? "border-success/30"
-                    : "border-error/30"
+                    ? "border-emerald-500/90"
+                    : "border-destructive/30"
                 )}
               />
             )}
@@ -654,8 +740,8 @@ function TimelineView({
                     className={cn(
                       "group flex h-8 items-center",
                       state.selected
-                        ? "bg-grid-dimmed hover:bg-grid-bright"
-                        : "bg-transparent hover:bg-grid-dimmed"
+                        ? "bg-muted hover:bg-muted/90"
+                        : "bg-transparent hover:bg-muted"
                     )}
                     // onMouseOver={() => console.log(`hover ${index}`)}
                     onClick={(e) => {
@@ -665,24 +751,20 @@ function TimelineView({
                     {node.data.level === "TRACE" ? (
                       <SpanWithDuration
                         showDuration={state.selected ? true : showDurations}
-                        startMs={nanosecondsToMilliseconds(node.data.offset)}
+                        startMs={node.data.offset}
                         durationMs={
                           node.data.duration
-                            ? nanosecondsToMilliseconds(node.data.duration)
-                            : nanosecondsToMilliseconds(
-                                duration - node.data.offset
-                              )
+                            ? node.data.duration
+                            : duration - node.data.offset
                         }
                         node={node}
                       />
                     ) : (
-                      <Timeline.Point
-                        ms={nanosecondsToMilliseconds(node.data.offset)}
-                      >
+                      <Timeline.Point ms={node.data.offset}>
                         {(ms) => (
                           <motion.div
                             className={cn(
-                              "-ml-1 h-3 w-3 rounded-full border-2 border-background-bright",
+                              "-ml-1 h-3 w-3 rounded-full border-2 border-border",
                               eventBackgroundClassName(node.data)
                             )}
                             layoutId={node.id}
@@ -729,7 +811,7 @@ function NodeStatusIcon({ node }: { node: RunEvent }) {
         >
           Canceled
         </Paragraph>
-        <TaskRunStatusIcon status="CANCELED" className={cn("size-4")} />
+        <TaskRunStatusIcon status="CANCELED" className={cn("w-4 h-4")} />
       </>
     );
   }
@@ -738,19 +820,19 @@ function NodeStatusIcon({ node }: { node: RunEvent }) {
     return (
       <TaskRunStatusIcon
         status="COMPLETED_WITH_ERRORS"
-        className={cn("size-4")}
+        className={cn("w-4 h-4")}
       />
     );
   }
 
   if (node.data.isPartial) {
-    return <TaskRunStatusIcon status={"EXECUTING"} className={cn("size-4")} />;
+    return <TaskRunStatusIcon status={"EXECUTING"} className={cn("w-4 h-4")} />;
   }
 
   return (
     <TaskRunStatusIcon
       status="COMPLETED_SUCCESSFULLY"
-      className={cn("size-4")}
+      className={cn("w-4 h-4")}
     />
   );
 }
@@ -762,7 +844,7 @@ function TaskLine({
   isError: boolean;
   isSelected: boolean;
 }) {
-  return <div className={cn("h-8 w-2 border-r border-grid-bright")} />;
+  return <div className={cn("h-8 w-2 border-r border-border")} />;
 }
 
 function ShowParentLink({ runFriendlyId }: { runFriendlyId: string }) {
@@ -770,41 +852,32 @@ function ShowParentLink({ runFriendlyId }: { runFriendlyId: string }) {
   const { spanParam } = useParams();
 
   return (
-    <LinkButton
-      variant="minimal/medium"
-      to={
-        spanParam
-          ? v3RunSpanPath(
-              organization,
-              project,
-              {
-                friendlyId: runFriendlyId,
-              },
-              { spanId: spanParam }
-            )
-          : v3RunPath(organization, project, {
-              friendlyId: runFriendlyId,
-            })
-      }
+    <Button
       onMouseEnter={() => setMouseOver(true)}
       onMouseLeave={() => setMouseOver(false)}
-      fullWidth
-      textAlignLeft
-      shortcut={{ key: "p" }}
-      className="flex-1"
+      asChild
+      className="w-full text-left flex-1"
     >
-      {mouseOver ? (
-        <ShowParentIconSelected className="h-4 w-4 text-indigo-500" />
-      ) : (
-        <ShowParentIcon className="text-charcoal-650 h-4 w-4" />
-      )}
-      <Paragraph
-        variant="small"
-        className={cn(mouseOver ? "text-indigo-500" : "text-charcoal-500")}
+      <Link
+        to={
+          spanParam
+            ? "/x/scheduling/runs?span=" + spanParam
+            : "x/scheduling/runs"
+        }
       >
-        Show parent items
-      </Paragraph>
-    </LinkButton>
+        {mouseOver ? (
+          <ShowParentIconSelected className="h-4 w-4 text-indigo-500" />
+        ) : (
+          <ShowParentIcon className="text-gray-600 h-4 w-4" />
+        )}
+        <Paragraph
+          variant="small"
+          className={cn(mouseOver ? "text-indigo-500" : "text-gray-500")}
+        >
+          Show parent items
+        </Paragraph>
+      </Link>
+    </Button>
   );
 }
 
@@ -820,7 +893,7 @@ function LiveReloadingStatus({
       <PulsingDot />
       <Paragraph
         variant="extra-small"
-        className="whitespace-nowrap text-blue-500"
+        className="whitespace-nowrap text-primary"
       >
         Live reloading
       </Paragraph>
@@ -832,9 +905,9 @@ function PulsingDot() {
   return (
     <span className="relative flex h-2 w-2">
       <span
-        className={`absolute h-full w-full animate-ping rounded-full border border-blue-500 opacity-100 duration-1000`}
+        className={`absolute h-full w-full animate-ping rounded-full border border-primary opacity-100 duration-1000`}
       />
-      <span className={`h-2 w-2 rounded-full bg-blue-500`} />
+      <span className={`h-2 w-2 rounded-full bg-primary`} />
     </span>
   );
 }
@@ -868,7 +941,7 @@ function SpanWithDuration({
             !showDuration && "opacity-0"
           )}
         >
-          <div className="rounded-sm px-1 py-0.5 text-xxs text-text-bright text-shadow-custom">
+          <div className="rounded-sm px-1 py-0.5 text-xxs text-foreground">
             {formatDurationMilliseconds(props.durationMs, {
               style: "short",
               maxDecimalPoints: props.durationMs < 1000 ? 0 : 1,
@@ -886,7 +959,7 @@ function CurrentTimeIndicator({ totalDuration }: { totalDuration: number }) {
   return (
     <Timeline.FollowCursor>
       {(ms) => {
-        const ratio = ms / nanosecondsToMilliseconds(totalDuration);
+        const ratio = ms / totalDuration;
         let offset = 0.5;
         if (ratio < edgeBoundary) {
           offset = lerp(0, 0.5, ratio / edgeBoundary);
@@ -898,7 +971,7 @@ function CurrentTimeIndicator({ totalDuration }: { totalDuration: number }) {
           <div className="relative z-50 flex h-full flex-col">
             <div className="relative flex h-6 items-end">
               <div
-                className="absolute w-fit whitespace-nowrap rounded-sm border border-charcoal-600 bg-charcoal-750 px-1 py-0.5 text-xxs tabular-nums text-text-bright"
+                className="absolute w-fit whitespace-nowrap rounded-sm border border-border bg-gray-700 px-1 py-0.5 text-xxs tabular-nums text-text-bright"
                 style={{
                   left: `${offset * 100}%`,
                   transform: `translateX(-${offset * 100}%)`,
@@ -910,7 +983,7 @@ function CurrentTimeIndicator({ totalDuration }: { totalDuration: number }) {
                 })}
               </div>
             </div>
-            <div className="w-px grow border-r border-charcoal-600" />
+            <div className="w-px grow border-r border-border" />
           </div>
         );
       }}
@@ -918,6 +991,7 @@ function CurrentTimeIndicator({ totalDuration }: { totalDuration: number }) {
   );
 }
 
+/*
 function KeyboardShortcuts({
   expandAllBelowDepth,
   collapseAllBelowDepth,
@@ -991,7 +1065,7 @@ function ShortcutWithAction({
   title: string;
   action: () => void;
 }) {
-  useShortcutKeys({
+  useKeyboardShortcuts({
     shortcut,
     action,
   });
@@ -1035,6 +1109,7 @@ function NumberShortcuts({
     </div>
   );
 }
+*/
 
 function SearchField({ onChange }: { onChange: (value: string) => void }) {
   const [value, setValue] = useState("");
@@ -1043,19 +1118,21 @@ function SearchField({ onChange }: { onChange: (value: string) => void }) {
     onChange(text);
   }, 250);
 
-  const updateValue = useCallback((value: string) => {
+  const updateValue = (value: string) => {
     setValue(value);
     updateFilterText(value);
-  }, []);
+  };
 
   return (
-    <Input
-      placeholder="Search log"
-      variant="tertiary"
-      icon="search"
-      fullWidth={true}
-      value={value}
-      onChange={(e) => updateValue(e.target.value)}
-    />
+    <InputGroup insetRing className="border-transparent rounded-none ring-0">
+      <InputLeftElement>
+        <LuSearch className="h-4 w-4 text-muted-foreground" />
+      </InputLeftElement>
+      <Input
+        placeholder="Search Job"
+        value={value}
+        onChange={(e) => updateValue(e.target.value)}
+      />
+    </InputGroup>
   );
 }

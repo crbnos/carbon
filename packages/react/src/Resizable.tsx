@@ -1,3 +1,5 @@
+"use client";
+
 import { LuGripVertical } from "react-icons/lu";
 import * as ResizablePrimitive from "react-resizable-panels";
 
@@ -40,4 +42,4 @@ const ResizableHandle = ({
   </ResizablePrimitive.PanelResizeHandle>
 );
 
-export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+export { ResizableHandle, ResizablePanel, ResizablePanelGroup };

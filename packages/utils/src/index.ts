@@ -2,6 +2,7 @@ export * from "./accounting";
 export * from "./arrays";
 export * from "./color";
 export * from "./date";
+export * from "./duration";
 export * from "./file";
 export * from "./geo";
 export * from "./keyboard";

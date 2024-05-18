@@ -10,7 +10,7 @@ import { getValidChildren } from "./utils/react";
 const InputGroupContext = createContext<boolean>(false);
 
 const inputGroupVariants = cva(
-  "flex relative w-full bg-transparent text-foreground shadow-sm focus-within:outline-none border border-input ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+  "flex relative w-full bg-transparent text-foreground shadow-sm focus-within:outline-none border border-input",
   {
     variants: {
       size: {
@@ -27,18 +27,24 @@ const inputGroupVariants = cva(
         true: "border-destructive focus-within:ring-destructive",
         false: "",
       },
+      insetRing: {
+        false:
+          "ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+        true: "focus-within:outline-none focus-within:box-shadow-[inset 0 0 0 2px var(--ring-color)]",
+      },
     },
     defaultVariants: {
       size: "md",
       isDisabled: false,
       isInvalid: false,
+      insetRing: false,
     },
   }
 );
 
 export interface InputGroupProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">,
-    VariantProps<typeof inputVariants> {
+    VariantProps<typeof inputGroupVariants> {
   isDisabled?: boolean;
   isInvalid?: boolean;
 }
@@ -49,6 +55,7 @@ const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(
       className,
       isInvalid = false,
       isDisabled = false,
+      insetRing,
       size,
       children,
       ...props
@@ -78,6 +85,7 @@ const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(
               size,
               isDisabled,
               isInvalid,
+              insetRing,
               className,
             })
           )}

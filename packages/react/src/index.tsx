@@ -209,6 +209,7 @@ import {
   SelectValue,
 } from "./Select";
 import { Skeleton } from "./Skeleton";
+import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
 import { Status } from "./Status";
 import { Switch } from "./Switch";
@@ -229,6 +230,7 @@ import {
   useDisclosure,
   useEscape,
   useHydrated,
+  useInitialDimensions,
   useInterval,
   useKeyboardShortcuts,
   useMount,
@@ -415,6 +417,7 @@ export {
   SelectTrigger,
   SelectValue,
   Skeleton,
+  Slider,
   Spinner,
   Status,
   Switch,
@@ -449,6 +452,7 @@ export {
   useEditor,
   useEscape,
   useHydrated,
+  useInitialDimensions,
   useInterval,
   useKeyboardShortcuts,
   useModalCardType,
