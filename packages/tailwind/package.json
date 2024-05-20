@@ -21,7 +21,7 @@
   },
   "private": true,
   "scripts": {
-    "clean": "rm -rf node_modules"
+    "clean": "rimraf node_modules"
   },
   "version": "*"
 }

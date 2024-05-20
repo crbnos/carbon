@@ -74,16 +74,18 @@ export default function ForgotPasswordRoute() {
 
   return (
     <>
-      <img
-        src="/carbon-logo-dark.png"
-        alt="Carbon Logo"
-        className="block dark:hidden max-w-[100px] mb-3"
-      />
-      <img
-        src="/carbon-logo-light.png"
-        alt="Carbon Logo"
-        className="hidden dark:block max-w-[100px] mb-3"
-      />
+      <div>
+        <img
+          src="/carbon-logo-dark.png"
+          alt="Carbon Logo"
+          className="block dark:hidden max-w-[100px] mb-3"
+        />
+        <img
+          src="/carbon-logo-light.png"
+          alt="Carbon Logo"
+          className="hidden dark:block max-w-[100px] mb-3"
+        />
+      </div>
       {actionData?.success ? (
         <Alert className="h-[240px] [&>svg]:left-8 [&>svg]:top-8 p-8">
           <LuCheckCircle className="w-4 h-4" />
@@ -94,7 +96,7 @@ export default function ForgotPasswordRoute() {
           </AlertDescription>
         </Alert>
       ) : (
-        <div className="rounded-lg bg-background shadow-lg p-8 w-[380px]">
+        <div className="rounded-lg bg-card border border-border shadow-lg p-8 w-[380px]">
           <ValidatedForm validator={forgotPasswordValidator} method="post">
             <VStack spacing={4}>
               <p>Please enter your email address to search for your account.</p>

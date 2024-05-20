@@ -85,7 +85,7 @@
   },
   "private": true,
   "scripts": {
-    "clean": "rm -rf .turbo node_modules",
+    "clean": "rimraf .turbo node_modules",
     "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
     "test": "jest"
   },

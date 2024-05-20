@@ -56,18 +56,19 @@ export default function ResetPasswordRoute() {
 
   return (
     <>
-      <img
-        src="/carbon-logo-dark.png"
-        alt="Carbon Logo"
-        className="block dark:hidden max-w-[100px] mb-3"
-      />
-      <img
-        src="/carbon-logo-light.png"
-        alt="Carbon Logo"
-        className="hidden dark:block max-w-[100px] mb-3"
-      />
-
-      <div className="rounded-lg bg-background shadow-lg p-8 w-[380px]">
+      <div>
+        <img
+          src="/carbon-logo-dark.png"
+          alt="Carbon Logo"
+          className="block dark:hidden max-w-[100px] mb-3"
+        />
+        <img
+          src="/carbon-logo-light.png"
+          alt="Carbon Logo"
+          className="hidden dark:block max-w-[100px] mb-3"
+        />
+      </div>
+      <div className="rounded-lg bg-card border border-border shadow-lg p-8 w-[380px]">
         <ValidatedForm
           method="post"
           action={path.to.resetPassword}

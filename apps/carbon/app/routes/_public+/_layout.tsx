@@ -7,7 +7,7 @@ export default function PublicRoute() {
     <div className="flex min-h-screen min-w-screen">
       <VStack
         spacing={8}
-        className="items-center mx-auto max-w-lg pt-24 px-6 z-[3]"
+        className="items-center justify-center mx-auto max-w-lg z-[3]"
       >
         <Outlet />
       </VStack>

@@ -1,7 +1,7 @@
 import { validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useActionData, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { supabaseClient } from "~/lib/supabase/client";
@@ -80,7 +80,6 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 }
 
 export default function AuthCallback() {
-  const result = useActionData<typeof action>();
   const fetcher = useFetcher();
   const isAuthenticating = useRef(false);
 
@@ -120,5 +119,21 @@ export default function AuthCallback() {
     };
   }, [fetcher]);
 
-  return <pre>{JSON.stringify(result, null, 2)}</pre>;
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <div>
+        <img
+          src="/carbon-logo-dark.png"
+          alt="Carbon Logo"
+          className="block dark:hidden max-w-[100px] mb-3"
+        />
+        <img
+          src="/carbon-logo-light.png"
+          alt="Carbon Logo"
+          className="hidden dark:block max-w-[100px] mb-3"
+        />
+      </div>
+      <p className="text-muted-foreground">Loading...</p>
+    </div>
+  );
 }
