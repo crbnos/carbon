@@ -1,14 +1,13 @@
 import { Badge, cn } from "@carbon/react";
 import { Fragment } from "react";
 import { LuChevronRight } from "react-icons/lu";
-import type { z } from "zod";
-import type { RunEvent, TaskEventLevel, TaskEventStyle } from "./types";
+import type { GantEventLevel, GantEventStyle, GanttEvent } from "../types";
 
 type SpanTitleProps = {
   message: string;
   isError: boolean;
-  style: z.infer<typeof TaskEventStyle>;
-  level: TaskEventLevel;
+  style: GantEventStyle;
+  level: GantEventLevel;
   isPartial: boolean;
   size: "small" | "large";
 };
@@ -31,7 +30,7 @@ function SpanAccessory({
   accessory,
   size,
 }: {
-  accessory: z.infer<typeof TaskEventStyle>["accessory"];
+  accessory: GantEventStyle["accessory"];
   size: SpanTitleProps["size"];
 }) {
   if (!accessory) {
@@ -68,7 +67,7 @@ export function SpanBadgeAccessory({
   accessory,
   className,
 }: {
-  accessory: NonNullable<z.infer<typeof TaskEventStyle>["accessory"]>;
+  accessory: NonNullable<GantEventStyle["accessory"]>;
   className?: string;
 }) {
   return (
@@ -103,10 +102,10 @@ function eventTextClassName(
       return textClassNameForVariant(event.style.variant);
     }
     case "WARN": {
-      return "text-amber-400";
+      return "text-orange-500";
     }
     case "ERROR": {
-      return "text-error";
+      return "text-red-500";
     }
     default: {
       return textClassNameForVariant(event.style.variant);
@@ -116,12 +115,12 @@ function eventTextClassName(
 
 export function eventBackgroundClassName(
   event: Pick<
-    RunEvent["data"],
+    GanttEvent["data"],
     "isError" | "style" | "level" | "isPartial" | "isCancelled"
   >
 ) {
   if (event.isError) {
-    return "bg-error";
+    return "bg-red-500";
   }
 
   if (event.isCancelled) {
@@ -144,10 +143,10 @@ export function eventBackgroundClassName(
       );
     }
     case "WARN": {
-      return "bg-orange-400";
+      return "bg-orange-500";
     }
     case "ERROR": {
-      return "bg-destructive";
+      return "bg-red-500";
     }
     default: {
       return backgroundClassNameForVariant(
@@ -158,9 +157,7 @@ export function eventBackgroundClassName(
   }
 }
 
-function textClassNameForVariant(
-  variant: z.infer<typeof TaskEventStyle>["variant"]
-) {
+function textClassNameForVariant(variant: GantEventStyle["variant"]) {
   switch (variant) {
     case "primary": {
       return "text-foreground";
@@ -172,7 +169,7 @@ function textClassNameForVariant(
 }
 
 function backgroundClassNameForVariant(
-  variant: z.infer<typeof TaskEventStyle>["variant"],
+  variant: GantEventStyle["variant"],
   isPartial: boolean
 ) {
   switch (variant) {

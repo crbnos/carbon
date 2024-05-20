@@ -13,9 +13,8 @@ import { Spinner, cn } from "@carbon/react";
 import assertNever from "assert-never";
 import { LuSnowflake, LuXCircle } from "react-icons/lu";
 
-export type TaskRunStatus =
+export type GanttTaskStatus =
   | "PENDING"
-  | "WAITING_FOR_DEPLOY"
   | "EXECUTING"
   | "RETRYING_AFTER_FAILURE"
   | "WAITING_TO_RESUME"
@@ -27,8 +26,7 @@ export type TaskRunStatus =
   | "PAUSED"
   | "CRASHED";
 
-export const allTaskRunStatuses = [
-  "WAITING_FOR_DEPLOY",
+export const allGanttTaskStatuses = [
   "PENDING",
   "EXECUTING",
   "RETRYING_AFTER_FAILURE",
@@ -39,11 +37,10 @@ export const allTaskRunStatuses = [
   "CRASHED",
   "INTERRUPTED",
   "SYSTEM_FAILURE",
-] as TaskRunStatus[];
+] as GanttTaskStatus[];
 
-const taskRunStatusDescriptions: Record<TaskRunStatus, string> = {
+const taskRunStatusDescriptions: Record<GanttTaskStatus, string> = {
   PENDING: "Task is waiting to be executed",
-  WAITING_FOR_DEPLOY: "Task needs to be deployed first to start executing",
   EXECUTING: "Task is currently being executed",
   RETRYING_AFTER_FAILURE: "Task is being reattempted after a failure",
   WAITING_TO_RESUME: "Task has been frozen and is waiting to be resumed",
@@ -56,18 +53,15 @@ const taskRunStatusDescriptions: Record<TaskRunStatus, string> = {
   CRASHED: "Task has crashed and won't be retried",
 };
 
-export const QUEUED_STATUSES: TaskRunStatus[] = [
-  "PENDING",
-  "WAITING_FOR_DEPLOY",
-];
+export const QUEUED_STATUSES: GanttTaskStatus[] = ["PENDING"];
 
-export const RUNNING_STATUSES: TaskRunStatus[] = [
+export const RUNNING_STATUSES: GanttTaskStatus[] = [
   "EXECUTING",
   "RETRYING_AFTER_FAILURE",
   "WAITING_TO_RESUME",
 ];
 
-export const FINISHED_STATUSES: TaskRunStatus[] = [
+export const FINISHED_STATUSES: GanttTaskStatus[] = [
   "COMPLETED_SUCCESSFULLY",
   "CANCELED",
   "COMPLETED_WITH_ERRORS",
@@ -76,31 +70,31 @@ export const FINISHED_STATUSES: TaskRunStatus[] = [
   "CRASHED",
 ];
 
-export function descriptionForTaskRunStatus(status: TaskRunStatus): string {
+export function descriptionForGanttTaskStatus(status: GanttTaskStatus): string {
   return taskRunStatusDescriptions[status];
 }
 
-export function TaskRunStatusCombo({
+export function GanttTaskStatusCombo({
   status,
   className,
   iconClassName,
 }: {
-  status: TaskRunStatus;
+  status: GanttTaskStatus;
   className?: string;
   iconClassName?: string;
 }) {
   return (
     <span className={cn("flex items-center gap-1", className)}>
-      <TaskRunStatusIcon
+      <GanttTaskStatusIcon
         status={status}
         className={cn("h-4 w-4", iconClassName)}
       />
-      <TaskRunStatusLabel status={status} />
+      <GanttTaskStatusLabel status={status} />
     </span>
   );
 }
 
-export function TaskRunStatusLabel({ status }: { status: TaskRunStatus }) {
+export function GanttTaskStatusLabel({ status }: { status: GanttTaskStatus }) {
   return (
     <span className={runStatusClassNameColor(status)}>
       {runStatusTitle(status)}
@@ -108,21 +102,15 @@ export function TaskRunStatusLabel({ status }: { status: TaskRunStatus }) {
   );
 }
 
-export function TaskRunStatusIcon({
+export function GanttTaskStatusIcon({
   status,
   className,
 }: {
-  status: TaskRunStatus;
+  status: GanttTaskStatus;
   className: string;
 }) {
   switch (status) {
     case "PENDING":
-      return (
-        <HiRectangleStack
-          className={cn(runStatusClassNameColor(status), className)}
-        />
-      );
-    case "WAITING_FOR_DEPLOY":
       return (
         <HiRectangleStack
           className={cn(runStatusClassNameColor(status), className)}
@@ -189,12 +177,10 @@ export function TaskRunStatusIcon({
   }
 }
 
-export function runStatusClassNameColor(status: TaskRunStatus): string {
+export function runStatusClassNameColor(status: GanttTaskStatus): string {
   switch (status) {
     case "PENDING":
       return "text-gray-500";
-    case "WAITING_FOR_DEPLOY":
-      return "text-orange-500";
     case "EXECUTING":
     case "RETRYING_AFTER_FAILURE":
       return "text-pending";
@@ -205,27 +191,25 @@ export function runStatusClassNameColor(status: TaskRunStatus): string {
     case "CANCELED":
       return "text-gray-500";
     case "INTERRUPTED":
-      return "text-error";
+      return "text-red-500";
     case "COMPLETED_SUCCESSFULLY":
       return "text-success";
     case "COMPLETED_WITH_ERRORS":
-      return "text-error";
+      return "text-red-500";
     case "SYSTEM_FAILURE":
-      return "text-error";
+      return "text-red-500";
     case "CRASHED":
-      return "text-error";
+      return "text-red-500";
     default: {
       assertNever(status);
     }
   }
 }
 
-export function runStatusTitle(status: TaskRunStatus): string {
+export function runStatusTitle(status: GanttTaskStatus): string {
   switch (status) {
     case "PENDING":
       return "Queued";
-    case "WAITING_FOR_DEPLOY":
-      return "Waiting for deploy";
     case "EXECUTING":
       return "Executing";
     case "WAITING_TO_RESUME":

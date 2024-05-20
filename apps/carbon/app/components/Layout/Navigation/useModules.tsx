@@ -1,5 +1,4 @@
 import {
-  LuCalendarRange,
   LuComponent,
   LuCreditCard,
   LuFiles,
@@ -36,12 +35,12 @@ export function useModules() {
     //   to: path.to.receipts,
     //   icon: LuBox,
     // },
-    {
-      permission: "scheduling",
-      name: "Scheduling",
-      to: path.to.scheduling,
-      icon: LuCalendarRange,
-    },
+    // {
+    //   permission: "scheduling",
+    //   name: "Scheduling",
+    //   to: path.to.scheduling,
+    //   icon: LuCalendarRange,
+    // },
     // {
     //   permission: "timecards",
     //   name: "Timecards",

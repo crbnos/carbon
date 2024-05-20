@@ -181,6 +181,7 @@ import {
   NumberInputGroup,
   NumberInputStepper,
 } from "./Number";
+import { Paragraph } from "./Paragraph";
 import {
   Popover,
   PopoverContent,
@@ -393,6 +394,7 @@ export {
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
+  Paragraph,
   Popover,
   PopoverContent,
   PopoverFooter,

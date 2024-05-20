@@ -1,6 +1,7 @@
 import { cn } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
+  HiBeaker,
   HiClock,
   HiHandRaised,
   HiInformationCircle,
@@ -15,7 +16,7 @@ type TaskIconProps = {
   className?: string;
 };
 
-export function RunIcon({ name, className }: TaskIconProps) {
+export function GanttIcon({ name, className }: TaskIconProps) {
   if (!name)
     return <HiSquares2X2 className={cn(className, "text-muted-foreground")} />;
 
@@ -30,14 +31,12 @@ export function RunIcon({ name, className }: TaskIconProps) {
       return <LuClock className={cn(className, "text-blue-500")} />;
     case "timecard":
       return <TaskIcon className={cn(className, "text-yellow-500")} />;
+    case "inspection":
+      return <HiBeaker className={cn(className, "text-teal-500")} />;
     case "attempt":
       return <AttemptIcon className={cn(className, "text-muted-foreground")} />;
     case "wait":
-      return <HiClock className={cn(className, "text-teal-500")} />;
-    case "trace":
-      return (
-        <HiSquares2X2 className={cn(className, "text-muted-foreground")} />
-      );
+      return <HiClock className={cn(className, "text-yellow-500")} />;
     //log levels
     case "debug":
     case "log":

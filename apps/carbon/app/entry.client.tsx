@@ -1,8 +1,9 @@
 import { RemixBrowser } from "@remix-run/react";
-import { startTransition, StrictMode, useEffect } from "react";
-import { hydrateRoot } from "react-dom/client";
 import posthog from "posthog-js";
+import { startTransition, useEffect } from "react";
+import { hydrateRoot } from "react-dom/client";
 import { POSTHOG_API_HOST, POSTHOG_PROJECT_PUBLIC_KEY } from "~/config/env";
+import { OperatingSystemContextProvider } from "./components/OperatingSystem";
 
 function PosthogInit() {
   useEffect(() => {
@@ -15,23 +16,14 @@ function PosthogInit() {
   return null;
 }
 
-//hydrateRoot(
-//document,
-// <OperatingSystemContextProvider
-//   platform={window.navigator.userAgent.includes("Mac") ? "mac" : "windows"}
-// >
-//   <LocaleContextProvider locales={window.navigator.languages as string[]}>
-//<RemixBrowser />
-//   </LocaleContextProvider>
-// </OperatingSystemContextProvider>
-//);
-
 startTransition(() => {
   hydrateRoot(
     document,
-    <StrictMode>
+    <OperatingSystemContextProvider
+      platform={window.navigator.userAgent.includes("Mac") ? "mac" : "windows"}
+    >
       <RemixBrowser />
       <PosthogInit />
-    </StrictMode>
+    </OperatingSystemContextProvider>
   );
 });

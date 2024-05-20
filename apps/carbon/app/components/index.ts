@@ -12,6 +12,7 @@ import Hyperlink from "./Hyperlink";
 import MultiSelect from "./MultiSelect";
 import New from "./New";
 import Select from "./Select";
+import { ShortcutKey } from "./ShortcutKey";
 import SupplierAvatar from "./SupplierAvatar";
 import Table from "./Table";
 
@@ -32,6 +33,7 @@ export {
   MultiSelect,
   New,
   Select,
+  ShortcutKey,
   SupplierAvatar,
   Table,
   useOptimisticAssignment,

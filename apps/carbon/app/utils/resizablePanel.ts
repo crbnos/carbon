@@ -24,14 +24,14 @@ function getCookieValue(
 //run page
 const runResizableName = "resizable-panels:run";
 
-export async function getResizableRunSettings(
+export async function getResizableGanttSettings(
   request: Request
 ): Promise<ResizableConfig> {
   const cookieHeader = request.headers.get("Cookie");
   return getCookieValue(cookieHeader, runResizableName);
 }
 
-export async function setResizableRunSettings(
+export async function setResizableGanttSettings(
   document: Document,
   layout: number[]
 ) {

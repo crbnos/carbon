@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export enum TaskEventLevel {
+export enum GantEventLevel {
   TRACE = "TRACE",
   DEBUG = "DEBUG",
   INFO = "INFO",
@@ -9,7 +9,7 @@ export enum TaskEventLevel {
   ERROR = "ERROR",
 }
 
-export type RunEvent = {
+export type GanttEvent = {
   id: string;
   parentId: string | undefined;
   children: string[];
@@ -21,33 +21,36 @@ export type RunEvent = {
     message: string;
     isRoot: boolean;
     isError: boolean;
-    style: z.infer<typeof TaskEventStyle>;
-    level: TaskEventLevel;
+    style: GantEventStyle;
+    level: GantEventLevel;
     isPartial: boolean;
     isCancelled: boolean;
   };
 };
 
-const Variant = z.enum(["primary"]);
+const variant = z.enum(["primary"]);
 
-const AccessoryItem = z.object({
+const accessoryItem = z.object({
   text: z.string(),
   variant: z.string().optional(),
   url: z.string().optional(),
 });
+export type AccessoryItem = z.infer<typeof accessoryItem>;
 
-const Accessory = z.object({
-  items: z.array(AccessoryItem),
+const accessory = z.object({
+  items: z.array(accessoryItem),
   style: z.enum(["person"]).optional(),
 });
+export type Accessory = z.infer<typeof accessory>;
 
-export const TaskEventStyle = z
+export const gantEventStyle = z
   .object({
     icon: z.string().optional(),
-    variant: Variant.optional(),
-    accessory: Accessory.optional(),
+    variant: variant.optional(),
+    accessory: accessory.optional(),
   })
   .default({
     icon: undefined,
     variant: undefined,
   });
+export type GantEventStyle = z.infer<typeof gantEventStyle>;
