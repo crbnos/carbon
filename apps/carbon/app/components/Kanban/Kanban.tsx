@@ -76,11 +76,9 @@ const Kanban = ({
           active.id,
           pickedUpItemColumn.current
         );
-        return `Picked up Item ${
-          active.data.current.item.content
-        } at position: ${itemPosition + 1} of ${
-          itemsInColumn.length
-        } in column ${column?.title}`;
+        return `Picked up Item ${active.data.current.item.title} at position: ${
+          itemPosition + 1
+        } of ${itemsInColumn.length} in column ${column?.title}`;
       }
     },
     onDragOver({ active, over }) {
@@ -104,7 +102,7 @@ const Kanban = ({
         );
         if (over.data.current.item.columnId !== pickedUpItemColumn.current) {
           return `Item ${
-            active.data.current.item.content
+            active.data.current.item.title
           } was moved over column ${column?.title} in position ${
             itemPosition + 1
           } of ${itemsInColumn.length}`;

@@ -8,6 +8,7 @@ import CreatableCombobox from "./CreateableCombobox";
 import CustomerAvatar from "./CustomerAvatar";
 import DocumentPreview from "./DocumentPreview";
 import EmployeeAvatar from "./EmployeeAvatar";
+import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
 import Hyperlink from "./Hyperlink";
 import MultiSelect from "./MultiSelect";
 import New from "./New";
@@ -29,6 +30,7 @@ export {
   CustomerAvatar,
   DocumentPreview,
   EmployeeAvatar,
+  EmployeeAvatarGroup,
   Hyperlink,
   MultiSelect,
   New,

@@ -70,8 +70,11 @@ export function ColumnCard({ column, items, isOverlay }: ColumnCardProps) {
         dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
       })}
     >
-      <CardHeader className="p-4 font-semibold border-b-2 text-left flex flex-row space-between items-center">
-        <span className="mr-auto truncate"> {column.title}</span>
+      <CardHeader className="p-4 w-full font-semibold border-b-2 text-left flex flex-row space-between items-center">
+        <div className="flex flex-grow items-center space-x-2">
+          {column.active && <PulsingDot />}
+          <span className="mr-auto truncate"> {column.title}</span>
+        </div>
         <Button
           variant={"ghost"}
           {...attributes}
@@ -118,5 +121,16 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
       </div>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
+  );
+}
+
+function PulsingDot() {
+  return (
+    <span className="relative flex h-2 w-2">
+      <span
+        className={`absolute h-full w-full animate-ping rounded-full border border-emerald-500 opacity-100 duration-1000`}
+      />
+      <span className={`h-2 w-2 rounded-full bg-emerald-500`} />
+    </span>
   );
 }
