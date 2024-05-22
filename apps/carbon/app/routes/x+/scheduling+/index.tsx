@@ -1,6 +1,6 @@
-import { Button, HStack, cn } from "@carbon/react";
+import { Button, HStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { LuListFilter } from "react-icons/lu";
+import { LuListFilter, LuRefreshCcw } from "react-icons/lu";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import type { Column, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
@@ -25,6 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       {
         id: "4",
         title: "Bench Grinder",
+        active: true,
       },
       {
         id: "5",
@@ -36,128 +37,106 @@ export async function loader({ request }: LoaderFunctionArgs) {
         id: "item0",
         columnId: "4",
         title: "1503",
-        customerId: "6bd344cd-5ea8-406e-9253-2d3672a56533",
-        dueDate: "2024-05-20",
+        customerId: "ca2f11f8-1464-4753-9690-00107f141f3a",
+        dueDate: "2024-05-28",
+        duration: 30 * 60 * 1000,
         deadlineType: "HARD_DEADLINE",
-        status: {
-          status: "WARNING",
-          message: "Paused",
-        },
+        progress: 5 * 60 * 1000,
+        status: "IN_PROGRESS",
       },
       {
         id: "item1",
         columnId: "3",
         title: "1032",
-        dueDate: "2024-05-20",
+        dueDate: "2024-05-30",
+        duration: 2 * 60 * 60 * 1000,
         deadlineType: "SOFT_DEADLINE",
-        status: {
-          status: "WARNING",
-          message: "Paused",
-        },
+        status: "PAUSED",
+        progress: 1.3 * 60 * 60 * 1000,
       },
       {
         id: "item2",
         columnId: "3",
         title: "1023",
         dueDate: "2024-05-20",
+        duration: 2 * 60 * 60 * 1000,
         deadlineType: "ASAP",
-        customerId: "6bd344cd-5ea8-406e-9253-2d3672a56533",
-        status: {
-          status: "INFO",
-          message: "Ready",
-        },
+        customerId: "ca2f11f8-1464-4753-9690-00107f141f3a",
+        status: "READY",
       },
       {
         id: "item3",
         columnId: "3",
         title: "1022",
+        duration: 10 * 60 * 1000,
         deadlineType: "NO_DEADLINE",
-        status: {
-          status: "INFO",
-          message: "Ready",
-        },
+        status: "READY",
       },
       {
         id: "item4",
         columnId: "2",
         title: "1492",
+        duration: 4 * 60 * 60 * 1000,
         deadlineType: "NO_DEADLINE",
-        status: {
-          status: "ERROR",
-          message: "Waiting",
-        },
+        status: "WAITING",
       },
       {
         id: "item5",
         columnId: "2",
         title: "1109",
         dueDate: "2024-05-20",
+        duration: 4 * 60 * 60 * 1000,
         deadlineType: "SOFT_DEADLINE",
-        status: {
-          status: "ERROR",
-          message: "Waiting",
-        },
+        status: "WAITING",
       },
       {
         id: "item6",
         columnId: "1",
         title: "1013",
         deadlineType: "NO_DEADLINE",
-        employeeIds: [
-          "1ab986d3-362b-4d7f-849e-bc57697c4aff",
-          "98bc4b87-37a9-4032-9f8e-97849e8dd8d4",
-        ],
-        status: {
-          status: "SUCCESS",
-          message: "In Progress",
-        },
+        duration: 2 * 60 * 60 * 1000,
+        employeeIds: ["52cdefed-f4b7-45b1-9ec8-701473671fb7"],
+        status: "IN_PROGRESS",
+        progress: 35 * 60 * 1000,
       },
       {
         id: "item7",
         columnId: "1",
         title: "1014",
-        dueDate: "2024-05-20",
+        dueDate: "2024-06-20",
+        duration: 20 * 60 * 1000,
         deadlineType: "HARD_DEADLINE",
-        customerId: "1af341c6-d71c-4e4e-8382-e3850e4808cc",
-        status: {
-          status: "DEFAULT",
-          message: "Pending",
-        },
+        customerId: "bcbe0bca-6516-4a6c-bb8a-b3942f1a9a33",
+        status: "TODO",
       },
       {
         id: "item8",
         columnId: "1",
         title: "1032",
-        dueDate: "2024-05-20",
+        dueDate: "2024-05-24",
+        duration: 2 * 60 * 60 * 1000,
         deadlineType: "SOFT_DEADLINE",
-        customerId: "6bd344cd-5ea8-406e-9253-2d3672a56533",
-        status: {
-          status: "DEFAULT",
-          message: "Pending",
-        },
+        customerId: "ca2f11f8-1464-4753-9690-00107f141f3a",
+        status: "TODO",
       },
       {
         id: "item9",
         columnId: "1",
         title: "1010",
         dueDate: "2024-05-20",
+        duration: 32 * 1000,
         deadlineType: "ASAP",
-        status: {
-          status: "DEFAULT",
-          message: "Pending",
-        },
+        status: "TODO",
       },
       {
         id: "item10",
         columnId: "1",
         title: "1403",
         dueDate: "2024-05-20",
+        duration: 6 * 60 * 60 * 1000,
         deadlineType: "NO_DEADLINE",
-        customerId: "1af341c6-d71c-4e4e-8382-e3850e4808cc",
-        status: {
-          status: "DEFAULT",
-          message: "Pending",
-        },
+        customerId: "bcbe0bca-6516-4a6c-bb8a-b3942f1a9a33",
+        status: "TODO",
       },
     ] satisfies Item[],
   });
@@ -166,7 +145,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function KanbanView() {
   const { columns, items } = useTypedLoaderData<typeof loader>();
   return (
-    <div className={cn("flex flex-col h-full max-h-full  overflow-hidden")}>
+    <div className="flex flex-col h-full max-h-full  overflow-auto relative">
       <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
         <HStack>
           <DebouncedInput param="search" size="sm" placeholder="Search" />
@@ -180,9 +159,15 @@ export default function KanbanView() {
             Filter
           </Button>
         </HStack>
+        <Button leftIcon={<LuRefreshCcw />}>Reschedule</Button>
       </HStack>
-
-      <Kanban columns={columns} items={items} />
+      <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
+        <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
+          <div className="flex flex-1 min-h-0 w-full relative">
+            <Kanban columns={columns} items={items} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

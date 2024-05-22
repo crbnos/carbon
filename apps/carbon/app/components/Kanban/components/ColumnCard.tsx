@@ -70,7 +70,7 @@ export function ColumnCard({ column, items, isOverlay }: ColumnCardProps) {
         dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
       })}
     >
-      <CardHeader className="p-4 w-full font-semibold border-b-2 text-left flex flex-row space-between items-center">
+      <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center">
         <div className="flex flex-grow items-center space-x-2">
           {column.active && <PulsingDot />}
           <span className="mr-auto truncate"> {column.title}</span>
@@ -116,7 +116,7 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
         dragging: dndContext.active ? "active" : "default",
       })}
     >
-      <div className="flex gap-4 items-start flex-row justify-start p-4">
+      <div className="flex gap-0.5 items-start flex-row justify-start p-0.5">
         {children}
       </div>
       <ScrollBar orientation="horizontal" />

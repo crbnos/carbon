@@ -30,6 +30,7 @@ const EmployeeAvatarGroup = ({
         {employees.map((employee, index: number) => (
           <Avatar
             key={index}
+            size={size ?? "xs"}
             name={employee.name ?? undefined}
             title={employee.name ?? undefined}
             path={employee.avatarUrl}

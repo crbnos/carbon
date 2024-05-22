@@ -18,6 +18,10 @@ const defaultFormatOptions: Intl.DateTimeFormatOptions = {
   timeZone: getLocalTimeZone(),
 };
 
+export function convertDateStringToIsoString(dateString: string) {
+  return new Date(dateString).toISOString();
+}
+
 export function formatDate(
   dateString?: string | null,
   options?: Intl.DateTimeFormatOptions
@@ -31,6 +35,14 @@ export function formatDate(
   ).format(date.toDate(getLocalTimeZone()));
 }
 
+export function formatRelativeTime(isoString: string) {
+  if (new Date(isoString).getTime() > new Date().getTime()) {
+    return formatTimeFromNow(isoString);
+  } else {
+    return formatTimeAgo(isoString);
+  }
+}
+
 export function formatTimeAgo(isoString: string) {
   let duration = (new Date(isoString).getTime() - new Date().getTime()) / 1000;
 
@@ -38,6 +50,21 @@ export function formatTimeAgo(isoString: string) {
     const division = DIVISIONS[i];
     if (Math.abs(duration) < division!.amount) {
       return relativeFormatter.format(Math.round(duration), division!.name);
+    }
+    duration /= division!.amount;
+  }
+}
+
+export function formatTimeFromNow(isoString: string) {
+  let duration = (new Date().getTime() - new Date(isoString).getTime()) / 1000;
+
+  for (let i = 0; i <= DIVISIONS.length; i++) {
+    const division = DIVISIONS[i];
+    if (Math.abs(duration) < division!.amount) {
+      return relativeFormatter.format(
+        Math.round(-1 * duration),
+        division!.name
+      );
     }
     duration /= division!.amount;
   }

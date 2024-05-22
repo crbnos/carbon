@@ -22,16 +22,21 @@ const itemValidator = z.object({
   customerId: z.string().optional(),
   employeeIds: z.array(z.string()).optional(),
   dueDate: z.string().optional(),
+  duration: z.number().optional(),
   deadlineType: z
     .enum(["ASAP", "HARD_DEADLINE", "SOFT_DEADLINE", "NO_DEADLINE"])
     .optional(),
+  progress: z.number().optional(),
   status: z
-    .object({
-      status: z
-        .enum(["INFO", "WARNING", "ERROR", "SUCCESS", "DEFAULT"])
-        .optional(),
-      message: z.string(),
-    })
+    .enum([
+      "CANCELED",
+      "DONE",
+      "IN_PROGRESS",
+      "PAUSED",
+      "READY",
+      "TODO",
+      "WAITING",
+    ])
     .optional(),
 });
 
@@ -43,11 +48,13 @@ export interface ItemDragData {
 }
 
 export enum ItemStatus {
-  Info = "INFO",
-  Warning = "WARNING",
-  Error = "ERROR",
-  Success = "SUCCESS",
-  Default = "DEFAULT",
+  Canceled = "CANCELED",
+  Done = "DONE",
+  InProgress = "IN_PROGRESS",
+  Paused = "PAUSED",
+  Ready = "READY",
+  Todo = "TODO",
+  Waiting = "WAITING",
 }
 
 export enum ItemDeadline {

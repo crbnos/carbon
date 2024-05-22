@@ -4,33 +4,85 @@ import {
   CardContent,
   CardHeader,
   HStack,
+  Progress,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   cn,
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import {
+  convertDateStringToIsoString,
+  formatDurationMilliseconds,
+  formatRelativeTime,
+} from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import {
-  LuCalendarCheck,
+  LuCheckCircle,
   LuFactory,
   LuGripVertical,
-  LuRocket,
+  LuTimer,
   LuUsers,
+  LuXCircle,
 } from "react-icons/lu";
 
+import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
+import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
+import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
+import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
+import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
+import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import CustomerAvatar from "~/components/CustomerAvatar";
 import EmployeeAvatarGroup from "~/components/EmployeeAvatarGroup";
-import type { Item, ItemDragData } from "../types";
-import KanbanStatus from "./KanbanStatus";
+import { type Item, type ItemDragData } from "../types";
 
 type ItemCardProps = {
   item: Item;
   isOverlay?: boolean;
 };
+
+const cardVariants = cva(
+  "bg-gradient-to-tl via-card to-card hover:from-muted/30 hover:to-muted/30 hover:via-muted/30",
+  {
+    variants: {
+      dragging: {
+        over: "ring-2 opacity-30",
+        overlay: "ring-2 ring-primary",
+      },
+      status: {
+        IN_PROGRESS: "border-green-600/30 from-green-600/10",
+        READY: "",
+        DONE: "",
+        PAUSED: "",
+        CANCELED: "",
+        WAITING: "border-red-500/30 from-red-500/10",
+        TODO: "border-border",
+      },
+    },
+    defaultVariants: {
+      status: "TODO",
+    },
+  }
+);
+
+const cardHeaderVariants = cva("border-b", {
+  variants: {
+    status: {
+      IN_PROGRESS: "border-green-600/30",
+      READY: "",
+      DONE: "",
+      PAUSED: "",
+      CANCELED: "",
+      WAITING: "border-red-500/30",
+      TODO: "border-border",
+    },
+  },
+  defaultVariants: {
+    status: "TODO",
+  },
+});
 
 export function ItemCard({ item, isOverlay }: ItemCardProps) {
   const {
@@ -56,14 +108,10 @@ export function ItemCard({ item, isOverlay }: ItemCardProps) {
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva("", {
-    variants: {
-      dragging: {
-        over: "ring-2 opacity-30",
-        overlay: "ring-2 ring-primary",
-      },
-    },
-  });
+  const isOverdue =
+    item.deadlineType !== "NO_DEADLINE" && item.dueDate
+      ? new Date(item.dueDate) < new Date()
+      : false;
 
   return (
     <Card
@@ -71,42 +119,87 @@ export function ItemCard({ item, isOverlay }: ItemCardProps) {
       style={style}
       className={cn(
         "max-w-[330px]",
-        variants({
+        cardVariants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+          status: item.status,
         })
       )}
     >
-      <CardHeader className="max-w-full px-3 py-3 space-y-0 flex-row border-b-2 border-secondary relative">
-        <span className="mr-auto font-semibold truncate">{item.title}</span>
-        <Button
-          variant={"ghost"}
-          {...attributes}
-          {...listeners}
-          className="p-1 text-secondary-foreground/50 -ml-2 h-auto cursor-grab"
-        >
-          <span className="sr-only">Move item</span>
-          <LuGripVertical />
-        </Button>
+      <CardHeader
+        className={cn(
+          "max-w-full p-3 border-b relative",
+          cardHeaderVariants({
+            status: item.status,
+          })
+        )}
+      >
+        <div className="flex w-full max-w-full justify-between">
+          <div className="flex flex-col space-y-0">
+            <span className="text-xs text-muted-foreground truncate">
+              F01234
+            </span>
+            <span className="mr-auto font-semibold truncate">{item.title}</span>
+          </div>
+          <Button
+            variant={"ghost"}
+            {...attributes}
+            {...listeners}
+            className="p-1 text-secondary-foreground/50 -ml-2 h-auto cursor-grab"
+          >
+            <span className="sr-only">Move item</span>
+            <LuGripVertical />
+          </Button>
+        </div>
+        {["PAUSED", "DONE", "IN_PROGRESS"].includes(item.status!) && (
+          <Progress
+            indicatorClassName={item.status === "PAUSED" ? "bg-yellow-500" : ""}
+            leftLabel={
+              item.progress ? formatDurationMilliseconds(item.progress) : ""
+            }
+            rightLabel={
+              item.duration ? formatDurationMilliseconds(item.duration) : ""
+            }
+            value={
+              item.progress && item.duration
+                ? (item.progress / item.duration) * 100
+                : 0
+            }
+          />
+        )}
       </CardHeader>
       <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap">
         {item.status && (
           <HStack className="justify-start space-x-2">
-            <LuRocket className="text-muted-foreground" />
-            <KanbanStatus {...item.status} />
+            {getStatusIcon(item.status)}
+            <span className="text-sm">{getStatusText(item.status)}</span>
+          </HStack>
+        )}
+        {item.duration && (
+          <HStack className="justify-start space-x-2">
+            <LuTimer className="text-muted-foreground" />
+            <span className="text-sm">
+              {formatDurationMilliseconds(item.duration)}
+            </span>
           </HStack>
         )}
         {item.deadlineType && (
           <HStack className="justify-start space-x-2">
-            {getDeadlineIcon(item.deadlineType)}
+            {getDeadlineIcon(item.deadlineType, isOverdue)}
             <Tooltip>
               <TooltipTrigger>
-                <span className="text-sm">
+                <span
+                  className={cn("text-sm", isOverdue ? "text-red-500" : "")}
+                >
                   {["ASAP", "NO_DEADLINE"].includes(item.deadlineType)
                     ? getDeadlineText(item.deadlineType)
-                    : formatDate(item.dueDate)}
+                    : item.dueDate
+                    ? `Due ${formatRelativeTime(
+                        convertDateStringToIsoString(item.dueDate)
+                      )}`
+                    : "–"}
                 </span>
               </TooltipTrigger>
-              <TooltipContent>
+              <TooltipContent side="right">
                 {getDeadlineText(item.deadlineType)}
               </TooltipContent>
             </Tooltip>
@@ -131,16 +224,56 @@ export function ItemCard({ item, isOverlay }: ItemCardProps) {
   );
 }
 
-function getDeadlineIcon(deadlineType: Item["deadlineType"]) {
+function getStatusIcon(status: Item["status"]) {
+  switch (status) {
+    case "READY":
+    case "TODO":
+      return <TodoStatusIcon className="text-foreground" />;
+    case "WAITING":
+    case "CANCELED":
+      return <LuXCircle className="text-muted-foreground" />;
+    case "DONE":
+      return <LuCheckCircle className="text-blue-600" />;
+    case "IN_PROGRESS":
+      return <AlmostDoneIcon />;
+    case "PAUSED":
+      return <InProgressStatusIcon />;
+    default:
+      return null;
+  }
+}
+
+function getStatusText(status: Item["status"], overdue: boolean = false) {
+  switch (status) {
+    case "READY":
+      return "Ready";
+    case "TODO":
+      return "Todo";
+    case "WAITING":
+      return "Waiting";
+    case "CANCELED":
+      return "Canceled";
+    case "DONE":
+      return "Done";
+    case "IN_PROGRESS":
+      return "In progress";
+    case "PAUSED":
+      return "Paused";
+  }
+}
+
+function getDeadlineIcon(deadlineType: Item["deadlineType"], overdue: boolean) {
   switch (deadlineType) {
     case "ASAP":
       return <BsExclamationSquareFill className="text-red-500" />;
     case "HARD_DEADLINE":
-      return <LuCalendarCheck className="text-orange-500" />;
+      return <HighPriorityIcon className={cn(overdue ? "text-red-500" : "")} />;
     case "SOFT_DEADLINE":
-      return <LuCalendarCheck className="text-yellow-500" />;
+      return (
+        <MediumPriorityIcon className={cn(overdue ? "text-red-500" : "")} />
+      );
     case "NO_DEADLINE":
-      return <LuCalendarCheck className="text-muted-foreground" />;
+      return <LowPriorityIcon />;
   }
 }
 
