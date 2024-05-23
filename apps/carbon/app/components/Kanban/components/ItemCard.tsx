@@ -21,6 +21,7 @@ import { cva } from "class-variance-authority";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import {
   LuCheckCircle,
+  LuClipboardCheck,
   LuFactory,
   LuGripVertical,
   LuTimer,
@@ -28,6 +29,7 @@ import {
   LuXCircle,
 } from "react-icons/lu";
 
+import { motion } from "framer-motion";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
@@ -36,20 +38,21 @@ import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import CustomerAvatar from "~/components/CustomerAvatar";
 import EmployeeAvatarGroup from "~/components/EmployeeAvatarGroup";
-import { type Item, type ItemDragData } from "../types";
+import type { DisplaySettings, Item, ItemDragData } from "../types";
 
 type ItemCardProps = {
   item: Item;
   isOverlay?: boolean;
-};
+} & DisplaySettings;
 
 const cardVariants = cva(
-  "bg-gradient-to-tl via-card to-card hover:from-muted/30 hover:to-muted/30 hover:via-muted/30",
+  "bg-gradient-to-tl via-card to-card hover:to-muted/30 hover:via-muted/30",
   {
     variants: {
       dragging: {
-        over: "ring-2 opacity-30",
-        overlay: "ring-2 ring-primary",
+        over: "ring-2 ring-primary opacity-30",
+        overlay:
+          "ring-2 ring-primary hover:from-muted hover:via-muted hover:to-muted",
       },
       status: {
         IN_PROGRESS: "border-green-600/30 from-green-600/10",
@@ -66,6 +69,8 @@ const cardVariants = cva(
     },
   }
 );
+
+const MotionCard = motion(Card);
 
 const cardHeaderVariants = cva("border-b", {
   variants: {
@@ -84,7 +89,17 @@ const cardHeaderVariants = cva("border-b", {
   },
 });
 
-export function ItemCard({ item, isOverlay }: ItemCardProps) {
+export function ItemCard({
+  item,
+  isOverlay,
+  showCustomer,
+  showDescription,
+  showDueDate,
+  showDuration,
+  showEmployee,
+  showProgress,
+  showStatus,
+}: ItemCardProps) {
   const {
     setNodeRef,
     attributes,
@@ -114,7 +129,7 @@ export function ItemCard({ item, isOverlay }: ItemCardProps) {
       : false;
 
   return (
-    <Card
+    <MotionCard
       ref={setNodeRef}
       style={style}
       className={cn(
@@ -135,9 +150,11 @@ export function ItemCard({ item, isOverlay }: ItemCardProps) {
       >
         <div className="flex w-full max-w-full justify-between">
           <div className="flex flex-col space-y-0">
-            <span className="text-xs text-muted-foreground truncate">
-              F01234
-            </span>
+            {item.subtitle && (
+              <span className="text-xs text-muted-foreground truncate">
+                {item.subtitle}
+              </span>
+            )}
             <span className="mr-auto font-semibold truncate">{item.title}</span>
           </div>
           <Button
@@ -150,31 +167,41 @@ export function ItemCard({ item, isOverlay }: ItemCardProps) {
             <LuGripVertical />
           </Button>
         </div>
-        {["PAUSED", "DONE", "IN_PROGRESS"].includes(item.status!) && (
-          <Progress
-            indicatorClassName={item.status === "PAUSED" ? "bg-yellow-500" : ""}
-            leftLabel={
-              item.progress ? formatDurationMilliseconds(item.progress) : ""
-            }
-            rightLabel={
-              item.duration ? formatDurationMilliseconds(item.duration) : ""
-            }
-            value={
-              item.progress && item.duration
-                ? (item.progress / item.duration) * 100
-                : 0
-            }
-          />
-        )}
+
+        {showProgress &&
+          ["PAUSED", "DONE", "IN_PROGRESS"].includes(item.status!) && (
+            <Progress
+              indicatorClassName={
+                item.status === "PAUSED" ? "bg-yellow-500" : ""
+              }
+              leftLabel={
+                item.progress ? formatDurationMilliseconds(item.progress) : ""
+              }
+              rightLabel={
+                item.duration ? formatDurationMilliseconds(item.duration) : ""
+              }
+              value={
+                item.progress && item.duration
+                  ? (item.progress / item.duration) * 100
+                  : 0
+              }
+            />
+          )}
       </CardHeader>
-      <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap">
-        {item.status && (
+      <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap text-sm">
+        {showDescription && item.description && (
+          <HStack className="justify-start space-x-2">
+            <LuClipboardCheck className="text-muted-foreground" />
+            <span className="text-sm">{item.description}</span>
+          </HStack>
+        )}
+        {showStatus && item.status && (
           <HStack className="justify-start space-x-2">
             {getStatusIcon(item.status)}
             <span className="text-sm">{getStatusText(item.status)}</span>
           </HStack>
         )}
-        {item.duration && (
+        {showDuration && item.duration && (
           <HStack className="justify-start space-x-2">
             <LuTimer className="text-muted-foreground" />
             <span className="text-sm">
@@ -182,7 +209,7 @@ export function ItemCard({ item, isOverlay }: ItemCardProps) {
             </span>
           </HStack>
         )}
-        {item.deadlineType && (
+        {showDueDate && item.deadlineType && (
           <HStack className="justify-start space-x-2">
             {getDeadlineIcon(item.deadlineType, isOverdue)}
             <Tooltip>
@@ -206,21 +233,21 @@ export function ItemCard({ item, isOverlay }: ItemCardProps) {
           </HStack>
         )}
 
-        {item.customerId && (
+        {showCustomer && item.customerId && (
           <HStack className="justify-start space-x-2">
             <LuFactory className="text-muted-foreground" />
             <CustomerAvatar customerId={item.customerId} />
           </HStack>
         )}
 
-        {item.employeeIds && (
+        {showEmployee && item.employeeIds && (
           <HStack className="justify-start space-x-2">
             <LuUsers className="text-muted-foreground" />
             <EmployeeAvatarGroup employeeIds={item.employeeIds} />
           </HStack>
         )}
       </CardContent>
-    </Card>
+    </MotionCard>
   );
 }
 

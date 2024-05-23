@@ -5,11 +5,13 @@ import Avatar from "./Avatar";
 
 type EmployeeAvatarProps = AvatarProps & {
   employeeId: string | null;
+  className?: string;
 };
 
 const EmployeeAvatar = ({
   employeeId,
   size,
+  className,
   ...props
 }: EmployeeAvatarProps) => {
   const [people] = usePeople();
@@ -37,7 +39,7 @@ const EmployeeAvatar = ({
         src={person.avatarUrl ?? undefined}
         name={person?.name ?? ""}
       />
-      <span>{person.name}</span>
+      <span className={className}>{person.name}</span>
     </HStack>
   );
 };

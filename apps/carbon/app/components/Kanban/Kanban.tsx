@@ -20,17 +20,18 @@ import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
-import type { Column, Item } from "./types";
+import type { Column, DisplaySettings, Item } from "./types";
 import { coordinateGetter, hasDraggableData } from "./utils";
 
 type KanbanProps = {
   columns: Column[];
   items: Item[];
-};
+} & DisplaySettings;
 
 const Kanban = ({
   columns: initialColumns,
   items: initialItems,
+  ...displaySettings
 }: KanbanProps) => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const pickedUpItemColumn = useRef<string | null>(null);
@@ -171,6 +172,7 @@ const Kanban = ({
               key={col.id}
               column={col}
               items={items.filter((item) => item.columnId === col.id)}
+              {...displaySettings}
             />
           ))}
         </SortableContext>
@@ -187,9 +189,12 @@ const Kanban = ({
                   items={items.filter(
                     (item) => item.columnId === activeColumn.id
                   )}
+                  {...displaySettings}
                 />
               )}
-              {activeItem && <ItemCard item={activeItem} isOverlay />}
+              {activeItem && (
+                <ItemCard item={activeItem} isOverlay {...displaySettings} />
+              )}
             </DragOverlay>,
             document.body
           )
@@ -217,6 +222,7 @@ const Kanban = ({
     setActiveItem(null);
 
     const { active, over } = event;
+
     if (!over) return;
 
     const activeId = active.id;
@@ -233,7 +239,6 @@ const Kanban = ({
 
     setColumns((columns) => {
       const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
-
       const overColumnIndex = columns.findIndex((col) => col.id === overId);
 
       return arrayMove(columns, activeColumnIndex, overColumnIndex);
@@ -242,6 +247,7 @@ const Kanban = ({
 
   function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
+
     if (!over) return;
 
     const activeId = active.id;
@@ -258,6 +264,7 @@ const Kanban = ({
     const isOverAItem = overData?.type === "item";
 
     if (!isActiveAItem) return;
+    if (activeData?.item.columnType !== overData?.item?.columnType) return; // only allow drop if both columns are same type
 
     // Im dropping a Item over another Item
     if (isActiveAItem && isOverAItem) {

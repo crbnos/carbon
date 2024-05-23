@@ -5,11 +5,13 @@ import Avatar from "./Avatar";
 
 type CustomerAvatarProps = AvatarProps & {
   customerId: string | null;
+  className?: string;
 };
 
 const CustomerAvatar = ({
   customerId,
   size,
+  className,
   ...props
 }: CustomerAvatarProps) => {
   const [customers] = useCustomers();
@@ -24,7 +26,7 @@ const CustomerAvatar = ({
   return (
     <HStack className="truncate">
       <Avatar size={size ?? "xs"} {...props} name={customer?.name ?? ""} />
-      <span>{customer.name}</span>
+      <span className={className}>{customer.name}</span>
     </HStack>
   );
 };

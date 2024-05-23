@@ -6,25 +6,35 @@ import {
   ScrollArea,
   ScrollBar,
 } from "@carbon/react";
+import { formatDurationMilliseconds } from "@carbon/utils";
 import { useDndContext } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import { useMemo } from "react";
 import { LuGripVertical } from "react-icons/lu";
-import type { Column, ColumnDragData, Item } from "../types";
+import type { Column, ColumnDragData, DisplaySettings, Item } from "../types";
 import { ItemCard } from "./ItemCard";
 
 type ColumnCardProps = {
   column: Column;
   items: Item[];
   isOverlay?: boolean;
-};
+} & DisplaySettings;
 
-export function ColumnCard({ column, items, isOverlay }: ColumnCardProps) {
+export function ColumnCard({
+  column,
+  items,
+  isOverlay,
+  ...displaySettings
+}: ColumnCardProps) {
   const itemsIds = useMemo(() => {
     return items.map((item) => item.id);
   }, [items]);
+
+  const totalDuration = items.reduce((acc, item) => {
+    return acc + (item.duration ?? 0);
+  }, 0);
 
   const {
     setNodeRef,
@@ -71,9 +81,16 @@ export function ColumnCard({ column, items, isOverlay }: ColumnCardProps) {
       })}
     >
       <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center">
-        <div className="flex flex-grow items-center space-x-2">
+        <div className="flex flex-grow items-start space-x-2">
           {column.active && <PulsingDot />}
-          <span className="mr-auto truncate"> {column.title}</span>
+          <div className="flex flex-col flex-grow">
+            <span className="mr-auto truncate"> {column.title}</span>
+            {totalDuration > 0 && (
+              <span className="text-muted-foreground text-xs">
+                {formatDurationMilliseconds(totalDuration)}
+              </span>
+            )}
+          </div>
         </div>
         <Button
           variant={"ghost"}
@@ -89,7 +106,7 @@ export function ColumnCard({ column, items, isOverlay }: ColumnCardProps) {
         <CardContent className="flex flex-grow flex-col gap-2 p-2">
           <SortableContext items={itemsIds}>
             {items.map((item) => (
-              <ItemCard key={item.id} item={item} />
+              <ItemCard key={item.id} item={item} {...displaySettings} />
             ))}
           </SortableContext>
         </CardContent>
@@ -126,7 +143,7 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
 
 function PulsingDot() {
   return (
-    <span className="relative flex h-2 w-2">
+    <span className="relative flex h-2 w-2 mt-2">
       <span
         className={`absolute h-full w-full animate-ping rounded-full border border-emerald-500 opacity-100 duration-1000`}
       />

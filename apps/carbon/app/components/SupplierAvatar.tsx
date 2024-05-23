@@ -5,11 +5,13 @@ import Avatar from "./Avatar";
 
 type SupplierAvatarProps = AvatarProps & {
   supplierId: string | null;
+  className?: string;
 };
 
 const SupplierAvatar = ({
   supplierId,
   size,
+  className,
   ...props
 }: SupplierAvatarProps) => {
   const [suppliers] = useSuppliers();
@@ -24,7 +26,7 @@ const SupplierAvatar = ({
   return (
     <HStack className="truncate">
       <Avatar size={size ?? "xs"} {...props} name={supplier?.name ?? ""} />
-      <span>{supplier.name}</span>
+      <span className={className}>{supplier.name}</span>
     </HStack>
   );
 };

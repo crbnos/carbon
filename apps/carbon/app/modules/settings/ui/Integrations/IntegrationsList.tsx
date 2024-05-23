@@ -22,7 +22,7 @@ const IntegrationsList = ({ integrations }: IntegrationsListProps) => {
           <Card
             key={integration.id}
             className="cursor-pointer"
-            onClick={() => navigate(integration.id)}
+            onClick={() => navigate(integration.id!)}
           >
             <CardHeader>
               <CardTitle className="text-base md:text-lg">
@@ -32,7 +32,7 @@ const IntegrationsList = ({ integrations }: IntegrationsListProps) => {
             </CardHeader>
 
             <CardContent>
-              <Switch checked={integration.active} />
+              <Switch checked={!!integration.active} />
             </CardContent>
           </Card>
         );

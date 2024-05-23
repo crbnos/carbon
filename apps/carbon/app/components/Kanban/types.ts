@@ -4,6 +4,7 @@ export const columnValidator = z.object({
   id: z.string(),
   title: z.string(),
   active: z.boolean().optional(),
+  type: z.string(),
 });
 
 export type Column = z.infer<typeof columnValidator>;
@@ -13,20 +14,33 @@ export interface ColumnDragData {
   column: Column;
 }
 
+export type DisplaySettings = {
+  showCustomer: boolean;
+  showDescription: boolean;
+  showDueDate: boolean;
+  showDuration: boolean;
+  showEmployee: boolean;
+  showProgress: boolean;
+  showStatus: boolean;
+};
+
 export type DraggableData = ColumnDragData | ItemDragData;
 
 const itemValidator = z.object({
   id: z.string(),
   columnId: z.string(),
+  columnType: z.string(),
   title: z.string(),
+  subtitle: z.string().optional(),
   customerId: z.string().optional(),
   employeeIds: z.array(z.string()).optional(),
-  dueDate: z.string().optional(),
-  duration: z.number().optional(),
+  description: z.string().optional(),
+  dueDate: z.string().optional(), // 2024-05-28
+  duration: z.number().optional(), // miliseconds
   deadlineType: z
     .enum(["ASAP", "HARD_DEADLINE", "SOFT_DEADLINE", "NO_DEADLINE"])
     .optional(),
-  progress: z.number().optional(),
+  progress: z.number().optional(), // miliseconds
   status: z
     .enum([
       "CANCELED",
