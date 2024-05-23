@@ -16,7 +16,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
@@ -34,13 +34,12 @@ const Kanban = ({
   ...displaySettings
 }: KanbanProps) => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const pickedUpItemColumn = useRef<string | null>(null);
-  const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
-
   const [items, setItems] = useState<Item[]>(initialItems);
 
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
 
+  const pickedUpItemColumn = useRef<string | null>(null);
+  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeItem, setActiveItem] = useState<Item | null>(null);
 
   const sensors = useSensors(
@@ -50,6 +49,10 @@ const Kanban = ({
       coordinateGetter,
     })
   );
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   function getDraggingItemData(itemId: UniqueIdentifier, columnId: string) {
     const itemsInColumn = items.filter((item) => item.columnId === columnId);

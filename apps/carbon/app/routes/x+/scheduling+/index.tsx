@@ -8,6 +8,7 @@ import {
   useLocalStorage,
 } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
+import { useRevalidator } from "@remix-run/react";
 import { HiOutlineAdjustmentsHorizontal } from "react-icons/hi2";
 import { LuListFilter, LuRefreshCcw } from "react-icons/lu";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
@@ -19,13 +20,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return typedjson({
     columns: [
       {
-        id: "1",
+        id: getRandomBetweenRange(1, 2),
         type: "assembly",
         title: "Assembly Station 1",
         active: true,
       },
       {
-        id: "2",
+        id: getRandomBetweenRange(1, 2),
         type: "assembly",
         title: "Assembly Station 2",
       },
@@ -99,29 +100,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         status: "READY",
       },
       {
-        id: "item4",
-        columnId: "2",
-        columnType: "assembly",
-        title: "1492",
-        subtitle: "F011432",
-        description: "Assemble",
-        duration: 4 * 60 * 60 * 1000,
-        deadlineType: "NO_DEADLINE",
-        status: "WAITING",
-      },
-      {
-        id: "item5",
-        columnId: "2",
-        columnType: "assembly",
-        title: "1109",
-        subtitle: "F011432",
-        description: "Assemble",
-        dueDate: "2024-05-20",
-        duration: 4 * 60 * 60 * 1000,
-        deadlineType: "SOFT_DEADLINE",
-        status: "WAITING",
-      },
-      {
         id: "item6",
         columnId: "1",
         columnType: "assembly",
@@ -135,8 +113,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
         progress: 35 * 60 * 1000,
       },
       {
+        id: "item4",
+        columnId: getRandomBetweenRange(1, 2),
+        columnType: "assembly",
+        title: "1492",
+        subtitle: "F011432",
+        description: "Assemble",
+        duration: 4 * 60 * 60 * 1000,
+        deadlineType: "NO_DEADLINE",
+        status: "WAITING",
+      },
+      {
+        id: "item5",
+        columnId: getRandomBetweenRange(1, 2),
+        columnType: "assembly",
+        title: "1109",
+        subtitle: "F011432",
+        description: "Assemble",
+        dueDate: "2024-05-20",
+        duration: 4 * 60 * 60 * 1000,
+        deadlineType: "SOFT_DEADLINE",
+        status: "WAITING",
+      },
+
+      {
         id: "item7",
-        columnId: "1",
+        columnId: getRandomBetweenRange(1, 2),
         columnType: "assembly",
         title: "1014",
         subtitle: "F011432",
@@ -149,7 +151,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
       {
         id: "item8",
-        columnId: "1",
+        columnId: getRandomBetweenRange(1, 2),
         columnType: "assembly",
         title: "1032",
         subtitle: "F011432",
@@ -162,7 +164,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
       {
         id: "item9",
-        columnId: "1",
+        columnId: getRandomBetweenRange(1, 2),
         columnType: "assembly",
         title: "1010",
         subtitle: "F011432",
@@ -174,7 +176,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
       {
         id: "item10",
-        columnId: "1",
+        columnId: getRandomBetweenRange(1, 2),
         columnType: "assembly",
         title: "1403",
         subtitle: "F011432",
@@ -192,6 +194,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function KanbanView() {
   const { columns, items } = useTypedLoaderData<typeof loader>();
   const [kanbanSettings, setKanbanSettings] = useKanbanSettings();
+  const revalidator = useRevalidator();
 
   return (
     <div className="flex flex-col h-full max-h-full  overflow-auto relative">
@@ -274,7 +277,11 @@ export default function KanbanView() {
               </div>
             </PopoverContent>
           </Popover>
-          <Button leftIcon={<LuRefreshCcw />} variant="secondary">
+          <Button
+            leftIcon={<LuRefreshCcw />}
+            variant="secondary"
+            onClick={revalidator.revalidate}
+          >
             Reschedule
           </Button>
         </HStack>
@@ -312,4 +319,8 @@ function useKanbanSettings() {
   };
 
   return [kanbanSettings, updateKanbanSettings] as const;
+}
+
+function getRandomBetweenRange(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1) + min).toString();
 }

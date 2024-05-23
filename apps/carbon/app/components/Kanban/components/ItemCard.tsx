@@ -29,7 +29,6 @@ import {
   LuXCircle,
 } from "react-icons/lu";
 
-import { motion } from "framer-motion";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
@@ -69,8 +68,6 @@ const cardVariants = cva(
     },
   }
 );
-
-const MotionCard = motion(Card);
 
 const cardHeaderVariants = cva("border-b", {
   variants: {
@@ -129,7 +126,7 @@ export function ItemCard({
       : false;
 
   return (
-    <MotionCard
+    <Card
       ref={setNodeRef}
       style={style}
       className={cn(
@@ -247,7 +244,7 @@ export function ItemCard({
           </HStack>
         )}
       </CardContent>
-    </MotionCard>
+    </Card>
   );
 }
 
