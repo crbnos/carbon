@@ -7,7 +7,7 @@ import { flash } from "~/services/session.server";
 import { error } from "~/utils/result";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     role: "employee",
   });
 
@@ -15,7 +15,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const type = searchParams.get("type");
 
-  const query = client.from("groups").select("*");
+  const query = client.from("groups").select("*").eq("companyId", companyId);
 
   if (type === "employee") query.eq("isEmployeeTypeGroup", true);
   if (type === "customer") query.eq("isCustomerOrgGroup", true);
