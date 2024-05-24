@@ -46,8 +46,8 @@ const CustomFieldCategoryDetail = ({
   onClose,
 }: CustomFieldCategoryDetailProps) => {
   const sortOrderFetcher = useFetcher();
-  const { tableId } = useParams();
-  if (!tableId) throw new Error("tableId is not found");
+  const { table } = useParams();
+  if (!table) throw new Error("table is not found");
   const [params] = useUrlParams();
 
   const getAttributeDataType = useCallback(
@@ -215,7 +215,7 @@ const CustomFieldCategoryDetail = ({
       {selectedCustomField && selectedCustomField.id && (
         <ConfirmDelete
           isOpen={deleteModal.isOpen}
-          action={path.to.deleteCustomField(tableId, selectedCustomField.id)}
+          action={path.to.deleteCustomField(table, selectedCustomField.id)}
           name={selectedCustomField?.name ?? ""}
           text={`Are you sure you want to delete the ${selectedCustomField?.name} field?`}
           onSubmit={onDeleteCancel}

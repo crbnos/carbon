@@ -33,8 +33,8 @@ const CustomFieldForm = ({
   onClose,
 }: CustomFieldFormProps) => {
   const permissions = usePermissions();
-  const { tableId } = useParams();
-  if (!tableId) throw new Error("tableId is not found");
+  const { table } = useParams();
+  if (!table) throw new Error("table is not found");
 
   const options =
     dataTypes?.map((dt) => ({
@@ -75,8 +75,8 @@ const CustomFieldForm = ({
           method="post"
           action={
             isEditing
-              ? path.to.customField(tableId, initialValues.id!)
-              : path.to.newCustomField(tableId)
+              ? path.to.customField(table, initialValues.table!)
+              : path.to.newCustomField(table)
           }
           defaultValues={initialValues}
           className="flex flex-col h-full"
@@ -88,7 +88,7 @@ const CustomFieldForm = ({
             <Hidden name="id" />
             <VStack spacing={4}>
               <Input name="name" label="Name" />
-              <Hidden name="customFieldTableId" />
+              <Hidden name="table" />
 
               <Select
                 name="dataTypeId"

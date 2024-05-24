@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     integration: validIntegration.success
       ? {
-          active: integration.data?.active,
+          active: integration.data?.active ?? false,
           ...validIntegration.data,
         }
       : defaultValue,

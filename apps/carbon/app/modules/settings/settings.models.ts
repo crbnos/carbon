@@ -43,7 +43,7 @@ export const customFieldValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     name: z.string().min(1, { message: "Name is required" }),
-    customFieldTableId: z.string().min(20),
+    table: z.string().min(1, { message: "Table is required" }),
     dataTypeId: zfd.numeric(
       z.number().min(1, { message: "Data type is required" })
     ),

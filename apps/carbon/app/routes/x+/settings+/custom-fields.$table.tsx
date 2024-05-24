@@ -12,15 +12,16 @@ import { path } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "settings",
     role: "employee",
   });
 
-  const { tableId } = params;
-  if (!tableId) throw notFound("Invalid tableId");
+  const { table } = params;
+  if (!table) throw notFound("Invalid table");
 
-  const customFields = await getCustomFields(client, tableId);
+  const customFields = await getCustomFields(client, table, companyId);
+
   if (customFields.error) {
     throw redirect(
       path.to.customFields,

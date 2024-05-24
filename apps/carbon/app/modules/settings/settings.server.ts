@@ -47,7 +47,7 @@ export async function upsertCustomField(
       const sortOrders = await client
         .from("customField")
         .select("sortOrder")
-        .eq("customFieldTableId", customField.customFieldTableId);
+        .eq("table", customField.table);
 
       if (sortOrders.error) return sortOrders;
       const maxSortOrder = sortOrders.data.reduce((max, item) => {

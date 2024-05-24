@@ -29,14 +29,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     role: "employee",
   });
 
-  const { tableId, id } = params;
-  if (!tableId) throw notFound("Invalid tableId");
+  const { table, id } = params;
+  if (!table) throw notFound("Invalid table");
   if (!id) throw new Error("id is not found");
 
   const customField = await getCustomField(client, id);
   if (customField.error) {
     throw redirect(
-      path.to.customFieldList(tableId),
+      path.to.customFieldList(table),
       await flash(
         request,
         error(customField.error, "Failed to fetch custom fields")
@@ -53,8 +53,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "settings",
   });
 
-  const { tableId } = params;
-  if (!tableId) throw new Error("tableId is not found");
+  const { table } = params;
+  if (!table) throw new Error("table is not found");
 
   const validation = await validator(customFieldValidator).validate(
     await request.formData()
@@ -79,13 +79,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(`${path.to.customFieldList(tableId)}?${getParams(request)}`);
+  throw redirect(`${path.to.customFieldList(table)}?${getParams(request)}`);
 }
 
 export default function UpdateCustomFieldRoute() {
   const { customField } = useLoaderData<typeof loader>();
-  const { tableId } = useParams();
-  if (!tableId) throw new Error("tableId is not found");
+  const { table } = useParams();
+  if (!table) throw new Error("table is not found");
 
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
@@ -100,7 +100,7 @@ export default function UpdateCustomFieldRoute() {
         name: customField.name,
         // @ts-expect-error
         dataTypeId: (customField.dataTypeId || DataType.Text).toString(),
-        customFieldTableId: tableId,
+        table: table,
         listOptions: customField.listOptions ?? [],
       }}
       dataTypes={routeData?.dataTypes ?? []}

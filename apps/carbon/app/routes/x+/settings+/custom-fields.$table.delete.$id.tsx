@@ -11,8 +11,8 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     delete: "settings",
   });
 
-  const { tableId, id } = params;
-  if (!tableId) throw new Error("tableId is not found");
+  const { table, id } = params;
+  if (!table) throw new Error("table is not found");
   if (!id) throw new Error("id is not found");
 
   const deleteField = await deleteCustomField(client, id, companyId);
@@ -27,7 +27,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   throw redirect(
-    path.to.customFieldList(tableId),
+    path.to.customFieldList(table),
     await flash(request, success("Successfully deleted custom field"))
   );
 }

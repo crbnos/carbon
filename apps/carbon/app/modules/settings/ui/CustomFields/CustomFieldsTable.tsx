@@ -25,7 +25,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         accessorKey: "name",
         header: "Table",
         cell: ({ row }) => (
-          <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
+          <Hyperlink to={row.original.table!}>{row.original.name}</Hyperlink>
         ),
       },
       {
@@ -48,7 +48,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
           <Button variant="secondary" asChild>
             <Link
               to={`${path.to.customFieldList(
-                row.original.id!
+                row.original.table!
               )}?${params?.toString()}`}
             >
               {Array.isArray(row.original.fields)
@@ -69,7 +69,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
           <MenuItem
             onClick={() => {
               navigate(
-                `${path.to.newCustomField(row.id!)}?${params?.toString()}`
+                `${path.to.newCustomField(row.table!)}?${params?.toString()}`
               );
             }}
           >
@@ -79,7 +79,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
           <MenuItem
             onClick={() => {
               navigate(
-                `${path.to.customFieldList(row.id!)}?${params?.toString()}`
+                `${path.to.customFieldList(row.table!)}?${params?.toString()}`
               );
             }}
           >

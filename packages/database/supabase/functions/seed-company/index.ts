@@ -7,7 +7,6 @@ import {
   accountDefaults,
   accounts,
   currencies,
-  customFields,
   customerStatuses,
   fiscalYearSettings,
   groupCompanyTemplate,
@@ -244,7 +243,7 @@ serve(async (req: Request) => {
 
       const currentPermissions = (user.data?.permissions ?? {}) as Record<
         string,
-        number[]
+        string[]
       >;
       const newPermissions = { ...currentPermissions };
       modules.forEach(({ name }) => {

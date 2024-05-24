@@ -88,20 +88,30 @@ export async function getCustomField(
 
 export async function getCustomFields(
   client: SupabaseClient<Database>,
-  id: string
+  table: string,
+  companyId: string
 ) {
-  return client.from("customFieldTables").select("*").eq("id", id).single();
+  return client
+    .from("customFieldTables")
+    .select("*")
+    .eq("table", table)
+    .eq("companyId", companyId)
+    .single();
 }
 
 export async function getCustomFieldsTables(
   client: SupabaseClient<Database>,
+  companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
   }
 ) {
-  let query = client.from("customFieldTables").select("*", {
-    count: "exact",
-  });
+  let query = client
+    .from("customFieldTables")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
 
   if (args.search) {
     query = query.ilike("name", `%${args.search}%`);

@@ -7,7 +7,7 @@ type ExchangeClientOptions = {
   baseCurrency: CurrencyCode;
 };
 
-type Rates = { [key in CurrencyCode]?: number };
+export type Rates = { [key in CurrencyCode]?: number };
 
 type ExchangeRatesSuccessResponse = {
   success: boolean;

@@ -1,18 +1,14 @@
 
 CREATE TABLE "customFieldTable" (
-  "id" TEXT NOT NULL DEFAULT xid(),
-  "module" module NOT NULL,
   "table" TEXT NOT NULL,
+  "module" module NOT NULL,
   "name" TEXT NOT NULL,
-  "companyId" TEXT NOT NULL,
 
-  CONSTRAINT "customFieldTable_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "customFieldTable_module_table_name_key" UNIQUE ("module", "table", "name", "companyId"),
-  CONSTRAINT "customFieldTable_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT "customFieldTable_pkey" PRIMARY KEY ("table"),
+  CONSTRAINT "customFieldTable_name_key" UNIQUE ("name")
 );
 
 CREATE INDEX "customFieldTable_module_idx" ON "customFieldTable" ("module");
-CREATE INDEX "customFieldTable_table_idx" ON "customFieldTable" ("table");
 
 ALTER TABLE "customFieldTable" ENABLE ROW LEVEL SECURITY;
 
@@ -26,7 +22,7 @@ CREATE TABLE "customField" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
   "sortOrder" INTEGER NOT NULL DEFAULT 1,
-  "customFieldTableId" TEXT NOT NULL,
+  "table" TEXT NOT NULL,
   "dataTypeId" INTEGER NOT NULL,
   "listOptions" TEXT ARRAY,
   "active" BOOLEAN DEFAULT TRUE,
@@ -37,8 +33,8 @@ CREATE TABLE "customField" (
   "updatedBy" TEXT,
 
   CONSTRAINT "customField_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "customField_customFieldTableId_name_key" UNIQUE ("customFieldTableId", "name", "companyId"),
-  CONSTRAINT "customField_customFieldTableId_fkey" FOREIGN KEY ("customFieldTableId") REFERENCES "customFieldTable"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "customField_customFieldTable_name_key" UNIQUE ("table", "name", "companyId"),
+  CONSTRAINT "customField_customFieldTable_fkey" FOREIGN KEY ("table") REFERENCES "customFieldTable"("table") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "customField_dataTypeId_fkey" FOREIGN KEY ("dataTypeId") REFERENCES "attributeDataType"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "customField_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "customField_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
@@ -76,28 +72,26 @@ CREATE POLICY "Employees with settings_delete can delete custom fields" ON "cust
 
 CREATE OR REPLACE VIEW "customFieldTables" WITH(SECURITY_INVOKER=true) AS
 SELECT 
-  cft.id,
-  cft.module,
-  cft.table,
-  cft.name,
-  cf."companyId",
-  cf.fields
-FROM "customFieldTable" cft
-LEFT JOIN (
-  SELECT 
-    cf."customFieldTableId",
-    cf."companyId",
-    COALESCE(json_agg(
-      json_build_object(
-        'id', id, 
-        'name', name,
-        'sortOrder', "sortOrder",
-        'dataTypeId', "dataTypeId",
-        'listOptions', "listOptions",
-        'active', active
-      )
-    ), '[]') AS fields 
-  FROM "customField" cf
-  GROUP BY cf."customFieldTableId", cf."companyId"
-) cf
-ON cf."customFieldTableId" = cft.id;
+  cft.*, 
+  c.id AS "companyId",
+  COALESCE(cf.fields, '[]') as fields
+FROM "customFieldTable" cft 
+  CROSS JOIN "company" c 
+  LEFT JOIN (
+    SELECT 
+      cf."table",
+      cf."companyId",
+      COALESCE(json_agg(
+        json_build_object(
+          'id', id, 
+          'name', name,
+          'sortOrder', "sortOrder",
+          'dataTypeId', "dataTypeId",
+          'listOptions', "listOptions",
+          'active', active
+        )
+      ), '[]') AS fields 
+    FROM "customField" cf
+    GROUP BY cf."table", cf."companyId"
+  ) cf
+    ON cf.table = cft.table AND cf."companyId" = c.id;

@@ -87,6 +87,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "abilities_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "abilities_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -238,6 +245,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "account_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "account_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -346,6 +360,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountCategory_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "accountCategory_createdBy_fkey"
@@ -731,6 +752,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_fkey"
+            columns: ["companyId"]
+            isOneToOne: true
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "accountDefault_interestAccount_fkey"
@@ -1224,6 +1252,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "accountingPeriod_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "accountingPeriod_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -1411,6 +1446,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "address_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
@@ -1617,6 +1659,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contact_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "contact_countryCode_fkey"
             columns: ["countryCode"]
             isOneToOne: false
@@ -1673,6 +1722,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "contractor_createdBy_fkey"
@@ -1882,6 +1938,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costLedger_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
         ]
       }
@@ -2145,6 +2208,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "currency_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "currency_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -2295,6 +2365,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "customer_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -2396,6 +2473,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "customerAccount_customerId_fkey"
@@ -2639,6 +2723,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customerPayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "customerPayment_currencyCode_fkey"
             columns: ["currencyCode", "companyId"]
             isOneToOne: false
@@ -2788,6 +2879,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customerShipping_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "customerShipping_customerId_fkey"
             columns: ["customerId"]
             isOneToOne: true
@@ -2934,6 +3032,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customerStatus_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "customerStatus_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -3041,6 +3146,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customerType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "customerType_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -3104,12 +3216,12 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          customFieldTableId: string
           dataTypeId: number
           id: string
           listOptions: string[] | null
           name: string
           sortOrder: number
+          table: string
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -3118,12 +3230,12 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          customFieldTableId: string
           dataTypeId: number
           id?: string
           listOptions?: string[] | null
           name: string
           sortOrder?: number
+          table: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -3132,12 +3244,12 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          customFieldTableId?: string
           dataTypeId?: number
           id?: string
           listOptions?: string[] | null
           name?: string
           sortOrder?: number
+          table?: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -3155,6 +3267,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customField_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "customField_createdBy_fkey"
@@ -3185,18 +3304,18 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "customField_customFieldTableId_fkey"
-            columns: ["customFieldTableId"]
+            foreignKeyName: "customField_customFieldTable_fkey"
+            columns: ["table"]
             isOneToOne: false
             referencedRelation: "customFieldTable"
-            referencedColumns: ["id"]
+            referencedColumns: ["table"]
           },
           {
-            foreignKeyName: "customField_customFieldTableId_fkey"
-            columns: ["customFieldTableId"]
+            foreignKeyName: "customField_customFieldTable_fkey"
+            columns: ["table"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
-            referencedColumns: ["id"]
+            referencedColumns: ["table"]
           },
           {
             foreignKeyName: "customField_dataTypeId_fkey"
@@ -3237,42 +3356,21 @@ export type Database = {
       }
       customFieldTable: {
         Row: {
-          companyId: string
-          id: string
           module: Database["public"]["Enums"]["module"]
           name: string
           table: string
         }
         Insert: {
-          companyId: string
-          id?: string
           module: Database["public"]["Enums"]["module"]
           name: string
           table: string
         }
         Update: {
-          companyId?: string
-          id?: string
           module?: Database["public"]["Enums"]["module"]
           name?: string
           table?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "customFieldTable_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customFieldTable_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       department: {
         Row: {
@@ -3322,6 +3420,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "department_parentDepartmentId_fkey"
@@ -3673,6 +3778,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employee_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "employee_employeeTypeId_fkey"
             columns: ["employeeTypeId"]
             isOneToOne: false
@@ -3804,6 +3916,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeeJob_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "employeeJob_departmentId_fkey"
@@ -4048,6 +4167,13 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "employeeType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       employeeTypePermission: {
@@ -4160,6 +4286,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "equipment_createdBy_fkey"
@@ -4320,6 +4453,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "equipmentType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "equipmentType_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -4419,6 +4559,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fiscalYearSettings_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: true
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "fiscalYearSettings_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -4503,6 +4650,13 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "group_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       holiday: {
@@ -4556,6 +4710,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "holiday_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "holiday_createdBy_fkey"
@@ -4736,6 +4897,13 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "journal_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       journalLine: {
@@ -4825,6 +4993,13 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "journalLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       location: {
@@ -4899,6 +5074,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
         ]
       }
@@ -5014,6 +5196,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "notes_createdBy_fkey"
@@ -5187,6 +5376,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "part_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "part_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -5312,6 +5508,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partCost_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "partCost_partId_fkey"
@@ -5445,6 +5648,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "partGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "partGroup_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -5550,6 +5760,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partInventory_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "partInventory_createdBy_fkey"
@@ -5788,6 +6005,13 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "partLeger_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       partner: {
@@ -5848,6 +6072,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "partner_createdBy_fkey"
@@ -5998,6 +6229,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partPlanning_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "partPlanning_createdBy_fkey"
@@ -6181,6 +6419,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partReplenishment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "partReplenishment_createdBy_fkey"
@@ -6371,6 +6616,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "partSupplier_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "partSupplier_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -6546,6 +6798,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "partUnitSalePrice_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "partUnitSalePrice_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -6698,6 +6957,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paymentTerm_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "paymentTerm_createdBy_fkey"
@@ -7139,6 +7405,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "postingGroupPurchasing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "postingGroupPurchasing_partGroupId_fkey"
             columns: ["partGroupId"]
             isOneToOne: false
@@ -7320,6 +7593,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postingGroupSales_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "postingGroupSales_customerTypeId_fkey"
@@ -7579,6 +7859,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "purchaseInvoice_createdBy_fkey"
@@ -7849,6 +8136,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLines_createdBy_fkey"
@@ -8344,6 +8638,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrder_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "purchaseOrder_createdBy_fkey"
@@ -9275,6 +9576,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchasePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "purchasePayment_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -9485,6 +9793,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "quote_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -9668,6 +9983,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteAssembly_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "quoteAssembly_createdBy_fkey"
@@ -9928,6 +10250,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "quoteLine_createdBy_fkey"
@@ -10244,6 +10573,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quoteMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "quoteMaterial_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -10449,6 +10785,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "quoteOperation_createdBy_fkey"
@@ -10673,6 +11016,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "receipt_createdBy_fkey"
@@ -11081,6 +11431,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "requestForQuote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "requestForQuote_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -11290,6 +11647,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requestForQuoteLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "requestForQuoteLine_createdBy_fkey"
@@ -11861,6 +12225,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "salesOrder_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "salesOrder_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -12319,6 +12690,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "salesOrderPayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "salesOrderPayment_currencyCode_fkey"
             columns: ["currencyCode", "companyId"]
             isOneToOne: false
@@ -12489,6 +12867,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderShipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "salesOrderShipment_customerId_fkey"
@@ -12784,6 +13169,13 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "search_companyid_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       sequence: {
@@ -12840,6 +13232,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sequence_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "sequence_updatedBy_fkey"
@@ -13004,6 +13403,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "service_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "service_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -13122,6 +13528,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceSupplier_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "serviceSupplier_createdBy_fkey"
@@ -13281,6 +13694,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shelf_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "shelf_createdBy_fkey"
@@ -13455,6 +13875,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shifts_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "shifts_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -13613,6 +14040,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shippingMethod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "shippingMethod_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -13715,6 +14149,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shippingTerm_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "shippingTerm_createdBy_fkey"
@@ -13895,6 +14336,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "supplier_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "supplier_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -13996,6 +14444,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "supplierAccount_id_fkey"
@@ -14226,6 +14681,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "supplierLedger_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "supplierLedger_supplierId_fkey"
             columns: ["supplierId"]
             isOneToOne: false
@@ -14377,6 +14839,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierPayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "supplierPayment_currencyCode_fkey"
@@ -14559,6 +15028,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "supplierShipping_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "supplierShipping_shippingMethodId_fkey"
             columns: ["shippingMethodId"]
             isOneToOne: false
@@ -14733,6 +15209,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "supplierStatus_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "supplierStatus_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -14838,6 +15321,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "supplierType_createdBy_fkey"
@@ -14948,6 +15438,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unitOfMeasure_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "unitOfMeasure_createdBy_fkey"
@@ -15218,6 +15715,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "userAttributeCategory_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "userAttributeCategory_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -15469,6 +15973,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "userToCompany_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "userToCompany_userId_fkey"
             columns: ["userId"]
             isOneToOne: false
@@ -15561,6 +16072,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "warehouse_createdBy_fkey"
@@ -15714,6 +16232,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCell_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "workCell_createdBy_fkey"
@@ -15883,6 +16408,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "workCellType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "workCellType_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -16003,6 +16535,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountCategory_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "accountCategory_createdBy_fkey"
@@ -16162,6 +16701,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "account_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "account_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -16284,6 +16830,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "userToCompany_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "userToCompany_userId_fkey"
             columns: ["userId"]
             isOneToOne: false
@@ -16341,6 +16894,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "contractor_id_fkey"
@@ -16443,6 +17003,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "customer_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -16518,27 +17085,11 @@ export type Database = {
         Row: {
           companyId: string | null
           fields: Json | null
-          id: string | null
           module: Database["public"]["Enums"]["module"] | null
           name: string | null
           table: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "customField_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customField_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       documentExtensions: {
         Row: {
@@ -16694,6 +17245,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employee_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "employee_employeeTypeId_fkey"
             columns: ["employeeTypeId"]
             isOneToOne: false
@@ -16729,6 +17287,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "employeeJob_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       groupMembers: {
@@ -16761,6 +17326,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "membership_groupId_fkey"
@@ -16857,6 +17429,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "holiday_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       modules: {
@@ -16905,6 +17484,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "partner_createdBy_fkey"
@@ -17003,6 +17589,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
         ]
       }
@@ -17104,6 +17697,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "part_createdBy_fkey"
@@ -17248,6 +17848,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "purchaseInvoice_createdBy_fkey"
@@ -17764,6 +18371,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchaseOrder_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "purchaseOrder_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -17891,6 +18505,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "supplier_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
         ]
       }
       quoteCustomerDetails: {
@@ -17952,6 +18573,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "quoteLine_createdBy_fkey"
@@ -18128,6 +18756,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "quote_createdBy_fkey"
@@ -18318,6 +18953,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "receipt_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "receipt_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -18505,6 +19147,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "requestForQuote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "requestForQuote_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -18610,6 +19259,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
         ]
       }
@@ -18917,6 +19573,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "salesOrder_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "salesOrder_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -19132,6 +19795,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "service_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "service_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -19233,6 +19903,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "shifts_createdBy_fkey"
@@ -19413,6 +20090,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "supplier_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
             foreignKeyName: "supplier_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
@@ -19532,6 +20216,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
           },
         ]
       }

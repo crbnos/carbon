@@ -19,8 +19,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "settings",
   });
 
-  const { tableId } = params;
-  if (!tableId) throw new Error("tableId is not found");
+  const { table } = params;
+  if (!table) throw new Error("table is not found");
 
   const validation = await validator(customFieldValidator).validate(
     await request.formData()
@@ -44,12 +44,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(`${path.to.customFieldList(tableId)}?${getParams(request)}`);
+  throw redirect(`${path.to.customFieldList(table)}?${getParams(request)}`);
 }
 
 export default function NewCustomFieldRoute() {
-  const { tableId } = useParams();
-  if (!tableId) throw new Error("tableId is not found");
+  const { table } = useParams();
+  if (!table) throw new Error("table is not found");
 
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
@@ -63,7 +63,7 @@ export default function NewCustomFieldRoute() {
         name: "",
         // @ts-ignore
         dataTypeId: DataType.Text.toString(),
-        customFieldTableId: tableId,
+        table: table,
       }}
       dataTypes={routeData?.dataTypes ?? []}
       onClose={onClose}
