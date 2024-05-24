@@ -8,9 +8,10 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const loadBalancer = new LoadBalancer(workCenters);
+
   try {
     // const client = getSupabaseServiceRole(req.headers.get("Authorization"));
-    const workCenterManager = new LoadBalancer(workCenters);
 
     const operationsByType = jobs.reduce((acc, job) => {
       job.operations.forEach((operation) => {
@@ -37,19 +38,13 @@ serve(async (req: Request) => {
     const operationsWithWorkCenter: OperationWithWorkCenter[] = Object.values(
       sortedOperationsByType
     ).flatMap((operations) =>
-      operations.map((operation) => {
+      operations.map((operation, index) => {
         const { workCenterType } = operation;
 
-        const workCenter =
-          workCenterManager.getWorkCenterWithLeastWork(workCenterType);
+        const workCenter = loadBalancer.get(workCenterType);
+        loadBalancer.add(workCenterType, workCenter.id, operation.duration);
 
-        workCenterManager.addWorkToWorkCenter(
-          workCenterType,
-          workCenter.id,
-          operation.duration
-        );
-
-        return { ...operation, workCenterId: workCenter.id };
+        return { ...operation, workCenterId: workCenter.id, order: index };
       })
     );
 
@@ -95,6 +90,7 @@ type Operation = {
 
 type OperationWithWorkCenter = Operation & {
   workCenterId: string;
+  order: number;
 };
 
 function sortOperations(operations: Operation[]) {
@@ -165,18 +161,14 @@ class LoadBalancer {
     }, {});
   }
 
-  public getWorkCenterWithLeastWork(workCenterType: string) {
+  public get(workCenterType: string) {
     const workCenters = this.workCentersByType[workCenterType];
     return workCenters.reduce((minWorkCenter, workCenter) =>
       workCenter.duration < minWorkCenter.duration ? workCenter : minWorkCenter
     );
   }
 
-  public addWorkToWorkCenter(
-    workCenterType: string,
-    workCenterId: string,
-    duration: number
-  ) {
+  public add(workCenterType: string, workCenterId: string, duration: number) {
     this.workCentersByType[workCenterType] = this.workCentersByType[
       workCenterType
     ].map((workCenter) => {
