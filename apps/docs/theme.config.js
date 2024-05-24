@@ -27,7 +27,7 @@ export default {
   },
   darkMode: true,
   footer: {
-    text: `Carbon ERP ${new Date().getFullYear()}. All rights reserved.`,
+    text: `CarbonOS ${new Date().getFullYear()}. All rights reserved.`,
   },
   editLink: {
     text: `View this page on GitHub`,
@@ -52,7 +52,7 @@ export default {
   ),
   useNextSeoProps() {
     return {
-      titleTemplate: "%s – Carbon ERP",
+      titleTemplate: "%s – CarbonOS",
     };
   },
 };

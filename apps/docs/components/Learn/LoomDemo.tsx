@@ -10,7 +10,7 @@ const LoomDemo = () => {
       }}
     >
       <iframe
-        title="Carbon ERP Walkthrough"
+        title="CarbonOS Walkthrough"
         src="https://www.loom.com/share/7eb03a5e4d4d4836b34f173805fb7403?sid=7ed308d0-8d59-4230-a3f1-137aae3c24da"
         frameBorder={0}
         allowFullScreen

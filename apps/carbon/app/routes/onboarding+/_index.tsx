@@ -37,14 +37,14 @@ export default function GetStarted() {
           size="display"
           className="m-0"
         >
-          Welcome to Carbon ERP
+          Welcome to CarbonOS
         </Heading>
         <motion.p
           {...fade}
           transition={{ duration: 1.4, ease: "easeInOut", delay: 1.9 }}
           className="text-muted-foreground text-sm pb-4"
         >
-          Carbon is an open-source ERP for manufacturing
+          CarbonOS is the operating system for manufacturing
         </motion.p>
 
         <Button

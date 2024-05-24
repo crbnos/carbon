@@ -41,7 +41,7 @@ export function links() {
 export const meta: MetaFunction = () => {
   return [
     {
-      title: "Carbon ERP",
+      title: "CarbonOS",
     },
   ];
 };
@@ -94,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 function Document({
   children,
-  title = "Carbon ERP",
+  title = "CarbonOS",
   mode = "dark",
 }: {
   children: React.ReactNode;

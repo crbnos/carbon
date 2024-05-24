@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Carbon ERP | Story",
+  title: "CarbonOS | Story",
 };
 
 export default function Page() {
@@ -43,7 +43,7 @@ export default function Page() {
         Extensible
       </h2>
       <p>
-        The mission of Carbon ERP is to become the platform upon which connected
+        The mission of CarbonOS is to become the platform upon which connected
         manufacturing ecosystems are built. The goal is to provide a solid
         foundation for businesses to build upon, and to provide a platform that
         is flexible enough to adapt to the ever-changing needs of the

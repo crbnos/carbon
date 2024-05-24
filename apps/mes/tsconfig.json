@@ -1,0 +1,13 @@
+{
+  "exclude": ["node_modules"],
+  "extends": "@carbon/tsconfig/vite.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

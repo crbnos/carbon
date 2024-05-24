@@ -2,7 +2,6 @@ import React from "react";
 import { BsLightningCharge } from "react-icons/bs";
 import { GiSpeedometer } from "react-icons/gi";
 import { GoSync } from "react-icons/go";
-import { HiCode, HiFingerPrint } from "react-icons/hi";
 import { TbBuildingFactory2 } from "react-icons/tb";
 import { useGlowPointer } from "../../../hooks/useGlowPointer";
 
@@ -19,12 +18,7 @@ const features = [
     description:
       "Built on best open-source technologies for incredible performance and security.",
   },
-  {
-    name: "Open Core",
-    icon: HiCode,
-    description:
-      "Unlike other open-source ERPs, you can use Carbon to build your own proprietary systems.",
-  },
+
   {
     name: "Serverless Architecture",
     icon: GoSync,
@@ -40,12 +34,6 @@ const features = [
     name: "Manufacturing",
     icon: TbBuildingFactory2,
     description: "Carbon has first-class support for American manufacturing.",
-  },
-  {
-    name: "Single Tenant",
-    icon: HiFingerPrint,
-    description:
-      "You're not sharing databases with other companies. Your data is yours.",
   },
 ] as const;
 

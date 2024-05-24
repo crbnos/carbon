@@ -4,9 +4,9 @@
 </a>
 </p>
 
-# Carbon ERP
+# CarbonOS
 
-Carbon is a high performance, open-source, single tenant (incomplete) ERP written in Typescript. It allows customers, suppliers, and employees to share a common platform that's easy to integrate with.
+Carbon is the operating system for manufacturing written in Typescript. It allows customers, suppliers, and employees to share a common platform that's easy to integrate with.
 
 Technical highlights/roadmap:
 
@@ -62,6 +62,7 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | ------------ | --------------- | --------------------- |
 | `carbon`     | ERP Application | `npm run dev`         |
 | `docs`       | Documentation   | `npm run dev:docs`    |
+| `mes`        | MES             | `npm run dev:mes`     |
 | `website`    | Website         | `npm run dev:website` |
 
 ### `/packages`
@@ -86,7 +87,8 @@ After installation you should be able to access the following apps/containers lo
 
 | Application     | URL                                                                                                                |
 | --------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Carbon ERP      | [http://localhost:3000](http://localhost:3000)                                                                     |
+| ERP             | [http://localhost:3000](http://localhost:3000)                                                                     |
+| MES             | [http://localhost:4000](http://localhost:4000)                                                                     |
 | Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
 | Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |
 | Inbucket        | [http://localhost:54324/monitor](http://localhost:54324/monitor)                                                   |
