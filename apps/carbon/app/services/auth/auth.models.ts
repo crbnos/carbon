@@ -22,4 +22,5 @@ export const resetPasswordValidator = z.object({
 
 export const callbackValidator = z.object({
   refreshToken: z.string(),
+  userId: z.string(),
 });
