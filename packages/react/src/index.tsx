@@ -92,7 +92,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./Dropdown";
-import { Editor, useEditor } from "./Editor";
 import { Enumerable } from "./Enumerable";
 import { File } from "./File";
 import {
@@ -105,6 +104,7 @@ import { HStack } from "./HStack";
 import { HTML } from "./HTML";
 import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
+import { RichText, useRichText } from "./RichText";
 
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
@@ -309,7 +309,6 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  Editor,
   Enumerable,
   File,
   FormControl,
@@ -394,6 +393,7 @@ export {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
+  RichText,
   ScrollArea,
   ScrollBar,
   Select,
@@ -437,9 +437,9 @@ export {
   multiSelectTriggerVariants,
   reactNodeToString,
   toast,
-  useEditor,
   useModalCardType,
   useModalDrawerType,
+  useRichText,
 };
 export type {
   AvatarProps,

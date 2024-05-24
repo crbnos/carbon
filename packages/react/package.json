@@ -45,6 +45,7 @@
     "cmdk": "^0.2.0",
     "dompurify": "3.0.5",
     "is-hotkey": "^0.2.0",
+    "novel": "^0.4.2",
     "react-aria-components": "1.0.1",
     "react-colorful": "^5.6.1",
     "react-resizable-panels": "^2.0.9",

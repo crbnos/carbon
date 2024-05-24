@@ -1,15 +1,15 @@
 import { Color } from "@tiptap/extension-color";
 import ListItem from "@tiptap/extension-list-item";
 import TextStyle from "@tiptap/extension-text-style";
-import { EditorContent, useEditor as useEditorInternal } from "@tiptap/react";
+import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { ComponentProps } from "react";
 import { VStack } from "../VStack";
 import { cn } from "../utils/cn";
 import { Toolbar } from "./Toolbar";
 
-export const useEditor = (content: string) => {
-  const editor = useEditorInternal({
+export const useRichText = (content: string) => {
+  const richText = useEditor({
     extensions: [
       Color.configure({ types: [TextStyle.name, ListItem.name] }),
       TextStyle,
@@ -27,17 +27,17 @@ export const useEditor = (content: string) => {
     content,
   });
 
-  return editor;
+  return richText;
 };
 
-export type EditorProps = Omit<
+export type RichTextProps = Omit<
   ComponentProps<typeof EditorContent>,
   "onChange"
 > & {
-  editor: ReturnType<typeof useEditor>;
+  editor: ReturnType<typeof useRichText>;
 };
 
-export const Editor = ({ editor, className, ...props }: EditorProps) => {
+export const RichText = ({ editor, className, ...props }: RichTextProps) => {
   if (!editor) {
     return null;
   }

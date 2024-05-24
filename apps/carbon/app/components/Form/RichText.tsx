@@ -1,14 +1,14 @@
 import {
-  Editor,
   FormControl,
   FormErrorMessage,
-  useEditor,
+  RichText as RichTextBase,
+  useRichText,
 } from "@carbon/react";
 import { useControlField, useField } from "@carbon/remix-validated-form";
 import type { ComponentProps } from "react";
 import { useEffect } from "react";
 
-type RichTextProps = Omit<ComponentProps<typeof Editor>, "editor"> & {
+type RichTextProps = Omit<ComponentProps<typeof RichTextBase>, "editor"> & {
   name: string;
   output?: "html" | "json" | "text";
 };
@@ -16,44 +16,44 @@ type RichTextProps = Omit<ComponentProps<typeof Editor>, "editor"> & {
 const RichText = ({ name, output = "html", ...props }: RichTextProps) => {
   const { getInputProps, error, defaultValue } = useField(name);
   const [value, setValue] = useControlField<string>(name);
-  const editor = useEditor(defaultValue);
+  const richText = useRichText(defaultValue);
 
   useEffect(() => {
     if (!value) {
-      editor?.commands.clearContent(true);
+      richText?.commands.clearContent(true);
     }
-  }, [value, editor]);
+  }, [value, richText]);
 
   useEffect(() => {
-    if (editor) {
-      editor.on("update", () => {
+    if (richText) {
+      richText.on("update", () => {
         switch (output) {
           case "html":
-            setValue(editor.getHTML());
+            setValue(richText.getHTML());
             break;
           case "json":
-            setValue(JSON.stringify(editor.getJSON()));
+            setValue(JSON.stringify(richText.getJSON()));
             break;
           case "text":
-            setValue(editor.getText());
+            setValue(richText.getText());
             break;
           default:
-            setValue(editor.getHTML());
+            setValue(richText.getHTML());
             break;
         }
       });
     }
 
     return () => {
-      if (editor) {
-        editor.off("update");
+      if (richText) {
+        richText.off("update");
       }
     };
-  }, [editor, output, setValue]);
+  }, [richText, output, setValue]);
 
   return (
     <FormControl isInvalid={!!error}>
-      <Editor {...props} editor={editor} />
+      <RichTextBase {...props} editor={richText} />
       <input
         {...getInputProps({
           // @ts-ignore
