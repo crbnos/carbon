@@ -6,7 +6,6 @@
   "devDependencies": {
     "eslint-config-carbon": "*"
   },
-  "license": "MIT",
   "private": true,
   "scripts": {
     "clean": "rimraf node_modules"

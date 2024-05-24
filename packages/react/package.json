@@ -77,7 +77,6 @@
   "jest": {
     "preset": "@carbon/jest/node"
   },
-  "license": "MIT",
   "peerDependencies": {
     "@internationalized/date": "^3.5.2",
     "framer-motion": "^11.1.7",

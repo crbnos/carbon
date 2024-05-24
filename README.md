@@ -1,12 +1,6 @@
-<p align="center">
-<a href="https://www.loom.com/share/7eb03a5e4d4d4836b34f173805fb7403?sid=7ed308d0-8d59-4230-a3f1-137aae3c24da" target="_blank">
-  <img src="https://github.com/barbinbrad/carbon/assets/64510427/229985c9-44de-4b2b-afdd-7d1f4fd9dedd" width="70%" />
-</a>
-</p>
-
 # CarbonOS
 
-Carbon is the operating system for manufacturing written in Typescript. It allows customers, suppliers, and employees to share a common platform that's easy to integrate with.
+Carbon is the operating system for manufacturing. It allows customers, suppliers, and employees to share a common platform that's easy to integrate with.
 
 Technical highlights/roadmap:
 

@@ -29,7 +29,6 @@
   "jest": {
     "preset": "@carbon/jest/node"
   },
-  "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "private": true,

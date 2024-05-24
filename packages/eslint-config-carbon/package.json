@@ -9,7 +9,6 @@
     "eslint-import-resolver-node": "0.3.6",
     "eslint-import-resolver-typescript": "^3.5.1"
   },
-  "license": "MIT",
   "main": "index.js",
   "peerDependencies": {
     "@types/eslint": "^8.4.6",

@@ -15,7 +15,6 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "MIT",
   "lint-staged": {
     "(apps|packages)/**/*.{js,ts,jsx,tsx}": [
       "prettier --write",
@@ -49,6 +48,7 @@
     "deploy": "turbo run deploy",
     "dev": "turbo run dev --filter=./apps/carbon --filter=./packages/",
     "dev:docs": "turbo run dev --filter=./apps/docs",
+    "dev:mes": "turbo run dev --filter=./apps/mes",
     "dev:packages": "turbo run dev --filter=./packages/*",
     "dev:website": "turbo run dev --filter=./apps/website",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",

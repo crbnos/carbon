@@ -3,7 +3,6 @@
   "files": [
     "eslint-preset.js"
   ],
-  "license": "MIT",
   "main": "index.js",
   "peerDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",
