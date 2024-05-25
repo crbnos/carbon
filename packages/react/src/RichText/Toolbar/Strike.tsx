@@ -1,4 +1,4 @@
-import { BsTypeStrikethrough } from "react-icons/bs";
+import { LuStrikethrough } from "react-icons/lu";
 import type { EditorComponent } from "../types";
 import ToolbarButton from "./ToolbarButton";
 
@@ -8,7 +8,7 @@ const Strike: EditorComponent = ({ editor }) => {
       label="Strike"
       onClick={() => editor.chain().focus().toggleStrike().run()}
       isActive={editor.isActive("strike")}
-      icon={<BsTypeStrikethrough />}
+      icon={<LuStrikethrough />}
       disabled={!editor.isEditable}
     />
   );

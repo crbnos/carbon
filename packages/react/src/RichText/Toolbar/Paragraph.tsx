@@ -1,4 +1,4 @@
-import { BsType } from "react-icons/bs";
+import { LuText } from "react-icons/lu";
 import type { EditorComponent } from "../types";
 import ToolbarButton from "./ToolbarButton";
 
@@ -8,7 +8,7 @@ const Paragraph: EditorComponent = ({ editor }) => {
       label="Normal text"
       onClick={() => editor.chain().focus().setParagraph().run()}
       isActive={editor.isActive("paragraph")}
-      icon={<BsType />}
+      icon={<LuText />}
       disabled={!editor.isEditable}
     />
   );

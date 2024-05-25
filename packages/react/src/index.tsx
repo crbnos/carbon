@@ -1,3 +1,4 @@
+import type { JSONContent } from "novel";
 import { ActionMenu } from "./ActionMenu";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
 import type { AvatarProps } from "./Avatar";
@@ -92,6 +93,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./Dropdown";
+import { Editor } from "./Editor";
 import { Enumerable } from "./Enumerable";
 import { File } from "./File";
 import {
@@ -309,6 +311,7 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  Editor,
   Enumerable,
   File,
   FormControl,
@@ -445,6 +448,7 @@ export type {
   AvatarProps,
   ButtonProps,
   InputProps,
+  JSONContent,
   NumberFieldProps,
   TextareaProps,
 };

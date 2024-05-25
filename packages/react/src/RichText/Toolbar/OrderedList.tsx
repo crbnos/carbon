@@ -1,4 +1,4 @@
-import { BsListOl } from "react-icons/bs";
+import { LuListOrdered } from "react-icons/lu";
 import type { EditorComponent } from "../types";
 import ToolbarButton from "./ToolbarButton";
 
@@ -8,7 +8,7 @@ const OrderedList: EditorComponent = ({ editor }) => {
       label="Numbered list"
       onClick={() => editor.chain().focus().toggleOrderedList().run()}
       isActive={editor.isActive("orderedList")}
-      icon={<BsListOl />}
+      icon={<LuListOrdered />}
       disabled={!editor.isEditable}
     />
   );

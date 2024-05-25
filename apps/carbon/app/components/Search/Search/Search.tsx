@@ -9,13 +9,11 @@ import {
   CommandList,
   CommandSeparator,
   HStack,
-  Kbd,
   Modal,
   ModalContent,
   VStack,
   useDebounce,
   useDisclosure,
-  useKeyboardShortcuts,
   useMount,
 } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
@@ -31,7 +29,9 @@ import { LuSearch } from "react-icons/lu";
 import { PiShareNetworkFill } from "react-icons/pi";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { useModules } from "~/components/Layout/Navigation/useModules";
-import { useUser } from "~/hooks";
+import { ShortcutKey } from "~/components/ShortcutKey";
+import { useShortcutKeys, useUser } from "~/hooks";
+import type { ShortcutDefinition } from "~/hooks/useShortcutKeys";
 import { useSupabase } from "~/lib/supabase";
 import { useAccountSubmodules } from "~/modules/account";
 import { useAccountingSubmodules } from "~/modules/accounting";
@@ -53,6 +53,11 @@ type SearchResult = {
   uuid: string | null;
   link: string;
   description: string | null;
+};
+
+const shortcut: ShortcutDefinition = {
+  key: "K",
+  modifiers: ["meta"],
 };
 
 const SearchModal = ({
@@ -265,8 +270,10 @@ function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
 
 const SearchButton = () => {
   const searchModal = useDisclosure();
-  useKeyboardShortcuts({
-    "/": searchModal.onOpen,
+
+  useShortcutKeys({
+    shortcut: shortcut,
+    action: searchModal.onOpen,
   });
 
   return (
@@ -279,7 +286,7 @@ const SearchButton = () => {
       >
         <HStack className="w-full">
           <div className="flex flex-grow">Search</div>
-          <Kbd>/</Kbd>
+          <ShortcutKey variant="small" shortcut={shortcut} />
         </HStack>
       </Button>
       <SearchModal isOpen={searchModal.isOpen} onClose={searchModal.onClose} />

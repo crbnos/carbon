@@ -1,4 +1,4 @@
-import { BsTypeItalic } from "react-icons/bs";
+import { LuItalic } from "react-icons/lu";
 import type { EditorComponent } from "../types";
 import ToolbarButton from "./ToolbarButton";
 
@@ -8,7 +8,7 @@ const Italic: EditorComponent = ({ editor }) => {
       label="Italic"
       onClick={() => editor.chain().focus().toggleItalic().run()}
       isActive={editor.isActive("italic")}
-      icon={<BsTypeItalic />}
+      icon={<LuItalic />}
       disabled={!editor.isEditable}
     >
       I

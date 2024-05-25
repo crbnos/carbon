@@ -1,4 +1,4 @@
-import { BsCodeSlash } from "react-icons/bs";
+import { LuCode2 } from "react-icons/lu";
 import type { EditorComponent } from "../types";
 import ToolbarButton from "./ToolbarButton";
 
@@ -8,7 +8,7 @@ const CodeBlock: EditorComponent = ({ editor }) => {
       label="Codeblock"
       onClick={() => editor.chain().focus().toggleCodeBlock().run()}
       isActive={editor.isActive("codeBlock")}
-      icon={<BsCodeSlash />}
+      icon={<LuCode2 />}
       disabled={!editor.isEditable}
     />
   );
