@@ -13,6 +13,7 @@
     "autoprefixer": "10.4.14",
     "eslint-config-carbon": "*",
     "postcss": "^8.4.33",
+    "postcss-nesting": "12.1.5",
     "tailwind-merge": "^2.2.1",
     "tailwind-scrollbar": "^3.0.5",
     "tailwind-scrollbar-hide": "^1.1.7",

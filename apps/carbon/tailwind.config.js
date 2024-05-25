@@ -1,1 +1,4 @@
-module.exports = require("@carbon/tailwind/tailwind.config");
+module.exports = {
+  "tailwindcss/nesting": {},
+  ...require("@carbon/tailwind/tailwind.config"),
+};
