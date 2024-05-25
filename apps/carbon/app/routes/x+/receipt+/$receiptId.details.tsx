@@ -51,8 +51,6 @@ export async function action({ request }: ActionFunctionArgs) {
     currentReceipt.data.sourceDocumentId !== data.sourceDocumentId ||
     currentReceipt.data.locationId !== data.locationId;
 
-  console.log("receiptDataHasChanged", receiptDataHasChanged);
-
   if (receiptDataHasChanged) {
     const serviceRole = getSupabaseServiceRole();
     switch (data.sourceDocument) {

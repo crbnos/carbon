@@ -144,11 +144,7 @@ function LoginForm({ className, ...props }: LoginFormProps) {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="**********"
-                        {...field}
-                      />
+                      <Input type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
