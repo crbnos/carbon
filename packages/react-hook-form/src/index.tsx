@@ -1,16 +1,16 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import type * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
 import * as React from "react";
-import type {
-  ControllerProps,
-  FieldPath,
-  FieldValues,
+import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
   useForm,
+  useFormContext,
 } from "react-hook-form";
-import { Controller, FormProvider, useFormContext } from "react-hook-form";
 
 import { Label, cn } from "@carbon/react";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 const Form = FormProvider;
 

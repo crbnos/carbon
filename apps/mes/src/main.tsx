@@ -1,22 +1,20 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Authentication } from "~/components/Authentication";
 import Error from "~/components/Error";
-import { path } from "~/config";
 import "~/index.css";
-import { MES } from "~/MES";
-import { Login, loader as loginLoader } from "./routes/login";
+import { Home } from "./routes";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <MES />,
+    element: <Authentication />,
     errorElement: <Error />,
     children: [
       {
-        path: path.to.login,
-        loader: loginLoader,
-        element: <Login />,
+        path: "/",
+        element: <Home />,
       },
     ],
   },

@@ -1,16 +1,31 @@
-import { Button, Input, Label, cn } from "@carbon/react";
-import type { HTMLAttributes, SyntheticEvent} from "react";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Heading,
+  Input,
+  cn,
+} from "@carbon/react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useForm,
+  zodResolver,
+} from "@carbon/react-hook-form";
+import {} from "@hookform/resolvers/zod";
+import type { HTMLAttributes } from "react";
 import { useState } from "react";
 import { BsHexagonFill } from "react-icons/bs";
-import { Link, useLoaderData } from "react-router-dom";
-
-export const loader = () => {
-  const quote = quotes[Math.floor(Math.random() * quotes.length)];
-  return quote ?? (quotes[0] as (typeof quotes)[number]);
-};
+import { Link } from "react-router-dom";
+import { z } from "zod";
+import { supabase } from "~/lib/supabase";
 
 export function Login() {
-  const data = useLoaderData() as ReturnType<typeof loader>;
+  const data = getRandomQuote();
 
   return (
     <>
@@ -33,12 +48,9 @@ export function Login() {
         <div className="lg:p-8">
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
             <div className="flex flex-col space-y-2 text-center">
-              <h1 className="text-2xl font-semibold tracking-tight">Sign In</h1>
-              <p className="text-sm text-muted-foreground">
-                Enter your email below to sign in
-              </p>
+              <Heading>Sign In</Heading>
             </div>
-            <UserAuthForm />
+            <LoginForm />
             <p className="px-8 text-center text-sm text-muted-foreground">
               By clicking continue, you agree to our{" "}
               <Link
@@ -63,46 +75,105 @@ export function Login() {
   );
 }
 
-interface UserAuthFormProps extends HTMLAttributes<HTMLDivElement> {}
+interface LoginFormProps extends HTMLAttributes<HTMLDivElement> {}
 
-function UserAuthForm({ className, ...props }: UserAuthFormProps) {
+const loginFormSchema = z.object({
+  email: z.string().email(),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters" }),
+});
+
+type LoginFormValues = z.infer<typeof loginFormSchema>;
+
+function LoginForm({ className, ...props }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(event: SyntheticEvent) {
-    event.preventDefault();
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  async function onSubmit(values: LoginFormValues) {
+    setError(null);
     setIsLoading(true);
 
-    setTimeout(() => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
+
+    if (error) {
       setIsLoading(false);
-    }, 3000);
+      setError(error.message);
+    }
   }
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
-      <form onSubmit={onSubmit}>
-        <div className="grid gap-2">
-          <div className="grid gap-1">
-            <Label className="sr-only" htmlFor="email">
-              Email
-            </Label>
-            <Input
-              className="bg-card"
-              id="email"
-              placeholder="joe@acme.com"
-              type="email"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect="off"
-              disabled={isLoading}
-            />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="grid gap-2">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <div className="grid gap-1">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="joe@acme.co" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="**********"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              isDisabled={isLoading}
+              isLoading={isLoading}
+            >
+              Sign In
+            </Button>
           </div>
-          <Button size="lg" isDisabled={isLoading} isLoading={isLoading}>
-            Sign In
-          </Button>
-        </div>
-      </form>
+        </form>
+      </Form>
     </div>
   );
+}
+
+function getRandomQuote() {
+  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+  return randomQuote;
 }
 
 const quotes = [

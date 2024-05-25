@@ -2,22 +2,22 @@
   "name": "@carbon/react-hook-form",
   "peerDependencies": {
     "@carbon/react": "*",
-    "react": "^18.2.0",
-    "zod": "^3.23.4"
+    "@hookform/resolvers": ">=3.4",
+    "react": ">=18.2",
+    "react-hook-form": ">=7",
+    "zod": ">=3.23"
   },
   "devDependencies": {
     "tsconfig": "*",
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.4.2",
     "@radix-ui/react-label": "^2.0.2",
-    "@radix-ui/react-slot": "^1.0.2",
-    "react-hook-form": "^7.51.5"
+    "@radix-ui/react-slot": "^1.0.2"
   },
-  "files": [
-    "dist/**"
-  ],
+  "exports": {
+    ".": "./src/index.tsx"
+  },
   "jest": {
     "preset": "@carbon/jest/node"
   },
@@ -25,13 +25,11 @@
   "module": "./dist/index.mjs",
   "private": true,
   "scripts": {
-    "build": "tsup src/index.tsx --format esm,cjs --dts --external react",
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup src/index.tsx --format esm,cjs --watch --dts --external react",
     "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
     "test": "jest"
   },
   "sideEffects": false,
-  "types": "./dist/index.d.ts",
   "version": "*"
 }
