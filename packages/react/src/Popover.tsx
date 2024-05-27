@@ -59,8 +59,11 @@ const PopoverFooter = forwardRef<
 ));
 PopoverFooter.displayName = "PopoverFooter";
 
+const PopoverClose = PopoverPrimitive.Close;
+
 export {
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverFooter,
   PopoverHeader,

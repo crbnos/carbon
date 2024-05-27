@@ -186,6 +186,7 @@ import {
 import { Paragraph } from "./Paragraph";
 import {
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverFooter,
   PopoverHeader,
@@ -211,6 +212,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./Select";
+import { Separator } from "./Separator";
 import { Skeleton } from "./Skeleton";
 import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
@@ -386,6 +388,7 @@ export {
   NumberInputStepper,
   Paragraph,
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverFooter,
   PopoverHeader,
@@ -409,6 +412,7 @@ export {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
+  Separator,
   Skeleton,
   Slider,
   Spinner,

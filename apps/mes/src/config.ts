@@ -1,5 +1,6 @@
 export const path = {
   to: {
-    login: "/login",
+    root: "/",
+    jobs: "/jobs",
   },
 };

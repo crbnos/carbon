@@ -20,13 +20,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return typedjson({
     columns: [
       {
-        id: getRandomBetweenRange(1, 2),
+        id: "1",
         type: "assembly",
         title: "Assembly Station 1",
         active: true,
       },
       {
-        id: getRandomBetweenRange(1, 2),
+        id: "2",
         type: "assembly",
         title: "Assembly Station 2",
       },
@@ -282,7 +282,7 @@ export default function KanbanView() {
             variant="secondary"
             onClick={revalidator.revalidate}
           >
-            Reschedule
+            Rebalance
           </Button>
         </HStack>
       </HStack>

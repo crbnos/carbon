@@ -1,27 +1,33 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Authentication } from "~/components/Authentication";
 import Error from "~/components/Error";
+import { path } from "~/config";
 import "~/index.css";
-import { Home } from "./routes";
+import { Job } from "~/routes/job";
+import { Jobs, loader as jobsLoader } from "~/routes/jobs";
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: path.to.root,
     element: <Authentication />,
     errorElement: <Error />,
     children: [
       {
-        path: "/",
-        element: <Home />,
+        path: path.to.jobs,
+        loader: jobsLoader,
+        element: <Jobs navCollapsedSize={4} />,
+        children: [
+          {
+            path: ":operationId",
+            element: <Job />,
+          },
+        ],
       },
     ],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>
+  <RouterProvider router={router} />
 );
