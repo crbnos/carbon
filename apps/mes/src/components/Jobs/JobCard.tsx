@@ -57,8 +57,6 @@ export function JobCard({
       ? new Date(job.dueDate) < new Date()
       : false;
 
-  console.log({ job, isSelected });
-
   return (
     <Card
       onClick={() => navigate(job.id)}

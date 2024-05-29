@@ -24,6 +24,7 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Separator } from "../Separator";
+import { cn } from "../utils/cn";
 import { ColorSelector } from "./components/ColorSelector";
 import { LinkSelector } from "./components/LinkSelector";
 import { NodeSelector } from "./components/NodeSelector";
@@ -32,6 +33,7 @@ import { defaultExtensions } from "./extensions";
 import { getSuggestionItems } from "./slash";
 
 interface EditorProp {
+  className?: string;
   initialValue?: JSONContent;
   onChange: (value: JSONContent) => void;
   onUpload?: (file: File) => Promise<string>;
@@ -44,7 +46,12 @@ const defaultOnUpload = async (file: File) => {
   );
 };
 
-const Editor = ({ initialValue, onChange, onUpload }: EditorProp) => {
+const Editor = ({
+  className,
+  initialValue,
+  onChange,
+  onUpload,
+}: EditorProp) => {
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
@@ -87,7 +94,7 @@ const Editor = ({ initialValue, onChange, onUpload }: EditorProp) => {
   return (
     <EditorRoot>
       <EditorContent
-        className="border border-border w-full h-full p-4"
+        className={cn("p-4", className)}
         {...(initialValue && { initialContent: initialValue })}
         extensions={extensions}
         editorProps={{

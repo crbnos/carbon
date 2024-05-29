@@ -25,9 +25,7 @@ export function Authentication() {
 
   return (
     <>
-      <div className="background">
-        <div className="gradient" />
-      </div>
+      <div className="background" />
       <div className="relative z-10">
         <div className="flex flex-col min-w-screen h-screen min-h-0">
           {initializing ? (

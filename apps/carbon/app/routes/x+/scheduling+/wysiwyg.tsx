@@ -32,13 +32,14 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const content = JSON.parse(formData.get("content") as string);
 
-  console.log({ content });
+  console.log(content);
   return null;
 }
 
 export default function WysiwygRoute() {
   const { content } = useLoaderData<{ content: JSONContent }>();
   const [value, setValue] = useState<JSONContent>(content);
+  console.log(value);
   const fetcher = useFetcher();
 
   const debounceSearch = useDebounce((c: JSONContent) => {

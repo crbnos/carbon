@@ -4,7 +4,7 @@ import { Authentication } from "~/components/Authentication";
 import Error from "~/components/Error";
 import { path } from "~/config";
 import "~/index.css";
-import { Job } from "~/routes/job";
+import { Job, loader as jobLoader } from "~/routes/job";
 import { Jobs, loader as jobsLoader } from "~/routes/jobs";
 
 const router = createBrowserRouter([
@@ -20,6 +20,7 @@ const router = createBrowserRouter([
         children: [
           {
             path: ":operationId",
+            loader: jobLoader,
             element: <Job />,
           },
         ],

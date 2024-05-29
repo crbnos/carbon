@@ -171,3 +171,238 @@ export const workCells = [
 ];
 
 export type WorkCell = (typeof workCells)[number];
+
+export const scrapReasons = [
+  {
+    id: "1",
+    name: "Wrong material picked",
+  },
+  {
+    id: "2",
+    name: "Incorrect drawings",
+  },
+  {
+    id: "3",
+    name: "Human Error",
+  },
+  {
+    id: "4",
+    name: "Issue with equipment",
+  },
+  {
+    id: "5",
+    name: "Wrong tooling",
+  },
+  {
+    id: "6",
+    name: "Wrong program",
+  },
+  {
+    id: "7",
+    name: "Machine malfunction",
+  },
+  {
+    id: "7",
+    name: "Other",
+  },
+];
+
+export type ScrapReason = (typeof scrapReasons)[number];
+
+export const notes = [
+  {
+    id: "1",
+    content: "Hey How are you today?",
+    createdAt: "2022-01-01",
+    createdBy: "2e7dbae5-712d-4809-a29e-25cff4b90a36",
+    createdByName: "Brad Barbin",
+  },
+  {
+    id: "2",
+    content:
+      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Vel ipsa commodi illum saepe numquam maxime asperiores voluptate sit, minima perspiciatis.",
+    createdAt: "2022-01-02",
+    createdBy: "tom",
+    createdByName: "Tom Smith",
+  },
+  {
+    id: "3",
+    content: "I'm ok what about you?",
+    createdAt: "2022-01-03",
+    createdBy: "2e7dbae5-712d-4809-a29e-25cff4b90a36",
+    createdByName: "Brad Barbin",
+  },
+  {
+    id: "4",
+    content: "Lorem ipsum dolor sit, amet consectetur adipisicing. ?",
+    createdAt: "2022-01-04",
+    createdBy: "tom",
+    createdByName: "Tom Smith",
+  },
+  {
+    id: "5",
+    content: "Lorem ipsum dolor sit amet !",
+    createdAt: "2022-01-05",
+    createdBy: "2e7dbae5-712d-4809-a29e-25cff4b90a36",
+    createdByName: "Brad Barbin",
+  },
+  {
+    id: "6",
+    content: "Lorem ipsum dolor sit, amet consectetur adipisicing. ?",
+    createdAt: "2022-01-06",
+    createdBy: "tom",
+    createdByName: "Tom Smith",
+  },
+  {
+    id: "7",
+    content:
+      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Perspiciatis, in.",
+    createdAt: "2022-01-07",
+    createdBy: "2e7dbae5-712d-4809-a29e-25cff4b90a36",
+    createdByName: "Brad Barbin",
+  },
+];
+
+export const workInstructions = {
+  type: "doc",
+  content: [
+    {
+      type: "heading",
+      attrs: {
+        level: 2,
+      },
+      content: [
+        {
+          type: "text",
+          text: "Work Instruction",
+        },
+      ],
+    },
+    {
+      type: "heading",
+      attrs: {
+        level: 3,
+      },
+      content: [
+        {
+          type: "text",
+          text: "Setup ",
+        },
+      ],
+    },
+    {
+      type: "paragraph",
+      content: [
+        {
+          type: "text",
+          marks: [
+            {
+              type: "textStyle",
+              attrs: {
+                color: "rgb(4, 4, 2)",
+              },
+            },
+          ],
+          text: "I'm baby letterpress franzen palo santo offal. XOXO lumbersexual farm-to-table mustache neutra selfies chillwave aesthetic green juice blue bottle letterpress fanny pack try-hard gorpcore. Selvage marfa butcher kale chips craft beer fashion axe lumbersexual mlkshk truffaut etsy same salvia activated charcoal kogi woke. Hoodie green juice put a bird on it, echo park swag disrupt ugh air plant vaporware vice hammock.",
+        },
+      ],
+    },
+    {
+      type: "taskList",
+      content: [
+        {
+          type: "taskItem",
+          attrs: {
+            checked: false,
+          },
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+
+                  text: "Slow-carb fam same vexillologist bitters.",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: "taskItem",
+          attrs: {
+            checked: false,
+          },
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+
+                  text: "Roof party franzen slow-carb heirloom viral small batch. ",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: "taskItem",
+          attrs: {
+            checked: false,
+          },
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+
+                  text: "Bitters next level listicle, +1 same godard 90's big mood heirloom shabby chic hella.",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      type: "heading",
+      attrs: {
+        level: 3,
+      },
+      content: [
+        {
+          type: "text",
+          text: "Run",
+        },
+      ],
+    },
+    {
+      type: "taskList",
+      content: [
+        {
+          type: "taskItem",
+          attrs: {
+            checked: false,
+          },
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+
+                  text: "DIY enamel pin viral ramps banjo DSA chartreuse.",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      type: "paragraph",
+    },
+  ],
+};

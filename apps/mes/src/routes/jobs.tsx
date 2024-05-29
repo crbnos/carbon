@@ -243,7 +243,7 @@ export function Jobs({
             </TabsContent>
           </Tabs>
         </ResizablePanel>
-        <Outlet />
+        <Outlet context={{ user }} />
       </ResizablePanelGroup>
     </TooltipProvider>
   );

@@ -33,6 +33,7 @@ const jobValidator = z.object({
     .optional(),
   progress: z.number().optional(), // miliseconds
   order: z.number().optional(),
+  quantity: z.number().optional(),
   status: z
     .enum([
       "CANCELED",
