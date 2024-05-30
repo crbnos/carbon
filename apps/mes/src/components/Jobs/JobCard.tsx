@@ -159,7 +159,7 @@ export function JobCard({
   );
 }
 
-function getStatusIcon(status: Job["status"]) {
+export function getStatusIcon(status: Job["status"]) {
   switch (status) {
     case "READY":
     case "TODO":
@@ -178,7 +178,7 @@ function getStatusIcon(status: Job["status"]) {
   }
 }
 
-function getStatusText(status: Job["status"], overdue: boolean = false) {
+export function getStatusText(status: Job["status"], overdue: boolean = false) {
   switch (status) {
     case "READY":
       return "Ready";
@@ -197,7 +197,10 @@ function getStatusText(status: Job["status"], overdue: boolean = false) {
   }
 }
 
-function getDeadlineIcon(deadlineType: Job["deadlineType"], overdue: boolean) {
+export function getDeadlineIcon(
+  deadlineType: Job["deadlineType"],
+  overdue: boolean
+) {
   switch (deadlineType) {
     case "ASAP":
       return <BsExclamationSquareFill className="text-red-500" />;
@@ -212,7 +215,7 @@ function getDeadlineIcon(deadlineType: Job["deadlineType"], overdue: boolean) {
   }
 }
 
-function getDeadlineText(deadlineType: Job["deadlineType"]) {
+export function getDeadlineText(deadlineType: Job["deadlineType"]) {
   switch (deadlineType) {
     case "ASAP":
       return "ASAP";

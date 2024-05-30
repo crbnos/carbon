@@ -223,6 +223,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 import type { TextareaProps } from "./Textarea";
 import { Textarea } from "./Textarea";
 import { Toaster, toast } from "./Toast";
+import { Toggle } from "./Toggle";
+import { ToggleGroup, ToggleGroupItem } from "./ToggleGroup";
 import {
   Tooltip,
   TooltipContent,
@@ -432,6 +434,9 @@ export {
   Thead,
   TimePicker,
   Toaster,
+  Toggle,
+  ToggleGroup,
+  ToggleGroupItem,
   Tooltip,
   TooltipContent,
   TooltipProvider,

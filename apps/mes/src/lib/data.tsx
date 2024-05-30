@@ -295,14 +295,6 @@ export const workInstructions = {
       content: [
         {
           type: "text",
-          marks: [
-            {
-              type: "textStyle",
-              attrs: {
-                color: "rgb(4, 4, 2)",
-              },
-            },
-          ],
           text: "I'm baby letterpress franzen palo santo offal. XOXO lumbersexual farm-to-table mustache neutra selfies chillwave aesthetic green juice blue bottle letterpress fanny pack try-hard gorpcore. Selvage marfa butcher kale chips craft beer fashion axe lumbersexual mlkshk truffaut etsy same salvia activated charcoal kogi woke. Hoodie green juice put a bird on it, echo park swag disrupt ugh air plant vaporware vice hammock.",
         },
       ],

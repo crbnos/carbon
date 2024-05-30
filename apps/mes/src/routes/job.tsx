@@ -3,6 +3,7 @@ import {
   Avatar,
   Button,
   Editor,
+  HStack,
   Heading,
   IconButton,
   Modal,
@@ -18,24 +19,35 @@ import {
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
-  Popover,
-  PopoverClose,
-  PopoverContent,
-  PopoverTrigger,
+  Progress,
   ResizableHandle,
   ResizablePanel,
+  ScrollArea,
   Separator,
+  Table,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  ToggleGroup,
+  ToggleGroupItem,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  Tr,
   cn,
   useMount,
 } from "@carbon/react";
+import {
+  convertDateStringToIsoString,
+  formatDurationMilliseconds,
+  formatRelativeTime,
+} from "@carbon/utils";
 import type { ComponentProps, ReactNode } from "react";
 import { useRef, useState } from "react";
 import {
@@ -45,14 +57,18 @@ import {
   FaPause,
   FaPlay,
   FaRedoAlt,
+  FaTasks,
   FaTrash,
-  FaTruckLoading,
 } from "react-icons/fa";
 import {
   LuChevronDown,
   LuChevronLeft,
   LuChevronUp,
+  LuClipboardCheck,
   LuExpand,
+  LuHammer,
+  LuHardHat,
+  LuTimer,
 } from "react-icons/lu";
 import {
   useLoaderData,
@@ -60,6 +76,12 @@ import {
   useOutletContext,
   useParams,
 } from "react-router-dom";
+import {
+  getDeadlineIcon,
+  getDeadlineText,
+  getStatusIcon,
+  getStatusText,
+} from "~/components/Jobs/JobCard";
 import { path } from "~/config";
 import { useRouteData } from "~/hooks/useRouteData";
 import { notes, workInstructions } from "~/lib/data";
@@ -86,6 +108,11 @@ export function Job() {
 
   const [fullScreen, setFullScreen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+
+  const isOverdue =
+    job?.deadlineType !== "NO_DEADLINE" && job?.dueDate
+      ? new Date(job?.dueDate) < new Date()
+      : false;
 
   const onWorkInstructionChange = (value: JSONContent) => {
     console.log(value);
@@ -140,52 +167,278 @@ export function Job() {
             </div>
           </div>
 
-          {!fullScreen && <Separator />}
+          {!fullScreen && (
+            <>
+              <Separator />
+              <div className="flex items-center justify-start px-4 py-2 h-[52px] bg-background gap-4">
+                {job.description && (
+                  <HStack className="justify-start space-x-2">
+                    <LuClipboardCheck className="text-muted-foreground" />
+                    <span className="text-sm truncate">{job.description}</span>
+                  </HStack>
+                )}
+                {job.status && (
+                  <HStack className="justify-start space-x-2">
+                    {getStatusIcon(job.status)}
+                    <span className="text-sm truncate">
+                      {getStatusText(job.status)}
+                    </span>
+                  </HStack>
+                )}
+                {job.duration && (
+                  <HStack className="justify-start space-x-2">
+                    <LuTimer className="text-muted-foreground" />
+                    <span className="text-sm truncate">
+                      {formatDurationMilliseconds(job.duration)}
+                    </span>
+                  </HStack>
+                )}
+              </div>
+              <Separator />
+            </>
+          )}
 
-          <TabsContent value="details"></TabsContent>
+          <TabsContent value="details">
+            <ScrollArea className="h-[calc(100vh-104px)] pb-36">
+              <div className="flex items-start justify-between p-4">
+                <div className="flex flex-col flex-grow">
+                  <Heading size="h2">{job.part}</Heading>
+                  <p className="text-muted-foreground line-clamp-1">
+                    3/8" x 2" x 1/4" Bracket
+                  </p>
+                </div>
+                <div className="flex flex-col flex-shrink items-end">
+                  <Heading size="h2">15</Heading>
+                  <p className="text-muted-foreground line-clamp-1">Pieces</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-start p-4">
+                <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3 w-full">
+                  <div className="rounded-xl border bg-card text-card-foreground shadow">
+                    <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                      <h3 className="tracking-tight text-sm font-medium">
+                        Scrapped
+                      </h3>
+                      <FaTrash className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <div className="p-6 pt-0">
+                      <Heading size="h2">0</Heading>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border bg-card text-card-foreground shadow">
+                    <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                      <h3 className="tracking-tight text-sm font-medium">
+                        Completed
+                      </h3>
+                      <FaCheck className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <div className="p-6 pt-0">
+                      <Heading size="h2">0</Heading>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border bg-card text-card-foreground shadow">
+                    <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                      <h3 className="tracking-tight text-sm font-medium">
+                        Reworked
+                      </h3>
+                      <FaRedoAlt className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <div className="p-6 pt-0">
+                      <Heading size="h2">0</Heading>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-start p-4">
+                <div className="flex flex-col w-full space-y-2">
+                  <HStack>
+                    <LuTimer className="h-4 w-4 mr-1" />
+                    <Progress
+                      leftLabel={formatDurationMilliseconds(6.5 * 60 * 1000)}
+                      rightLabel={formatDurationMilliseconds(5 * 60 * 1000)}
+                      value={120}
+                    />
+                  </HStack>
+                  <HStack>
+                    <LuHardHat className="h-4 w-4 mr-1" />
+                    <Progress
+                      leftLabel={
+                        job.progress
+                          ? formatDurationMilliseconds(job.progress)
+                          : ""
+                      }
+                      rightLabel={
+                        job.duration
+                          ? formatDurationMilliseconds(job.duration)
+                          : ""
+                      }
+                      value={
+                        job.progress && job.duration
+                          ? (job.progress / job.duration) * 100
+                          : 0
+                      }
+                    />
+                  </HStack>
+                  <HStack>
+                    <LuHammer className="h-4 w-4 mr-1" />
+                    <Progress
+                      leftLabel={
+                        job.progress
+                          ? formatDurationMilliseconds(job.progress)
+                          : ""
+                      }
+                      rightLabel={
+                        job.duration
+                          ? formatDurationMilliseconds(job.duration)
+                          : ""
+                      }
+                      value={
+                        job.progress && job.duration
+                          ? (job.progress / job.duration) * 100
+                          : 0
+                      }
+                    />
+                  </HStack>
+                  <HStack>
+                    <FaTasks className="h-4 w-4 mr-1" />
+                    <Progress
+                      indicatorClassName={
+                        job.status === "PAUSED" ? "bg-yellow-500" : ""
+                      }
+                      leftLabel={"0/15"}
+                      rightLabel={"0%"}
+                      value={0}
+                    />
+                  </HStack>
+                </div>
+              </div>
+              <Separator />
+              {job.customerId && (
+                <>
+                  <div className="flex items-start justify-between p-4">
+                    <div className="flex flex-col flex-grow">
+                      <Heading size="h3">Tesla</Heading>
+                      <p className="text-muted-foreground line-clamp-1">
+                        SO129034
+                      </p>
+                    </div>
+                    <div className="flex flex-col flex-shrink items-end">
+                      {job.deadlineType && (
+                        <HStack className="justify-start space-x-2">
+                          {getDeadlineIcon(job.deadlineType, isOverdue)}
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span
+                                className={cn(
+                                  "text-sm truncate",
+                                  isOverdue ? "text-red-500" : ""
+                                )}
+                              >
+                                {["ASAP", "NO_DEADLINE"].includes(
+                                  job.deadlineType
+                                )
+                                  ? getDeadlineText(job.deadlineType)
+                                  : job.dueDate
+                                  ? `Due ${formatRelativeTime(
+                                      convertDateStringToIsoString(job.dueDate)
+                                    )}`
+                                  : "–"}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              {getDeadlineText(job.deadlineType)}
+                            </TooltipContent>
+                          </Tooltip>
+                        </HStack>
+                      )}
+                    </div>
+                  </div>
+                  <Separator />
+                </>
+              )}
+              <div className="flex flex-col items-start justify-between">
+                <div className="p-4">
+                  <Heading size="h3">Files</Heading>
+                </div>
+                <Table>
+                  <Thead>
+                    <Tr>
+                      <Th>Name</Th>
+                      <Th>Size</Th>
+
+                      <Th></Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    <Tr>
+                      <Td
+                        colSpan={24}
+                        className="py-8 text-muted-foreground text-center"
+                      >
+                        No files
+                      </Td>
+                    </Tr>
+                  </Tbody>
+                </Table>
+              </div>
+            </ScrollArea>
+          </TabsContent>
           <TabsContent value="model"></TabsContent>
           <TabsContent value="instructions" className="flex flex-grow bg-card">
-            <Editor
-              initialValue={workInstructions as JSONContent}
-              onChange={onWorkInstructionChange}
-            />
+            <ScrollArea className="h-[calc(100vh-104px)] pb-36">
+              <Editor
+                initialValue={workInstructions as JSONContent}
+                onChange={onWorkInstructionChange}
+              />
+            </ScrollArea>
           </TabsContent>
           <TabsContent value="notes">
             <Notes job={job} notes={notes} />
           </TabsContent>
 
-          <Controls>
-            <IconButtonWithTooltip
-              disabled
-              icon={
-                <FaOilCan className="text-accent-foreground group-hover:text-accent-foreground/80" />
-              }
-              tooltip="Non-Conformance Report"
-            />
-            <IconButtonWithTooltip
-              icon={
-                <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
-              }
-              tooltip="Scrap"
-            />
-            <PlayButton
-              onStart={(type) => {
-                alert(type);
-              }}
-            />
-            <IconButtonWithTooltip
-              icon={
-                <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
-              }
-              tooltip="Rework"
-            />
-            <IconButtonWithTooltip
-              icon={
-                <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
-              }
-              tooltip="Complete"
-            />
-          </Controls>
+          {activeTab !== "notes" && (
+            <Controls>
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center gap-4 justify-center">
+                  <IconButtonWithTooltip
+                    disabled
+                    icon={
+                      <FaOilCan className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    }
+                    tooltip="Non-Conformance Report"
+                  />
+
+                  <IconButtonWithTooltip
+                    icon={
+                      <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    }
+                    tooltip="Scrap"
+                  />
+                  <PlayButton
+                    onStart={(type) => {
+                      alert(type);
+                    }}
+                  />
+                  <IconButtonWithTooltip
+                    icon={
+                      <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    }
+                    tooltip="Rework"
+                  />
+                  <IconButtonWithTooltip
+                    icon={
+                      <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    }
+                    tooltip="Complete"
+                  />
+                </div>
+                <WorkTypeToggle />
+              </div>
+            </Controls>
+          )}
         </Tabs>
       </OptionallyFullscreen>
     </>
@@ -246,7 +499,7 @@ function Notes({ notes }: { job: JobType; notes: Note[] }) {
   const { user } = useOutletContext<OutletContext>();
 
   return (
-    <div className="flex flex-col flex-auto h-[calc(100vh-130px)] p-6">
+    <div className="flex flex-col flex-auto h-[calc(100vh-108px)] p-6">
       <div className="flex flex-col flex-auto flex-shrink-0 rounded-2xl bg-muted h-full p-4">
         <div
           ref={listRef}
@@ -258,7 +511,7 @@ function Notes({ notes }: { job: JobType; notes: Note[] }) {
                 <Message
                   key={note.id}
                   note={note}
-                  isFromUser={note.createdBy === user?.id}
+                  isFromViewer={note.createdBy === user?.id}
                 />
               ))}
             </div>
@@ -306,11 +559,7 @@ function Notes({ notes }: { job: JobType; notes: Note[] }) {
                 </button> */}
           </div>
 
-          <Button
-            className="bg-indigo-600 hover:bg-indigo-500 rounded-2xl"
-            size="lg"
-            rightIcon={<FaPaperPlane />}
-          >
+          <Button className="rounded-xl" size="lg" rightIcon={<FaPaperPlane />}>
             Send
           </Button>
         </div>
@@ -321,22 +570,22 @@ function Notes({ notes }: { job: JobType; notes: Note[] }) {
 
 type MessageProps = {
   note: Note;
-  isFromUser: boolean;
+  isFromViewer: boolean;
 };
 
-function Message({ note, isFromUser }: MessageProps) {
+function Message({ note, isFromViewer }: MessageProps) {
   const { content, createdByAvatar, createdByName } = note;
   return (
     <div
       className={cn(
         "p-3 rounded-lg",
-        isFromUser ? "col-start-6 col-end-13" : "col-start-1 col-end-8"
+        isFromViewer ? "col-start-6 col-end-13" : "col-start-1 col-end-8"
       )}
     >
       <div
         className={cn(
           "flex items-center justify-start",
-          isFromUser && "flex-row-reverse"
+          isFromViewer && "flex-row-reverse"
         )}
       >
         <Avatar
@@ -348,7 +597,7 @@ function Message({ note, isFromUser }: MessageProps) {
         <div
           className={cn(
             "relative text-sm py-2 px-4 shadow rounded-xl",
-            isFromUser ? "mr-3 bg-indigo-100" : "ml-3 bg-background"
+            isFromViewer ? "mr-3 bg-indigo-100" : "ml-3 bg-background"
           )}
         >
           <div>{content}</div>
@@ -369,7 +618,7 @@ function Controls({
     <TooltipProvider>
       <div
         className={cn(
-          "flex items-center gap-4 absolute p-4 bottom-0 left-1/2 transform -translate-x-1/2",
+          "absolute p-4 bottom-0 left-1/2 transform -translate-x-1/2",
           className
         )}
       >
@@ -410,6 +659,37 @@ function IconButtonWithTooltip({
   );
 }
 
+function WorkTypeToggle() {
+  return (
+    <ToggleGroup defaultValue="labor" type="single">
+      <ToggleGroupItem
+        className="w-[110px]"
+        value="setup"
+        aria-label="Toggle setup"
+      >
+        <LuTimer className="h-4 w-4 mr-2" />
+        Setup
+      </ToggleGroupItem>
+      <ToggleGroupItem
+        className="w-[110px]"
+        value="labor"
+        aria-label="Toggle labor"
+      >
+        <LuHardHat className="h-4 w-4 mr-2" />
+        Labor
+      </ToggleGroupItem>
+      <ToggleGroupItem
+        className="w-[110px]"
+        value="machine"
+        aria-label="Toggle machine"
+      >
+        <LuHammer className="h-4 w-4 mr-2" />
+        Machine
+      </ToggleGroupItem>
+    </ToggleGroup>
+  );
+}
+
 function PauseButton({ className, ...props }: ComponentProps<"button">) {
   return (
     <ButtonWithTooltip
@@ -427,44 +707,13 @@ function PlayButton({
   onStart,
   ...props
 }: ComponentProps<"button"> & { onStart: (type: "setup" | "run") => void }) {
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          {...props}
-          className="group w-16 h-16 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all"
-        >
-          <FaPlay className="text-accent group-hover:scale-125" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="flex space-x-4 w-full justify-center">
-        <Button
-          leftIcon={<FaTruckLoading />}
-          size="lg"
-          variant="secondary"
-          onClick={() => {
-            onStart("setup");
-            closeButtonRef.current?.click();
-          }}
-        >
-          Setup
-        </Button>
-        <Button
-          leftIcon={<FaPlay />}
-          size="lg"
-          variant="primary"
-          onClick={() => {
-            onStart("run");
-            closeButtonRef.current?.click();
-          }}
-        >
-          Run
-        </Button>
-        <PopoverClose ref={closeButtonRef} className="sr-only" tabIndex={-1} />
-      </PopoverContent>
-    </Popover>
+    <button
+      {...props}
+      className="group w-16 h-16 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all"
+    >
+      <FaPlay className="text-accent group-hover:scale-125" />
+    </button>
   );
 }
 
