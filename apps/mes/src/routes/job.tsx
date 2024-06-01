@@ -361,6 +361,32 @@ export function Job() {
               )}
               <div className="flex flex-col items-start justify-between">
                 <div className="p-4">
+                  <Heading size="h3">Materials</Heading>
+                </div>
+                <Table>
+                  <Thead>
+                    <Tr>
+                      <Th>Part</Th>
+                      <Th>Quantity</Th>
+
+                      <Th></Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    <Tr>
+                      <Td
+                        colSpan={24}
+                        className="py-8 text-muted-foreground text-center"
+                      >
+                        No materials
+                      </Td>
+                    </Tr>
+                  </Tbody>
+                </Table>
+              </div>
+              <Separator />
+              <div className="flex flex-col items-start justify-between">
+                <div className="p-4">
                   <Heading size="h3">Files</Heading>
                 </div>
                 <Table>
@@ -539,7 +565,7 @@ function Notes({ notes }: { job: JobType; notes: Note[] }) {
           <div className="flex-grow relative">
             <input
               type="text"
-              className="flex w-full border rounded-xl focus:outline-none focus:border-ring pl-4 h-11"
+              className="flex w-full border rounded-xl focus:outline-none focus:border-ring pl-4 h-11 bg-foreground/10 text-foreground"
             />
             {/* <button className="absolute flex items-center justify-center h-full w-12 right-0 top-0 text-gray-400 hover:text-gray-600">
                   <svg

@@ -206,7 +206,7 @@ export function Jobs({
               </TabsList>
             </div>
             <Separator />
-            <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="p-4">
               <div className="relative">
                 <div className="flex justify-between space-x-4">
                   <div className="flex flex-grow">

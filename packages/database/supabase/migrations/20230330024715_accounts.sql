@@ -108,7 +108,7 @@ CREATE TABLE "accountCategory" (
 
   CONSTRAINT "accountCategory_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "accountCategory_unique_category" UNIQUE ("category", "companyId"),
-  CONSTRAINT "accountCategory_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
+  CONSTRAINT "accountCategory_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "accountCategory_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
   CONSTRAINT "accountCategory_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );

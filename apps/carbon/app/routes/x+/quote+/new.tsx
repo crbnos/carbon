@@ -73,7 +73,7 @@ export default function QuotationNewRoute() {
   };
 
   return (
-    <div className="w-1/2 max-w-[720px] min-w-[420px] mx-auto pt-4">
+    <div className="w-1/2 max-w-[600px] min-w-[420px] mx-auto pt-4">
       {/* @ts-ignore */}
       <QuotationForm initialValues={initialValues} />
     </div>
