@@ -25,8 +25,8 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { Form, Link, useMatches } from "@remix-run/react";
 import { BsFillHexagonFill } from "react-icons/bs";
+import { IoMdAdd } from "react-icons/io";
 import { LuChevronsUpDown } from "react-icons/lu";
-import { MdAdd } from "react-icons/md";
 import { z } from "zod";
 import {
   BreadcrumbItem,
@@ -158,7 +158,7 @@ function CompanyBreadcrumb() {
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem onClick={companyForm.onOpen}>
-                      <DropdownMenuIcon icon={<MdAdd />} />
+                      <DropdownMenuIcon icon={<IoMdAdd />} />
                       Add Company
                     </DropdownMenuItem>
                   </DropdownMenuGroup>

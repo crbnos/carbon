@@ -4,9 +4,14 @@ import {
   Enumerable,
   HStack,
   Heading,
+  IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
+  VStack,
   cn,
 } from "@carbon/react";
 import { Link, type LinkProps } from "@remix-run/react";
@@ -21,6 +26,8 @@ import {
   LuChevronDown,
   LuChevronUp,
   LuHammer,
+  LuPlus,
+  LuSearch,
   LuShoppingCart,
 } from "react-icons/lu";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
@@ -77,6 +84,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           isRoot: false,
         },
       },
+
       {
         id: "4",
         parentId: "2",
@@ -90,6 +98,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
           quantity: 2.8,
           fulfillmentMethod: "Pick",
           isInherited: true,
+          isRoot: false,
+        },
+      },
+      {
+        id: "3",
+        parentId: "1",
+        hasChildren: false,
+        children: [],
+        level: 1,
+        data: {
+          itemId: "3",
+          readableId: "91772A061",
+          description: '5/16" Threaded Machine Screw',
+          quantity: 4,
+          fulfillmentMethod: "Buy",
+          isInherited: false,
           isRoot: false,
         },
       },
@@ -117,7 +141,7 @@ export default function Item() {
             <TabTrigger to="details">Details</TabTrigger>
             <TabTrigger to="purchasing">Purchasing</TabTrigger>
             <TabTrigger to="sales">Sales</TabTrigger>
-            <TabTrigger isActive to="production">
+            <TabTrigger isActive to="purchasing">
               Production
             </TabTrigger>
             <TabTrigger to="inventory">Inventory</TabTrigger>
@@ -149,7 +173,7 @@ export default function Item() {
               <ResizablePanel order={2} minSize={40} defaultSize={60}>
                 {/* Details */}
               </ResizablePanel>
-              <ResizableHandle withHandle />
+              {/* <ResizableHandle withHandle />
               <ResizablePanel
                 order={3}
                 minSize={20}
@@ -157,7 +181,7 @@ export default function Item() {
                 className="bg-card"
               >
                 <div className="grid h-full overflow-hidden p-2"></div>
-              </ResizablePanel>
+              </ResizablePanel> */}
             </ResizablePanelGroup>
           )}
         </ClientOnly>
@@ -203,103 +227,122 @@ function BoMExplorer({
       value: { text: filterText },
       fn: (value, node) => {
         if (value.text === "") return true;
-        // if (
-        //   node.data.partId.toLowerCase().includes(value.text.toLowerCase())
-        // ) {
-        //   return true;
-        // }
+        if (
+          node.data.readableId.toLowerCase().includes(value.text.toLowerCase())
+        ) {
+          return true;
+        }
         return false;
       },
     },
   });
 
   return (
-    <TreeView
-      parentRef={parentRef}
-      virtualizer={virtualizer}
-      autoFocus
-      tree={methods}
-      nodes={nodes}
-      getNodeProps={getNodeProps}
-      getTreeProps={getTreeProps}
-      renderNode={({ node, state }) => (
-        <>
-          <div
-            className={cn(
-              "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2",
-              state.selected
-                ? "bg-muted hover:bg-muted/90"
-                : "bg-transparent hover:bg-muted/90"
-            )}
-            onClick={() => {
-              selectNode(node.id);
-            }}
-          >
-            <div className="flex h-8 items-center">
-              {Array.from({ length: node.level }).map((_, index) => (
-                <TaskLine key={index} isSelected={state.selected} />
-              ))}
-              <div
-                className={cn(
-                  "flex h-8 w-4 items-center",
-                  node.hasChildren && "hover:bg-accent"
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (e.altKey) {
-                    if (state.expanded) {
-                      collapseAllBelowDepth(node.level);
+    <VStack>
+      <HStack className="w-full">
+        <InputGroup size="sm" className="flex flex-grow">
+          <InputLeftElement>
+            <LuSearch className="h-4 w-4" />
+          </InputLeftElement>
+          <Input
+            placeholder="Search..."
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+          />
+        </InputGroup>
+        <IconButton
+          aria-label="Add"
+          variant="secondary"
+          icon={<LuPlus className="h-4 w-4" />}
+        />
+      </HStack>
+      <TreeView
+        parentRef={parentRef}
+        virtualizer={virtualizer}
+        autoFocus
+        tree={methods}
+        nodes={nodes}
+        getNodeProps={getNodeProps}
+        getTreeProps={getTreeProps}
+        renderNode={({ node, state }) => (
+          <>
+            <div
+              className={cn(
+                "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2",
+                state.selected
+                  ? "bg-muted hover:bg-muted/90"
+                  : "bg-transparent hover:bg-muted/90"
+              )}
+              onClick={() => {
+                selectNode(node.id);
+              }}
+            >
+              <div className="flex h-8 items-center">
+                {Array.from({ length: node.level }).map((_, index) => (
+                  <TaskLine key={index} isSelected={state.selected} />
+                ))}
+                <div
+                  className={cn(
+                    "flex h-8 w-4 items-center",
+                    node.hasChildren && "hover:bg-accent"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (e.altKey) {
+                      if (state.expanded) {
+                        collapseAllBelowDepth(node.level);
+                      } else {
+                        expandAllBelowDepth(node.level);
+                      }
                     } else {
-                      expandAllBelowDepth(node.level);
+                      toggleExpandNode(node.id);
                     }
-                  } else {
-                    toggleExpandNode(node.id);
-                  }
-                  scrollToNode(node.id);
-                }}
-              >
-                {node.hasChildren ? (
-                  state.expanded ? (
-                    <LuChevronDown className="h-4 w-4 text-gray-400" />
+                    scrollToNode(node.id);
+                  }}
+                >
+                  {node.hasChildren ? (
+                    state.expanded ? (
+                      <LuChevronDown className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <LuChevronUp className="h-4 w-4 text-gray-400" />
+                    )
                   ) : (
-                    <LuChevronUp className="h-4 w-4 text-gray-400" />
-                  )
-                ) : (
-                  <div className="h-8 w-4" />
-                )}
+                    <div className="h-8 w-4" />
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="flex w-full items-center justify-between gap-2">
-              <div
-                className={cn(
-                  "flex items-center gap-2 overflow-x-hidden",
-                  node.data.isInherited && "opacity-50"
-                )}
-              >
-                <MethodIcon
-                  type={
-                    // node.data.isRoot ? "Method" :
-                    node.data.fulfillmentMethod
-                  }
-                  className="h-4 min-h-4 w-4 min-w-4"
-                />
-                <NodeText node={node} />
-              </div>
-              <div className="flex items-center gap-1">
-                {node.data.isRoot ? (
-                  <Badge variant="outline" className="text-xs">
-                    Method
-                  </Badge>
-                ) : (
-                  <NodeQuantity node={node} />
-                )}
+              <div className="flex w-full items-center justify-between gap-2">
+                <div
+                  className={cn(
+                    "flex items-center gap-2 overflow-x-hidden",
+                    node.data.isInherited && "opacity-50"
+                  )}
+                >
+                  <MethodIcon
+                    type={
+                      // node.data.isRoot ? "Method" :
+                      node.data.fulfillmentMethod
+                    }
+                    className="h-4 min-h-4 w-4 min-w-4"
+                  />
+                  <NodeText node={node} />
+                </div>
+                <div className="flex items-center gap-1">
+                  {node.data.isRoot ? (
+                    <Badge variant="outline" className="text-xs">
+                      Method
+                    </Badge>
+                  ) : (
+                    <NodeQuantity node={node} />
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
-    />
+          </>
+        )}
+      />
+    </VStack>
   );
 }
 
@@ -364,7 +407,7 @@ function TabTrigger({
     <Link
       {...props}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         isActive && "bg-background text-foreground shadow"
       )}
     >
