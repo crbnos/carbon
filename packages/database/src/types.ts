@@ -5412,6 +5412,110 @@ export type Database = {
         }
         Relationships: []
       }
+      item: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          name: string
+          partGroupId: string | null
+          readableId: string
+          type: Database["public"]["Enums"]["itemType"]
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          name: string
+          partGroupId?: string | null
+          readableId: string
+          type: Database["public"]["Enums"]["itemType"]
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          name?: string
+          partGroupId?: string | null
+          readableId?: string
+          type?: Database["public"]["Enums"]["itemType"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "item_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "item_partGroupId_fkey"
+            columns: ["partGroupId"]
+            isOneToOne: false
+            referencedRelation: "partGroup"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal: {
         Row: {
           accountingPeriodId: string | null
@@ -5855,6 +5959,7 @@ export type Database = {
           description: string | null
           fromDate: string | null
           id: string
+          itemId: string
           manufacturerPartNumber: string | null
           name: string
           partGroupId: string | null
@@ -5878,6 +5983,7 @@ export type Database = {
           description?: string | null
           fromDate?: string | null
           id: string
+          itemId: string
           manufacturerPartNumber?: string | null
           name: string
           partGroupId?: string | null
@@ -5901,6 +6007,7 @@ export type Database = {
           description?: string | null
           fromDate?: string | null
           id?: string
+          itemId?: string
           manufacturerPartNumber?: string | null
           name?: string
           partGroupId?: string | null
@@ -6044,6 +6151,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "part_id_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "part_partGroupId_fkey"
@@ -19716,6 +19830,7 @@ export type Database = {
           description: string | null
           fromDate: string | null
           id: string | null
+          itemId: string | null
           manufacturerPartNumber: string | null
           name: string | null
           partGroup: string | null
@@ -19863,6 +19978,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "part_id_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "part_partGroupId_fkey"
@@ -22935,6 +23057,14 @@ export type Database = {
       glAccountType: "Posting" | "Total" | "Begin Total" | "End Total"
       glConsolidatedRate: "Average" | "Current" | "Historical"
       glIncomeBalance: "Balance Sheet" | "Income Statement"
+      itemType:
+        | "part"
+        | "material"
+        | "tool"
+        | "hardware"
+        | "service"
+        | "consumable"
+        | "fixture"
       journalLineDocumentType:
         | "Receipt"
         | "Invoice"

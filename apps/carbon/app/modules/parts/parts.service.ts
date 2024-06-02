@@ -455,7 +455,28 @@ export async function upsertPart(
       })
 ) {
   if ("createdBy" in part) {
-    return client.from("part").insert(part).select("*").single();
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: part.id,
+        name: part.name,
+        type: "part",
+        companyId: part.companyId,
+        createdBy: part.createdBy,
+      })
+      .select("id")
+      .single();
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("part")
+      .insert({
+        ...part,
+        itemId,
+      })
+      .select("*")
+      .single();
   }
   return client
     .from("part")

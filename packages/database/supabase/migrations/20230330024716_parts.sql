@@ -50,6 +50,35 @@ CREATE POLICY "Employees with parts_delete can delete part groups" ON "partGroup
     has_company_permission('parts_update', "companyId")
   );
 
+
+CREATE TYPE "itemType" AS ENUM (
+  'part',
+  'material',
+  'tool',
+  'hardware',
+  'service',
+  'consumable',
+  'fixture'
+);
+
+CREATE TABLE "item" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "readableId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "type" "itemType" NOT NULL,
+  "partGroupId" TEXT,
+  "companyId" TEXT NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT "item_pkey" PRIMARY KEY (id),
+  CONSTRAINT "item_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "item_unique" UNIQUE ("readableId", "companyId", "type"),
+  CONSTRAINT "item_partGroupId_fkey" FOREIGN KEY ("partGroupId") REFERENCES "partGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "item_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id")
+);
+
+
 CREATE TYPE "partType" AS ENUM (
   'Inventory',
   'Non-Inventory'
@@ -139,6 +168,7 @@ CREATE POLICY "Employees with parts_delete can delete units of measure" ON "unit
 
 CREATE TABLE "part" (
   "id" TEXT NOT NULL,
+  "itemId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "description" TEXT,
   "blocked" BOOLEAN NOT NULL DEFAULT false,
@@ -161,6 +191,7 @@ CREATE TABLE "part" (
   "customFields" JSONB,
 
   CONSTRAINT "part_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "part_id_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "part_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "part_partGroupId_fkey" FOREIGN KEY ("partGroupId") REFERENCES "partGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "part_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
