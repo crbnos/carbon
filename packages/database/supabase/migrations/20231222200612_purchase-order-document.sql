@@ -5,8 +5,8 @@ CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS
     -- p.name AS "partName",
     -- p.description AS "partDescription",
     ps."supplierPartId",
-    s.name AS "serviceName",
-    s.description AS "serviceDescription",
+    -- s.name AS "serviceName",
+    -- s.description AS "serviceDescription",
     ss."supplierServiceId"
   FROM "purchaseOrderLine" pol
     INNER JOIN "purchaseOrder" po 

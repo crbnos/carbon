@@ -13,6 +13,7 @@ import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
+  Hidden,
   Input,
   InputControlled,
   PartGroup,
@@ -22,7 +23,11 @@ import {
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import { serviceType, serviceValidator } from "~/modules/parts";
+import {
+  newServiceValidator,
+  serviceType,
+  serviceValidator,
+} from "~/modules/parts";
 
 type ServiceFormProps = {
   initialValues: z.infer<typeof serviceValidator>;
@@ -90,7 +95,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
   return (
     <ValidatedForm
       method="post"
-      validator={serviceValidator}
+      validator={isEditing ? serviceValidator : newServiceValidator}
       defaultValues={initialValues}
     >
       <Card>
@@ -104,27 +109,29 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
           )}
         </CardHeader>
         <CardContent>
+          {isEditing && <Hidden name="id" />}
           <div
             className={cn(
               "grid w-full gap-x-8 gap-y-2",
               isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
             )}
           >
-            {isEditing ? (
-              <Input name="id" label="Service ID" isReadOnly />
-            ) : (
-              <InputControlled
-                name="id"
-                label="Service ID"
-                helperText="Use ... to get the next service ID"
-                value={serviceId}
-                onChange={onServiceIdChange}
-                isDisabled={loading}
-              />
+            {!isEditing && (
+              <>
+                {" "}
+                <InputControlled
+                  name="id"
+                  label="Service ID"
+                  helperText="Use ... to get the next service ID"
+                  value={serviceId}
+                  onChange={onServiceIdChange}
+                  isDisabled={loading}
+                />
+                <Input name="name" label="Name" />
+                <PartGroup name="partGroupId" label="Part Group" />
+                <TextArea name="description" label="Description" />
+              </>
             )}
-            <Input name="name" label="Name" />
-            <PartGroup name="partGroupId" label="Part Group" />
-            <TextArea name="description" label="Description" />
 
             <Select
               name="serviceType"
@@ -132,8 +139,8 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
               options={serviceTypeOptions}
             />
 
-            <Boolean name="blocked" label="Blocked" />
-            {isEditing && <Boolean name="active" label="Active" />}
+            {!isEditing && <Boolean name="blocked" label="Blocked" />}
+
             <CustomFormFields table="service" />
           </div>
         </CardContent>

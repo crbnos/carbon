@@ -147,6 +147,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
+              {isEditing && <Hidden name="id" />}
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-2",

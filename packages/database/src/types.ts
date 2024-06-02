@@ -14775,60 +14775,48 @@ export type Database = {
       }
       service: {
         Row: {
-          active: boolean
           approved: boolean
           approvedBy: string | null
           assignee: string | null
-          blocked: boolean
           companyId: string
           createdAt: string
           createdBy: string
           customFields: Json | null
-          description: string | null
           fromDate: string | null
           id: string
-          name: string
-          partGroupId: string | null
+          itemId: string | null
           serviceType: Database["public"]["Enums"]["serviceType"]
           toDate: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
-          active?: boolean
           approved?: boolean
           approvedBy?: string | null
           assignee?: string | null
-          blocked?: boolean
           companyId: string
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          description?: string | null
           fromDate?: string | null
           id: string
-          name: string
-          partGroupId?: string | null
+          itemId?: string | null
           serviceType: Database["public"]["Enums"]["serviceType"]
           toDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
-          active?: boolean
           approved?: boolean
           approvedBy?: string | null
           assignee?: string | null
-          blocked?: boolean
           companyId?: string
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          description?: string | null
           fromDate?: string | null
           id?: string
-          name?: string
-          partGroupId?: string | null
+          itemId?: string | null
           serviceType?: Database["public"]["Enums"]["serviceType"]
           toDate?: string | null
           updatedAt?: string | null
@@ -14969,10 +14957,10 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "service_partGroupId_fkey"
-            columns: ["partGroupId"]
+            foreignKeyName: "service_itemId_fkey"
+            columns: ["itemId"]
             isOneToOne: false
-            referencedRelation: "partGroup"
+            referencedRelation: "item"
             referencedColumns: ["id"]
           },
           {
@@ -20296,9 +20284,7 @@ export type Database = {
           quantityToReceive: number | null
           receivedComplete: boolean | null
           requiresInspection: boolean | null
-          serviceDescription: string | null
           serviceId: string | null
-          serviceName: string | null
           setupPrice: number | null
           shelfId: string | null
           supplierId: string | null
@@ -22198,6 +22184,7 @@ export type Database = {
           description: string | null
           fromDate: string | null
           id: string | null
+          itemId: string | null
           name: string | null
           partGroup: string | null
           partGroupId: string | null
@@ -22208,6 +22195,13 @@ export type Database = {
           updatedBy: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "item_partGroupId_fkey"
+            columns: ["partGroupId"]
+            isOneToOne: false
+            referencedRelation: "partGroup"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_approvedBy_fkey"
             columns: ["approvedBy"]
@@ -22342,10 +22336,10 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "service_partGroupId_fkey"
-            columns: ["partGroupId"]
+            foreignKeyName: "service_itemId_fkey"
+            columns: ["itemId"]
             isOneToOne: false
-            referencedRelation: "partGroup"
+            referencedRelation: "item"
             referencedColumns: ["id"]
           },
           {

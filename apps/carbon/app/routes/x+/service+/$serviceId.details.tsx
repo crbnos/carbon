@@ -1,10 +1,16 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import type { Service } from "~/modules/parts";
-import { ServiceForm, serviceValidator, upsertService } from "~/modules/parts";
+import {
+  ItemForm,
+  ServiceForm,
+  serviceValidator,
+  upsertService,
+} from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -56,7 +62,17 @@ export default function ServiceDetailsRoute() {
   );
   if (!routeData) throw new Error("Could not find part data");
 
-  const initialValues = {
+  const itemInitialValues = {
+    id: routeData.service?.itemId ?? "",
+    readableId: routeData.service?.id ?? "",
+    name: routeData.service?.name ?? "",
+    description: routeData.service?.description ?? "",
+    partGroupId: routeData.service?.partGroupId ?? "",
+    active: routeData.service?.active ?? true,
+    blocked: routeData.service?.blocked ?? false,
+  };
+
+  const serviceInitialValues = {
     id: routeData.service?.id!,
     name: routeData.service?.name ?? "",
     description: routeData.service?.description ?? undefined,
@@ -67,5 +83,17 @@ export default function ServiceDetailsRoute() {
     ...getCustomFields(routeData.service?.customFields),
   };
 
-  return <ServiceForm key={initialValues.id} initialValues={initialValues} />;
+  return (
+    <VStack spacing={4}>
+      <ItemForm
+        key={itemInitialValues.id}
+        initialValues={itemInitialValues}
+        type="service"
+      />
+      <ServiceForm
+        key={serviceInitialValues.id}
+        initialValues={serviceInitialValues}
+      />
+    </VStack>
+  );
 }

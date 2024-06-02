@@ -1,0 +1,52 @@
+import { validationError, validator } from "@carbon/remix-validated-form";
+import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { itemValidator, updateItem } from "~/modules/parts";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import { assertIsPost } from "~/utils/http";
+import { error, success } from "~/utils/result";
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId } = await requirePermissions(request, {
+    create: "parts",
+  });
+
+  const { type } = params;
+  if (!type) throw new Error("Could not find type");
+  if (
+    ![
+      "part",
+      "material",
+      "tool",
+      "hardware",
+      "service",
+      "consumable",
+      "fixture",
+    ].includes(type)
+  ) {
+    throw new Error("Invalid type");
+  }
+
+  const formData = await request.formData();
+  const validation = await validator(itemValidator).validate(formData);
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  const update = await updateItem(client, {
+    ...validation.data,
+    type: type as "part",
+    companyId,
+  });
+
+  if (update.error) {
+    return json(
+      update.error,
+      await flash(request, error(update.error, "Failed to update item"))
+    );
+  }
+
+  return json({ success: true }, await flash(request, success("Updated item")));
+}

@@ -6,7 +6,9 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  itemValidator,
   newPartValidator,
+  newServiceValidator,
   partCostValidator,
   partGroupValidator,
   partInventoryValidator,
@@ -494,6 +496,20 @@ export async function upsertPart(
     .eq("id", part.id);
 }
 
+export async function updateItem(
+  client: SupabaseClient<Database>,
+  item: z.infer<typeof itemValidator> & {
+    companyId: string;
+    type: Database["public"]["Enums"]["itemType"];
+  }
+) {
+  return client
+    .from("item")
+    .update(sanitize(item))
+    .eq("id", item.id)
+    .eq("companyId", item.companyId);
+}
+
 export async function upsertPartCost(
   client: SupabaseClient<Database>,
   partCost: z.infer<typeof partCostValidator> & {
@@ -653,7 +669,7 @@ export async function upsertPartUnitSalePrice(
 export async function upsertService(
   client: SupabaseClient<Database>,
   service:
-    | (z.infer<typeof serviceValidator> & {
+    | (z.infer<typeof newServiceValidator> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -665,7 +681,31 @@ export async function upsertService(
       })
 ) {
   if ("createdBy" in service) {
-    return client.from("service").insert(service).select("*").single();
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: service.id,
+        name: service.name,
+        type: "service",
+        companyId: service.companyId,
+        createdBy: service.createdBy,
+      })
+      .select("id")
+      .single();
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("service")
+      .insert({
+        id: service.id,
+        itemId: itemId,
+        serviceType: service.serviceType,
+        companyId: service.companyId,
+        createdBy: service.createdBy,
+      })
+      .select("*")
+      .single();
   }
   return client
     .from("service")

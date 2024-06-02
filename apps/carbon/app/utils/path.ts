@@ -28,6 +28,7 @@ export const path = {
       equipmentTypes: `${api}/resources/equipment-types`,
       groupsByType: (type?: string) =>
         generatePath(`${api}/users/groups?type=${type}`),
+      item: (type: string) => generatePath(`${api}/item/${type}`),
       locations: `${api}/resources/locations`,
       partGroups: `${api}/parts/groups`,
       rollback: (table: string, id: string) =>
@@ -267,7 +268,6 @@ export const path = {
     integration: (name: string) =>
       generatePath(`${x}/settings/integrations/${name}`),
     integrations: `${x}/settings/integrations`,
-    item: `${x}/item`,
     inventory: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
     jobs: `${x}/jobs`,

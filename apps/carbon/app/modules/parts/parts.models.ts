@@ -149,17 +149,14 @@ export const partUnitSalePriceValidator = z.object({
 
 export const serviceValidator = z.object({
   id: z.string().min(1, { message: "Service ID is required" }).max(255),
-  name: z.string().min(1, { message: "Name is required" }).max(255),
-  description: z.string().optional(),
-  partGroupId: zfd.text(z.string().optional()),
   serviceType: z.enum(serviceType, {
     errorMap: (issue, ctx) => ({
       message: "Service type is required",
     }),
   }),
-  blocked: zfd.checkbox(),
-  active: zfd.checkbox(),
 });
+
+export const newServiceValidator = itemValidator.merge(serviceValidator);
 
 export const serviceSupplierValidator = z.object({
   id: zfd.text(z.string().optional()),

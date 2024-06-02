@@ -146,10 +146,16 @@ DROP VIEW "services";
 CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
   SELECT
     s.*,
+    i.name,
+    i.description,
+    i."partGroupId",
+    i.active,
+    i.blocked,
     pg.name AS "partGroup",
     ss."supplierIds"
   FROM "service" s
-  LEFT JOIN "partGroup" pg ON pg.id = s."partGroupId"
+  INNER JOIN "item" i ON i.id = s."itemId"
+  LEFT JOIN "partGroup" pg ON pg.id = i."partGroupId"
   LEFT JOIN (
     SELECT 
       "serviceId",

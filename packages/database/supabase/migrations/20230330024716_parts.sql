@@ -83,6 +83,7 @@ CREATE TABLE "item" (
 
 CREATE INDEX "item_companyId_idx" ON "item" ("companyId");
 CREATE INDEX "item_name_companyId_idx" ON "item" ("name", "companyId");
+CREATE INDEX "item_type_companyId_idx" ON "item" ("type", "companyId");
 
 CREATE TYPE "partType" AS ENUM (
   'Inventory',

@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
+import { useFetcher } from "@remix-run/react";
 import type { z } from "zod";
 import {
   Boolean,
@@ -32,14 +33,16 @@ function getLabel(type: Database["public"]["Enums"]["itemType"]) {
 
 const ItemForm = ({ initialValues, type }: ItemFormProps) => {
   const permissions = usePermissions();
+  const fetcher = useFetcher();
 
   return (
     <Card>
       <ValidatedForm
-        action={path.to.item}
+        action={path.to.api.item(type)}
         method="post"
         validator={itemValidator}
         defaultValues={initialValues}
+        fetcher={fetcher}
       >
         <CardHeader>
           <CardTitle>{getLabel(type)}</CardTitle>
