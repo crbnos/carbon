@@ -24,12 +24,12 @@ import {
   PartGroup,
   Select,
   Submit,
-  TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import {
+  newPartValidator,
   partReplenishmentSystems,
   partTypes,
   partValidator,
@@ -130,7 +130,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
           <ValidatedForm
             action={isEditing ? undefined : path.to.newPart}
             method="post"
-            validator={partValidator}
+            validator={isEditing ? partValidator : newPartValidator}
             defaultValues={initialValues}
             fetcher={fetcher}
           >
@@ -153,9 +153,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   isEditing ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1"
                 )}
               >
-                {isEditing ? (
-                  <Input name="id" label="Part ID" isReadOnly />
-                ) : (
+                {!isEditing && (
                   <InputControlled
                     name="id"
                     label="Part ID"
@@ -170,10 +168,11 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   />
                 )}
 
-                <Input name="name" label="Name" />
-                <PartGroup name="partGroupId" label="Part Group" />
-                {isEditing && (
-                  <TextArea name="description" label="Description" />
+                {!isEditing && (
+                  <>
+                    <Input name="name" label="Name" />
+                    <PartGroup name="partGroupId" label="Part Group" />
+                  </>
                 )}
                 <Select
                   name="replenishmentSystem"
@@ -190,8 +189,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   label="Unit of Measure"
                 />
 
-                <Boolean name="blocked" label="Blocked" />
-                {isEditing && <Boolean name="active" label="Active" />}
+                {!isEditing && <Boolean name="blocked" label="Blocked" />}
 
                 <CustomFormFields table="part" />
               </div>

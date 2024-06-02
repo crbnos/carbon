@@ -1,5 +1,6 @@
 import usePartsSubmodules from "./usePartsSubmodules";
 
+export * from "./Item";
 export * from "./Part";
 export * from "./PartGroups";
 export * from "./Parts";

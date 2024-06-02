@@ -64,9 +64,12 @@ CREATE TYPE "itemType" AS ENUM (
 CREATE TABLE "item" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "readableId" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
   "type" "itemType" NOT NULL,
+  "name" TEXT NOT NULL,
+  "description" TEXT,
   "partGroupId" TEXT,
+  "active" BOOLEAN NOT NULL DEFAULT true,
+  "blocked" BOOLEAN NOT NULL DEFAULT false,
   "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -78,6 +81,8 @@ CREATE TABLE "item" (
   CONSTRAINT "item_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id")
 );
 
+CREATE INDEX "item_companyId_idx" ON "item" ("companyId");
+CREATE INDEX "item_name_companyId_idx" ON "item" ("name", "companyId");
 
 CREATE TYPE "partType" AS ENUM (
   'Inventory',
@@ -169,15 +174,9 @@ CREATE POLICY "Employees with parts_delete can delete units of measure" ON "unit
 CREATE TABLE "part" (
   "id" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
-  "description" TEXT,
-  "blocked" BOOLEAN NOT NULL DEFAULT false,
   "replenishmentSystem" "partReplenishmentSystem" NOT NULL,
-  "partGroupId" TEXT,
   "partType" "partType" NOT NULL,
-  "manufacturerPartNumber" TEXT,
   "unitOfMeasureCode" TEXT NOT NULL,
-  "active" BOOLEAN NOT NULL DEFAULT true,
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
   "fromDate" DATE,
@@ -193,7 +192,6 @@ CREATE TABLE "part" (
   CONSTRAINT "part_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "part_id_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "part_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "part_partGroupId_fkey" FOREIGN KEY ("partGroupId") REFERENCES "partGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "part_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
   CONSTRAINT "part_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT "part_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -201,12 +199,10 @@ CREATE TABLE "part" (
   CONSTRAINT "part_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "part_name_idx" ON "part"("name");
+CREATE INDEX "part_itemId_idx" ON "part" ("itemId");
 CREATE INDEX "part_companyId_idx" ON "part" ("companyId");
-CREATE INDEX "part_partType_idx" ON "part"("partType");
-CREATE INDEX "part_partGroupId_idx" ON "part"("partGroupId");
-CREATE INDEX "part_replenishmentSystem_idx" ON "part"("replenishmentSystem");
-CREATE INDEX "part_active_blocked_idx" ON "part"("active", "blocked");
+CREATE INDEX "part_partType_idx" ON "part"("partType", "companyId");
+CREATE INDEX "part_replenishmentSystem_idx" ON "part"("replenishmentSystem", "companyId");
 
 ALTER publication supabase_realtime ADD TABLE "part";
 ALTER TABLE "part" ENABLE ROW LEVEL SECURITY;
@@ -241,18 +237,18 @@ CREATE POLICY "Employees with parts_delete can delete parts" ON "part"
     has_company_permission('parts_delete', "companyId")
   );
 
-CREATE OR REPLACE FUNCTION public.create_part_search_result()
+CREATE OR REPLACE FUNCTION public.create_item_search_result()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.search(name, description, entity, uuid, link, "companyId")
-  VALUES (new.id, new.name || ' ' || COALESCE(new.description, ''), 'Part', new.id, '/x/part/' || new.id, new."companyId");
+  VALUES (new."readableId", new.name || ' ' || COALESCE(new.description, ''), 'Part', new."readableId", '/x/part/' || new."id", new."companyId");
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER create_part_search_result
-  AFTER INSERT on public.part
-  FOR EACH ROW EXECUTE PROCEDURE public.create_part_search_result();
+CREATE TRIGGER create_item_search_result
+  AFTER INSERT on public.item
+  FOR EACH ROW EXECUTE PROCEDURE public.create_item_search_result();
 
 CREATE FUNCTION public.create_part_related_records()
 RETURNS TRIGGER AS $$
@@ -276,23 +272,23 @@ CREATE TRIGGER create_part_related_records
   AFTER INSERT on public.part
   FOR EACH ROW EXECUTE PROCEDURE public.create_part_related_records();
 
-CREATE OR REPLACE FUNCTION public.update_part_search_result()
+CREATE OR REPLACE FUNCTION public.update_item_search_result()
 RETURNS TRIGGER AS $$
 BEGIN
   IF (old.name <> new.name OR old.description <> new.description) THEN
-    UPDATE public.search SET name = new.id, description = new.name || ' ' || COALESCE(new.description, '')
-    WHERE entity = 'Part' AND uuid = new.id AND "companyId" = new."companyId";
+    UPDATE public.search SET name = new."readableId", description = new.name || ' ' || COALESCE(new.description, '')
+    WHERE entity = 'Part' AND uuid = new."readableId" AND "companyId" = new."companyId";
   END IF;
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER update_part_search_result
-  AFTER UPDATE on public.part
-  FOR EACH ROW EXECUTE PROCEDURE public.update_part_search_result();
+CREATE TRIGGER update_item_search_result
+  AFTER UPDATE on public.item
+  FOR EACH ROW EXECUTE PROCEDURE public.update_item_search_result();
 
 
-CREATE FUNCTION public.delete_part_search_result()
+CREATE FUNCTION public.delete_item_search_result()
 RETURNS TRIGGER AS $$
 BEGIN
   DELETE FROM public.search WHERE entity = 'Part' AND uuid = old.id AND "companyId" = old."companyId";
@@ -300,9 +296,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER delete_part_search_result
-  AFTER DELETE on public.part
-  FOR EACH ROW EXECUTE PROCEDURE public.delete_part_search_result();
+CREATE TRIGGER delete_item_search_result
+  AFTER DELETE on public.item
+  FOR EACH ROW EXECUTE PROCEDURE public.delete_item_search_result();
 
 CREATE TABLE "partCost" (
   "partId" TEXT NOT NULL,

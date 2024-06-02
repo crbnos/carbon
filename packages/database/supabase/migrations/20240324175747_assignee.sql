@@ -11,11 +11,17 @@ CREATE OR REPLACE VIEW "customers" WITH(SECURITY_INVOKER=true) AS
 DROP VIEW "parts";
 CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS 
   SELECT
+    i.name,
+    i.description,
+    i."partGroupId",
+    i.active,
+    i.blocked,
     p.*,
     pg.name AS "partGroup",
     ps."supplierIds"
   FROM "part" p
-  LEFT JOIN "partGroup" pg ON pg.id = p."partGroupId"
+  INNER JOIN "item" i ON i.id = p."itemId"
+  LEFT JOIN "partGroup" pg ON pg.id = i."partGroupId"
   LEFT JOIN (
     SELECT 
       "partId",

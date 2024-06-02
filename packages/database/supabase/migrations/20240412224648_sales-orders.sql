@@ -623,9 +623,10 @@ CREATE OR REPLACE VIEW "customers" WITH(SECURITY_INVOKER=true) AS
 CREATE OR REPLACE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS
   SELECT 
     sol.*,
-    so."customerId" ,
-    p.name AS "partName",
-    p.description AS "partDescription"
+    so."customerId" 
+    -- ,
+    -- p.name AS "partName",
+    -- p.description AS "partDescription"
   FROM "salesOrderLine" sol
     INNER JOIN "salesOrder" so 
       ON so.id = sol."salesOrderId"

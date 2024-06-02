@@ -1,10 +1,11 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/parts";
-import { PartForm, partValidator, upsertPart } from "~/modules/parts";
+import { ItemForm, PartForm, partValidator, upsertPart } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -47,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export default function PartBasicRoute() {
+export default function PartDetailsRoute() {
   const { partId } = useParams();
   if (!partId) throw new Error("Could not find partId");
   const partData = useRouteData<{ partSummary: PartSummary }>(
@@ -55,18 +56,32 @@ export default function PartBasicRoute() {
   );
   if (!partData) throw new Error("Could not find part data");
 
-  const initialValues = {
-    id: partData.partSummary?.id ?? "",
+  const itemInitialValues = {
+    id: partData.partSummary?.itemId ?? "",
+    readableId: partData.partSummary?.id ?? "",
     name: partData.partSummary?.name ?? "",
-    description: partData.partSummary?.description ?? undefined,
+    description: partData.partSummary?.description ?? "",
+    partGroupId: partData.partSummary?.partGroupId ?? "",
+    active: partData.partSummary?.active ?? true,
+    blocked: partData.partSummary?.blocked ?? false,
+  };
+
+  const partInitialValues = {
+    id: partData.partSummary?.id ?? "",
     partType: partData.partSummary?.partType ?? "Inventory",
-    partGroupId: partData.partSummary?.partGroupId ?? undefined,
     replenishmentSystem: partData.partSummary?.replenishmentSystem ?? "Buy",
     unitOfMeasureCode: partData.partSummary?.unitOfMeasureCode ?? "EA",
-    blocked: partData.partSummary?.blocked ?? false,
-    active: partData.partSummary?.active ?? false,
     ...getCustomFields(partData.partSummary?.customFields ?? {}),
   };
 
-  return <PartForm key={initialValues.id} initialValues={initialValues} />;
+  return (
+    <VStack spacing={4}>
+      <ItemForm
+        key={itemInitialValues.id}
+        type="part"
+        initialValues={itemInitialValues}
+      />
+      <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
+    </VStack>
+  );
 }

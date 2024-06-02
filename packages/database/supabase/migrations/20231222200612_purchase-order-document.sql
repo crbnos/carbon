@@ -2,8 +2,8 @@ CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS
   SELECT 
     pol.*,
     po."supplierId" ,
-    p.name AS "partName",
-    p.description AS "partDescription",
+    -- p.name AS "partName",
+    -- p.description AS "partDescription",
     ps."supplierPartId",
     s.name AS "serviceName",
     s.description AS "serviceDescription",

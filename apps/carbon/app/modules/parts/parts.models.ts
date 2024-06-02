@@ -27,18 +27,22 @@ export const partManufacturingPolicies = [
 
 export const serviceType = ["Internal", "External"] as const;
 
-export const partValidator = z.object({
-  id: z.string().min(1, { message: "Part ID is required" }).max(255),
+export const itemValidator = z.object({
+  id: z.string().min(1, { message: "Item ID is required" }).max(255),
   name: z.string().min(1, { message: "Name is required" }).max(255),
   description: zfd.text(z.string().optional()),
+  partGroupId: zfd.text(z.string().optional()),
   blocked: zfd.checkbox(),
   active: zfd.checkbox(),
+});
+
+export const partValidator = z.object({
+  id: z.string().min(1, { message: "Part ID is required" }).max(255),
   replenishmentSystem: z.enum(partReplenishmentSystems, {
     errorMap: (issue, ctx) => ({
       message: "Replenishment system is required",
     }),
   }),
-  partGroupId: zfd.text(z.string().optional()),
   partType: z.enum(partTypes, {
     errorMap: (issue, ctx) => ({
       message: "Part type is required",
@@ -48,6 +52,8 @@ export const partValidator = z.object({
     .string()
     .min(1, { message: "Unit of Measure is required" }),
 });
+
+export const newPartValidator = itemValidator.merge(partValidator);
 
 export const partCostValidator = z.object({
   partId: z.string().min(1, { message: "Part ID is required" }),

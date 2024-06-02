@@ -267,6 +267,7 @@ export const path = {
     integration: (name: string) =>
       generatePath(`${x}/settings/integrations/${name}`),
     integrations: `${x}/settings/integrations`,
+    item: `${x}/item`,
     inventory: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
     jobs: `${x}/jobs`,

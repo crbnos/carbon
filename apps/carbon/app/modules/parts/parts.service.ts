@@ -6,6 +6,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  newPartValidator,
   partCostValidator,
   partGroupValidator,
   partInventoryValidator,
@@ -220,7 +221,7 @@ export async function getPart(
   companyId: string
 ) {
   return client
-    .from("part")
+    .from("parts")
     .select("*")
     .eq("id", id)
     .eq("companyId", companyId)
@@ -444,7 +445,7 @@ export async function insertShelf(
 export async function upsertPart(
   client: SupabaseClient<Database>,
   part:
-    | (z.infer<typeof partValidator> & {
+    | (z.infer<typeof newPartValidator> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -472,8 +473,14 @@ export async function upsertPart(
     return client
       .from("part")
       .insert({
-        ...part,
-        itemId,
+        id: part.id,
+        itemId: itemId,
+        replenishmentSystem: part.replenishmentSystem,
+        partType: part.partType,
+        unitOfMeasureCode: part.unitOfMeasureCode,
+        companyId: part.companyId,
+        createdBy: part.createdBy,
+        customFields: part.customFields,
       })
       .select("*")
       .single();

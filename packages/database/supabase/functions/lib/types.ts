@@ -5414,9 +5414,12 @@ export type Database = {
       }
       item: {
         Row: {
+          active: boolean
+          blocked: boolean
           companyId: string
           createdAt: string
           createdBy: string
+          description: string | null
           id: string
           name: string
           partGroupId: string | null
@@ -5424,9 +5427,12 @@ export type Database = {
           type: Database["public"]["Enums"]["itemType"]
         }
         Insert: {
+          active?: boolean
+          blocked?: boolean
           companyId: string
           createdAt?: string
           createdBy: string
+          description?: string | null
           id?: string
           name: string
           partGroupId?: string | null
@@ -5434,9 +5440,12 @@ export type Database = {
           type: Database["public"]["Enums"]["itemType"]
         }
         Update: {
+          active?: boolean
+          blocked?: boolean
           companyId?: string
           createdAt?: string
           createdBy?: string
+          description?: string | null
           id?: string
           name?: string
           partGroupId?: string | null
@@ -5947,22 +5956,16 @@ export type Database = {
       }
       part: {
         Row: {
-          active: boolean
           approved: boolean
           approvedBy: string | null
           assignee: string | null
-          blocked: boolean
           companyId: string
           createdAt: string
           createdBy: string
           customFields: Json | null
-          description: string | null
           fromDate: string | null
           id: string
           itemId: string
-          manufacturerPartNumber: string | null
-          name: string
-          partGroupId: string | null
           partType: Database["public"]["Enums"]["partType"]
           replenishmentSystem: Database["public"]["Enums"]["partReplenishmentSystem"]
           toDate: string | null
@@ -5971,22 +5974,16 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
-          active?: boolean
           approved?: boolean
           approvedBy?: string | null
           assignee?: string | null
-          blocked?: boolean
           companyId: string
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          description?: string | null
           fromDate?: string | null
           id: string
           itemId: string
-          manufacturerPartNumber?: string | null
-          name: string
-          partGroupId?: string | null
           partType: Database["public"]["Enums"]["partType"]
           replenishmentSystem: Database["public"]["Enums"]["partReplenishmentSystem"]
           toDate?: string | null
@@ -5995,22 +5992,16 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
-          active?: boolean
           approved?: boolean
           approvedBy?: string | null
           assignee?: string | null
-          blocked?: boolean
           companyId?: string
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          description?: string | null
           fromDate?: string | null
           id?: string
           itemId?: string
-          manufacturerPartNumber?: string | null
-          name?: string
-          partGroupId?: string | null
           partType?: Database["public"]["Enums"]["partType"]
           replenishmentSystem?: Database["public"]["Enums"]["partReplenishmentSystem"]
           toDate?: string | null
@@ -6157,13 +6148,6 @@ export type Database = {
             columns: ["itemId"]
             isOneToOne: false
             referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_partGroupId_fkey"
-            columns: ["partGroupId"]
-            isOneToOne: false
-            referencedRelation: "partGroup"
             referencedColumns: ["id"]
           },
           {
@@ -19831,7 +19815,6 @@ export type Database = {
           fromDate: string | null
           id: string | null
           itemId: string | null
-          manufacturerPartNumber: string | null
           name: string | null
           partGroup: string | null
           partGroupId: string | null
@@ -19846,6 +19829,13 @@ export type Database = {
           updatedBy: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "item_partGroupId_fkey"
+            columns: ["partGroupId"]
+            isOneToOne: false
+            referencedRelation: "partGroup"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "part_approvedBy_fkey"
             columns: ["approvedBy"]
@@ -19984,13 +19974,6 @@ export type Database = {
             columns: ["itemId"]
             isOneToOne: false
             referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_partGroupId_fkey"
-            columns: ["partGroupId"]
-            isOneToOne: false
-            referencedRelation: "partGroup"
             referencedColumns: ["id"]
           },
           {
@@ -20300,9 +20283,7 @@ export type Database = {
           inventoryUnitOfMeasureCode: string | null
           invoicedComplete: boolean | null
           locationId: string | null
-          partDescription: string | null
           partId: string | null
-          partName: string | null
           purchaseOrderId: string | null
           purchaseOrderLineType:
             | Database["public"]["Enums"]["purchaseOrderLineType"]
@@ -21738,9 +21719,7 @@ export type Database = {
           id: string | null
           invoicedComplete: boolean | null
           locationId: string | null
-          partDescription: string | null
           partId: string | null
-          partName: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
           quantityToInvoice: number | null
