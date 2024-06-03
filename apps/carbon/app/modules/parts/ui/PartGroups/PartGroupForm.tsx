@@ -53,11 +53,9 @@ const PartGroupForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created supplier status`);
+      toast.success(`Created part group`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        `Failed to create supplier status: ${fetcher.data.error.message}`
-      );
+      toast.error(`Failed to create part group: ${fetcher.data.error.message}`);
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 

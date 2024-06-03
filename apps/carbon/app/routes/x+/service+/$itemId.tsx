@@ -18,12 +18,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { serviceId } = params;
-  if (!serviceId) throw new Error("Could not find serviceId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
-  const [service] = await Promise.all([
-    getService(client, serviceId, companyId),
-  ]);
+  const [service] = await Promise.all([getService(client, itemId, companyId)]);
 
   if (service.error) {
     throw redirect(

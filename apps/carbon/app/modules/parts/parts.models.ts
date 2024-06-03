@@ -36,24 +36,24 @@ export const itemValidator = z.object({
   active: zfd.checkbox(),
 });
 
-export const partValidator = z.object({
-  id: z.string().min(1, { message: "Part ID is required" }).max(255),
-  replenishmentSystem: z.enum(partReplenishmentSystems, {
-    errorMap: (issue, ctx) => ({
-      message: "Replenishment system is required",
+export const partValidator = itemValidator.merge(
+  z.object({
+    id: z.string().min(1, { message: "Part ID is required" }).max(255),
+    replenishmentSystem: z.enum(partReplenishmentSystems, {
+      errorMap: (issue, ctx) => ({
+        message: "Replenishment system is required",
+      }),
     }),
-  }),
-  partType: z.enum(partTypes, {
-    errorMap: (issue, ctx) => ({
-      message: "Part type is required",
+    partType: z.enum(partTypes, {
+      errorMap: (issue, ctx) => ({
+        message: "Part type is required",
+      }),
     }),
-  }),
-  unitOfMeasureCode: z
-    .string()
-    .min(1, { message: "Unit of Measure is required" }),
-});
-
-export const newPartValidator = itemValidator.merge(partValidator);
+    unitOfMeasureCode: z
+      .string()
+      .min(1, { message: "Unit of Measure is required" }),
+  })
+);
 
 export const partCostValidator = z.object({
   partId: z.string().min(1, { message: "Part ID is required" }),
@@ -147,16 +147,16 @@ export const partUnitSalePriceValidator = z.object({
   allowInvoiceDiscount: zfd.checkbox(),
 });
 
-export const serviceValidator = z.object({
-  id: z.string().min(1, { message: "Service ID is required" }).max(255),
-  serviceType: z.enum(serviceType, {
-    errorMap: (issue, ctx) => ({
-      message: "Service type is required",
+export const serviceValidator = itemValidator.merge(
+  z.object({
+    id: z.string().min(1, { message: "Service ID is required" }).max(255),
+    serviceType: z.enum(serviceType, {
+      errorMap: (issue, ctx) => ({
+        message: "Service type is required",
+      }),
     }),
-  }),
-});
-
-export const newServiceValidator = itemValidator.merge(serviceValidator);
+  })
+);
 
 export const serviceSupplierValidator = z.object({
   id: zfd.text(z.string().optional()),

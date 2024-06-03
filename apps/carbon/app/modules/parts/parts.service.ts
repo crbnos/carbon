@@ -7,8 +7,6 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   itemValidator,
-  newPartValidator,
-  newServiceValidator,
   partCostValidator,
   partGroupValidator,
   partInventoryValidator,
@@ -219,13 +217,13 @@ export async function getPartQuantities(
 
 export async function getPart(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
     .from("parts")
     .select("*")
-    .eq("id", id)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
 }
@@ -307,13 +305,13 @@ export async function getServices(
 
 export async function getService(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
     .from("services")
     .select("*")
-    .eq("id", id)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
 }
@@ -447,7 +445,7 @@ export async function insertShelf(
 export async function upsertPart(
   client: SupabaseClient<Database>,
   part:
-    | (z.infer<typeof newPartValidator> & {
+    | (z.infer<typeof partValidator> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -487,13 +485,41 @@ export async function upsertPart(
       .select("*")
       .single();
   }
-  return client
-    .from("part")
-    .update({
-      ...sanitize(part),
-      updatedAt: today(getLocalTimeZone()).toString(),
-    })
-    .eq("id", part.id);
+
+  const itemUpdate = {
+    id: part.id,
+    name: part.name,
+    description: part.description,
+    partGroupId: part.partGroupId,
+    active: part.active,
+    blocked: part.blocked,
+  };
+
+  const partUpdate = {
+    replenishmentSystem: part.replenishmentSystem,
+    partType: part.partType,
+    unitOfMeasureCode: part.unitOfMeasureCode,
+  };
+
+  const [updateItem, updatePart] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", part.id),
+    client
+      .from("part")
+      .update({
+        ...sanitize(partUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", part.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updatePart;
 }
 
 export async function updateItem(
@@ -669,7 +695,7 @@ export async function upsertPartUnitSalePrice(
 export async function upsertService(
   client: SupabaseClient<Database>,
   service:
-    | (z.infer<typeof newServiceValidator> & {
+    | (z.infer<typeof serviceValidator> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -707,13 +733,38 @@ export async function upsertService(
       .select("*")
       .single();
   }
-  return client
-    .from("service")
-    .update({
-      ...sanitize(service),
-      updatedAt: today(getLocalTimeZone()).toString(),
-    })
-    .eq("id", service.id);
+  const itemUpdate = {
+    id: service.id,
+    name: service.name,
+    description: service.description,
+    partGroupId: service.partGroupId,
+    active: service.active,
+    blocked: service.blocked,
+  };
+
+  const serviceUpdate = {
+    serviceType: service.serviceType,
+  };
+
+  const [updateItem, updateService] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", service.id),
+    client
+      .from("service")
+      .update({
+        ...sanitize(serviceUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", service.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updateService;
 }
 
 export async function upsertServiceSupplier(

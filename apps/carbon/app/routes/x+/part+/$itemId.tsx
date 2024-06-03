@@ -12,10 +12,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
-  const [partSummary] = await Promise.all([getPart(client, partId, companyId)]);
+  const [partSummary] = await Promise.all([getPart(client, itemId, companyId)]);
 
   if (partSummary.error) {
     throw redirect(

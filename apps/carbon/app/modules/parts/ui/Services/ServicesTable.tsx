@@ -32,7 +32,7 @@ const ServicesTable = memo(
           accessorKey: "id",
           header: "Service ID",
           cell: ({ row }) => (
-            <Hyperlink to={path.to.serviceDetails(row.original.id!)}>
+            <Hyperlink to={path.to.serviceDetails(row.original.itemId!)}>
               {row.original.id}
             </Hyperlink>
           ),

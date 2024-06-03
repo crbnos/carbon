@@ -24,12 +24,12 @@ import {
   PartGroup,
   Select,
   Submit,
+  TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import {
-  newPartValidator,
   partReplenishmentSystems,
   partTypes,
   partValidator,
@@ -130,7 +130,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
           <ValidatedForm
             action={isEditing ? undefined : path.to.newPart}
             method="post"
-            validator={isEditing ? partValidator : newPartValidator}
+            validator={partValidator}
             defaultValues={initialValues}
             fetcher={fetcher}
           >
@@ -147,14 +147,15 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
-              {isEditing && <Hidden name="id" />}
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-2",
                   isEditing ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1"
                 )}
               >
-                {!isEditing && (
+                {isEditing ? (
+                  <Input name="id" label="Part ID" isReadOnly />
+                ) : (
                   <InputControlled
                     name="id"
                     label="Part ID"
@@ -169,11 +170,10 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   />
                 )}
 
-                {!isEditing && (
-                  <>
-                    <Input name="name" label="Name" />
-                    <PartGroup name="partGroupId" label="Part Group" />
-                  </>
+                <Input name="name" label="Name" />
+                <PartGroup name="partGroupId" label="Part Group" />
+                {isEditing && (
+                  <TextArea name="description" label="Description" />
                 )}
                 <Select
                   name="replenishmentSystem"
@@ -190,7 +190,8 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   label="Unit of Measure"
                 />
 
-                {!isEditing && <Boolean name="blocked" label="Blocked" />}
+                <Boolean name="blocked" label="Blocked" />
+                {isEditing && <Boolean name="active" label="Active" />}
 
                 <CustomFormFields table="part" />
               </div>

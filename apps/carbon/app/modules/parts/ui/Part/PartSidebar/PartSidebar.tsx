@@ -6,11 +6,11 @@ import { path } from "~/utils/path";
 import { usePartSidebar } from "./usePartSidebar";
 
 const PartSidebar = () => {
-  const { partId } = useParams();
-  if (!partId) throw new Error("partId not found");
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("itemId not found");
 
   const routeData = useRouteData<{ partSummary: PartSummary }>(
-    path.to.part(partId)
+    path.to.part(itemId)
   );
   if (!routeData?.partSummary?.replenishmentSystem)
     throw new Error("Could not find replenishmentSystem in routeData");

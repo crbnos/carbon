@@ -23,15 +23,15 @@ import { path } from "~/utils/path";
 
 const PartHeader = () => {
   const permissions = usePermissions();
-  const { partId } = useParams();
-  if (!partId) throw new Error("partId not found");
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("itemId not found");
 
   const routeData = useRouteData<{ partSummary: PartSummary }>(
-    path.to.part(partId)
+    path.to.part(itemId)
   );
 
   const optimisticAssignment = useOptimisticAssignment({
-    id: partId,
+    id: itemId,
     table: "part",
   });
   const assignee =
@@ -41,10 +41,10 @@ const PartHeader = () => {
 
   return (
     <VStack>
-      {permissions.is("employee") && (
+      {permissions.is("employee") && !!routeData?.partSummary?.id && (
         <Menubar>
           <Assign
-            id={partId}
+            id={routeData?.partSummary?.id}
             table="part"
             value={routeData?.partSummary?.assignee ?? ""}
           />

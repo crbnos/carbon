@@ -1,7 +1,7 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { PartForm, newPartValidator, upsertPart } from "~/modules/parts";
+import { PartForm, partValidator, upsertPart } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
@@ -18,7 +18,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const modal = formData.get("type") === "modal";
 
-  const validation = await validator(newPartValidator).validate(formData);
+  const validation = await validator(partValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -43,12 +43,12 @@ export async function action({ request }: ActionFunctionArgs) {
         );
   }
 
-  const partId = createPart.data?.id;
-  if (!partId) throw new Error("Part ID not found");
+  const itemId = createPart.data?.itemId;
+  if (!itemId) throw new Error("Part ID not found");
 
   return modal
     ? json(createPart, { status: 201 })
-    : redirect(path.to.part(partId));
+    : redirect(path.to.part(itemId));
 }
 
 export default function PartsNewRoute() {

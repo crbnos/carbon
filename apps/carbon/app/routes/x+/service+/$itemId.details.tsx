@@ -5,12 +5,7 @@ import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import type { Service } from "~/modules/parts";
-import {
-  ItemForm,
-  ServiceForm,
-  serviceValidator,
-  upsertService,
-} from "~/modules/parts";
+import { ServiceForm, serviceValidator, upsertService } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -24,8 +19,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts",
   });
 
-  const { serviceId } = params;
-  if (!serviceId) throw new Error("Could not find serviceId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
   const validation = await validator(serviceValidator).validate(formData);
@@ -36,41 +31,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updatePart = await upsertService(client, {
     ...validation.data,
-    id: serviceId,
+    id: itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
 
   if (updatePart.error) {
     throw redirect(
-      path.to.service(serviceId),
+      path.to.service(itemId),
       await flash(request, error(updatePart.error, "Failed to update part"))
     );
   }
 
   throw redirect(
-    path.to.service(serviceId),
+    path.to.service(itemId),
     await flash(request, success("Updated part"))
   );
 }
 
 export default function ServiceDetailsRoute() {
-  const { serviceId } = useParams();
-  if (!serviceId) throw new Error("Could not find serviceId");
-  const routeData = useRouteData<{ service: Service }>(
-    path.to.service(serviceId)
-  );
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("Could not find itemId");
+  const routeData = useRouteData<{ service: Service }>(path.to.service(itemId));
   if (!routeData) throw new Error("Could not find part data");
-
-  const itemInitialValues = {
-    id: routeData.service?.itemId ?? "",
-    readableId: routeData.service?.id ?? "",
-    name: routeData.service?.name ?? "",
-    description: routeData.service?.description ?? "",
-    partGroupId: routeData.service?.partGroupId ?? "",
-    active: routeData.service?.active ?? true,
-    blocked: routeData.service?.blocked ?? false,
-  };
 
   const serviceInitialValues = {
     id: routeData.service?.id!,
@@ -85,11 +68,6 @@ export default function ServiceDetailsRoute() {
 
   return (
     <VStack spacing={4}>
-      <ItemForm
-        key={itemInitialValues.id}
-        initialValues={itemInitialValues}
-        type="service"
-      />
       <ServiceForm
         key={serviceInitialValues.id}
         initialValues={serviceInitialValues}

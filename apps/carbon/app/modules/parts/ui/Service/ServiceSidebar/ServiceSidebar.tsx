@@ -6,13 +6,11 @@ import { path } from "~/utils/path";
 import { useServiceSidebar } from "./useServiceSidebar";
 
 const ServiceSidebar = () => {
-  const { serviceId } = useParams();
+  const { itemId } = useParams();
 
-  if (!serviceId) throw new Error("serviceId not found");
+  if (!itemId) throw new Error("itemId not found");
 
-  const routeData = useRouteData<{ service: Service }>(
-    path.to.service(serviceId)
-  );
+  const routeData = useRouteData<{ service: Service }>(path.to.service(itemId));
   if (!routeData?.service?.serviceType)
     throw new Error("Could not find service type in routeData");
 

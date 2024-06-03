@@ -3,7 +3,7 @@ import { redirect } from "@remix-run/node";
 import { path } from "~/utils/path";
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const { serviceId } = params;
-  if (!serviceId) throw new Error("Could not find serviceId");
-  throw redirect(path.to.serviceDetails(serviceId));
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
+  throw redirect(path.to.partDetails(itemId));
 }

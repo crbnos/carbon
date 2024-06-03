@@ -32,7 +32,7 @@ const PartsTable = memo(({ data, count, partGroups }: PartsTableProps) => {
         accessorKey: "id",
         header: "Part ID",
         cell: ({ row }) => (
-          <Hyperlink to={path.to.partDetails(row.original.id!)}>
+          <Hyperlink to={path.to.partDetails(row.original.itemId!)}>
             {row.original.id}
           </Hyperlink>
         ),

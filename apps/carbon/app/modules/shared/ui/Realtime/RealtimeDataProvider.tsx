@@ -43,7 +43,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
 
     const [parts, suppliers, customers, people] = await Promise.all([
       supabase
-        .from("part")
+        .from("parts")
         .select("id, name, replenishmentSystem")
         .eq("companyId", companyId)
         .eq("active", true)
@@ -66,12 +66,22 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         .order("name"),
     ]);
 
-    if (parts.error || suppliers.error || customers.error || people.error) {
-      throw new Error("Failed to fetch core data");
+    if (parts.error) {
+      throw new Error("Failed to fetch parts");
+    }
+    if (suppliers.error) {
+      throw new Error("Failed to fetch suppliers");
+    }
+    if (customers.error) {
+      throw new Error("Failed to fetch customers");
+    }
+    if (people.error) {
+      throw new Error("Failed to fetch people");
     }
 
     hydratedFromServer = true;
 
+    // @ts-ignore
     setParts(parts.data ?? []);
     setSuppliers(suppliers.data ?? []);
     setCustomers(customers.data ?? []);
@@ -100,16 +110,18 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           switch (payload.eventType) {
             case "INSERT":
               const { new: inserted } = payload;
-              setParts((parts) =>
-                [
-                  ...parts,
-                  {
-                    id: inserted.id,
-                    name: inserted.name,
-                    replenishmentSystem: inserted.replenishmentSystem,
-                  },
-                ].sort((a, b) => a.name.localeCompare(b.name))
-              );
+              if (inserted.active && !inserted.blocked) {
+                setParts((parts) =>
+                  [
+                    ...parts,
+                    {
+                      id: inserted.id,
+                      name: inserted.name,
+                      replenishmentSystem: inserted.replenishmentSystem,
+                    },
+                  ].sort((a, b) => a.name.localeCompare(b.name))
+                );
+              }
               break;
             case "UPDATE":
               const { new: updated } = payload;

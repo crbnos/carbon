@@ -5425,6 +5425,8 @@ export type Database = {
           partGroupId: string | null
           readableId: string
           type: Database["public"]["Enums"]["itemType"]
+          updatedAt: string | null
+          updatedBy: string | null
         }
         Insert: {
           active?: boolean
@@ -5438,6 +5440,8 @@ export type Database = {
           partGroupId?: string | null
           readableId: string
           type: Database["public"]["Enums"]["itemType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Update: {
           active?: boolean
@@ -5451,6 +5455,8 @@ export type Database = {
           partGroupId?: string | null
           readableId?: string
           type?: Database["public"]["Enums"]["itemType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Relationships: [
           {
@@ -5522,6 +5528,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partGroup"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
@@ -20522,14 +20563,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]

@@ -1,11 +1,7 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import {
-  ServiceForm,
-  newServiceValidator,
-  upsertService,
-} from "~/modules/parts";
+import { ServiceForm, serviceValidator, upsertService } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
@@ -26,7 +22,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(newServiceValidator).validate(formData);
+  const validation = await validator(serviceValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);

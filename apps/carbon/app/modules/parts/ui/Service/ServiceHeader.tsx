@@ -23,15 +23,13 @@ import { path } from "~/utils/path";
 
 const ServiceHeader = () => {
   const permissions = usePermissions();
-  const { serviceId } = useParams();
-  if (!serviceId) throw new Error("serviceId not found");
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("itemId not found");
 
-  const routeData = useRouteData<{ service: Service }>(
-    path.to.service(serviceId)
-  );
+  const routeData = useRouteData<{ service: Service }>(path.to.service(itemId));
 
   const optimisticAssignment = useOptimisticAssignment({
-    id: serviceId,
+    id: itemId,
     table: "service",
   });
   const assignee =
@@ -44,7 +42,7 @@ const ServiceHeader = () => {
       {permissions.is("employee") && (
         <Menubar>
           <Assign
-            id={serviceId}
+            id={itemId}
             table="service"
             value={routeData?.service?.assignee ?? ""}
           />

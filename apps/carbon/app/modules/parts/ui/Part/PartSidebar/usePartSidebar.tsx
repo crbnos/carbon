@@ -16,19 +16,19 @@ import { path } from "~/utils/path";
 
 export function usePartSidebar(replenishment: PartReplenishmentSystem) {
   const permissions = usePermissions();
-  const { partId } = useParams();
-  if (!partId) throw new Error("partId not found");
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("itemId not found");
 
   return [
     {
       name: "Details",
-      to: path.to.partDetails(partId),
+      to: path.to.partDetails(itemId),
       icon: LuFileText,
       shortcut: "Command+Shift+d",
     },
     {
       name: "Purchasing",
-      to: path.to.partPurchasing(partId),
+      to: path.to.partPurchasing(itemId),
       isDisabled: replenishment === "Make",
       role: ["employee", "supplier"],
       icon: LuShoppingCart,
@@ -36,7 +36,7 @@ export function usePartSidebar(replenishment: PartReplenishmentSystem) {
     },
     {
       name: "Suppliers",
-      to: path.to.partSuppliers(partId),
+      to: path.to.partSuppliers(itemId),
       isDisabled: replenishment === "Make",
       role: ["employee", "supplier"],
       icon: LuShare2,
@@ -44,7 +44,7 @@ export function usePartSidebar(replenishment: PartReplenishmentSystem) {
     },
     {
       name: "Manufacturing",
-      to: path.to.partManufacturing(partId),
+      to: path.to.partManufacturing(itemId),
       isDisabled: replenishment === "Buy",
       role: ["employee"],
       icon: BiListCheck,
@@ -52,28 +52,28 @@ export function usePartSidebar(replenishment: PartReplenishmentSystem) {
     },
     {
       name: "Costing",
-      to: path.to.partCosting(partId),
+      to: path.to.partCosting(itemId),
       role: ["employee", "supplier"],
       icon: LuTags,
       shortcut: "Command+Shift+c",
     },
     {
       name: "Planning",
-      to: path.to.partPlanning(partId),
+      to: path.to.partPlanning(itemId),
       role: ["employee"],
       icon: LuFileBarChart,
       shortcut: "Command+Shift+p",
     },
     {
       name: "Inventory",
-      to: path.to.partInventory(partId),
+      to: path.to.partInventory(itemId),
       role: ["employee", "supplier"],
       icon: LuBox,
       shortcut: "Command+Shift+i",
     },
     {
       name: "Sale Price",
-      to: path.to.partSalePrice(partId),
+      to: path.to.partSalePrice(itemId),
       role: ["employee", "customer"],
       icon: LuReceipt,
       shortcut: "Command+Shift+x",
