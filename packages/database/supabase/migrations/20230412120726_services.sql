@@ -147,7 +147,7 @@ CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
     i."name",
     i."description",
     i."blocked",
-    i."partGroupId",
+    i."itemGroupId",
     s."serviceType",
     i."active",
     s."approved",
@@ -156,11 +156,11 @@ CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
     s."toDate",
     s."customFields",
     s."companyId",
-    pg.name AS "partGroup",
+    pg.name AS "itemGroup",
     array_agg(ss."supplierId") AS "supplierIds"
   FROM "service" s
   INNER JOIN "item" i ON i."id" = s."itemId"
-  LEFT JOIN "partGroup" pg ON pg.id = i."partGroupId"
+  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN "serviceSupplier" ss ON ss."serviceId" = s.id
   GROUP BY 
     s."id",
@@ -168,7 +168,7 @@ CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
     i."name",
     i."description",
     i."blocked",
-    i."partGroupId",
+    i."itemGroupId",
     i."active",
     s."serviceType",
     s."approved",

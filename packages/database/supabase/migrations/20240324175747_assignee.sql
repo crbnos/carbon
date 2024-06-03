@@ -13,15 +13,15 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
   SELECT
     i.name,
     i.description,
-    i."partGroupId",
+    i."itemGroupId",
     i.active,
     i.blocked,
     p.*,
-    pg.name AS "partGroup",
+    pg.name AS "itemGroup",
     ps."supplierIds"
   FROM "part" p
   INNER JOIN "item" i ON i.id = p."itemId"
-  LEFT JOIN "partGroup" pg ON pg.id = i."partGroupId"
+  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "partId",
@@ -148,14 +148,14 @@ CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
     s.*,
     i.name,
     i.description,
-    i."partGroupId",
+    i."itemGroupId",
     i.active,
     i.blocked,
-    pg.name AS "partGroup",
+    pg.name AS "itemGroup",
     ss."supplierIds"
   FROM "service" s
   INNER JOIN "item" i ON i.id = s."itemId"
-  LEFT JOIN "partGroup" pg ON pg.id = i."partGroupId"
+  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "serviceId",

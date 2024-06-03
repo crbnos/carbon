@@ -15,12 +15,12 @@ import { path } from "~/utils/path";
 
 type ServicesTableProps = {
   data: Service[];
-  partGroups: ListItem[];
+  itemGroups: ListItem[];
   count: number;
 };
 
 const ServicesTable = memo(
-  ({ data, count, partGroups }: ServicesTableProps) => {
+  ({ data, count, itemGroups }: ServicesTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
     const customColumns = useCustomColumns<Service>("part");
@@ -62,13 +62,13 @@ const ServicesTable = memo(
           },
         },
         {
-          accessorKey: "partGroup",
-          header: "Part Group",
+          accessorKey: "itemGroup",
+          header: "Item Group",
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
             filter: {
               type: "static",
-              options: partGroups.map(({ id, name }) => ({
+              options: itemGroups.map(({ id, name }) => ({
                 value: name,
                 label: <Enumerable value={name} />,
               })),
@@ -165,7 +165,7 @@ const ServicesTable = memo(
         },
       ];
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, partGroups, people]);
+    }, [customColumns, itemGroups, people]);
 
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name

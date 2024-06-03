@@ -21,7 +21,7 @@ import {
   Hidden,
   Input,
   InputControlled,
-  PartGroup,
+  ItemGroup,
   Select,
   Submit,
   TextArea,
@@ -171,7 +171,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 )}
 
                 <Input name="name" label="Name" />
-                <PartGroup name="partGroupId" label="Part Group" />
+                <ItemGroup name="itemGroupId" label="Item Group" />
                 {isEditing && (
                   <TextArea name="description" label="Description" />
                 )}

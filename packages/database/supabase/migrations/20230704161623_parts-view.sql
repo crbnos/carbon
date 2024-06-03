@@ -5,8 +5,8 @@ CREATE OR REPLACE VIEW "parts" AS
     i.name,
     i.description,
     p."partType",
-    i."partGroupId",
-    pg.name AS "partGroup",
+    i."itemGroupId",
+    pg.name AS "itemGroup",
     p."replenishmentSystem",
     i.active,
     i.blocked,
@@ -15,13 +15,13 @@ CREATE OR REPLACE VIEW "parts" AS
     array_agg(ps."supplierId") AS "supplierIds"
   FROM "part" p
   INNER JOIN "item" i ON i.id = p."itemId"
-  LEFT JOIN "partGroup" pg ON pg.id = i."partGroupId"
+  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN "partSupplier" ps ON ps."partId" = p.id
   GROUP BY p.id,
     i.name,
     i.description,
     p."partType",
-    i."partGroupId",
+    i."itemGroupId",
     pg.name,
     p."replenishmentSystem",
     i.active,

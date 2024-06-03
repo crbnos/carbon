@@ -31,7 +31,7 @@ export const itemValidator = z.object({
   id: z.string().min(1, { message: "Item ID is required" }).max(255),
   name: z.string().min(1, { message: "Name is required" }).max(255),
   description: zfd.text(z.string().optional()),
-  partGroupId: zfd.text(z.string().optional()),
+  itemGroupId: zfd.text(z.string().optional()),
   blocked: zfd.checkbox(),
   active: zfd.checkbox(),
 });
@@ -67,7 +67,7 @@ export const partCostValidator = z.object({
   costIsAdjusted: zfd.checkbox(),
 });
 
-export const partGroupValidator = z.object({
+export const itemGroupValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }).max(255),
   description: z.string().optional(),

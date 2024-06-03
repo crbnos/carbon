@@ -15,11 +15,11 @@ import { path } from "~/utils/path";
 
 type PartsTableProps = {
   data: Part[];
-  partGroups: ListItem[];
+  itemGroups: ListItem[];
   count: number;
 };
 
-const PartsTable = memo(({ data, count, partGroups }: PartsTableProps) => {
+const PartsTable = memo(({ data, count, itemGroups }: PartsTableProps) => {
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const permissions = usePermissions();
@@ -76,13 +76,13 @@ const PartsTable = memo(({ data, count, partGroups }: PartsTableProps) => {
         },
       },
       {
-        accessorKey: "partGroup",
-        header: "Part Group",
+        accessorKey: "itemGroup",
+        header: "Item Group",
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           filter: {
             type: "static",
-            options: partGroups.map(({ name }) => ({
+            options: itemGroups.map(({ name }) => ({
               value: name,
               label: <Enumerable value={name} />,
             })),

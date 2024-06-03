@@ -1,9 +1,9 @@
 import type { Database } from "@carbon/database";
 import type {
+  getItemGroups,
+  getItemGroupsList,
   getPart,
   getPartCost,
-  getPartGroups,
-  getPartGroupsList,
   getPartQuantities,
   getPartSuppliers,
   getParts,
@@ -20,12 +20,12 @@ export type PartCost = NonNullable<
 export type PartCostingMethod =
   Database["public"]["Enums"]["partCostingMethod"];
 
-export type PartGroup = NonNullable<
-  Awaited<ReturnType<typeof getPartGroups>>["data"]
+export type ItemGroup = NonNullable<
+  Awaited<ReturnType<typeof getItemGroups>>["data"]
 >[number];
 
-export type PartGroupListItem = NonNullable<
-  Awaited<ReturnType<typeof getPartGroupsList>>["data"]
+export type ItemGroupListItem = NonNullable<
+  Awaited<ReturnType<typeof getItemGroupsList>>["data"]
 >[number];
 
 export type PartQuantities = NonNullable<

@@ -2,7 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import { ConfirmDelete } from "~/components/Modals";
-import { deletePartGroup, getPartGroup } from "~/modules/parts";
+import { deleteItemGroup, getItemGroup } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { notFound } from "~/utils/http";
@@ -16,15 +16,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const partGroup = await getPartGroup(client, groupId);
-  if (partGroup.error) {
+  const itemGroup = await getItemGroup(client, groupId);
+  if (itemGroup.error) {
     throw redirect(
-      path.to.partGroups,
-      await flash(request, error(partGroup.error, "Failed to get part group"))
+      path.to.itemGroups,
+      await flash(request, error(itemGroup.error, "Failed to get item group"))
     );
   }
 
-  return json({ partGroup: partGroup.data });
+  return json({ itemGroup: itemGroup.data });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -35,44 +35,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { groupId } = params;
   if (!groupId) {
     throw redirect(
-      path.to.partGroups,
-      await flash(request, error(params, "Failed to get an part group id"))
+      path.to.itemGroups,
+      await flash(request, error(params, "Failed to get an item group id"))
     );
   }
 
-  const { error: deleteTypeError } = await deletePartGroup(client, groupId);
+  const { error: deleteTypeError } = await deleteItemGroup(client, groupId);
   if (deleteTypeError) {
     throw redirect(
-      `${path.to.partGroups}?${getParams(request)}`,
+      `${path.to.itemGroups}?${getParams(request)}`,
       await flash(
         request,
-        error(deleteTypeError, "Failed to delete part group")
+        error(deleteTypeError, "Failed to delete item group")
       )
     );
   }
 
   throw redirect(
-    path.to.partGroups,
-    await flash(request, success("Successfully deleted part group"))
+    path.to.itemGroups,
+    await flash(request, success("Successfully deleted item group"))
   );
 }
 
-export default function DeletePartGroupRoute() {
+export default function DeleteItemGroupRoute() {
   const { groupId } = useParams();
   if (!groupId) throw new Error("groupId not found");
 
-  const { partGroup } = useLoaderData<typeof loader>();
+  const { itemGroup } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  if (!partGroup) return null;
+  if (!itemGroup) return null;
 
   const onCancel = () => navigate(-1);
 
   return (
     <ConfirmDelete
-      action={path.to.deletePartGroup(groupId)}
-      name={partGroup.name}
-      text={`Are you sure you want to delete the part group: ${partGroup.name}? This cannot be undone.`}
+      action={path.to.deleteItemGroup(groupId)}
+      name={itemGroup.name}
+      text={`Are you sure you want to delete the item group: ${itemGroup.name}? This cannot be undone.`}
       onCancel={onCancel}
     />
   );

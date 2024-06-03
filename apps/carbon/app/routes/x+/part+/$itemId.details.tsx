@@ -61,7 +61,7 @@ export default function PartDetailsRoute() {
     itemId: partData.partSummary?.itemId ?? "",
     name: partData.partSummary?.name ?? "",
     description: partData.partSummary?.description ?? "",
-    partGroupId: partData.partSummary?.partGroupId ?? "",
+    itemGroupId: partData.partSummary?.itemGroupId ?? "",
     active: partData.partSummary?.active ?? true,
     blocked: partData.partSummary?.blocked ?? false,
     partType: partData.partSummary?.partType ?? "Inventory",

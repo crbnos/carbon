@@ -1,20 +1,20 @@
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
-import type { getPartGroupsList } from "~/modules/parts";
-import { PartGroupForm } from "~/modules/parts";
+import type { getItemGroupsList } from "~/modules/parts";
+import { ItemGroupForm } from "~/modules/parts";
 import { path } from "~/utils/path";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
-type PartGroupSelectProps = Omit<ComboboxProps, "options">;
+type ItemGroupSelectProps = Omit<ComboboxProps, "options">;
 
-const PartGroup = (props: PartGroupSelectProps) => {
-  const newPartGroupModal = useDisclosure();
+const ItemGroup = (props: ItemGroupSelectProps) => {
+  const newItemGroupModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = usePartGroups();
+  const options = useItemGroups();
 
   return (
     <>
@@ -22,18 +22,18 @@ const PartGroup = (props: PartGroupSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
-        label={props?.label ?? "Part Group"}
+        label={props?.label ?? "Item Group"}
         onCreateOption={(option) => {
-          newPartGroupModal.onOpen();
+          newItemGroupModal.onOpen();
           setCreated(option);
         }}
       />
-      {newPartGroupModal.isOpen && (
-        <PartGroupForm
+      {newItemGroupModal.isOpen && (
+        <ItemGroupForm
           type="modal"
           onClose={() => {
             setCreated("");
-            newPartGroupModal.onClose();
+            newItemGroupModal.onClose();
             triggerRef.current?.click();
           }}
           initialValues={{
@@ -45,27 +45,27 @@ const PartGroup = (props: PartGroupSelectProps) => {
   );
 };
 
-PartGroup.displayName = "PartGroup";
+ItemGroup.displayName = "ItemGroup";
 
-export default PartGroup;
+export default ItemGroup;
 
-export const usePartGroups = () => {
-  const partGroupFetcher =
-    useFetcher<Awaited<ReturnType<typeof getPartGroupsList>>>();
+export const useItemGroups = () => {
+  const itemGroupFetcher =
+    useFetcher<Awaited<ReturnType<typeof getItemGroupsList>>>();
 
   useMount(() => {
-    partGroupFetcher.load(path.to.api.partGroups);
+    itemGroupFetcher.load(path.to.api.itemGroups);
   });
 
   const options = useMemo(
     () =>
-      partGroupFetcher.data?.data
-        ? partGroupFetcher.data?.data.map((c) => ({
+      itemGroupFetcher.data?.data
+        ? itemGroupFetcher.data?.data.map((c) => ({
             value: c.id,
             label: c.name,
           }))
         : [],
-    [partGroupFetcher.data]
+    [itemGroupFetcher.data]
   );
 
   return options;

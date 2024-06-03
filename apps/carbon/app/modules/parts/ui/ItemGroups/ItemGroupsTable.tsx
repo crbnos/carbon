@@ -6,21 +6,21 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PartGroup } from "~/modules/parts";
+import type { ItemGroup } from "~/modules/parts";
 import { path } from "~/utils/path";
 
-type PartGroupsTableProps = {
-  data: PartGroup[];
+type ItemGroupsTableProps = {
+  data: ItemGroup[];
   count: number;
 };
 
-const PartGroupsTable = memo(({ data, count }: PartGroupsTableProps) => {
+const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
 
   const rows = useMemo(() => data, [data]);
-  const customColumns = useCustomColumns<PartGroup>("partGroup");
+  const customColumns = useCustomColumns<ItemGroup>("itemGroup");
 
   const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
     const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [
@@ -32,7 +32,7 @@ const PartGroupsTable = memo(({ data, count }: PartGroupsTableProps) => {
             value={row.original.name}
             onClick={() =>
               navigate(
-                `${path.to.partGroup(row.original.id)}?${params.toString()}`
+                `${path.to.itemGroup(row.original.id)}?${params.toString()}`
               )
             }
             className="cursor-pointer"
@@ -55,22 +55,22 @@ const PartGroupsTable = memo(({ data, count }: PartGroupsTableProps) => {
           <MenuItem
             disabled={!permissions.can("update", "parts")}
             onClick={() => {
-              navigate(`${path.to.partGroup(row.id)}?${params.toString()}`);
+              navigate(`${path.to.itemGroup(row.id)}?${params.toString()}`);
             }}
           >
             <MenuIcon icon={<LuPencil />} />
-            Edit Part Group
+            Edit Item Group
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "parts")}
             onClick={() => {
               navigate(
-                `${path.to.deletePartGroup(row.id)}?${params.toString()}`
+                `${path.to.deleteItemGroup(row.id)}?${params.toString()}`
               );
             }}
           >
             <MenuIcon icon={<LuTrash />} />
-            Delete Part Group
+            Delete Item Group
           </MenuItem>
         </>
       );
@@ -86,8 +86,8 @@ const PartGroupsTable = memo(({ data, count }: PartGroupsTableProps) => {
       primaryAction={
         permissions.can("create", "parts") && (
           <New
-            label="Part Group"
-            to={`${path.to.newPartGroup}?${params.toString()}`}
+            label="Item Group"
+            to={`${path.to.newItemGroup}?${params.toString()}`}
           />
         )
       }
@@ -96,5 +96,5 @@ const PartGroupsTable = memo(({ data, count }: PartGroupsTableProps) => {
   );
 });
 
-PartGroupsTable.displayName = "PartGroupsTable";
-export default PartGroupsTable;
+ItemGroupsTable.displayName = "ItemGroupsTable";
+export default ItemGroupsTable;

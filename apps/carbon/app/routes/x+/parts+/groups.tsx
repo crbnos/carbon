@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { getAccountsList } from "~/modules/accounting";
-import { PartGroupsTable, getPartGroups } from "~/modules/parts";
+import { ItemGroupsTable, getItemGroups } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -12,8 +12,8 @@ import { getGenericQueryFilters } from "~/utils/query";
 import { error } from "~/utils/result";
 
 export const handle: Handle = {
-  breadcrumb: "Part Groups",
-  to: path.to.partGroups,
+  breadcrumb: "Item Groups",
+  to: path.to.itemGroups,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -28,8 +28,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [partGroups, accounts] = await Promise.all([
-    getPartGroups(client, companyId, {
+  const [itemGroups, accounts] = await Promise.all([
+    getItemGroups(client, companyId, {
       limit,
       offset,
       sorts,
@@ -39,33 +39,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getAccountsList(client, companyId),
   ]);
 
-  if (partGroups.error) {
+  if (itemGroups.error) {
     throw redirect(
       path.to.parts,
-      await flash(request, error(null, "Error loading part groups"))
+      await flash(request, error(null, "Error loading item groups"))
     );
   }
 
   if (accounts.error) {
     throw redirect(
-      path.to.partGroups,
+      path.to.itemGroups,
       await flash(request, error(accounts.error, "Error loading accounts"))
     );
   }
 
   return json({
-    partGroups: partGroups.data ?? [],
-    count: partGroups.count ?? 0,
+    itemGroups: itemGroups.data ?? [],
+    count: itemGroups.count ?? 0,
     accounts: accounts.data ?? [],
   });
 }
 
-export default function PartGroupsRoute() {
-  const { partGroups, count } = useLoaderData<typeof loader>();
+export default function ItemGroupsRoute() {
+  const { itemGroups, count } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PartGroupsTable data={partGroups} count={count ?? 0} />
+      <ItemGroupsTable data={itemGroups} count={count ?? 0} />
       <Outlet />
     </VStack>
   );

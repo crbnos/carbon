@@ -30,7 +30,7 @@ export const path = {
         generatePath(`${api}/users/groups?type=${type}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
       locations: `${api}/resources/locations`,
-      partGroups: `${api}/parts/groups`,
+      itemGroups: `${api}/parts/groups`,
       rollback: (table: string, id: string) =>
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
@@ -183,7 +183,7 @@ export const path = {
     deleteLocation: (id: string) =>
       generatePath(`${x}/resources/locations/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
-    deletePartGroup: (id: string) =>
+    deleteItemGroup: (id: string) =>
       generatePath(`${x}/parts/groups/delete/${id}`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
@@ -313,7 +313,7 @@ export const path = {
     newLocation: `${x}/resources/locations/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
-    newPartGroup: `${x}/parts/groups/new`,
+    newItemGroup: `${x}/parts/groups/new`,
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/suppliers/new`),
     newPartner: `${x}/resources/partners/new`,
@@ -370,8 +370,8 @@ export const path = {
     part: (id: string) => generatePath(`${x}/part/${id}`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/costing`),
     partDetails: (id: string) => generatePath(`${x}/part/${id}/details`),
-    partGroup: (id: string) => generatePath(`${x}/parts/groups/${id}`),
-    partGroups: `${x}/parts/groups`,
+    itemGroup: (id: string) => generatePath(`${x}/parts/groups/${id}`),
+    itemGroups: `${x}/parts/groups`,
     partInventory: (id: string) => generatePath(`${x}/part/${id}/inventory`),
     partInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/part/${id}/inventory?location=${locationId}`),

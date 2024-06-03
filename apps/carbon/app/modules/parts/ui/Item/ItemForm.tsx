@@ -14,7 +14,7 @@ import {
   CustomFormFields,
   Hidden,
   Input,
-  PartGroup,
+  ItemGroup,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -57,7 +57,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             />
 
             <Input name="name" label="Name" />
-            <PartGroup name="partGroupId" label="Part Group" />
+            <ItemGroup name="itemGroupId" label="Item Group" />
 
             <Boolean name="active" label="Active" />
             <Boolean name="blocked" label="Blocked" />

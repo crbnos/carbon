@@ -1,7 +1,7 @@
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
-import { getPartGroupsList } from "~/modules/parts";
+import { getItemGroupsList } from "~/modules/parts";
 import { getLocationsList } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";
@@ -22,14 +22,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const [partGroups, locations] = await Promise.all([
-    getPartGroupsList(client, companyId),
+  const [itemGroups, locations] = await Promise.all([
+    getItemGroupsList(client, companyId),
     getLocationsList(client, companyId),
   ]);
 
   return {
     locations: locations?.data ?? [],
-    partGroups: partGroups?.data ?? [],
+    itemGroups: itemGroups?.data ?? [],
   };
 }
 

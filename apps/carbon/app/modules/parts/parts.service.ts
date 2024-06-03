@@ -6,9 +6,9 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  itemGroupValidator,
   itemValidator,
   partCostValidator,
-  partGroupValidator,
   partInventoryValidator,
   partManufacturingValidator,
   partPlanningValidator,
@@ -22,11 +22,11 @@ import type {
 } from "./parts.models";
 import type { PartReplenishmentSystem, ServiceType } from "./types";
 
-export async function deletePartGroup(
+export async function deleteItemGroup(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("partGroup").delete().eq("id", id);
+  return client.from("itemGroup").delete().eq("id", id);
 }
 
 export async function deleteUnitOfMeasure(
@@ -49,20 +49,20 @@ export async function getPartCost(
     .single();
 }
 
-export async function getPartGroup(
+export async function getItemGroup(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("partGroup").select("*").eq("id", id).single();
+  return client.from("itemGroup").select("*").eq("id", id).single();
 }
 
-export async function getPartGroups(
+export async function getItemGroups(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
   let query = client
-    .from("partGroup")
+    .from("itemGroup")
     .select("*", {
       count: "exact",
     })
@@ -81,12 +81,12 @@ export async function getPartGroups(
   return query;
 }
 
-export async function getPartGroupsList(
+export async function getItemGroupsList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   return client
-    .from("partGroup")
+    .from("itemGroup")
     .select("id, name", { count: "exact" })
     .eq("companyId", companyId)
     .order("name");
@@ -290,7 +290,7 @@ export async function getServices(
   }
 
   if (args.group) {
-    query = query.eq("partGroupId", args.group);
+    query = query.eq("itemGroupId", args.group);
   }
 
   if (args.supplierId) {
@@ -490,7 +490,7 @@ export async function upsertPart(
     id: part.id,
     name: part.name,
     description: part.description,
-    partGroupId: part.partGroupId,
+    itemGroupId: part.itemGroupId,
     active: part.active,
     blocked: part.blocked,
   };
@@ -622,29 +622,29 @@ export async function upsertPartPurchasing(
     .eq("partId", partPurchasing.partId);
 }
 
-export async function upsertPartGroup(
+export async function upsertItemGroup(
   client: SupabaseClient<Database>,
-  partGroup:
-    | (Omit<z.infer<typeof partGroupValidator>, "id"> & {
+  itemGroup:
+    | (Omit<z.infer<typeof itemGroupValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof partGroupValidator>, "id"> & {
+    | (Omit<z.infer<typeof itemGroupValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in partGroup) {
-    return client.from("partGroup").insert([partGroup]).select("*").single();
+  if ("createdBy" in itemGroup) {
+    return client.from("itemGroup").insert([itemGroup]).select("*").single();
   }
   return (
     client
-      .from("partGroup")
-      .update(sanitize(partGroup))
+      .from("itemGroup")
+      .update(sanitize(itemGroup))
       // @ts-ignore
-      .eq("id", partGroup.id)
+      .eq("id", itemGroup.id)
       .select("id")
       .single()
   );
@@ -737,7 +737,7 @@ export async function upsertService(
     id: service.id,
     name: service.name,
     description: service.description,
-    partGroupId: service.partGroupId,
+    itemGroupId: service.itemGroupId,
     active: service.active,
     blocked: service.blocked,
   };

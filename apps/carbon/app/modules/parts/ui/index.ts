@@ -1,8 +1,8 @@
 import usePartsSubmodules from "./usePartsSubmodules";
 
 export * from "./Item";
+export * from "./ItemGroups";
 export * from "./Part";
-export * from "./PartGroups";
 export * from "./Parts";
 export * from "./Routing";
 export * from "./Service";

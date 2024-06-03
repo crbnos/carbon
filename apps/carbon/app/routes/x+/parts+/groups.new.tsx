@@ -3,9 +3,9 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
 import {
-  PartGroupForm,
-  partGroupValidator,
-  upsertPartGroup,
+  ItemGroupForm,
+  itemGroupValidator,
+  upsertItemGroup,
 } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const modal = formData.get("type") == "modal";
 
-  const validation = await validator(partGroupValidator).validate(formData);
+  const validation = await validator(itemGroupValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -39,42 +39,42 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const insertPartGroup = await upsertPartGroup(client, {
+  const insertItemGroup = await upsertItemGroup(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (insertPartGroup.error) {
+  if (insertItemGroup.error) {
     return json(
       {},
       await flash(
         request,
-        error(insertPartGroup.error, "Failed to insert part group")
+        error(insertItemGroup.error, "Failed to insert item group")
       )
     );
   }
 
-  const partGroupId = insertPartGroup.data?.id;
-  if (!partGroupId) {
+  const itemGroupId = insertItemGroup.data?.id;
+  if (!itemGroupId) {
     return json(
       {},
       await flash(
         request,
-        error(insertPartGroup, "Failed to insert part group")
+        error(insertItemGroup, "Failed to insert item group")
       )
     );
   }
 
   return modal
-    ? json(insertPartGroup, { status: 201 })
+    ? json(insertItemGroup, { status: 201 })
     : redirect(
-        `${path.to.partGroups}?${getParams(request)}`,
+        `${path.to.itemGroups}?${getParams(request)}`,
         await flash(request, success("Part group created"))
       );
 }
 
-export default function NewPartGroupsRoute() {
+export default function NewItemGroupsRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
@@ -82,6 +82,6 @@ export default function NewPartGroupsRoute() {
   };
 
   return (
-    <PartGroupForm onClose={() => navigate(-1)} initialValues={initialValues} />
+    <ItemGroupForm onClose={() => navigate(-1)} initialValues={initialValues} />
   );
 }

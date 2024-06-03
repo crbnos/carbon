@@ -15,7 +15,7 @@ import {
   CustomFormFields,
   Input,
   InputControlled,
-  PartGroup,
+  ItemGroup,
   Select,
   Submit,
   TextArea,
@@ -124,7 +124,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
               />
             )}
             <Input name="name" label="Name" />
-            <PartGroup name="partGroupId" label="Part Group" />
+            <ItemGroup name="itemGroupId" label="Item Group" />
             <TextArea name="description" label="Description" />
 
             <Select

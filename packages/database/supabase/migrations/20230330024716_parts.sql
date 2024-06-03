@@ -1,4 +1,4 @@
-CREATE TABLE "partGroup" (
+CREATE TABLE "itemGroup" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
   "description" TEXT,
@@ -10,18 +10,18 @@ CREATE TABLE "partGroup" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
 
-  CONSTRAINT "partGroup_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "partGroup_name_key" UNIQUE ("name", "companyId"),
-  CONSTRAINT "partGroup_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "partGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemGroup_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "itemGroup_name_key" UNIQUE ("name", "companyId"),
+  CONSTRAINT "itemGroup_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "partGroup_companyId_idx" ON "partGroup" ("companyId");
+CREATE INDEX "itemGroup_companyId_idx" ON "itemGroup" ("companyId");
 
-ALTER TABLE "partGroup" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "itemGroup" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with parts_view can view part groups" ON "partGroup"
+CREATE POLICY "Employees with parts_view can view item groups" ON "itemGroup"
   FOR SELECT
   USING (
     has_role('employee') AND
@@ -29,21 +29,21 @@ CREATE POLICY "Employees with parts_view can view part groups" ON "partGroup"
   );
   
 
-CREATE POLICY "Employees with parts_create can insert part groups" ON "partGroup"
+CREATE POLICY "Employees with parts_create can insert item groups" ON "itemGroup"
   FOR INSERT
   WITH CHECK (   
     has_role('employee') AND
     has_company_permission('parts_create', "companyId")
 );
 
-CREATE POLICY "Employees with parts_update can update part groups" ON "partGroup"
+CREATE POLICY "Employees with parts_update can update item groups" ON "itemGroup"
   FOR UPDATE
   USING (
     has_role('employee') AND
     has_company_permission('parts_update', "companyId")
   );
 
-CREATE POLICY "Employees with parts_delete can delete part groups" ON "partGroup"
+CREATE POLICY "Employees with parts_delete can delete item groups" ON "itemGroup"
   FOR DELETE
   USING (
     has_role('employee') AND
@@ -67,7 +67,7 @@ CREATE TABLE "item" (
   "type" "itemType" NOT NULL,
   "name" TEXT NOT NULL,
   "description" TEXT,
-  "partGroupId" TEXT,
+  "itemGroupId" TEXT,
   "active" BOOLEAN NOT NULL DEFAULT true,
   "blocked" BOOLEAN NOT NULL DEFAULT false,
   "companyId" TEXT NOT NULL,
@@ -79,7 +79,7 @@ CREATE TABLE "item" (
   CONSTRAINT "item_pkey" PRIMARY KEY (id),
   CONSTRAINT "item_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "item_unique" UNIQUE ("readableId", "companyId", "type"),
-  CONSTRAINT "item_partGroupId_fkey" FOREIGN KEY ("partGroupId") REFERENCES "partGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "item_itemGroupId_fkey" FOREIGN KEY ("itemGroupId") REFERENCES "itemGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "item_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
   CONSTRAINT "item_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
@@ -320,8 +320,8 @@ CREATE TABLE "partCost" (
 
   CONSTRAINT "partCost_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "partCost_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "partGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
 CREATE INDEX "partCost_partId_idx" ON "partCost" ("partId");

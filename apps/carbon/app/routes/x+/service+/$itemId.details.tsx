@@ -60,7 +60,7 @@ export default function ServiceDetailsRoute() {
     name: routeData.service?.name ?? "",
     description: routeData.service?.description ?? undefined,
     serviceType: routeData.service?.serviceType ?? "Internal",
-    partGroupId: routeData.service?.partGroupId ?? undefined,
+    itemGroupId: routeData.service?.itemGroupId ?? undefined,
     active: routeData.service?.active ?? true,
     blocked: routeData.service?.blocked ?? false,
     ...getCustomFields(routeData.service?.customFields),

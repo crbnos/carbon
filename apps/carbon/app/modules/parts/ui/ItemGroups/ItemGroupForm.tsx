@@ -24,22 +24,22 @@ import {
   TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { partGroupValidator } from "~/modules/parts";
+import { itemGroupValidator } from "~/modules/parts";
 import { path } from "~/utils/path";
 
-type PartGroupFormProps = {
-  initialValues: z.infer<typeof partGroupValidator>;
+type ItemGroupFormProps = {
+  initialValues: z.infer<typeof itemGroupValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: (data?: { id: string; name: string }) => void;
 };
 
-const PartGroupForm = ({
+const ItemGroupForm = ({
   initialValues,
   open = true,
   type = "drawer",
   onClose,
-}: PartGroupFormProps) => {
+}: ItemGroupFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string; name: string }>>();
 
@@ -53,9 +53,9 @@ const PartGroupForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created part group`);
+      toast.success(`Created item group`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(`Failed to create part group: ${fetcher.data.error.message}`);
+      toast.error(`Failed to create item group: ${fetcher.data.error.message}`);
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 
@@ -69,12 +69,12 @@ const PartGroupForm = ({
       >
         <ModalDrawerContent>
           <ValidatedForm
-            validator={partGroupValidator}
+            validator={itemGroupValidator}
             method="post"
             action={
               isEditing
-                ? path.to.partGroup(initialValues.id!)
-                : path.to.newPartGroup
+                ? path.to.itemGroup(initialValues.id!)
+                : path.to.newItemGroup
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -82,7 +82,7 @@ const PartGroupForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? "Edit" : "New"} Part Group
+                {isEditing ? "Edit" : "New"} Item Group
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
@@ -91,7 +91,7 @@ const PartGroupForm = ({
               <VStack spacing={4}>
                 <Input name="name" label="Name" />
                 <TextArea name="description" label="Description" />
-                <CustomFormFields table="partGroup" />
+                <CustomFormFields table="itemGroup" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -109,4 +109,4 @@ const PartGroupForm = ({
   );
 };
 
-export default PartGroupForm;
+export default ItemGroupForm;

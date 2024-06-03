@@ -40,7 +40,7 @@ serve(async (req: Request) => {
 
     const parts = await client
       .from("part")
-      .select("id, partGroupId, partType")
+      .select("id, itemGroupId, partType")
       .in(
         "id",
         receiptLines.data.reduce<string[]>((acc, receiptLine) => {
@@ -51,7 +51,7 @@ serve(async (req: Request) => {
         }, [])
       )
       .eq("companyId", companyId);
-    if (parts.error) throw new Error("Failed to fetch part groups");
+    if (parts.error) throw new Error("Failed to fetch item groups");
 
     switch (receipt.data?.sourceDocument) {
       case "Purchase Order": {
@@ -198,22 +198,22 @@ serve(async (req: Request) => {
             parts.data.find((part) => part.id === receiptLine.partId)
               ?.partType ?? "Inventory";
 
-          const partGroupId: string | null =
+          const itemGroupId: string | null =
             parts.data.find((part) => part.id === receiptLine.partId)
-              ?.partGroupId ?? null;
+              ?.itemGroupId ?? null;
           const locationId = receiptLine.locationId ?? null;
           const supplierTypeId: string | null =
             supplier.data.supplierTypeId ?? null;
 
           // inventory posting group
-          if (`${partGroupId}-${locationId}` in inventoryPostingGroups) {
+          if (`${itemGroupId}-${locationId}` in inventoryPostingGroups) {
             postingGroupInventory =
-              inventoryPostingGroups[`${partGroupId}-${locationId}`];
+              inventoryPostingGroups[`${itemGroupId}-${locationId}`];
           } else {
             const inventoryPostingGroup = await getInventoryPostingGroup(
               client,
               {
-                partGroupId,
+                itemGroupId,
                 locationId,
               }
             );
@@ -223,7 +223,7 @@ serve(async (req: Request) => {
             }
 
             postingGroupInventory = inventoryPostingGroup.data ?? null;
-            inventoryPostingGroups[`${partGroupId}-${locationId}`] =
+            inventoryPostingGroups[`${itemGroupId}-${locationId}`] =
               postingGroupInventory;
           }
 
@@ -241,14 +241,14 @@ serve(async (req: Request) => {
             | Database["public"]["Tables"]["postingGroupPurchasing"]["Row"]
             | null = null;
 
-          if (`${partGroupId}-${supplierTypeId}` in purchasingPostingGroups) {
+          if (`${itemGroupId}-${supplierTypeId}` in purchasingPostingGroups) {
             postingGroupPurchasing =
-              purchasingPostingGroups[`${partGroupId}-${supplierTypeId}`];
+              purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`];
           } else {
             const purchasingPostingGroup = await getPurchasingPostingGroup(
               client,
               {
-                partGroupId,
+                itemGroupId,
                 supplierTypeId,
               }
             );
@@ -258,7 +258,7 @@ serve(async (req: Request) => {
             }
 
             postingGroupPurchasing = purchasingPostingGroup.data ?? null;
-            purchasingPostingGroups[`${partGroupId}-${supplierTypeId}`] =
+            purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`] =
               postingGroupPurchasing;
           }
 

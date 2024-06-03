@@ -2,7 +2,7 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { PartsTable, getPartGroupsList, getParts } from "~/modules/parts";
+import { PartsTable, getItemGroupsList, getParts } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -22,7 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [parts, partGroups] = await Promise.all([
+  const [parts, itemGroups] = await Promise.all([
     getParts(client, companyId, {
       search,
       supplierId,
@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getPartGroupsList(client, companyId),
+    getItemGroupsList(client, companyId),
   ]);
 
   if (parts.error) {
@@ -44,16 +44,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: parts.count ?? 0,
     parts: parts.data ?? [],
-    partGroups: partGroups.data ?? [],
+    itemGroups: itemGroups.data ?? [],
   });
 }
 
 export default function PartsSearchRoute() {
-  const { count, parts, partGroups } = useLoaderData<typeof loader>();
+  const { count, parts, itemGroups } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PartsTable data={parts} count={count} partGroups={partGroups} />
+      <PartsTable data={parts} count={count} itemGroups={itemGroups} />
       <Outlet />
     </VStack>
   );
