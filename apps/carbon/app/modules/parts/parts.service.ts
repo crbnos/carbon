@@ -6,21 +6,21 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  itemCostValidator,
   itemGroupValidator,
+  itemInventoryValidator,
+  itemManufacturingValidator,
+  itemPlanningValidator,
+  itemPurchasingValidator,
+  itemSupplierValidator,
+  itemUnitSalePriceValidator,
   itemValidator,
-  partCostValidator,
-  partInventoryValidator,
-  partManufacturingValidator,
-  partPlanningValidator,
-  partPurchasingValidator,
-  partSupplierValidator,
-  partUnitSalePriceValidator,
   partValidator,
   serviceSupplierValidator,
   serviceValidator,
   unitOfMeasureValidator,
 } from "./parts.models";
-import type { PartReplenishmentSystem, ServiceType } from "./types";
+import type { ItemReplenishmentSystem, ServiceType } from "./types";
 
 export async function deleteItemGroup(
   client: SupabaseClient<Database>,
@@ -36,15 +36,15 @@ export async function deleteUnitOfMeasure(
   return client.from("unitOfMeasure").delete().eq("id", id);
 }
 
-export async function getPartCost(
+export async function getItemCost(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
-    .from("partCost")
+    .from("itemCost")
     .select("*")
-    .eq("partId", id)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
 }
@@ -92,58 +92,58 @@ export async function getItemGroupsList(
     .order("name");
 }
 
-export async function getPartInventory(
+export async function getItemInventory(
   client: SupabaseClient<Database>,
-  partId: string,
+  itemId: string,
   companyId: string,
   locationId: string
 ) {
   return client
-    .from("partInventory")
+    .from("itemInventory")
     .select("*")
-    .eq("partId", partId)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .maybeSingle();
 }
 
-export async function getPartManufacturing(
+export async function getItemManufacturing(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
 ) {
   return client
-    .from("partReplenishment")
+    .from("itemReplenishment")
     .select("*")
-    .eq("partId", id)
+    .eq("itemId", id)
     .eq("companyId", companyId)
     .single();
 }
 
-export async function getPartPlanning(
+export async function getItemPlanning(
   client: SupabaseClient<Database>,
-  partId: string,
+  itemId: string,
   companyId: string,
   locationId: string
 ) {
   return client
-    .from("partPlanning")
+    .from("itemPlanning")
     .select("*")
-    .eq("partId", partId)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .maybeSingle();
 }
 
-export async function getPartReplenishment(
+export async function getItemReplenishment(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
-    .from("partReplenishment")
+    .from("itemReplenishment")
     .select("*")
-    .eq("partId", id)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
 }
@@ -182,7 +182,7 @@ export async function getParts(
 export async function getPartsList(
   client: SupabaseClient<Database>,
   companyId: string,
-  replenishmentSystem: PartReplenishmentSystem | null
+  replenishmentSystem: ItemReplenishmentSystem | null
 ) {
   let query = client
     .from("part")
@@ -200,16 +200,16 @@ export async function getPartsList(
   return query.order("name");
 }
 
-export async function getPartQuantities(
+export async function getItemQuantities(
   client: SupabaseClient<Database>,
-  partId: string,
+  itemId: string,
   companyId: string,
   locationId: string
 ) {
   return client
-    .from("partQuantities")
+    .from("itemQuantities")
     .select("*")
-    .eq("partId", partId)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .maybeSingle();
@@ -228,13 +228,13 @@ export async function getPart(
     .single();
 }
 
-export async function getPartSuppliers(
+export async function getItemSuppliers(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
 ) {
   return client
-    .from("partSupplier")
+    .from("itemSupplier")
     .select(
       `
       id, supplier(id, name),
@@ -245,19 +245,19 @@ export async function getPartSuppliers(
     `
     )
     .eq("active", true)
-    .eq("partId", id)
+    .eq("itemId", id)
     .eq("companyId", companyId);
 }
 
-export async function getPartUnitSalePrice(
+export async function getItemUnitSalePrice(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
 ) {
   return client
-    .from("partUnitSalePrice")
+    .from("itemUnitSalePrice")
     .select("*")
-    .eq("partId", id)
+    .eq("itemId", id)
     .eq("companyId", companyId)
     .single();
 }
@@ -461,7 +461,7 @@ export async function upsertPart(
       .insert({
         readableId: part.id,
         name: part.name,
-        type: "part",
+        type: "Part",
         companyId: part.companyId,
         createdBy: part.createdBy,
       })
@@ -536,90 +536,90 @@ export async function updateItem(
     .eq("companyId", item.companyId);
 }
 
-export async function upsertPartCost(
+export async function upsertItemCost(
   client: SupabaseClient<Database>,
-  partCost: z.infer<typeof partCostValidator> & {
+  itemCost: z.infer<typeof itemCostValidator> & {
     updatedBy: string;
     customFields?: Json;
   }
 ) {
   return client
-    .from("partCost")
-    .update(sanitize(partCost))
-    .eq("partId", partCost.partId);
+    .from("itemCost")
+    .update(sanitize(itemCost))
+    .eq("itemId", itemCost.itemId);
 }
 
-export async function upsertPartInventory(
+export async function upsertItemInventory(
   client: SupabaseClient<Database>,
-  partInventory:
-    | (z.infer<typeof partInventoryValidator> & {
+  itemInventory:
+    | (z.infer<typeof itemInventoryValidator> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (z.infer<typeof partInventoryValidator> & {
+    | (z.infer<typeof itemInventoryValidator> & {
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in partInventory) {
-    return client.from("partInventory").insert(partInventory);
+  if ("createdBy" in itemInventory) {
+    return client.from("itemInventory").insert(itemInventory);
   }
 
   return client
-    .from("partInventory")
-    .update(sanitize(partInventory))
-    .eq("partId", partInventory.partId)
-    .eq("locationId", partInventory.locationId);
+    .from("itemInventory")
+    .update(sanitize(itemInventory))
+    .eq("itemId", itemInventory.itemId)
+    .eq("locationId", itemInventory.locationId);
 }
 
-export async function upsertPartManufacturing(
+export async function upsertItemManufacturing(
   client: SupabaseClient<Database>,
-  partManufacturing: z.infer<typeof partManufacturingValidator> & {
+  partManufacturing: z.infer<typeof itemManufacturingValidator> & {
     updatedBy: string;
     customFields?: Json;
   }
 ) {
   return client
-    .from("partReplenishment")
+    .from("itemReplenishment")
     .update(sanitize(partManufacturing))
-    .eq("partId", partManufacturing.partId);
+    .eq("itemId", partManufacturing.itemId);
 }
 
-export async function upsertPartPlanning(
+export async function upsertItemPlanning(
   client: SupabaseClient<Database>,
   partPlanning:
     | {
         companyId: string;
-        partId: string;
+        itemId: string;
         locationId: string;
         createdBy: string;
       }
-    | (z.infer<typeof partPlanningValidator> & {
+    | (z.infer<typeof itemPlanningValidator> & {
         updatedBy: string;
         customFields?: Json;
       })
 ) {
   if ("createdBy" in partPlanning) {
-    return client.from("partPlanning").insert(partPlanning);
+    return client.from("itemPlanning").insert(partPlanning);
   }
   return client
-    .from("partPlanning")
+    .from("itemPlanning")
     .update(sanitize(partPlanning))
-    .eq("partId", partPlanning.partId)
+    .eq("itemId", partPlanning.itemId)
     .eq("locationId", partPlanning.locationId);
 }
 
-export async function upsertPartPurchasing(
+export async function upsertItemPurchasing(
   client: SupabaseClient<Database>,
-  partPurchasing: z.infer<typeof partPurchasingValidator> & {
+  itemPurchasing: z.infer<typeof itemPurchasingValidator> & {
     updatedBy: string;
   }
 ) {
   return client
-    .from("partReplenishment")
-    .update(sanitize(partPurchasing))
-    .eq("partId", partPurchasing.partId);
+    .from("itemReplenishment")
+    .update(sanitize(itemPurchasing))
+    .eq("itemId", itemPurchasing.itemId);
 }
 
 export async function upsertItemGroup(
@@ -650,46 +650,46 @@ export async function upsertItemGroup(
   );
 }
 
-export async function upsertPartSupplier(
+export async function upsertItemSupplier(
   client: SupabaseClient<Database>,
-  partSupplier:
-    | (Omit<z.infer<typeof partSupplierValidator>, "id"> & {
+  itemSupplier:
+    | (Omit<z.infer<typeof itemSupplierValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof partSupplierValidator>, "id"> & {
+    | (Omit<z.infer<typeof itemSupplierValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in partSupplier) {
+  if ("createdBy" in itemSupplier) {
     return client
-      .from("partSupplier")
-      .insert([partSupplier])
+      .from("itemSupplier")
+      .insert([itemSupplier])
       .select("id")
       .single();
   }
   return client
-    .from("partSupplier")
-    .update(sanitize(partSupplier))
-    .eq("id", partSupplier.id)
+    .from("itemSupplier")
+    .update(sanitize(itemSupplier))
+    .eq("id", itemSupplier.id)
     .select("id")
     .single();
 }
 
-export async function upsertPartUnitSalePrice(
+export async function upsertItemUnitSalePrice(
   client: SupabaseClient<Database>,
-  partUnitSalePrice: z.infer<typeof partUnitSalePriceValidator> & {
+  itemUnitSalePrice: z.infer<typeof itemUnitSalePriceValidator> & {
     updatedBy: string;
     customFields?: Json;
   }
 ) {
   return client
-    .from("partUnitSalePrice")
-    .update(sanitize(partUnitSalePrice))
-    .eq("partId", partUnitSalePrice.partId);
+    .from("itemUnitSalePrice")
+    .update(sanitize(itemUnitSalePrice))
+    .eq("itemId", itemUnitSalePrice.itemId);
 }
 
 export async function upsertService(
@@ -712,7 +712,7 @@ export async function upsertService(
       .insert({
         readableId: service.id,
         name: service.name,
-        type: "service",
+        type: "Service",
         companyId: service.companyId,
         createdBy: service.createdBy,
       })

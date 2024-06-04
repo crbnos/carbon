@@ -52,13 +52,13 @@ CREATE POLICY "Employees with parts_delete can delete item groups" ON "itemGroup
 
 
 CREATE TYPE "itemType" AS ENUM (
-  'part',
-  'material',
-  'tool',
-  'hardware',
-  'service',
-  'consumable',
-  'fixture'
+  'Part',
+  'Material',
+  'Tool',
+  'Hardware',
+  'Service',
+  'Consumable',
+  'Fixture'
 );
 
 CREATE TABLE "item" (
@@ -93,7 +93,7 @@ CREATE TYPE "partType" AS ENUM (
   'Non-Inventory'
 );
 
-CREATE TYPE "partReplenishmentSystem" AS ENUM (
+CREATE TYPE "itemReplenishmentSystem" AS ENUM (
   'Buy',
   'Make',
   'Buy and Make'
@@ -105,14 +105,14 @@ CREATE TYPE "partManufacturingPolicy" AS ENUM (
 );
 
 
-CREATE TYPE "partCostingMethod" AS ENUM (
+CREATE TYPE "itemCostingMethod" AS ENUM (
   'Standard',
   'Average',
   'LIFO',
   'FIFO'
 );
 
-CREATE TYPE "partReorderingPolicy" AS ENUM (
+CREATE TYPE "itemReorderingPolicy" AS ENUM (
   'Manual Reorder',
   'Demand-Based Reorder',
   'Fixed Reorder Quantity',
@@ -178,7 +178,7 @@ CREATE POLICY "Employees with parts_delete can delete units of measure" ON "unit
 CREATE TABLE "part" (
   "id" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
-  "replenishmentSystem" "partReplenishmentSystem" NOT NULL,
+  "replenishmentSystem" "itemReplenishmentSystem" NOT NULL,
   "partType" "partType" NOT NULL,
   "unitOfMeasureCode" TEXT NOT NULL,
   "approved" BOOLEAN NOT NULL DEFAULT false,
@@ -257,15 +257,15 @@ CREATE TRIGGER create_item_search_result
 CREATE FUNCTION public.create_part_related_records()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public."partCost"("partId", "costingMethod", "createdBy", "companyId")
-  VALUES (new.id, 'FIFO', new."createdBy", new."companyId");
+  INSERT INTO public."itemCost"("itemId", "costingMethod", "createdBy", "companyId")
+  VALUES (new."itemId", 'FIFO', new."createdBy", new."companyId");
 
-  INSERT INTO public."partReplenishment"("partId", "createdBy", "companyId")
-  VALUES (new.id, new."createdBy", new."companyId");
+  INSERT INTO public."itemReplenishment"("itemId", "createdBy", "companyId")
+  VALUES (new."itemId", new."createdBy", new."companyId");
 
-  INSERT INTO public."partUnitSalePrice"("partId", "currencyCode", "createdBy", "companyId")
+  INSERT INTO public."itemUnitSalePrice"("itemId", "currencyCode", "createdBy", "companyId")
   -- TODO: get default currency
-  VALUES (new.id, 'USD', new."createdBy", new."companyId");
+  VALUES (new."itemId", 'USD', new."createdBy", new."companyId");
   
   RETURN new;
 END;
@@ -304,9 +304,9 @@ CREATE TRIGGER delete_item_search_result
   AFTER DELETE on public.item
   FOR EACH ROW EXECUTE PROCEDURE public.delete_item_search_result();
 
-CREATE TABLE "partCost" (
-  "partId" TEXT NOT NULL,
-  "costingMethod" "partCostingMethod" NOT NULL,
+CREATE TABLE "itemCost" (
+  "itemId" TEXT NOT NULL,
+  "costingMethod" "itemCostingMethod" NOT NULL,
   "standardCost" NUMERIC(15,5) NOT NULL DEFAULT 0,
   "unitCost" NUMERIC(15,5) NOT NULL DEFAULT 0,
   "costIsAdjusted" BOOLEAN NOT NULL DEFAULT false,
@@ -318,32 +318,32 @@ CREATE TABLE "partCost" (
   "customFields" JSONB,
 
 
-  CONSTRAINT "partCost_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partCost_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemCost_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemCost_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "itemGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
   CONSTRAINT "itemGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "partCost_partId_idx" ON "partCost" ("partId");
+CREATE INDEX "itemCost_itemId_idx" ON "itemCost" ("itemId");
 
-ALTER TABLE "partCost" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "itemCost" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with parts_view can view part costs" ON "partCost"
+CREATE POLICY "Employees with parts_view can view part costs" ON "itemCost"
   FOR SELECT
   USING (
     has_role('employee') AND
     has_company_permission('parts_view', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update part costs" ON "partCost"
+CREATE POLICY "Employees with parts_update can update part costs" ON "itemCost"
   FOR UPDATE
   USING (
     has_role('employee') AND
     has_company_permission('parts_update', "companyId")
   );
 
-CREATE TABLE "partUnitSalePrice" (
-  "partId" TEXT NOT NULL,
+CREATE TABLE "itemUnitSalePrice" (
+  "itemId" TEXT NOT NULL,
   "unitSalePrice" NUMERIC(15,5) NOT NULL DEFAULT 0,
   "currencyCode" TEXT NOT NULL,
   "salesUnitOfMeasureCode" TEXT,
@@ -357,36 +357,36 @@ CREATE TABLE "partUnitSalePrice" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
 
-  CONSTRAINT "partUnitSalePrice_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partUnitSalePrice_currencyCode_fkey" FOREIGN KEY ("currencyCode", "companyId") REFERENCES "currency"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "partUnitSalePrice_salesUnitOfMeasureId_fkey" FOREIGN KEY ("salesUnitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL,
-  CONSTRAINT "partUnitSalePrice_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partUnitSalePrice_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "partUnitSalePrice_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemUnitSalePrice_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemUnitSalePrice_currencyCode_fkey" FOREIGN KEY ("currencyCode", "companyId") REFERENCES "currency"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "itemUnitSalePrice_salesUnitOfMeasureId_fkey" FOREIGN KEY ("salesUnitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL,
+  CONSTRAINT "itemUnitSalePrice_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemUnitSalePrice_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemUnitSalePrice_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "partUnitSalePrice_partId_idx" ON "partUnitSalePrice"("partId");
-CREATE INDEX "partUnitSalePrice_companyId_idx" ON "partUnitSalePrice"("companyId");
+CREATE INDEX "itemUnitSalePrice_itemId_idx" ON "itemUnitSalePrice"("itemId");
+CREATE INDEX "itemUnitSalePrice_companyId_idx" ON "itemUnitSalePrice"("companyId");
 
-ALTER TABLE "partUnitSalePrice" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "itemUnitSalePrice" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with part_view can view part sale prices" ON "partUnitSalePrice"
+CREATE POLICY "Employees with part_view can view part sale prices" ON "itemUnitSalePrice"
   FOR SELECT
   USING (
     has_role('employee') AND
     has_company_permission('parts_view', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update part sale prices" ON "partUnitSalePrice"
+CREATE POLICY "Employees with parts_update can update part sale prices" ON "itemUnitSalePrice"
   FOR UPDATE
   USING (
     has_role('employee') AND
     has_company_permission('parts_update', "companyId")
   );
 
-CREATE TABLE "partSupplier" (
+CREATE TABLE "itemSupplier" (
   "id" TEXT NOT NULL DEFAULT xid(),
-  "partId" TEXT NOT NULL,
+  "itemId" TEXT NOT NULL,
   "supplierId" TEXT NOT NULL,
   "supplierPartId" TEXT,
   "supplierUnitOfMeasureCode" TEXT,
@@ -400,21 +400,21 @@ CREATE TABLE "partSupplier" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
 
-  CONSTRAINT "partSupplier_id_pkey" PRIMARY KEY ("id", "companyId"),
-  CONSTRAINT "partSupplier_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partSupplier_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON DELETE CASCADE,
-  CONSTRAINT "partSupplier_part_supplier_unique" UNIQUE ("partId", "supplierId", "companyId"),
-  CONSTRAINT "partSupplier_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partSupplier_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "partSupplier_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemSupplier_id_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "itemSupplier_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemSupplier_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON DELETE CASCADE,
+  CONSTRAINT "itemSupplier_part_supplier_unique" UNIQUE ("itemId", "supplierId", "companyId"),
+  CONSTRAINT "itemSupplier_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemSupplier_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemSupplier_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "partSupplier_partId_idx" ON "partSupplier"("partId");
-CREATE INDEX "partSupplier_companyId_idx" ON "partSupplier"("companyId");
+CREATE INDEX "itemSupplier_itemId_idx" ON "itemSupplier"("itemId");
+CREATE INDEX "itemSupplier_companyId_idx" ON "itemSupplier"("companyId");
 
-ALTER TABLE "partSupplier" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "itemSupplier" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with part/purchasing_view can view part suppliers" ON "partSupplier"
+CREATE POLICY "Employees with part/purchasing_view can view part suppliers" ON "itemSupplier"
   FOR SELECT
   USING (
     (
@@ -424,28 +424,28 @@ CREATE POLICY "Employees with part/purchasing_view can view part suppliers" ON "
     AND has_role('employee')
   );
 
-CREATE POLICY "Employees with parts_create can create part suppliers" ON "partSupplier"
+CREATE POLICY "Employees with parts_create can create part suppliers" ON "itemSupplier"
   FOR INSERT
   WITH CHECK (
     has_role('employee') AND
     has_company_permission('parts_create', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update part suppliers" ON "partSupplier"
+CREATE POLICY "Employees with parts_update can update part suppliers" ON "itemSupplier"
   FOR UPDATE
   USING (
     has_role('employee') AND
     has_company_permission('parts_update', "companyId")
   );
 
-CREATE POLICY "Employees with parts_delete can delete part suppliers" ON "partSupplier"
+CREATE POLICY "Employees with parts_delete can delete part suppliers" ON "itemSupplier"
   FOR DELETE
   USING (
     has_role('employee') AND
     has_company_permission('parts_delete', "companyId")
   );
 
-CREATE POLICY "Suppliers with parts_view can view their own part suppliers" ON "partSupplier"
+CREATE POLICY "Suppliers with parts_view can view their own part suppliers" ON "itemSupplier"
   FOR SELECT
   USING (
     has_role('supplier') AND
@@ -455,7 +455,7 @@ CREATE POLICY "Suppliers with parts_view can view their own part suppliers" ON "
     )
   );
 
-CREATE POLICY "Suppliers with parts_update can update their own part suppliers" ON "partSupplier"
+CREATE POLICY "Suppliers with parts_update can update their own part suppliers" ON "itemSupplier"
   FOR UPDATE
   USING (
     has_role('supplier') AND
@@ -466,8 +466,8 @@ CREATE POLICY "Suppliers with parts_update can update their own part suppliers" 
   );
 
 
-CREATE TABLE "partReplenishment" (
-  "partId" TEXT NOT NULL,
+CREATE TABLE "itemReplenishment" (
+  "itemId" TEXT NOT NULL,
   "preferredSupplierId" TEXT,
   "purchasingLeadTime" INTEGER NOT NULL DEFAULT 0,
   "purchasingUnitOfMeasureCode" TEXT,
@@ -486,28 +486,28 @@ CREATE TABLE "partReplenishment" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
   
-  CONSTRAINT "partReplenishment_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partReplenishment_preferredSupplierId_fkey" FOREIGN KEY ("preferredSupplierId") REFERENCES "supplier"("id") ON DELETE SET NULL,
-  CONSTRAINT "partReplenishment_purchaseUnitOfMeasureCode_fkey" FOREIGN KEY ("purchasingUnitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "partReplenishment_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partReplenishment_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "partReplenishment_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemReplenishment_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemReplenishment_preferredSupplierId_fkey" FOREIGN KEY ("preferredSupplierId") REFERENCES "supplier"("id") ON DELETE SET NULL,
+  CONSTRAINT "itemReplenishment_purchaseUnitOfMeasureCode_fkey" FOREIGN KEY ("purchasingUnitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "itemReplenishment_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemReplenishment_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemReplenishment_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "partReplenishment_partId_idx" ON "partReplenishment" ("partId");
-CREATE INDEX "partReplenishment_companyId_idx" ON "partReplenishment" ("companyId");
-CREATE INDEX "partReplenishment_preferredSupplierId_idx" ON "partReplenishment" ("preferredSupplierId");
+CREATE INDEX "itemReplenishment_itemId_idx" ON "itemReplenishment" ("itemId");
+CREATE INDEX "itemReplenishment_companyId_idx" ON "itemReplenishment" ("companyId");
+CREATE INDEX "itemReplenishment_preferredSupplierId_idx" ON "itemReplenishment" ("preferredSupplierId");
 
-ALTER TABLE "partReplenishment" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "itemReplenishment" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with part_view can view part costs" ON "partReplenishment"
+CREATE POLICY "Employees with part_view can view part costs" ON "itemReplenishment"
   FOR SELECT
   USING (
     has_role('employee') AND
     has_company_permission('parts_view', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update part costs" ON "partReplenishment"
+CREATE POLICY "Employees with parts_update can update part costs" ON "itemReplenishment"
   FOR UPDATE
   USING (
     has_role('employee') AND
@@ -524,7 +524,7 @@ CREATE POLICY "Suppliers with parts can view parts they created or supply" ON "p
       "createdBy" = auth.uid()::text
       OR (
         id IN (
-          SELECT "partId" FROM "partSupplier" WHERE "supplierId" IN (
+          SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
               SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
           )
         )              
@@ -548,7 +548,7 @@ CREATE POLICY "Suppliers with parts_update can update parts that they created or
       "createdBy" = auth.uid()::text
       OR (
         id IN (
-          SELECT "partId" FROM "partSupplier" WHERE "supplierId" IN (
+          SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
               SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
           )
         )              
@@ -565,7 +565,7 @@ CREATE POLICY "Suppliers with parts_delete can delete parts that they created or
       "createdBy" = auth.uid()::text
       OR (
         id IN (
-          SELECT "partId" FROM "partSupplier" WHERE "supplierId" IN (
+          SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
               SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
           )
         )              
@@ -573,56 +573,56 @@ CREATE POLICY "Suppliers with parts_delete can delete parts that they created or
     ) 
   );
 
-CREATE POLICY "Suppliers with parts_view can view part costs they supply" ON "partCost"
+CREATE POLICY "Suppliers with parts_view can view part costs they supply" ON "itemCost"
   FOR SELECT
   USING (
     has_role('supplier') AND
     has_company_permission('parts_view', "companyId")
     AND (
-      "partId" IN (
-        SELECT "partId" FROM "partSupplier" WHERE "supplierId" IN (
+      "itemId" IN (
+        SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
             SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
         )
       )                 
     )
   );
 
-CREATE POLICY "Suppliers with parts_update can update parts costs that they supply" ON "partCost"
+CREATE POLICY "Suppliers with parts_update can update parts costs that they supply" ON "itemCost"
   FOR UPDATE
   USING (
     has_role('supplier') AND
     has_company_permission('parts_update', "companyId")
     AND (
-      "partId" IN (
-        SELECT "partId" FROM "partSupplier" WHERE "supplierId" IN (
+      "itemId" IN (
+        SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
             SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
         )
       )                 
     )
   );
 
-CREATE POLICY "Suppliers with parts_view can view part replenishments they supply" ON "partReplenishment"
+CREATE POLICY "Suppliers with parts_view can view part replenishments they supply" ON "itemReplenishment"
   FOR SELECT
   USING (
     has_role('supplier') AND
     has_company_permission('parts_create', "companyId")
     AND (
-      "partId" IN (
-        SELECT "partId" FROM "partSupplier" WHERE "supplierId" IN (
+      "itemId" IN (
+        SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
             SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
         )
       )               
     )
   );
 
-CREATE POLICY "Suppliers with parts_update can update parts replenishments that they supply" ON "partReplenishment"
+CREATE POLICY "Suppliers with parts_update can update parts replenishments that they supply" ON "itemReplenishment"
   FOR UPDATE
   USING (
     has_role('supplier') AND
     has_company_permission('parts_update', "companyId")
     AND (
-      "partId" IN (
-        SELECT "partId" FROM "partSupplier" WHERE "supplierId" IN (
+      "itemId" IN (
+        SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
             SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
         )
       )                
@@ -713,10 +713,10 @@ CREATE POLICY "Employees with parts_delete can delete shelves" ON "shelf"
     has_company_permission('parts_delete', "companyId")
   );
 
-CREATE TABLE "partPlanning" (
-  "partId" TEXT NOT NULL,
+CREATE TABLE "itemPlanning" (
+  "itemId" TEXT NOT NULL,
   "locationId" TEXT NOT NULL,
-  "reorderingPolicy" "partReorderingPolicy" NOT NULL DEFAULT 'Demand-Based Reorder',
+  "reorderingPolicy" "itemReorderingPolicy" NOT NULL DEFAULT 'Demand-Based Reorder',
   "critical" BOOLEAN NOT NULL DEFAULT false,
   "safetyStockQuantity" INTEGER NOT NULL DEFAULT 0,
   "safetyStockLeadTime" INTEGER NOT NULL DEFAULT 0,
@@ -737,18 +737,18 @@ CREATE TABLE "partPlanning" (
   "customFields" JSONB,
 
 
-  CONSTRAINT "partPlanning_partId_locationId_key" UNIQUE ("partId", "locationId"),
-  CONSTRAINT "partPlanning_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partPlanning_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partPlanning_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partPlanning_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "partPlanning_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemPlanning_itemId_locationId_key" UNIQUE ("itemId", "locationId"),
+  CONSTRAINT "itemPlanning_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemPlanning_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemPlanning_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemPlanning_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemPlanning_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "partPlanning_partId_locationId_idx" ON "partPlanning" ("partId", "locationId");
-ALTER TABLE "partPlanning" ENABLE ROW LEVEL SECURITY;
+CREATE INDEX "itemPlanning_itemId_locationId_idx" ON "itemPlanning" ("itemId", "locationId");
+ALTER TABLE "itemPlanning" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with parts can view part planning" ON "partPlanning"
+CREATE POLICY "Employees with parts can view part planning" ON "itemPlanning"
   FOR SELECT
   USING (
     has_role('employee') AND
@@ -756,14 +756,14 @@ CREATE POLICY "Employees with parts can view part planning" ON "partPlanning"
   );
 
 -- these are records are created lazily when a user attempts to view them
-CREATE POLICY "Employees with parts can insert part planning" ON "partPlanning"
+CREATE POLICY "Employees with parts can insert part planning" ON "itemPlanning"
   FOR INSERT
   WITH CHECK (
     has_role('employee') AND
     has_company_permission('parts_view', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update part planning" ON "partPlanning"
+CREATE POLICY "Employees with parts_update can update part planning" ON "itemPlanning"
   FOR UPDATE
   USING (
     has_role('employee') AND
@@ -771,8 +771,8 @@ CREATE POLICY "Employees with parts_update can update part planning" ON "partPla
   );
 
 
-CREATE TABLE "partInventory" (
-  "partId" TEXT NOT NULL,
+CREATE TABLE "itemInventory" (
+  "itemId" TEXT NOT NULL,
   "locationId" TEXT NOT NULL,
   "defaultShelfId" TEXT,
   "companyId" TEXT NOT NULL,
@@ -782,21 +782,21 @@ CREATE TABLE "partInventory" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
 
-  CONSTRAINT "partInventory_partId_locationId_key" UNIQUE ("partId", "locationId"),
-  CONSTRAINT "partInventory_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partInventory_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partInventory_shelfId_fkey" FOREIGN KEY ("defaultShelfId", "locationId") REFERENCES "shelf"("id", "locationId") ON DELETE SET NULL,
-  CONSTRAINT "partInventory_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "partInventory_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "partInventory_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemInventory_itemId_locationId_key" UNIQUE ("itemId", "locationId"),
+  CONSTRAINT "itemInventory_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemInventory_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemInventory_shelfId_fkey" FOREIGN KEY ("defaultShelfId", "locationId") REFERENCES "shelf"("id", "locationId") ON DELETE SET NULL,
+  CONSTRAINT "itemInventory_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemInventory_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemInventory_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "partInventory_partId_locationId_idx" ON "partInventory" ("partId", "locationId");
-CREATE INDEX "partInventory_shelfId_idx" ON "partInventory" ("defaultShelfId");
+CREATE INDEX "itemInventory_itemId_locationId_idx" ON "itemInventory" ("itemId", "locationId");
+CREATE INDEX "itemInventory_shelfId_idx" ON "itemInventory" ("defaultShelfId");
 
-ALTER TABLE "partInventory" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "itemInventory" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with part_view can view part planning" ON "partInventory"
+CREATE POLICY "Employees with part_view can view part planning" ON "itemInventory"
   FOR SELECT
   USING (
     has_role('employee') AND
@@ -804,14 +804,14 @@ CREATE POLICY "Employees with part_view can view part planning" ON "partInventor
   );
 
 -- these are records are created lazily when a user attempts to view them
-CREATE POLICY "Employees with part_view can insert part planning" ON "partInventory"
+CREATE POLICY "Employees with part_view can insert part planning" ON "itemInventory"
   FOR INSERT
   WITH CHECK (
     has_role('employee') AND
     has_company_permission('parts_view', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update part planning" ON "partInventory"
+CREATE POLICY "Employees with parts_update can update part planning" ON "itemInventory"
   FOR UPDATE
   USING (
     has_role('employee') AND

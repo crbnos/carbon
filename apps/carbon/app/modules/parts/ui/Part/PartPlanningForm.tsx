@@ -19,7 +19,7 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { partPlanningValidator, partReorderingPolicies } from "~/modules/parts";
+import { itemReorderingPolicies, partPlanningValidator } from "~/modules/parts";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -71,7 +71,7 @@ const PartPlanningForm = ({
             <SelectForm
               name="reorderingPolicy"
               label="Reordering Policy"
-              options={partReorderingPolicies.map((policy) => ({
+              options={itemReorderingPolicies.map((policy) => ({
                 label: policy,
                 value: policy,
               }))}

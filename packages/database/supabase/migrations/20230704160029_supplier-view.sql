@@ -7,7 +7,7 @@ CREATE OR REPLACE VIEW "suppliers" AS
     s."supplierStatusId",
     ss.name AS "status",
     po.count AS "orderCount",
-    p.count AS "partCount",
+    i.count AS "partCount",
     s."customFields",
     s."companyId"
   FROM "supplier" s
@@ -24,9 +24,9 @@ CREATE OR REPLACE VIEW "suppliers" AS
     SELECT 
       "supplierId",
       COUNT(*) AS "count"
-    FROM "partSupplier"
+    FROM "itemSupplier"
     GROUP BY "supplierId"
-  ) p ON p."supplierId" = s.id;
+  ) i ON i."supplierId" = s.id;
 
 CREATE OR REPLACE VIEW "customers" AS 
   SELECT 

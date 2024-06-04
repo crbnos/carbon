@@ -1,24 +1,23 @@
 import type { Database } from "@carbon/database";
 import type {
+  getItemCost,
   getItemGroups,
   getItemGroupsList,
+  getItemQuantities,
+  getItemSuppliers,
   getPart,
-  getPartCost,
-  getPartQuantities,
-  getPartSuppliers,
   getParts,
-  getServiceSuppliers,
   getServices,
   getUnitOfMeasure,
   getUnitOfMeasuresList,
 } from "./parts.service";
 
-export type PartCost = NonNullable<
-  Awaited<ReturnType<typeof getPartCost>>
+export type ItemCost = NonNullable<
+  Awaited<ReturnType<typeof getItemCost>>
 >["data"];
 
 export type PartCostingMethod =
-  Database["public"]["Enums"]["partCostingMethod"];
+  Database["public"]["Enums"]["itemCostingMethod"];
 
 export type ItemGroup = NonNullable<
   Awaited<ReturnType<typeof getItemGroups>>["data"]
@@ -28,22 +27,22 @@ export type ItemGroupListItem = NonNullable<
   Awaited<ReturnType<typeof getItemGroupsList>>["data"]
 >[number];
 
-export type PartQuantities = NonNullable<
-  Awaited<ReturnType<typeof getPartQuantities>>["data"]
+export type ItemQuantities = NonNullable<
+  Awaited<ReturnType<typeof getItemQuantities>>["data"]
 >;
 
-export type PartReorderingPolicy =
-  Database["public"]["Enums"]["partReorderingPolicy"];
+export type ItemReorderingPolicy =
+  Database["public"]["Enums"]["itemReorderingPolicy"];
 
-export type PartReplenishmentSystem =
-  Database["public"]["Enums"]["partReplenishmentSystem"];
+export type ItemReplenishmentSystem =
+  Database["public"]["Enums"]["itemReplenishmentSystem"];
 
 export type PartSummary = NonNullable<
   Awaited<ReturnType<typeof getPart>>
 >["data"];
 
-export type PartSupplier = NonNullable<
-  Awaited<ReturnType<typeof getPartSuppliers>>["data"]
+export type ItemSupplier = NonNullable<
+  Awaited<ReturnType<typeof getItemSuppliers>>["data"]
 >[number];
 
 export type PartManufacturingPolicy =
@@ -57,10 +56,6 @@ export type PartType = Database["public"]["Enums"]["partType"];
 
 export type Service = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]
->[number];
-
-export type ServiceSupplier = NonNullable<
-  Awaited<ReturnType<typeof getServiceSuppliers>>["data"]
 >[number];
 
 export type ServiceType = Database["public"]["Enums"]["serviceType"];

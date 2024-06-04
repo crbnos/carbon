@@ -25,6 +25,7 @@ import EquipmentType from "./EquipmentType";
 import Hidden from "./Hidden";
 import Input from "./Input";
 import InputControlled from "./InputControlled";
+import Item from "./Item";
 import ItemGroup from "./ItemGroup";
 import Location from "./Location";
 import Number from "./Number";
@@ -82,6 +83,7 @@ export {
   Hidden,
   Input,
   InputControlled,
+  Item,
   ItemGroup,
   Location,
   Number,

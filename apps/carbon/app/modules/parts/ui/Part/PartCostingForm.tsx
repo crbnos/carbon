@@ -17,10 +17,10 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { partCostValidator, partCostingMethods } from "~/modules/parts";
+import { itemCostValidator, itemCostingMethods } from "~/modules/parts";
 
 type PartCostingFormProps = {
-  initialValues: z.infer<typeof partCostValidator>;
+  initialValues: z.infer<typeof itemCostValidator>;
 };
 
 const currency = "USD"; // TODO: get from settings
@@ -31,7 +31,7 @@ const PartCostingForm = ({ initialValues }: PartCostingFormProps) => {
     initialValues.costingMethod
   );
 
-  const partCostingMethodOptions = partCostingMethods.map(
+  const partCostingMethodOptions = itemCostingMethods.map(
     (partCostingMethod) => ({
       label: partCostingMethod,
       value: partCostingMethod,
@@ -41,7 +41,7 @@ const PartCostingForm = ({ initialValues }: PartCostingFormProps) => {
   return (
     <ValidatedForm
       method="post"
-      validator={partCostValidator}
+      validator={itemCostValidator}
       defaultValues={initialValues}
     >
       <Card>
@@ -49,7 +49,7 @@ const PartCostingForm = ({ initialValues }: PartCostingFormProps) => {
           <CardTitle>Costing & Posting</CardTitle>
         </CardHeader>
         <CardContent>
-          <Hidden name="partId" />
+          <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2 w-full">
             <Select
               name="costingMethod"

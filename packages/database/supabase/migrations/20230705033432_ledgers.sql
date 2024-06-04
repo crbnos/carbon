@@ -142,7 +142,7 @@ CREATE POLICY "Employees with accounting_create can insert journal lines" ON "jo
 
 -- delete and update are not available for journal lines
 
-CREATE TYPE "partLedgerType" AS ENUM (
+CREATE TYPE "itemLedgerType" AS ENUM (
   'Purchase',
   'Sale',
   'Positive Adjmt.',
@@ -163,7 +163,7 @@ CREATE TYPE "costLedgerType" AS ENUM (
   'Total'
 );
 
-CREATE TYPE "partLedgerDocumentType" AS ENUM (
+CREATE TYPE "itemLedgerDocumentType" AS ENUM (
   'Sales Shipment',
   'Sales Invoice',
   'Sales Return Receipt',
@@ -187,13 +187,13 @@ CREATE TABLE "costLedger" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "entryNumber" SERIAL,
   "postingDate" DATE NOT NULL DEFAULT CURRENT_DATE,
-  "partLedgerType" "partLedgerType" NOT NULL,
+  "itemLedgerType" "itemLedgerType" NOT NULL,
   "costLedgerType" "costLedgerType" NOT NULL,
   "adjustment" BOOLEAN NOT NULL DEFAULT false,
-  "documentType" "partLedgerDocumentType",
+  "documentType" "itemLedgerDocumentType",
   "documentId" TEXT,
   "externalDocumentId" TEXT,
-  "partId" TEXT,
+  "itemId" TEXT,
   "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 0,
   "cost" NUMERIC(19, 4) NOT NULL DEFAULT 0,
   "costPostedToGL" NUMERIC(19, 4) NOT NULL DEFAULT 0,
@@ -204,7 +204,7 @@ CREATE TABLE "costLedger" (
   CONSTRAINT "costLedger_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "costLedger_partId_idx" ON "costLedger" ("partId");
+CREATE INDEX "costLedger_itemId_idx" ON "costLedger" ("itemId");
 CREATE INDEX "costLedger_companyId_idx" ON "costLedger" ("companyId");
 
 ALTER TABLE "costLedger" ENABLE ROW LEVEL SECURITY;
@@ -217,31 +217,31 @@ CREATE POLICY "Employees with accounting_view can view the value ledger" ON "cos
   );
 
 
-CREATE TABLE "partLedger" (
+CREATE TABLE "itemLedger" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "entryNumber" SERIAL,
   "postingDate" DATE NOT NULL DEFAULT CURRENT_DATE,
-  "entryType" "partLedgerType" NOT NULL,
-  "documentType" "partLedgerDocumentType",
+  "entryType" "itemLedgerType" NOT NULL,
+  "documentType" "itemLedgerDocumentType",
   "documentId" TEXT,
   "externalDocumentId" TEXT,
-  "partId" TEXT NOT NULL,
+  "itemId" TEXT NOT NULL,
   "locationId" TEXT,
   "shelfId" TEXT,
   "quantity" NUMERIC(12, 4) NOT NULL,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 
-  CONSTRAINT "partLedger_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "partLedger_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "partLedger_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON UPDATE CASCADE ON DELETE SET NULL,
-  CONSTRAINT "partLedger_shelfId_fkey" FOREIGN KEY ("shelfId", "locationId") REFERENCES "shelf"("id", "locationId") ON UPDATE CASCADE ON DELETE SET NULL,
+  CONSTRAINT "itemLedger_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "itemLedger_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "itemLedger_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON UPDATE CASCADE ON DELETE SET NULL,
+  CONSTRAINT "itemLedger_shelfId_fkey" FOREIGN KEY ("shelfId", "locationId") REFERENCES "shelf"("id", "locationId") ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT "partLeger_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-ALTER TABLE "partLedger" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "itemLedger" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Certain employees can view the parts ledger" ON "partLedger"
+CREATE POLICY "Certain employees can view the parts ledger" ON "itemLedger"
   FOR SELECT
   USING (
     has_role('employee') AND

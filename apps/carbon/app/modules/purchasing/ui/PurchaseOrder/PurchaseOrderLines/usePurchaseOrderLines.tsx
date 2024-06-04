@@ -6,7 +6,7 @@ import { useSupabase } from "~/lib/supabase";
 import type { getAccountsList } from "~/modules/accounting";
 import type { getServicesList } from "~/modules/parts";
 import type { PurchaseOrderLine } from "~/modules/purchasing";
-import { usePurchasedParts } from "~/stores/parts";
+import { usePurchasedParts } from "~/stores/items";
 import { path } from "~/utils/path";
 
 export default function usePurchaseOrderLines() {

@@ -5,8 +5,6 @@ import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { getAccountsList } from "~/modules/accounting";
 import type { PurchaseInvoiceLine } from "~/modules/invoicing";
-import type { getServicesList } from "~/modules/parts";
-import { usePurchasedParts } from "~/stores/parts";
 import { path } from "~/utils/path";
 
 export default function usePurchaseInvoiceLines() {
@@ -16,16 +14,6 @@ export default function usePurchaseInvoiceLines() {
 
   const canEdit = permissions.can("update", "invoicing");
   const canDelete = permissions.can("delete", "invoicing");
-
-  const parts = usePurchasedParts();
-  const partOptions = useMemo(
-    () =>
-      parts.map((p) => ({
-        value: p.id,
-        label: p.id,
-      })),
-    [parts]
-  );
 
   const accountsFetcher =
     useFetcher<Awaited<ReturnType<typeof getAccountsList>>>();
@@ -43,23 +31,6 @@ export default function usePurchaseInvoiceLines() {
           }))
         : [],
     [accountsFetcher.data]
-  );
-
-  const servicesFetcher =
-    useFetcher<Awaited<ReturnType<typeof getServicesList>>>();
-  useMount(() => {
-    servicesFetcher.load(`${path.to.api.services}?type=External`);
-  });
-
-  const serviceOptions = useMemo(
-    () =>
-      servicesFetcher.data?.data
-        ? servicesFetcher.data?.data.map((s) => ({
-            value: s.id,
-            label: s.id,
-          }))
-        : [],
-    [servicesFetcher.data]
   );
 
   const onCellEdit = useCallback(
@@ -80,8 +51,6 @@ export default function usePurchaseInvoiceLines() {
     accountOptions,
     canDelete,
     canEdit,
-    partOptions,
-    serviceOptions,
     supabase,
     onCellEdit,
   };

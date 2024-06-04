@@ -4,9 +4,9 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import {
   PartManufacturingForm,
-  getPartManufacturing,
-  partManufacturingValidator,
-  upsertPartManufacturing,
+  getItemManufacturing,
+  itemManufacturingValidator,
+  upsertItemManufacturing,
 } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -20,12 +20,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
-  const partManufacturing = await getPartManufacturing(
+  const partManufacturing = await getItemManufacturing(
     client,
-    partId,
+    itemId,
     companyId
   );
 
@@ -53,11 +53,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(partManufacturingValidator).validate(
+  const validation = await validator(itemManufacturingValidator).validate(
     formData
   );
 
@@ -65,15 +65,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePartManufacturing = await upsertPartManufacturing(client, {
+  const updatePartManufacturing = await upsertItemManufacturing(client, {
     ...validation.data,
-    partId,
+    itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
   if (updatePartManufacturing.error) {
     throw redirect(
-      path.to.part(partId),
+      path.to.part(itemId),
       await flash(
         request,
         error(
@@ -85,7 +85,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.partManufacturing(partId),
+    path.to.partManufacturing(itemId),
     await flash(request, success("Updated part manufacturing"))
   );
 }
@@ -101,7 +101,7 @@ export default function PartManufacturingRoute() {
 
   return (
     <PartManufacturingForm
-      key={initialValues.partId}
+      key={initialValues.itemId}
       initialValues={initialValues}
     />
   );

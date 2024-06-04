@@ -1,28 +1,31 @@
+import type { Database } from "@carbon/database";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { PartForm, type ItemReplenishmentSystem } from "~/modules/parts";
-import { useParts } from "~/stores";
+import { PartForm } from "~/modules/parts";
+import { useItems } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
-type PartSelectProps = Omit<ComboboxProps, "options"> & {
-  partReplenishmentSystem?: ItemReplenishmentSystem;
+type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
+  type: Database["public"]["Enums"]["itemType"];
 };
 
-const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
-  const parts = useParts();
-  const newPartsModal = useDisclosure();
+const Item = ({ type, ...props }: ItemSelectProps) => {
+  const [items] = useItems();
+  const newItemsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(
     () =>
-      parts.map((part) => ({
-        value: part.id,
-        label: part.id,
-        helper: part.name,
-      })) ?? [],
-    [parts]
+      items
+        .filter((item) => item.type === type)
+        .map((item) => ({
+          value: item.id,
+          label: item.readableId,
+          helper: item.name,
+        })) ?? [],
+    [items, type]
   );
 
   return (
@@ -31,18 +34,18 @@ const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
-        label={props?.label ?? "Part"}
+        label={props?.label ?? "Item"}
         onCreateOption={(option) => {
-          newPartsModal.onOpen();
+          newItemsModal.onOpen();
           setCreated(option);
         }}
       />
-      {newPartsModal.isOpen && (
+      {type === "Part" && newItemsModal.isOpen && (
         <PartForm
           type="modal"
           onClose={() => {
             setCreated("");
-            newPartsModal.onClose();
+            newItemsModal.onClose();
             triggerRef.current?.click();
           }}
           initialValues={{
@@ -50,7 +53,7 @@ const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
             name: created,
             description: "",
             partType: "Inventory" as "Inventory",
-            replenishmentSystem: partReplenishmentSystem ?? "Buy and Make",
+            replenishmentSystem: "Buy and Make",
             unitOfMeasureCode: "EA",
             blocked: false,
             active: true,
@@ -61,6 +64,6 @@ const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
   );
 };
 
-Part.displayName = "Part";
+Item.displayName = "Item";
 
-export default Part;
+export default Item;

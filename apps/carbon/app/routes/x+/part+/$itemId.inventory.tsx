@@ -5,11 +5,11 @@ import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import {
   PartInventoryForm,
-  getPartInventory,
-  getPartQuantities,
+  getItemInventory,
+  getItemQuantities,
   getShelvesList,
-  partInventoryValidator,
-  upsertPartInventory,
+  itemInventoryValidator,
+  upsertItemInventory,
 } from "~/modules/parts";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -26,8 +26,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.part(partId),
+        path.to.part(itemId),
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -52,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.part(partId),
+        path.to.part(itemId),
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -63,38 +63,38 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let [partInventory, shelves] = await Promise.all([
-    getPartInventory(client, partId, companyId, locationId),
+    getItemInventory(client, itemId, companyId, locationId),
     getShelvesList(client, locationId),
   ]);
 
   if (partInventory.error || !partInventory.data) {
-    const insertPartInventory = await upsertPartInventory(client, {
-      partId,
+    const insertItemInventory = await upsertItemInventory(client, {
+      itemId,
       companyId,
       locationId,
       customFields: {},
       createdBy: userId,
     });
 
-    if (insertPartInventory.error) {
+    if (insertItemInventory.error) {
       throw redirect(
-        path.to.part(partId),
+        path.to.part(itemId),
         await flash(
           request,
-          error(insertPartInventory.error, "Failed to insert part inventory")
+          error(insertItemInventory.error, "Failed to insert part inventory")
         )
       );
     }
 
-    partInventory = await getPartInventory(
+    partInventory = await getItemInventory(
       client,
-      partId,
+      itemId,
       companyId,
       locationId
     );
     if (partInventory.error || !partInventory.data) {
       throw redirect(
-        path.to.part(partId),
+        path.to.part(itemId),
         await flash(
           request,
           error(partInventory.error, "Failed to load part inventory")
@@ -110,9 +110,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const quantities = await getPartQuantities(
+  const quantities = await getItemQuantities(
     client,
-    partId,
+    itemId,
     companyId,
     locationId
   );
@@ -136,12 +136,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
   // validate with partsValidator
-  const validation = await validator(partInventoryValidator).validate(formData);
+  const validation = await validator(itemInventoryValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -149,30 +149,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { ...update } = validation.data;
 
-  const updatePartInventory = await upsertPartInventory(client, {
+  const updateItemInventory = await upsertItemInventory(client, {
     ...update,
-    partId,
+    itemId,
     customFields: setCustomFields(formData),
     updatedBy: userId,
   });
-  if (updatePartInventory.error) {
+  if (updateItemInventory.error) {
     throw redirect(
-      path.to.part(partId),
+      path.to.part(itemId),
       await flash(
         request,
-        error(updatePartInventory.error, "Failed to update part inventory")
+        error(updateItemInventory.error, "Failed to update part inventory")
       )
     );
   }
 
   throw redirect(
-    path.to.partInventoryLocation(partId, update.locationId),
+    path.to.partInventoryLocation(itemId, update.locationId),
     await flash(request, success("Updated part inventory"))
   );
 }
 
 export default function PartInventoryRoute() {
-  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
+  const sharedPartssData = useRouteData<{ locations: ListItem[] }>(
     path.to.partRoot
   );
   const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
@@ -184,10 +184,10 @@ export default function PartInventoryRoute() {
   };
   return (
     <PartInventoryForm
-      key={initialValues.partId}
+      key={initialValues.itemId}
       initialValues={initialValues}
       quantities={quantities}
-      locations={sharedPartsData?.locations ?? []}
+      locations={sharedPartssData?.locations ?? []}
       shelves={shelves}
     />
   );

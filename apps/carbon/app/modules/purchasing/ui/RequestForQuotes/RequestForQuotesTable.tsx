@@ -29,7 +29,7 @@ const RequestForQuotesTable = memo(
     const fetcher = useFetcher();
     const optimisticFavorite = useOptimisticFavorite();
 
-    const [parts] = useParts();
+    const parts = useParts();
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
 

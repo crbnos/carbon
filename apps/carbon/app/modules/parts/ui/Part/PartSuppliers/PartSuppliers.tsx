@@ -18,12 +18,12 @@ import {
 import Grid from "~/components/Grid";
 import { useRouteData } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PartSupplier, UnitOfMeasureListItem } from "~/modules/parts";
+import type { ItemSupplier, UnitOfMeasureListItem } from "~/modules/parts";
 import { path } from "~/utils/path";
-import usePartSuppliers from "./usePartSuppliers";
+import useItemSuppliers from "./useItemSuppliers";
 
-type PartSuppliersProps = {
-  partSuppliers: PartSupplier[];
+type ItemSuppliersProps = {
+  partSuppliers: ItemSupplier[];
 };
 
 // TODO: make dynamic
@@ -32,9 +32,9 @@ const formatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
-const PartSuppliers = ({ partSuppliers }: PartSuppliersProps) => {
+const ItemSuppliers = ({ partSuppliers }: ItemSuppliersProps) => {
   const navigate = useNavigate();
-  const { canEdit, onCellEdit } = usePartSuppliers();
+  const { canEdit, onCellEdit } = useItemSuppliers();
   const sharedPartData = useRouteData<{
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.partRoot);
@@ -48,10 +48,10 @@ const PartSuppliers = ({ partSuppliers }: PartSuppliersProps) => {
     );
   }, [sharedPartData?.unitOfMeasures]);
 
-  const customColumns = useCustomColumns<PartSupplier>("partSupplier");
+  const customColumns = useCustomColumns<ItemSupplier>("partSupplier");
 
-  const columns = useMemo<ColumnDef<PartSupplier>[]>(() => {
-    const defaultColumns: ColumnDef<PartSupplier>[] = [
+  const columns = useMemo<ColumnDef<ItemSupplier>[]>(() => {
+    const defaultColumns: ColumnDef<ItemSupplier>[] = [
       {
         accessorKey: "supplier.id",
         header: "Supplier",
@@ -128,7 +128,7 @@ const PartSuppliers = ({ partSuppliers }: PartSuppliersProps) => {
           <CardAction>{canEdit && <New to="new" />}</CardAction>
         </HStack>
         <CardContent>
-          <Grid<PartSupplier>
+          <Grid<ItemSupplier>
             data={partSuppliers}
             columns={columns}
             canEdit={canEdit}
@@ -142,4 +142,4 @@ const PartSuppliers = ({ partSuppliers }: PartSuppliersProps) => {
   );
 };
 
-export default PartSuppliers;
+export default ItemSuppliers;

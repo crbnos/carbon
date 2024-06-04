@@ -112,11 +112,16 @@ CREATE POLICY "Employees with invoicing_view can view AP invoices status history
 
 
 CREATE TYPE "payableLineType" AS ENUM (
+  'Comment',
   'G/L Account',
-  'Part',
-  'Service',
   'Fixed Asset',
-  'Comment'
+  'Part',
+  'Material',
+  'Tool',
+  'Hardware',
+  'Service',
+  'Consumable',
+  'Fixture'
 );
 
 CREATE TABLE "purchaseInvoiceLine" (
@@ -125,7 +130,8 @@ CREATE TABLE "purchaseInvoiceLine" (
   "invoiceLineType" "payableLineType" NOT NULL,
   "purchaseOrderId" TEXT,
   "purchaseOrderLineId" TEXT,
-  "partId" TEXT,
+  "itemId" TEXT,
+  "itemReadableId" TEXT,
   "serviceId" TEXT,
   "locationId" TEXT,
   "shelfId" TEXT,
@@ -150,37 +156,34 @@ CREATE TABLE "purchaseInvoiceLine" (
     CHECK (
       (
         "invoiceLineType" = 'Comment' AND
-        "partId" IS NULL AND
-        "serviceId" IS NULL AND
+        "itemId" IS NULL AND
         "accountNumber" IS NULL AND
         "assetId" IS NULL AND
         "description" IS NOT NULL
       ) 
       OR (
         "invoiceLineType" = 'G/L Account' AND
-        "partId" IS NULL AND
-        "serviceId" IS NULL AND
+        "itemId" IS NULL AND
         "accountNumber" IS NOT NULL AND
         "assetId" IS NULL 
       ) 
       OR (
-        "invoiceLineType" = 'Part' AND
-        "partId" IS NOT NULL AND
-        "serviceId" IS NULL AND
-        "accountNumber" IS NULL AND
-        "assetId" IS NULL 
-      ) 
-      OR (
-        "invoiceLineType" = 'Service' AND
-        "partId" IS NULL AND
-        "serviceId" IS NOT NULL AND
+        (
+          "invoiceLineType" = 'Part' OR
+          "invoiceLineType" = 'Material' OR 
+          "invoiceLineType" = 'Tool' OR 
+          "invoiceLineType" = 'Hardware' OR 
+          "invoiceLineType" = 'Consumable' OR 
+          "invoiceLineType" = 'Fixture' OR 
+          "invoiceLineType" = 'Service'
+        ) AND
+        "itemId" IS NOT NULL AND
         "accountNumber" IS NULL AND
         "assetId" IS NULL 
       ) 
       OR (
         "invoiceLineType" = 'Fixed Asset' AND
-        "partId" IS NULL AND
-        "serviceId" IS NULL AND
+        "itemId" IS NULL AND
         "accountNumber" IS NULL AND
         "assetId" IS NOT NULL 
       ) 
@@ -190,8 +193,7 @@ CREATE TABLE "purchaseInvoiceLine" (
   CONSTRAINT "purchaseInvoiceLines_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES "purchaseInvoice" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "purchaseInvoiceLines_purchaseOrderId_fkey" FOREIGN KEY ("purchaseOrderId") REFERENCES "purchaseOrder" ("id") ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT "purchaseInvoiceLines_purchaseOrderLineId_fkey" FOREIGN KEY ("purchaseOrderLineId") REFERENCES "purchaseOrderLine" ("id") ON UPDATE CASCADE ON DELETE RESTRICT,
-  CONSTRAINT "purchaseInvoiceLines_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part" ("id", "companyId") ON UPDATE CASCADE ON DELETE RESTRICT,
-  CONSTRAINT "purchaseInvoiceLines_serviceId_fkey" FOREIGN KEY ("serviceId", "companyId") REFERENCES "service" ("id", "companyId") ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT "purchaseInvoiceLines_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT "purchaseInvoiceLines_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location" ("id") ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT "purchaseInvoiceLines_shelfId_fkey" FOREIGN KEY ("shelfId", "locationId") REFERENCES "shelf" ("id", "locationId") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "purchaseInvoiceLines_accountNumber_fkey" FOREIGN KEY ("accountNumber", "companyId") REFERENCES "account" ("number", "companyId") ON UPDATE CASCADE ON DELETE RESTRICT,

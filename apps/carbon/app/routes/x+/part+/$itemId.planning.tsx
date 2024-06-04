@@ -5,9 +5,9 @@ import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import {
   PartPlanningForm,
-  getPartPlanning,
-  partPlanningValidator,
-  upsertPartPlanning,
+  getItemPlanning,
+  itemPlanningValidator,
+  upsertItemPlanning,
 } from "~/modules/parts";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -24,8 +24,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.part(partId),
+        path.to.part(itemId),
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -50,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.part(partId),
+        path.to.part(itemId),
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -60,16 +60,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let partPlanning = await getPartPlanning(
+  let partPlanning = await getItemPlanning(
     client,
-    partId,
+    itemId,
     companyId,
     locationId
   );
 
   if (partPlanning.error || !partPlanning.data) {
-    const insertPartPlanning = await upsertPartPlanning(client, {
-      partId,
+    const insertPartPlanning = await upsertItemPlanning(client, {
+      itemId,
       companyId,
       locationId,
       createdBy: userId,
@@ -77,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     if (insertPartPlanning.error) {
       throw redirect(
-        path.to.part(partId),
+        path.to.part(itemId),
         await flash(
           request,
           error(insertPartPlanning.error, "Failed to insert part planning")
@@ -85,10 +85,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    partPlanning = await getPartPlanning(client, partId, companyId, locationId);
+    partPlanning = await getItemPlanning(client, itemId, companyId, locationId);
     if (partPlanning.error || !partPlanning.data) {
       throw redirect(
-        path.to.part(partId),
+        path.to.part(itemId),
         await flash(
           request,
           error(partPlanning.error, "Failed to load part planning")
@@ -108,25 +108,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(partPlanningValidator).validate(formData);
+  const validation = await validator(itemPlanningValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const updatePartPlanning = await upsertPartPlanning(client, {
+  const updatePartPlanning = await upsertItemPlanning(client, {
     ...validation.data,
-    partId,
+    itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
   if (updatePartPlanning.error) {
     throw redirect(
-      path.to.part(partId),
+      path.to.part(itemId),
       await flash(
         request,
         error(updatePartPlanning.error, "Failed to update part planning")
@@ -135,7 +135,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.partPlanningLocation(partId, validation.data.locationId),
+    path.to.partPlanningLocation(itemId, validation.data.locationId),
     await flash(request, success("Updated part planning"))
   );
 }
@@ -151,7 +151,7 @@ export default function PartPlanningRoute() {
 
   return (
     <PartPlanningForm
-      key={partPlanning.partId}
+      key={partPlanning.itemId}
       initialValues={{
         ...partPlanning,
         ...getCustomFields(partPlanning.customFields),

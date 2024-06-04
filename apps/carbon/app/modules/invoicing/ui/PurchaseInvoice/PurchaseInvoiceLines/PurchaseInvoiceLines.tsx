@@ -30,6 +30,7 @@ import { useRealtime, useRouteData, useUser } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
 import { usePurchaseInvoiceTotals } from "~/modules/invoicing";
+import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import usePurchaseInvoiceLines from "./usePurchaseInvoiceLines";
@@ -49,16 +50,10 @@ const PurchaseInvoiceLines = () => {
   }>(path.to.purchaseInvoice(invoiceId));
 
   const { defaults, id: userId } = useUser();
+  const [items] = useItems();
   const unitOfMeasureOptions = useUnitOfMeasure();
-  const {
-    canEdit,
-    canDelete,
-    supabase,
-    partOptions,
-    serviceOptions,
-    accountOptions,
-    onCellEdit,
-  } = usePurchaseInvoiceLines();
+  const { canEdit, canDelete, supabase, accountOptions, onCellEdit } =
+    usePurchaseInvoiceLines();
   const [, setPurchaseInvoiceTotals] = usePurchaseInvoiceTotals();
 
   const isEditable = !routeData?.purchaseInvoice?.postingDate;
@@ -112,14 +107,18 @@ const PurchaseInvoiceLines = () => {
         ),
       },
       {
-        accessorKey: "partId",
+        accessorKey: "itemId",
         header: "Number",
         cell: ({ row }) => {
           switch (row.original.invoiceLineType) {
             case "Part":
-              return <span>{row.original.partId}</span>;
             case "Service":
-              return <span>{row.original.serviceId}</span>;
+            case "Material":
+            case "Tool":
+            case "Fixture":
+            case "Hardware":
+            case "Consumable":
+              return <span>{row.original.itemId}</span>;
             case "G/L Account":
               return <span>{row.original.accountNumber}</span>;
             case "Fixed Asset":
@@ -227,8 +226,7 @@ const PurchaseInvoiceLines = () => {
       unitPrice: EditableNumber(onCellEdit),
       partId: EditablePurchaseInvoiceLineNumber(onCellEdit, {
         client: supabase,
-        parts: partOptions,
-        services: serviceOptions,
+        items: items,
         accounts: accountOptions,
         defaultLocationId: defaults.locationId,
         supplierId: routeData?.purchaseInvoice.supplierId ?? "",
@@ -240,8 +238,7 @@ const PurchaseInvoiceLines = () => {
     [
       onCellEdit,
       supabase,
-      partOptions,
-      serviceOptions,
+      items,
       accountOptions,
       defaults.locationId,
       routeData?.purchaseInvoice.supplierId,

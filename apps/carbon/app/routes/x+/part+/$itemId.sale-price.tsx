@@ -4,9 +4,9 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import {
   PartSalePriceForm,
-  getPartUnitSalePrice,
-  partUnitSalePriceValidator,
-  upsertPartUnitSalePrice,
+  getItemUnitSalePrice,
+  itemUnitSalePriceValidator,
+  upsertItemUnitSalePrice,
 } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -20,11 +20,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const [partUnitSalePrice] = await Promise.all([
-    getPartUnitSalePrice(client, partId, companyId),
+    getItemUnitSalePrice(client, itemId, companyId),
   ]);
 
   if (partUnitSalePrice.error) {
@@ -48,11 +48,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(partUnitSalePriceValidator).validate(
+  const validation = await validator(itemUnitSalePriceValidator).validate(
     formData
   );
 
@@ -60,15 +60,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePartUnitSalePrice = await upsertPartUnitSalePrice(client, {
+  const updatePartUnitSalePrice = await upsertItemUnitSalePrice(client, {
     ...validation.data,
-    partId,
+    itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
   if (updatePartUnitSalePrice.error) {
     throw redirect(
-      path.to.part(partId),
+      path.to.part(itemId),
       await flash(
         request,
         error(updatePartUnitSalePrice.error, "Failed to update part sale price")
@@ -77,7 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.partSalePrice(partId),
+    path.to.partSalePrice(itemId),
     await flash(request, success("Updated part sale price"))
   );
 }
@@ -93,7 +93,7 @@ export default function PartSalePriceRoute() {
 
   return (
     <PartSalePriceForm
-      key={initialValues.partId}
+      key={initialValues.itemId}
       initialValues={initialValues}
     />
   );

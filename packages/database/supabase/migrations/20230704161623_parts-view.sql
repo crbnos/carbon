@@ -12,11 +12,11 @@ CREATE OR REPLACE VIEW "parts" AS
     i.blocked,
     p."customFields",
     p."companyId",
-    array_agg(ps."supplierId") AS "supplierIds"
+    array_agg(s."supplierId") AS "supplierIds"
   FROM "part" p
   INNER JOIN "item" i ON i.id = p."itemId"
   LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
-  LEFT JOIN "partSupplier" ps ON ps."partId" = p.id
+  LEFT JOIN "itemSupplier" s ON s."itemId" = p."itemId"
   GROUP BY p.id,
     i.name,
     i.description,

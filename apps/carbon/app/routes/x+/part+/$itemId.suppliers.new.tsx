@@ -4,8 +4,8 @@ import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import {
   PartSupplierForm,
-  partSupplierValidator,
-  upsertPartSupplier,
+  itemSupplierValidator,
+  upsertItemSupplier,
 } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -20,11 +20,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(partSupplierValidator).validate(formData);
+  const validation = await validator(itemSupplierValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createPartSupplier = await upsertPartSupplier(client, {
+  const createPartSupplier = await upsertItemSupplier(client, {
     ...data,
     companyId,
     createdBy: userId,
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createPartSupplier.error) {
     throw redirect(
-      path.to.partSuppliers(partId),
+      path.to.partSuppliers(itemId),
       await flash(
         request,
         error(createPartSupplier.error, "Failed to create part supplier")
@@ -49,16 +49,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.partSuppliers(partId));
+  throw redirect(path.to.partSuppliers(itemId));
 }
 
 export default function NewPartSupplierRoute() {
-  const { partId } = useParams();
+  const { itemId } = useParams();
 
-  if (!partId) throw new Error("partId not found");
+  if (!itemId) throw new Error("itemId not found");
 
   const initialValues = {
-    partId: partId,
+    itemId: itemId,
     supplierId: "",
     supplierPartId: "",
     unitPrice: 0,

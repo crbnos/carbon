@@ -4,8 +4,13 @@ import { zfd } from "zod-form-data";
 export const purchaseInvoiceLineType = [
   "Part",
   "Service",
-  "G/L Account",
+  "Material",
+  "Tool",
+  "Fixture",
+  "Hardware",
+  "Consumable",
   "Fixed Asset",
+  "G/L Account",
   "Comment",
 ] as const;
 
@@ -47,8 +52,8 @@ export const purchaseInvoiceLineValidator = z
     }),
     purchaseOrderId: zfd.text(z.string().optional()),
     purchaseOrderLineId: zfd.text(z.string().optional()),
-    partId: zfd.text(z.string().optional()),
-    serviceId: zfd.text(z.string().optional()),
+    itemId: zfd.text(z.string().optional()),
+    itemReadableId: zfd.text(z.string().optional()),
     accountNumber: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),
@@ -62,12 +67,36 @@ export const purchaseInvoiceLineValidator = z
     currencyCode: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
   })
-  .refine((data) => (data.invoiceLineType === "Part" ? data.partId : true), {
-    message: "Part is required",
-    path: ["partId"], // path of error
-  })
   .refine(
-    (data) => (data.invoiceLineType === "Part" ? data.locationId : true),
+    (data) =>
+      [
+        "Part",
+        "Service",
+        "Material",
+        "Tool",
+        "Fixture",
+        "Hardware",
+        "Consumable",
+      ].includes(data.invoiceLineType)
+        ? data.itemId
+        : true,
+    {
+      message: "Item is required",
+      path: ["itemId"], // path of error
+    }
+  )
+  .refine(
+    (data) =>
+      [
+        "Part",
+        "Material",
+        "Tool",
+        "Fixture",
+        "Hardware",
+        "Consumable",
+      ].includes(data.invoiceLineType)
+        ? data.locationId
+        : true,
     {
       message: "Location is required",
       path: ["locationId"], // path of error

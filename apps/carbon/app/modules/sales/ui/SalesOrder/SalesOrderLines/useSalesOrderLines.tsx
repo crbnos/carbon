@@ -5,7 +5,7 @@ import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { getServicesList } from "~/modules/parts";
 import type { SalesOrderLine } from "~/modules/sales";
-import { useParts } from "~/stores/parts";
+import { useParts } from "~/stores/items";
 import { path } from "~/utils/path";
 
 export default function useSalesOrderLines() {
@@ -16,7 +16,7 @@ export default function useSalesOrderLines() {
   const canEdit = permissions.can("update", "sales");
   const canDelete = permissions.can("delete", "sales");
 
-  const [parts] = useParts();
+  const parts = useParts();
   const partOptions = useMemo(
     () =>
       parts.map((p) => ({

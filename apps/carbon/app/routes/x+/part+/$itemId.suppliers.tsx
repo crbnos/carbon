@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { PartSuppliers, getPartSuppliers } from "~/modules/parts";
+import { PartSuppliers, getItemSuppliers } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -12,16 +12,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const [partSuppliers] = await Promise.all([
-    getPartSuppliers(client, partId, companyId),
+    getItemSuppliers(client, itemId, companyId),
   ]);
 
   if (partSuppliers.error) {
     throw redirect(
-      path.to.part(partId),
+      path.to.part(itemId),
       await flash(
         request,
         error(partSuppliers.error, "Failed to load part suppliers")

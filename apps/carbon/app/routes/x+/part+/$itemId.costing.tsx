@@ -5,9 +5,9 @@ import { useLoaderData } from "@remix-run/react";
 import { getAccountsList } from "~/modules/accounting";
 import {
   PartCostingForm,
-  getPartCost,
-  partCostValidator,
-  upsertPartCost,
+  getItemCost,
+  itemCostValidator,
+  upsertItemCost,
 } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -21,18 +21,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
-  const [partCost, accounts] = await Promise.all([
-    getPartCost(client, partId, companyId),
+  const [itemCost, accounts] = await Promise.all([
+    getItemCost(client, itemId, companyId),
     getAccountsList(client, companyId),
   ]);
 
-  if (partCost.error) {
+  if (itemCost.error) {
     throw redirect(
       path.to.parts,
-      await flash(request, error(partCost.error, "Failed to load part costing"))
+      await flash(request, error(itemCost.error, "Failed to load part costing"))
     );
   }
   if (accounts.error) {
@@ -43,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return json({
-    partCost: partCost.data,
+    itemCost: itemCost.data,
     accounts: accounts.data,
   });
 }
@@ -54,44 +54,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(partCostValidator).validate(formData);
+  const validation = await validator(itemCostValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const updatePartCost = await upsertPartCost(client, {
+  const updateItemCost = await upsertItemCost(client, {
     ...validation.data,
-    partId,
+    itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updatePartCost.error) {
+  if (updateItemCost.error) {
     throw redirect(
-      path.to.part(partId),
+      path.to.part(itemId),
       await flash(
         request,
-        error(updatePartCost.error, "Failed to update part costing")
+        error(updateItemCost.error, "Failed to update part costing")
       )
     );
   }
 
   throw redirect(
-    path.to.partCosting(partId),
+    path.to.partCosting(itemId),
     await flash(request, success("Updated part costing"))
   );
 }
 
 export default function PartCostingRoute() {
-  const { partCost } = useLoaderData<typeof loader>();
+  const { itemCost } = useLoaderData<typeof loader>();
   return (
     <PartCostingForm
-      key={partCost.partId}
-      initialValues={{ ...partCost, ...getCustomFields(partCost.customFields) }}
+      key={itemCost.itemId}
+      initialValues={{ ...itemCost, ...getCustomFields(itemCost.customFields) }}
     />
   );
 }

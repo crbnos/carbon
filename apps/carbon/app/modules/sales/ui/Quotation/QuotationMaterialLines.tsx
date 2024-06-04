@@ -23,7 +23,7 @@ import {
   type Quotation,
   type QuotationMaterial,
 } from "~/modules/sales";
-import { useParts } from "~/stores/parts";
+import { useParts } from "~/stores/items";
 import { path } from "~/utils/path";
 
 type QuotationMaterialLinesProps = {
@@ -47,7 +47,7 @@ const QuotationMaterialLines = ({
   const canEdit = permissions.can("update", "sales");
   const canDelete = permissions.can("delete", "sales");
 
-  const [parts] = useParts();
+  const parts = useParts();
   const partOptions = useMemo(
     () =>
       parts.map((p) => ({

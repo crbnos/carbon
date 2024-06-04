@@ -42,7 +42,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
   const deleteQuotationModal = useDisclosure();
 
   const [customers] = useCustomers();
-  const [parts] = useParts();
+  const parts = useParts();
   const [people] = usePeople();
 
   const fetcher = useFetcher();

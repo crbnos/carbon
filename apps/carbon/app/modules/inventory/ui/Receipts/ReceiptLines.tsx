@@ -30,7 +30,7 @@ const ReceiptLines = () => {
     locations: ListItem[];
   }>(path.to.receipt(receiptId));
 
-  const [parts] = useParts();
+  const parts = useParts();
 
   const receiptLineColumns = useMemo<ColumnDef<ReceiptLine>[]>(() => {
     return [

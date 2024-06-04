@@ -90,8 +90,8 @@ export const purchaseOrderLineValidator = z
         message: "Type is required",
       }),
     }),
-    partId: zfd.text(z.string().optional()),
-    serviceId: zfd.text(z.string().optional()),
+    itemId: zfd.text(z.string().optional()),
+    itemReadableId: zfd.text(z.string().optional()),
     accountNumber: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),
@@ -105,7 +105,18 @@ export const purchaseOrderLineValidator = z
     shelfId: zfd.text(z.string().optional()),
   })
   .refine(
-    (data) => (data.purchaseOrderLineType === "Part" ? data.partId : true),
+    (data) =>
+      [
+        "Part",
+        "Service",
+        "Material",
+        "Tool",
+        "Fixture",
+        "Hardware",
+        "Consumable",
+      ].includes(data.purchaseOrderLineType)
+        ? data.itemId
+        : true,
     {
       message: "Part is required",
       path: ["partId"], // path of error

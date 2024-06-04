@@ -4,9 +4,9 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import {
   PartPurchasingForm,
-  getPartReplenishment,
-  partPurchasingValidator,
-  upsertPartPurchasing,
+  getItemReplenishment,
+  itemPurchasingValidator,
+  upsertItemPurchasing,
 } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -19,10 +19,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
-  const partPurchasing = await getPartReplenishment(client, partId, companyId);
+  const partPurchasing = await getItemReplenishment(client, itemId, companyId);
 
   if (partPurchasing.error) {
     throw redirect(
@@ -45,11 +45,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "parts",
   });
 
-  const { partId } = params;
-  if (!partId) throw new Error("Could not find partId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   // validate with partsValidator
-  const validation = await validator(partPurchasingValidator).validate(
+  const validation = await validator(itemPurchasingValidator).validate(
     await request.formData()
   );
 
@@ -57,14 +57,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePartPurchasing = await upsertPartPurchasing(client, {
+  const updatePartPurchasing = await upsertItemPurchasing(client, {
     ...validation.data,
-    partId,
+    itemId,
     updatedBy: userId,
   });
   if (updatePartPurchasing.error) {
     throw redirect(
-      path.to.part(partId),
+      path.to.part(itemId),
       await flash(
         request,
         error(updatePartPurchasing.error, "Failed to update part purchasing")
@@ -73,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.partPurchasing(partId),
+    path.to.partPurchasing(itemId),
     await flash(request, success("Updated part purchasing"))
   );
 }
@@ -93,7 +93,7 @@ export default function PartPurchasingRoute() {
 
   return (
     <PartPurchasingForm
-      key={initialValues.partId}
+      key={initialValues.itemId}
       initialValues={initialValues}
     />
   );

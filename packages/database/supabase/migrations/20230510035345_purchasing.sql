@@ -247,9 +247,14 @@ CREATE INDEX "purchaseOrder_companyId_idx" ON "purchaseOrder" ("companyId");
 CREATE TYPE "purchaseOrderLineType" AS ENUM (
   'Comment',
   'G/L Account',
+  'Fixed Asset',
   'Part',
+  'Material',
+  'Tool',
+  'Hardware',
   'Service',
-  'Fixed Asset'
+  'Consumable',
+  'Fixture'
 );
 
 CREATE TABLE "purchaseOrderStatusHistory" (
@@ -283,8 +288,8 @@ CREATE TABLE "purchaseOrderLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "purchaseOrderId" TEXT NOT NULL,
   "purchaseOrderLineType" "purchaseOrderLineType" NOT NULL,
-  "partId" TEXT,
-  "serviceId" TEXT,
+  "itemId" TEXT,
+  "itemReadableId" TEXT,
   "accountNumber" TEXT,
   "assetId" TEXT,
   "description" TEXT,
@@ -313,37 +318,33 @@ CREATE TABLE "purchaseOrderLine" (
     CHECK (
       (
         "purchaseOrderLineType" = 'Comment' AND
-        "partId" IS NULL AND
-        "serviceId" IS NULL AND
+        "itemId" IS NULL AND
         "accountNumber" IS NULL AND
         "assetId" IS NULL AND
         "description" IS NOT NULL
       ) 
       OR (
         "purchaseOrderLineType" = 'G/L Account' AND
-        "partId" IS NULL AND
-        "serviceId" IS NULL AND
+        "itemId" IS NULL AND
         "accountNumber" IS NOT NULL AND
         "assetId" IS NULL 
       ) 
       OR (
-        "purchaseOrderLineType" = 'Part' AND
-        "partId" IS NOT NULL AND
-        "serviceId" IS NULL AND
+        (
+          "purchaseOrderLineType" = 'Part' OR
+          "purchaseOrderLineType" = 'Material' OR 
+          "purchaseOrderLineType" = 'Tool' OR 
+          "purchaseOrderLineType" = 'Hardware' OR 
+          "purchaseOrderLineType" = 'Consumable' OR 
+          "purchaseOrderLineType" = 'Fixture' OR 
+          "purchaseOrderLineType" = 'Service'
+        ) AND
+        "itemId" IS NOT NULL AND
         "accountNumber" IS NULL AND
         "assetId" IS NULL 
-      ) 
-      OR (
-        "purchaseOrderLineType" = 'Service' AND
-        "partId" IS NULL AND
-        "serviceId" IS NOT NULL AND
-        "accountNumber" IS NULL AND
-        "assetId" IS NULL 
-      ) 
-      OR (
+      ) OR (
         "purchaseOrderLineType" = 'Fixed Asset' AND
-        "partId" IS NULL AND
-        "serviceId" IS NULL AND
+        "itemId" IS NULL AND
         "accountNumber" IS NULL AND
         "assetId" IS NOT NULL 
       ) 
@@ -351,8 +352,7 @@ CREATE TABLE "purchaseOrderLine" (
 
   CONSTRAINT "purchaseOrderLine_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "purchaseOrderLine_purchaseOrderId_fkey" FOREIGN KEY ("purchaseOrderId") REFERENCES "purchaseOrder" ("id") ON DELETE CASCADE,
-  CONSTRAINT "purchaseOrderLine_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part" ("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "purchaseOrderLine_serviceId_fkey" FOREIGN KEY ("serviceId", "companyId") REFERENCES "service" ("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "purchaseOrderLine_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "purchaseOrderLine_accountNumber_fkey" FOREIGN KEY ("accountNumber", "companyId") REFERENCES "account" ("number", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
   -- TODO: Add assetId foreign key
   CONSTRAINT "purchaseOrderLine_shelfId_fkey" FOREIGN KEY ("shelfId", "locationId") REFERENCES "shelf" ("id", "locationId") ON DELETE CASCADE,
