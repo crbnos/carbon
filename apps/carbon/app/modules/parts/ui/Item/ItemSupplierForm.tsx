@@ -30,9 +30,10 @@ import { path } from "~/utils/path";
 
 type ItemSupplierFormProps = {
   initialValues: z.infer<typeof itemSupplierValidator>;
+  type: "Part" | "Service";
 };
 
-const ItemSupplierForm = ({ initialValues }: ItemSupplierFormProps) => {
+const ItemSupplierForm = ({ initialValues, type }: ItemSupplierFormProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
   const { itemId } = useParams();
@@ -52,6 +53,8 @@ const ItemSupplierForm = ({ initialValues }: ItemSupplierFormProps) => {
 
   const onClose = () => navigate(-1);
 
+  const action = getAction(isEditing, type, itemId, initialValues.id);
+
   return (
     <Drawer
       open
@@ -64,11 +67,7 @@ const ItemSupplierForm = ({ initialValues }: ItemSupplierFormProps) => {
           defaultValues={initialValues}
           validator={itemSupplierValidator}
           method="post"
-          action={
-            isEditing
-              ? path.to.partSupplier(itemId, initialValues.id!)
-              : path.to.newPartSupplier(itemId)
-          }
+          action={action}
           className="flex flex-col h-full"
         >
           <DrawerHeader>
@@ -122,3 +121,26 @@ const ItemSupplierForm = ({ initialValues }: ItemSupplierFormProps) => {
 };
 
 export default ItemSupplierForm;
+
+function getAction(
+  isEditing: boolean,
+  type: "Part" | "Service",
+  itemId: string,
+  id?: string
+) {
+  if (type === "Part") {
+    if (isEditing) {
+      return path.to.partSupplier(itemId, id!);
+    } else {
+      return path.to.newPartSupplier(itemId);
+    }
+  }
+  if (type === "Service") {
+    if (isEditing) {
+      return path.to.serviceSupplier(itemId, id!);
+    } else {
+      return path.to.newServiceSupplier(itemId);
+    }
+  }
+  throw new Error("Invalid type");
+}

@@ -67,5 +67,5 @@ export default function NewPartSupplierRoute() {
     conversionFactor: 1,
   };
 
-  return <ItemSupplierForm initialValues={initialValues} />;
+  return <ItemSupplierForm type="Part" initialValues={initialValues} />;
 }

@@ -32,19 +32,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createItemSupplier = await upsertItemSupplier(client, {
+  const createPartSupplier = await upsertItemSupplier(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (createItemSupplier.error) {
+  if (createPartSupplier.error) {
     throw redirect(
       path.to.serviceSuppliers(itemId),
       await flash(
         request,
-        error(createItemSupplier.error, "Failed to create service supplier.")
+        error(createPartSupplier.error, "Failed to create service supplier")
       )
     );
   }
@@ -52,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   throw redirect(path.to.serviceSuppliers(itemId));
 }
 
-export default function NewItemSupplierRoute() {
+export default function NewPartSupplierRoute() {
   const { itemId } = useParams();
 
   if (!itemId) throw new Error("itemId not found");
@@ -67,5 +67,5 @@ export default function NewItemSupplierRoute() {
     conversionFactor: 1,
   };
 
-  return <ItemSupplierForm initialValues={initialValues} />;
+  return <ItemSupplierForm type="Service" initialValues={initialValues} />;
 }
