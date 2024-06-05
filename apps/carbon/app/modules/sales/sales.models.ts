@@ -87,6 +87,7 @@ export const quotationAssemblyValidator = z.object({
   id: zfd.text(z.string().optional()),
   parentAssemblyId: zfd.text(z.string().optional()),
   itemId: z.string().min(1, { message: "Part is required" }),
+  itemReadableId: zfd.text(z.string().optional()),
   description: z.string().min(1, { message: "Description is required" }),
   unitOfMeasureCode: zfd.text(z.string().optional()),
   quantityPerParent: zfd.numeric(
@@ -97,6 +98,7 @@ export const quotationAssemblyValidator = z.object({
 export const quotationMaterialValidator = z.object({
   id: zfd.text(z.string().optional()),
   itemId: z.string().min(1, { message: "Part is required" }),
+  itemReadableId: zfd.text(z.string().optional()),
   quantity: zfd.numeric(
     z.number().min(0.00001, { message: "Quantity is required" })
   ),
@@ -136,6 +138,7 @@ export const quotationLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: z.string(),
   itemId: z.string().min(1, { message: "Part is required" }),
+  itemReadableId: zfd.text(z.string().optional()),
   status: z.enum(quoteLineStatusType, {
     errorMap: () => ({ message: "Status is required" }),
   }),
@@ -170,6 +173,8 @@ export const salesOrderLineType = [
   "Hardware",
   "Consumable",
   "Comment",
+  "GL Account",
+  "Fixed Asset",
 ] as const;
 
 export const salesOrderStatusType = [

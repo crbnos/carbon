@@ -69,6 +69,7 @@ const $quotationLinePriceEffects = computed($quotationStore, (store) => {
   const linePriceEffects = store?.lines
     ?.filter((line) => line.replenishmentSystem === "Make")
     .reduce<Record<string, LinePriceEffects>>((effects, line) => {
+      if (!line.id) return effects;
       effects[line.id] = {
         materialCost: [],
         laborCost: [],
@@ -118,23 +119,23 @@ const $quotationLinePriceEffects = computed($quotationStore, (store) => {
           0
         );
 
-        effects[line.id].materialCost.push((quantity) => {
+        effects[line.id!].materialCost.push((quantity) => {
           return materialCost * quantity * extendedQuantityPerAssembly;
         });
 
         if (operation.setupHours) {
-          effects[line.id].setupHours.push((_quantity) => {
+          effects[line.id!].setupHours.push((_quantity) => {
             return operation.setupHours;
           });
           if (operation.quotingRate) {
-            effects[line.id].overheadCost.push((_quantity) => {
+            effects[line.id!].overheadCost.push((_quantity) => {
               return operation.setupHours * (operation.quotingRate ?? 0);
             });
           } else {
-            effects[line.id].laborCost.push((_quantity) => {
+            effects[line.id!].laborCost.push((_quantity) => {
               return operation.setupHours * (operation.laborRate ?? 0);
             });
-            effects[line.id].overheadCost.push((_quantity) => {
+            effects[line.id!].overheadCost.push((_quantity) => {
               return operation.setupHours * (operation.overheadRate ?? 0);
             });
           }
@@ -179,7 +180,7 @@ const $quotationLinePriceEffects = computed($quotationStore, (store) => {
               break;
           }
 
-          effects[line.id].productionHours.push((quantity) => {
+          effects[line.id!].productionHours.push((quantity) => {
             return (
               hoursPerProductionStandard *
               quantity *
@@ -187,7 +188,7 @@ const $quotationLinePriceEffects = computed($quotationStore, (store) => {
             );
           });
           if (operation.quotingRate) {
-            effects[line.id].overheadCost.push((quantity) => {
+            effects[line.id!].overheadCost.push((quantity) => {
               return (
                 hoursPerProductionStandard *
                 quantity *
@@ -196,7 +197,7 @@ const $quotationLinePriceEffects = computed($quotationStore, (store) => {
               );
             });
           } else {
-            effects[line.id].laborCost.push((quantity) => {
+            effects[line.id!].laborCost.push((quantity) => {
               return (
                 hoursPerProductionStandard *
                 quantity *
@@ -204,7 +205,7 @@ const $quotationLinePriceEffects = computed($quotationStore, (store) => {
                 (operation.laborRate ?? 0)
               );
             });
-            effects[line.id].overheadCost.push((quantity) => {
+            effects[line.id!].overheadCost.push((quantity) => {
               return (
                 hoursPerProductionStandard *
                 quantity *

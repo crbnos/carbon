@@ -66,7 +66,7 @@ export default function NewPurchaseOrderLineRoute() {
   const initialValues = {
     purchaseOrderId: orderId,
     purchaseOrderLineType: "Part" as PurchaseOrderLineType,
-    partId: "",
+    itemId: "",
     purchaseQuantity: 1,
     unitPrice: 0,
     setupPrice: 0,

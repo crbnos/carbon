@@ -11328,6 +11328,7 @@ export type Database = {
           description: string
           id: string
           itemId: string
+          itemReadableId: string | null
           quoteId: string
           quoteRevisionId: number
           replenishmentSystem: string | null
@@ -11345,6 +11346,7 @@ export type Database = {
           description: string
           id?: string
           itemId: string
+          itemReadableId?: string | null
           quoteId: string
           quoteRevisionId?: number
           replenishmentSystem?: string | null
@@ -11362,6 +11364,7 @@ export type Database = {
           description?: string
           id?: string
           itemId?: string
+          itemReadableId?: string | null
           quoteId?: string
           quoteRevisionId?: number
           replenishmentSystem?: string | null
@@ -20420,14 +20423,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -20754,6 +20757,7 @@ export type Database = {
           description: string | null
           id: string | null
           itemId: string | null
+          itemReadableId: string | null
           pricingDiscountPercent: number | null
           pricingExtendedPrice: number | null
           pricingLeadTime: number | null

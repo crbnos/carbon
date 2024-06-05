@@ -92,7 +92,7 @@ export async function action(args: ActionFunctionArgs) {
           salesOrderId: newSalesOrderId,
           salesOrderLineType: "Part" as "Part",
           companyId,
-          partId: quoteLine.partId!,
+          itemId: quoteLine.itemId!,
           description: quoteLine.description!,
           createdBy: userId,
         };

@@ -65,6 +65,7 @@ CREATE TABLE "quoteLine" (
   "quoteRevisionId" INTEGER NOT NULL DEFAULT 0,
   "status" "quoteLineStatus" NOT NULL DEFAULT 'Draft',
   "itemId" TEXT NOT NULL,
+  "itemReadableId" TEXT,
   "description" TEXT NOT NULL,
   "customerPartId" TEXT,
   "customerPartRevision" TEXT,

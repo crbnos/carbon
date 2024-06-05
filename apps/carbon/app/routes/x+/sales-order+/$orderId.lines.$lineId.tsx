@@ -53,19 +53,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  if (data.salesOrderLineType === "Part") {
+  if (data.salesOrderLineType === "Comment") {
     data.accountNumber = undefined;
     data.assetId = undefined;
-    data.serviceId = undefined;
-  } else if (data.salesOrderLineType === "Service") {
+    data.itemId = undefined;
+  } else if (data.salesOrderLineType === "Fixed Asset") {
+    data.accountNumber = undefined;
+    data.itemId = undefined;
+  } else if (data.salesOrderLineType === "GL Account") {
+    data.assetId = undefined;
+    data.itemId = undefined;
+  } else {
     data.accountNumber = undefined;
     data.assetId = undefined;
-    data.partId = undefined;
-  } else if (data.salesOrderLineType === "Comment") {
-    data.accountNumber = undefined;
-    data.assetId = undefined;
-    data.partId = undefined;
-    data.serviceId = undefined;
   }
 
   const updateSalesOrderLine = await upsertSalesOrderLine(client, {
@@ -96,8 +96,8 @@ export default function EditSalesOrderLineRoute() {
     salesOrderId: salesOrderLine?.salesOrderId ?? "",
     salesOrderLineType:
       salesOrderLine?.salesOrderLineType ?? ("Part" as SalesOrderLineType),
-    partId: salesOrderLine?.partId ?? "",
-    serviceId: salesOrderLine?.serviceId ?? "",
+    itemId: salesOrderLine?.itemId ?? "",
+    itemReadableId: salesOrderLine?.itemReadableId ?? "",
     accountNumber: salesOrderLine?.accountNumber ?? "",
     assetId: salesOrderLine?.assetId ?? "",
     description: salesOrderLine?.description ?? "",

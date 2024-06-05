@@ -384,8 +384,8 @@ export const path = {
     partPurchasing: (id: string) => generatePath(`${x}/part/${id}/purchasing`),
     partRoot: `${x}/part`,
     partSalePrice: (id: string) => generatePath(`${x}/part/${id}/sale-price`),
-    partSupplier: (partId: string, id: string) =>
-      generatePath(`${x}/part/${partId}/suppliers/${id}`),
+    partSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/part/${itemId}/suppliers/${id}`),
     partSuppliers: (id: string) => generatePath(`${x}/part/${id}/suppliers`),
     parts: `${x}/parts`,
     partsSearch: `${x}/parts/search`,

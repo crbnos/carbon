@@ -67,7 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function NewQuoteMaterial() {
   const initialValues = {
-    partId: "",
+    itemId: "",
     quantity: 1,
     description: "",
     unitCost: 0,
