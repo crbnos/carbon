@@ -53,27 +53,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  if (data.invoiceLineType === "Part") {
-    data.accountNumber = undefined;
+  if (data.invoiceLineType === "G/L Account") {
     data.assetId = undefined;
-    data.serviceId = undefined;
-  } else if (data.invoiceLineType === "Service") {
-    data.accountNumber = undefined;
-    data.assetId = undefined;
-    data.partId = undefined;
-  } else if (data.invoiceLineType === "G/L Account") {
-    data.assetId = undefined;
-    data.partId = undefined;
-    data.serviceId = undefined;
+    data.itemId = undefined;
   } else if (data.invoiceLineType === "Fixed Asset") {
     data.accountNumber = undefined;
-    data.partId = undefined;
-    data.serviceId = undefined;
+    data.itemId = undefined;
   } else if (data.invoiceLineType === "Comment") {
     data.accountNumber = undefined;
     data.assetId = undefined;
-    data.partId = undefined;
-    data.serviceId = undefined;
+    data.itemId = undefined;
+  } else {
+    data.accountNumber = undefined;
+    data.assetId = undefined;
   }
 
   const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
@@ -108,8 +100,8 @@ export default function EditPurchaseInvoiceLineRoute() {
     invoiceLineType:
       purchaseInvoiceLine?.invoiceLineType ??
       ("Part" as PurchaseInvoiceLineType),
-    partId: purchaseInvoiceLine?.partId ?? "",
-    serviceId: purchaseInvoiceLine?.serviceId ?? "",
+    itemId: purchaseInvoiceLine?.itemId ?? "",
+    itemReadableId: purchaseInvoiceLine?.itemReadableId ?? "",
     accountNumber: purchaseInvoiceLine?.accountNumber ?? "",
     assetId: purchaseInvoiceLine?.assetId ?? "",
     description: purchaseInvoiceLine?.description ?? "",

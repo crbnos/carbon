@@ -53,27 +53,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  if (data.purchaseOrderLineType === "Part") {
-    data.accountNumber = undefined;
+  if (data.purchaseOrderLineType === "G/L Account") {
     data.assetId = undefined;
-    data.serviceId = undefined;
-  } else if (data.purchaseOrderLineType === "Service") {
-    data.accountNumber = undefined;
-    data.assetId = undefined;
-    data.partId = undefined;
-  } else if (data.purchaseOrderLineType === "G/L Account") {
-    data.assetId = undefined;
-    data.partId = undefined;
-    data.serviceId = undefined;
+    data.itemId = undefined;
   } else if (data.purchaseOrderLineType === "Fixed Asset") {
     data.accountNumber = undefined;
-    data.partId = undefined;
-    data.serviceId = undefined;
+    data.itemId = undefined;
   } else if (data.purchaseOrderLineType === "Comment") {
     data.accountNumber = undefined;
     data.assetId = undefined;
-    data.partId = undefined;
-    data.serviceId = undefined;
+    data.itemId = undefined;
+  } else {
+    data.accountNumber = undefined;
+    data.assetId = undefined;
   }
 
   const updatePurchaseOrderLine = await upsertPurchaseOrderLine(client, {
@@ -108,8 +100,8 @@ export default function EditPurchaseOrderLineRoute() {
     purchaseOrderLineType:
       purchaseOrderLine?.purchaseOrderLineType ??
       ("Part" as PurchaseOrderLineType),
-    partId: purchaseOrderLine?.partId ?? "",
-    serviceId: purchaseOrderLine?.serviceId ?? "",
+    itemId: purchaseOrderLine?.itemId ?? "",
+    itemReadableId: purchaseOrderLine?.itemReadableId ?? "",
     accountNumber: purchaseOrderLine?.accountNumber ?? "",
     assetId: purchaseOrderLine?.assetId ?? "",
     description: purchaseOrderLine?.description ?? "",

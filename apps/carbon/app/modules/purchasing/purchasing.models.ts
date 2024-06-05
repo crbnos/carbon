@@ -195,7 +195,7 @@ export const requestForQuoteValidator = z.object({
 export const requestForQuoteLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   requestForQuoteId: z.string().min(36, { message: "Request is required" }),
-  partId: zfd.text(z.string().optional()),
+  itemId: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),
   quantity: zfd.numeric(z.number()),
   unitPrice: zfd.numeric(z.number().optional()),

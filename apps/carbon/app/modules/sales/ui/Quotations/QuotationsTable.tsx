@@ -22,7 +22,7 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Quotation } from "~/modules/sales";
 import { quoteStatusType } from "~/modules/sales";
-import { useCustomers, useParts, usePeople } from "~/stores";
+import { useCustomers, useItems, usePeople } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
 import { QuotationStatus } from "../Quotation";
@@ -42,7 +42,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
   const deleteQuotationModal = useDisclosure();
 
   const [customers] = useCustomers();
-  const parts = useParts();
+  const [items] = useItems();
   const [people] = usePeople();
 
   const fetcher = useFetcher();
@@ -134,16 +134,16 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
         },
       },
       {
-        id: "partIds",
+        id: "itemIds",
         header: "Parts",
-        cell: ({ row }) => row.original.partIds?.length ?? 0,
+        cell: ({ row }) => row.original.itemIds?.length ?? 0,
         meta: {
           filter: {
             type: "static",
-            options: parts.map((part) => ({
-              value: part.id,
-              label: part.id,
-              helperText: part.name,
+            options: items.map((item) => ({
+              value: item.id,
+              label: item.id,
+              helperText: item.name,
             })),
             isArray: true,
           },
@@ -259,7 +259,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, parts, people, customColumns, fetcher]);
+  }, [customers, items, people, customColumns, fetcher]);
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name

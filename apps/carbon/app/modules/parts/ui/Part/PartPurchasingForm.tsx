@@ -29,11 +29,11 @@ type PartPurchasingFormProps = {
 
 const PartPurchasingForm = ({ initialValues }: PartPurchasingFormProps) => {
   const permissions = usePermissions();
-  const { partId } = useParams();
-  if (!partId) throw new Error("partId not found");
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("itemId not found");
 
   const routeData = useRouteData<{ partSummary: PartSummary }>(
-    path.to.part(partId)
+    path.to.part(itemId)
   );
 
   const inventoryCode = routeData?.partSummary?.unitOfMeasureCode;

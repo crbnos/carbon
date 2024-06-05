@@ -224,7 +224,7 @@ const PurchaseInvoiceLines = () => {
       description: EditableText(onCellEdit),
       quantity: EditableNumber(onCellEdit),
       unitPrice: EditableNumber(onCellEdit),
-      partId: EditablePurchaseInvoiceLineNumber(onCellEdit, {
+      itemId: EditablePurchaseInvoiceLineNumber(onCellEdit, {
         client: supabase,
         items: items,
         accounts: accountOptions,
