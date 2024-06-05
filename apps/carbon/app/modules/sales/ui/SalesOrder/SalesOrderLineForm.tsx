@@ -18,12 +18,10 @@ import {
   ComboboxControlled,
   CustomFormFields,
   Hidden,
-  InputControlled,
+  Item,
   Number,
   NumberControlled,
-  Part,
   Select,
-  Service,
   Submit,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -64,14 +62,16 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
 
   const [type, setType] = useState(initialValues.salesOrderLineType);
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
-  const [partData, setPartData] = useState<{
-    partId: string;
+  const [itemData, setItemData] = useState<{
+    itemId: string;
+    itemReadableId?: string;
     description: string;
     unitPrice: number;
     uom: string;
     shelfId: string;
   }>({
-    partId: initialValues.partId ?? "",
+    itemId: initialValues.itemId ?? "",
+    itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     unitPrice: initialValues.unitPrice ?? 0,
     uom: initialValues.unitOfMeasureCode ?? "",
@@ -111,9 +111,11 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
   const onClose = () => navigate(-1);
 
   const onTypeChange = (type: SalesOrderLineType) => {
+    // @ts-ignore
     setType(type);
-    setPartData({
-      partId: "",
+    setItemData({
+      itemId: "",
+      itemReadableId: "",
       description: "",
       unitPrice: 0,
       uom: "EA",
@@ -121,54 +123,44 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
     });
   };
 
-  const onPartChange = async (partId: string) => {
+  const onChange = async (itemId: string) => {
+    if (!itemId) return;
     if (!supabase || !company.id) return;
-    const [part, shelf, price] = await Promise.all([
+    const [item, part, shelf, price] = await Promise.all([
       supabase
-        .from("part")
-        .select("name, unitOfMeasureCode")
-        .eq("id", partId)
+        .from("item")
+        .select("name, readableId")
+        .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
       supabase
-        .from("partInventory")
+        .from("part")
+        .select("unitOfMeasureCode")
+        .eq("itemId", itemId)
+        .eq("companyId", company.id)
+        .maybeSingle(),
+      supabase
+        .from("itemInventory")
         .select("defaultShelfId")
-        .eq("partId", partId)
+        .eq("itemId", itemId)
         .eq("companyId", company.id)
         .eq("locationId", locationId)
         .maybeSingle(),
       supabase
-        .from("partUnitSalePrice")
+        .from("itemUnitSalePrice")
         .select("unitSalePrice")
-        .eq("partId", partId)
+        .eq("itemId", itemId)
         .eq("companyId", company.id)
-        .single(),
+        .maybeSingle(),
     ]);
 
-    setPartData({
-      partId,
-      description: part.data?.name ?? "",
+    setItemData({
+      itemId,
+      itemReadableId: item.data?.readableId,
+      description: item.data?.name ?? "",
       unitPrice: price.data?.unitSalePrice ?? 0,
       uom: part.data?.unitOfMeasureCode ?? "EA",
       shelfId: shelf.data?.defaultShelfId ?? "",
-    });
-  };
-
-  const onServiceChange = async (serviceId: string) => {
-    if (!supabase) return;
-    const service = await supabase
-      .from("service")
-      .select("name")
-      .eq("id", serviceId)
-      .eq("companyId", company.id)
-      .single();
-
-    setPartData({
-      partId: "",
-      description: service.data?.name ?? "",
-      unitPrice: 0,
-      uom: "EA",
-      shelfId: "",
     });
   };
 
@@ -178,16 +170,16 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
       throw new Error("locationId is not a string");
 
     setLocationId(newLocation.value);
-    if (!partData.partId) return;
+    if (!itemData.itemId) return;
     const shelf = await supabase
-      .from("partInventory")
+      .from("itemInventory")
       .select("defaultShelfId")
-      .eq("partId", partData.partId)
+      .eq("itemId", itemData.itemId)
       .eq("companyId", company.id)
       .eq("locationId", newLocation.value)
       .maybeSingle();
 
-    setPartData((d) => ({
+    setItemData((d) => ({
       ...d,
       shelfId: shelf?.data?.defaultShelfId ?? "",
     }));
@@ -220,7 +212,8 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
           <DrawerBody>
             <Hidden name="id" />
             <Hidden name="salesOrderId" />
-
+            <Hidden name="itemReadableId" value={itemData?.itemReadableId} />
+            <Hidden name="description" value={itemData?.description} />
             <VStack spacing={4}>
               <Select
                 name="salesOrderLineType"
@@ -230,35 +223,27 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
                   onTypeChange(value?.value as SalesOrderLineType);
                 }}
               />
-              {type === "Part" && (
-                <Part
-                  name="partId"
-                  label="Part"
-                  partReplenishmentSystem="Buy and Make"
+
+              {[
+                "Part",
+                "Material",
+                "Service",
+                "Hardware",
+                "Tool",
+                "Fixture",
+                "Consumable",
+              ].includes(type) && (
+                <Item
+                  name="itemId"
+                  label={type}
+                  // @ts-ignore
+                  type={type}
                   onChange={(value) => {
-                    onPartChange(value?.value as string);
+                    onChange(value?.value as string);
                   }}
                 />
               )}
 
-              {type === "Service" && (
-                <Service
-                  name="serviceId"
-                  label="Service"
-                  serviceType="External"
-                  onChange={(value) => {
-                    onServiceChange(value?.value as string);
-                  }}
-                />
-              )}
-              <InputControlled
-                name="description"
-                label="Description"
-                value={partData.description}
-                onChange={(newValue) =>
-                  setPartData((d) => ({ ...d, description: newValue }))
-                }
-              />
               {type !== "Comment" && (
                 <>
                   <Number name="saleQuantity" label="Quantity" />
@@ -268,9 +253,9 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
                   <NumberControlled
                     name="unitPrice"
                     label="Unit Price"
-                    value={partData.unitPrice}
+                    value={itemData.unitPrice}
                     onChange={(value) =>
-                      setPartData((d) => ({
+                      setItemData((d) => ({
                         ...d,
                         unitPrice: value,
                       }))
@@ -290,10 +275,10 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
                       name="shelfId"
                       label="Shelf"
                       options={shelfOptions}
-                      value={partData.shelfId}
+                      value={itemData.shelfId}
                       onChange={(newValue) => {
                         if (newValue) {
-                          setPartData((d) => ({
+                          setItemData((d) => ({
                             ...d,
                             shelfId: newValue?.value as string,
                           }));

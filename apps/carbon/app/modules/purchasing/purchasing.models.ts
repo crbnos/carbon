@@ -124,7 +124,7 @@ export const purchaseOrderLineValidator = z
         : true,
     {
       message: "Part is required",
-      path: ["partId"], // path of error
+      path: ["itemId"], // path of error
     }
   )
   .refine(

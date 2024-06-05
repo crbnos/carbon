@@ -184,8 +184,8 @@ export async function getPartsList(
   replenishmentSystem: ItemReplenishmentSystem | null
 ) {
   let query = client
-    .from("part")
-    .select("id, name")
+    .from("item")
+    .select("id, name, readableId")
     .eq("companyId", companyId)
     .eq("blocked", false)
     .eq("active", true);

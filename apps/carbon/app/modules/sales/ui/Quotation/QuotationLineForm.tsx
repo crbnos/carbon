@@ -28,7 +28,7 @@ import {
   Hidden,
   Input,
   InputControlled,
-  Part,
+  Item,
   Select,
   SelectControlled,
   Submit,
@@ -69,31 +69,32 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
     : !permissions.can("create", "sales");
 
   const [partData, setPartData] = useState<{
-    partId: string;
+    itemId: string;
     description: string;
     replenishmentSystem: string;
     uom: string;
   }>({
-    partId: initialValues.partId ?? "",
+    itemId: initialValues.itemId ?? "",
     description: initialValues.description ?? "",
     replenishmentSystem: initialValues.replenishmentSystem ?? "",
     uom: initialValues.unitOfMeasureCode ?? "",
   });
 
-  const onPartChange = async (partId: string) => {
+  const onPartChange = async (itemId: string) => {
     if (!supabase || !company.id) return;
-    const [part] = await Promise.all([
+    const [item, part] = await Promise.all([
+      supabase.from("item").select("name").eq("id", itemId).single(),
       supabase
         .from("part")
-        .select("name, replenishmentSystem, unitOfMeasureCode")
-        .eq("id", partId)
+        .select("replenishmentSystem, unitOfMeasureCode")
+        .eq("itemId", itemId)
         .eq("companyId", company.id)
         .single(),
     ]);
 
     setPartData({
-      partId,
-      description: part.data?.name ?? "",
+      itemId,
+      description: item.data?.name ?? "",
       replenishmentSystem:
         part.data?.replenishmentSystem === "Buy and Make"
           ? ""
@@ -159,8 +160,9 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
           <Hidden name="unitOfMeasureCode" value={partData?.uom} />
           <VStack>
             <div className="grid w-full gap-x-8 gap-y-2 grid-cols-1 lg:grid-cols-3">
-              <Part
-                name="partId"
+              <Item
+                name="itemId"
+                type="Part"
                 label="Part"
                 onChange={(value) => {
                   onPartChange(value?.value as string);

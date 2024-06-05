@@ -59,29 +59,35 @@ const QuotationAssemblyForm = ({
   const isEditing = initialValues.id !== undefined;
 
   const [partData, setPartData] = useState<{
-    partId: string;
+    itemId: string;
     description: string;
     uom: string;
   }>({
-    partId: initialValues.partId ?? "",
+    itemId: initialValues.itemId ?? "",
     description: initialValues.description ?? "",
     uom: initialValues.unitOfMeasureCode ?? "",
   });
 
-  const onPartChange = async (partId: string) => {
+  const onPartChange = async (itemId: string) => {
     if (!supabase || !company.id) return;
-    const [part] = await Promise.all([
+    const [item, part] = await Promise.all([
+      supabase
+        .from("item")
+        .select("name")
+        .eq("id", itemId)
+        .eq("companyId", company.id)
+        .single(),
       supabase
         .from("part")
-        .select("name, replenishmentSystem, unitOfMeasureCode")
-        .eq("id", partId)
+        .select("replenishmentSystem, unitOfMeasureCode")
+        .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
     ]);
 
     setPartData({
-      partId,
-      description: part.data?.name ?? "",
+      itemId,
+      description: item.data?.name ?? "",
       uom: part.data?.unitOfMeasureCode ?? "",
     });
   };
@@ -109,7 +115,7 @@ const QuotationAssemblyForm = ({
             <CardTitle>{isEditing ? "Assembly" : "New Assembly"}</CardTitle>
             <CardDescription>
               {isEditing
-                ? partData?.partId
+                ? partData?.itemId
                 : "A quote assembly is a collection of operations, materials, and subassemblies that are used to build a product."}
             </CardDescription>
           </CardHeader>
@@ -151,7 +157,7 @@ const QuotationAssemblyForm = ({
           <VStack>
             <div className="grid w-full gap-x-8 gap-y-2 grid-cols-1 lg:grid-cols-3">
               <Part
-                name="partId"
+                name="itemId"
                 label="Manufactured Part"
                 partReplenishmentSystem="Make"
                 onChange={(value) => {

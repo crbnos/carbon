@@ -52,12 +52,12 @@ const QuotationMaterialForm = ({
   const isEditable = ["Draft"].includes(routeData?.quotation?.status ?? "");
 
   const [partData, setPartData] = useState<{
-    partId: string;
+    itemId: string;
     description: string;
     unitCost: number;
     uom: string;
   }>({
-    partId: initialValues.partId ?? "",
+    itemId: initialValues.itemId ?? "",
     description: initialValues.description ?? "",
     unitCost: initialValues.unitCost ?? 0,
     uom: initialValues.unitOfMeasureCode ?? "",
@@ -72,26 +72,32 @@ const QuotationMaterialForm = ({
 
   const onClose = () => navigate(-1);
 
-  const onPartChange = async (partId: string) => {
+  const onPartChange = async (itemId: string) => {
     if (!supabase || !company.id) return;
-    const [part, cost] = await Promise.all([
+    const [item, part, cost] = await Promise.all([
       supabase
-        .from("part")
-        .select("name, unitOfMeasureCode")
-        .eq("id", partId)
+        .from("item")
+        .select("name")
+        .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
       supabase
-        .from("partCost")
+        .from("part")
+        .select("unitOfMeasureCode")
+        .eq("id", itemId)
+        .eq("companyId", company.id)
+        .single(),
+      supabase
+        .from("itemCost")
         .select("unitCost")
-        .eq("partId", partId)
+        .eq("itemId", itemId)
         .eq("companyId", company.id)
         .single(),
     ]);
 
     setPartData({
-      partId,
-      description: part.data?.name ?? "",
+      itemId,
+      description: item.data?.name ?? "",
       unitCost: cost.data?.unitCost ?? 0,
       uom: part.data?.unitOfMeasureCode ?? "EA",
     });
@@ -129,7 +135,7 @@ const QuotationMaterialForm = ({
 
             <VStack spacing={4}>
               <Part
-                name="partId"
+                name="itemId"
                 label="Part"
                 partReplenishmentSystem="Buy"
                 onChange={(value) => {

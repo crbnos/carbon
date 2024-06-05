@@ -54,15 +54,14 @@ CREATE INDEX "salesOrder_companyId_idx" ON "salesOrder" ("companyId");
 
 CREATE TYPE "salesOrderLineType" AS ENUM (
   'Comment',
-  'G/L Account',
-  'Fixed Asset',
   'Part',
   'Material',
   'Tool',
   'Hardware',
   'Service',
   'Consumable',
-  'Fixture'
+  'Fixture',
+  'Fixed Asset'
 );
 
 CREATE TABLE "salesOrderStatusHistory" (

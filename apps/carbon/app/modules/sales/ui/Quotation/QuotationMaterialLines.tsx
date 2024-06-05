@@ -19,6 +19,7 @@ import {
   type Quotation,
   type QuotationMaterial,
 } from "~/modules/sales";
+import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
 type QuotationMaterialLinesProps = {
@@ -69,12 +70,16 @@ const QuotationMaterialLines = ({
     currency: "USD",
   });
 
+  const [items] = useItems();
+
   const columns = useMemo<ColumnDef<QuotationMaterial>[]>(() => {
     return [
       {
-        accessorKey: "partId",
+        accessorKey: "itemId",
         header: "Part",
-        cell: (item) => item.getValue(),
+        cell: ({ row }) =>
+          items.find((item) => item.id === row.original.itemId)?.readableId ??
+          null,
       },
       {
         accessorKey: "description",

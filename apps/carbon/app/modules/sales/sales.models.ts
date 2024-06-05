@@ -86,7 +86,7 @@ export const quotationValidator = z.object({
 export const quotationAssemblyValidator = z.object({
   id: zfd.text(z.string().optional()),
   parentAssemblyId: zfd.text(z.string().optional()),
-  partId: z.string().min(1, { message: "Part is required" }),
+  itemId: z.string().min(1, { message: "Part is required" }),
   description: z.string().min(1, { message: "Description is required" }),
   unitOfMeasureCode: zfd.text(z.string().optional()),
   quantityPerParent: zfd.numeric(
@@ -96,7 +96,7 @@ export const quotationAssemblyValidator = z.object({
 
 export const quotationMaterialValidator = z.object({
   id: zfd.text(z.string().optional()),
-  partId: z.string().min(1, { message: "Part is required" }),
+  itemId: z.string().min(1, { message: "Part is required" }),
   quantity: zfd.numeric(
     z.number().min(0.00001, { message: "Quantity is required" })
   ),
@@ -135,7 +135,7 @@ export const quotationPricingValidator = z.object({
 export const quotationLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: z.string(),
-  partId: z.string().min(1, { message: "Part is required" }),
+  itemId: z.string().min(1, { message: "Part is required" }),
   status: z.enum(quoteLineStatusType, {
     errorMap: () => ({ message: "Status is required" }),
   }),
@@ -161,7 +161,16 @@ export const quotationReleaseValidator = z
     }
   );
 
-export const salesOrderLineType = ["Part", "Service", "Comment"] as const;
+export const salesOrderLineType = [
+  "Part",
+  "Service",
+  "Material",
+  "Tool",
+  "Fixture",
+  "Hardware",
+  "Consumable",
+  "Comment",
+] as const;
 
 export const salesOrderStatusType = [
   "Draft",
@@ -237,7 +246,8 @@ export const salesOrderLineValidator = z
         message: "Type is required",
       }),
     }),
-    partId: zfd.text(z.string().optional()),
+    itemId: zfd.text(z.string().optional()),
+    itemReadableId: zfd.text(z.string().optional()),
     serviceId: zfd.text(z.string().optional()),
     accountNumber: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
@@ -249,9 +259,9 @@ export const salesOrderLineValidator = z
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
   })
-  .refine((data) => (data.salesOrderLineType === "Part" ? data.partId : true), {
+  .refine((data) => (data.salesOrderLineType === "Part" ? data.itemId : true), {
     message: "Part is required",
-    path: ["partId"], // path of error
+    path: ["itemId"], // path of error
   })
   .refine(
     (data) => (data.salesOrderLineType === "Comment" ? data.description : true),

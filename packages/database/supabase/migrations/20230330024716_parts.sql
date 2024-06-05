@@ -84,6 +84,8 @@ CREATE TABLE "item" (
   CONSTRAINT "item_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
+ALTER publication supabase_realtime ADD TABLE "item";
+
 CREATE INDEX "item_companyId_idx" ON "item" ("companyId");
 CREATE INDEX "item_name_companyId_idx" ON "item" ("name", "companyId");
 CREATE INDEX "item_type_companyId_idx" ON "item" ("type", "companyId");

@@ -23063,8 +23063,6 @@ export type Database = {
       requestForQuoteStatus: "Draft" | "Sent" | "Expired" | "Closed"
       salesOrderLineType:
         | "Comment"
-        | "G/L Account"
-        | "Fixed Asset"
         | "Part"
         | "Material"
         | "Tool"
@@ -23072,6 +23070,7 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
+        | "Fixed Asset"
       salesOrderStatus:
         | "Draft"
         | "Needs Approval"

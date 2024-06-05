@@ -112,7 +112,7 @@ const SalesOrderLines = () => {
             case "Comment":
               return null;
             default:
-              return <span>{row.original.itemId}</span>;
+              return <span>{row.original.itemReadableId}</span>;
           }
         },
       },

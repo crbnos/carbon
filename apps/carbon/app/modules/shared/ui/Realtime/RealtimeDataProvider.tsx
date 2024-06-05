@@ -102,7 +102,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         {
           event: "*",
           schema: "public",
-          table: "part",
+          table: "item",
         },
         (payload) => {
           if ("companyId" in payload.new && payload.new.companyId !== companyId)

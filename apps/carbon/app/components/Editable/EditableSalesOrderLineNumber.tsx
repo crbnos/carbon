@@ -86,8 +86,6 @@ const EditableSalesOrderLineNumber =
             description: item.data?.name ?? "",
             unitPrice: itemUnitSalePrice?.unitSalePrice ?? 0,
             unitOfMeasureCode: part.data?.unitOfMeasureCode ?? "EA",
-
-            conversionFactor: itemReplenishment?.conversionFactor ?? 1,
             shelfId: inventory.data?.defaultShelfId ?? null,
           });
 
@@ -101,8 +99,6 @@ const EditableSalesOrderLineNumber =
                 description: item.data?.name ?? "",
                 unitPrice: itemUnitSalePrice?.unitSalePrice ?? 0,
                 unitOfMeasureCode: part.data?.unitOfMeasureCode ?? "EA",
-
-                conversionFactor: itemReplenishment?.conversionFactor ?? 1,
                 shelfId: inventory.data?.defaultShelfId ?? null,
                 updatedBy: userId,
               })
