@@ -38,20 +38,20 @@ serve(async (req: Request) => {
 
     const companyId = receipt.data?.companyId;
 
-    const parts = await client
-      .from("part")
-      .select("id, itemGroupId, partType")
+    const items = await client
+      .from("item")
+      .select("id, itemGroupId, itemInventoryType")
       .in(
         "id",
         receiptLines.data.reduce<string[]>((acc, receiptLine) => {
-          if (receiptLine.partId && !acc.includes(receiptLine.partId)) {
-            acc.push(receiptLine.partId);
+          if (receiptLine.itemId && !acc.includes(receiptLine.itemId)) {
+            acc.push(receiptLine.itemId);
           }
           return acc;
         }, [])
       )
       .eq("companyId", companyId);
-    if (parts.error) throw new Error("Failed to fetch item groups");
+    if (items.error) throw new Error("Failed to fetch item groups");
 
     switch (receipt.data?.sourceDocument) {
       case "Purchase Order": {
@@ -194,12 +194,12 @@ serve(async (req: Request) => {
             | Database["public"]["Tables"]["postingGroupInventory"]["Row"]
             | null = null;
 
-          const partType =
-            parts.data.find((part) => part.id === receiptLine.partId)
-              ?.partType ?? "Inventory";
+          const itemInventoryType =
+            items.data.find((item) => item.id === receiptLine.itemId)
+              ?.itemInventoryType ?? "Inventory";
 
           const itemGroupId: string | null =
-            parts.data.find((part) => part.id === receiptLine.partId)
+            items.data.find((item) => item.id === receiptLine.itemId)
               ?.itemGroupId ?? null;
           const locationId = receiptLine.locationId ?? null;
           const supplierTypeId: string | null =
@@ -424,7 +424,8 @@ serve(async (req: Request) => {
               documentType: "Purchase Receipt",
               documentId: receipt.data?.id ?? undefined,
               externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
-              partId: receiptLine.partId,
+              itemId: receiptLine.itemId,
+              itemReadableId: receiptLine.itemReadableId ?? "",
               quantity: quantityToReverse,
               cost: reversedValue,
               costPostedToGL: reversedValue,
@@ -435,7 +436,7 @@ serve(async (req: Request) => {
 
             let journalLineReference = nanoid();
 
-            if (partType === "Inventory") {
+            if (itemInventoryType === "Inventory") {
               // debit the inventory account
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.inventoryAccount,
@@ -580,10 +581,11 @@ serve(async (req: Request) => {
             });
           }
 
-          if (partType === "Inventory") {
+          if (itemInventoryType === "Inventory") {
             itemLedgerInserts.push({
               postingDate: today,
-              partId: receiptLine.partId,
+              itemId: receiptLine.itemId,
+              itemReadableId: receiptLine.itemReadableId ?? "",
               quantity: receiptLine.receivedQuantity,
               locationId: receiptLine.locationId,
               shelfId: receiptLine.shelfId,

@@ -14,6 +14,7 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
     i.name,
     i.description,
     i."itemGroupId",
+    i."itemInventoryType",
     i.active,
     i.blocked,
     p.*,

@@ -38,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
           await flash(request, error(createPart.error, "Failed to insert part"))
         )
       : redirect(
-          path.to.partsSearch,
+          path.to.parts,
           await flash(request, error(createPart.error, "Failed to insert part"))
         );
   }
@@ -56,7 +56,7 @@ export default function PartsNewRoute() {
     id: "",
     name: "",
     description: "",
-    partType: "Inventory" as "Inventory",
+    itemInventoryType: "Inventory" as "Inventory",
     replenishmentSystem: "Buy" as "Buy",
     unitOfMeasureCode: "EA",
     blocked: false,

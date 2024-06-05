@@ -21,7 +21,7 @@ export function useModules() {
     {
       permission: "parts",
       name: "Items",
-      to: path.to.partsSearch,
+      to: path.to.parts,
       icon: LuComponent,
     },
     // {

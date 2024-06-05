@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { z } from "zod";
+import { type z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -448,6 +448,8 @@ export async function upsertPart(
         readableId: part.id,
         name: part.name,
         type: "Part",
+        itemGroupId: part.itemGroupId,
+        itemInventoryType: part.itemInventoryType,
         companyId: part.companyId,
         createdBy: part.createdBy,
       })
@@ -462,7 +464,6 @@ export async function upsertPart(
         id: part.id,
         itemId: itemId,
         replenishmentSystem: part.replenishmentSystem,
-        partType: part.partType,
         unitOfMeasureCode: part.unitOfMeasureCode,
         companyId: part.companyId,
         createdBy: part.createdBy,
@@ -477,14 +478,15 @@ export async function upsertPart(
     name: part.name,
     description: part.description,
     itemGroupId: part.itemGroupId,
+    itemInventoryType: part.itemInventoryType,
     active: part.active,
     blocked: part.blocked,
   };
 
   const partUpdate = {
     replenishmentSystem: part.replenishmentSystem,
-    partType: part.partType,
     unitOfMeasureCode: part.unitOfMeasureCode,
+    customFields: part.customFields,
   };
 
   const [updateItem, updatePart] = await Promise.all([
@@ -699,6 +701,8 @@ export async function upsertService(
         readableId: service.id,
         name: service.name,
         type: "Service",
+        itemGroupId: service.itemGroupId,
+        itemInventoryType: service.itemInventoryType,
         companyId: service.companyId,
         createdBy: service.createdBy,
       })
@@ -724,6 +728,7 @@ export async function upsertService(
     name: service.name,
     description: service.description,
     itemGroupId: service.itemGroupId,
+    itemInventoryType: service.itemInventoryType,
     active: service.active,
     blocked: service.blocked,
   };

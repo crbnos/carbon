@@ -60,9 +60,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } else if (data.salesOrderLineType === "Fixed Asset") {
     data.accountNumber = undefined;
     data.itemId = undefined;
-  } else if (data.salesOrderLineType === "GL Account") {
-    data.assetId = undefined;
-    data.itemId = undefined;
   } else {
     data.accountNumber = undefined;
     data.assetId = undefined;

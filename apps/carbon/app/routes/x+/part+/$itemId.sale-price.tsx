@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (partUnitSalePrice.error) {
     throw redirect(
-      path.to.parts,
+      path.to.items,
       await flash(
         request,
         error(partUnitSalePrice.error, "Failed to load part unit sale price")

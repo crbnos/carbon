@@ -92,6 +92,7 @@ CREATE TABLE "receiptLine" (
   "receiptId" TEXT NOT NULL,
   "lineId" TEXT,
   "itemId" TEXT NOT NULL,
+  "itemReadableId" TEXT,
   "orderQuantity" NUMERIC(18, 4) NOT NULL,
   "outstandingQuantity" NUMERIC(18, 4) NOT NULL DEFAULT 0,
   "receivedQuantity" NUMERIC(18, 4) NOT NULL DEFAULT 0,

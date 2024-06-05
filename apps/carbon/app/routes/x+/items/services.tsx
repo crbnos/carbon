@@ -2,8 +2,7 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { getAccountsList } from "~/modules/accounting";
-import { ItemGroupsTable, getItemGroups } from "~/modules/parts";
+import { ServicesTable, getItemGroupsList, getServices } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -12,60 +11,59 @@ import { getGenericQueryFilters } from "~/utils/query";
 import { error } from "~/utils/result";
 
 export const handle: Handle = {
-  breadcrumb: "Posting Groups",
-  to: path.to.itemGroups,
+  breadcrumb: "Services",
+  to: path.to.services,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
-    role: "employee",
   });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
+  const type = searchParams.get("type");
+  const group = searchParams.get("group");
+  const supplierId = searchParams.get("supplierId");
+
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [itemGroups, accounts] = await Promise.all([
-    getItemGroups(client, companyId, {
+  const [services, itemGroups] = await Promise.all([
+    getServices(client, companyId, {
+      search,
+      type,
+      group,
+      supplierId,
       limit,
       offset,
       sorts,
-      search,
       filters,
     }),
-    getAccountsList(client, companyId),
+    getItemGroupsList(client, companyId),
   ]);
 
-  if (itemGroups.error) {
-    throw redirect(
-      path.to.parts,
-      await flash(request, error(null, "Error loading item groups"))
-    );
-  }
-
-  if (accounts.error) {
-    throw redirect(
-      path.to.itemGroups,
-      await flash(request, error(accounts.error, "Error loading accounts"))
+  if (services.error) {
+    redirect(
+      path.to.items,
+      await flash(request, error(services.error, "Failed to fetch services"))
     );
   }
 
   return json({
+    count: services.count ?? 0,
+    services: services.data ?? [],
     itemGroups: itemGroups.data ?? [],
-    count: itemGroups.count ?? 0,
-    accounts: accounts.data ?? [],
   });
 }
 
-export default function ItemGroupsRoute() {
-  const { itemGroups, count } = useLoaderData<typeof loader>();
+export default function ServicesSearchRoute() {
+  const { count, services, itemGroups } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ItemGroupsTable data={itemGroups} count={count ?? 0} />
+      <ServicesTable data={services} count={count} itemGroups={itemGroups} />
       <Outlet />
     </VStack>
   );

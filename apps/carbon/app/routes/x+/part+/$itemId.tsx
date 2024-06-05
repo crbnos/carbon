@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (partSummary.error) {
     throw redirect(
-      path.to.parts,
+      path.to.items,
       await flash(
         request,
         error(partSummary.error, "Failed to load part summary")

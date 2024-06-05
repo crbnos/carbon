@@ -49,7 +49,7 @@ const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
             id: "",
             name: created,
             description: "",
-            partType: "Inventory" as "Inventory",
+            itemInventoryType: "Inventory" as "Inventory",
             replenishmentSystem: partReplenishmentSystem ?? "Buy and Make",
             unitOfMeasureCode: "EA",
             blocked: false,

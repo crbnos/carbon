@@ -24,7 +24,7 @@ export function getLineDescriptionDetails(
     case "Fixed Asset":
       return line?.description;
     case "G/L Account":
-      return `GL Account: ${line?.accountNumber}`;
+      return `G/L Account: ${line?.accountNumber}`;
     case "Comment":
     default:
       const itemDescription = line?.itemDescription

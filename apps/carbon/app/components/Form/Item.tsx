@@ -52,7 +52,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             id: "",
             name: created,
             description: "",
-            partType: "Inventory" as "Inventory",
+            itemInventoryType: "Inventory",
             replenishmentSystem: "Buy and Make",
             unitOfMeasureCode: "EA",
             blocked: false,

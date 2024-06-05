@@ -30,24 +30,24 @@ export const path = {
         generatePath(`${api}/users/groups?type=${type}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
       locations: `${api}/resources/locations`,
-      itemGroups: `${api}/parts/groups`,
+      itemGroups: `${api}/items/groups`,
       rollback: (table: string, id: string) =>
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
         ),
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
-      services: `${api}/parts/services`,
+      services: `${api}/items/services`,
       shifts: (id: string) =>
         generatePath(`${api}/resources/shifts?location=${id}`),
       shelves: (id: string) =>
-        generatePath(`${api}/parts/shelf?locationId=${id}`),
+        generatePath(`${api}/items/shelf?locationId=${id}`),
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts?supplierId=${id}`),
       supplierLocations: (id: string) =>
         generatePath(`${api}/purchasing/supplier-locations?supplierId=${id}`),
       supplierStatuses: `${api}/purchasing/supplier-statuses`,
       supplierTypes: `${api}/purchasing/supplier-types`,
-      unitOfMeasures: `${api}/parts/uoms`,
+      unitOfMeasures: `${api}/items/uoms`,
       workCells: (id: string) =>
         generatePath(`${api}/resources/work-cells?location=${id}`),
       workCellTypes: `${api}/resources/work-cell-types`,
@@ -184,7 +184,7 @@ export const path = {
       generatePath(`${x}/resources/locations/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deleteItemGroup: (id: string) =>
-      generatePath(`${x}/parts/groups/delete/${id}`),
+      generatePath(`${x}/items/groups/delete/${id}`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePaymentTerm: (id: string) =>
@@ -227,7 +227,7 @@ export const path = {
       generatePath(`${x}/purchasing/supplier-statuses/delete/${id}`),
     deleteSupplierType: (id: string) =>
       generatePath(`${x}/purchasing/supplier-types/delete/${id}`),
-    deleteUom: (id: string) => generatePath(`${x}/parts/uom/delete/${id}`),
+    deleteUom: (id: string) => generatePath(`${x}/items/uom/delete/${id}`),
     deleteUserAttribute: (id: string) =>
       generatePath(`${x}/account/${id}/delete/attribute`),
     deleteWorkCell: (id: string) =>
@@ -313,7 +313,7 @@ export const path = {
     newLocation: `${x}/resources/locations/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
-    newItemGroup: `${x}/parts/groups/new`,
+    newItemGroup: `${x}/items/groups/new`,
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/suppliers/new`),
     newPartner: `${x}/resources/partners/new`,
@@ -362,7 +362,7 @@ export const path = {
       generatePath(`${x}/supplier/${id}/locations/new`),
     newSupplierStatus: `${x}/purchasing/supplier-statuses/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
-    newUom: `${x}/parts/uom/new`,
+    newUom: `${x}/items/uom/new`,
     newWorkCell: `${x}/resources/work-cells/cell/new`,
     newWorkCellUnit: (id: string) =>
       generatePath(`${x}/resources/work-cells/list/${id}/new`),
@@ -370,8 +370,8 @@ export const path = {
     part: (id: string) => generatePath(`${x}/part/${id}`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/costing`),
     partDetails: (id: string) => generatePath(`${x}/part/${id}/details`),
-    itemGroup: (id: string) => generatePath(`${x}/parts/groups/${id}`),
-    itemGroups: `${x}/parts/groups`,
+    itemGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
+    itemGroups: `${x}/items/groups`,
     partInventory: (id: string) => generatePath(`${x}/part/${id}/inventory`),
     partInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/part/${id}/inventory?location=${locationId}`),
@@ -387,8 +387,8 @@ export const path = {
     partSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/suppliers/${id}`),
     partSuppliers: (id: string) => generatePath(`${x}/part/${id}/suppliers`),
-    parts: `${x}/parts`,
-    partsSearch: `${x}/parts/search`,
+    items: `${x}/items`,
+    parts: `${x}/items/parts`,
     partner: (id: string, abilityId: string) =>
       generatePath(`${x}/resources/partners/${id}/${abilityId}`),
     partners: `${x}/resources/partners`,
@@ -475,7 +475,7 @@ export const path = {
     resetPassword: "/reset-password",
     resources: `${x}/resources`,
     root: "/",
-    routings: `${x}/parts/routing`,
+    routings: `${x}/items/routing`,
     sales: `${x}/sales`,
     salesInvoices: `${x}/invoicing/sales`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
@@ -499,7 +499,7 @@ export const path = {
     salesOrders: `${x}/sales/orders`,
     scheduling: `${x}/scheduling`,
     service: (id: string) => generatePath(`${x}/service/${id}`),
-    services: `${x}/parts/services`,
+    services: `${x}/items/services`,
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
     serviceRoot: `${x}/service`,
     serviceSupplier: (serviceId: string, id: string) =>
@@ -542,8 +542,8 @@ export const path = {
       generatePath(`${x}/settings/sequences/${id}`),
     theme: `${x}/account/theme`,
     timecards: `${x}/timecards`,
-    uom: (id: string) => generatePath(`${x}/parts/uom/${id}`),
-    uoms: `${x}/parts/uom`,
+    uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
+    uoms: `${x}/items/uom`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,
     workCell: (id: string) =>

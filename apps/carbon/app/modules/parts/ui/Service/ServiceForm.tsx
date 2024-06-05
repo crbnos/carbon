@@ -13,6 +13,7 @@ import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
+  Hidden,
   Input,
   InputControlled,
   ItemGroup,
@@ -105,6 +106,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
           )}
         </CardHeader>
         <CardContent>
+          <Hidden name="itemInventoryType" value="Non-Inventory" />
           <div
             className={cn(
               "grid w-full gap-x-8 gap-y-2",

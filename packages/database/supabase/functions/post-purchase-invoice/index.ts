@@ -42,33 +42,21 @@ serve(async (req: Request) => {
 
     const companyId = purchaseInvoice.data.companyId;
 
-    const [parts, services, purchaseOrderLines, supplier] = await Promise.all([
+    const [items, purchaseOrderLines, supplier] = await Promise.all([
       client
-        .from("part")
-        .select("id, itemGroupId, partType")
+        .from("item")
+        .select("id, itemGroupId, itemInventoryType, readableId")
         .in(
           "id",
           purchaseInvoiceLines.data.reduce<string[]>((acc, invoiceLine) => {
-            if (invoiceLine.partId && !acc.includes(invoiceLine.partId)) {
-              acc.push(invoiceLine.partId);
+            if (invoiceLine.itemId && !acc.includes(invoiceLine.itemId)) {
+              acc.push(invoiceLine.itemId);
             }
             return acc;
           }, [])
         )
         .eq("companyId", companyId),
-      client
-        .from("service")
-        .select("id, itemGroupId")
-        .in(
-          "id",
-          purchaseInvoiceLines.data.reduce<string[]>((acc, invoiceLine) => {
-            if (invoiceLine.serviceId && !acc.includes(invoiceLine.serviceId)) {
-              acc.push(invoiceLine.serviceId);
-            }
-            return acc;
-          }, [])
-        )
-        .eq("companyId", companyId),
+
       client
         .from("purchaseOrderLine")
         .select("*")
@@ -91,8 +79,7 @@ serve(async (req: Request) => {
         .eq("companyId", companyId)
         .single(),
     ]);
-    if (parts.error) throw new Error("Failed to fetch item groups");
-    if (services.error) throw new Error("Failed to fetch service item groups");
+    if (items.error) throw new Error("Failed to fetch item groups");
     if (purchaseOrderLines.error)
       throw new Error("Failed to fetch purchase order lines");
     if (supplier.error) throw new Error("Failed to fetch supplier");
@@ -259,266 +246,19 @@ serve(async (req: Request) => {
       let journalLineReference: string;
 
       switch (invoiceLine.invoiceLineType) {
-        case "G/L Account":
-          const [account, accountDefaults] = await Promise.all([
-            client
-              .from("accounts")
-              .select("name, number, directPosting")
-              .eq("number", invoiceLine.accountNumber ?? "")
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("accountDefault")
-              .select(
-                "overheadCostAppliedAccount, payablesAccount, purchaseAccount"
-              )
-              .eq("companyId", companyId)
-              .single(),
-          ]);
-          if (account.error || !account.data)
-            throw new Error("Failed to fetch account");
-          if (!account.data.directPosting)
-            throw new Error("Account is not a direct posting account");
-
-          if (accountDefaults.error || !accountDefaults.data)
-            throw new Error("Failed to fetch account defaults");
-
-          journalLineReference = nanoid();
-
-          // debit the G/L account
-          journalLineInserts.push({
-            accountNumber: account.data.number!,
-            description: account.data.name!,
-            // we limit the account to assets and expenses in the UI, so we don't need to check here
-            amount: debit(
-              "asset",
-              invoiceLine.quantity * invoiceLine.unitPrice
-            ),
-            quantity: invoiceLineQuantityInInventoryUnit,
-            documentType: "Invoice",
-            documentId: purchaseInvoice.data?.id,
-            externalDocumentId: purchaseInvoice.data?.supplierReference,
-            documentLineReference: journalReference.to.purchaseInvoice(
-              invoiceLine.purchaseOrderLineId!
-            ),
-            journalLineReference,
-            companyId,
-          });
-
-          // credit the direct cost applied account
-          journalLineInserts.push({
-            accountNumber: accountDefaults.data.overheadCostAppliedAccount!,
-            description: "Overhead Cost Applied",
-            amount: credit(
-              "expense",
-              invoiceLine.quantity * invoiceLine.unitPrice
-            ),
-            quantity: invoiceLineQuantityInInventoryUnit,
-            documentType: "Invoice",
-            documentId: purchaseInvoice.data?.id,
-            externalDocumentId: purchaseInvoice.data?.supplierReference,
-            documentLineReference: journalReference.to.purchaseInvoice(
-              invoiceLine.purchaseOrderLineId!
-            ),
-            journalLineReference,
-            companyId,
-          });
-
-          journalLineReference = nanoid();
-
-          // debit the purchase account
-          journalLineInserts.push({
-            accountNumber: accountDefaults.data.purchaseAccount!,
-            description: "Purchase Account",
-            amount: debit(
-              "expense",
-              invoiceLine.quantity * invoiceLine.unitPrice
-            ),
-            quantity: invoiceLineQuantityInInventoryUnit,
-            documentType: "Invoice",
-            documentId: purchaseInvoice.data?.id,
-            externalDocumentId: purchaseInvoice.data?.supplierReference,
-            documentLineReference: journalReference.to.purchaseInvoice(
-              invoiceLine.purchaseOrderLineId!
-            ),
-            journalLineReference,
-            companyId,
-          });
-
-          // credit the accounts payable account
-          journalLineInserts.push({
-            accountNumber: accountDefaults.data.payablesAccount!,
-            description: "Accounts Payable",
-            amount: credit(
-              "liability",
-              invoiceLine.quantity * invoiceLine.unitPrice
-            ),
-            quantity: invoiceLineQuantityInInventoryUnit,
-            documentType: "Invoice",
-            documentId: purchaseInvoice.data?.id,
-            externalDocumentId: purchaseInvoice.data?.supplierReference,
-            documentLineReference: journalReference.to.purchaseInvoice(
-              invoiceLine.purchaseOrderLineId!
-            ),
-            journalLineReference,
-            companyId,
-          });
-          break;
-        case "Service":
-          itemGroupId =
-            services.data.find(
-              (service) => service.id === invoiceLine.serviceId
-            )?.itemGroupId ?? null;
-
-          // inventory posting group
-          if (`${itemGroupId}-${locationId}` in inventoryPostingGroups) {
-            postingGroupInventory =
-              inventoryPostingGroups[`${itemGroupId}-${locationId}`];
-          } else {
-            const inventoryPostingGroup = await getInventoryPostingGroup(
-              client,
-              {
-                itemGroupId,
-                locationId,
-              }
-            );
-
-            if (inventoryPostingGroup.error || !inventoryPostingGroup.data) {
-              throw new Error("Error getting inventory posting group");
-            }
-
-            postingGroupInventory = inventoryPostingGroup.data ?? null;
-            inventoryPostingGroups[`${itemGroupId}-${locationId}`] =
-              postingGroupInventory;
-          }
-
-          if (!postingGroupInventory) {
-            throw new Error("No inventory posting group found");
-          }
-
-          if (`${itemGroupId}-${supplierTypeId}` in purchasingPostingGroups) {
-            postingGroupPurchasing =
-              purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`];
-          } else {
-            const purchasingPostingGroup = await getPurchasingPostingGroup(
-              client,
-              {
-                itemGroupId,
-                supplierTypeId,
-              }
-            );
-
-            if (purchasingPostingGroup.error || !purchasingPostingGroup.data) {
-              throw new Error("Error getting purchasing posting group");
-            }
-
-            postingGroupPurchasing = purchasingPostingGroup.data ?? null;
-            purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`] =
-              postingGroupPurchasing;
-          }
-
-          if (!postingGroupPurchasing) {
-            throw new Error("No purchasing posting group found");
-          }
-
-          if (
-            invoiceLine.purchaseOrderLineId !== null &&
-            invoiceLine.purchaseOrderLineId in purchaseOrderLineUpdates
-          ) {
-            // we don't receive services, so match the received to the invoiced
-            const update =
-              purchaseOrderLineUpdates[invoiceLine.purchaseOrderLineId];
-            purchaseOrderLineUpdates[invoiceLine.purchaseOrderLineId] = {
-              ...update,
-              receivedComplete: update.invoicedComplete,
-              quantityReceived: update.quantityInvoiced,
-            };
-          }
-
-          // create the normal GL entries for a service
-
-          journalLineReference = nanoid();
-
-          // debit the inventory account
-          journalLineInserts.push({
-            accountNumber: postingGroupInventory.overheadAccount,
-            description: "Overhead Account",
-            amount: debit(
-              "expense",
-              invoiceLine.quantity * invoiceLine.unitPrice
-            ),
-            quantity: invoiceLineQuantityInInventoryUnit,
-            documentType: "Invoice",
-            documentId: purchaseInvoice.data?.id,
-            externalDocumentId: purchaseInvoice.data?.supplierReference,
-            journalLineReference,
-            companyId,
-          });
-
-          // creidt the direct cost applied account
-          journalLineInserts.push({
-            accountNumber: postingGroupInventory.overheadCostAppliedAccount,
-            description: "Over Cost Applied",
-            amount: credit(
-              "expense",
-              invoiceLine.quantity * invoiceLine.unitPrice
-            ),
-            quantity: invoiceLineQuantityInInventoryUnit,
-            documentType: "Invoice",
-            documentId: purchaseInvoice.data?.id,
-            externalDocumentId: purchaseInvoice.data?.supplierReference,
-            journalLineReference,
-            companyId,
-          });
-
-          journalLineReference = nanoid();
-
-          // debit the purchase account
-          journalLineInserts.push({
-            accountNumber: postingGroupPurchasing.purchaseAccount,
-            description: "Purchase Account",
-            amount: debit(
-              "expense",
-              invoiceLine.quantity * invoiceLine.unitPrice
-            ),
-            quantity: invoiceLineQuantityInInventoryUnit,
-            documentType: "Invoice",
-            documentId: purchaseInvoice.data?.id,
-            externalDocumentId: purchaseInvoice.data?.supplierReference,
-            documentLineReference: journalReference.to.purchaseInvoice(
-              invoiceLine.purchaseOrderLineId!
-            ),
-            journalLineReference,
-            companyId,
-          });
-
-          // credit the accounts payable account
-          journalLineInserts.push({
-            accountNumber: postingGroupPurchasing.payablesAccount,
-            description: "Accounts Payable",
-            amount: credit(
-              "liability",
-              invoiceLine.quantity * invoiceLine.unitPrice
-            ),
-            quantity: invoiceLineQuantityInInventoryUnit,
-            documentType: "Invoice",
-            documentId: purchaseInvoice.data?.id,
-            externalDocumentId: purchaseInvoice.data?.supplierReference,
-            documentLineReference: journalReference.to.purchaseInvoice(
-              invoiceLine.purchaseOrderLineId!
-            ),
-            journalLineReference,
-            companyId,
-          });
-
-          break;
         case "Part":
-          const partType =
-            parts.data.find((part) => part.id === invoiceLine.partId)
-              ?.partType ?? "Inventory";
+        case "Service":
+        case "Consumable":
+        case "Fixture":
+        case "Hardware":
+        case "Material":
+        case "Tool":
+          const itemInventoryType =
+            items.data.find((item) => item.id === invoiceLine.itemId)
+              ?.itemInventoryType ?? "Inventory";
 
           itemGroupId =
-            parts.data.find((part) => part.id === invoiceLine.partId)
+            items.data.find((item) => item.id === invoiceLine.itemId)
               ?.itemGroupId ?? null;
 
           // inventory posting group
@@ -576,7 +316,7 @@ serve(async (req: Request) => {
           if (invoiceLine.purchaseOrderLineId === null) {
             // create the receipt line
             receiptLineInserts.push({
-              partId: invoiceLine.partId!,
+              itemId: invoiceLine.itemId!,
               lineId: invoiceLine.id,
               orderQuantity: invoiceLineQuantityInInventoryUnit,
               outstandingQuantity: invoiceLineQuantityInInventoryUnit,
@@ -589,11 +329,12 @@ serve(async (req: Request) => {
               companyId,
             });
 
-            if (partType === "Inventory") {
+            if (itemInventoryType === "Inventory") {
               // create the part ledger line
               itemLedgerInserts.push({
                 postingDate: today,
-                partId: invoiceLine.partId!,
+                itemId: invoiceLine.itemId!,
+                itemReadableId: invoiceLine.itemReadableId!,
                 quantity: invoiceLineQuantityInInventoryUnit,
                 locationId: invoiceLine.locationId,
                 shelfId: invoiceLine.shelfId,
@@ -615,7 +356,8 @@ serve(async (req: Request) => {
               documentId: purchaseInvoice.data?.id ?? undefined,
               externalDocumentId:
                 purchaseInvoice.data?.supplierReference ?? undefined,
-              partId: invoiceLine.partId,
+              itemId: invoiceLine.itemId,
+              itemReadableId: invoiceLine.itemReadableId,
               quantity: invoiceLineQuantityInInventoryUnit,
               cost: invoiceLine.quantity * invoiceLine.unitPrice,
               costPostedToGL: invoiceLine.quantity * invoiceLine.unitPrice,
@@ -626,7 +368,7 @@ serve(async (req: Request) => {
 
             journalLineReference = nanoid();
 
-            if (partType === "Inventory") {
+            if (itemInventoryType === "Inventory") {
               // debit the inventory account
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.inventoryAccount,
@@ -891,7 +633,8 @@ serve(async (req: Request) => {
                 documentId: purchaseInvoice.data?.id ?? undefined,
                 externalDocumentId:
                   purchaseInvoice.data?.supplierReference ?? undefined,
-                partId: invoiceLine.partId,
+                itemId: invoiceLine.itemId,
+                itemReadableId: invoiceLine.itemReadableId,
                 quantity: quantityToReverse,
                 cost: quantityToReverse * invoiceLineUnitPriceInInventoryUnit,
                 costPostedToGL:
@@ -903,7 +646,7 @@ serve(async (req: Request) => {
 
               journalLineReference = nanoid();
 
-              if (partType === "Inventory") {
+              if (itemInventoryType === "Inventory") {
                 // debit the inventory account
                 journalLineInserts.push({
                   accountNumber: postingGroupInventory.inventoryAccount,
@@ -1084,6 +827,112 @@ serve(async (req: Request) => {
           break;
         case "Comment":
           break;
+        case "G/L Account":
+          const [account, accountDefaults] = await Promise.all([
+            client
+              .from("accounts")
+              .select("name, number, directPosting")
+              .eq("number", invoiceLine.accountNumber ?? "")
+              .eq("companyId", companyId)
+              .single(),
+            client
+              .from("accountDefault")
+              .select(
+                "overheadCostAppliedAccount, payablesAccount, purchaseAccount"
+              )
+              .eq("companyId", companyId)
+              .single(),
+          ]);
+          if (account.error || !account.data)
+            throw new Error("Failed to fetch account");
+          if (!account.data.directPosting)
+            throw new Error("Account is not a direct posting account");
+
+          if (accountDefaults.error || !accountDefaults.data)
+            throw new Error("Failed to fetch account defaults");
+
+          journalLineReference = nanoid();
+
+          // debit the G/L account
+          journalLineInserts.push({
+            accountNumber: account.data.number!,
+            description: account.data.name!,
+            // we limit the account to assets and expenses in the UI, so we don't need to check here
+            amount: debit(
+              "asset",
+              invoiceLine.quantity * invoiceLine.unitPrice
+            ),
+            quantity: invoiceLineQuantityInInventoryUnit,
+            documentType: "Invoice",
+            documentId: purchaseInvoice.data?.id,
+            externalDocumentId: purchaseInvoice.data?.supplierReference,
+            documentLineReference: journalReference.to.purchaseInvoice(
+              invoiceLine.purchaseOrderLineId!
+            ),
+            journalLineReference,
+            companyId,
+          });
+
+          // credit the direct cost applied account
+          journalLineInserts.push({
+            accountNumber: accountDefaults.data.overheadCostAppliedAccount!,
+            description: "Overhead Cost Applied",
+            amount: credit(
+              "expense",
+              invoiceLine.quantity * invoiceLine.unitPrice
+            ),
+            quantity: invoiceLineQuantityInInventoryUnit,
+            documentType: "Invoice",
+            documentId: purchaseInvoice.data?.id,
+            externalDocumentId: purchaseInvoice.data?.supplierReference,
+            documentLineReference: journalReference.to.purchaseInvoice(
+              invoiceLine.purchaseOrderLineId!
+            ),
+            journalLineReference,
+            companyId,
+          });
+
+          journalLineReference = nanoid();
+
+          // debit the purchase account
+          journalLineInserts.push({
+            accountNumber: accountDefaults.data.purchaseAccount!,
+            description: "Purchase Account",
+            amount: debit(
+              "expense",
+              invoiceLine.quantity * invoiceLine.unitPrice
+            ),
+            quantity: invoiceLineQuantityInInventoryUnit,
+            documentType: "Invoice",
+            documentId: purchaseInvoice.data?.id,
+            externalDocumentId: purchaseInvoice.data?.supplierReference,
+            documentLineReference: journalReference.to.purchaseInvoice(
+              invoiceLine.purchaseOrderLineId!
+            ),
+            journalLineReference,
+            companyId,
+          });
+
+          // credit the accounts payable account
+          journalLineInserts.push({
+            accountNumber: accountDefaults.data.payablesAccount!,
+            description: "Accounts Payable",
+            amount: credit(
+              "liability",
+              invoiceLine.quantity * invoiceLine.unitPrice
+            ),
+            quantity: invoiceLineQuantityInInventoryUnit,
+            documentType: "Invoice",
+            documentId: purchaseInvoice.data?.id,
+            externalDocumentId: purchaseInvoice.data?.supplierReference,
+            documentLineReference: journalReference.to.purchaseInvoice(
+              invoiceLine.purchaseOrderLineId!
+            ),
+            journalLineReference,
+            companyId,
+          });
+          break;
+
         default:
           throw new Error("Unsupported invoice line type");
       }

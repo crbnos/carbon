@@ -30,8 +30,8 @@ import {
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import {
+  itemInventoryTypes,
   partReplenishmentSystems,
-  partTypes,
   partValidator,
 } from "~/modules/parts";
 import { path } from "~/utils/path";
@@ -111,10 +111,10 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
-  const partTypeOptions =
-    partTypes.map((partType) => ({
-      label: partType,
-      value: partType,
+  const itemInventoryTypeOptions =
+    itemInventoryTypes.map((itemInventoryType) => ({
+      label: itemInventoryType,
+      value: itemInventoryType,
     })) ?? [];
 
   const partReplenishmentSystemOptions =
@@ -181,9 +181,9 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   options={partReplenishmentSystemOptions}
                 />
                 <Select
-                  name="partType"
+                  name="itemInventoryType"
                   label="Part Type"
-                  options={partTypeOptions}
+                  options={itemInventoryTypeOptions}
                 />
                 <UnitOfMeasure
                   name="unitOfMeasureCode"

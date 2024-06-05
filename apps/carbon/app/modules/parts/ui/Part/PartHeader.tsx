@@ -87,9 +87,11 @@ const PartHeader = () => {
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>
-              <CardAttributeLabel>Part Type</CardAttributeLabel>
+              <CardAttributeLabel>Inventory Type</CardAttributeLabel>
               <CardAttributeValue>
-                <Enumerable value={routeData?.partSummary?.partType ?? null} />
+                <Enumerable
+                  value={routeData?.partSummary?.itemInventoryType ?? null}
+                />
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>

@@ -61,6 +61,11 @@ CREATE TYPE "itemType" AS ENUM (
   'Fixture'
 );
 
+CREATE TYPE "itemInventoryType" AS ENUM (
+  'Inventory',
+  'Non-Inventory'
+);
+
 CREATE TABLE "item" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "readableId" TEXT NOT NULL,
@@ -68,6 +73,7 @@ CREATE TABLE "item" (
   "name" TEXT NOT NULL,
   "description" TEXT,
   "itemGroupId" TEXT,
+  "itemInventoryType" "itemInventoryType" NOT NULL,
   "active" BOOLEAN NOT NULL DEFAULT true,
   "blocked" BOOLEAN NOT NULL DEFAULT false,
   "companyId" TEXT NOT NULL,
@@ -90,10 +96,6 @@ CREATE INDEX "item_companyId_idx" ON "item" ("companyId");
 CREATE INDEX "item_name_companyId_idx" ON "item" ("name", "companyId");
 CREATE INDEX "item_type_companyId_idx" ON "item" ("type", "companyId");
 
-CREATE TYPE "partType" AS ENUM (
-  'Inventory',
-  'Non-Inventory'
-);
 
 CREATE TYPE "itemReplenishmentSystem" AS ENUM (
   'Buy',
@@ -181,7 +183,6 @@ CREATE TABLE "part" (
   "id" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
   "replenishmentSystem" "itemReplenishmentSystem" NOT NULL,
-  "partType" "partType" NOT NULL,
   "unitOfMeasureCode" TEXT NOT NULL,
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
@@ -207,7 +208,6 @@ CREATE TABLE "part" (
 
 CREATE INDEX "part_itemId_idx" ON "part" ("itemId");
 CREATE INDEX "part_companyId_idx" ON "part" ("companyId");
-CREATE INDEX "part_partType_idx" ON "part"("partType", "companyId");
 CREATE INDEX "part_replenishmentSystem_idx" ON "part"("replenishmentSystem", "companyId");
 
 ALTER publication supabase_realtime ADD TABLE "part";

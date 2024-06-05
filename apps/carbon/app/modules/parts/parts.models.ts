@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
-export const partTypes = ["Inventory", "Non-Inventory"] as const;
+export const itemInventoryTypes = ["Inventory", "Non-Inventory"] as const;
 export const partReplenishmentSystems = [
   "Buy",
   "Make",
@@ -32,6 +32,11 @@ export const itemValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }).max(255),
   description: zfd.text(z.string().optional()),
   itemGroupId: zfd.text(z.string().optional()),
+  itemInventoryType: z.enum(itemInventoryTypes, {
+    errorMap: (issue, ctx) => ({
+      message: "Part type is required",
+    }),
+  }),
   blocked: zfd.checkbox(),
   active: zfd.checkbox(),
 });
@@ -134,11 +139,6 @@ export const partValidator = itemValidator.merge(
     replenishmentSystem: z.enum(partReplenishmentSystems, {
       errorMap: (issue, ctx) => ({
         message: "Replenishment system is required",
-      }),
-    }),
-    partType: z.enum(partTypes, {
-      errorMap: (issue, ctx) => ({
-        message: "Part type is required",
       }),
     }),
     unitOfMeasureCode: z

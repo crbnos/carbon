@@ -173,7 +173,6 @@ export const salesOrderLineType = [
   "Hardware",
   "Consumable",
   "Comment",
-  "GL Account",
   "Fixed Asset",
 ] as const;
 

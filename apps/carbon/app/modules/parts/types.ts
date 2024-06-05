@@ -52,7 +52,7 @@ export type Part = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
 >[number];
 
-export type PartType = Database["public"]["Enums"]["partType"];
+export type PartType = Database["public"]["Enums"]["itemInventoryType"];
 
 export type Service = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]

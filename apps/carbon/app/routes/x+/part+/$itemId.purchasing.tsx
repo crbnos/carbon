@@ -26,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (partPurchasing.error) {
     throw redirect(
-      path.to.parts,
+      path.to.items,
       await flash(
         request,
         error(partPurchasing.error, "Failed to load part purchasing")

@@ -25,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (service.error) {
     throw redirect(
-      path.to.parts,
+      path.to.items,
       await flash(request, error(service.error, "Failed to load service"))
     );
   }

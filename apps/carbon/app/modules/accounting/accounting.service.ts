@@ -652,7 +652,7 @@ export async function insertPartEntries(
   return client.from("itemLedger").insert(itemEntries);
 }
 
-export async function insertPartLedger(
+export async function insertItemLedger(
   client: SupabaseClient<Database>,
   itemEntry: z.infer<typeof itemLedgerValidator> & {
     companyId: string;

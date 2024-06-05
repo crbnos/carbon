@@ -8,7 +8,7 @@ const partsRoutes: AuthenticatedRouteGroup[] = [
     routes: [
       {
         name: "Parts",
-        to: path.to.partsSearch,
+        to: path.to.parts,
       },
       {
         name: "Services",

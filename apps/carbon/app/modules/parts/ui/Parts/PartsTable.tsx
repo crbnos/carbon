@@ -8,7 +8,7 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Part } from "~/modules/parts";
-import { partReplenishmentSystems, partTypes } from "~/modules/parts";
+import { itemInventoryTypes, partReplenishmentSystems } from "~/modules/parts";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -48,13 +48,13 @@ const PartsTable = memo(({ data, count, itemGroups }: PartsTableProps) => {
         cell: (item) => item.getValue(),
       },
       {
-        accessorKey: "partType",
-        header: "Part Type",
+        accessorKey: "itemInventoryType",
+        header: "Inventory",
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           filter: {
             type: "static",
-            options: partTypes.map((type) => ({
+            options: itemInventoryTypes.map((type) => ({
               value: type,
               label: <Enumerable value={type} />,
             })),

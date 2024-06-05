@@ -61,6 +61,7 @@ export default function ServiceDetailsRoute() {
     description: routeData.service?.description ?? undefined,
     serviceType: routeData.service?.serviceType ?? "Internal",
     itemGroupId: routeData.service?.itemGroupId ?? undefined,
+    itemInventoryType: "Non-Inventory" as const,
     active: routeData.service?.active ?? true,
     blocked: routeData.service?.blocked ?? false,
     ...getCustomFields(routeData.service?.customFields),

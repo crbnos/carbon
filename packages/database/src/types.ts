@@ -2121,6 +2121,7 @@ export type Database = {
           id: string
           itemId: string | null
           itemLedgerType: Database["public"]["Enums"]["itemLedgerType"]
+          itemReadableId: string | null
           postingDate: string
           quantity: number
         }
@@ -2140,6 +2141,7 @@ export type Database = {
           id?: string
           itemId?: string | null
           itemLedgerType: Database["public"]["Enums"]["itemLedgerType"]
+          itemReadableId?: string | null
           postingDate?: string
           quantity?: number
         }
@@ -2159,6 +2161,7 @@ export type Database = {
           id?: string
           itemId?: string | null
           itemLedgerType?: Database["public"]["Enums"]["itemLedgerType"]
+          itemReadableId?: string | null
           postingDate?: string
           quantity?: number
         }
@@ -5422,6 +5425,7 @@ export type Database = {
           description: string | null
           id: string
           itemGroupId: string | null
+          itemInventoryType: Database["public"]["Enums"]["itemInventoryType"]
           name: string
           readableId: string
           type: Database["public"]["Enums"]["itemType"]
@@ -5437,6 +5441,7 @@ export type Database = {
           description?: string | null
           id?: string
           itemGroupId?: string | null
+          itemInventoryType: Database["public"]["Enums"]["itemInventoryType"]
           name: string
           readableId: string
           type: Database["public"]["Enums"]["itemType"]
@@ -5452,6 +5457,7 @@ export type Database = {
           description?: string | null
           id?: string
           itemGroupId?: string | null
+          itemInventoryType?: Database["public"]["Enums"]["itemInventoryType"]
           name?: string
           readableId?: string
           type?: Database["public"]["Enums"]["itemType"]
@@ -6056,6 +6062,7 @@ export type Database = {
           externalDocumentId: string | null
           id: string
           itemId: string
+          itemReadableId: string | null
           locationId: string | null
           postingDate: string
           quantity: number
@@ -6073,6 +6080,7 @@ export type Database = {
           externalDocumentId?: string | null
           id?: string
           itemId: string
+          itemReadableId?: string | null
           locationId?: string | null
           postingDate?: string
           quantity: number
@@ -6090,6 +6098,7 @@ export type Database = {
           externalDocumentId?: string | null
           id?: string
           itemId?: string
+          itemReadableId?: string | null
           locationId?: string | null
           postingDate?: string
           quantity?: number
@@ -7424,7 +7433,6 @@ export type Database = {
           fromDate: string | null
           id: string
           itemId: string
-          partType: Database["public"]["Enums"]["partType"]
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate: string | null
           unitOfMeasureCode: string
@@ -7442,7 +7450,6 @@ export type Database = {
           fromDate?: string | null
           id: string
           itemId: string
-          partType: Database["public"]["Enums"]["partType"]
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate?: string | null
           unitOfMeasureCode: string
@@ -7460,7 +7467,6 @@ export type Database = {
           fromDate?: string | null
           id?: string
           itemId?: string
-          partType?: Database["public"]["Enums"]["partType"]
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate?: string | null
           unitOfMeasureCode?: string
@@ -12381,6 +12387,7 @@ export type Database = {
           createdBy: string
           id: string
           itemId: string
+          itemReadableId: string | null
           lineId: string | null
           locationId: string | null
           orderQuantity: number
@@ -12400,6 +12407,7 @@ export type Database = {
           createdBy: string
           id?: string
           itemId: string
+          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity: number
@@ -12419,6 +12427,7 @@ export type Database = {
           createdBy?: string
           id?: string
           itemId?: string
+          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity?: number
@@ -19719,8 +19728,10 @@ export type Database = {
           itemGroup: string | null
           itemGroupId: string | null
           itemId: string | null
+          itemInventoryType:
+            | Database["public"]["Enums"]["itemInventoryType"]
+            | null
           name: string | null
-          partType: Database["public"]["Enums"]["partType"] | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -20423,14 +20434,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -22914,6 +22925,7 @@ export type Database = {
       glConsolidatedRate: "Average" | "Current" | "Historical"
       glIncomeBalance: "Balance Sheet" | "Income Statement"
       itemCostingMethod: "Standard" | "Average" | "LIFO" | "FIFO"
+      itemInventoryType: "Inventory" | "Non-Inventory"
       itemLedgerDocumentType:
         | "Sales Shipment"
         | "Sales Invoice"
@@ -22991,7 +23003,6 @@ export type Database = {
         | "November"
         | "December"
       partManufacturingPolicy: "Make to Order" | "Make to Stock"
-      partType: "Inventory" | "Non-Inventory"
       payableLineType:
         | "Comment"
         | "G/L Account"

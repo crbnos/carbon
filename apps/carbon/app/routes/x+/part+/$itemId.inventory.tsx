@@ -105,7 +105,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (shelves.error) {
     throw redirect(
-      path.to.parts,
+      path.to.items,
       await flash(request, error(shelves.error, "Failed to load shelves"))
     );
   }
@@ -118,7 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
   if (quantities.error || !quantities.data) {
     throw redirect(
-      path.to.parts,
+      path.to.items,
       await flash(request, error(quantities, "Failed to load part quantities"))
     );
   }
