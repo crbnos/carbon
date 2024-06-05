@@ -126,7 +126,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
               />
             )}
             <Input name="name" label="Name" />
-            <ItemGroup name="itemGroupId" label="Item Group" />
+            <ItemGroup name="itemGroupId" label="Posting Group" />
             <TextArea name="description" label="Description" />
 
             <Select

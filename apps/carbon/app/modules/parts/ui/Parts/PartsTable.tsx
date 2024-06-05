@@ -77,7 +77,7 @@ const PartsTable = memo(({ data, count, itemGroups }: PartsTableProps) => {
       },
       {
         accessorKey: "itemGroup",
-        header: "Item Group",
+        header: "Posting Group",
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           filter: {

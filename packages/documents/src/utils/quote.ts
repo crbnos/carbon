@@ -8,7 +8,7 @@ export function getLineDescription(
         line.customerPartRevision ? `Rev ${line.customerPartRevision}` : ""
       })`
     : "";
-  return line?.itemId + customerPartNumber;
+  return line?.itemReadableId + customerPartNumber;
 }
 
 export function getLineDescriptionDetails(

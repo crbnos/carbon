@@ -13,7 +13,7 @@ export function getLineDescription(
       const supplierPartNumber = line.supplierPartId
         ? ` (${line.supplierPartId})`
         : "";
-      return line?.itemId + supplierPartNumber;
+      return line?.itemReadableId + supplierPartNumber;
   }
 }
 
