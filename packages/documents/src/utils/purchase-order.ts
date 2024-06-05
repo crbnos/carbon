@@ -4,23 +4,16 @@ export function getLineDescription(
   line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
 ) {
   switch (line?.purchaseOrderLineType) {
-    case "Part":
-      const supplierPartNumber = line.supplierPartId
-        ? ` (${line.supplierPartId})`
-        : "";
-      return line?.partId + supplierPartNumber;
-    case "Service":
-      const supplierServiceNumber = line.supplierServiceId
-        ? ` (${line.supplierServiceId})`
-        : "";
-      return line?.serviceId + supplierServiceNumber;
     case "Fixed Asset":
       return line?.assetId;
     case "G/L Account":
     case "Comment":
       return line?.description;
     default:
-      return "";
+      const supplierPartNumber = line.supplierPartId
+        ? ` (${line.supplierPartId})`
+        : "";
+      return line?.itemId + supplierPartNumber;
   }
 }
 
@@ -28,23 +21,16 @@ export function getLineDescriptionDetails(
   line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
 ) {
   switch (line?.purchaseOrderLineType) {
-    case "Part":
-      const partDescription = line?.partDescription
-        ? `\n${line.partDescription}`
-        : "";
-      return line?.description + partDescription;
-    case "Service":
-      const serviceDescription = line?.serviceDescription
-        ? `\n${line.serviceDescription}`
-        : "";
-      return line?.description + serviceDescription;
     case "Fixed Asset":
       return line?.description;
     case "G/L Account":
       return `GL Account: ${line?.accountNumber}`;
     case "Comment":
     default:
-      return "";
+      const itemDescription = line?.itemDescription
+        ? `\n${line.itemDescription}`
+        : "";
+      return line?.description + itemDescription;
   }
 }
 
