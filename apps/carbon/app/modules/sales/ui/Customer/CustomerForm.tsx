@@ -97,8 +97,8 @@ const CustomerForm = ({
 
                 <CustomerType
                   name="customerTypeId"
-                  label="Customer Type"
-                  placeholder="Select Customer Type"
+                  label="Posting Group"
+                  placeholder="Select Posting Group"
                 />
                 <CustomerStatus
                   name="customerStatusId"

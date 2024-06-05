@@ -12,7 +12,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 import { error } from "~/utils/result";
 
 export const handle: Handle = {
-  breadcrumb: "Item Groups",
+  breadcrumb: "Posting Groups",
   to: path.to.itemGroups,
 };
 

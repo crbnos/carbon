@@ -3,7 +3,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import {
-  PartSupplierForm,
+  ItemSupplierForm,
   itemSupplierValidator,
   upsertItemSupplier,
 } from "~/modules/parts";
@@ -67,5 +67,5 @@ export default function NewPartSupplierRoute() {
     conversionFactor: 1,
   };
 
-  return <PartSupplierForm initialValues={initialValues} />;
+  return <ItemSupplierForm initialValues={initialValues} />;
 }

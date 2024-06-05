@@ -3,7 +3,6 @@ import EditableNumber from "./EditableNumber";
 import EditablePurchaseInvoiceLineNumber from "./EditablePurchaseInvoiceLineNumber";
 import EditablePurchaseOrderLineNumber from "./EditablePurchaseOrderLineNumber";
 import EditableSalesOrderLineNumber from "./EditableSalesOrderLineNumber";
-import EditableQuotationMaterial from "./EditableQuotationMaterial";
 import EditableText from "./EditableText";
 
 export * from "./types";
@@ -13,6 +12,5 @@ export {
   EditablePurchaseInvoiceLineNumber,
   EditablePurchaseOrderLineNumber,
   EditableSalesOrderLineNumber,
-  EditableQuotationMaterial,
   EditableText,
 };

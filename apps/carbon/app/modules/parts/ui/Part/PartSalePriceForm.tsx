@@ -18,10 +18,10 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { partUnitSalePriceValidator } from "~/modules/parts";
+import { itemUnitSalePriceValidator } from "~/modules/parts";
 
 type PartSalePriceFormProps = {
-  initialValues: z.infer<typeof partUnitSalePriceValidator>;
+  initialValues: z.infer<typeof itemUnitSalePriceValidator>;
 };
 
 const PartSalePriceForm = ({ initialValues }: PartSalePriceFormProps) => {
@@ -31,7 +31,7 @@ const PartSalePriceForm = ({ initialValues }: PartSalePriceFormProps) => {
   return (
     <ValidatedForm
       method="post"
-      validator={partUnitSalePriceValidator}
+      validator={itemUnitSalePriceValidator}
       defaultValues={initialValues}
     >
       <Card>
@@ -39,7 +39,7 @@ const PartSalePriceForm = ({ initialValues }: PartSalePriceFormProps) => {
           <CardTitle>Sale Price</CardTitle>
         </CardHeader>
         <CardContent>
-          <Hidden name="partId" />
+          <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2 w-full">
             <Number
               name="unitSalePrice"

@@ -25,7 +25,7 @@ const partsRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
-        name: "Item Groups",
+        name: "Posting Groups",
         to: path.to.itemGroups,
         role: "employee",
       },

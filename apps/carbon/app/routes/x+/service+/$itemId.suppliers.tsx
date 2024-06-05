@@ -1,7 +1,8 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { ServiceSuppliers, getServiceSuppliers } from "~/modules/parts";
+import { getItemSuppliers } from "~/modules/parts";
+import ItemSuppliers from "~/modules/parts/ui/Item/ItemSuppliers/ItemSuppliers";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -12,30 +13,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { serviceId } = params;
-  if (!serviceId) throw new Error("Could not find serviceId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
-  const [serviceSuppliers] = await Promise.all([
-    getServiceSuppliers(client, serviceId, companyId),
+  const [suppliers] = await Promise.all([
+    getItemSuppliers(client, itemId, companyId),
   ]);
 
-  if (serviceSuppliers.error) {
+  if (suppliers.error) {
     throw redirect(
-      path.to.service(serviceId),
+      path.to.service(itemId),
       await flash(
         request,
-        error(serviceSuppliers.error, "Failed to load service suppliers")
+        error(suppliers.error, "Failed to load service suppliers")
       )
     );
   }
 
   return json({
-    serviceSuppliers: serviceSuppliers.data ?? [],
+    suppliers: suppliers.data ?? [],
   });
 }
 
 export default function ServiceSuppliersRoute() {
-  const { serviceSuppliers } = useLoaderData<typeof loader>();
+  const { suppliers } = useLoaderData<typeof loader>();
 
-  return <ServiceSuppliers serviceSuppliers={serviceSuppliers} />;
+  return <ItemSuppliers suppliers={suppliers} />;
 }

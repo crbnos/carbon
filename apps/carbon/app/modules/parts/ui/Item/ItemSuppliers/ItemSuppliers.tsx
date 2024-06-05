@@ -23,7 +23,7 @@ import { path } from "~/utils/path";
 import useItemSuppliers from "./useItemSuppliers";
 
 type ItemSuppliersProps = {
-  partSuppliers: ItemSupplier[];
+  suppliers: ItemSupplier[];
 };
 
 // TODO: make dynamic
@@ -32,7 +32,7 @@ const formatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
-const ItemSuppliers = ({ partSuppliers }: ItemSuppliersProps) => {
+const ItemSuppliers = ({ suppliers }: ItemSuppliersProps) => {
   const navigate = useNavigate();
   const { canEdit, onCellEdit } = useItemSuppliers();
   const sharedPartData = useRouteData<{
@@ -48,7 +48,7 @@ const ItemSuppliers = ({ partSuppliers }: ItemSuppliersProps) => {
     );
   }, [sharedPartData?.unitOfMeasures]);
 
-  const customColumns = useCustomColumns<ItemSupplier>("partSupplier");
+  const customColumns = useCustomColumns<ItemSupplier>("itemSupplier");
 
   const columns = useMemo<ColumnDef<ItemSupplier>[]>(() => {
     const defaultColumns: ColumnDef<ItemSupplier>[] = [
@@ -129,7 +129,7 @@ const ItemSuppliers = ({ partSuppliers }: ItemSuppliersProps) => {
         </HStack>
         <CardContent>
           <Grid<ItemSupplier>
-            data={partSuppliers}
+            data={suppliers}
             columns={columns}
             canEdit={canEdit}
             editableComponents={editableComponents}

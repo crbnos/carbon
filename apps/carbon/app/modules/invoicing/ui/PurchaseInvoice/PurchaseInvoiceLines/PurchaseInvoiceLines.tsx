@@ -118,7 +118,7 @@ const PurchaseInvoiceLines = () => {
             case "Fixture":
             case "Hardware":
             case "Consumable":
-              return <span>{row.original.itemId}</span>;
+              return <span>{row.original.itemReadableId}</span>;
             case "G/L Account":
               return <span>{row.original.accountNumber}</span>;
             case "Fixed Asset":

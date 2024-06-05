@@ -5,7 +5,7 @@ import { useLoaderData } from "@remix-run/react";
 import {
   PartManufacturingForm,
   getItemManufacturing,
-  itemManufacturingValidator,
+  partManufacturingValidator,
   upsertItemManufacturing,
 } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -57,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(itemManufacturingValidator).validate(
+  const validation = await validator(partManufacturingValidator).validate(
     formData
   );
 

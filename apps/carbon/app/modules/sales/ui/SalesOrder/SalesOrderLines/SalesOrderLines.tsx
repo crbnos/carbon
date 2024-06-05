@@ -109,14 +109,10 @@ const SalesOrderLines = () => {
         header: "Number",
         cell: ({ row }) => {
           switch (row.original.salesOrderLineType) {
-            case "Part":
-              return <span>{row.original.itemId}</span>;
-            case "Service":
-              return <span>{row.original.serviceId}</span>;
             case "Comment":
               return null;
             default:
-              return null;
+              return <span>{row.original.itemId}</span>;
           }
         },
       },

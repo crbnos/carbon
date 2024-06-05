@@ -7,8 +7,6 @@ import PartPlanningForm from "./PartPlanningForm";
 import PartPurchasingForm from "./PartPurchasingForm";
 import PartSalePriceForm from "./PartSalePriceForm";
 import PartSidebar from "./PartSidebar";
-import PartSupplierForm from "./PartSupplierForm";
-import PartSuppliers from "./PartSuppliers";
 
 export {
   PartCostingForm,
@@ -20,6 +18,4 @@ export {
   PartPurchasingForm,
   PartSalePriceForm,
   PartSidebar,
-  PartSupplierForm,
-  PartSuppliers,
 };

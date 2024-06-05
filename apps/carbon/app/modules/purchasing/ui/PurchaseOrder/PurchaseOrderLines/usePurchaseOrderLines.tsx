@@ -4,9 +4,7 @@ import { useCallback, useMemo } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { getAccountsList } from "~/modules/accounting";
-import type { getServicesList } from "~/modules/parts";
 import type { PurchaseOrderLine } from "~/modules/purchasing";
-import { usePurchasedParts } from "~/stores/items";
 import { path } from "~/utils/path";
 
 export default function usePurchaseOrderLines() {
@@ -16,16 +14,6 @@ export default function usePurchaseOrderLines() {
 
   const canEdit = permissions.can("update", "purchasing");
   const canDelete = permissions.can("delete", "purchasing");
-
-  const parts = usePurchasedParts();
-  const partOptions = useMemo(
-    () =>
-      parts.map((p) => ({
-        value: p.id,
-        label: p.id,
-      })),
-    [parts]
-  );
 
   const accountsFetcher =
     useFetcher<Awaited<ReturnType<typeof getAccountsList>>>();
@@ -43,23 +31,6 @@ export default function usePurchaseOrderLines() {
           }))
         : [],
     [accountsFetcher.data]
-  );
-
-  const servicesFetcher =
-    useFetcher<Awaited<ReturnType<typeof getServicesList>>>();
-  useMount(() => {
-    servicesFetcher.load(`${path.to.api.services}?type=External`);
-  });
-
-  const serviceOptions = useMemo(
-    () =>
-      servicesFetcher.data?.data
-        ? servicesFetcher.data?.data.map((s) => ({
-            value: s.id,
-            label: s.id,
-          }))
-        : [],
-    [servicesFetcher.data]
   );
 
   const onCellEdit = useCallback(
@@ -80,8 +51,6 @@ export default function usePurchaseOrderLines() {
     accountOptions,
     canDelete,
     canEdit,
-    partOptions,
-    serviceOptions,
     supabase,
     onCellEdit,
   };

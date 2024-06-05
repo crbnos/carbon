@@ -25,21 +25,21 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/parts";
-import { partSupplierValidator } from "~/modules/parts";
+import { itemSupplierValidator } from "~/modules/parts";
 import { path } from "~/utils/path";
 
-type PartSupplierFormProps = {
-  initialValues: z.infer<typeof partSupplierValidator>;
+type ItemSupplierFormProps = {
+  initialValues: z.infer<typeof itemSupplierValidator>;
 };
 
-const PartSupplierForm = ({ initialValues }: PartSupplierFormProps) => {
+const ItemSupplierForm = ({ initialValues }: ItemSupplierFormProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const { partId } = useParams();
-  if (!partId) throw new Error("partId not found");
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("itemId not found");
 
   const routeData = useRouteData<{ partSummary: PartSummary }>(
-    path.to.part(partId)
+    path.to.part(itemId)
   );
   const [purchaseUnitOfMeasure, setPurchaseUnitOfMeasure] = useState<
     string | undefined
@@ -62,12 +62,12 @@ const PartSupplierForm = ({ initialValues }: PartSupplierFormProps) => {
       <DrawerContent>
         <ValidatedForm
           defaultValues={initialValues}
-          validator={partSupplierValidator}
+          validator={itemSupplierValidator}
           method="post"
           action={
             isEditing
-              ? path.to.partSupplier(partId, initialValues.id!)
-              : path.to.newPartSupplier(partId)
+              ? path.to.partSupplier(itemId, initialValues.id!)
+              : path.to.newPartSupplier(itemId)
           }
           className="flex flex-col h-full"
         >
@@ -78,7 +78,7 @@ const PartSupplierForm = ({ initialValues }: PartSupplierFormProps) => {
           </DrawerHeader>
           <DrawerBody>
             <Hidden name="id" />
-            <Hidden name="partId" />
+            <Hidden name="itemId" />
 
             <VStack spacing={4}>
               <Supplier name="supplierId" label="Supplier" />
@@ -94,7 +94,9 @@ const PartSupplierForm = ({ initialValues }: PartSupplierFormProps) => {
               <ConversionFactor
                 name="conversionFactor"
                 label="Conversion Factor"
-                inventoryCode={routeData?.partSummary?.unitOfMeasureCode}
+                inventoryCode={
+                  routeData?.partSummary?.unitOfMeasureCode ?? undefined
+                }
                 purchasingCode={purchaseUnitOfMeasure}
               />
               <Number
@@ -119,4 +121,4 @@ const PartSupplierForm = ({ initialValues }: PartSupplierFormProps) => {
   );
 };
 
-export default PartSupplierForm;
+export default ItemSupplierForm;

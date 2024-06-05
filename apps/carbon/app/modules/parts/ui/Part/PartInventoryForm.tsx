@@ -20,14 +20,14 @@ import {
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { PartQuantities } from "~/modules/parts";
-import { partInventoryValidator } from "~/modules/parts";
+import type { ItemQuantities } from "~/modules/parts";
+import { itemInventoryValidator } from "~/modules/parts";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type PartInventoryFormProps = {
-  initialValues: z.infer<typeof partInventoryValidator>;
-  quantities: PartQuantities;
+  initialValues: z.infer<typeof itemInventoryValidator>;
+  quantities: ItemQuantities;
   locations: ListItem[];
   shelves: string[];
 };
@@ -52,7 +52,7 @@ const PartInventoryForm = ({
   return (
     <ValidatedForm
       method="post"
-      validator={partInventoryValidator}
+      validator={itemInventoryValidator}
       defaultValues={{ ...quantities, ...initialValues }}
     >
       <Card>
@@ -69,7 +69,7 @@ const PartInventoryForm = ({
               onChange={(selected) => {
                 // hard refresh because initialValues update has no effect otherwise
                 window.location.href = `${path.to.partInventory(
-                  initialValues.partId
+                  initialValues.itemId
                 )}?location=${selected}`;
               }}
             />
@@ -77,7 +77,7 @@ const PartInventoryForm = ({
         </HStack>
 
         <CardContent>
-          <Hidden name="partId" />
+          <Hidden name="itemId" />
           <Hidden name="locationId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2 w-full">
             <CreatableCombobox

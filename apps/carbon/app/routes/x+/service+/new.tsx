@@ -45,7 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const serviceId = createService.data?.id;
+  const serviceId = createService.data?.itemId;
   if (!serviceId) {
     throw redirect(
       path.to.services,

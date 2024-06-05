@@ -20,11 +20,11 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/parts";
-import { partPurchasingValidator } from "~/modules/parts";
+import { itemPurchasingValidator } from "~/modules/parts";
 import { path } from "~/utils/path";
 
 type PartPurchasingFormProps = {
-  initialValues: z.infer<typeof partPurchasingValidator>;
+  initialValues: z.infer<typeof itemPurchasingValidator>;
 };
 
 const PartPurchasingForm = ({ initialValues }: PartPurchasingFormProps) => {
@@ -44,7 +44,7 @@ const PartPurchasingForm = ({ initialValues }: PartPurchasingFormProps) => {
   return (
     <ValidatedForm
       method="post"
-      validator={partPurchasingValidator}
+      validator={itemPurchasingValidator}
       defaultValues={initialValues}
     >
       <Card>
@@ -52,7 +52,7 @@ const PartPurchasingForm = ({ initialValues }: PartPurchasingFormProps) => {
           <CardTitle>Purchasing</CardTitle>
         </CardHeader>
         <CardContent>
-          <Hidden name="partId" />
+          <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2 w-full">
             <Supplier name="preferredSupplierId" label="Preferred Supplier" />
             <Number name="purchasingLeadTime" label="Lead Time (Days)" />
@@ -67,7 +67,7 @@ const PartPurchasingForm = ({ initialValues }: PartPurchasingFormProps) => {
               name="conversionFactor"
               isReadOnly={!purchasingCode || !inventoryCode}
               purchasingCode={purchasingCode ?? undefined}
-              inventoryCode={inventoryCode}
+              inventoryCode={inventoryCode ?? undefined}
             />
             <Boolean name="purchasingBlocked" label="Purchasing Blocked" />
           </div>

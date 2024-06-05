@@ -13773,6 +13773,7 @@ export type Database = {
           id: string
           invoicedComplete: boolean
           itemId: string | null
+          itemReadableId: string | null
           locationId: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
@@ -13801,6 +13802,7 @@ export type Database = {
           id?: string
           invoicedComplete?: boolean
           itemId?: string | null
+          itemReadableId?: string | null
           locationId?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
@@ -13829,6 +13831,7 @@ export type Database = {
           id?: string
           invoicedComplete?: boolean
           itemId?: string | null
+          itemReadableId?: string | null
           locationId?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
@@ -21595,6 +21598,7 @@ export type Database = {
           itemDescription: string | null
           itemId: string | null
           itemName: string | null
+          itemReadableId: string | null
           locationId: string | null
           quantityInvoiced: number | null
           quantitySent: number | null

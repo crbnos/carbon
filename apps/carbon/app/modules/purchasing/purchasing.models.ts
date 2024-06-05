@@ -6,6 +6,11 @@ import { currencyCodes } from "../accounting";
 export const purchaseOrderLineType = [
   "Part",
   "Service",
+  "Material",
+  "Tool",
+  "Fixture",
+  "Hardware",
+  "Consumable",
   "G/L Account",
   "Fixed Asset",
   "Comment",

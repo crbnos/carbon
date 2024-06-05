@@ -19,12 +19,12 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { itemReorderingPolicies, partPlanningValidator } from "~/modules/parts";
+import { itemPlanningValidator, itemReorderingPolicies } from "~/modules/parts";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type PartPlanningFormProps = {
-  initialValues: z.infer<typeof partPlanningValidator>;
+  initialValues: z.infer<typeof itemPlanningValidator>;
   locations: ListItem[];
 };
 
@@ -42,7 +42,7 @@ const PartPlanningForm = ({
   return (
     <ValidatedForm
       method="post"
-      validator={partPlanningValidator}
+      validator={itemPlanningValidator}
       defaultValues={initialValues}
     >
       <Card>
@@ -58,14 +58,14 @@ const PartPlanningForm = ({
               onChange={(selected) => {
                 // hard refresh because initialValues update has no effect otherwise
                 window.location.href = `${path.to.partPlanning(
-                  initialValues.partId
+                  initialValues.itemId
                 )}?location=${selected}`;
               }}
             />
           </CardAction>
         </HStack>
         <CardContent>
-          <Hidden name="partId" />
+          <Hidden name="itemId" />
           <Hidden name="locationId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2 w-full">
             <SelectForm

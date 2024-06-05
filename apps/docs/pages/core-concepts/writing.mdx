@@ -157,7 +157,7 @@ import { getSupabaseServiceRole } from "../lib/supabase.ts";
 // Use the supabase types to define a subset of the database we'll transact with
 interface DB {
   generalLedger: Database["public"]["Tables"]["generalLedger"]["Update"];
-  partLedger: Database["public"]["Tables"]["partLedger"]["Insert"];
+  itemLedger: Database["public"]["Tables"]["itemLedger"]["Insert"];
   costLedger: Database["public"]["Tables"]["costLedger"]["Insert"];
 }
 
@@ -172,11 +172,11 @@ serve(async (req: Request) => {
 
     await db.transaction().execute(async (trx) => {
       await trx
-        .updateTable("partLedger")
+        .updateTable("itemLedger")
         .set({
           expectedCost: 0,
         })
-        .where("id", "=", partLedgerId)
+        .where("id", "=", itemLedgerId)
         .execute();
 
       const generalLedgerIds = await trx

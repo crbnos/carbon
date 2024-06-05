@@ -171,7 +171,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 )}
 
                 <Input name="name" label="Name" />
-                <ItemGroup name="itemGroupId" label="Item Group" />
+                <ItemGroup name="itemGroupId" label="Posting Group" />
                 {isEditing && (
                   <TextArea name="description" label="Description" />
                 )}

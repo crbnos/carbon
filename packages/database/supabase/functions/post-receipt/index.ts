@@ -84,7 +84,7 @@ serve(async (req: Request) => {
 
         const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
           [];
-        const partLedgerInserts: Database["public"]["Tables"]["partLedger"]["Insert"][] =
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
         const journalLineInserts: Omit<
           Database["public"]["Tables"]["journalLine"]["Insert"],
@@ -418,7 +418,7 @@ serve(async (req: Request) => {
 
             // create the cost ledger entry
             costLedgerInserts.push({
-              partLedgerType: "Purchase",
+              itemLedgerType: "Purchase",
               costLedgerType: "Direct Cost",
               adjustment: false,
               documentType: "Purchase Receipt",
@@ -581,7 +581,7 @@ serve(async (req: Request) => {
           }
 
           if (partType === "Inventory") {
-            partLedgerInserts.push({
+            itemLedgerInserts.push({
               postingDate: today,
               partId: receiptLine.partId,
               quantity: receiptLine.receivedQuantity,
@@ -686,10 +686,10 @@ serve(async (req: Request) => {
             .returning(["id"])
             .execute();
 
-          if (partLedgerInserts.length > 0) {
+          if (itemLedgerInserts.length > 0) {
             await trx
-              .insertInto("partLedger")
-              .values(partLedgerInserts)
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
               .returning(["id"])
               .execute();
           }

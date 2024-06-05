@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import type { PartReplenishmentSystem } from "~/modules/parts";
+import type { ItemReplenishmentSystem } from "~/modules/parts";
 import { getPartsList } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -13,7 +13,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const replenishmentSystem = searchParams.get(
     "replenishmentSystem"
-  ) as PartReplenishmentSystem | null;
+  ) as ItemReplenishmentSystem | null;
 
   const parts = await getPartsList(client, companyId, replenishmentSystem);
   if (parts.error) {

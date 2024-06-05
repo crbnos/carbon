@@ -9,14 +9,13 @@ import type {
   itemCostValidator,
   itemGroupValidator,
   itemInventoryValidator,
-  itemManufacturingValidator,
   itemPlanningValidator,
   itemPurchasingValidator,
   itemSupplierValidator,
   itemUnitSalePriceValidator,
   itemValidator,
+  partManufacturingValidator,
   partValidator,
-  serviceSupplierValidator,
   serviceValidator,
   unitOfMeasureValidator,
 } from "./parts.models";
@@ -336,19 +335,6 @@ export async function getServicesList(
   return query;
 }
 
-export async function getServiceSuppliers(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("serviceSupplier")
-    .select(`id, supplier(id, name), customFields, supplierServiceId`)
-    .eq("serviceId", id)
-    .eq("companyId", companyId)
-    .eq("active", true);
-}
-
 export async function getShelvesList(
   client: SupabaseClient<Database>,
   locationId: string
@@ -575,7 +561,7 @@ export async function upsertItemInventory(
 
 export async function upsertItemManufacturing(
   client: SupabaseClient<Database>,
-  partManufacturing: z.infer<typeof itemManufacturingValidator> & {
+  partManufacturing: z.infer<typeof partManufacturingValidator> & {
     updatedBy: string;
     customFields?: Json;
   }
@@ -765,35 +751,6 @@ export async function upsertService(
 
   if (updateItem.error) return updateItem;
   return updateService;
-}
-
-export async function upsertServiceSupplier(
-  client: SupabaseClient<Database>,
-  serviceSupplier:
-    | (Omit<z.infer<typeof serviceSupplierValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof serviceSupplierValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in serviceSupplier) {
-    return client
-      .from("serviceSupplier")
-      .insert([serviceSupplier])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("serviceSupplier")
-    .update(sanitize(serviceSupplier))
-    .eq("id", serviceSupplier.id)
-    .select("id")
-    .single();
 }
 
 export async function upsertUnitOfMeasure(

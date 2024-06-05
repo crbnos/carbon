@@ -33,7 +33,7 @@ export const journalLineDocumentType = [
   "Return Order",
 ] as const;
 
-const partLedgerTypes = [
+const itemLedgerTypes = [
   "Purchase",
   "Sale",
   "Positive Adjmt.",
@@ -45,7 +45,7 @@ const partLedgerTypes = [
   "Assembly Output",
 ] as const;
 
-const partLedgerDocumentTypes = [
+const itemLedgerDocumentTypes = [
   "Sales Shipment",
   "Sales Invoice",
   "Sales Return Receipt",
@@ -337,12 +337,12 @@ export const defaultIncomeAcountValidator = z.object({
   }),
 });
 
-export const partLedgerValidator = z.object({
+export const itemLedgerValidator = z.object({
   postingDate: zfd.text(z.string().optional()),
-  entryType: z.enum(partLedgerTypes),
-  documentType: z.union([z.enum(partLedgerDocumentTypes), z.undefined()]),
+  entryType: z.enum(itemLedgerTypes),
+  documentType: z.union([z.enum(itemLedgerDocumentTypes), z.undefined()]),
   documentId: z.string().optional(),
-  partId: z.string().min(1, { message: "Part is required" }),
+  itemId: z.string().min(1, { message: "Part is required" }),
   locationId: z.string().optional(),
   shelfId: z.string().optional(),
   quantity: z.number(),
@@ -386,12 +386,12 @@ export const paymentTermValidator = z.object({
 
 export const costLedgerValidator = z.object({
   postingDate: zfd.text(z.string().optional()),
-  partLedgerType: z.enum(partLedgerTypes),
+  itemLedgerType: z.enum(itemLedgerTypes),
   costLedgerType: z.enum(costLedgerTypes),
   adjustment: z.boolean(),
-  documentType: z.union([z.enum(partLedgerDocumentTypes), z.undefined()]),
+  documentType: z.union([z.enum(itemLedgerDocumentTypes), z.undefined()]),
   documentId: z.string().optional(),
-  partId: zfd.text(z.string()),
+  itemId: zfd.text(z.string()),
   quantity: z.number(),
   cost: z.number(),
   costPostedToGL: z.number(),

@@ -13,7 +13,7 @@ import type {
   defaultBalanceSheetAccountValidator,
   defaultIncomeAcountValidator,
   fiscalYearSettingsValidator,
-  partLedgerValidator,
+  itemLedgerValidator,
   paymentTermValidator,
 } from "./accounting.models";
 import type { Account, Transaction } from "./types";
@@ -645,20 +645,20 @@ export async function getSalesPostingGroups(
 
 export async function insertPartEntries(
   client: SupabaseClient<Database>,
-  partEntries: (z.infer<typeof partLedgerValidator> & {
+  itemEntries: (z.infer<typeof itemLedgerValidator> & {
     companyId: string;
   })[]
 ) {
-  return client.from("partLedger").insert(partEntries);
+  return client.from("itemLedger").insert(itemEntries);
 }
 
 export async function insertPartLedger(
   client: SupabaseClient<Database>,
-  partEntry: z.infer<typeof partLedgerValidator> & {
+  itemEntry: z.infer<typeof itemLedgerValidator> & {
     companyId: string;
   }
 ) {
-  return client.from("partLedger").insert([partEntry]);
+  return client.from("itemLedger").insert([itemEntry]);
 }
 
 export async function updateDefaultBalanceSheetAccounts(

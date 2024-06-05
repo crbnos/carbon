@@ -137,7 +137,7 @@ const EditablePurchaseOrderLineNumber =
             itemReadableId: item.data?.readableId,
             locationId: options.defaultLocationId,
             description: item.data?.name ?? "",
-            quantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
+            purchaseQuantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
             unitPrice: itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
             purchaseUnitOfMeasureCode:
               itemReplenishment?.purchasingUnitOfMeasureCode ??
@@ -156,7 +156,7 @@ const EditablePurchaseOrderLineNumber =
                 itemReadableId: item.data?.readableId,
                 locationId: options.defaultLocationId,
                 description: item.data?.name ?? "",
-                quantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
+                purchaseQuantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
                 unitPrice:
                   itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
                 purchaseUnitOfMeasureCode:

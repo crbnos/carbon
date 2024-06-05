@@ -60,7 +60,7 @@ export const itemInventoryValidator = z.object({
   defaultShelfId: zfd.text(z.string().optional()),
 });
 
-export const itemManufacturingValidator = z.object({
+export const partManufacturingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   manufacturingPolicy: z.enum(partManufacturingPolicies, {
     errorMap: (issue, ctx) => ({
@@ -157,13 +157,6 @@ export const serviceValidator = itemValidator.merge(
     }),
   })
 );
-
-export const serviceSupplierValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  serviceId: z.string().min(1, { message: "Part ID is required" }),
-  supplierId: z.string().min(36, { message: "Supplier ID is required" }),
-  supplierServiceId: z.string().optional(),
-});
 
 export const unitOfMeasureValidator = z.object({
   id: zfd.text(z.string().optional()),

@@ -10,11 +10,11 @@ import {
   LuTags,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
-import type { PartReplenishmentSystem } from "~/modules/parts/types";
+import type { ItemReplenishmentSystem } from "~/modules/parts/types";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 
-export function usePartSidebar(replenishment: PartReplenishmentSystem) {
+export function usePartSidebar(replenishment: ItemReplenishmentSystem) {
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");

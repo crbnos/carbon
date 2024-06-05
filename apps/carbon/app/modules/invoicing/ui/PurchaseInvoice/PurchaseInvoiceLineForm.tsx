@@ -281,6 +281,7 @@ const PurchaseInvoiceLineForm = ({
           <DrawerBody>
             <Hidden name="id" />
             <Hidden name="invoiceId" />
+            <Hidden name="itemReadableId" value={itemData.itemReadableId} />
             <Hidden name="description" value={itemData.description} />
             <Hidden
               name="inventoryUnitOfMeasureCode"

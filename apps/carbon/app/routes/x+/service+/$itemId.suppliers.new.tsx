@@ -3,9 +3,9 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import {
-  ServiceSupplierForm,
-  serviceSupplierValidator,
-  upsertServiceSupplier,
+  ItemSupplierForm,
+  itemSupplierValidator,
+  upsertItemSupplier,
 } from "~/modules/parts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -20,13 +20,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "parts",
   });
 
-  const { serviceId } = params;
-  if (!serviceId) throw new Error("Could not find serviceId");
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(serviceSupplierValidator).validate(
-    formData
-  );
+  const validation = await validator(itemSupplierValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -34,36 +32,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createServiceSupplier = await upsertServiceSupplier(client, {
+  const createItemSupplier = await upsertItemSupplier(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (createServiceSupplier.error) {
+  if (createItemSupplier.error) {
     throw redirect(
-      path.to.serviceSuppliers(serviceId),
+      path.to.serviceSuppliers(itemId),
       await flash(
         request,
-        error(createServiceSupplier.error, "Failed to create service supplier.")
+        error(createItemSupplier.error, "Failed to create service supplier.")
       )
     );
   }
 
-  throw redirect(path.to.serviceSuppliers(serviceId));
+  throw redirect(path.to.serviceSuppliers(itemId));
 }
 
-export default function NewServiceSupplierRoute() {
-  const { serviceId } = useParams();
+export default function NewItemSupplierRoute() {
+  const { itemId } = useParams();
 
-  if (!serviceId) throw new Error("serviceId not found");
+  if (!itemId) throw new Error("itemId not found");
 
   const initialValues = {
-    serviceId,
+    itemId: itemId,
     supplierId: "",
-    supplierServiceId: "",
+    supplierPartId: "",
+    unitPrice: 0,
+    supplierUnitOfMeasureCode: "EA",
+    minimumOrderQuantity: 1,
+    conversionFactor: 1,
   };
 
-  return <ServiceSupplierForm initialValues={initialValues} />;
+  return <ItemSupplierForm initialValues={initialValues} />;
 }
