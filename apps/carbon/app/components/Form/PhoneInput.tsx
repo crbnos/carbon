@@ -48,6 +48,7 @@ const PhoneInput: ForwardRefExoticComponent<PhoneInputProps> = forwardRef<
 
   const onChange = (value: string) => {
     setValue(value);
+    // @ts-ignore
     props.onChange?.(value);
   };
 
@@ -75,6 +76,7 @@ const PhoneInput: ForwardRefExoticComponent<PhoneInputProps> = forwardRef<
          *
          * @param {E164Number | undefined} value - The entered value
          */
+        // @ts-ignore
         onChange={onChange}
         {...props}
       />

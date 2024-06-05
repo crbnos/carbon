@@ -83,6 +83,7 @@ CREATE TABLE "salesOrderLine" (
   "salesOrderId" TEXT NOT NULL,
   "salesOrderLineType" "salesOrderLineType" NOT NULL,
   "itemId" TEXT,
+  "itemReadableId" TEXT,
   "accountNumber" TEXT,
   "assetId" TEXT,
   "description" TEXT,

@@ -29,6 +29,7 @@ import { useRealtime, useRouteData, useUser } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { SalesOrder, SalesOrderLine } from "~/modules/sales";
 import { useSalesOrderTotals } from "~/modules/sales";
+import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import useSalesOrderLines from "./useSalesOrderLines";
@@ -49,14 +50,7 @@ const SalesOrderLines = () => {
 
   const locations = routeData?.locations ?? [];
   const { defaults, id: userId } = useUser();
-  const {
-    canEdit,
-    canDelete,
-    supabase,
-    partOptions,
-    serviceOptions,
-    onCellEdit,
-  } = useSalesOrderLines();
+  const { canEdit, canDelete, supabase, onCellEdit } = useSalesOrderLines();
   const [, setSalesOrderTotals] = useSalesOrderTotals();
 
   const isEditable = ["Draft", "To Review"].includes(
@@ -111,12 +105,12 @@ const SalesOrderLines = () => {
         ),
       },
       {
-        accessorKey: "partId",
+        accessorKey: "itemId",
         header: "Number",
         cell: ({ row }) => {
           switch (row.original.salesOrderLineType) {
             case "Part":
-              return <span>{row.original.partId}</span>;
+              return <span>{row.original.itemId}</span>;
             case "Service":
               return <span>{row.original.serviceId}</span>;
             case "Comment":
@@ -256,27 +250,21 @@ const SalesOrderLines = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, customColumns]);
 
+  const [items] = useItems();
+
   const editableComponents = useMemo(
     () => ({
       description: EditableText(onCellEdit),
       saleQuantity: EditableNumber(onCellEdit),
       unitPrice: EditableNumber(onCellEdit),
-      partId: EditableSalesOrderLineNumber(onCellEdit, {
+      itemId: EditableSalesOrderLineNumber(onCellEdit, {
         client: supabase,
-        parts: partOptions,
-        services: serviceOptions,
+        items: items,
         defaultLocationId: defaults.locationId,
         userId: userId,
       }),
     }),
-    [
-      onCellEdit,
-      supabase,
-      partOptions,
-      serviceOptions,
-      defaults.locationId,
-      userId,
-    ]
+    [onCellEdit, supabase, items, defaults.locationId, userId]
   );
 
   return (
