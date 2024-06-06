@@ -170,7 +170,6 @@ export const salesOrderLineType = [
   "Material",
   "Tool",
   "Fixture",
-  "Hardware",
   "Consumable",
   "Comment",
   "Fixed Asset",

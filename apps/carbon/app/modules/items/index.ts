@@ -1,4 +1,4 @@
-export * from "./parts.models";
-export * from "./parts.service";
+export * from "./items.models";
+export * from "./items.service";
 export * from "./types";
 export * from "./ui";

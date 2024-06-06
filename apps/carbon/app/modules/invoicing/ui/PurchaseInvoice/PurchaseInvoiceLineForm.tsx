@@ -302,7 +302,6 @@ const PurchaseInvoiceLineForm = ({
                 "Material",
                 "Tool",
                 "Fixture",
-                "Hardware",
                 "Consumable",
               ].includes(type) && (
                 <Item
@@ -376,7 +375,7 @@ const PurchaseInvoiceLineForm = ({
                     }
                   />
 
-                  {["Part", "Material", "Hardware"] && (
+                  {["Part", "Material", "Consumable"] && (
                     <>
                       <UnitOfMeasure
                         name="purchaseUnitOfMeasureCode"
@@ -412,7 +411,6 @@ const PurchaseInvoiceLineForm = ({
                     "Material",
                     "Tool",
                     "Fixture",
-                    "Hardware",
                     "Consumable",
                     "Fixed Asset",
                   ].includes(type) && (
@@ -430,7 +428,6 @@ const PurchaseInvoiceLineForm = ({
                     "Material",
                     "Tool",
                     "Fixture",
-                    "Hardware",
                     "Consumable",
                     "Fixed Asset",
                   ].includes(type) && (

@@ -20435,14 +20435,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -22965,7 +22965,6 @@ export type Database = {
         | "Part"
         | "Material"
         | "Tool"
-        | "Hardware"
         | "Service"
         | "Consumable"
         | "Fixture"
@@ -23011,7 +23010,6 @@ export type Database = {
         | "Part"
         | "Material"
         | "Tool"
-        | "Hardware"
         | "Service"
         | "Consumable"
         | "Fixture"
@@ -23033,7 +23031,6 @@ export type Database = {
         | "Part"
         | "Material"
         | "Tool"
-        | "Hardware"
         | "Service"
         | "Consumable"
         | "Fixture"
@@ -23082,7 +23079,6 @@ export type Database = {
         | "Part"
         | "Material"
         | "Tool"
-        | "Hardware"
         | "Service"
         | "Consumable"
         | "Fixture"

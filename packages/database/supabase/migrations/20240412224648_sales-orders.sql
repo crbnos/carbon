@@ -57,7 +57,6 @@ CREATE TYPE "salesOrderLineType" AS ENUM (
   'Part',
   'Material',
   'Tool',
-  'Hardware',
   'Service',
   'Consumable',
   'Fixture',
@@ -120,7 +119,6 @@ CREATE TABLE "salesOrderLine" (
           "salesOrderLineType" = 'Part' OR
           "salesOrderLineType" = 'Material' OR 
           "salesOrderLineType" = 'Tool' OR 
-          "salesOrderLineType" = 'Hardware' OR 
           "salesOrderLineType" = 'Consumable' OR 
           "salesOrderLineType" = 'Fixture' OR 
           "salesOrderLineType" = 'Service'

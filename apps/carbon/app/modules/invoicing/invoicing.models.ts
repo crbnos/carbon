@@ -7,7 +7,6 @@ export const purchaseInvoiceLineType = [
   "Material",
   "Tool",
   "Fixture",
-  "Hardware",
   "Consumable",
   "Fixed Asset",
   "G/L Account",
@@ -69,15 +68,9 @@ export const purchaseInvoiceLineValidator = z
   })
   .refine(
     (data) =>
-      [
-        "Part",
-        "Service",
-        "Material",
-        "Tool",
-        "Fixture",
-        "Hardware",
-        "Consumable",
-      ].includes(data.invoiceLineType)
+      ["Part", "Service", "Material", "Tool", "Fixture", "Consumable"].includes(
+        data.invoiceLineType
+      )
         ? data.itemId
         : true,
     {
@@ -87,14 +80,9 @@ export const purchaseInvoiceLineValidator = z
   )
   .refine(
     (data) =>
-      [
-        "Part",
-        "Material",
-        "Tool",
-        "Fixture",
-        "Hardware",
-        "Consumable",
-      ].includes(data.invoiceLineType)
+      ["Part", "Material", "Tool", "Fixture", "Consumable"].includes(
+        data.invoiceLineType
+      )
         ? data.locationId
         : true,
     {

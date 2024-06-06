@@ -250,7 +250,6 @@ serve(async (req: Request) => {
         case "Service":
         case "Consumable":
         case "Fixture":
-        case "Hardware":
         case "Material":
         case "Tool":
           const itemInventoryType =

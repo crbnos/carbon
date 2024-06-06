@@ -224,7 +224,6 @@ const EditablePurchaseInvoiceLineNumber =
           "Material",
           "Tool",
           "Fixture",
-          "Hardware",
           "Consumable",
         ].includes(row.invoiceLineType)
       ) {
@@ -259,7 +258,6 @@ function getValue(row: PurchaseInvoiceLine) {
     case "Material":
     case "Tool":
     case "Fixture":
-    case "Hardware":
     case "Consumable":
       return row.itemId;
 

@@ -9,7 +9,6 @@ export const purchaseOrderLineType = [
   "Material",
   "Tool",
   "Fixture",
-  "Hardware",
   "Consumable",
   "G/L Account",
   "Fixed Asset",
@@ -111,15 +110,9 @@ export const purchaseOrderLineValidator = z
   })
   .refine(
     (data) =>
-      [
-        "Part",
-        "Service",
-        "Material",
-        "Tool",
-        "Fixture",
-        "Hardware",
-        "Consumable",
-      ].includes(data.purchaseOrderLineType)
+      ["Part", "Service", "Material", "Tool", "Fixture", "Consumable"].includes(
+        data.purchaseOrderLineType
+      )
         ? data.itemId
         : true,
     {

@@ -230,7 +230,6 @@ const EditablePurchaseOrderLineNumber =
           "Material",
           "Tool",
           "Fixture",
-          "Hardware",
           "Consumable",
         ].includes(row.purchaseOrderLineType)
       ) {
@@ -264,7 +263,6 @@ function getValue(row: PurchaseOrderLine) {
     case "Material":
     case "Tool":
     case "Fixture":
-    case "Hardware":
     case "Consumable":
       return row.itemId;
 

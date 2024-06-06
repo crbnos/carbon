@@ -118,7 +118,6 @@ CREATE TYPE "payableLineType" AS ENUM (
   'Part',
   'Material',
   'Tool',
-  'Hardware',
   'Service',
   'Consumable',
   'Fixture'
@@ -172,7 +171,6 @@ CREATE TABLE "purchaseInvoiceLine" (
           "invoiceLineType" = 'Part' OR
           "invoiceLineType" = 'Material' OR 
           "invoiceLineType" = 'Tool' OR 
-          "invoiceLineType" = 'Hardware' OR 
           "invoiceLineType" = 'Consumable' OR 
           "invoiceLineType" = 'Fixture' OR 
           "invoiceLineType" = 'Service'

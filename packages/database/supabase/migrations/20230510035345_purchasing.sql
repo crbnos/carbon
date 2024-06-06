@@ -251,7 +251,6 @@ CREATE TYPE "purchaseOrderLineType" AS ENUM (
   'Part',
   'Material',
   'Tool',
-  'Hardware',
   'Service',
   'Consumable',
   'Fixture'
@@ -334,7 +333,6 @@ CREATE TABLE "purchaseOrderLine" (
           "purchaseOrderLineType" = 'Part' OR
           "purchaseOrderLineType" = 'Material' OR 
           "purchaseOrderLineType" = 'Tool' OR 
-          "purchaseOrderLineType" = 'Hardware' OR 
           "purchaseOrderLineType" = 'Consumable' OR 
           "purchaseOrderLineType" = 'Fixture' OR 
           "purchaseOrderLineType" = 'Service'

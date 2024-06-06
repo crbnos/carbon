@@ -116,7 +116,6 @@ const PurchaseInvoiceLines = () => {
             case "Material":
             case "Tool":
             case "Fixture":
-            case "Hardware":
             case "Consumable":
               return <span>{row.original.itemReadableId}</span>;
             case "G/L Account":

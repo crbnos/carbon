@@ -228,7 +228,6 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
                 "Part",
                 "Material",
                 "Service",
-                "Hardware",
                 "Tool",
                 "Fixture",
                 "Consumable",

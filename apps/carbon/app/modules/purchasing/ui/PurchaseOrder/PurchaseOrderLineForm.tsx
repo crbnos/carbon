@@ -298,7 +298,6 @@ const PurchaseOrderLineForm = ({
                 "Material",
                 "Tool",
                 "Fixture",
-                "Hardware",
                 "Consumable",
               ].includes(type) && (
                 <Item
@@ -372,7 +371,7 @@ const PurchaseOrderLineForm = ({
                     }
                   />
 
-                  {["Part", "Material", "Hardware"] && (
+                  {["Part", "Material", "Consumable"] && (
                     <>
                       <UnitOfMeasure
                         name="purchaseUnitOfMeasureCode"
@@ -408,7 +407,6 @@ const PurchaseOrderLineForm = ({
                     "Material",
                     "Tool",
                     "Fixture",
-                    "Hardware",
                     "Consumable",
                     "Fixed Asset",
                   ].includes(type) && (
@@ -426,7 +424,6 @@ const PurchaseOrderLineForm = ({
                     "Material",
                     "Tool",
                     "Fixture",
-                    "Hardware",
                     "Consumable",
                     "Fixed Asset",
                   ].includes(type) && (

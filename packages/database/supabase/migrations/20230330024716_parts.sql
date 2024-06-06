@@ -55,7 +55,6 @@ CREATE TYPE "itemType" AS ENUM (
   'Part',
   'Material',
   'Tool',
-  'Hardware',
   'Service',
   'Consumable',
   'Fixture'

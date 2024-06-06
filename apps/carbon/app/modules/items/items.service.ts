@@ -18,7 +18,7 @@ import type {
   partValidator,
   serviceValidator,
   unitOfMeasureValidator,
-} from "./parts.models";
+} from "./items.models";
 import type { ItemReplenishmentSystem, ServiceType } from "./types";
 
 export async function deleteItemGroup(
