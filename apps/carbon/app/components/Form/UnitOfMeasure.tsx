@@ -5,8 +5,8 @@ import { useRouteData } from "~/hooks";
 import type {
   UnitOfMeasureListItem,
   getUnitOfMeasuresList,
-} from "~/modules/parts";
-import { UnitOfMeasureForm } from "~/modules/parts";
+} from "~/modules/items";
+import { UnitOfMeasureForm } from "~/modules/items";
 import { path } from "~/utils/path";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";

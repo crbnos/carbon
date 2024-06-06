@@ -1,8 +1,8 @@
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
-import type { getItemGroupsList } from "~/modules/parts";
-import { ItemGroupForm } from "~/modules/parts";
+import type { getItemGroupsList } from "~/modules/items";
+import { ItemGroupForm } from "~/modules/items";
 import { path } from "~/utils/path";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";

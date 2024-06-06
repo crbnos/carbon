@@ -3,11 +3,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import {
-  PartPurchasingForm,
+  ItemPurchasingForm,
   getItemReplenishment,
   itemPurchasingValidator,
   upsertItemPurchasing,
-} from "~/modules/parts";
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
@@ -92,7 +92,7 @@ export default function PartPurchasingRoute() {
   };
 
   return (
-    <PartPurchasingForm
+    <ItemPurchasingForm
       key={initialValues.itemId}
       initialValues={initialValues}
     />

@@ -1,6 +1,6 @@
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { PartForm, type ItemReplenishmentSystem } from "~/modules/parts";
+import { PartForm, type ItemReplenishmentSystem } from "~/modules/items";
 import { useParts } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";

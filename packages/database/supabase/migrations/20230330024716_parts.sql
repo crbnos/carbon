@@ -96,6 +96,38 @@ CREATE INDEX "item_companyId_idx" ON "item" ("companyId");
 CREATE INDEX "item_name_companyId_idx" ON "item" ("name", "companyId");
 CREATE INDEX "item_type_companyId_idx" ON "item" ("type", "companyId");
 
+ALTER TABLE "item" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Employees can view items" ON "item"
+  FOR SELECT
+  USING (
+    has_role('employee') 
+    AND "companyId" = ANY(
+      select "companyId" from "userToCompany" where "userId" = auth.uid()::text
+    )
+  );
+
+CREATE POLICY "Employees with parts_create can insert items" ON "item"
+  FOR INSERT
+  WITH CHECK (   
+    has_role('employee') AND
+    has_company_permission('parts_create', "companyId")
+  );
+
+CREATE POLICY "Employees with parts_update can update items" ON "item"
+  FOR UPDATE
+  USING (
+    has_role('employee') AND
+    has_company_permission('parts_update', "companyId")
+  );
+
+CREATE POLICY "Employees with parts_delete can delete items" ON "item"
+  FOR DELETE
+  USING (
+    has_role('employee') AND
+    has_company_permission('parts_delete', "companyId")
+  );
+
 
 CREATE TYPE "itemReplenishmentSystem" AS ENUM (
   'Buy',

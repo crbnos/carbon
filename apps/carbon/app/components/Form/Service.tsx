@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { ServiceType } from "~/modules/parts";
+import type { ServiceType } from "~/modules/items";
 import { useServices } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import Combobox from "./Combobox";

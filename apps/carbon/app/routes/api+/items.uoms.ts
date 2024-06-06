@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { getUnitOfMeasuresList } from "~/modules/parts";
+import { getUnitOfMeasuresList } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {

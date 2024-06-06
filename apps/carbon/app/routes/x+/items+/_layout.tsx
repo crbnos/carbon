@@ -2,7 +2,7 @@ import { VStack } from "@carbon/react";
 import type { MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { usePartsSubmodules } from "~/modules/parts";
+import { usePartsSubmodules } from "~/modules/items";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import type { ServiceType } from "~/modules/parts";
-import { getServicesList } from "~/modules/parts";
+import type { ServiceType } from "~/modules/items";
+import { getServicesList } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { error } from "~/utils/result";

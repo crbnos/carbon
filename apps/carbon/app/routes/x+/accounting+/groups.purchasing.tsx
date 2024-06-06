@@ -8,7 +8,7 @@ import {
   PurchasingPostingGroupsTable,
   getPurchasingPostingGroups,
 } from "~/modules/accounting";
-import { getItemGroupsList } from "~/modules/parts";
+import { getItemGroupsList } from "~/modules/items";
 import { getSupplierTypesList } from "~/modules/purchasing";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

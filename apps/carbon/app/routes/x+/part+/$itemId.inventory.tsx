@@ -4,13 +4,13 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import {
-  PartInventoryForm,
+  ItemInventoryForm,
   getItemInventory,
   getItemQuantities,
   getShelvesList,
   itemInventoryValidator,
   upsertItemInventory,
-} from "~/modules/parts";
+} from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -183,7 +183,7 @@ export default function PartInventoryRoute() {
     ...getCustomFields(partInventory.customFields ?? {}),
   };
   return (
-    <PartInventoryForm
+    <ItemInventoryForm
       key={initialValues.itemId}
       initialValues={initialValues}
       quantities={quantities}

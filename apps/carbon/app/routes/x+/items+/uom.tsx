@@ -2,7 +2,7 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { UnitOfMeasuresTable, getUnitOfMeasures } from "~/modules/parts";
+import { UnitOfMeasuresTable, getUnitOfMeasures } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

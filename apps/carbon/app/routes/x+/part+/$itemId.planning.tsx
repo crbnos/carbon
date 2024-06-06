@@ -4,11 +4,11 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import {
-  PartPlanningForm,
+  ItemPlanningForm,
   getItemPlanning,
   itemPlanningValidator,
   upsertItemPlanning,
-} from "~/modules/parts";
+} from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -150,7 +150,7 @@ export default function PartPlanningRoute() {
   if (!sharedPartsData) throw new Error("Could not load shared parts data");
 
   return (
-    <PartPlanningForm
+    <ItemPlanningForm
       key={partPlanning.itemId}
       initialValues={{
         ...partPlanning,

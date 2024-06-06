@@ -4,11 +4,11 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getAccountsList } from "~/modules/accounting";
 import {
-  PartCostingForm,
+  ItemCostingForm,
   getItemCost,
   itemCostValidator,
   upsertItemCost,
-} from "~/modules/parts";
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -89,7 +89,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function PartCostingRoute() {
   const { itemCost } = useLoaderData<typeof loader>();
   return (
-    <PartCostingForm
+    <ItemCostingForm
       key={itemCost.itemId}
       initialValues={{ ...itemCost, ...getCustomFields(itemCost.customFields) }}
     />

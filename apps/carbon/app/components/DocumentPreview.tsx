@@ -20,7 +20,6 @@ const DocumentPreview = forwardRef<
   ElementRef<typeof HoverCardContent>,
   DocumentPreviewProps
 >(({ bucket, pathToFile, type, children, className, ...props }, ref) => {
-  console.log({ bucket, pathToFile, type });
   return (
     <HoverCard>
       <HoverCardTrigger>{children}</HoverCardTrigger>

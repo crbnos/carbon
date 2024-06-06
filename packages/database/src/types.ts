@@ -19737,6 +19737,7 @@ export type Database = {
             | null
           supplierIds: string[] | null
           toDate: string | null
+          unitOfMeasure: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null

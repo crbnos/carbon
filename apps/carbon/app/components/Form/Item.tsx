@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { PartForm } from "~/modules/parts";
+import { PartForm } from "~/modules/items";
 import { useItems } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";

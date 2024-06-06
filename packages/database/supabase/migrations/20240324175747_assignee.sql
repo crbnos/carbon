@@ -19,7 +19,8 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
     i.blocked,
     p.*,
     pg.name AS "itemGroup",
-    ps."supplierIds"
+    ps."supplierIds",
+    uom.name as "unitOfMeasure"
   FROM "part" p
   INNER JOIN "item" i ON i.id = p."itemId"
   LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
@@ -29,7 +30,8 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
       array_agg(ps."supplierId") AS "supplierIds"
     FROM "itemSupplier" ps
     GROUP BY "itemId"
-  )  ps ON ps."itemId" = p."itemId";
+  )  ps ON ps."itemId" = p."itemId"
+  LEFT JOIN "unitOfMeasure" uom ON uom.code = p."unitOfMeasureCode" AND uom."companyId" = p."companyId";
   
 DROP VIEW "purchaseOrders";
 CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS

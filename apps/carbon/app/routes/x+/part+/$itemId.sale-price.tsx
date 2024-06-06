@@ -3,11 +3,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import {
-  PartSalePriceForm,
+  ItemSalePriceForm,
   getItemUnitSalePrice,
   itemUnitSalePriceValidator,
   upsertItemUnitSalePrice,
-} from "~/modules/parts";
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -92,7 +92,7 @@ export default function PartSalePriceRoute() {
   };
 
   return (
-    <PartSalePriceForm
+    <ItemSalePriceForm
       key={initialValues.itemId}
       initialValues={initialValues}
     />

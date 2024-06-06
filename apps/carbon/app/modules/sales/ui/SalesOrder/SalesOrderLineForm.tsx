@@ -26,7 +26,7 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { getShelvesList } from "~/modules/parts";
+import type { getShelvesList } from "~/modules/items";
 import type { SalesOrder, SalesOrderLineType } from "~/modules/sales";
 import { salesOrderLineType, salesOrderLineValidator } from "~/modules/sales";
 import type { ListItem } from "~/types";

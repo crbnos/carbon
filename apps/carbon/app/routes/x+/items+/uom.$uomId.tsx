@@ -7,7 +7,7 @@ import {
   getUnitOfMeasure,
   unitOfMeasureValidator,
   upsertUnitOfMeasure,
-} from "~/modules/parts";
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";

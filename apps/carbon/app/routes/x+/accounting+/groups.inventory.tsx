@@ -8,7 +8,7 @@ import {
   InventoryPostingGroupsTable,
   getInventoryPostingGroups,
 } from "~/modules/accounting";
-import { getItemGroupsList } from "~/modules/parts";
+import { getItemGroupsList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

@@ -39,7 +39,7 @@ import {
   purchaseInvoiceLineType,
   purchaseInvoiceLineValidator,
 } from "~/modules/invoicing";
-import type { getShelvesList } from "~/modules/parts";
+import type { getShelvesList } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 

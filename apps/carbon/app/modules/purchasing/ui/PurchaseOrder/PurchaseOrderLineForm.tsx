@@ -31,7 +31,7 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { getShelvesList } from "~/modules/parts";
+import type { getShelvesList } from "~/modules/items";
 import type {
   PurchaseOrder,
   PurchaseOrderLineType,
