@@ -22,8 +22,5 @@ jobs:
         with:
           version: latest
 
-      - run: git pull origin main
-      - run: git submodule update --init --recursive
-      - run: git submodule update --recursive --remote
       - run: npm install
       - run: npm run ci:migrations
