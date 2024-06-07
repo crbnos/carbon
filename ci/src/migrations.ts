@@ -18,7 +18,7 @@ async function migrate(): Promise<void> {
   console.log("✅ 🛩️ Successfully retreived customers");
 
   console.log("👯‍♀️ Copying supabase folder");
-  await $`cp -r ../packages/database/supabase .`;
+  await $`cd ../packages/database/supabase`;
 
   for await (const customer of customers as Customer[]) {
     try {
@@ -64,7 +64,7 @@ async function migrate(): Promise<void> {
       if (!customer.seeded) {
         try {
           console.log(`✅ 🌱 Seeding ${customer.name}`);
-          await $$`tsx ../../carbon/packages/database/src/seed.ts`;
+          await $$`tsx ../src/seed.ts`;
           const { error } = await client
             .from("customer")
             .update({ seeded: true })
