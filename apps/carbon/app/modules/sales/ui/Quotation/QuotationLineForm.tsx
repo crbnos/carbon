@@ -28,7 +28,7 @@ import {
   Hidden,
   Input,
   InputControlled,
-  Part,
+  Item,
   Select,
   SelectControlled,
   Submit,
@@ -68,32 +68,40 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
     ? !permissions.can("update", "sales")
     : !permissions.can("create", "sales");
 
-  const [partData, setPartData] = useState<{
-    partId: string;
+  const [itemData, setItemData] = useState<{
+    itemId: string;
+    itemReadableId: string;
     description: string;
     replenishmentSystem: string;
     uom: string;
   }>({
-    partId: initialValues.partId ?? "",
+    itemId: initialValues.itemId ?? "",
+    itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     replenishmentSystem: initialValues.replenishmentSystem ?? "",
     uom: initialValues.unitOfMeasureCode ?? "",
   });
 
-  const onPartChange = async (partId: string) => {
+  const onItemChange = async (itemId: string) => {
     if (!supabase || !company.id) return;
-    const [part] = await Promise.all([
+    const [item, part] = await Promise.all([
+      supabase
+        .from("item")
+        .select("name, readableId")
+        .eq("id", itemId)
+        .single(),
       supabase
         .from("part")
-        .select("name, replenishmentSystem, unitOfMeasureCode")
-        .eq("id", partId)
+        .select("replenishmentSystem, unitOfMeasureCode")
+        .eq("itemId", itemId)
         .eq("companyId", company.id)
         .single(),
     ]);
 
-    setPartData({
-      partId,
-      description: part.data?.name ?? "",
+    setItemData({
+      itemId,
+      itemReadableId: item.data?.readableId ?? "",
+      description: item.data?.name ?? "",
       replenishmentSystem:
         part.data?.replenishmentSystem === "Buy and Make"
           ? ""
@@ -120,7 +128,7 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
             <CardTitle>{isEditing ? "Quote Line" : "New Quote Line"}</CardTitle>
             <CardDescription>
               {isEditing
-                ? partData?.description
+                ? itemData?.description
                 : "A quote line contains pricing and lead times for a particular part"}
             </CardDescription>
           </CardHeader>
@@ -156,23 +164,25 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
           <Hidden name="intent" value="line" />
           <Hidden name="id" />
           <Hidden name="quoteId" />
-          <Hidden name="unitOfMeasureCode" value={partData?.uom} />
+          <Hidden name="itemReadableId" value={itemData?.itemReadableId} />
+          <Hidden name="unitOfMeasureCode" value={itemData?.uom} />
           <VStack>
             <div className="grid w-full gap-x-8 gap-y-2 grid-cols-1 lg:grid-cols-3">
-              <Part
-                name="partId"
+              <Item
+                name="itemId"
+                type="Part"
                 label="Part"
                 onChange={(value) => {
-                  onPartChange(value?.value as string);
+                  onItemChange(value?.value as string);
                 }}
               />
 
               <InputControlled
                 name="description"
                 label="Description"
-                value={partData.description}
+                value={itemData.description}
                 onChange={(newValue) =>
-                  setPartData((d) => ({ ...d, description: newValue }))
+                  setItemData((d) => ({ ...d, description: newValue }))
                 }
               />
 
@@ -180,9 +190,9 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
                 name="replenishmentSystem"
                 label="Replenishment System"
                 options={
-                  partData.replenishmentSystem === "Buy"
+                  itemData.replenishmentSystem === "Buy"
                     ? [{ label: "Buy", value: "Buy" }]
-                    : partData.replenishmentSystem === "Make"
+                    : itemData.replenishmentSystem === "Make"
                     ? [{ label: "Make", value: "Make" }]
                     : [
                         {
@@ -195,10 +205,10 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
                         },
                       ]
                 }
-                value={partData.replenishmentSystem}
+                value={itemData.replenishmentSystem}
                 onChange={(newValue) => {
                   if (newValue)
-                    setPartData((d) => ({
+                    setItemData((d) => ({
                       ...d,
                       replenishmentSystem: newValue?.value,
                     }));

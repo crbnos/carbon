@@ -5,8 +5,8 @@ import { useRouteData } from "~/hooks";
 import type {
   UnitOfMeasureListItem,
   getUnitOfMeasuresList,
-} from "~/modules/parts";
-import { UnitOfMeasureForm } from "~/modules/parts";
+} from "~/modules/items";
+import { UnitOfMeasureForm } from "~/modules/items";
 import { path } from "~/utils/path";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
@@ -26,7 +26,7 @@ const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
-        label={props?.label ?? "Part Group"}
+        label={props?.label ?? "Item Group"}
         onCreateOption={(option) => {
           newUnitOfMeasureModal.onOpen();
           setCreated(option);

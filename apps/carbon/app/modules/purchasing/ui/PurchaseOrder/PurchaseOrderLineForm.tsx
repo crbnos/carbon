@@ -6,7 +6,10 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  FormControl,
+  FormLabel,
   HStack,
+  Input,
   VStack,
 } from "@carbon/react";
 
@@ -20,17 +23,15 @@ import {
   ConversionFactor,
   CustomFormFields,
   Hidden,
-  InputControlled,
+  Item,
   NumberControlled,
-  Part,
   Select,
-  Service,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { getShelvesList } from "~/modules/parts";
+import type { getShelvesList } from "~/modules/items";
 import type {
   PurchaseOrder,
   PurchaseOrderLineType,
@@ -68,26 +69,26 @@ const PurchaseOrderLineForm = ({
     value: location.id,
   }));
 
-  const isEditable = ["Draft", "To Review"].includes(
-    routeData?.purchaseOrder?.status ?? ""
-  );
+  const isEditable = ["Draft"].includes(routeData?.purchaseOrder?.status ?? "");
 
   const [type, setType] = useState(initialValues.purchaseOrderLineType);
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
-  const [partData, setPartData] = useState<{
-    partId: string;
+  const [itemData, setItemData] = useState<{
+    itemId: string;
+    itemReadableId: string;
     description: string;
-    quantity: number;
+    purchaseQuantity: number;
     unitPrice: number;
     purchaseUom: string;
     inventoryUom: string;
     conversionFactor: number;
-    shelfId: string;
+    shelfId: string | null;
     minimumOrderQuantity?: number;
   }>({
-    partId: initialValues.partId ?? "",
+    itemId: initialValues.itemId ?? "",
+    itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
-    quantity: initialValues.purchaseQuantity ?? 1,
+    purchaseQuantity: initialValues.purchaseQuantity ?? 1,
     unitPrice: initialValues.unitPrice ?? 0,
     purchaseUom: initialValues.purchaseUnitOfMeasureCode ?? "",
     inventoryUom: initialValues.inventoryUnitOfMeasureCode ?? "",
@@ -130,89 +131,102 @@ const PurchaseOrderLineForm = ({
 
   const onTypeChange = (type: PurchaseOrderLineType) => {
     setType(type);
-    setPartData({
-      partId: "",
+    setItemData({
+      itemId: "",
+      itemReadableId: "",
       description: "",
-      quantity: 1,
+      purchaseQuantity: 1,
       unitPrice: 0,
-      purchaseUom: "",
       inventoryUom: "",
+      purchaseUom: "",
       conversionFactor: 1,
       shelfId: "",
       minimumOrderQuantity: undefined,
     });
   };
 
-  const onPartChange = async (partId: string) => {
-    if (!supabase || !company.id) return;
-    const [part, partSupplier, inventory] = await Promise.all([
-      supabase
-        .from("part")
-        .select(
-          `
-          name, unitOfMeasureCode, 
-          partCost(unitCost), 
-          partReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)
-        `
-        )
-        .eq("id", partId)
-        .eq("companyId", company.id)
-        .single(),
-      supabase
-        .from("partSupplier")
-        .select("*")
-        .eq("partId", partId)
-        .eq("companyId", company.id)
-        .eq("supplierId", routeData?.purchaseOrder?.supplierId!)
-        .maybeSingle(),
-      supabase
-        .from("partInventory")
-        .select("defaultShelfId")
-        .eq("partId", partId)
-        .eq("companyId", company.id)
-        .eq("locationId", locationId)
-        .single(),
-    ]);
+  const onItemChange = async (itemId: string) => {
+    if (!supabase) throw new Error("Supabase client not found");
+    switch (type) {
+      case "Part":
+        const [item, part, itemSupplier, inventory] = await Promise.all([
+          supabase
+            .from("item")
+            .select(
+              "name, readableId, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+            )
+            .eq("id", itemId)
+            .eq("companyId", company.id)
+            .single(),
+          supabase
+            .from("part")
+            .select("unitOfMeasureCode")
+            .eq("itemId", itemId)
+            .eq("companyId", company.id)
+            .single(),
+          supabase
+            .from("itemSupplier")
+            .select("*")
+            .eq("itemId", itemId)
+            .eq("companyId", company.id)
+            .eq("supplierId", routeData?.purchaseOrder.supplierId!)
+            .maybeSingle(),
+          supabase
+            .from("itemInventory")
+            .select("defaultShelfId")
+            .eq("itemId", itemId)
+            .eq("companyId", company.id)
+            .eq("locationId", locationId!)
+            .maybeSingle(),
+        ]);
 
-    const partCost = part?.data?.partCost?.[0];
-    const partReplenishment = part?.data?.partReplenishment?.[0];
+        const itemCost = item?.data?.itemCost?.[0];
+        const itemReplenishment = item?.data?.itemReplenishment?.[0];
 
-    setPartData({
-      partId,
-      description: part.data?.name ?? "",
-      quantity: partSupplier?.data?.minimumOrderQuantity ?? 1,
-      unitPrice: partSupplier?.data?.unitPrice ?? partCost?.unitCost ?? 0,
-      purchaseUom:
-        partReplenishment?.purchasingUnitOfMeasureCode ??
-        part.data?.unitOfMeasureCode ??
-        "EA",
-      inventoryUom: part.data?.unitOfMeasureCode ?? "EA",
-      conversionFactor: partReplenishment?.conversionFactor ?? 1,
-      shelfId: inventory.data?.defaultShelfId ?? "",
-      minimumOrderQuantity: partSupplier?.data?.minimumOrderQuantity ?? 0,
-    });
-  };
+        setItemData({
+          itemId: itemId,
+          itemReadableId: item.data?.readableId ?? "",
+          description: item.data?.name ?? "",
+          purchaseQuantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
+          unitPrice: itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+          purchaseUom:
+            itemReplenishment?.purchasingUnitOfMeasureCode ??
+            part.data?.unitOfMeasureCode ??
+            "EA",
+          inventoryUom: part.data?.unitOfMeasureCode ?? "EA",
 
-  const onServiceChange = async (serviceId: string) => {
-    if (!supabase) return;
-    const service = await supabase
-      .from("service")
-      .select("name")
-      .eq("id", serviceId)
-      .eq("companyId", company.id)
-      .single();
+          conversionFactor: itemReplenishment?.conversionFactor ?? 1,
+          shelfId: inventory.data?.defaultShelfId ?? null,
+        });
 
-    setPartData({
-      partId: "",
-      description: service.data?.name ?? "",
-      quantity: 1,
-      unitPrice: 0,
-      purchaseUom: "EA",
-      inventoryUom: "EA",
-      conversionFactor: 1,
-      shelfId: "",
-      minimumOrderQuantity: 0,
-    });
+        break;
+      case "Service":
+        const service = await supabase
+          .from("item")
+          .select("readableId, name")
+          .eq("id", itemId)
+          .eq("companyId", company.id)
+          .single();
+
+        setItemData({
+          itemId: itemId,
+          itemReadableId: service.data?.readableId ?? "",
+          description: service.data?.name ?? "",
+          purchaseQuantity: 1,
+          unitPrice: 0,
+          purchaseUom: "EA",
+          inventoryUom: "EA",
+          conversionFactor: 1,
+          shelfId: "",
+          minimumOrderQuantity: undefined,
+        });
+
+        break;
+      default:
+        throw new Error(
+          `Invalid invoice line type: ${type} is not implemented`
+        );
+    }
   };
 
   const onLocationChange = async (newLocation: { value: string } | null) => {
@@ -221,16 +235,16 @@ const PurchaseOrderLineForm = ({
       throw new Error("locationId is not a string");
 
     setLocationId(newLocation.value);
-    if (!partData.partId) return;
+    if (!itemData.itemId) return;
     const shelf = await supabase
-      .from("partInventory")
+      .from("itemInventory")
       .select("defaultShelfId")
-      .eq("partId", partData.partId)
+      .eq("itemId", itemData.itemId)
       .eq("companyId", company.id)
       .eq("locationId", newLocation.value)
       .maybeSingle();
 
-    setPartData((d) => ({
+    setItemData((d) => ({
       ...d,
       shelfId: shelf?.data?.defaultShelfId ?? "",
     }));
@@ -263,9 +277,11 @@ const PurchaseOrderLineForm = ({
           <DrawerBody>
             <Hidden name="id" />
             <Hidden name="purchaseOrderId" />
+            <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+            <Hidden name="description" value={itemData.description} />
             <Hidden
               name="inventoryUnitOfMeasureCode"
-              value={partData?.inventoryUom}
+              value={itemData?.inventoryUom}
             />
             <VStack spacing={4}>
               <Select
@@ -276,24 +292,21 @@ const PurchaseOrderLineForm = ({
                   onTypeChange(value?.value as PurchaseOrderLineType);
                 }}
               />
-              {type === "Part" && (
-                <Part
-                  name="partId"
-                  label="Part"
-                  partReplenishmentSystem="Buy"
+              {[
+                "Part",
+                "Service",
+                "Material",
+                "Tool",
+                "Fixture",
+                "Consumable",
+              ].includes(type) && (
+                <Item
+                  name="itemId"
+                  label={type}
+                  // @ts-ignore
+                  type={type}
                   onChange={(value) => {
-                    onPartChange(value?.value as string);
-                  }}
-                />
-              )}
-
-              {type === "Service" && (
-                <Service
-                  name="serviceId"
-                  label="Service"
-                  serviceType="External"
-                  onChange={(value) => {
-                    onServiceChange(value?.value as string);
+                    onItemChange(value?.value as string);
                   }}
                 />
               )}
@@ -304,10 +317,11 @@ const PurchaseOrderLineForm = ({
                   label="Account"
                   classes={["Expense", "Asset"]}
                   onChange={(value) => {
-                    setPartData({
-                      partId: "",
+                    setItemData({
+                      itemId: "",
+                      itemReadableId: "",
                       description: value?.label ?? "",
-                      quantity: 1,
+                      purchaseQuantity: 1,
                       unitPrice: 0,
                       purchaseUom: "EA",
                       inventoryUom: "EA",
@@ -322,49 +336,50 @@ const PurchaseOrderLineForm = ({
                 // TODO: implement Fixed Asset
                 <Select name="assetId" label="Asset" options={[]} />
               )}
-              <InputControlled
-                name="description"
-                label="Description"
-                value={partData.description}
-                onChange={(newValue) =>
-                  setPartData((d) => ({ ...d, description: newValue }))
-                }
-              />
+              <FormControl>
+                <FormLabel>Description</FormLabel>
+                <Input
+                  value={itemData.description}
+                  onChange={(e) =>
+                    setItemData((d) => ({ ...d, description: e.target.value }))
+                  }
+                />
+              </FormControl>
               {type !== "Comment" && (
                 <>
                   <NumberControlled
-                    minValue={partData.minimumOrderQuantity}
+                    minValue={itemData.minimumOrderQuantity}
                     name="purchaseQuantity"
                     label="Quantity"
-                    value={partData.quantity}
+                    value={itemData.purchaseQuantity}
                     onChange={(value) => {
-                      setPartData((d) => ({
+                      setItemData((d) => ({
                         ...d,
-                        quantity: value,
+                        purchaseQuantity: value,
                       }));
                     }}
                   />
                   <NumberControlled
                     name="unitPrice"
                     label="Unit Price"
-                    value={partData.unitPrice}
+                    value={itemData.unitPrice}
                     onChange={(value) =>
-                      setPartData((d) => ({
+                      setItemData((d) => ({
                         ...d,
                         unitPrice: value,
                       }))
                     }
                   />
 
-                  {type === "Part" && (
+                  {["Part", "Material", "Consumable"] && (
                     <>
                       <UnitOfMeasure
                         name="purchaseUnitOfMeasureCode"
                         label="Unit of Measure"
-                        value={partData.purchaseUom}
+                        value={itemData.purchaseUom}
                         onChange={(newValue) => {
                           if (newValue) {
-                            setPartData((d) => ({
+                            setItemData((d) => ({
                               ...d,
                               purchaseUom: newValue?.value as string,
                             }));
@@ -373,11 +388,11 @@ const PurchaseOrderLineForm = ({
                       />
                       <ConversionFactor
                         name="conversionFactor"
-                        purchasingCode={partData.purchaseUom}
-                        inventoryCode={partData.inventoryUom}
-                        value={partData.conversionFactor}
+                        purchasingCode={itemData.purchaseUom}
+                        inventoryCode={itemData.inventoryUom}
+                        value={itemData.conversionFactor}
                         onChange={(value) => {
-                          setPartData((d) => ({
+                          setItemData((d) => ({
                             ...d,
                             conversionFactor: value,
                           }));
@@ -386,7 +401,15 @@ const PurchaseOrderLineForm = ({
                     </>
                   )}
 
-                  {["Part", "Service"].includes(type) && (
+                  {[
+                    "Part",
+                    "Service",
+                    "Material",
+                    "Tool",
+                    "Fixture",
+                    "Consumable",
+                    "Fixed Asset",
+                  ].includes(type) && (
                     <ComboboxControlled
                       name="locationId"
                       label="Location"
@@ -395,17 +418,25 @@ const PurchaseOrderLineForm = ({
                       onChange={onLocationChange}
                     />
                   )}
-                  {type === "Part" && (
+                  {[
+                    "Part",
+                    "Service",
+                    "Material",
+                    "Tool",
+                    "Fixture",
+                    "Consumable",
+                    "Fixed Asset",
+                  ].includes(type) && (
                     <ComboboxControlled
                       name="shelfId"
                       label="Shelf"
                       options={shelfOptions}
-                      value={partData.shelfId}
+                      value={itemData.shelfId ?? ""}
                       onChange={(newValue) => {
                         if (newValue) {
-                          setPartData((d) => ({
+                          setItemData((d) => ({
                             ...d,
-                            shelfId: newValue?.value as string,
+                            shelfId: newValue.value,
                           }));
                         }
                       }}

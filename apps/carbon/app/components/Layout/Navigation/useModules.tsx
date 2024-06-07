@@ -20,8 +20,8 @@ export function useModules() {
   const modules: Authenticated<NavItem>[] = [
     {
       permission: "parts",
-      name: "Parts",
-      to: path.to.partsSearch,
+      name: "Items",
+      to: path.to.parts,
       icon: LuComponent,
     },
     // {

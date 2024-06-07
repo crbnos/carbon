@@ -92,7 +92,7 @@ export default function QuoteAssembly() {
     quoteId: quoteAssembly.quoteId,
     quoteLineId: quoteAssembly.quoteLineId,
     parentAssemblyId: quoteAssembly.parentAssemblyId ?? undefined,
-    partId: quoteAssembly.partId,
+    itemId: quoteAssembly.itemId,
     description: quoteAssembly.description ?? "",
     quantityPerParent: quoteAssembly.quantityPerParent,
     unitOfMeasureCode: quoteAssembly.unitOfMeasureCode ?? "",

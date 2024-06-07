@@ -13,7 +13,7 @@ import usePostingGroups from "./usePostingGroups";
 type InventoryPostingGroupsTableProps = {
   data: InventoryPostingGroup[];
   count: number;
-  partGroups: ListItem[];
+  itemGroups: ListItem[];
   locations: ListItem[];
   balanceSheetAccounts: AccountListItem[];
   incomeStatementAccounts: AccountListItem[];
@@ -22,7 +22,7 @@ type InventoryPostingGroupsTableProps = {
 const InventoryPostingGroupsTable = ({
   data,
   count,
-  partGroups,
+  itemGroups,
   locations,
   balanceSheetAccounts,
   incomeStatementAccounts,
@@ -46,12 +46,12 @@ const InventoryPostingGroupsTable = ({
   const columns = useMemo<ColumnDef<InventoryPostingGroup>[]>(() => {
     return [
       {
-        id: "partGroupId",
-        header: "Part Group",
+        id: "itemGroupId",
+        header: "Item Group",
         cell: ({ row }) => (
           <Enumerable
             value={
-              partGroups.find((group) => group.id === row.original.partGroupId)
+              itemGroups.find((group) => group.id === row.original.itemGroupId)
                 ?.name ?? null
             }
           />
@@ -59,7 +59,7 @@ const InventoryPostingGroupsTable = ({
         meta: {
           filter: {
             type: "static",
-            options: partGroups.map((group) => ({
+            options: itemGroups.map((group) => ({
               label: <Enumerable value={group.name} />,
               value: group.id,
             })),
@@ -158,7 +158,7 @@ const InventoryPostingGroupsTable = ({
         cell: (item) => item.getValue(),
       },
     ];
-  }, [locations, partGroups]);
+  }, [locations, itemGroups]);
 
   const editableComponents = useMemo(
     () => ({

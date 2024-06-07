@@ -63,7 +63,7 @@ export default function NewSalesOrderLineRoute() {
   const initialValues = {
     salesOrderId: orderId,
     salesOrderLineType: "Part" as SalesOrderLineType,
-    partId: "",
+    itemId: "",
     saleQuantity: 1,
     unitPrice: 0,
     setupPrice: 0,

@@ -97,7 +97,7 @@ export const useDocument = () => {
 
   const view = useCallback(
     (document: DocumentType) => {
-      navigate(`${path.to.documentView(document.id)}/?${params}`);
+      navigate(`${path.to.documentView(document.id!)}/?${params}`);
     },
     [navigate, params]
   );

@@ -1,4 +1,4 @@
 export * from "./customers";
-export * from "./parts";
+export * from "./items";
 export * from "./people";
 export * from "./suppliers";

@@ -37,7 +37,8 @@
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup src/index.tsx --format esm,cjs --watch --dts --external react",
     "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
-    "test": "jest"
+    "test": "jest",
+    "types": "tsc"
   },
   "sideEffects": false,
   "types": "./dist/index.d.ts",

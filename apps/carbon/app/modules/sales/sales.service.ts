@@ -646,16 +646,16 @@ export async function insertQuoteLinePrice(
   let unitCost = 0;
 
   if (quoteLine.data?.replenishmentSystem === "Buy") {
-    const partId = quoteLine.data?.partId;
-    const [partCost] = await Promise.all([
-      client.from("partCost").select("unitCost").eq("partId", partId).single(),
+    const itemId = quoteLine.data?.itemId;
+    const [itemCost] = await Promise.all([
+      client.from("itemCost").select("unitCost").eq("itemId", itemId).single(),
     ]);
 
-    if (partCost.error) {
-      return partCost;
+    if (itemCost.error) {
+      return itemCost;
     }
 
-    unitCost = partCost.data?.unitCost;
+    unitCost = itemCost.data?.unitCost;
   }
 
   const totalCost = unitCost * (quoteLinePrice.quantity ?? 0);

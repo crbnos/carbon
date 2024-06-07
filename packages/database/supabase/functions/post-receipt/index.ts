@@ -38,20 +38,20 @@ serve(async (req: Request) => {
 
     const companyId = receipt.data?.companyId;
 
-    const parts = await client
-      .from("part")
-      .select("id, partGroupId, partType")
+    const items = await client
+      .from("item")
+      .select("id, itemGroupId, itemInventoryType")
       .in(
         "id",
         receiptLines.data.reduce<string[]>((acc, receiptLine) => {
-          if (receiptLine.partId && !acc.includes(receiptLine.partId)) {
-            acc.push(receiptLine.partId);
+          if (receiptLine.itemId && !acc.includes(receiptLine.itemId)) {
+            acc.push(receiptLine.itemId);
           }
           return acc;
         }, [])
       )
       .eq("companyId", companyId);
-    if (parts.error) throw new Error("Failed to fetch part groups");
+    if (items.error) throw new Error("Failed to fetch item groups");
 
     switch (receipt.data?.sourceDocument) {
       case "Purchase Order": {
@@ -84,7 +84,7 @@ serve(async (req: Request) => {
 
         const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
           [];
-        const partLedgerInserts: Database["public"]["Tables"]["partLedger"]["Insert"][] =
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
         const journalLineInserts: Omit<
           Database["public"]["Tables"]["journalLine"]["Insert"],
@@ -194,26 +194,26 @@ serve(async (req: Request) => {
             | Database["public"]["Tables"]["postingGroupInventory"]["Row"]
             | null = null;
 
-          const partType =
-            parts.data.find((part) => part.id === receiptLine.partId)
-              ?.partType ?? "Inventory";
+          const itemInventoryType =
+            items.data.find((item) => item.id === receiptLine.itemId)
+              ?.itemInventoryType ?? "Inventory";
 
-          const partGroupId: string | null =
-            parts.data.find((part) => part.id === receiptLine.partId)
-              ?.partGroupId ?? null;
+          const itemGroupId: string | null =
+            items.data.find((item) => item.id === receiptLine.itemId)
+              ?.itemGroupId ?? null;
           const locationId = receiptLine.locationId ?? null;
           const supplierTypeId: string | null =
             supplier.data.supplierTypeId ?? null;
 
           // inventory posting group
-          if (`${partGroupId}-${locationId}` in inventoryPostingGroups) {
+          if (`${itemGroupId}-${locationId}` in inventoryPostingGroups) {
             postingGroupInventory =
-              inventoryPostingGroups[`${partGroupId}-${locationId}`];
+              inventoryPostingGroups[`${itemGroupId}-${locationId}`];
           } else {
             const inventoryPostingGroup = await getInventoryPostingGroup(
               client,
               {
-                partGroupId,
+                itemGroupId,
                 locationId,
               }
             );
@@ -223,7 +223,7 @@ serve(async (req: Request) => {
             }
 
             postingGroupInventory = inventoryPostingGroup.data ?? null;
-            inventoryPostingGroups[`${partGroupId}-${locationId}`] =
+            inventoryPostingGroups[`${itemGroupId}-${locationId}`] =
               postingGroupInventory;
           }
 
@@ -241,14 +241,14 @@ serve(async (req: Request) => {
             | Database["public"]["Tables"]["postingGroupPurchasing"]["Row"]
             | null = null;
 
-          if (`${partGroupId}-${supplierTypeId}` in purchasingPostingGroups) {
+          if (`${itemGroupId}-${supplierTypeId}` in purchasingPostingGroups) {
             postingGroupPurchasing =
-              purchasingPostingGroups[`${partGroupId}-${supplierTypeId}`];
+              purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`];
           } else {
             const purchasingPostingGroup = await getPurchasingPostingGroup(
               client,
               {
-                partGroupId,
+                itemGroupId,
                 supplierTypeId,
               }
             );
@@ -258,7 +258,7 @@ serve(async (req: Request) => {
             }
 
             postingGroupPurchasing = purchasingPostingGroup.data ?? null;
-            purchasingPostingGroups[`${partGroupId}-${supplierTypeId}`] =
+            purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`] =
               postingGroupPurchasing;
           }
 
@@ -418,13 +418,14 @@ serve(async (req: Request) => {
 
             // create the cost ledger entry
             costLedgerInserts.push({
-              partLedgerType: "Purchase",
+              itemLedgerType: "Purchase",
               costLedgerType: "Direct Cost",
               adjustment: false,
               documentType: "Purchase Receipt",
               documentId: receipt.data?.id ?? undefined,
               externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
-              partId: receiptLine.partId,
+              itemId: receiptLine.itemId,
+              itemReadableId: receiptLine.itemReadableId ?? "",
               quantity: quantityToReverse,
               cost: reversedValue,
               costPostedToGL: reversedValue,
@@ -435,7 +436,7 @@ serve(async (req: Request) => {
 
             let journalLineReference = nanoid();
 
-            if (partType === "Inventory") {
+            if (itemInventoryType === "Inventory") {
               // debit the inventory account
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.inventoryAccount,
@@ -580,10 +581,11 @@ serve(async (req: Request) => {
             });
           }
 
-          if (partType === "Inventory") {
-            partLedgerInserts.push({
+          if (itemInventoryType === "Inventory") {
+            itemLedgerInserts.push({
               postingDate: today,
-              partId: receiptLine.partId,
+              itemId: receiptLine.itemId,
+              itemReadableId: receiptLine.itemReadableId ?? "",
               quantity: receiptLine.receivedQuantity,
               locationId: receiptLine.locationId,
               shelfId: receiptLine.shelfId,
@@ -686,10 +688,10 @@ serve(async (req: Request) => {
             .returning(["id"])
             .execute();
 
-          if (partLedgerInserts.length > 0) {
+          if (itemLedgerInserts.length > 0) {
             await trx
-              .insertInto("partLedger")
-              .values(partLedgerInserts)
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
               .returning(["id"])
               .execute();
           }

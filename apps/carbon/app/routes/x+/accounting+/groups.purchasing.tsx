@@ -8,7 +8,7 @@ import {
   PurchasingPostingGroupsTable,
   getPurchasingPostingGroups,
 } from "~/modules/accounting";
-import { getPartGroupsList } from "~/modules/parts";
+import { getItemGroupsList } from "~/modules/items";
 import { getSupplierTypesList } from "~/modules/purchasing";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -32,14 +32,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [purchasingGroups, partGroups, supplierTypes] = await Promise.all([
+  const [purchasingGroups, itemGroups, supplierTypes] = await Promise.all([
     getPurchasingPostingGroups(client, companyId, {
       limit,
       offset,
       sorts,
       filters,
     }),
-    getPartGroupsList(client, companyId),
+    getItemGroupsList(client, companyId),
     getSupplierTypesList(client, companyId),
   ]);
   if (purchasingGroups.error) {
@@ -57,14 +57,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return json({
     data: purchasingGroups.data ?? [],
-    partGroups: partGroups.data ?? [],
+    itemGroups: itemGroups.data ?? [],
     supplierTypes: supplierTypes.data ?? [],
     count: purchasingGroups.count ?? 0,
   });
 }
 
 export default function PurchasingPostingGroupsRoute() {
-  const { data, partGroups, supplierTypes, count } =
+  const { data, itemGroups, supplierTypes, count } =
     useLoaderData<typeof loader>();
 
   const routeData = useRouteData<{
@@ -77,7 +77,7 @@ export default function PurchasingPostingGroupsRoute() {
       <PurchasingPostingGroupsTable
         data={data}
         count={count}
-        partGroups={partGroups}
+        itemGroups={itemGroups}
         supplierTypes={supplierTypes}
         balanceSheetAccounts={routeData?.balanceSheetAccounts ?? []}
         incomeStatementAccounts={routeData?.incomeStatementAccounts ?? []}

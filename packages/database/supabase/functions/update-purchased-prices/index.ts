@@ -31,9 +31,9 @@ serve(async (req: Request) => {
     if (purchaseInvoiceLines.error)
       throw new Error("Failed to fetch receipt lines");
 
-    const partIds = purchaseInvoiceLines.data
-      .filter((line) => Boolean(line.partId))
-      .map((line) => line.partId);
+    const itemIds = purchaseInvoiceLines.data
+      .filter((line) => Boolean(line.itemId))
+      .map((line) => line.itemId);
 
     const dateOneYearAgo = format(
       new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
@@ -42,26 +42,27 @@ serve(async (req: Request) => {
 
     const companyId = purchaseInvoice.data.companyId;
 
-    const [costLedgers, partSuppliers] = await Promise.all([
+    const [costLedgers, itemSuppliers] = await Promise.all([
       client
         .from("costLedger")
         .select("*")
-        .in("partId", partIds)
+        .in("itemId", itemIds)
         .eq("companyId", companyId)
         .gte("postingDate", dateOneYearAgo),
       client
-        .from("partSupplier")
+        .from("itemSupplier")
         .select("*")
+
         .eq("supplierId", purchaseInvoice.data?.supplierId ?? "")
-        .in("partId", partIds)
+        .in("itemId", itemIds)
         .eq("companyId", companyId),
     ]);
 
-    const partCostUpdates: Database["public"]["Tables"]["partCost"]["Update"][] =
+    const itemCostUpdates: Database["public"]["Tables"]["itemCost"]["Update"][] =
       [];
-    const partSupplierInserts: Database["public"]["Tables"]["partSupplier"]["Insert"][] =
+    const itemSupplierInserts: Database["public"]["Tables"]["itemSupplier"]["Insert"][] =
       [];
-    const partSupplierUpdates: Database["public"]["Tables"]["partSupplier"]["Update"][] =
+    const itemSupplierUpdates: Database["public"]["Tables"]["itemSupplier"]["Update"][] =
       [];
 
     const historicalPartCosts: Record<
@@ -70,46 +71,46 @@ serve(async (req: Request) => {
     > = {};
 
     costLedgers.data?.forEach((ledger) => {
-      if (ledger.partId) {
-        if (!historicalPartCosts[ledger.partId]) {
-          historicalPartCosts[ledger.partId] = {
+      if (ledger.itemId) {
+        if (!historicalPartCosts[ledger.itemId]) {
+          historicalPartCosts[ledger.itemId] = {
             quantity: 0,
             cost: 0,
           };
         }
 
-        historicalPartCosts[ledger.partId].quantity += ledger.quantity;
-        historicalPartCosts[ledger.partId].cost += ledger.cost;
+        historicalPartCosts[ledger.itemId].quantity += ledger.quantity;
+        historicalPartCosts[ledger.itemId].cost += ledger.cost;
       }
     });
 
     purchaseInvoiceLines.data.forEach((line) => {
-      if (line.partId && historicalPartCosts[line.partId]) {
-        partCostUpdates.push({
-          partId: line.partId,
+      if (line.itemId && historicalPartCosts[line.itemId]) {
+        itemCostUpdates.push({
+          itemId: line.itemId,
           unitCost:
-            historicalPartCosts[line.partId].cost /
-            historicalPartCosts[line.partId].quantity,
+            historicalPartCosts[line.itemId].cost /
+            historicalPartCosts[line.itemId].quantity,
           updatedBy: "system",
         });
 
-        const partSupplier = partSuppliers.data?.find(
-          (partSupplier) =>
-            partSupplier.partId === line.partId &&
-            partSupplier.supplierId === purchaseInvoice.data?.supplierId
+        const itemSupplier = itemSuppliers.data?.find(
+          (itemSupplier) =>
+            itemSupplier.itemId === line.itemId &&
+            itemSupplier.supplierId === purchaseInvoice.data?.supplierId
         );
 
-        if (partSupplier && partSupplier.id) {
-          partSupplierUpdates.push({
-            id: partSupplier.id,
+        if (itemSupplier && itemSupplier.id) {
+          itemSupplierUpdates.push({
+            id: itemSupplier.id,
             unitPrice: line.unitPrice,
             conversionFactor: line.conversionFactor ?? 1,
             supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
             updatedBy: "system",
           });
         } else {
-          partSupplierInserts.push({
-            partId: line.partId,
+          itemSupplierInserts.push({
+            itemId: line.itemId,
             supplierId: purchaseInvoice.data?.supplierId!,
             unitPrice: line.unitPrice,
             conversionFactor: line.conversionFactor ?? 1,
@@ -122,30 +123,30 @@ serve(async (req: Request) => {
     });
 
     await db.transaction().execute(async (trx) => {
-      if (partCostUpdates.length > 0) {
-        for await (const partCostUpdate of partCostUpdates) {
+      if (itemCostUpdates.length > 0) {
+        for await (const itemCostUpdate of itemCostUpdates) {
           await trx
-            .updateTable("partCost")
-            .set(partCostUpdate)
-            .where("partId", "=", partCostUpdate.partId!)
+            .updateTable("itemCost")
+            .set(itemCostUpdate)
+            .where("itemId", "=", itemCostUpdate.itemId!)
             .where("companyId", "=", companyId)
             .execute();
         }
       }
 
-      if (partSupplierInserts.length > 0) {
+      if (itemSupplierInserts.length > 0) {
         await trx
-          .insertInto("partSupplier")
-          .values(partSupplierInserts)
+          .insertInto("itemSupplier")
+          .values(itemSupplierInserts)
           .execute();
       }
 
-      if (partSupplierUpdates.length > 0) {
-        for await (const partSupplierUpdate of partSupplierUpdates) {
+      if (itemSupplierUpdates.length > 0) {
+        for await (const itemSupplierUpdate of itemSupplierUpdates) {
           await trx
-            .updateTable("partSupplier")
-            .set(partSupplierUpdate)
-            .where("id", "=", partSupplierUpdate.id!)
+            .updateTable("itemSupplier")
+            .set(itemSupplierUpdate)
+            .where("id", "=", itemSupplierUpdate.id!)
             .execute();
         }
       }

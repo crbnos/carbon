@@ -11,18 +11,27 @@ CREATE OR REPLACE VIEW "customers" WITH(SECURITY_INVOKER=true) AS
 DROP VIEW "parts";
 CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS 
   SELECT
+    i.name,
+    i.description,
+    i."itemGroupId",
+    i."itemInventoryType",
+    i.active,
+    i.blocked,
     p.*,
-    pg.name AS "partGroup",
-    ps."supplierIds"
+    pg.name AS "itemGroup",
+    ps."supplierIds",
+    uom.name as "unitOfMeasure"
   FROM "part" p
-  LEFT JOIN "partGroup" pg ON pg.id = p."partGroupId"
+  INNER JOIN "item" i ON i.id = p."itemId"
+  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
-      "partId",
+      "itemId",
       array_agg(ps."supplierId") AS "supplierIds"
-    FROM "partSupplier" ps
-    GROUP BY "partId"
-  )  ps ON ps."partId" = p.id;
+    FROM "itemSupplier" ps
+    GROUP BY "itemId"
+  )  ps ON ps."itemId" = p."itemId"
+  LEFT JOIN "unitOfMeasure" uom ON uom.code = p."unitOfMeasureCode" AND uom."companyId" = p."companyId";
   
 DROP VIEW "purchaseOrders";
 CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
@@ -86,13 +95,13 @@ CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
   SELECT 
   q.*,
   l."name" AS "locationName",
-  ql."partIds",
+  ql."itemIds",
   EXISTS(SELECT 1 FROM "quoteFavorite" pf WHERE pf."quoteId" = q.id AND pf."userId" = auth.uid()::text) AS favorite
   FROM "quote" q
   LEFT JOIN (
     SELECT 
       "quoteId",
-      array_agg("partId") AS "partIds"
+      array_agg("itemId") AS "itemIds"
     FROM "quoteLine"
     GROUP BY "quoteId"
   ) ql ON ql."quoteId" = q.id
@@ -114,7 +123,7 @@ CREATE OR REPLACE VIEW "requestForQuotes" WITH(SECURITY_INVOKER=true) AS
   r.*,
   l."name" AS "locationName",
   rs."supplierIds",
-  rp."partIds",
+  rp."itemIds",
   EXISTS(SELECT 1 FROM "requestForQuoteFavorite" pf WHERE pf."requestForQuoteId" = r.id AND pf."userId" = auth.uid()::text) AS favorite
 FROM "requestForQuote" r
 LEFT JOIN "location" l
@@ -130,7 +139,7 @@ LEFT JOIN (
 LEFT JOIN (
   SELECT
     "requestForQuoteId",
-    array_agg(rp."partId") AS "partIds"
+    array_agg(rp."itemId") AS "itemIds"
   FROM "requestForQuoteLine" rp
   GROUP BY "requestForQuoteId"
 ) rp
@@ -140,10 +149,16 @@ DROP VIEW "services";
 CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
   SELECT
     s.*,
-    pg.name AS "partGroup",
+    i.name,
+    i.description,
+    i."itemGroupId",
+    i.active,
+    i.blocked,
+    pg.name AS "itemGroup",
     ss."supplierIds"
   FROM "service" s
-  LEFT JOIN "partGroup" pg ON pg.id = s."partGroupId"
+  INNER JOIN "item" i ON i.id = s."itemId"
+  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "serviceId",
@@ -175,6 +190,6 @@ CREATE OR REPLACE VIEW "suppliers" WITH(SECURITY_INVOKER=true) AS
     SELECT 
       "supplierId",
       COUNT(*) AS "count"
-    FROM "partSupplier"
+    FROM "itemSupplier"
     GROUP BY "supplierId"
   ) p ON p."supplierId" = s.id;

@@ -1,7 +1,7 @@
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
-import { getUnitOfMeasuresList } from "~/modules/parts";
+import { getUnitOfMeasuresList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";
@@ -12,8 +12,8 @@ export const meta: MetaFunction = () => {
 };
 
 export const handle: Handle = {
-  breadcrumb: "Parts",
-  to: path.to.partsSearch,
+  breadcrumb: "Items",
+  to: path.to.items,
   module: "parts",
 };
 

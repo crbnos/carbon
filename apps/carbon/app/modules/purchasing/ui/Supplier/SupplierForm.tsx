@@ -97,8 +97,8 @@ const SupplierForm = ({
 
                 <SupplierType
                   name="supplierTypeId"
-                  label="Supplier Type"
-                  placeholder="Select Supplier Type"
+                  label="Posting Group"
+                  placeholder="Select Posting Group"
                 />
                 <SupplierStatus
                   name="supplierStatusId"

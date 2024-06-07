@@ -13,7 +13,7 @@ import type {
   defaultBalanceSheetAccountValidator,
   defaultIncomeAcountValidator,
   fiscalYearSettingsValidator,
-  partLedgerValidator,
+  itemLedgerValidator,
   paymentTermValidator,
 } from "./accounting.models";
 import type { Account, Transaction } from "./types";
@@ -472,16 +472,16 @@ export async function getFiscalYearSettings(
 export async function getInventoryPostingGroup(
   client: SupabaseClient<Database>,
   args: {
-    partGroupId: string | null;
+    itemGroupId: string | null;
     locationId: string | null;
   }
 ) {
   let query = client.from("postingGroupInventory").select("*");
 
-  if (args.partGroupId === null) {
-    query = query.is("partGroupId", null);
+  if (args.itemGroupId === null) {
+    query = query.is("itemGroupId", null);
   } else {
-    query = query.eq("partGroupId", args.partGroupId);
+    query = query.eq("itemGroupId", args.itemGroupId);
   }
 
   if (args.locationId === null) {
@@ -506,7 +506,7 @@ export async function getInventoryPostingGroups(
     .eq("companyId", companyId);
 
   query = setGenericQueryFilters(query, args, [
-    { column: "partGroupId", ascending: false },
+    { column: "itemGroupId", ascending: false },
   ]);
   return query;
 }
@@ -562,16 +562,16 @@ export async function getPaymentTermsList(
 export async function getPurchasingPostingGroup(
   client: SupabaseClient<Database>,
   args: {
-    partGroupId: string | null;
+    itemGroupId: string | null;
     supplierTypeId: string | null;
   }
 ) {
   let query = client.from("postingGroupInventory").select("*");
 
-  if (args.partGroupId === null) {
-    query = query.is("partGroupId", null);
+  if (args.itemGroupId === null) {
+    query = query.is("itemGroupId", null);
   } else {
-    query = query.eq("partGroupId", args.partGroupId);
+    query = query.eq("itemGroupId", args.itemGroupId);
   }
 
   if (args.supplierTypeId === null) {
@@ -596,7 +596,7 @@ export async function getPurchasingPostingGroups(
     .eq("companyId", companyId);
 
   query = setGenericQueryFilters(query, args, [
-    { column: "partGroupId", ascending: false },
+    { column: "itemGroupId", ascending: false },
   ]);
   return query;
 }
@@ -604,16 +604,16 @@ export async function getPurchasingPostingGroups(
 export async function getPurchasingSalesGroup(
   client: SupabaseClient<Database>,
   args: {
-    partGroupId: string | null;
+    itemGroupId: string | null;
     customerTypeId: string | null;
   }
 ) {
   let query = client.from("postingGroupInventory").select("*");
 
-  if (args.partGroupId === null) {
-    query = query.is("partGroupId", null);
+  if (args.itemGroupId === null) {
+    query = query.is("itemGroupId", null);
   } else {
-    query = query.eq("partGroupId", args.partGroupId);
+    query = query.eq("itemGroupId", args.itemGroupId);
   }
 
   if (args.customerTypeId === null) {
@@ -638,27 +638,27 @@ export async function getSalesPostingGroups(
     .eq("companyId", companyId);
 
   query = setGenericQueryFilters(query, args, [
-    { column: "partGroupId", ascending: false },
+    { column: "itemGroupId", ascending: false },
   ]);
   return query;
 }
 
 export async function insertPartEntries(
   client: SupabaseClient<Database>,
-  partEntries: (z.infer<typeof partLedgerValidator> & {
+  itemEntries: (z.infer<typeof itemLedgerValidator> & {
     companyId: string;
   })[]
 ) {
-  return client.from("partLedger").insert(partEntries);
+  return client.from("itemLedger").insert(itemEntries);
 }
 
-export async function insertPartLedger(
+export async function insertItemLedger(
   client: SupabaseClient<Database>,
-  partEntry: z.infer<typeof partLedgerValidator> & {
+  itemEntry: z.infer<typeof itemLedgerValidator> & {
     companyId: string;
   }
 ) {
-  return client.from("partLedger").insert([partEntry]);
+  return client.from("itemLedger").insert([itemEntry]);
 }
 
 export async function updateDefaultBalanceSheetAccounts(

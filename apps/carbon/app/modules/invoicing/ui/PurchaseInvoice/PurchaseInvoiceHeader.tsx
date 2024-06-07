@@ -35,7 +35,7 @@ const PurchaseInvoiceHeader = () => {
 
   const { supabase } = useSupabase();
   const [linesNotAssociatedWithPO, setLinesNotAssociatedWithPO] = useState<
-    { partId: string | null; quantity: number }[]
+    { itemId: string | null; itemReadableId: string | null; quantity: number }[]
   >([]);
 
   if (!invoiceId) throw new Error("invoiceId not found");
@@ -63,7 +63,7 @@ const PurchaseInvoiceHeader = () => {
     if (!supabase) throw new Error("supabase not found");
     const { data, error } = await supabase
       .from("purchaseInvoiceLine")
-      .select("partId, quantity, conversionFactor")
+      .select("itemId, itemReadableId, quantity, conversionFactor")
       .eq("invoiceId", invoiceId)
       .eq("invoiceLineType", "Part")
       .is("purchaseOrderLineId", null);
@@ -73,7 +73,7 @@ const PurchaseInvoiceHeader = () => {
 
     // so that we can ask the user if they want to receive those lines
     setLinesNotAssociatedWithPO(
-      data.map((d) => ({
+      data?.map((d) => ({
         ...d,
         quantity: d.quantity * (d.conversionFactor ?? 1),
       })) ?? []

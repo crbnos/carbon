@@ -2,8 +2,8 @@ import idb from "localforage";
 import { useEffect } from "react";
 import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import { useCustomers, useParts, usePeople, useSuppliers } from "~/stores";
-import type { Part } from "~/stores/parts";
+import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
+import type { Item } from "~/stores/items";
 import type { ListItem } from "~/types";
 
 let hydratedFromIdb = false;
@@ -15,7 +15,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     company: { id: companyId },
   } = useUser();
 
-  const [, setParts] = useParts();
+  const [, setItems] = useItems();
   const [, setSuppliers] = useSuppliers();
   const [, setCustomers] = useCustomers();
   const [, setPeople] = usePeople();
@@ -27,8 +27,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       idb.getItem("customers").then((data) => {
         if (data && !hydratedFromServer) setCustomers(data as ListItem[], true);
       });
-      idb.getItem("parts").then((data) => {
-        if (data && !hydratedFromServer) setParts(data as Part[], true);
+      idb.getItem("items").then((data) => {
+        if (data && !hydratedFromServer) setItems(data as Item[], true);
       });
       idb.getItem("suppliers").then((data) => {
         if (data && !hydratedFromServer) setSuppliers(data as ListItem[], true);
@@ -41,10 +41,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (!supabase || !accessToken) return;
 
-    const [parts, suppliers, customers, people] = await Promise.all([
+    const [items, suppliers, customers, people] = await Promise.all([
       supabase
-        .from("part")
-        .select("id, name, replenishmentSystem")
+        .from("item")
+        .select("id, readableId, name, type")
         .eq("companyId", companyId)
         .eq("active", true)
         .eq("blocked", false)
@@ -66,13 +66,23 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         .order("name"),
     ]);
 
-    if (parts.error || suppliers.error || customers.error || people.error) {
-      throw new Error("Failed to fetch core data");
+    if (items.error) {
+      throw new Error("Failed to fetch items");
+    }
+    if (suppliers.error) {
+      throw new Error("Failed to fetch suppliers");
+    }
+    if (customers.error) {
+      throw new Error("Failed to fetch customers");
+    }
+    if (people.error) {
+      throw new Error("Failed to fetch people");
     }
 
     hydratedFromServer = true;
 
-    setParts(parts.data ?? []);
+    // @ts-ignore
+    setItems(items.data ?? []);
     setSuppliers(suppliers.data ?? []);
     setCustomers(customers.data ?? []);
     // @ts-ignore
@@ -92,7 +102,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         {
           event: "*",
           schema: "public",
-          table: "part",
+          table: "item",
         },
         (payload) => {
           if ("companyId" in payload.new && payload.new.companyId !== companyId)
@@ -100,37 +110,41 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           switch (payload.eventType) {
             case "INSERT":
               const { new: inserted } = payload;
-              setParts((parts) =>
-                [
-                  ...parts,
-                  {
-                    id: inserted.id,
-                    name: inserted.name,
-                    replenishmentSystem: inserted.replenishmentSystem,
-                  },
-                ].sort((a, b) => a.name.localeCompare(b.name))
-              );
+              if (inserted.active && !inserted.blocked) {
+                setItems((items) =>
+                  [
+                    ...items,
+                    {
+                      id: inserted.id,
+                      readableId: inserted.readableId,
+                      name: inserted.name,
+                      type: inserted.type,
+                    },
+                  ].sort((a, b) => a.name.localeCompare(b.name))
+                );
+              }
               break;
             case "UPDATE":
               const { new: updated } = payload;
-              setParts((parts) =>
-                parts
-                  .map((p) => {
-                    if (p.id === updated.id) {
+              setItems((items) =>
+                items
+                  .map((i) => {
+                    if (i.id === updated.id) {
                       return {
-                        ...p,
+                        ...i,
+                        readableId: updated.readableId,
                         name: updated.name,
-                        replenishmentSystem: updated.replenishmentSystem,
+                        description: updated.description,
                       };
                     }
-                    return p;
+                    return i;
                   })
                   .sort((a, b) => a.name.localeCompare(b.name))
               );
               break;
             case "DELETE":
               const { old: deleted } = payload;
-              setParts((parts) => parts.filter((p) => p.id !== deleted.id));
+              setItems((items) => items.filter((p) => p.id !== deleted.id));
               break;
             default:
               break;

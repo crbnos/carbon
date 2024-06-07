@@ -72,7 +72,7 @@ export default function NewQuoteAssembly() {
     quoteId,
     quoteLineId: lineId,
     parentAssemblyId: parentAssemblyId ?? undefined,
-    partId: "",
+    itemId: "",
     description: "",
     quantityPerParent: 1,
   };

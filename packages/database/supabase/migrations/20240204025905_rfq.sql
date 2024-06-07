@@ -32,7 +32,7 @@ CREATE INDEX "requestForQuote_locationId_idx" ON "requestForQuote" ("locationId"
 CREATE TABLE "requestForQuoteLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "requestForQuoteId" TEXT NOT NULL,
-  "partId" TEXT NOT NULL,
+  "itemId" TEXT NOT NULL,
   "description" TEXT,
   "quantity" NUMERIC(20, 2) NOT NULL,
   "unitPrice" NUMERIC(20, 2) NOT NULL DEFAULT 0,
@@ -48,7 +48,7 @@ CREATE TABLE "requestForQuoteLine" (
 
   CONSTRAINT "requestForQuoteLine_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "requestForQuoteLine_requestForQuoteId_fkey" FOREIGN KEY ("requestForQuoteId") REFERENCES "requestForQuote"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "requestForQuoteLine_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part"("id", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "requestForQuoteLine_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "requestForQuoteLine_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT "requestForQuoteLine_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT "requestForQuoteLine_shelfId_fkey"  FOREIGN KEY ("shelfId", "locationId") REFERENCES "shelf" ("id", "locationId") ON DELETE CASCADE,
@@ -58,7 +58,7 @@ CREATE TABLE "requestForQuoteLine" (
 );
 
 CREATE INDEX "requestForQuoteLine_requestForQuoteId_idx" ON "requestForQuoteLine" ("requestForQuoteId");
-CREATE INDEX "requestForQuoteLine_partId_idx" ON "requestForQuoteLine" ("partId");
+CREATE INDEX "requestForQuoteLine_itemId_idx" ON "requestForQuoteLine" ("itemId");
 CREATE INDEX "requestForQuoteLine_locationId_idx" ON "requestForQuoteLine" ("locationId");
 
 CREATE TABLE "requestForQuoteSupplier" (
@@ -155,7 +155,7 @@ CREATE OR REPLACE VIEW "requestForQuotes" WITH(SECURITY_INVOKER=true) AS
   uu."avatarUrl" AS "updatedByAvatar",
   l."name" AS "locationName",
   array_agg(rs."supplierId") AS "supplierIds",
-  array_agg(rl."partId") AS "partIds",
+  array_agg(rl."itemId") AS "itemIds",
   EXISTS(SELECT 1 FROM "requestForQuoteFavorite" pf WHERE pf."requestForQuoteId" = r.id AND pf."userId" = auth.uid()::text) AS favorite
 FROM "requestForQuote" r
 LEFT JOIN "location" l

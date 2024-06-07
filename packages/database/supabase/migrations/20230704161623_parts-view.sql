@@ -1,27 +1,34 @@
 CREATE OR REPLACE VIEW "parts" AS 
   SELECT
     p.id,
-    p.name,
-    p.description,
-    p."partType",
-    p."partGroupId",
-    pg.name AS "partGroup",
+    p."itemId",
+    i.name,
+    i.description,
+    i."itemGroupId",
+    i."itemInventoryType",
+    pg.name AS "itemGroup",
+    uom.name as "unitOfMeasure",
     p."replenishmentSystem",
-    p.active,
+    i.active,
+    i.blocked,
     p."customFields",
     p."companyId",
-    array_agg(ps."supplierId") AS "supplierIds"
+    array_agg(s."supplierId") AS "supplierIds"
   FROM "part" p
-  LEFT JOIN "partGroup" pg ON pg.id = p."partGroupId"
-  LEFT JOIN "partSupplier" ps ON ps."partId" = p.id
+  INNER JOIN "item" i ON i.id = p."itemId"
+  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
+  LEFT JOIN "itemSupplier" s ON s."itemId" = p."itemId"
+  LEFT JOIN "unitOfMeasure" uom ON uom.code = p."unitOfMeasureCode" AND uom."companyId" = p."companyId"
   GROUP BY p.id,
-    p.name,
-    p.description,
-    p."partType",
-    p."partGroupId",
+    i.name,
+    i.description,
+    i."itemGroupId",
+    i."itemInventoryType",
     pg.name,
     p."replenishmentSystem",
-    p.active,
+    i.active,
+    i.blocked,
     p."customFields",
-    p."companyId";
+    p."companyId",
+    uom.name;
   

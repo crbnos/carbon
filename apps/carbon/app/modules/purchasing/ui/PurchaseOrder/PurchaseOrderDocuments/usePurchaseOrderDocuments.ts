@@ -14,7 +14,7 @@ export const usePurchaseOrderDocuments = ({ isExternal, orderId }: Props) => {
   const fetcher = useFetcher();
   const permissions = usePermissions();
   const { supabase } = useSupabase();
-  const { id: companyId } = useUser();
+  const { company } = useUser();
 
   const canDelete = permissions.can("delete", "purchasing"); // TODO: or is document owner
 
@@ -25,11 +25,11 @@ export const usePurchaseOrderDocuments = ({ isExternal, orderId }: Props) => {
 
   const getPath = useCallback(
     (attachment: PurchaseOrderAttachment) => {
-      return `/${companyId}/purchasing/${
+      return `/${company.id}/purchasing/${
         isExternal ? "external" : "internal"
       }/${orderId}/${attachment.name}`;
     },
-    [companyId, isExternal, orderId]
+    [company.id, isExternal, orderId]
   );
 
   const deleteAttachment = useCallback(

@@ -66,7 +66,7 @@ export default function NewPurchaseInvoiceLineRoute() {
   const initialValues = {
     invoiceId: invoiceId,
     invoiceLineType: "Part" as PurchaseInvoiceLineType,
-    partId: "",
+    itemId: "",
     quantity: 1,
     unitPrice: 0,
     setupPrice: 0,

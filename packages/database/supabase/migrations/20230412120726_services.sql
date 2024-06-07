@@ -5,12 +5,8 @@ CREATE TYPE "serviceType" AS ENUM (
 
 CREATE TABLE "service" (
   "id" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
-  "description" TEXT,
-  "blocked" BOOLEAN NOT NULL DEFAULT false,
-  "partGroupId" TEXT,
+  "itemId" TEXT,
   "serviceType" "serviceType" NOT NULL,
-  "active" BOOLEAN NOT NULL DEFAULT true,
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
   "fromDate" DATE,
@@ -24,7 +20,7 @@ CREATE TABLE "service" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
 
   CONSTRAINT "service_pkey" PRIMARY KEY ("id", "companyId"),
-  CONSTRAINT "service_partGroupId_fkey" FOREIGN KEY ("partGroupId") REFERENCES "partGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "service_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "service_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "service_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
   CONSTRAINT "service_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
@@ -33,6 +29,8 @@ CREATE TABLE "service" (
 );
 
 CREATE INDEX "service_companyId_idx" ON "service"("companyId");
+CREATE INDEX "service_itemId_idx" ON "service"("itemId");
+CREATE INDEX "service_serviceType_idx" ON "service"("serviceType", "companyId");
 
 CREATE POLICY "Employees can view services" ON "service"
   FOR SELECT
@@ -145,31 +143,34 @@ CREATE POLICY "Suppliers with parts_update can update their own part suppliers" 
 CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
   SELECT
     s."id",
-    s."name",
-    s."description",
-    s."blocked",
-    s."partGroupId",
+    s."itemId",
+    i."name",
+    i."description",
+    i."blocked",
+    i."itemGroupId",
     s."serviceType",
-    s."active",
+    i."active",
     s."approved",
     s."approvedBy",
     s."fromDate",
     s."toDate",
     s."customFields",
     s."companyId",
-    pg.name AS "partGroup",
+    pg.name AS "itemGroup",
     array_agg(ss."supplierId") AS "supplierIds"
   FROM "service" s
-  LEFT JOIN "partGroup" pg ON pg.id = s."partGroupId"
+  INNER JOIN "item" i ON i."id" = s."itemId"
+  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN "serviceSupplier" ss ON ss."serviceId" = s.id
   GROUP BY 
     s."id",
-    s."name",
-    s."description",
-    s."blocked",
-    s."partGroupId",
+    s."itemId",
+    i."name",
+    i."description",
+    i."blocked",
+    i."itemGroupId",
+    i."active",
     s."serviceType",
-    s."active",
     s."approved",
     s."approvedBy",
     s."fromDate",

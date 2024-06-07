@@ -38,7 +38,7 @@ import { useAccountingSubmodules } from "~/modules/accounting";
 import { useDocumentsSubmodules } from "~/modules/documents";
 import { useInventorySubmodules } from "~/modules/inventory";
 import { useInvoicingSubmodules } from "~/modules/invoicing";
-import { usePartsSubmodules } from "~/modules/parts";
+import { usePartsSubmodules } from "~/modules/items";
 import { usePurchasingSubmodules } from "~/modules/purchasing";
 import { useResourcesSubmodules } from "~/modules/resources";
 import { useSalesSubmodules } from "~/modules/sales";

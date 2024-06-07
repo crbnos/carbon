@@ -29,7 +29,7 @@ const RequestForQuotesTable = memo(
     const fetcher = useFetcher();
     const optimisticFavorite = useOptimisticFavorite();
 
-    const [parts] = useParts();
+    const parts = useParts();
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
 
@@ -168,9 +168,9 @@ const RequestForQuotesTable = memo(
           },
         },
         {
-          id: "partIds",
-          header: "Parts",
-          cell: ({ row }) => row.original.partIds?.length ?? 0,
+          id: "itemIds",
+          header: "Items",
+          cell: ({ row }) => row.original.itemIds?.length ?? 0,
           meta: {
             filter: {
               type: "static",
@@ -235,7 +235,7 @@ const RequestForQuotesTable = memo(
       createdBy: false,
       updatedAt: false,
       updatedBy: false,
-      partIds: false,
+      itemIds: false,
       supplierIds: false,
     };
 

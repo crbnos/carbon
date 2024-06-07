@@ -1,7 +1,7 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { PartForm, partValidator, upsertPart } from "~/modules/parts";
+import { PartForm, partValidator, upsertPart } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
@@ -38,17 +38,17 @@ export async function action({ request }: ActionFunctionArgs) {
           await flash(request, error(createPart.error, "Failed to insert part"))
         )
       : redirect(
-          path.to.partsSearch,
+          path.to.parts,
           await flash(request, error(createPart.error, "Failed to insert part"))
         );
   }
 
-  const partId = createPart.data?.id;
-  if (!partId) throw new Error("Part ID not found");
+  const itemId = createPart.data?.itemId;
+  if (!itemId) throw new Error("Part ID not found");
 
   return modal
     ? json(createPart, { status: 201 })
-    : redirect(path.to.part(partId));
+    : redirect(path.to.part(itemId));
 }
 
 export default function PartsNewRoute() {
@@ -56,7 +56,7 @@ export default function PartsNewRoute() {
     id: "",
     name: "",
     description: "",
-    partType: "Inventory" as "Inventory",
+    itemInventoryType: "Inventory" as "Inventory",
     replenishmentSystem: "Buy" as "Buy",
     unitOfMeasureCode: "EA",
     blocked: false,

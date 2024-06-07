@@ -34,7 +34,7 @@ const job = triggerClient.defineJob({
   }),
   run: async (payload, io, ctx) => {
     const integration = await supabaseClient
-      .from("integration")
+      .from("companyIntegration")
       .select("active, metadata")
       .eq("companyId", payload.companyId)
       .eq("id", "resend")

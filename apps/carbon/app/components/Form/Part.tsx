@@ -1,38 +1,28 @@
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { PartForm, type PartReplenishmentSystem } from "~/modules/parts";
+import { PartForm, type ItemReplenishmentSystem } from "~/modules/items";
 import { useParts } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
 type PartSelectProps = Omit<ComboboxProps, "options"> & {
-  partReplenishmentSystem?: PartReplenishmentSystem;
+  partReplenishmentSystem?: ItemReplenishmentSystem;
 };
 
 const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
-  const [parts] = useParts();
+  const parts = useParts();
   const newPartsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(
     () =>
-      parts
-        .filter((part) => {
-          if (partReplenishmentSystem === "Buy") {
-            return ["Buy", "Buy and Make"].includes(part.replenishmentSystem);
-          } else if (partReplenishmentSystem === "Make") {
-            return ["Make", "Buy and Make"].includes(part.replenishmentSystem);
-          } else {
-            return true;
-          }
-        })
-        .map((part) => ({
-          value: part.id,
-          label: part.id,
-          helper: part.name,
-        })) ?? [],
-    [partReplenishmentSystem, parts]
+      parts.map((part) => ({
+        value: part.id,
+        label: part.id,
+        helper: part.name,
+      })) ?? [],
+    [parts]
   );
 
   return (
@@ -59,11 +49,11 @@ const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
             id: "",
             name: created,
             description: "",
-            partType: "Inventory" as "Inventory",
-            replenishmentSystem: partReplenishmentSystem ?? ("Buy" as "Buy"),
+            itemInventoryType: "Inventory" as "Inventory",
+            replenishmentSystem: partReplenishmentSystem ?? "Buy and Make",
             unitOfMeasureCode: "EA",
             blocked: false,
-            active: false,
+            active: true,
           }}
         />
       )}

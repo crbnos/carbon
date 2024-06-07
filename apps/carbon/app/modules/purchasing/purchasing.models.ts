@@ -6,6 +6,10 @@ import { currencyCodes } from "../accounting";
 export const purchaseOrderLineType = [
   "Part",
   "Service",
+  "Material",
+  "Tool",
+  "Fixture",
+  "Consumable",
   "G/L Account",
   "Fixed Asset",
   "Comment",
@@ -90,8 +94,8 @@ export const purchaseOrderLineValidator = z
         message: "Type is required",
       }),
     }),
-    partId: zfd.text(z.string().optional()),
-    serviceId: zfd.text(z.string().optional()),
+    itemId: zfd.text(z.string().optional()),
+    itemReadableId: zfd.text(z.string().optional()),
     accountNumber: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),
@@ -105,10 +109,15 @@ export const purchaseOrderLineValidator = z
     shelfId: zfd.text(z.string().optional()),
   })
   .refine(
-    (data) => (data.purchaseOrderLineType === "Part" ? data.partId : true),
+    (data) =>
+      ["Part", "Service", "Material", "Tool", "Fixture", "Consumable"].includes(
+        data.purchaseOrderLineType
+      )
+        ? data.itemId
+        : true,
     {
       message: "Part is required",
-      path: ["partId"], // path of error
+      path: ["itemId"], // path of error
     }
   )
   .refine(
@@ -179,7 +188,7 @@ export const requestForQuoteValidator = z.object({
 export const requestForQuoteLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   requestForQuoteId: z.string().min(36, { message: "Request is required" }),
-  partId: zfd.text(z.string().optional()),
+  itemId: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),
   quantity: zfd.numeric(z.number()),
   unitPrice: zfd.numeric(z.number().optional()),

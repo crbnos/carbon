@@ -31,6 +31,7 @@ import { useRealtime, useRouteData, useUser } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
 import { usePurchaseOrderTotals } from "~/modules/purchasing";
+import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import usePurchaseOrderLines from "./usePurchaseOrderLines";
@@ -53,15 +54,8 @@ const PurchaseOrderLines = () => {
   const { defaults, id: userId } = useUser();
   const unitOfMeasureOptions = useUnitOfMeasure();
 
-  const {
-    canEdit,
-    canDelete,
-    supabase,
-    partOptions,
-    serviceOptions,
-    accountOptions,
-    onCellEdit,
-  } = usePurchaseOrderLines();
+  const { canEdit, canDelete, supabase, accountOptions, onCellEdit } =
+    usePurchaseOrderLines();
   const [, setPurchaseOrderTotals] = usePurchaseOrderTotals();
 
   const isEditable = ["Draft", "To Review"].includes(
@@ -117,18 +111,19 @@ const PurchaseOrderLines = () => {
         ),
       },
       {
-        accessorKey: "partId",
+        accessorKey: "itemId",
         header: "Number",
         cell: ({ row }) => {
           switch (row.original.purchaseOrderLineType) {
             case "Part":
-              return <span>{row.original.partId}</span>;
             case "Service":
-              return <span>{row.original.serviceId}</span>;
+            case "Material":
+            case "Tool":
+            case "Fixture":
+            case "Consumable":
+              return <span>{row.original.itemReadableId}</span>;
             case "G/L Account":
               return <span>{row.original.accountNumber}</span>;
-            case "Comment":
-              return null;
             case "Fixed Asset":
               return <span>{row.original.assetId}</span>;
             default:
@@ -290,18 +285,19 @@ const PurchaseOrderLines = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, customColumns]);
 
+  const [items] = useItems();
+
   const editableComponents = useMemo(
     () => ({
       description: EditableText(onCellEdit),
       purchaseQuantity: EditableNumber(onCellEdit),
       unitPrice: EditableNumber(onCellEdit),
-      partId: EditablePurchaseOrderLineNumber(onCellEdit, {
+      itemId: EditablePurchaseOrderLineNumber(onCellEdit, {
         client: supabase,
-        parts: partOptions,
-        services: serviceOptions,
+        items: items,
         accounts: accountOptions,
         defaultLocationId: defaults.locationId,
-        supplerId: routeData?.purchaseOrder.supplierId ?? "",
+        supplierId: routeData?.purchaseOrder.supplierId ?? "",
         userId: userId,
       }),
       purchaseUnitOfMeasureCode: EditableList(onCellEdit, unitOfMeasureOptions),
@@ -310,8 +306,7 @@ const PurchaseOrderLines = () => {
     [
       onCellEdit,
       supabase,
-      partOptions,
-      serviceOptions,
+      items,
       accountOptions,
       defaults.locationId,
       routeData?.purchaseOrder.supplierId,

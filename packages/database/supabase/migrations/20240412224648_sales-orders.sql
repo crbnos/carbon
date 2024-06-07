@@ -55,7 +55,12 @@ CREATE INDEX "salesOrder_companyId_idx" ON "salesOrder" ("companyId");
 CREATE TYPE "salesOrderLineType" AS ENUM (
   'Comment',
   'Part',
-  'Service'
+  'Material',
+  'Tool',
+  'Service',
+  'Consumable',
+  'Fixture',
+  'Fixed Asset'
 );
 
 CREATE TABLE "salesOrderStatusHistory" (
@@ -75,8 +80,8 @@ CREATE TABLE "salesOrderLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "salesOrderId" TEXT NOT NULL,
   "salesOrderLineType" "salesOrderLineType" NOT NULL,
-  "partId" TEXT,
-  "serviceId" TEXT,
+  "itemId" TEXT,
+  "itemReadableId" TEXT,
   "accountNumber" TEXT,
   "assetId" TEXT,
   "description" TEXT,
@@ -104,32 +109,35 @@ CREATE TABLE "salesOrderLine" (
     CHECK (
       (
         "salesOrderLineType" = 'Comment' AND
-        "partId" IS NULL AND
-        "serviceId" IS NULL AND
+        "itemId" IS NULL AND
         "accountNumber" IS NULL AND
         "assetId" IS NULL AND
         "description" IS NOT NULL
       )
       OR (
-        "salesOrderLineType" = 'Part' AND
-        "partId" IS NOT NULL AND
-        "serviceId" IS NULL AND
+        (
+          "salesOrderLineType" = 'Part' OR
+          "salesOrderLineType" = 'Material' OR 
+          "salesOrderLineType" = 'Tool' OR 
+          "salesOrderLineType" = 'Consumable' OR 
+          "salesOrderLineType" = 'Fixture' OR 
+          "salesOrderLineType" = 'Service'
+        ) AND
+        "itemId" IS NOT NULL AND
         "accountNumber" IS NULL AND
         "assetId" IS NULL 
       ) 
       OR (
-        "salesOrderLineType" = 'Service' AND
-        "partId" IS NULL AND
-        "serviceId" IS NOT NULL AND
+        "salesOrderLineType" = 'Fixed Asset' AND
+        "itemId" IS NULL AND
         "accountNumber" IS NULL AND
-        "assetId" IS NULL 
+        "assetId" IS NOT NULL 
       )
     ),
 
   CONSTRAINT "salesOrderLine_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "salesOrderLine_salesOrderId_fkey" FOREIGN KEY ("salesOrderId") REFERENCES "salesOrder" ("id") ON DELETE CASCADE,
-  CONSTRAINT "salesOrderLine_partId_fkey" FOREIGN KEY ("partId", "companyId") REFERENCES "part" ("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "salesOrderLine_serviceId_fkey" FOREIGN KEY ("serviceId", "companyId") REFERENCES "service" ("id", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "salesOrderLine_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesOrderLine_accountNumber_fkey" FOREIGN KEY ("accountNumber", "companyId") REFERENCES "account" ("number", "companyId") ON DELETE CASCADE ON UPDATE CASCADE,
   -- TODO: Add assetId foreign key
   CONSTRAINT "salesOrderLine_shelfId_fkey" FOREIGN KEY ("shelfId", "locationId") REFERENCES "shelf" ("id", "locationId") ON DELETE CASCADE,
@@ -623,105 +631,11 @@ CREATE OR REPLACE VIEW "customers" WITH(SECURITY_INVOKER=true) AS
 CREATE OR REPLACE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS
   SELECT 
     sol.*,
-    so."customerId" ,
-    p.name AS "partName",
-    p.description AS "partDescription"
+    so."customerId",
+    i.name AS "itemName",
+    i.description AS "itemDescription"
   FROM "salesOrderLine" sol
     INNER JOIN "salesOrder" so 
       ON so.id = sol."salesOrderId"
-    LEFT OUTER JOIN "part" p
-      ON p.id = sol."partId";
-
-/*CREATE OR REPLACE VIEW "salesOrderLocations" WITH(SECURITY_INVOKER=true) AS
-  SELECT 
-    so.id,
-    s.name AS "supplierName",
-    sa."addressLine1" AS "supplierAddressLine1",
-    sa."addressLine2" AS "supplierAddressLine2",
-    sa."city" AS "supplierCity",
-    sa."state" AS "supplierState",
-    sa."postalCode" AS "supplierPostalCode",
-    sa."countryCode" AS "supplierCountryCode",
-    dl.name AS "deliveryName",
-    dl."addressLine1" AS "deliveryAddressLine1",
-    dl."addressLine2" AS "deliveryAddressLine2",
-    dl."city" AS "deliveryCity",
-    dl."state" AS "deliveryState",
-    dl."postalCode" AS "deliveryPostalCode",
-    dl."countryCode" AS "deliveryCountryCode",
-    pod."dropShipment",
-    c.name AS "customerName",
-    ca."addressLine1" AS "customerAddressLine1",
-    ca."addressLine2" AS "customerAddressLine2",
-    ca."city" AS "customerCity",
-    ca."state" AS "customerState",
-    ca."postalCode" AS "customerPostalCode",
-    ca."countryCode" AS "customerCountryCode"
-  FROM "salesOrder" so 
-  LEFT OUTER JOIN "supplier" s 
-    ON s.id = po."supplierId"
-  LEFT OUTER JOIN "supplierLocation" sl
-    ON sl.id = po."supplierLocationId"
-  LEFT OUTER JOIN "address" sa
-    ON sa.id = sl."addressId"
-  INNER JOIN "purchaseOrderDelivery" pod 
-    ON pod.id = po.id 
-  LEFT OUTER JOIN "location" dl
-    ON dl.id = pod."locationId"
-  LEFT OUTER JOIN "customer" c
-    ON c.id = pod."customerId"
-  LEFT OUTER JOIN "customerLocation" cl
-    ON cl.id = pod."customerLocationId"
-  LEFT OUTER JOIN "address" ca
-    ON ca.id = cl."addressId";*/
-  
-/*
-DROP VIEW "partQuantities";
-CREATE OR REPLACE VIEW "partQuantities" AS 
-  SELECT 
-    p."id" AS "partId", 
-    loc."id" AS "locationId",
-    COALESCE(SUM(pl."quantity"), 0) AS "quantityOnHand",
-    COALESCE(pol."quantityToReceive", 0) AS "quantityOnPurchaseOrder",
-    COALESCE(sol."quantityToSend", 0) AS "quantityOnSalesOrder",
-    0 AS "quantityOnProdOrder",
-    0 AS "quantityAvailable"
-  FROM "part" p 
-  CROSS JOIN "location" loc
-  LEFT JOIN "partLedger" pl
-    ON pl."partId" = p."id" AND pl."locationId" = loc."id"
-  LEFT JOIN (
-    SELECT 
-        pol."partId",
-        pol."locationId",
-        COALESCE(SUM(GREATEST(pol."quantityToReceive", 0)), 0) AS "quantityToReceive"
-      FROM "purchaseOrderLine" pol 
-      INNER JOIN "purchaseOrder" po 
-        ON pol."purchaseOrderId" = po."id"
-      WHERE po."status" != 'Draft' 
-        AND po."status" != 'Rejected'
-        AND po."status" != 'Closed'
-      GROUP BY 
-        pol."partId",
-        pol."locationId"
-  ) pol ON pol."partId" = p."id" AND pol."locationId" = loc."id"
-  LEFT JOIN (
-    SELECT 
-        sol."partId",
-        sol."locationId",
-        COALESCE(SUM(GREATEST(sol."quantityToSend", 0)), 0) AS "quantityToSend"
-      FROM "salesOrderLine" sol 
-      INNER JOIN "salesOrder" so 
-        ON sol."salesOrderId" = so."id"
-      WHERE so."status" != 'Draft' 
-        AND so."status" != 'Cancelled'
-        AND so."status" != 'Needs Approval'
-      GROUP BY 
-        sol."partId",
-        sol."locationId"
-  ) sol ON sol."partId" = p."id" AND sol."locationId" = loc."id"
-  GROUP BY 
-    p."id", 
-    loc."id",
-    pol."quantityToReceive",
-    sol."quantityToSend"*/
+    LEFT OUTER JOIN "item" i
+      ON i.id = sol."itemId";

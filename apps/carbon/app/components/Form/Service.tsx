@@ -1,8 +1,6 @@
-import { useMount } from "@carbon/react";
-import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
-import type { ServiceType, getServicesList } from "~/modules/parts";
-import { path } from "~/utils/path";
+import type { ServiceType } from "~/modules/items";
+import { useServices } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import Combobox from "./Combobox";
 
@@ -11,7 +9,16 @@ type ServiceSelectProps = Omit<ComboboxProps, "options"> & {
 };
 
 const Service = ({ serviceType, ...props }: ServiceSelectProps) => {
-  const options = useServices(serviceType);
+  const services = useServices();
+  const options = useMemo(
+    () =>
+      services.map((service) => ({
+        value: service.id,
+        label: service.id,
+        helper: service.name,
+      })) ?? [],
+    [services]
+  );
 
   return (
     <Combobox options={options} {...props} label={props?.label ?? "Service"} />
@@ -21,26 +28,3 @@ const Service = ({ serviceType, ...props }: ServiceSelectProps) => {
 Service.displayName = "Service";
 
 export default Service;
-
-export const useServices = (serviceType?: ServiceType) => {
-  const servicesFetcher =
-    useFetcher<Awaited<ReturnType<typeof getServicesList>>>();
-
-  useMount(() => {
-    const typeQueryParams = serviceType ? `type=${serviceType}` : "";
-    servicesFetcher.load(`${path.to.api.services}?${typeQueryParams}`);
-  });
-
-  const options = useMemo(
-    () =>
-      servicesFetcher.data?.data
-        ? servicesFetcher.data?.data.map((s) => ({
-            value: s.id,
-            label: `${s.id} - ${s.name}`,
-          }))
-        : [],
-    [servicesFetcher.data]
-  );
-
-  return options;
-};

@@ -16,7 +16,11 @@ type PurchaseInvoicePostModalProps = {
   isOpen: boolean;
   onClose: () => void;
   invoiceId: string;
-  linesToReceive: { partId: string | null; quantity: number }[];
+  linesToReceive: {
+    itemId: string | null;
+    itemReadableId: string | null;
+    quantity: number;
+  }[];
 };
 
 const PurchaseInvoicePostModal = ({
@@ -48,8 +52,8 @@ const PurchaseInvoicePostModal = ({
               </p>
               <ul className="mt-2">
                 {linesToReceive.map((line) => (
-                  <li key={line.partId}>
-                    {`${line.partId} (${line.quantity})`}
+                  <li key={line.itemId}>
+                    {`${line.itemReadableId} (${line.quantity})`}
                   </li>
                 ))}
               </ul>

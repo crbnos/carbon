@@ -296,7 +296,7 @@ const QuotationExplorer = () => {
       acc[assembly.quoteLineId].push({
         id: assembly.id,
         parentId: assembly.parentAssemblyId ?? undefined,
-        label: assembly.description ?? assembly.partId,
+        label: assembly.description ?? assembly.itemId,
         type: "assembly",
         meta: assembly,
       });
@@ -645,7 +645,7 @@ const QuotationSearch = ({ onSelect }: QuotationSearchProps) => {
             <CommandGroup heading="Lines">
               {quote?.lines.map((line) => (
                 <CommandItem
-                  value={`lines ${line.partId} ${line.description}`}
+                  value={`lines ${line.itemId} ${line.description}`}
                   key={line.id}
                   onSelect={() => {
                     onSelect(line.id!);
@@ -656,7 +656,7 @@ const QuotationSearch = ({ onSelect }: QuotationSearchProps) => {
                   <div className="flex flex-col">
                     <p>{line.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {line.partId}
+                      {line.itemId}
                     </p>
                   </div>
 
@@ -677,7 +677,7 @@ const QuotationSearch = ({ onSelect }: QuotationSearchProps) => {
             <CommandGroup heading="Assemblies">
               {quote?.assemblies.map((assembly) => (
                 <CommandItem
-                  value={`assemblies ${assembly.partId} ${assembly.description}`}
+                  value={`assemblies ${assembly.itemId} ${assembly.description}`}
                   key={assembly.id}
                   onSelect={() => {
                     onSelect(assembly.id);
@@ -694,7 +694,7 @@ const QuotationSearch = ({ onSelect }: QuotationSearchProps) => {
                   <div className="flex flex-col">
                     <p>{assembly.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {assembly.partId}
+                      {assembly.itemId}
                     </p>
                   </div>
 
@@ -768,7 +768,7 @@ const QuotationSearch = ({ onSelect }: QuotationSearchProps) => {
                 );
                 return (
                   <CommandItem
-                    value={`materials ${material.description} ${material.partId} ${parent.description}`}
+                    value={`materials ${material.description} ${material.itemId} ${parent.description}`}
                     key={material.id}
                     onSelect={() => {
                       onSelect(material.id);

@@ -13,7 +13,7 @@ import Grid from "~/components/Grid";
 import { useRealtime, useRouteData } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
-import { useParts } from "~/stores";
+import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -30,19 +30,22 @@ const ReceiptLines = () => {
     locations: ListItem[];
   }>(path.to.receipt(receiptId));
 
-  const [parts] = useParts();
+  const [items] = useItems();
 
   const receiptLineColumns = useMemo<ColumnDef<ReceiptLine>[]>(() => {
     return [
       {
-        accessorKey: "partId",
         header: "Part",
-        cell: (item) => item.getValue(),
+        cell: ({ row }) => {
+          return (
+            items.find((p) => p.id === row.original.itemId)?.readableId ?? null
+          );
+        },
       },
       {
         header: "Name",
         cell: ({ row }) => {
-          return parts.find((p) => p.id === row.original.partId)?.name ?? null;
+          return items.find((p) => p.id === row.original.itemId)?.name ?? null;
         },
       },
       {
@@ -80,7 +83,7 @@ const ReceiptLines = () => {
         cell: (item) => item.getValue(),
       },
     ];
-  }, [routeData?.locations, parts]);
+  }, [routeData?.locations, items]);
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: ReceiptLine) => {

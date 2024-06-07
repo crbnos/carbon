@@ -10,11 +10,7 @@ import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
 import { New } from "~/components";
-import {
-  EditableNumber,
-  EditableQuotationMaterial,
-  EditableText,
-} from "~/components/Editable";
+import { EditableNumber, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
@@ -23,7 +19,7 @@ import {
   type Quotation,
   type QuotationMaterial,
 } from "~/modules/sales";
-import { useParts } from "~/stores/parts";
+import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
 type QuotationMaterialLinesProps = {
@@ -46,16 +42,6 @@ const QuotationMaterialLines = ({
 
   const canEdit = permissions.can("update", "sales");
   const canDelete = permissions.can("delete", "sales");
-
-  const [parts] = useParts();
-  const partOptions = useMemo(
-    () =>
-      parts.map((p) => ({
-        value: p.id,
-        label: p.id,
-      })),
-    [parts]
-  );
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: QuotationMaterial) => {
@@ -84,12 +70,16 @@ const QuotationMaterialLines = ({
     currency: "USD",
   });
 
+  const [items] = useItems();
+
   const columns = useMemo<ColumnDef<QuotationMaterial>[]>(() => {
     return [
       {
-        accessorKey: "partId",
+        accessorKey: "itemId",
         header: "Part",
-        cell: (item) => item.getValue(),
+        cell: ({ row }) =>
+          items.find((item) => item.id === row.original.itemId)?.readableId ??
+          null,
       },
       {
         accessorKey: "description",
@@ -117,16 +107,11 @@ const QuotationMaterialLines = ({
 
   const editableComponents = useMemo(
     () => ({
-      partId: EditableQuotationMaterial(onCellEdit, {
-        client: supabase,
-        parts: partOptions,
-        userId,
-      }),
       quantity: EditableNumber(onCellEdit),
       description: EditableText(onCellEdit),
       unitCost: EditableNumber(onCellEdit, { minValue: 0 }),
     }),
-    [onCellEdit, partOptions, supabase, userId]
+    [onCellEdit]
   );
 
   return (

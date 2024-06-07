@@ -54,8 +54,8 @@ export default function DeleteQuoteAssembly() {
   return (
     <ConfirmDelete
       action={path.to.deleteQuoteAssembly(id, lineId, assemblyId)}
-      name={routeData?.quoteAssembly.partId}
-      text={`Are you sure you want to delete the assembly: ${routeData?.quoteAssembly.partId}? This cannot be undone.`}
+      name={routeData?.quoteAssembly.itemId}
+      text={`Are you sure you want to delete the assembly: ${routeData?.quoteAssembly.itemId}? This cannot be undone.`}
       onCancel={() => navigate(path.to.quoteAssembly(id, lineId, assemblyId))}
     />
   );

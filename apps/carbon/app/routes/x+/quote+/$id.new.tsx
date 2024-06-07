@@ -70,7 +70,7 @@ export default function NewQuotationLineRoute() {
 
   const initialValues = {
     quoteId: id,
-    partId: "",
+    itemId: "",
     description: "",
     replenishmentSystem: "" as "Buy" | "Make",
     unitOfMeasureCode: "",

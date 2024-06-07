@@ -7,6 +7,7 @@ import type {
 import { Combobox } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import type { PurchaseOrderLine } from "~/modules/purchasing";
+import type { Item } from "~/stores";
 
 const EditablePurchaseOrderLineNumber =
   (
@@ -17,11 +18,10 @@ const EditablePurchaseOrderLineNumber =
     ) => Promise<PostgrestSingleResponse<unknown>>,
     options: {
       client?: SupabaseClient<Database>;
-      parts: { label: string; value: string }[];
-      services: { label: string; value: string }[];
+      items: Item[];
       accounts: { label: string; value: string }[];
       defaultLocationId: string | null;
-      supplerId: string;
+      supplierId: string;
       userId: string;
     }
   ) =>
@@ -32,26 +32,32 @@ const EditablePurchaseOrderLineNumber =
     onError,
     onUpdate,
   }: EditableTableCellComponentProps<PurchaseOrderLine>) => {
-    const { client, parts, services, accounts, supplerId, userId } = options;
+    const { client, items, accounts, supplierId, userId } = options;
     const selectOptions =
-      row.purchaseOrderLineType === "Part"
-        ? parts
-        : row.purchaseOrderLineType === "Service"
-        ? services
-        : row.purchaseOrderLineType === "G/L Account"
+      row.purchaseOrderLineType === "G/L Account"
         ? accounts
-        : [];
+        : items
+            .filter((item) => item.type === row.purchaseOrderLineType)
+            .map((item) => ({
+              label: item.name,
+              value: item.id,
+            }));
 
     const onAccountChange = async (accountNumber: string) => {
       if (!client) throw new Error("Supabase client not found");
+      if (!row.companyId) throw new Error("Company ID not found");
+      if (!row.id) throw new Error("Purchase order line ID not found");
 
       const account = await client
         .from("account")
         .select("name")
         .eq("number", accountNumber)
+        .eq("companyId", row.companyId)
         .single();
 
       onUpdate({
+        itemId: null,
+        itemReadableId: null,
         description: account.data?.name ?? "",
         accountNumber: accountNumber,
       });
@@ -60,11 +66,13 @@ const EditablePurchaseOrderLineNumber =
         const { error } = await client
           .from("purchaseOrderLine")
           .update({
+            itemId: null,
+            itemReadableId: null,
             accountNumber: accountNumber,
             description: account.data?.name ?? "",
             updatedBy: userId,
           })
-          .eq("id", row.id!);
+          .eq("id", row.id);
 
         if (error) onError();
       } catch (error) {
@@ -73,133 +81,161 @@ const EditablePurchaseOrderLineNumber =
       }
     };
 
-    const onPartChange = async (partId: string) => {
+    const onItemChange = async (itemId: string) => {
       if (!client) throw new Error("Supabase client not found");
-      const [part, partSupplier, inventory] = await Promise.all([
-        client
-          .from("part")
-          .select(
-            `
-            name, unitOfMeasureCode, 
-            partCost(unitCost), 
-            partReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)
-          `
-          )
-          .eq("id", partId)
-          .eq("companyId", row.companyId!)
-          .single(),
-        client
-          .from("partSupplier")
-          .select("*")
-          .eq("partId", partId)
-          .eq("companyId", row.companyId!)
-          .eq("supplierId", supplerId)
-          .maybeSingle(),
-        client
-          .from("partInventory")
-          .select("defaultShelfId")
-          .eq("partId", partId)
-          .eq("companyId", row.companyId!)
-          .eq("locationId", row.locationId!)
-          .maybeSingle(),
-      ]);
+      if (!row.companyId) throw new Error("Company ID not found");
+      if (!row.id) throw new Error("Purchase order line ID not found");
 
-      const partCost = part?.data?.partCost?.[0];
-      const partReplenishment = part?.data?.partReplenishment?.[0];
+      switch (row.purchaseOrderLineType) {
+        case "Part":
+          const [item, part, itemSupplier, inventory] = await Promise.all([
+            client
+              .from("item")
+              .select(
+                "name, readableId, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+              )
+              .eq("id", itemId)
+              .eq("companyId", row.companyId!)
+              .single(),
+            client
+              .from("part")
+              .select("unitOfMeasureCode")
+              .eq("itemId", itemId)
+              .eq("companyId", row.companyId!)
+              .single(),
+            client
+              .from("itemSupplier")
+              .select("*")
+              .eq("itemId", itemId)
+              .eq("companyId", row.companyId!)
+              .eq("supplierId", supplierId)
+              .maybeSingle(),
+            client
+              .from("itemInventory")
+              .select("defaultShelfId")
+              .eq("itemId", itemId)
+              .eq("companyId", row.companyId!)
+              .eq("locationId", row.locationId!)
+              .maybeSingle(),
+          ]);
 
-      if (part.error || partSupplier.error || inventory.error) {
-        onError();
-        return;
-      }
+          const itemCost = item?.data?.itemCost?.[0];
+          const itemReplenishment = item?.data?.itemReplenishment?.[0];
 
-      onUpdate({
-        partId: partId,
-        locationId: options.defaultLocationId,
-        description: part.data?.name ?? "",
-        purchaseQuantity: partSupplier?.data?.minimumOrderQuantity ?? 1,
-        unitPrice: partSupplier?.data?.unitPrice ?? partCost?.unitCost ?? 0,
-        purchaseUnitOfMeasureCode:
-          partReplenishment?.purchasingUnitOfMeasureCode ??
-          part.data?.unitOfMeasureCode ??
-          "EA",
+          if (
+            item.error ||
+            part.error ||
+            itemSupplier.error ||
+            inventory.error
+          ) {
+            onError();
+            return;
+          }
 
-        conversionFactor: partReplenishment?.conversionFactor ?? 1,
-        shelfId: inventory.data?.defaultShelfId ?? "",
-      });
-
-      try {
-        const { error } = await client
-          .from("purchaseOrderLine")
-          .update({
-            partId: partId,
+          onUpdate({
+            itemId: itemId,
+            itemReadableId: item.data?.readableId,
             locationId: options.defaultLocationId,
-            description: part.data?.name ?? "",
-            purchaseQuantity: partSupplier?.data?.minimumOrderQuantity ?? 1,
-            unitPrice: partSupplier?.data?.unitPrice ?? partCost?.unitCost ?? 0,
+            description: item.data?.name ?? "",
+            purchaseQuantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
+            unitPrice: itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
             purchaseUnitOfMeasureCode:
-              partReplenishment?.purchasingUnitOfMeasureCode ??
+              itemReplenishment?.purchasingUnitOfMeasureCode ??
               part.data?.unitOfMeasureCode ??
               "EA",
 
-            conversionFactor: partReplenishment?.conversionFactor ?? 1,
+            conversionFactor: itemReplenishment?.conversionFactor ?? 1,
             shelfId: inventory.data?.defaultShelfId ?? null,
-            updatedBy: userId,
-          })
-          .eq("id", row.id!);
+          });
 
-        if (error) onError();
-      } catch (error) {
-        console.error(error);
-        onError();
-      }
-    };
+          try {
+            const { error } = await client
+              .from("purchaseOrderLine")
+              .update({
+                itemId: itemId,
+                itemReadableId: item.data?.readableId,
+                locationId: options.defaultLocationId,
+                description: item.data?.name ?? "",
+                purchaseQuantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
+                unitPrice:
+                  itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+                purchaseUnitOfMeasureCode:
+                  itemReplenishment?.purchasingUnitOfMeasureCode ??
+                  part.data?.unitOfMeasureCode ??
+                  "EA",
 
-    const onServiceChange = async (serviceId: string) => {
-      if (!client) throw new Error("Supabase client not found");
-      const service = await client
-        .from("service")
-        .select("name")
-        .eq("id", serviceId)
-        .single();
+                conversionFactor: itemReplenishment?.conversionFactor ?? 1,
+                shelfId: inventory.data?.defaultShelfId ?? null,
+                updatedBy: userId,
+              })
+              .eq("id", row.id);
 
-      if (service.error) {
-        onError();
-        return;
-      }
+            if (error) onError();
+          } catch (error) {
+            console.error(error);
+            onError();
+          }
+          break;
+        case "Service":
+          const service = await client
+            .from("item")
+            .select("name, readableId")
+            .eq("id", itemId)
+            .eq("companyId", row.companyId)
+            .single();
 
-      onUpdate({
-        serviceId: serviceId,
-        description: service.data?.name,
-        purchaseUnitOfMeasureCode: "EA",
-      });
+          if (service.error) {
+            onError();
+            return;
+          }
 
-      try {
-        const { error } = await client
-          .from("purchaseOrderLine")
-          .update({
-            serviceId: serviceId,
+          onUpdate({
+            itemId: itemId,
+            itemReadableId: service.data?.readableId,
             description: service.data?.name,
-            purchaseUnitOfMeasureCode: "EA",
-            updatedBy: userId,
-          })
-          .eq("id", row.id!);
+          });
 
-        if (error) onError();
-      } catch (error) {
-        console.error(error);
-        onError();
+          try {
+            const { error } = await client
+              .from("purchaseOrderLine")
+              .update({
+                itemId: itemId,
+                itemReadableId: service.data?.readableId,
+                description: service.data?.name,
+                updatedBy: userId,
+              })
+              .eq("id", row.id);
+
+            if (error) onError();
+          } catch (error) {
+            console.error(error);
+            onError();
+          }
+          break;
+        default:
+          throw new Error(
+            `Invalid invoice line type: ${row.purchaseOrderLineType} is not implemented`
+          );
       }
     };
 
     const onChange = (newValue: string | null) => {
       if (!newValue) return;
+      if (!row.purchaseOrderLineType) return;
 
-      if (row.purchaseOrderLineType === "Part") {
-        onPartChange(newValue);
+      if (
+        [
+          "Part",
+          "Service",
+          "Material",
+          "Tool",
+          "Fixture",
+          "Consumable",
+        ].includes(row.purchaseOrderLineType)
+      ) {
+        onItemChange(newValue);
       } else if (row.purchaseOrderLineType === "G/L Account") {
         onAccountChange(newValue);
-      } else if (row.purchaseOrderLineType === "Service") {
-        onServiceChange(newValue);
       }
     };
 
@@ -223,9 +259,13 @@ export default EditablePurchaseOrderLineNumber;
 function getValue(row: PurchaseOrderLine) {
   switch (row.purchaseOrderLineType) {
     case "Part":
-      return row.partId;
     case "Service":
-      return row.serviceId;
+    case "Material":
+    case "Tool":
+    case "Fixture":
+    case "Consumable":
+      return row.itemId;
+
     case "G/L Account":
       return row.accountNumber;
     case "Fixed Asset":

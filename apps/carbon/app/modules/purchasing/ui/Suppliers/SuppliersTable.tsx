@@ -119,7 +119,7 @@ const SuppliersTable = memo(
           header: "Parts",
           cell: ({ row }) => (
             <Button variant="secondary" asChild>
-              <Link to={`${path.to.partsSearch}?supplierId=${row.original.id}`}>
+              <Link to={`${path.to.parts}?supplierId=${row.original.id}`}>
                 {row.original.partCount ?? 0} Parts
               </Link>
             </Button>

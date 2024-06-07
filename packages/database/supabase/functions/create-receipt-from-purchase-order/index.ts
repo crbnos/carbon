@@ -68,9 +68,10 @@ serve(async (req: Request) => {
     const receiptLineItems = purchaseOrderLines.data.reduce<ReceiptLineItem[]>(
       (acc, d) => {
         if (
-          !d.partId ||
+          !d.itemId ||
           !d.purchaseQuantity ||
           d.unitPrice === null ||
+          d.purchaseOrderLineType === "Service" ||
           isNaN(d.unitPrice)
         ) {
           return acc;
@@ -82,7 +83,8 @@ serve(async (req: Request) => {
         acc.push({
           lineId: d.id,
           companyId: companyId,
-          partId: d.partId,
+          itemId: d.itemId,
+          itemReadableId: d.itemReadableId,
           orderQuantity: d.purchaseQuantity * (d.conversionFactor ?? 1),
           outstandingQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
           receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),

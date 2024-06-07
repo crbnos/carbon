@@ -25,11 +25,12 @@ import EquipmentType from "./EquipmentType";
 import Hidden from "./Hidden";
 import Input from "./Input";
 import InputControlled from "./InputControlled";
+import Item from "./Item";
+import ItemGroup from "./ItemGroup";
 import Location from "./Location";
 import Number from "./Number";
 import NumberControlled from "./NumberControlled";
 import Part from "./Part";
-import PartGroup from "./PartGroup";
 import Password from "./Password";
 import PhoneInput from "./PhoneInput";
 import Radios from "./Radios";
@@ -82,11 +83,12 @@ export {
   Hidden,
   Input,
   InputControlled,
+  Item,
+  ItemGroup,
   Location,
   Number,
   NumberControlled,
   Part,
-  PartGroup,
   Password,
   PhoneInput,
   Radios,

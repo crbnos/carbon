@@ -117,7 +117,7 @@ export default function EditQuotationLineRoute() {
   const lineInitialValues = {
     id: quotationLine?.id ?? undefined,
     quoteId: quotationLine?.quoteId ?? "",
-    partId: quotationLine?.partId ?? "",
+    itemId: quotationLine?.itemId ?? "",
     description: quotationLine?.description ?? "",
     customerPartId: quotationLine?.customerPartId ?? "",
     customerPartRevision: quotationLine?.customerPartRevision ?? "",

@@ -72,7 +72,7 @@ export default function DeleteQuoteLineRoute() {
     <ConfirmDelete
       action={path.to.deleteQuoteLine(id, lineId)}
       name="Quote Line"
-      text={`Are you sure you want to delete the quotation line for ${quotationLine.partId}? This cannot be undone.`}
+      text={`Are you sure you want to delete the quotation line for ${quotationLine.itemReadableId}? This cannot be undone.`}
       onCancel={onCancel}
     />
   );
