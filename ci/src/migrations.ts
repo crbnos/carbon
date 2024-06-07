@@ -18,7 +18,7 @@ async function migrate(): Promise<void> {
   console.log("✅ 🛩️ Successfully retreived customers");
 
   console.log("👯‍♀️ Copying supabase folder");
-  await $`cd ../packages/database/supabase`;
+  await $`cp -r ../packages/database/supabase .`;
 
   for await (const customer of customers as Customer[]) {
     try {
