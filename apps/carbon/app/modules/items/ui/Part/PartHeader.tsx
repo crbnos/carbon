@@ -97,7 +97,9 @@ const PartHeader = () => {
             <CardAttribute>
               <CardAttributeLabel>UoM</CardAttributeLabel>
               <CardAttributeValue>
-                <Enumerable value={routeData?.partSummary?.unitOfMeasure} />
+                <Enumerable
+                  value={routeData?.partSummary?.unitOfMeasure ?? null}
+                />
               </CardAttributeValue>
             </CardAttribute>
           </CardAttributes>

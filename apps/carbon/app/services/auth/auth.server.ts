@@ -139,7 +139,10 @@ export async function requirePermissions(
       path.to.authenticatedRoot,
       await flash(
         request,
-        error({ myClaims, requiredPermissions }, "Access Denied")
+        error(
+          { myClaims: JSON.stringify(myClaims, null, 2), requiredPermissions },
+          "Access Denied"
+        )
       )
     );
   }

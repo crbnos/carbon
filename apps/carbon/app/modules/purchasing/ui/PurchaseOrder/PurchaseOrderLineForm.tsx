@@ -371,7 +371,7 @@ const PurchaseOrderLineForm = ({
                     }
                   />
 
-                  {["Part", "Material", "Consumable"] && (
+                  {["Part", "Material", "Consumable", "Tool"] && (
                     <>
                       <UnitOfMeasure
                         name="purchaseUnitOfMeasureCode"
