@@ -50,6 +50,7 @@ const Kanban = ({
     })
   );
 
+  // TODO: remove this with and replace with optimistic merge
   useEffect(() => {
     setItems(initialItems);
   }, [initialItems]);

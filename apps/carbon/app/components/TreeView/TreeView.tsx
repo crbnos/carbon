@@ -1,9 +1,30 @@
 import { cn } from "@carbon/react";
+import type { Announcements, UniqueIdentifier } from "@dnd-kit/core";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import type { VirtualItem, Virtualizer } from "@tanstack/react-virtual";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import type { MutableRefObject, RefObject } from "react";
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import type { NodeState, NodesState } from "./reducer";
 import { reducer } from "./reducer";
 import { concreteStateFromInput, selectedIdFromState } from "./utils";
@@ -42,6 +63,15 @@ export function TreeView<TData>({
   scrollRef,
   onScroll,
 }: TreeViewProps<TData>) {
+  const [items, setItems] = useState(tree);
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
+  const [offsetLeft, setOffsetLeft] = useState(0);
+  const [currentPosition, setCurrentPosition] = useState<{
+    parentId: UniqueIdentifier | null;
+    overId: UniqueIdentifier;
+  } | null>(null);
+
   useEffect(() => {
     if (autoFocus) {
       parentRef?.current?.focus();
@@ -67,69 +97,192 @@ export function TreeView<TData>({
       scrollRef.current?.removeEventListener("scroll", scrollCallback);
   }, [scrollRef?.current]);
 
+  const projected =
+    activeId && overId
+      ? getProjection<TData>(items, activeId, overId, offsetLeft)
+      : null;
+
+  const sensorContext: SensorContext<TData> = useRef({
+    items: items,
+    offset: offsetLeft,
+  });
+
+  const [coordinateGetter] = useState(() =>
+    sortableTreeKeyboardCoordinates(sensorContext, indicator)
+  );
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter,
+    })
+  );
+
+  const sortedIds = useMemo(() => items.map(({ id }) => id), [items]);
+  const activeItem = activeId ? items.find(({ id }) => id === activeId) : null;
+
+  useEffect(() => {
+    sensorContext.current = {
+      items: items,
+      offset: offsetLeft,
+    };
+  }, [items, offsetLeft]);
+
+  const announcements: Announcements = {
+    onDragStart({ active }) {
+      return `Picked up ${active.id}.`;
+    },
+    onDragMove({ active, over }) {
+      return getMovementAnnouncement("onDragMove", active.id, over?.id);
+    },
+    onDragOver({ active, over }) {
+      return getMovementAnnouncement("onDragOver", active.id, over?.id);
+    },
+    onDragEnd({ active, over }) {
+      return getMovementAnnouncement("onDragEnd", active.id, over?.id);
+    },
+    onDragCancel({ active }) {
+      return `Moving was cancelled. ${active.id} was dropped in its original position.`;
+    },
+  };
+
   return (
-    <motion.div
-      ref={(element) => {
-        if (parentRef) {
-          parentRef.current = element;
-        }
-        if (scrollRef) {
-          scrollRef.current = element;
-        }
-      }}
-      className={cn(
-        "w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-charcoal-600 focus-within:outline-none",
-        parentClassName
-      )}
-      layoutScroll
-      {...getTreeProps()}
+    <DndContext
+      accessibility={{ announcements }}
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      measuring={measuring}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
-      <div
-        style={{
-          height: `${virtualizer.getTotalSize()}px`,
-          width: "100%",
-          position: "relative",
-          overflowY: "visible",
+      <motion.div
+        ref={(element) => {
+          if (parentRef) {
+            parentRef.current = element;
+          }
+          if (scrollRef) {
+            scrollRef.current = element;
+          }
         }}
+        className={cn(
+          "w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-charcoal-600 focus-within:outline-none",
+          parentClassName
+        )}
+        layoutScroll
+        {...getTreeProps()}
       >
         <div
           style={{
-            position: "absolute",
-            overflowY: "visible",
-            top: 0,
-            left: 0,
+            height: `${virtualizer.getTotalSize()}px`,
             width: "100%",
-            transform: `translateY(${virtualItems.at(0)?.start ?? 0}px)`,
+            position: "relative",
+            overflowY: "visible",
           }}
         >
-          {virtualItems.map((virtualItem) => {
-            const node = tree.find((node) => node.id === virtualItem.key);
-            if (!node) return null;
-            const state = nodes[node.id];
-            if (!state) return null;
-            if (!state.visible) return null;
-            return (
-              <div
-                key={node.id}
-                data-index={virtualItem.index}
-                ref={virtualizer.measureElement}
-                className="overflow-clip"
-                {...getNodeProps(node.id)}
-              >
-                {renderNode({
-                  node,
-                  state,
-                  index: virtualItem.index,
-                  virtualizer: virtualizer,
-                  virtualItem,
-                })}
-              </div>
-            );
-          })}
+          <div
+            style={{
+              position: "absolute",
+              overflowY: "visible",
+              top: 0,
+              left: 0,
+              width: "100%",
+              transform: `translateY(${virtualItems.at(0)?.start ?? 0}px)`,
+            }}
+          >
+            <SortableContext
+              items={sortedIds}
+              strategy={verticalListSortingStrategy}
+            >
+              {virtualItems.map((virtualItem) => {
+                const node = tree.find((node) => node.id === virtualItem.key);
+                if (!node) return null;
+                const state = nodes[node.id];
+                if (!state) return null;
+                if (!state.visible) return null;
+                return (
+                  <div
+                    key={node.id}
+                    data-index={virtualItem.index}
+                    ref={virtualizer.measureElement}
+                    className="overflow-clip"
+                    {...getNodeProps(node.id)}
+                  >
+                    {renderNode({
+                      node,
+                      state,
+                      index: virtualItem.index,
+                      virtualizer: virtualizer,
+                      virtualItem,
+                    })}
+                  </div>
+                );
+              })}
+            </SortableContext>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </DndContext>
   );
+
+  function getMovementAnnouncement(
+    eventName: string,
+    activeId: UniqueIdentifier,
+    overId?: UniqueIdentifier
+  ) {
+    if (overId && projected) {
+      if (eventName !== "onDragEnd") {
+        if (
+          currentPosition &&
+          projected.parentId === currentPosition.parentId &&
+          overId === currentPosition.overId
+        ) {
+          return;
+        } else {
+          setCurrentPosition({
+            parentId: projected.parentId,
+            overId,
+          });
+        }
+      }
+
+      const clonedItems: FlatTree<TData> = JSON.parse(JSON.stringify(items));
+      const overIndex = clonedItems.findIndex(({ id }) => id === overId);
+      const activeIndex = clonedItems.findIndex(({ id }) => id === activeId);
+      const sortedItems = arrayMove(clonedItems, activeIndex, overIndex);
+
+      const previousItem = sortedItems[overIndex - 1];
+
+      let announcement;
+      const movedVerb = eventName === "onDragEnd" ? "dropped" : "moved";
+      const nestedVerb = eventName === "onDragEnd" ? "dropped" : "nested";
+
+      if (!previousItem) {
+        const nextItem = sortedItems[overIndex + 1];
+        announcement = `${activeId} was ${movedVerb} before ${nextItem.id}.`;
+      } else {
+        if (projected.level > previousItem.level) {
+          announcement = `${activeId} was ${nestedVerb} under ${previousItem.id}.`;
+        } else {
+          let previousSibling: FlatTreeItem<TData> | undefined = previousItem;
+          while (previousSibling && projected.level < previousSibling.level) {
+            const parentId: UniqueIdentifier | undefined =
+              previousSibling.parentId;
+            previousSibling = sortedItems.find(({ id }) => id === parentId);
+          }
+
+          if (previousSibling) {
+            announcement = `${activeId} was ${movedVerb} after ${previousSibling.id}.`;
+          }
+        }
+      }
+
+      return announcement;
+    }
+
+    return;
+  }
 }
 
 export type Filter<TData, TFilterValue> = {
@@ -171,8 +324,8 @@ export type UseTreeStateOutput = {
   expandNode: (id: string, scrollToNode?: boolean) => void;
   collapseNode: (id: string) => void;
   toggleExpandNode: (id: string, scrollToNode?: boolean) => void;
-  expandAllBelowDepth: (depth: number) => void;
-  collapseAllBelowDepth: (depth: number) => void;
+  expandAllBelowDepth: (level: number) => void;
+  collapseAllBelowDepth: (level: number) => void;
   expandLevel: (level: number) => void;
   collapseLevel: (level: number) => void;
   toggleExpandLevel: (level: number) => void;
@@ -616,4 +769,83 @@ export function createTreeFromFlatItems<TData>(
   });
 
   return indexedItems[rootId];
+}
+
+export type SensorContext<TData> = MutableRefObject<{
+  items: FlatTree<TData>;
+  offset: number;
+}>;
+
+function getDragLevel(offset: number, indentationWidth: number) {
+  return Math.round(offset / indentationWidth);
+}
+
+function getProjection<TData>(
+  items: FlatTree<TData>,
+  activeId: UniqueIdentifier,
+  overId: UniqueIdentifier,
+  dragOffset: number
+) {
+  const overItemIndex = items.findIndex(({ id }) => id === overId);
+  const activeItemIndex = items.findIndex(({ id }) => id === activeId);
+  const activeItem = items[activeItemIndex];
+  const newItems = arrayMove(items, activeItemIndex, overItemIndex);
+  const previousItem = newItems[overItemIndex - 1];
+  const nextItem = newItems[overItemIndex + 1];
+  const dragLevel = getDragLevel(dragOffset, 8);
+  const projectedLevel = activeItem.level + dragLevel;
+  const maxLevel = getMaxLevel<TData>({
+    previousItem,
+  });
+  const minLevel = getMinLevel<TData>({ nextItem });
+  let level = projectedLevel;
+
+  if (projectedLevel >= maxLevel) {
+    level = maxLevel;
+  } else if (projectedLevel < minLevel) {
+    level = minLevel;
+  }
+
+  return { level, maxLevel, minLevel, parentId: getParentId() };
+
+  function getParentId() {
+    if (level === 0 || !previousItem) {
+      return null;
+    }
+
+    if (level === previousItem.level) {
+      return previousItem.parentId;
+    }
+
+    if (level > previousItem.level) {
+      return previousItem.id;
+    }
+
+    const newParent = newItems
+      .slice(0, overItemIndex)
+      .reverse()
+      .find((item) => item.level === level)?.parentId;
+
+    return newParent ?? null;
+  }
+}
+
+function getMaxLevel<TData>({
+  previousItem,
+}: {
+  previousItem: FlatTreeItem<TData>;
+}) {
+  if (previousItem) {
+    return previousItem.level + 1;
+  }
+
+  return 0;
+}
+
+function getMinLevel<TData>({ nextItem }: { nextItem: FlatTreeItem<TData> }) {
+  if (nextItem) {
+    return nextItem.level;
+  }
+
+  return 0;
 }
