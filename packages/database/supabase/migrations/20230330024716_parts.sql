@@ -76,7 +76,6 @@ CREATE TABLE "item" (
   "active" BOOLEAN NOT NULL DEFAULT true,
   "blocked" BOOLEAN NOT NULL DEFAULT false,
   "companyId" TEXT NOT NULL,
-  "assignee" TEXT,
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT,
@@ -86,7 +85,6 @@ CREATE TABLE "item" (
   CONSTRAINT "item_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "item_unique" UNIQUE ("readableId", "companyId", "type"),
   CONSTRAINT "item_itemGroupId_fkey" FOREIGN KEY ("itemGroupId") REFERENCES "itemGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "item_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT "item_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
   CONSTRAINT "item_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
@@ -221,6 +219,7 @@ CREATE TABLE "part" (
   "approvedBy" TEXT,
   "fromDate" DATE,
   "toDate" DATE,
+  "assignee" TEXT,
   "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -232,6 +231,7 @@ CREATE TABLE "part" (
   CONSTRAINT "part_id_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "part_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "part_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
+  CONSTRAINT "part_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT "part_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "part_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
   CONSTRAINT "part_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")

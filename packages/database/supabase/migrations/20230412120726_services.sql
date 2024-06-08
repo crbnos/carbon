@@ -11,6 +11,7 @@ CREATE TABLE "service" (
   "approvedBy" TEXT,
   "fromDate" DATE,
   "toDate" DATE,
+  "assignee" TEXT,
   "customFields" JSONB,
   "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
@@ -20,6 +21,7 @@ CREATE TABLE "service" (
 
   CONSTRAINT "service_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "service_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "service_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "service_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
   CONSTRAINT "service_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
   CONSTRAINT "service_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
