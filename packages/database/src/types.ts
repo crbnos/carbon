@@ -5418,6 +5418,7 @@ export type Database = {
       item: {
         Row: {
           active: boolean
+          assignee: string | null
           blocked: boolean
           companyId: string
           createdAt: string
@@ -5434,6 +5435,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          assignee?: string | null
           blocked?: boolean
           companyId: string
           createdAt?: string
@@ -5450,6 +5452,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          assignee?: string | null
           blocked?: boolean
           companyId?: string
           createdAt?: string
@@ -5465,6 +5468,41 @@ export type Database = {
           updatedBy?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
@@ -7425,7 +7463,6 @@ export type Database = {
         Row: {
           approved: boolean
           approvedBy: string | null
-          assignee: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -7442,7 +7479,6 @@ export type Database = {
         Insert: {
           approved?: boolean
           approvedBy?: string | null
-          assignee?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -7459,7 +7495,6 @@ export type Database = {
         Update: {
           approved?: boolean
           approvedBy?: string | null
-          assignee?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -7505,41 +7540,6 @@ export type Database = {
           {
             foreignKeyName: "part_approvedBy_fkey"
             columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -14693,7 +14693,6 @@ export type Database = {
         Row: {
           approved: boolean
           approvedBy: string | null
-          assignee: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -14709,7 +14708,6 @@ export type Database = {
         Insert: {
           approved?: boolean
           approvedBy?: string | null
-          assignee?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -14725,7 +14723,6 @@ export type Database = {
         Update: {
           approved?: boolean
           approvedBy?: string | null
-          assignee?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -14770,41 +14767,6 @@ export type Database = {
           {
             foreignKeyName: "service_approvedBy_fkey"
             columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -19744,6 +19706,41 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
             foreignKeyName: "item_itemGroupId_fkey"
             columns: ["itemGroupId"]
             isOneToOne: false
@@ -19781,41 +19778,6 @@ export type Database = {
           {
             foreignKeyName: "part_approvedBy_fkey"
             columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_assignee_fkey"
-            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -20435,14 +20397,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -22084,6 +22046,41 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
             foreignKeyName: "item_itemGroupId_fkey"
             columns: ["itemGroupId"]
             isOneToOne: false
@@ -22121,41 +22118,6 @@ export type Database = {
           {
             foreignKeyName: "service_approvedBy_fkey"
             columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_assignee_fkey"
-            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]

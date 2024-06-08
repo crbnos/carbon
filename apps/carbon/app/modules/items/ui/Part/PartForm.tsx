@@ -167,6 +167,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                     value={partId}
                     onChange={onPartIdChange}
                     isDisabled={loading}
+                    autoFocus
                   />
                 )}
 

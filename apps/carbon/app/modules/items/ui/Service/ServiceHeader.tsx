@@ -30,7 +30,7 @@ const ServiceHeader = () => {
 
   const optimisticAssignment = useOptimisticAssignment({
     id: itemId,
-    table: "service",
+    table: "item",
   });
   const assignee =
     optimisticAssignment !== undefined
@@ -43,7 +43,7 @@ const ServiceHeader = () => {
         <Menubar>
           <Assign
             id={itemId}
-            table="service"
+            table="item"
             value={routeData?.service?.assignee ?? ""}
           />
         </Menubar>

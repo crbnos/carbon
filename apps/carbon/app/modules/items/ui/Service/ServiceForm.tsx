@@ -123,6 +123,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
                 value={serviceId}
                 onChange={onServiceIdChange}
                 isDisabled={loading}
+                autoFocus
               />
             )}
             <Input name="name" label="Name" />

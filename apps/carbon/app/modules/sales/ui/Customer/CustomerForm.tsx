@@ -92,7 +92,7 @@ const CustomerForm = ({
                   isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
                 )}
               >
-                <Input name="name" label="Name" />
+                <Input name="name" label="Name" autoFocus={!isEditing} />
                 <Input name="taxId" label="Tax ID" />
 
                 <CustomerType

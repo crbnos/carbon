@@ -17,6 +17,7 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
     i."itemInventoryType",
     i.active,
     i.blocked,
+    i.assignee,
     p.*,
     pg.name AS "itemGroup",
     ps."supplierIds",
@@ -154,6 +155,7 @@ CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
     i."itemGroupId",
     i.active,
     i.blocked,
+    i.assignee,
     pg.name AS "itemGroup",
     ss."supplierIds"
   FROM "service" s

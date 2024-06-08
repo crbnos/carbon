@@ -32,7 +32,7 @@ const PartHeader = () => {
 
   const optimisticAssignment = useOptimisticAssignment({
     id: itemId,
-    table: "part",
+    table: "item",
   });
   const assignee =
     optimisticAssignment !== undefined
@@ -44,8 +44,8 @@ const PartHeader = () => {
       {permissions.is("employee") && !!routeData?.partSummary?.id && (
         <Menubar>
           <Assign
-            id={routeData?.partSummary?.id}
-            table="part"
+            id={itemId}
+            table="item"
             value={routeData?.partSummary?.assignee ?? ""}
           />
         </Menubar>
