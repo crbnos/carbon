@@ -14,6 +14,8 @@ import type {
   itemSupplierValidator,
   itemUnitSalePriceValidator,
   itemValidator,
+  materialFormValidator,
+  materialSubstanceValidator,
   partManufacturingValidator,
   partValidator,
   serviceValidator,
@@ -26,6 +28,20 @@ export async function deleteItemGroup(
   id: string
 ) {
   return client.from("itemGroup").delete().eq("id", id);
+}
+
+export async function deleteMaterialForm(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialForm").delete().eq("id", id);
+}
+
+export async function deleteMaterialSubstance(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialSubstance").delete().eq("id", id);
 }
 
 export async function deleteUnitOfMeasure(
@@ -145,6 +161,92 @@ export async function getItemReplenishment(
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
+}
+
+export async function getMaterialForm(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialForm").select("*").eq("id", id).single();
+}
+
+export async function getMaterialForms(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("materialForm")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMaterialFormsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("materialForm")
+    .select("id, name")
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .order("name");
+}
+
+export async function getMaterialSubstance(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialSubstance").select("*").eq("id", id).single();
+}
+
+export async function getMaterialSubstances(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("materialSubstance")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMaterialSubstancesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("materialSubstance")
+    .select("id, name")
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .order("name");
 }
 
 export async function getParts(
@@ -678,6 +780,70 @@ export async function upsertItemUnitSalePrice(
     .from("itemUnitSalePrice")
     .update(sanitize(itemUnitSalePrice))
     .eq("itemId", itemUnitSalePrice.itemId);
+}
+
+export async function upsertMaterialForm(
+  client: SupabaseClient<Database>,
+  materialForm:
+    | (Omit<z.infer<typeof materialFormValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof materialFormValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in materialForm) {
+    return client
+      .from("materialForm")
+      .insert([materialForm])
+      .select("*")
+      .single();
+  }
+  return (
+    client
+      .from("materialForm")
+      .update(sanitize(materialForm))
+      // @ts-ignore
+      .eq("id", materialForm.id)
+      .select("id")
+      .single()
+  );
+}
+
+export async function upsertMaterialSubstance(
+  client: SupabaseClient<Database>,
+  materialSubstance:
+    | (Omit<z.infer<typeof materialSubstanceValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof materialSubstanceValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in materialSubstance) {
+    return client
+      .from("materialSubstance")
+      .insert([materialSubstance])
+      .select("*")
+      .single();
+  }
+  return (
+    client
+      .from("materialSubstance")
+      .update(sanitize(materialSubstance))
+      // @ts-ignore
+      .eq("id", materialSubstance.id)
+      .select("id")
+      .single()
+  );
 }
 
 export async function upsertService(

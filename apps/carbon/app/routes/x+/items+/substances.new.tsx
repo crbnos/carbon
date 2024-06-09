@@ -3,9 +3,9 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
 import {
-  ItemGroupForm,
-  itemGroupValidator,
-  upsertItemGroup,
+  MaterialSubstanceForm,
+  materialSubstanceValidator,
+  upsertMaterialSubstance,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -31,7 +31,9 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const modal = formData.get("type") == "modal";
 
-  const validation = await validator(itemGroupValidator).validate(formData);
+  const validation = await validator(materialSubstanceValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
@@ -39,42 +41,45 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const insertItemGroup = await upsertItemGroup(client, {
+  const insertMaterialSubstance = await upsertMaterialSubstance(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (insertItemGroup.error) {
+  if (insertMaterialSubstance.error) {
     return json(
       {},
       await flash(
         request,
-        error(insertItemGroup.error, "Failed to insert item group")
+        error(
+          insertMaterialSubstance.error,
+          "Failed to insert material substance"
+        )
       )
     );
   }
 
-  const itemGroupId = insertItemGroup.data?.id;
-  if (!itemGroupId) {
+  const materialSubstanceId = insertMaterialSubstance.data?.id;
+  if (!materialSubstanceId) {
     return json(
       {},
       await flash(
         request,
-        error(insertItemGroup, "Failed to insert item group")
+        error(insertMaterialSubstance, "Failed to insert material substance")
       )
     );
   }
 
   return modal
-    ? json(insertItemGroup, { status: 201 })
+    ? json(insertMaterialSubstance, { status: 201 })
     : redirect(
-        `${path.to.itemGroups}?${getParams(request)}`,
-        await flash(request, success("Item posting group created"))
+        `${path.to.materialSubstances}?${getParams(request)}`,
+        await flash(request, success("Part group created"))
       );
 }
 
-export default function NewItemGroupsRoute() {
+export default function NewMaterialSubstancesRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
@@ -82,6 +87,9 @@ export default function NewItemGroupsRoute() {
   };
 
   return (
-    <ItemGroupForm onClose={() => navigate(-1)} initialValues={initialValues} />
+    <MaterialSubstanceForm
+      onClose={() => navigate(-1)}
+      initialValues={initialValues}
+    />
   );
 }

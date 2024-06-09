@@ -2,13 +2,29 @@ import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
-const partsRoutes: AuthenticatedRouteGroup[] = [
+const itemsRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Manage",
     routes: [
       {
         name: "Parts",
         to: path.to.parts,
+      },
+      {
+        name: "Materials",
+        to: path.to.materials,
+      },
+      {
+        name: "Tools",
+        to: path.to.tools,
+      },
+      {
+        name: "Fixtures",
+        to: path.to.fixtures,
+      },
+      {
+        name: "Consumables",
+        to: path.to.consumables,
       },
       {
         name: "Services",
@@ -25,6 +41,14 @@ const partsRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
+        name: "Forms",
+        to: path.to.materialForms,
+      },
+      {
+        name: "Substances",
+        to: path.to.materialSubstances,
+      },
+      {
         name: "Posting Groups",
         to: path.to.itemGroups,
         role: "employee",
@@ -38,10 +62,10 @@ const partsRoutes: AuthenticatedRouteGroup[] = [
   },
 ];
 
-export default function usePartsSubmodules() {
+export default function useItemsSubmodules() {
   const permissions = usePermissions();
   return {
-    groups: partsRoutes
+    groups: itemsRoutes
       .filter((group) => {
         const filteredRoutes = group.routes.filter((route) => {
           if (route.role) {

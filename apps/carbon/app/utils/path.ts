@@ -106,6 +106,7 @@ export const path = {
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,
+    consumables: `${x}/items/consumables`,
     convertQuoteToOrder: (id: string) =>
       generatePath(`${x}/quote/${id}/convert-to-order`),
     currency: (id: string) => generatePath(`${x}/accounting/currencies/${id}`),
@@ -185,6 +186,10 @@ export const path = {
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deleteItemGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
+    deleteMaterialForm: (id: string) =>
+      generatePath(`${x}/items/forms/delete/${id}`),
+    deleteMaterialSubstance: (id: string) =>
+      generatePath(`${x}/items/substances/delete/${id}`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePaymentTerm: (id: string) =>
@@ -260,6 +265,7 @@ export const path = {
     equipmentUnit: (id: string) =>
       generatePath(`${x}/resources/equipment/unit/${id}`),
     fiscalYears: `${x}/accounting/years`,
+    fixtures: `${x}/items/fixtures`,
     forgotPassword: "/forgot-password",
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),
     groups: `${x}/users/groups`,
@@ -276,6 +282,12 @@ export const path = {
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
+    materials: `${x}/items/materials`,
+    materialForm: (id: string) => generatePath(`${x}/items/forms/${id}`),
+    materialForms: `${x}/items/forms`,
+    materialSubstance: (id: string) =>
+      generatePath(`${x}/items/substances/${id}`),
+    materialSubstances: `${x}/items/substances`,
     messaging: `${x}/messaging`,
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
@@ -315,6 +327,8 @@ export const path = {
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newItemGroup: `${x}/items/groups/new`,
+    newMaterialForm: `${x}/items/forms/new`,
+    newMaterialSubstance: `${x}/items/substances/new`,
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/suppliers/new`),
     newPartner: `${x}/resources/partners/new`,
@@ -388,7 +402,6 @@ export const path = {
     partSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/suppliers/${id}`),
     partSuppliers: (id: string) => generatePath(`${x}/part/${id}/suppliers`),
-
     parts: `${x}/items/parts`,
     partner: (id: string, abilityId: string) =>
       generatePath(`${x}/resources/partners/${id}/${abilityId}`),
@@ -543,6 +556,7 @@ export const path = {
       generatePath(`${x}/settings/sequences/${id}`),
     theme: `${x}/account/theme`,
     timecards: `${x}/timecards`,
+    tools: `${x}/items/tools`,
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
     uoms: `${x}/items/uom`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),

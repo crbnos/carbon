@@ -5,6 +5,8 @@ import type {
   getItemGroupsList,
   getItemQuantities,
   getItemSuppliers,
+  getMaterialForms,
+  getMaterialSubstances,
   getPart,
   getParts,
   getServices,
@@ -16,7 +18,7 @@ export type ItemCost = NonNullable<
   Awaited<ReturnType<typeof getItemCost>>
 >["data"];
 
-export type PartCostingMethod =
+export type ItemCostingMethod =
   Database["public"]["Enums"]["itemCostingMethod"];
 
 export type ItemGroup = NonNullable<
@@ -45,14 +47,23 @@ export type ItemSupplier = NonNullable<
   Awaited<ReturnType<typeof getItemSuppliers>>["data"]
 >[number];
 
+export type InventoryItemType =
+  Database["public"]["Enums"]["itemInventoryType"];
+
+export type MaterialForm = NonNullable<
+  Awaited<ReturnType<typeof getMaterialForms>>["data"]
+>[number];
+
+export type MaterialSubstance = NonNullable<
+  Awaited<ReturnType<typeof getMaterialSubstances>>["data"]
+>[number];
+
 export type PartManufacturingPolicy =
   Database["public"]["Enums"]["partManufacturingPolicy"];
 
 export type Part = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
 >[number];
-
-export type PartType = Database["public"]["Enums"]["itemInventoryType"];
 
 export type Service = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]

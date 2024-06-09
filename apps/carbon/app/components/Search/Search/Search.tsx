@@ -38,7 +38,7 @@ import { useAccountingSubmodules } from "~/modules/accounting";
 import { useDocumentsSubmodules } from "~/modules/documents";
 import { useInventorySubmodules } from "~/modules/inventory";
 import { useInvoicingSubmodules } from "~/modules/invoicing";
-import { usePartsSubmodules } from "~/modules/items";
+import { useItemsSubmodules } from "~/modules/items";
 import { usePurchasingSubmodules } from "~/modules/purchasing";
 import { useResourcesSubmodules } from "~/modules/resources";
 import { useSalesSubmodules } from "~/modules/sales";
@@ -296,7 +296,7 @@ const SearchButton = () => {
 
 function useGroupedSubmodules() {
   const modules = useModules();
-  const parts = usePartsSubmodules();
+  const parts = useItemsSubmodules();
   // const jobs = useJobsSidebar();
   const inventory = useInventorySubmodules();
   // const scheduling = useSchedulingSidebar();

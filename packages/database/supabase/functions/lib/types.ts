@@ -7709,8 +7709,8 @@ export type Database = {
           grade: string | null
           id: string
           itemId: string | null
-          materialFormId: number
-          materialSubstanceId: number
+          materialFormId: string
+          materialSubstanceId: string
           unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
@@ -7727,8 +7727,8 @@ export type Database = {
           grade?: string | null
           id: string
           itemId?: string | null
-          materialFormId: number
-          materialSubstanceId: number
+          materialFormId: string
+          materialSubstanceId: string
           unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -7745,8 +7745,8 @@ export type Database = {
           grade?: string | null
           id?: string
           itemId?: string | null
-          materialFormId?: number
-          materialSubstanceId?: number
+          materialFormId?: string
+          materialSubstanceId?: string
           unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -7927,7 +7927,8 @@ export type Database = {
           companyId: string | null
           createdAt: string
           createdBy: string
-          id: number
+          customFields: Json | null
+          id: string
           name: string
           updatedAt: string | null
           updatedBy: string | null
@@ -7936,7 +7937,8 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy: string
-          id?: number
+          customFields?: Json | null
+          id?: string
           name: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -7945,7 +7947,8 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy?: string
-          id?: number
+          customFields?: Json | null
+          id?: string
           name?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8056,7 +8059,8 @@ export type Database = {
           companyId: string | null
           createdAt: string
           createdBy: string
-          id: number
+          customFields: Json | null
+          id: string
           name: string
           updatedAt: string | null
           updatedBy: string | null
@@ -8065,7 +8069,8 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy: string
-          id?: number
+          customFields?: Json | null
+          id?: string
           name: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8074,7 +8079,8 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy?: string
-          id?: number
+          customFields?: Json | null
+          id?: string
           name?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -20912,9 +20918,9 @@ export type Database = {
             | Database["public"]["Enums"]["itemInventoryType"]
             | null
           materialForm: string | null
-          materialFormId: number | null
+          materialFormId: string | null
           materialSubstance: string | null
-          materialSubstanceId: number | null
+          materialSubstanceId: string | null
           name: string | null
           supplierIds: string[] | null
           unitOfMeasure: string | null

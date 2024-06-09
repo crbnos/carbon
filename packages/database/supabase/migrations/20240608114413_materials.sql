@@ -12,14 +12,16 @@ ALTER POLICY "Employees can view items" ON "item"
   );
 
 CREATE TABLE "materialForm" (
-  "id" SERIAL PRIMARY KEY,
+  "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
   "companyId" TEXT,
+  "customFields" JSONB,
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
 
+  CONSTRAINT "materialForm_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "materialForm_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "materialForm_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "materialForm_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE
@@ -27,6 +29,7 @@ CREATE TABLE "materialForm" (
 
 CREATE INDEX "materialForm_companyId_idx" ON "materialForm"("companyId");
 
+ALTER TABLE "materialForm" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view material forms" ON "materialForm"
   FOR SELECT
   USING (
@@ -64,22 +67,25 @@ INSERT INTO "customFieldTable" ("table", "name", "module")
 VALUES ('materialForm', 'Material Form', 'Items');
 
 CREATE TABLE "materialSubstance" (
-  "id" SERIAL PRIMARY KEY,
+  "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
   "companyId" TEXT,
+  "customFields" JSONB,
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
 
+  CONSTRAINT "materialSubstance_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "materialSubstance_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "materialSubstance_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "materialSubstance_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
+
 CREATE INDEX "materialSubstance_companyId_idx" ON "materialSubstance"("companyId");
 
-
+ALTER TABLE "materialSubstance" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view material substances" ON "materialSubstance"
   FOR SELECT
   USING (
@@ -119,8 +125,8 @@ VALUES ('materialSubstance', 'Material Substance', 'Items');
 CREATE TABLE "material" (
   "id" TEXT NOT NULL,
   "itemId" TEXT,
-  "materialFormId" INTEGER NOT NULL,
-  "materialSubstanceId" INTEGER NOT NULL,
+  "materialFormId" TEXT NOT NULL,
+  "materialSubstanceId" TEXT NOT NULL,
   "grade" TEXT,
   "dimensions" TEXT,
   "finish" TEXT,
@@ -128,7 +134,7 @@ CREATE TABLE "material" (
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
   "customFields" JSONB,
-  "companyId" TEXT, -- we share certain materials across companies
+  "companyId" TEXT, -- nullable because we share certain materials across companies
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT,
@@ -140,7 +146,7 @@ CREATE TABLE "material" (
   CONSTRAINT "material_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "material_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
   -- unique index on itemId, materialFormId, materialSubstanceId, grade, dimensions, finish
-  CONSTRAINT "material_unique" UNIQUE ("itemId", "materialFormId", "materialSubstanceId", "grade", "dimensions", "finish"),
+  CONSTRAINT "material_unique" UNIQUE ("itemId", "materialFormId", "materialSubstanceId", "grade", "dimensions", "finish", "companyId"),
   CONSTRAINT "material_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
   CONSTRAINT "material_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
   CONSTRAINT "material_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
@@ -150,6 +156,7 @@ CREATE TABLE "material" (
 CREATE INDEX "material_companyId_idx" ON "material"("companyId");
 CREATE INDEX "material_itemId_idx" ON "material"("itemId");
 
+ALTER TABLE "material" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view materials" ON "material"
   FOR SELECT
   USING (
@@ -214,3 +221,28 @@ CREATE OR REPLACE VIEW "materials" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "materialForm" mf ON mf.id = m."materialFormId"
   LEFT JOIN "materialSubstance" ms ON ms.id = m."materialSubstanceId"
   LEFT JOIN "unitOfMeasure" uom ON uom.code = m."unitOfMeasureCode" AND uom."companyId" = m."companyId";
+
+
+INSERT INTO "materialSubstance" ("name", "createdBy")
+VALUES 
+  ('Aluminum', 'system'), 
+  ('Steel', 'system'), 
+  ('Stainless Steel', 'system'),
+  ('Titanium', 'system'),
+  ('Brass', 'system'),
+  ('Copper', 'system');
+
+INSERT INTO "materialForm" ("name", "createdBy")
+VALUES 
+  ('Angle', 'system'),
+  ('Channel', 'system'),
+  ('Beam', 'system'),
+  ('Flat Bar', 'system'),
+  ('Round Bar', 'system'),
+  ('Square Bar', 'system'),
+  ('Pipe', 'system'),
+  ('Square Tube', 'system'),
+  ('Rectangle Tube', 'system'),
+  ('Diamond Plate', 'system'),
+  ('Plate', 'system'),
+  ('Sheet', 'system');

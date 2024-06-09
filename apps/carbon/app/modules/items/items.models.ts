@@ -115,6 +115,16 @@ export const itemInventoryValidator = z.object({
   defaultShelfId: zfd.text(z.string().optional()),
 });
 
+export const materialFormValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+});
+
+export const materialSubstanceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+});
+
 export const partManufacturingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   manufacturingPolicy: z.enum(partManufacturingPolicies, {
