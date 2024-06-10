@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { PartForm } from "~/modules/items";
+import { PartForm, ToolForm } from "~/modules/items";
 import { useItems } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
@@ -54,6 +54,25 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             description: "",
             itemInventoryType: "Inventory",
             replenishmentSystem: "Buy and Make",
+            unitOfMeasureCode: "EA",
+            blocked: false,
+            active: true,
+          }}
+        />
+      )}
+      {type === "Tool" && newItemsModal.isOpen && (
+        <ToolForm
+          type="modal"
+          onClose={() => {
+            setCreated("");
+            newItemsModal.onClose();
+            triggerRef.current?.click();
+          }}
+          initialValues={{
+            id: "",
+            name: created,
+            description: "",
+            itemInventoryType: "Inventory",
             unitOfMeasureCode: "EA",
             blocked: false,
             active: true,

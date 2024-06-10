@@ -8,7 +8,6 @@ import {
   cn,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
@@ -21,63 +20,15 @@ import {
   Submit,
   TextArea,
 } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
+import { useNextItemId, usePermissions } from "~/hooks";
 import { serviceType, serviceValidator } from "~/modules/items";
 
 type ServiceFormProps = {
   initialValues: z.infer<typeof serviceValidator>;
 };
 
-const useNextServiceIdShortcut = () => {
-  const { company } = useUser();
-  const { supabase } = useSupabase();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [serviceId, setServiceId] = useState<string>("");
-
-  const onServiceIdChange = async (newServiceId: string) => {
-    if (newServiceId.endsWith("...") && supabase) {
-      setLoading(true);
-
-      const prefix = newServiceId.slice(0, -3);
-      try {
-        const { data } = await supabase
-          ?.from("service")
-          .select("id")
-          .eq("companyId", company.id)
-          .ilike("id", `${prefix}%`)
-          .order("id", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data?.id) {
-          const sequence = data.id.slice(prefix.length);
-          const currentSequence = parseInt(sequence);
-          const nextSequence = currentSequence + 1;
-          const nextId = `${prefix}${nextSequence
-            .toString()
-            .padStart(
-              sequence.length -
-                (data.id.split(`${currentSequence}`)?.[1].length ?? 0),
-              "0"
-            )}`;
-          setServiceId(nextId);
-        } else {
-          setServiceId(`${prefix}${(1).toString().padStart(9, "0")}`);
-        }
-      } catch {
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setServiceId(newServiceId);
-    }
-  };
-
-  return { serviceId, onServiceIdChange, loading };
-};
-
 const ServiceForm = ({ initialValues }: ServiceFormProps) => {
-  const { serviceId, onServiceIdChange, loading } = useNextServiceIdShortcut();
+  const { id, onIdChange, loading } = useNextItemId("service");
 
   const permissions = usePermissions();
   const isEditing = initialValues.id !== undefined;
@@ -120,8 +71,8 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
                 name="id"
                 label="Service ID"
                 helperText="Use ... to get the next service ID"
-                value={serviceId}
-                onChange={onServiceIdChange}
+                value={id}
+                onChange={onIdChange}
                 isDisabled={loading}
                 autoFocus
               />

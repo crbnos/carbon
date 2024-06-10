@@ -39,10 +39,6 @@ export type ItemReorderingPolicy =
 export type ItemReplenishmentSystem =
   Database["public"]["Enums"]["itemReplenishmentSystem"];
 
-export type PartSummary = NonNullable<
-  Awaited<ReturnType<typeof getPart>>
->["data"];
-
 export type ItemSupplier = NonNullable<
   Awaited<ReturnType<typeof getItemSuppliers>>["data"]
 >[number];
@@ -65,11 +61,23 @@ export type Part = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
 >[number];
 
+export type PartSummary = NonNullable<
+  Awaited<ReturnType<typeof getPart>>
+>["data"];
+
 export type Service = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]
 >[number];
 
 export type ServiceType = Database["public"]["Enums"]["serviceType"];
+
+export type Tool = NonNullable<
+  Awaited<ReturnType<typeof getTools>>["data"]
+>[number];
+
+export type ToolSummary = NonNullable<
+  Awaited<ReturnType<typeof getTool>>
+>["data"];
 
 export type UnitOfMeasure = NonNullable<
   Awaited<ReturnType<typeof getUnitOfMeasure>>["data"]

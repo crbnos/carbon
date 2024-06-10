@@ -1,4 +1,5 @@
 import { useParams } from "@remix-run/react";
+
 import { BiListCheck } from "react-icons/bi";
 import {
   LuBox,
@@ -9,12 +10,16 @@ import {
   LuShoppingCart,
   LuTags,
 } from "react-icons/lu";
-import { usePermissions } from "~/hooks";
-import type { ItemReplenishmentSystem } from "~/modules/items/types";
+import { DetailSidebar } from "~/components/Layout";
+import { usePermissions, useRouteData } from "~/hooks";
+import type {
+  ItemReplenishmentSystem,
+  PartSummary,
+} from "~/modules/items/types";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 
-export function usePartSidebar(replenishment: ItemReplenishmentSystem) {
+export function usePartNavigation(replenishment: ItemReplenishmentSystem) {
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
@@ -85,3 +90,20 @@ export function usePartSidebar(replenishment: ItemReplenishmentSystem) {
         item.role.some((role) => permissions.is(role as Role)))
   );
 }
+
+const PartNavigation = () => {
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("itemId not found");
+
+  const routeData = useRouteData<{ partSummary: PartSummary }>(
+    path.to.part(itemId)
+  );
+  if (!routeData?.partSummary?.replenishmentSystem)
+    throw new Error("Could not find replenishmentSystem in routeData");
+
+  const links = usePartNavigation(routeData.partSummary.replenishmentSystem);
+
+  return <DetailSidebar links={links} />;
+};
+
+export default PartNavigation;
