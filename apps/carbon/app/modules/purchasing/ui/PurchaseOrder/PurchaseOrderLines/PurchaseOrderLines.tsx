@@ -171,10 +171,13 @@ const PurchaseOrderLines = () => {
         header: "Pur. UoM",
         cell: ({ row }) => {
           switch (row.original.purchaseOrderLineType) {
-            case "Part":
-              return <span>{row.original.purchaseUnitOfMeasureCode}</span>;
-            default:
+            case "Service":
+            case "Comment":
+            case "G/L Account":
+            case "Fixed Asset":
               return null;
+            default:
+              return <span>{row.original.purchaseUnitOfMeasureCode}</span>;
           }
         },
       },
@@ -183,10 +186,13 @@ const PurchaseOrderLines = () => {
         header: "Conversion Factor",
         cell: ({ row }) => {
           switch (row.original.purchaseOrderLineType) {
-            case "Part":
-              return <span>{row.original.conversionFactor}</span>;
-            default:
+            case "Service":
+            case "Comment":
+            case "G/L Account":
+            case "Fixed Asset":
               return null;
+            default:
+              return <span>{row.original.conversionFactor}</span>;
           }
         },
       },

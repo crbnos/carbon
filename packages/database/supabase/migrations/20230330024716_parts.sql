@@ -1,3 +1,59 @@
+CREATE TABLE "unitOfMeasure" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "code" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "active" BOOLEAN NOT NULL DEFAULT true,
+  "companyId" TEXT NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "customFields" JSONB,
+
+  CONSTRAINT "unitOfMeasure_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "unitOfMeasure_code_unique" UNIQUE ("code", "companyId"),
+  CONSTRAINT "unitOfMeasure_name_unique" UNIQUE ("name", "companyId"),
+  CONSTRAINT "unitOfMeasure_code_check" CHECK (char_length("code") <= 6),
+  CONSTRAINT "unitOfMeasure_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "unitOfMeasure_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "unitOfMeasure_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+);
+
+CREATE INDEX "unitOfMeasure_code_idx" ON "unitOfMeasure"("code");
+CREATE INDEX "unitOfMeasure_name_idx" ON "unitOfMeasure"("name");
+CREATE INDEX "unitOfMeasure_companyId_idx" ON "unitOfMeasure"("companyId");
+
+ALTER TABLE "unitOfMeasure" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can view units of measure" ON "unitOfMeasure"
+  FOR SELECT
+  USING (
+    auth.role() = 'authenticated'
+  );
+  
+
+CREATE POLICY "Employees with parts_create can insert units of measure" ON "unitOfMeasure"
+  FOR INSERT
+  WITH CHECK (   
+    has_role('employee') AND
+    has_company_permission('parts_create', "companyId")
+);
+
+CREATE POLICY "Employees with parts_update can update units of measure" ON "unitOfMeasure"
+  FOR UPDATE
+  USING (
+    has_role('employee') AND
+    has_company_permission('parts_update', "companyId")
+  );
+
+CREATE POLICY "Employees with parts_delete can delete units of measure" ON "unitOfMeasure"
+  FOR DELETE
+  USING (
+    has_role('employee') AND
+    has_company_permission('parts_delete', "companyId")
+  );
+
+
 CREATE TABLE "itemGroup" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
@@ -73,6 +129,7 @@ CREATE TABLE "item" (
   "description" TEXT,
   "itemGroupId" TEXT,
   "itemInventoryType" "itemInventoryType" NOT NULL,
+  "unitOfMeasureCode" TEXT,
   "active" BOOLEAN NOT NULL DEFAULT true,
   "blocked" BOOLEAN NOT NULL DEFAULT false,
   "companyId" TEXT NOT NULL,
@@ -84,6 +141,7 @@ CREATE TABLE "item" (
   CONSTRAINT "item_pkey" PRIMARY KEY (id),
   CONSTRAINT "item_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "item_unique" UNIQUE ("readableId", "companyId", "type"),
+  CONSTRAINT "item_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "item_itemGroupId_fkey" FOREIGN KEY ("itemGroupId") REFERENCES "itemGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "item_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
   CONSTRAINT "item_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
@@ -154,67 +212,11 @@ CREATE TYPE "itemReorderingPolicy" AS ENUM (
   'Maximum Quantity'
 );
 
-CREATE TABLE "unitOfMeasure" (
-  "id" TEXT NOT NULL DEFAULT xid(),
-  "code" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
-  "active" BOOLEAN NOT NULL DEFAULT true,
-  "companyId" TEXT NOT NULL,
-  "createdBy" TEXT NOT NULL,
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "updatedBy" TEXT,
-  "updatedAt" TIMESTAMP WITH TIME ZONE,
-  "customFields" JSONB,
-
-  CONSTRAINT "unitOfMeasure_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "unitOfMeasure_code_unique" UNIQUE ("code", "companyId"),
-  CONSTRAINT "unitOfMeasure_name_unique" UNIQUE ("name", "companyId"),
-  CONSTRAINT "unitOfMeasure_code_check" CHECK (char_length("code") <= 6),
-  CONSTRAINT "unitOfMeasure_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "unitOfMeasure_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "unitOfMeasure_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
-);
-
-CREATE INDEX "unitOfMeasure_code_idx" ON "unitOfMeasure"("code");
-CREATE INDEX "unitOfMeasure_name_idx" ON "unitOfMeasure"("name");
-CREATE INDEX "unitOfMeasure_companyId_idx" ON "unitOfMeasure"("companyId");
-
-ALTER TABLE "unitOfMeasure" ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Authenticated users can view units of measure" ON "unitOfMeasure"
-  FOR SELECT
-  USING (
-    auth.role() = 'authenticated'
-  );
-  
-
-CREATE POLICY "Employees with parts_create can insert units of measure" ON "unitOfMeasure"
-  FOR INSERT
-  WITH CHECK (   
-    has_role('employee') AND
-    has_company_permission('parts_create', "companyId")
-);
-
-CREATE POLICY "Employees with parts_update can update units of measure" ON "unitOfMeasure"
-  FOR UPDATE
-  USING (
-    has_role('employee') AND
-    has_company_permission('parts_update', "companyId")
-  );
-
-CREATE POLICY "Employees with parts_delete can delete units of measure" ON "unitOfMeasure"
-  FOR DELETE
-  USING (
-    has_role('employee') AND
-    has_company_permission('parts_delete', "companyId")
-  );
-
 
 CREATE TABLE "part" (
   "id" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
   "replenishmentSystem" "itemReplenishmentSystem" NOT NULL,
-  "unitOfMeasureCode" TEXT NOT NULL,
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
   "fromDate" DATE,
@@ -229,7 +231,6 @@ CREATE TABLE "part" (
 
   CONSTRAINT "part_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "part_id_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "part_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "part_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
   CONSTRAINT "part_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT "part_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -287,27 +288,27 @@ CREATE TRIGGER create_item_search_result
   AFTER INSERT on public.item
   FOR EACH ROW EXECUTE PROCEDURE public.create_item_search_result();
 
-CREATE FUNCTION public.create_part_related_records()
+CREATE FUNCTION public.create_item_related_records()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public."itemCost"("itemId", "costingMethod", "createdBy", "companyId")
-  VALUES (new."itemId", 'FIFO', new."createdBy", new."companyId");
+  VALUES (new.id, 'FIFO', new."createdBy", new."companyId");
 
   INSERT INTO public."itemReplenishment"("itemId", "createdBy", "companyId")
-  VALUES (new."itemId", new."createdBy", new."companyId");
+  VALUES (new.id, new."createdBy", new."companyId");
 
   INSERT INTO public."itemUnitSalePrice"("itemId", "currencyCode", "createdBy", "companyId")
   -- TODO: get default currency
-  VALUES (new."itemId", 'USD', new."createdBy", new."companyId");
+  VALUES (new.id, 'USD', new."createdBy", new."companyId");
   
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
-CREATE TRIGGER create_part_related_records
-  AFTER INSERT on public.part
-  FOR EACH ROW EXECUTE PROCEDURE public.create_part_related_records();
+CREATE TRIGGER create_item_related_records
+  AFTER INSERT on public.item
+  FOR EACH ROW EXECUTE PROCEDURE public.create_item_related_records();
 
 CREATE OR REPLACE FUNCTION public.update_item_search_result()
 RETURNS TRIGGER AS $$

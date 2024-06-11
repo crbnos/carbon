@@ -58,6 +58,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
         </CardHeader>
         <CardContent>
           <Hidden name="itemInventoryType" value="Non-Inventory" />
+          <Hidden name="unitOfMeasureCode" value="" />
           <div
             className={cn(
               "grid w-full gap-x-8 gap-y-2",

@@ -32,7 +32,7 @@ const ToolsTable = memo(({ data, count, itemGroups }: ToolsTableProps) => {
         accessorKey: "id",
         header: "Tool ID",
         cell: ({ row }) => (
-          <Hyperlink to={path.to.partDetails(row.original.itemId!)}>
+          <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
             {row.original.id}
           </Hyperlink>
         ),
@@ -171,7 +171,7 @@ const ToolsTable = memo(({ data, count, itemGroups }: ToolsTableProps) => {
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
     return (row: Tool) => (
-      <MenuItem onClick={() => navigate(path.to.part(row.id!))}>
+      <MenuItem onClick={() => navigate(path.to.tool(row.id!))}>
         <MenuIcon icon={<LuPencil />} />
         Edit Tool
       </MenuItem>

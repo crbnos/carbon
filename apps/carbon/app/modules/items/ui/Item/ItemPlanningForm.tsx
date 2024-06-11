@@ -26,11 +26,13 @@ import { path } from "~/utils/path";
 type ItemPlanningFormProps = {
   initialValues: z.infer<typeof itemPlanningValidator>;
   locations: ListItem[];
+  type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
 };
 
 const ItemPlanningForm = ({
   initialValues,
   locations,
+  type,
 }: ItemPlanningFormProps) => {
   const permissions = usePermissions();
 
@@ -57,9 +59,11 @@ const ItemPlanningForm = ({
               options={locationOptions}
               onChange={(selected) => {
                 // hard refresh because initialValues update has no effect otherwise
-                window.location.href = `${path.to.partPlanning(
-                  initialValues.itemId
-                )}?location=${selected}`;
+                window.location.href = window.location.href = getLocationPath(
+                  initialValues.itemId,
+                  selected,
+                  type
+                );
               }}
             />
           </CardAction>
@@ -131,3 +135,25 @@ const ItemPlanningForm = ({
 };
 
 export default ItemPlanningForm;
+
+function getLocationPath(
+  itemId: string,
+  locationId: string,
+  type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable"
+) {
+  switch (type) {
+    case "Part":
+      return `${path.to.partPlanning(itemId)}?location=${locationId}`;
+    case "Material":
+      return `${path.to.materialPlanning(itemId)}?location=${locationId}`;
+
+    case "Tool":
+      return `${path.to.toolPlanning(itemId)}?location=${locationId}`;
+    case "Fixture":
+      return `${path.to.fixturePlanning(itemId)}?location=${locationId}`;
+    case "Consumable":
+      return `${path.to.consumablePlanning(itemId)}?location=${locationId}`;
+    default:
+      throw new Error(`Invalid item type: ${type}`);
+  }
+}

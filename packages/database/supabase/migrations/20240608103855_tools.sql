@@ -5,7 +5,6 @@ UPDATE "customFieldTable" SET "module" = 'Items' WHERE "module" = 'Parts';
 CREATE TABLE "tool" (
   "id" TEXT NOT NULL,
   "itemId" TEXT,
-  "unitOfMeasureCode" TEXT NOT NULL,
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
   "customFields" JSONB,
@@ -17,7 +16,6 @@ CREATE TABLE "tool" (
 
   CONSTRAINT "tool_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "tool_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "tool_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "tool_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
   CONSTRAINT "tool_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
   CONSTRAINT "tool_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
@@ -69,6 +67,7 @@ CREATE OR REPLACE VIEW "tools" WITH(SECURITY_INVOKER=true) AS
     i.active,
     i.blocked,
     i.assignee,
+    i."unitOfMeasureCode",
     t.*,
     ig.name AS "itemGroup",
     s."supplierIds",
@@ -83,4 +82,4 @@ CREATE OR REPLACE VIEW "tools" WITH(SECURITY_INVOKER=true) AS
     FROM "itemSupplier" s
     GROUP BY "itemId"
   )  s ON s."itemId" = t."itemId"
-  LEFT JOIN "unitOfMeasure" uom ON uom.code = t."unitOfMeasureCode" AND uom."companyId" = t."companyId";
+  LEFT JOIN "unitOfMeasure" uom ON uom.code = i."unitOfMeasureCode" AND uom."companyId" = i."companyId";

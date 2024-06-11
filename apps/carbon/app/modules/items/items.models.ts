@@ -37,6 +37,9 @@ export const itemValidator = z.object({
       message: "Part type is required",
     }),
   }),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of Measure is required" }),
   blocked: zfd.checkbox(),
   active: zfd.checkbox(),
 });
@@ -65,9 +68,6 @@ export const partValidator = itemValidator.merge(
         message: "Replenishment system is required",
       }),
     }),
-    unitOfMeasureCode: z
-      .string()
-      .min(1, { message: "Unit of Measure is required" }),
   })
 );
 

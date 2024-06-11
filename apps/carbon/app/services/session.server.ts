@@ -10,6 +10,8 @@ import {
   SESSION_SECRET,
 } from "~/config/env";
 
+import { redis } from "@carbon/redis";
+import { getPermissionCacheKey } from "~/modules/users/users.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 import { refreshAccessToken, verifyAuthSession } from "./auth/auth.server";
@@ -188,6 +190,7 @@ export async function updateCompanySession(
   // allow user session to be null.
   // useful you want to clear session and display a message explaining why
   if (authSession !== undefined) {
+    await redis.del(getPermissionCacheKey(authSession?.userId!));
     session.set(SESSION_KEY, {
       ...authSession,
       companyId,

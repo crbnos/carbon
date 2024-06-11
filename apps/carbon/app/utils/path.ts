@@ -107,6 +107,10 @@ export const path = {
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,
     consumables: `${x}/items/consumables`,
+    consumableInventory: (id: string) =>
+      generatePath(`${x}/consumable/${id}/inventory`),
+    consumablePlanning: (id: string) =>
+      generatePath(`${x}/consumable/${id}/planning`),
     convertQuoteToOrder: (id: string) =>
       generatePath(`${x}/quote/${id}/convert-to-order`),
     currency: (id: string) => generatePath(`${x}/accounting/currencies/${id}`),
@@ -266,6 +270,10 @@ export const path = {
       generatePath(`${x}/resources/equipment/unit/${id}`),
     fiscalYears: `${x}/accounting/years`,
     fixtures: `${x}/items/fixtures`,
+    fixtureInventory: (id: string) =>
+      generatePath(`${x}/fixture/${id}/inventory`),
+    fixturePlanning: (id: string) =>
+      generatePath(`${x}/fixture/${id}/planning`),
     forgotPassword: "/forgot-password",
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),
     groups: `${x}/users/groups`,
@@ -287,6 +295,10 @@ export const path = {
     materials: `${x}/items/materials`,
     materialForm: (id: string) => generatePath(`${x}/items/forms/${id}`),
     materialForms: `${x}/items/forms`,
+    materialInventory: (id: string) =>
+      generatePath(`${x}/material/${id}/inventory`),
+    materialPlanning: (id: string) =>
+      generatePath(`${x}/material/${id}/planning`),
     materialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/${id}`),
     materialSubstances: `${x}/items/substances`,
@@ -380,6 +392,8 @@ export const path = {
     newSupplierStatus: `${x}/purchasing/supplier-statuses/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
     newTool: `${x}/tool/new`,
+    newToolSupplier: (id: string) =>
+      generatePath(`${x}/tool/${id}/suppliers/new`),
     newUom: `${x}/items/uom/new`,
     newWorkCell: `${x}/resources/work-cells/cell/new`,
     newWorkCellUnit: (id: string) =>

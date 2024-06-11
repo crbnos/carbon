@@ -15,6 +15,7 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
     i.description,
     i."itemGroupId",
     i."itemInventoryType",
+    i."unitOfMeasureCode",
     i.active,
     i.blocked,
     i.assignee,
@@ -32,7 +33,7 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
     FROM "itemSupplier" ps
     GROUP BY "itemId"
   )  ps ON ps."itemId" = p."itemId"
-  LEFT JOIN "unitOfMeasure" uom ON uom.code = p."unitOfMeasureCode" AND uom."companyId" = p."companyId";
+  LEFT JOIN "unitOfMeasure" uom ON uom.code = i."unitOfMeasureCode" AND uom."companyId" = i."companyId";
 
 
 CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS

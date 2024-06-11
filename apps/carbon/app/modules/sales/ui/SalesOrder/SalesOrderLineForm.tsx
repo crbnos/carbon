@@ -126,19 +126,13 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
   const onChange = async (itemId: string) => {
     if (!itemId) return;
     if (!supabase || !company.id) return;
-    const [item, part, shelf, price] = await Promise.all([
+    const [item, shelf, price] = await Promise.all([
       supabase
         .from("item")
-        .select("name, readableId")
+        .select("name, readableId, unitOfMeasureCode")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
-      supabase
-        .from("part")
-        .select("unitOfMeasureCode")
-        .eq("itemId", itemId)
-        .eq("companyId", company.id)
-        .maybeSingle(),
       supabase
         .from("itemInventory")
         .select("defaultShelfId")
@@ -159,7 +153,7 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
       itemReadableId: item.data?.readableId,
       description: item.data?.name ?? "",
       unitPrice: price.data?.unitSalePrice ?? 0,
-      uom: part.data?.unitOfMeasureCode ?? "EA",
+      uom: item.data?.unitOfMeasureCode ?? "EA",
       shelfId: shelf.data?.defaultShelfId ?? "",
     });
   };
@@ -260,7 +254,14 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
                       }))
                     }
                   />
-                  {["Part", "Service"].includes(type) && (
+                  {[
+                    "Part",
+                    "Material",
+                    "Service",
+                    "Tool",
+                    "Fixture",
+                    "Consumable",
+                  ].includes(type) && (
                     <ComboboxControlled
                       name="locationId"
                       label="Location"
@@ -269,7 +270,13 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
                       onChange={onLocationChange}
                     />
                   )}
-                  {type === "Part" && (
+                  {[
+                    "Part",
+                    "Material",
+                    "Tool",
+                    "Fixture",
+                    "Consumable",
+                  ].includes(type) && (
                     <ComboboxControlled
                       name="shelfId"
                       label="Shelf"

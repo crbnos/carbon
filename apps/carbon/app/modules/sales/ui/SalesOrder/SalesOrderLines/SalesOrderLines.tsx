@@ -156,7 +156,10 @@ const SalesOrderLines = () => {
         header: "Location",
         cell: ({ row }) => {
           switch (row.original.salesOrderLineType) {
-            case "Part":
+            case "Comment":
+            case "Service":
+              return null;
+            default:
               return (
                 <span>
                   {locations.find((l) => l.id == row.original.locationId)?.name}

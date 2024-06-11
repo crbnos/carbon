@@ -5838,6 +5838,7 @@ export type Database = {
           name: string
           readableId: string
           type: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -5855,6 +5856,7 @@ export type Database = {
           name: string
           readableId: string
           type: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -5872,6 +5874,7 @@ export type Database = {
           name?: string
           readableId?: string
           type?: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -5980,6 +5983,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itemGroup"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "item_updatedBy_fkey"
@@ -8370,7 +8380,6 @@ export type Database = {
           itemId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate: string | null
-          unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8386,7 +8395,6 @@ export type Database = {
           itemId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate?: string | null
-          unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8402,7 +8410,6 @@ export type Database = {
           itemId?: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate?: string | null
-          unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8518,13 +8525,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itemQuantities"
             referencedColumns: ["itemId"]
-          },
-          {
-            foreignKeyName: "part_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "part_updatedBy_fkey"
@@ -17754,7 +17754,6 @@ export type Database = {
           customFields: Json | null
           id: string
           itemId: string | null
-          unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -17767,7 +17766,6 @@ export type Database = {
           customFields?: Json | null
           id: string
           itemId?: string | null
-          unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -17780,7 +17778,6 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId?: string | null
-          unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -17896,13 +17893,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itemQuantities"
             referencedColumns: ["itemId"]
-          },
-          {
-            foreignKeyName: "tool_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "tool_updatedBy_fkey"
@@ -21475,13 +21465,6 @@ export type Database = {
             referencedColumns: ["itemId"]
           },
           {
-            foreignKeyName: "part_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
             foreignKeyName: "part_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -24389,13 +24372,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itemQuantities"
             referencedColumns: ["itemId"]
-          },
-          {
-            foreignKeyName: "tool_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "tool_updatedBy_fkey"

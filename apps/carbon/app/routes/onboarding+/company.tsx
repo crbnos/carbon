@@ -9,7 +9,6 @@ import {
   HStack,
   VStack,
 } from "@carbon/react";
-import { redis } from "@carbon/redis";
 import {
   ValidatedForm,
   validationError,
@@ -35,12 +34,8 @@ import {
   seedCompany,
   updateCompany,
 } from "~/modules/settings";
-import { getPermissionCacheKey } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
-import {
-  destroyAuthSession,
-  updateCompanySession,
-} from "~/services/session.server";
+import { updateCompanySession } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
 
 export async function loader({ request }: ActionFunctionArgs) {
@@ -153,17 +148,12 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         locationId,
       }),
-      redis.del(getPermissionCacheKey(userId)),
     ]);
 
     if (job.error) {
       logger.error(job.error);
       throw new Error("Fatal: failed to insert job");
     }
-  }
-
-  if (!companyId) {
-    await destroyAuthSession(request);
   }
 
   throw redirect(next, {

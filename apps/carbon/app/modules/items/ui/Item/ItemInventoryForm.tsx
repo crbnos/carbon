@@ -30,6 +30,7 @@ type ItemInventoryFormProps = {
   quantities: ItemQuantities;
   locations: ListItem[];
   shelves: string[];
+  type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
 };
 
 const ItemInventoryForm = ({
@@ -37,6 +38,7 @@ const ItemInventoryForm = ({
   locations,
   quantities,
   shelves,
+  type,
 }: ItemInventoryFormProps) => {
   const permissions = usePermissions();
   const { supabase } = useSupabase();
@@ -68,9 +70,11 @@ const ItemInventoryForm = ({
               options={locationOptions}
               onChange={(selected) => {
                 // hard refresh because initialValues update has no effect otherwise
-                window.location.href = `${path.to.partInventory(
-                  initialValues.itemId
-                )}?location=${selected}`;
+                window.location.href = getLocationPath(
+                  initialValues.itemId,
+                  selected,
+                  type
+                );
               }}
             />
           </CardAction>
@@ -132,3 +136,25 @@ const ItemInventoryForm = ({
 };
 
 export default ItemInventoryForm;
+
+function getLocationPath(
+  itemId: string,
+  locationId: string,
+  type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable"
+) {
+  switch (type) {
+    case "Part":
+      return `${path.to.partInventory(itemId)}?location=${locationId}`;
+    case "Material":
+      return `${path.to.materialInventory(itemId)}?location=${locationId}`;
+
+    case "Tool":
+      return `${path.to.toolInventory(itemId)}?location=${locationId}`;
+    case "Fixture":
+      return `${path.to.fixtureInventory(itemId)}?location=${locationId}`;
+    case "Consumable":
+      return `${path.to.consumableInventory(itemId)}?location=${locationId}`;
+    default:
+      throw new Error(`Invalid item type: ${type}`);
+  }
+}

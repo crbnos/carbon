@@ -4,10 +4,12 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import {
-  ItemPlanningForm,
-  getItemPlanning,
-  itemPlanningValidator,
-  upsertItemPlanning,
+  ItemInventoryForm,
+  getItemInventory,
+  getItemQuantities,
+  getShelvesList,
+  itemInventoryValidator,
+  upsertItemInventory,
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -35,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.tool(itemId),
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -50,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.tool(itemId),
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -60,45 +62,71 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let partPlanning = await getItemPlanning(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  let [toolInventory, shelves] = await Promise.all([
+    getItemInventory(client, itemId, companyId, locationId),
+    getShelvesList(client, locationId),
+  ]);
 
-  if (partPlanning.error || !partPlanning.data) {
-    const insertPartPlanning = await upsertItemPlanning(client, {
+  if (toolInventory.error || !toolInventory.data) {
+    const insertItemInventory = await upsertItemInventory(client, {
       itemId,
       companyId,
       locationId,
+      customFields: {},
       createdBy: userId,
     });
 
-    if (insertPartPlanning.error) {
+    if (insertItemInventory.error) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.tool(itemId),
         await flash(
           request,
-          error(insertPartPlanning.error, "Failed to insert part planning")
+          error(insertItemInventory.error, "Failed to insert tool inventory")
         )
       );
     }
 
-    partPlanning = await getItemPlanning(client, itemId, companyId, locationId);
-    if (partPlanning.error || !partPlanning.data) {
+    toolInventory = await getItemInventory(
+      client,
+      itemId,
+      companyId,
+      locationId
+    );
+    if (toolInventory.error || !toolInventory.data) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.tool(itemId),
         await flash(
           request,
-          error(partPlanning.error, "Failed to load part planning")
+          error(toolInventory.error, "Failed to load tool inventory")
         )
       );
     }
   }
 
+  if (shelves.error) {
+    throw redirect(
+      path.to.items,
+      await flash(request, error(shelves.error, "Failed to load shelves"))
+    );
+  }
+
+  const quantities = await getItemQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (quantities.error || !quantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(request, error(quantities, "Failed to load tool quantities"))
+    );
+  }
+
   return json({
-    partPlanning: partPlanning.data,
+    toolInventory: toolInventory.data,
+    quantities: quantities.data,
+    shelves: shelves.data.map((s) => s.id),
   });
 }
 
@@ -112,52 +140,56 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(itemPlanningValidator).validate(formData);
+  // validate with toolsValidator
+  const validation = await validator(itemInventoryValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const updatePartPlanning = await upsertItemPlanning(client, {
-    ...validation.data,
+  const { ...update } = validation.data;
+
+  const updateItemInventory = await upsertItemInventory(client, {
+    ...update,
     itemId,
-    updatedBy: userId,
     customFields: setCustomFields(formData),
+    updatedBy: userId,
   });
-  if (updatePartPlanning.error) {
+  if (updateItemInventory.error) {
     throw redirect(
-      path.to.part(itemId),
+      path.to.tool(itemId),
       await flash(
         request,
-        error(updatePartPlanning.error, "Failed to update part planning")
+        error(updateItemInventory.error, "Failed to update tool inventory")
       )
     );
   }
 
   throw redirect(
-    path.to.partPlanningLocation(itemId, validation.data.locationId),
-    await flash(request, success("Updated part planning"))
+    path.to.toolInventoryLocation(itemId, update.locationId),
+    await flash(request, success("Updated tool inventory"))
   );
 }
 
-export default function PartPlanningRoute() {
-  const sharedPartsData = useRouteData<{
-    locations: ListItem[];
-  }>(path.to.partRoot);
+export default function ToolInventoryRoute() {
+  const sharedToolsData = useRouteData<{ locations: ListItem[] }>(
+    path.to.toolRoot
+  );
+  const { toolInventory, quantities, shelves } = useLoaderData<typeof loader>();
 
-  const { partPlanning } = useLoaderData<typeof loader>();
-
-  if (!sharedPartsData) throw new Error("Could not load shared parts data");
-
+  const initialValues = {
+    ...toolInventory,
+    defaultShelfId: toolInventory.defaultShelfId ?? undefined,
+    ...getCustomFields(toolInventory.customFields ?? {}),
+  };
   return (
-    <ItemPlanningForm
-      key={partPlanning.itemId}
-      initialValues={{
-        ...partPlanning,
-        ...getCustomFields(partPlanning.customFields),
-      }}
-      locations={sharedPartsData.locations ?? []}
-      type="Part"
+    <ItemInventoryForm
+      key={initialValues.itemId}
+      initialValues={initialValues}
+      quantities={quantities}
+      locations={sharedToolsData?.locations ?? []}
+      shelves={shelves}
+      type="Tool"
     />
   );
 }

@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.tool(itemId),
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -50,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.tool(itemId),
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -60,45 +60,45 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let partPlanning = await getItemPlanning(
+  let toolPlanning = await getItemPlanning(
     client,
     itemId,
     companyId,
     locationId
   );
 
-  if (partPlanning.error || !partPlanning.data) {
-    const insertPartPlanning = await upsertItemPlanning(client, {
+  if (toolPlanning.error || !toolPlanning.data) {
+    const insertToolPlanning = await upsertItemPlanning(client, {
       itemId,
       companyId,
       locationId,
       createdBy: userId,
     });
 
-    if (insertPartPlanning.error) {
+    if (insertToolPlanning.error) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.tool(itemId),
         await flash(
           request,
-          error(insertPartPlanning.error, "Failed to insert part planning")
+          error(insertToolPlanning.error, "Failed to insert tool planning")
         )
       );
     }
 
-    partPlanning = await getItemPlanning(client, itemId, companyId, locationId);
-    if (partPlanning.error || !partPlanning.data) {
+    toolPlanning = await getItemPlanning(client, itemId, companyId, locationId);
+    if (toolPlanning.error || !toolPlanning.data) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.tool(itemId),
         await flash(
           request,
-          error(partPlanning.error, "Failed to load part planning")
+          error(toolPlanning.error, "Failed to load tool planning")
         )
       );
     }
   }
 
   return json({
-    partPlanning: partPlanning.data,
+    toolPlanning: toolPlanning.data,
   });
 }
 
@@ -118,46 +118,46 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePartPlanning = await upsertItemPlanning(client, {
+  const updateToolPlanning = await upsertItemPlanning(client, {
     ...validation.data,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updatePartPlanning.error) {
+  if (updateToolPlanning.error) {
     throw redirect(
-      path.to.part(itemId),
+      path.to.tool(itemId),
       await flash(
         request,
-        error(updatePartPlanning.error, "Failed to update part planning")
+        error(updateToolPlanning.error, "Failed to update tool planning")
       )
     );
   }
 
   throw redirect(
-    path.to.partPlanningLocation(itemId, validation.data.locationId),
-    await flash(request, success("Updated part planning"))
+    path.to.toolPlanningLocation(itemId, validation.data.locationId),
+    await flash(request, success("Updated tool planning"))
   );
 }
 
-export default function PartPlanningRoute() {
-  const sharedPartsData = useRouteData<{
+export default function ToolPlanningRoute() {
+  const sharedToolsData = useRouteData<{
     locations: ListItem[];
-  }>(path.to.partRoot);
+  }>(path.to.toolRoot);
 
-  const { partPlanning } = useLoaderData<typeof loader>();
+  const { toolPlanning } = useLoaderData<typeof loader>();
 
-  if (!sharedPartsData) throw new Error("Could not load shared parts data");
+  if (!sharedToolsData) throw new Error("Could not load shared tools data");
 
   return (
     <ItemPlanningForm
-      key={partPlanning.itemId}
+      key={toolPlanning.itemId}
       initialValues={{
-        ...partPlanning,
-        ...getCustomFields(partPlanning.customFields),
+        ...toolPlanning,
+        ...getCustomFields(toolPlanning.customFields),
       }}
-      locations={sharedPartsData.locations ?? []}
-      type="Part"
+      locations={sharedToolsData.locations ?? []}
+      type="Tool"
     />
   );
 }

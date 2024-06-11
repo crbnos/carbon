@@ -10,6 +10,8 @@ import type {
   getPart,
   getParts,
   getServices,
+  getTool,
+  getTools,
   getUnitOfMeasure,
   getUnitOfMeasuresList,
 } from "./items.service";
