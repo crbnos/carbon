@@ -1,7 +1,6 @@
 CREATE TABLE "consumable" (
   "id" TEXT NOT NULL,
   "itemId" TEXT,
-  "unitOfMeasureCode" TEXT NOT NULL,
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
   "customFields" JSONB,
@@ -13,7 +12,6 @@ CREATE TABLE "consumable" (
 
   CONSTRAINT "consumable_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "consumable_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "consumable_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "consumable_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
   CONSTRAINT "consumable_approvedBy_fkey" FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
   CONSTRAINT "consumable_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
@@ -62,6 +60,7 @@ CREATE OR REPLACE VIEW "consumables" WITH(SECURITY_INVOKER=true) AS
     i.description,
     i."itemGroupId",
     i."itemInventoryType",
+    i."unitOfMeasureCode",
     i.active,
     i.blocked,
     i.assignee,
@@ -79,4 +78,4 @@ CREATE OR REPLACE VIEW "consumables" WITH(SECURITY_INVOKER=true) AS
     FROM "itemSupplier" s
     GROUP BY "itemId"
   )  s ON s."itemId" = c."itemId"
-  LEFT JOIN "unitOfMeasure" uom ON uom.code = c."unitOfMeasureCode" AND uom."companyId" = c."companyId";
+  LEFT JOIN "unitOfMeasure" uom ON uom.code = i."unitOfMeasureCode" AND uom."companyId" = i."companyId";

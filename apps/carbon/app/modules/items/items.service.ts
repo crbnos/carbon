@@ -51,6 +51,65 @@ export async function deleteUnitOfMeasure(
   return client.from("unitOfMeasure").delete().eq("id", id);
 }
 
+export async function getConsumable(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("consumables")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getConsumables(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("consumables")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.supplierId) {
+    query = query.contains("supplierIds", [args.supplierId]);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "id", ascending: true },
+  ]);
+  return query;
+}
+
+export async function getConsumablesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  let query = client
+    .from("item")
+    .select("id, name, readableId")
+    .eq("type", "Consumable")
+    .eq("companyId", companyId)
+    .eq("blocked", false)
+    .eq("active", true);
+
+  return query.order("name");
+}
+
 export async function getItemCost(
   client: SupabaseClient<Database>,
   itemId: string,

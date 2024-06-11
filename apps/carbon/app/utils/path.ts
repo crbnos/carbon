@@ -106,11 +106,20 @@ export const path = {
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,
+    consumable: (id: string) => generatePath(`${x}/consumable/${id}`),
     consumables: `${x}/items/consumables`,
+    consumableCosting: (id: string) =>
+      generatePath(`${x}/consumable/${id}/costing`),
+    consumableDetails: (id: string) =>
+      generatePath(`${x}/consumable/${id}/details`),
     consumableInventory: (id: string) =>
       generatePath(`${x}/consumable/${id}/inventory`),
     consumablePlanning: (id: string) =>
       generatePath(`${x}/consumable/${id}/planning`),
+    consumablePurchasing: (id: string) =>
+      generatePath(`${x}/consumable/${id}/purchasing`),
+    consumableSuppliers: (id: string) =>
+      generatePath(`${x}/consumable/${id}/suppliers`),
     convertQuoteToOrder: (id: string) =>
       generatePath(`${x}/quote/${id}/convert-to-order`),
     currency: (id: string) => generatePath(`${x}/accounting/currencies/${id}`),
@@ -313,6 +322,7 @@ export const path = {
       generatePath(`${x}/resources/attributes/list/${id}/new`),
     newChartOfAccount: `${x}/accounting/charts/new`,
     newCompany: `${x}/settings/company/new`,
+    newConsumable: `${x}/consumable/new`,
     newContractor: `${x}/resources/contractors/new`,
     newCurrency: `${x}/accounting/currencies/new`,
     newCustomer: `${x}/customer/new`,

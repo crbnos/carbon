@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import type {
+  getConsumables,
   getItemCost,
   getItemGroups,
   getItemGroupsList,
@@ -15,6 +16,10 @@ import type {
   getUnitOfMeasure,
   getUnitOfMeasuresList,
 } from "./items.service";
+
+export type Consumable = NonNullable<
+  Awaited<ReturnType<typeof getConsumables>>["data"]
+>[number];
 
 export type ItemCost = NonNullable<
   Awaited<ReturnType<typeof getItemCost>>

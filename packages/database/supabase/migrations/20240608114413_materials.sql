@@ -130,7 +130,6 @@ CREATE TABLE "material" (
   "grade" TEXT,
   "dimensions" TEXT,
   "finish" TEXT,
-  "unitOfMeasureCode" TEXT NOT NULL,
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
   "customFields" JSONB,
@@ -144,7 +143,6 @@ CREATE TABLE "material" (
   CONSTRAINT "material_materialFormId_fkey" FOREIGN KEY ("materialFormId") REFERENCES "materialForm"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "material_materialSubstanceId_fkey" FOREIGN KEY ("materialSubstanceId") REFERENCES "materialSubstance"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "material_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "material_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
   -- unique index on itemId, materialFormId, materialSubstanceId, grade, dimensions, finish
   CONSTRAINT "material_unique" UNIQUE ("itemId", "materialFormId", "materialSubstanceId", "grade", "dimensions", "finish", "companyId"),
   CONSTRAINT "material_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
@@ -199,6 +197,7 @@ CREATE OR REPLACE VIEW "materials" WITH(SECURITY_INVOKER=true) AS
     i.description,
     i."itemGroupId",
     i."itemInventoryType",
+    i."unitOfMeasureCode",
     i.active,
     i.blocked,
     i.assignee,
@@ -220,7 +219,7 @@ CREATE OR REPLACE VIEW "materials" WITH(SECURITY_INVOKER=true) AS
   )  s ON s."itemId" = m."itemId"
   LEFT JOIN "materialForm" mf ON mf.id = m."materialFormId"
   LEFT JOIN "materialSubstance" ms ON ms.id = m."materialSubstanceId"
-  LEFT JOIN "unitOfMeasure" uom ON uom.code = m."unitOfMeasureCode" AND uom."companyId" = m."companyId";
+  LEFT JOIN "unitOfMeasure" uom ON uom.code = i."unitOfMeasureCode" AND uom."companyId" = i."companyId";
 
 
 INSERT INTO "materialSubstance" ("name", "createdBy")

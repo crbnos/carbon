@@ -1792,7 +1792,6 @@ export type Database = {
           customFields: Json | null
           id: string
           itemId: string | null
-          unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -1805,7 +1804,6 @@ export type Database = {
           customFields?: Json | null
           id: string
           itemId?: string | null
-          unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -1818,7 +1816,6 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId?: string | null
-          unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -1934,13 +1931,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itemQuantities"
             referencedColumns: ["itemId"]
-          },
-          {
-            foreignKeyName: "consumable_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "consumable_updatedBy_fkey"
@@ -7721,7 +7711,6 @@ export type Database = {
           itemId: string | null
           materialFormId: string
           materialSubstanceId: string
-          unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -7739,7 +7728,6 @@ export type Database = {
           itemId?: string | null
           materialFormId: string
           materialSubstanceId: string
-          unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -7757,7 +7745,6 @@ export type Database = {
           itemId?: string | null
           materialFormId?: string
           materialSubstanceId?: string
-          unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -7887,13 +7874,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "materialSubstance"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "material_updatedBy_fkey"
@@ -19822,13 +19802,6 @@ export type Database = {
             referencedColumns: ["itemId"]
           },
           {
-            foreignKeyName: "consumable_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
             foreignKeyName: "consumable_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -21086,13 +21059,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "materialSubstance"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "material_updatedBy_fkey"
