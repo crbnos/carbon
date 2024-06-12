@@ -30,7 +30,7 @@ import { path } from "~/utils/path";
 
 type ItemSupplierFormProps = {
   initialValues: z.infer<typeof itemSupplierValidator>;
-  type: "Part" | "Service" | "Tool";
+  type: "Part" | "Service" | "Tool" | "Consumable" | "Material";
 };
 
 const ItemSupplierForm = ({ initialValues, type }: ItemSupplierFormProps) => {
@@ -124,7 +124,7 @@ export default ItemSupplierForm;
 
 function getAction(
   isEditing: boolean,
-  type: "Part" | "Service" | "Tool",
+  type: "Part" | "Service" | "Tool" | "Consumable" | "Material",
   itemId: string,
   id?: string
 ) {
@@ -148,6 +148,22 @@ function getAction(
       return path.to.toolSupplier(itemId, id!);
     } else {
       return path.to.newToolSupplier(itemId);
+    }
+  }
+
+  if (type === "Consumable") {
+    if (isEditing) {
+      return path.to.consumableSupplier(itemId, id!);
+    } else {
+      return path.to.newConsumableSupplier(itemId);
+    }
+  }
+
+  if (type === "Material") {
+    if (isEditing) {
+      return path.to.materialSupplier(itemId, id!);
+    } else {
+      return path.to.newMaterialSupplier(itemId);
     }
   }
   throw new Error("Invalid type");

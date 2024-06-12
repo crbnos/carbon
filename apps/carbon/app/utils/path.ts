@@ -114,10 +114,17 @@ export const path = {
       generatePath(`${x}/consumable/${id}/details`),
     consumableInventory: (id: string) =>
       generatePath(`${x}/consumable/${id}/inventory`),
+    consumableInventoryLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/consumable/${id}/inventory?location=${locationId}`),
     consumablePlanning: (id: string) =>
       generatePath(`${x}/consumable/${id}/planning`),
+    consumablePlanningLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/consumable/${id}/planning?location=${locationId}`),
     consumablePurchasing: (id: string) =>
       generatePath(`${x}/consumable/${id}/purchasing`),
+    consumableRoot: `${x}/consumable`,
+    consumableSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/consumable/${itemId}/suppliers/${id}`),
     consumableSuppliers: (id: string) =>
       generatePath(`${x}/consumable/${id}/suppliers`),
     convertQuoteToOrder: (id: string) =>
@@ -311,6 +318,8 @@ export const path = {
     materialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/${id}`),
     materialSubstances: `${x}/items/substances`,
+    materialSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/material/${itemId}/suppliers/${id}`),
     messaging: `${x}/messaging`,
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
@@ -323,6 +332,8 @@ export const path = {
     newChartOfAccount: `${x}/accounting/charts/new`,
     newCompany: `${x}/settings/company/new`,
     newConsumable: `${x}/consumable/new`,
+    newConsumableSupplier: (id: string) =>
+      generatePath(`${x}/consumable/${id}/suppliers/new`),
     newContractor: `${x}/resources/contractors/new`,
     newCurrency: `${x}/accounting/currencies/new`,
     newCustomer: `${x}/customer/new`,
@@ -353,6 +364,8 @@ export const path = {
     newItemGroup: `${x}/items/groups/new`,
     newMaterialForm: `${x}/items/forms/new`,
     newMaterialSubstance: `${x}/items/substances/new`,
+    newMaterialSupplier: (id: string) =>
+      generatePath(`${x}/material/${id}/suppliers/new`),
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/suppliers/new`),
     newPartner: `${x}/resources/partners/new`,

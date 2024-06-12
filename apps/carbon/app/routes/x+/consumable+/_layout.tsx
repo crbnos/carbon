@@ -8,7 +8,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Tools" }];
+  return [{ title: "Carbon | Consumables" }];
 };
 
 export const handle: Handle = {
@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export default function ToolRoute() {
+export default function ConsumableRoute() {
   return (
     <VStack spacing={4} className="h-full p-4">
       <Outlet />

@@ -6,6 +6,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  consumableValidator,
   itemCostValidator,
   itemGroupValidator,
   itemInventoryValidator,
@@ -636,6 +637,86 @@ export async function insertShelf(
     ])
     .select("id")
     .single();
+}
+
+export async function upsertConsumable(
+  client: SupabaseClient<Database>,
+  consumable:
+    | (z.infer<typeof consumableValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof consumableValidator> & {
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in consumable) {
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: consumable.id,
+        name: consumable.name,
+        type: "Consumable",
+        itemGroupId: consumable.itemGroupId,
+        itemInventoryType: consumable.itemInventoryType,
+        unitOfMeasureCode: consumable.unitOfMeasureCode,
+        companyId: consumable.companyId,
+        createdBy: consumable.createdBy,
+      })
+      .select("id")
+      .single();
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("consumable")
+      .insert({
+        id: consumable.id,
+        itemId: itemId,
+        companyId: consumable.companyId,
+        createdBy: consumable.createdBy,
+        customFields: consumable.customFields,
+      })
+      .select("*")
+      .single();
+  }
+
+  const itemUpdate = {
+    id: consumable.id,
+    name: consumable.name,
+    description: consumable.description,
+    itemGroupId: consumable.itemGroupId,
+    itemInventoryType: consumable.itemInventoryType,
+    unitOfMeasureCode: consumable.unitOfMeasureCode,
+    active: consumable.active,
+    blocked: consumable.blocked,
+  };
+
+  const consumableUpdate = {
+    customFields: consumable.customFields,
+  };
+
+  const [updateItem, updatePart] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", consumable.id),
+    client
+      .from("consumable")
+      .update({
+        ...sanitize(consumableUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", consumable.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updatePart;
 }
 
 export async function upsertPart(
