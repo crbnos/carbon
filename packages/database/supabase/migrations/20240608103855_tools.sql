@@ -25,6 +25,8 @@ CREATE TABLE "tool" (
 CREATE INDEX "tool_companyId_idx" ON "tool"("companyId");
 CREATE INDEX "tool_itemId_idx" ON "tool"("itemId");
 
+ALTER TABLE "tool" ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY "Employees can view tools" ON "tool"
   FOR SELECT
   USING (

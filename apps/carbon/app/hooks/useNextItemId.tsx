@@ -3,7 +3,7 @@ import { useSupabase } from "~/lib/supabase";
 import { useUser } from "./useUser";
 
 export function useNextItemId(
-  table: "part" | "service" | "tool" | "material" | "consumable"
+  table: "Part" | "Service" | "Tool" | "Material" | "Consumable" | "Fixture"
 ) {
   const { company } = useUser();
   const { supabase } = useSupabase();
@@ -17,22 +17,22 @@ export function useNextItemId(
       const prefix = newToolId.slice(0, -3);
       try {
         const { data } = await supabase
-          ?.from(table)
-          .select("id")
+          ?.from("item")
+          .select("readableId")
           .eq("companyId", company.id)
-          .ilike("id", `${prefix}%`)
-          .order("id", { ascending: false })
+          .ilike("readableId", `${prefix}%`)
+          .order("readableId", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (data?.id) {
-          const sequence = data.id.slice(prefix.length);
+        if (data?.readableId) {
+          const sequence = data.readableId.slice(prefix.length);
           const currentSequence = parseInt(sequence);
           const nextSequence = currentSequence + 1;
           const nextId = `${prefix}${nextSequence
             .toString()
             .padStart(
               sequence.length -
-                (data.id.split(`${currentSequence}`)?.[1].length ?? 0),
+                (data.readableId.split(`${currentSequence}`)?.[1].length ?? 0),
               "0"
             )}`;
           setId(nextId);

@@ -1,0 +1,85 @@
+import { VStack } from "@carbon/react";
+import { validationError, validator } from "@carbon/remix-validated-form";
+import type { ActionFunctionArgs } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+import { useParams } from "@remix-run/react";
+import { useRouteData } from "~/hooks";
+import type { Fixture } from "~/modules/items";
+import { FixtureForm, fixtureValidator, upsertFixture } from "~/modules/items";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import { getCustomFields, setCustomFields } from "~/utils/form";
+import { assertIsPost } from "~/utils/http";
+import { path } from "~/utils/path";
+import { error, success } from "~/utils/result";
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, userId } = await requirePermissions(request, {
+    update: "parts",
+  });
+
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
+
+  const formData = await request.formData();
+  const validation = await validator(fixtureValidator).validate(formData);
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  const updateFixture = await upsertFixture(client, {
+    ...validation.data,
+    id: itemId,
+    customFields: setCustomFields(formData),
+    updatedBy: userId,
+  });
+  if (updateFixture.error) {
+    throw redirect(
+      path.to.fixture(itemId),
+      await flash(
+        request,
+        error(updateFixture.error, "Failed to update fixture")
+      )
+    );
+  }
+
+  throw redirect(
+    path.to.fixture(itemId),
+    await flash(request, success("Updated fixture"))
+  );
+}
+
+export default function FixtureDetailsRoute() {
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("Could not find itemId");
+  const fixtureData = useRouteData<{ fixtureSummary: Fixture }>(
+    path.to.fixture(itemId)
+  );
+  if (!fixtureData) throw new Error("Could not find fixture data");
+
+  const fixtureInitialValues = {
+    id: fixtureData.fixtureSummary?.id ?? "",
+    itemId: fixtureData.fixtureSummary?.itemId ?? "",
+    name: fixtureData.fixtureSummary?.name ?? "",
+    description: fixtureData.fixtureSummary?.description ?? "",
+    itemGroupId: fixtureData.fixtureSummary?.itemGroupId ?? "",
+    itemInventoryType:
+      fixtureData.fixtureSummary?.itemInventoryType ?? "Inventory",
+    active: fixtureData.fixtureSummary?.active ?? true,
+    blocked: fixtureData.fixtureSummary?.blocked ?? false,
+    customerId: fixtureData.fixtureSummary?.customerId ?? "",
+    unitOfMeasureCode: "EA",
+    ...getCustomFields(fixtureData.fixtureSummary?.customFields ?? {}),
+  };
+
+  return (
+    <VStack spacing={4}>
+      <FixtureForm
+        key={fixtureInitialValues.id}
+        initialValues={fixtureInitialValues}
+      />
+    </VStack>
+  );
+}

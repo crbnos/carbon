@@ -18,6 +18,7 @@ import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
+  Customer,
   Hidden,
   Input,
   InputControlled,
@@ -25,14 +26,13 @@ import {
   Select,
   Submit,
   TextArea,
-  UnitOfMeasure,
 } from "~/components/Form";
 import { useNextItemId, usePermissions } from "~/hooks";
-import { consumableValidator, itemInventoryTypes } from "~/modules/items";
+import { fixtureValidator, itemInventoryTypes } from "~/modules/items";
 import { path } from "~/utils/path";
 
-type ConsumableFormProps = {
-  initialValues: z.infer<typeof consumableValidator>;
+type FixtureFormProps = {
+  initialValues: z.infer<typeof fixtureValidator>;
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -41,11 +41,11 @@ function startsWithLetter(value: string) {
   return /^[A-Za-z]/.test(value);
 }
 
-const ConsumableForm = ({
+const FixtureForm = ({
   initialValues,
   type = "card",
   onClose,
-}: ConsumableFormProps) => {
+}: FixtureFormProps) => {
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
@@ -53,13 +53,13 @@ const ConsumableForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created consumable`);
+      toast.success(`Created fixture`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(`Failed to create consumable: ${fetcher.data.error.message}`);
+      toast.error(`Failed to create fixture: ${fetcher.data.error.message}`);
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 
-  const { id, onIdChange, loading } = useNextItemId("Consumable");
+  const { id, onIdChange, loading } = useNextItemId("Fixture");
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
@@ -74,25 +74,26 @@ const ConsumableForm = ({
       <ModalCard onClose={onClose}>
         <ModalCardContent>
           <ValidatedForm
-            action={isEditing ? undefined : path.to.newConsumable}
+            action={isEditing ? undefined : path.to.newFixture}
             method="post"
-            validator={consumableValidator}
+            validator={fixtureValidator}
             defaultValues={initialValues}
             fetcher={fetcher}
           >
             <ModalCardHeader>
               <ModalCardTitle>
-                {isEditing ? "Consumable Details" : "New Consumable"}
+                {isEditing ? "Fixture Details" : "New Fixture"}
               </ModalCardTitle>
               {!isEditing && (
                 <ModalCardDescription>
-                  A consumable is a physical item used to make a part that can
-                  be used across multiple jobs
+                  A fixture is a physical item used to make a part that can be
+                  used across multiple jobs
                 </ModalCardDescription>
               )}
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
+              <Hidden name="unitOfMeasureCode" value="EA" />
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-2",
@@ -100,14 +101,14 @@ const ConsumableForm = ({
                 )}
               >
                 {isEditing ? (
-                  <Input name="id" label="Consumable ID" isReadOnly />
+                  <Input name="id" label="Fixture ID" isReadOnly />
                 ) : (
                   <InputControlled
                     name="id"
-                    label="Consumable ID"
+                    label="Fixture ID"
                     helperText={
                       startsWithLetter(id)
-                        ? "Use ... to get the next consumable ID"
+                        ? "Use ... to get the next fixture ID"
                         : undefined
                     }
                     value={id}
@@ -125,18 +126,15 @@ const ConsumableForm = ({
 
                 <Select
                   name="itemInventoryType"
-                  label="Consumable Type"
+                  label="Fixture Type"
                   options={itemInventoryTypeOptions}
                 />
-                <UnitOfMeasure
-                  name="unitOfMeasureCode"
-                  label="Unit of Measure"
-                />
+                <Customer name="customerId" label="Customer" />
 
                 <Boolean name="blocked" label="Blocked" />
                 {isEditing && <Boolean name="active" label="Active" />}
 
-                <CustomFormFields table="consumable" />
+                <CustomFormFields table="fixture" />
               </div>
             </ModalCardBody>
             <ModalCardFooter>
@@ -157,4 +155,4 @@ const ConsumableForm = ({
   );
 };
 
-export default ConsumableForm;
+export default FixtureForm;

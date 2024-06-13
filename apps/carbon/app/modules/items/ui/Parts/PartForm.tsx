@@ -59,7 +59,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 
-  const { id, onIdChange, loading } = useNextItemId("part");
+  const { id, onIdChange, loading } = useNextItemId("Part");
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 

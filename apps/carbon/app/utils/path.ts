@@ -285,11 +285,25 @@ export const path = {
     equipmentUnit: (id: string) =>
       generatePath(`${x}/resources/equipment/unit/${id}`),
     fiscalYears: `${x}/accounting/years`,
+    fixture: (id: string) => generatePath(`${x}/fixture/${id}`),
     fixtures: `${x}/items/fixtures`,
+    fixtureCosting: (id: string) => generatePath(`${x}/fixture/${id}/costing`),
+    fixtureDetails: (id: string) => generatePath(`${x}/fixture/${id}/details`),
     fixtureInventory: (id: string) =>
       generatePath(`${x}/fixture/${id}/inventory`),
+    fixtureInventoryLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/fixture/${id}/inventory?location=${locationId}`),
     fixturePlanning: (id: string) =>
       generatePath(`${x}/fixture/${id}/planning`),
+    fixturePlanningLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/fixture/${id}/planning?location=${locationId}`),
+    fixturePurchasing: (id: string) =>
+      generatePath(`${x}/fixture/${id}/purchasing`),
+    fixtureRoot: `${x}/fixture`,
+    fixtureSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/fixture/${itemId}/suppliers/${id}`),
+    fixtureSuppliers: (id: string) =>
+      generatePath(`${x}/fixture/${id}/suppliers`),
     forgotPassword: "/forgot-password",
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),
     groups: `${x}/users/groups`,
@@ -356,6 +370,9 @@ export const path = {
       generatePath(`${x}/resources/equipment/list/${id}/new`),
     newEquipmentUnit: `${x}/resources/equipment/unit/new`,
     newEquipmentType: `${x}/resources/equipment/new`,
+    newFixture: `${x}/fixture/new`,
+    newFixtureSupplier: (id: string) =>
+      generatePath(`${x}/fixture/${id}/suppliers/new`),
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/resources/holidays/new`,
     newLocation: `${x}/resources/locations/new`,

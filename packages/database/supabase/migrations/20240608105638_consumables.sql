@@ -21,6 +21,8 @@ CREATE TABLE "consumable" (
 CREATE INDEX "consumable_companyId_idx" ON "consumable"("companyId");
 CREATE INDEX "consumable_itemId_idx" ON "consumable"("itemId");
 
+ALTER TABLE "consumable" ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY "Employees can view consumables" ON "consumable"
   FOR SELECT
   USING (

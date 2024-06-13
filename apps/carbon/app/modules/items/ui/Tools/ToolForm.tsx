@@ -55,7 +55,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 
-  const { id, onIdChange, loading } = useNextItemId("tool");
+  const { id, onIdChange, loading } = useNextItemId("Tool");
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 

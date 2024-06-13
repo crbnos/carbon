@@ -7,6 +7,7 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   consumableValidator,
+  fixtureValidator,
   itemCostValidator,
   itemGroupValidator,
   itemInventoryValidator,
@@ -104,6 +105,65 @@ export async function getConsumablesList(
     .from("item")
     .select("id, name, readableId")
     .eq("type", "Consumable")
+    .eq("companyId", companyId)
+    .eq("blocked", false)
+    .eq("active", true);
+
+  return query.order("name");
+}
+
+export async function getFixture(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("fixtures")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getFixtures(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("fixtures")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.supplierId) {
+    query = query.contains("supplierIds", [args.supplierId]);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "id", ascending: true },
+  ]);
+  return query;
+}
+
+export async function getFixturesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  let query = client
+    .from("item")
+    .select("id, name, readableId")
+    .eq("type", "Fixture")
     .eq("companyId", companyId)
     .eq("blocked", false)
     .eq("active", true);
@@ -698,7 +758,7 @@ export async function upsertConsumable(
     customFields: consumable.customFields,
   };
 
-  const [updateItem, updatePart] = await Promise.all([
+  const [updateItem, updateConsumable] = await Promise.all([
     client
       .from("item")
       .update({
@@ -716,7 +776,90 @@ export async function upsertConsumable(
   ]);
 
   if (updateItem.error) return updateItem;
-  return updatePart;
+  return updateConsumable;
+}
+
+export async function upsertFixture(
+  client: SupabaseClient<Database>,
+  fixture:
+    | (z.infer<typeof fixtureValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof fixtureValidator> & {
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in fixture) {
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: fixture.id,
+        name: fixture.name,
+        type: "Fixture",
+        itemGroupId: fixture.itemGroupId,
+        itemInventoryType: fixture.itemInventoryType,
+        unitOfMeasureCode: "EA",
+        companyId: fixture.companyId,
+        createdBy: fixture.createdBy,
+      })
+      .select("id")
+      .single();
+
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("fixture")
+      .insert({
+        id: fixture.id,
+        itemId: itemId,
+        companyId: fixture.companyId,
+        customerId: fixture.customerId ? fixture.customerId : undefined,
+        createdBy: fixture.createdBy,
+        customFields: fixture.customFields,
+      })
+      .select("*")
+      .single();
+  }
+
+  const itemUpdate = {
+    id: fixture.id,
+    name: fixture.name,
+    description: fixture.description,
+    itemGroupId: fixture.itemGroupId,
+    itemInventoryType: fixture.itemInventoryType,
+    unitOfMeasureCode: "EA",
+    active: fixture.active,
+    blocked: fixture.blocked,
+  };
+
+  const fixtureUpdate = {
+    customerId: fixture.customerId,
+    customFields: fixture.customFields,
+  };
+
+  const [updateItem, updateFixture] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", fixture.id),
+    client
+      .from("fixture")
+      .update({
+        ...sanitize(fixtureUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", fixture.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updateFixture;
 }
 
 export async function upsertPart(

@@ -23,6 +23,8 @@ CREATE TABLE "fixture" (
 CREATE INDEX "fixture_companyId_idx" ON "fixture"("companyId");
 CREATE INDEX "fixture_itemId_idx" ON "fixture"("itemId");
 
+ALTER TABLE "fixture" ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY "Employees can view fixtures" ON "fixture"
   FOR SELECT
   USING (

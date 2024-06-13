@@ -28,7 +28,7 @@ type ServiceFormProps = {
 };
 
 const ServiceForm = ({ initialValues }: ServiceFormProps) => {
-  const { id, onIdChange, loading } = useNextItemId("service");
+  const { id, onIdChange, loading } = useNextItemId("Service");
 
   const permissions = usePermissions();
   const isEditing = initialValues.id !== undefined;
