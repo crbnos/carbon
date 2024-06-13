@@ -9,6 +9,7 @@ import type {
   getItemSuppliers,
   getMaterialForms,
   getMaterialSubstances,
+  getMaterials,
   getPart,
   getParts,
   getServices,
@@ -57,6 +58,10 @@ export type ItemSupplier = NonNullable<
 
 export type InventoryItemType =
   Database["public"]["Enums"]["itemInventoryType"];
+
+export type Material = NonNullable<
+  Awaited<ReturnType<typeof getMaterials>>["data"]
+>[number];
 
 export type MaterialForm = NonNullable<
   Awaited<ReturnType<typeof getMaterialForms>>["data"]

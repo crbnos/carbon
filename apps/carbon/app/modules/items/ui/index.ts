@@ -6,6 +6,7 @@ export * from "./Item";
 export * from "./ItemGroups";
 export * from "./MaterialForms";
 export * from "./MaterialSubstances";
+export * from "./Materials";
 export * from "./Parts";
 export * from "./Services";
 export * from "./Tools";

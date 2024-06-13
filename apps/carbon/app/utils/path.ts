@@ -31,6 +31,8 @@ export const path = {
       item: (type: string) => generatePath(`${api}/item/${type}`),
       locations: `${api}/resources/locations`,
       itemGroups: `${api}/items/groups`,
+      materialForms: `${api}/items/forms`,
+      materialSubstances: `${api}/items/substances`,
       rollback: (table: string, id: string) =>
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
@@ -322,19 +324,34 @@ export const path = {
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
-    materials: `${x}/items/materials`,
+    material: (id: string) => generatePath(`${x}/material/${id}`),
+    materialCosting: (id: string) =>
+      generatePath(`${x}/material/${id}/costing`),
+    materialDetails: (id: string) =>
+      generatePath(`${x}/material/${id}/details`),
     materialForm: (id: string) => generatePath(`${x}/items/forms/${id}`),
     materialForms: `${x}/items/forms`,
     materialInventory: (id: string) =>
       generatePath(`${x}/material/${id}/inventory`),
+    materialInventoryLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/material/${id}/inventory?location=${locationId}`),
     materialPlanning: (id: string) =>
       generatePath(`${x}/material/${id}/planning`),
+    materialPlanningLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/material/${id}/planning?location=${locationId}`),
+    materialPricing: (id: string) =>
+      generatePath(`${x}/material/${id}/pricing`),
+    materialPurchasing: (id: string) =>
+      generatePath(`${x}/material/${id}/purchasing`),
+    materialRoot: `${x}/material`,
+    materialSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/material/${itemId}/suppliers/${id}`),
+    materialSuppliers: (id: string) =>
+      generatePath(`${x}/material/${id}/suppliers`),
+    materials: `${x}/items/materials`,
     materialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/${id}`),
     materialSubstances: `${x}/items/substances`,
-    materialSupplier: (itemId: string, id: string) =>
-      generatePath(`${x}/material/${itemId}/suppliers/${id}`),
-    messaging: `${x}/messaging`,
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
     newAccountingSubcategory: (id: string) =>
@@ -376,6 +393,7 @@ export const path = {
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/resources/holidays/new`,
     newLocation: `${x}/resources/locations/new`,
+    newMaterial: `${x}/material/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newItemGroup: `${x}/items/groups/new`,

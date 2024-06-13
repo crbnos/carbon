@@ -60,6 +60,19 @@ export const fixtureValidator = itemValidator.merge(
   })
 );
 
+export const materialValidator = itemValidator.merge(
+  z.object({
+    id: z.string().min(1, { message: "Material ID is required" }).max(255),
+    materialSubstanceId: z
+      .string()
+      .min(1, { message: "Substance is required" }),
+    materialFormId: z.string().min(1, { message: "Form is required" }),
+    finish: z.string().optional(),
+    grade: z.string().optional(),
+    dimensions: z.string().optional(),
+  })
+);
+
 export const partValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Part ID is required" }).max(255),

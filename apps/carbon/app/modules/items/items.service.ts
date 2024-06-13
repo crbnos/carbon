@@ -283,6 +283,65 @@ export async function getItemReplenishment(
     .single();
 }
 
+export async function getMaterial(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("materials")
+    .select("*")
+    .eq("itemId", itemId)
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .single();
+}
+
+export async function getMaterials(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("materials")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args.search) {
+    query = query.or(
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.supplierId) {
+    query = query.contains("supplierIds", [args.supplierId]);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "id", ascending: true },
+  ]);
+  return query;
+}
+
+export async function getMaterialsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  let query = client
+    .from("item")
+    .select("id, name, readableId")
+    .eq("type", "Material")
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .eq("blocked", false)
+    .eq("active", true);
+
+  return query.order("name");
+}
+
 export async function getMaterialForm(
   client: SupabaseClient<Database>,
   id: string
