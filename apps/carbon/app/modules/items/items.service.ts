@@ -6,6 +6,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  consumableValidator,
+  fixtureValidator,
   itemCostValidator,
   itemGroupValidator,
   itemInventoryValidator,
@@ -14,12 +16,15 @@ import type {
   itemSupplierValidator,
   itemUnitSalePriceValidator,
   itemValidator,
+  materialFormValidator,
+  materialSubstanceValidator,
+  materialValidator,
   partManufacturingValidator,
   partValidator,
   serviceValidator,
+  toolValidator,
   unitOfMeasureValidator,
 } from "./items.models";
-import type { ItemReplenishmentSystem, ServiceType } from "./types";
 
 export async function deleteItemGroup(
   client: SupabaseClient<Database>,
@@ -28,11 +33,143 @@ export async function deleteItemGroup(
   return client.from("itemGroup").delete().eq("id", id);
 }
 
+export async function deleteMaterialForm(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialForm").delete().eq("id", id);
+}
+
+export async function deleteMaterialSubstance(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialSubstance").delete().eq("id", id);
+}
+
 export async function deleteUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string
 ) {
   return client.from("unitOfMeasure").delete().eq("id", id);
+}
+
+export async function getConsumable(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("consumables")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getConsumables(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("consumables")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.supplierId) {
+    query = query.contains("supplierIds", [args.supplierId]);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "id", ascending: true },
+  ]);
+  return query;
+}
+
+export async function getConsumablesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  let query = client
+    .from("item")
+    .select("id, name, readableId")
+    .eq("type", "Consumable")
+    .eq("companyId", companyId)
+    .eq("blocked", false)
+    .eq("active", true);
+
+  return query.order("name");
+}
+
+export async function getFixture(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("fixtures")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getFixtures(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("fixtures")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.supplierId) {
+    query = query.contains("supplierIds", [args.supplierId]);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "id", ascending: true },
+  ]);
+  return query;
+}
+
+export async function getFixturesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  let query = client
+    .from("item")
+    .select("id, name, readableId")
+    .eq("type", "Fixture")
+    .eq("companyId", companyId)
+    .eq("blocked", false)
+    .eq("active", true);
+
+  return query.order("name");
 }
 
 export async function getItemCost(
@@ -147,6 +284,164 @@ export async function getItemReplenishment(
     .single();
 }
 
+export async function getMaterial(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("materials")
+    .select("*")
+    .eq("itemId", itemId)
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .single();
+}
+
+export async function getMaterials(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("materials")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args.search) {
+    query = query.or(
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.supplierId) {
+    query = query.contains("supplierIds", [args.supplierId]);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "id", ascending: true },
+  ]);
+  return query;
+}
+
+export async function getMaterialsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  let query = client
+    .from("item")
+    .select("id, name, readableId")
+    .eq("type", "Material")
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .eq("blocked", false)
+    .eq("active", true);
+
+  return query.order("name");
+}
+
+export async function getMaterialForm(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialForm").select("*").eq("id", id).single();
+}
+
+export async function getMaterialForms(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("materialForm")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMaterialFormsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("materialForm")
+    .select("id, name")
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .order("name");
+}
+
+export async function getMaterialSubstance(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialSubstance").select("*").eq("id", id).single();
+}
+
+export async function getMaterialSubstances(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("materialSubstance")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMaterialSubstancesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("materialSubstance")
+    .select("id, name")
+    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .order("name");
+}
+
+export async function getPart(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("parts")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .single();
+}
+
 export async function getParts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -180,21 +475,15 @@ export async function getParts(
 
 export async function getPartsList(
   client: SupabaseClient<Database>,
-  companyId: string,
-  replenishmentSystem: ItemReplenishmentSystem | null
+  companyId: string
 ) {
   let query = client
     .from("item")
     .select("id, name, readableId")
+    .eq("type", "Part")
     .eq("companyId", companyId)
     .eq("blocked", false)
     .eq("active", true);
-
-  if (replenishmentSystem) {
-    query = query.or(
-      `replenishmentSystem.eq.${replenishmentSystem},replenishmentSystem.eq.Buy and Make`
-    );
-  }
 
   return query.order("name");
 }
@@ -212,19 +501,6 @@ export async function getItemQuantities(
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .maybeSingle();
-}
-
-export async function getPart(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("parts")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .single();
 }
 
 export async function getItemSuppliers(
@@ -317,20 +593,16 @@ export async function getService(
 
 export async function getServicesList(
   client: SupabaseClient<Database>,
-  companyId: string,
-  type: ServiceType | null
+  companyId: string
 ) {
   let query = client
-    .from("service")
+    .from("item")
     .select("id, name")
+    .eq("type", "Service")
     .eq("companyId", companyId)
     .eq("blocked", false)
     .eq("active", true)
     .order("name");
-
-  if (type) {
-    query = query.eq("serviceType", type);
-  }
 
   return query;
 }
@@ -345,6 +617,65 @@ export async function getShelvesList(
     .eq("active", true)
     .eq("locationId", locationId)
     .order("id");
+}
+
+export async function getTool(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("tools")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getTools(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("tools")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.supplierId) {
+    query = query.contains("supplierIds", [args.supplierId]);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "id", ascending: true },
+  ]);
+  return query;
+}
+
+export async function getToolsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  let query = client
+    .from("item")
+    .select("id, name, readableId")
+    .eq("type", "Tool")
+    .eq("companyId", companyId)
+    .eq("blocked", false)
+    .eq("active", true);
+
+  return query.order("name");
 }
 
 export async function getUnitOfMeasure(
@@ -428,6 +759,169 @@ export async function insertShelf(
     .single();
 }
 
+export async function upsertConsumable(
+  client: SupabaseClient<Database>,
+  consumable:
+    | (z.infer<typeof consumableValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof consumableValidator> & {
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in consumable) {
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: consumable.id,
+        name: consumable.name,
+        type: "Consumable",
+        itemGroupId: consumable.itemGroupId,
+        itemInventoryType: consumable.itemInventoryType,
+        unitOfMeasureCode: consumable.unitOfMeasureCode,
+        companyId: consumable.companyId,
+        createdBy: consumable.createdBy,
+      })
+      .select("id")
+      .single();
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("consumable")
+      .insert({
+        id: consumable.id,
+        itemId: itemId,
+        companyId: consumable.companyId,
+        createdBy: consumable.createdBy,
+        customFields: consumable.customFields,
+      })
+      .select("*")
+      .single();
+  }
+
+  const itemUpdate = {
+    id: consumable.id,
+    name: consumable.name,
+    description: consumable.description,
+    itemGroupId: consumable.itemGroupId,
+    itemInventoryType: consumable.itemInventoryType,
+    unitOfMeasureCode: consumable.unitOfMeasureCode,
+    active: consumable.active,
+    blocked: consumable.blocked,
+  };
+
+  const consumableUpdate = {
+    customFields: consumable.customFields,
+  };
+
+  const [updateItem, updateConsumable] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", consumable.id),
+    client
+      .from("consumable")
+      .update({
+        ...sanitize(consumableUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", consumable.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updateConsumable;
+}
+
+export async function upsertFixture(
+  client: SupabaseClient<Database>,
+  fixture:
+    | (z.infer<typeof fixtureValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof fixtureValidator> & {
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in fixture) {
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: fixture.id,
+        name: fixture.name,
+        type: "Fixture",
+        itemGroupId: fixture.itemGroupId,
+        itemInventoryType: fixture.itemInventoryType,
+        unitOfMeasureCode: "EA",
+        companyId: fixture.companyId,
+        createdBy: fixture.createdBy,
+      })
+      .select("id")
+      .single();
+
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("fixture")
+      .insert({
+        id: fixture.id,
+        itemId: itemId,
+        companyId: fixture.companyId,
+        customerId: fixture.customerId ? fixture.customerId : undefined,
+        createdBy: fixture.createdBy,
+        customFields: fixture.customFields,
+      })
+      .select("*")
+      .single();
+  }
+
+  const itemUpdate = {
+    id: fixture.id,
+    name: fixture.name,
+    description: fixture.description,
+    itemGroupId: fixture.itemGroupId,
+    itemInventoryType: fixture.itemInventoryType,
+    unitOfMeasureCode: "EA",
+    active: fixture.active,
+    blocked: fixture.blocked,
+  };
+
+  const fixtureUpdate = {
+    customerId: fixture.customerId,
+    customFields: fixture.customFields,
+  };
+
+  const [updateItem, updateFixture] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", fixture.id),
+    client
+      .from("fixture")
+      .update({
+        ...sanitize(fixtureUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", fixture.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updateFixture;
+}
+
 export async function upsertPart(
   client: SupabaseClient<Database>,
   part:
@@ -450,6 +944,7 @@ export async function upsertPart(
         type: "Part",
         itemGroupId: part.itemGroupId,
         itemInventoryType: part.itemInventoryType,
+        unitOfMeasureCode: part.unitOfMeasureCode,
         companyId: part.companyId,
         createdBy: part.createdBy,
       })
@@ -464,7 +959,6 @@ export async function upsertPart(
         id: part.id,
         itemId: itemId,
         replenishmentSystem: part.replenishmentSystem,
-        unitOfMeasureCode: part.unitOfMeasureCode,
         companyId: part.companyId,
         createdBy: part.createdBy,
         customFields: part.customFields,
@@ -479,13 +973,13 @@ export async function upsertPart(
     description: part.description,
     itemGroupId: part.itemGroupId,
     itemInventoryType: part.itemInventoryType,
+    unitOfMeasureCode: part.unitOfMeasureCode,
     active: part.active,
     blocked: part.blocked,
   };
 
   const partUpdate = {
     replenishmentSystem: part.replenishmentSystem,
-    unitOfMeasureCode: part.unitOfMeasureCode,
     customFields: part.customFields,
   };
 
@@ -680,6 +1174,160 @@ export async function upsertItemUnitSalePrice(
     .eq("itemId", itemUnitSalePrice.itemId);
 }
 
+export async function upsertMaterial(
+  client: SupabaseClient<Database>,
+  material:
+    | (z.infer<typeof materialValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof materialValidator> & {
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in material) {
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: material.id,
+        name: material.name,
+        type: "Material",
+        itemGroupId: material.itemGroupId,
+        itemInventoryType: material.itemInventoryType,
+        unitOfMeasureCode: material.unitOfMeasureCode,
+        companyId: material.companyId,
+        createdBy: material.createdBy,
+      })
+      .select("id")
+      .single();
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("material")
+      .insert({
+        id: material.id,
+        itemId: itemId,
+        materialFormId: material.materialFormId,
+        materialSubstanceId: material.materialSubstanceId,
+        finish: material.finish,
+        grade: material.grade,
+        dimensions: material.dimensions,
+        companyId: material.companyId,
+        createdBy: material.createdBy,
+        customFields: material.customFields,
+      })
+      .select("*")
+      .single();
+  }
+
+  const itemUpdate = {
+    id: material.id,
+    name: material.name,
+    description: material.description,
+    itemGroupId: material.itemGroupId,
+    itemInventoryType: material.itemInventoryType,
+    unitOfMeasureCode: material.unitOfMeasureCode,
+    active: material.active,
+    blocked: material.blocked,
+  };
+
+  const materialUpdate = {
+    materialFormId: material.materialFormId,
+    materialSubstanceId: material.materialSubstanceId,
+    finish: material.finish,
+    grade: material.grade,
+    dimensions: material.dimensions,
+    customFields: material.customFields,
+  };
+
+  const [updateItem, updatePart] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", material.id),
+    client
+      .from("material")
+      .update({
+        ...sanitize(materialUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", material.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updatePart;
+}
+
+export async function upsertMaterialForm(
+  client: SupabaseClient<Database>,
+  materialForm:
+    | (Omit<z.infer<typeof materialFormValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof materialFormValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in materialForm) {
+    return client
+      .from("materialForm")
+      .insert([materialForm])
+      .select("*")
+      .single();
+  }
+  return (
+    client
+      .from("materialForm")
+      .update(sanitize(materialForm))
+      // @ts-ignore
+      .eq("id", materialForm.id)
+      .select("id")
+      .single()
+  );
+}
+
+export async function upsertMaterialSubstance(
+  client: SupabaseClient<Database>,
+  materialSubstance:
+    | (Omit<z.infer<typeof materialSubstanceValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof materialSubstanceValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in materialSubstance) {
+    return client
+      .from("materialSubstance")
+      .insert([materialSubstance])
+      .select("*")
+      .single();
+  }
+  return (
+    client
+      .from("materialSubstance")
+      .update(sanitize(materialSubstance))
+      // @ts-ignore
+      .eq("id", materialSubstance.id)
+      .select("id")
+      .single()
+  );
+}
+
 export async function upsertService(
   client: SupabaseClient<Database>,
   service:
@@ -703,6 +1351,7 @@ export async function upsertService(
         type: "Service",
         itemGroupId: service.itemGroupId,
         itemInventoryType: service.itemInventoryType,
+        unitOfMeasureCode: null,
         companyId: service.companyId,
         createdBy: service.createdBy,
       })
@@ -729,6 +1378,7 @@ export async function upsertService(
     description: service.description,
     itemGroupId: service.itemGroupId,
     itemInventoryType: service.itemInventoryType,
+    unitOfMeasureCode: null,
     active: service.active,
     blocked: service.blocked,
   };
@@ -786,4 +1436,84 @@ export async function upsertUnitOfMeasure(
     .insert([unitOfMeasure])
     .select("id")
     .single();
+}
+
+export async function upsertTool(
+  client: SupabaseClient<Database>,
+  tool:
+    | (z.infer<typeof toolValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof toolValidator> & {
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in tool) {
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: tool.id,
+        name: tool.name,
+        type: "Tool",
+        itemGroupId: tool.itemGroupId,
+        itemInventoryType: tool.itemInventoryType,
+        unitOfMeasureCode: tool.unitOfMeasureCode,
+        companyId: tool.companyId,
+        createdBy: tool.createdBy,
+      })
+      .select("id")
+      .single();
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("tool")
+      .insert({
+        id: tool.id,
+        itemId: itemId,
+        companyId: tool.companyId,
+        createdBy: tool.createdBy,
+        customFields: tool.customFields,
+      })
+      .select("*")
+      .single();
+  }
+
+  const itemUpdate = {
+    id: tool.id,
+    name: tool.name,
+    description: tool.description,
+    itemGroupId: tool.itemGroupId,
+    itemInventoryType: tool.itemInventoryType,
+    unitOfMeasureCode: tool.unitOfMeasureCode,
+    active: tool.active,
+    blocked: tool.blocked,
+  };
+
+  const toolUpdate = {
+    customFields: tool.customFields,
+  };
+
+  const [updateItem, updatePart] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", tool.id),
+    client
+      .from("tool")
+      .update({
+        ...sanitize(toolUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", tool.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updatePart;
 }

@@ -1,0 +1,62 @@
+import { VStack } from "@carbon/react";
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Outlet, useLoaderData } from "@remix-run/react";
+import { MaterialFormsTable, getMaterialForms } from "~/modules/items";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+import { getGenericQueryFilters } from "~/utils/query";
+import { error } from "~/utils/result";
+
+export const handle: Handle = {
+  breadcrumb: "Forms",
+  to: path.to.materialForms,
+};
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "parts",
+    role: "employee",
+  });
+
+  const url = new URL(request.url);
+  const searchParams = new URLSearchParams(url.search);
+  const search = searchParams.get("search");
+  const { limit, offset, sorts, filters } =
+    getGenericQueryFilters(searchParams);
+
+  const [materialForms] = await Promise.all([
+    getMaterialForms(client, companyId, {
+      limit,
+      offset,
+      sorts,
+      search,
+      filters,
+    }),
+  ]);
+
+  if (materialForms.error) {
+    throw redirect(
+      path.to.items,
+      await flash(request, error(null, "Error loading material forms"))
+    );
+  }
+
+  return json({
+    materialForms: materialForms.data ?? [],
+    count: materialForms.count ?? 0,
+  });
+}
+
+export default function MaterialFormsRoute() {
+  const { materialForms, count } = useLoaderData<typeof loader>();
+
+  return (
+    <VStack spacing={0} className="h-full">
+      <MaterialFormsTable data={materialForms} count={count ?? 0} />
+      <Outlet />
+    </VStack>
+  );
+}

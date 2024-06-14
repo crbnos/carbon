@@ -153,10 +153,13 @@ const PurchaseInvoiceLines = () => {
         header: "Pur. UoM",
         cell: ({ row }) => {
           switch (row.original.invoiceLineType) {
-            case "Part":
-              return <span>{row.original.purchaseUnitOfMeasureCode}</span>;
-            default:
+            case "Comment":
+            case "Service":
+            case "G/L Account":
+            case "Fixed Asset":
               return null;
+            default:
+              return <span>{row.original.purchaseUnitOfMeasureCode}</span>;
           }
         },
       },
@@ -165,10 +168,13 @@ const PurchaseInvoiceLines = () => {
         header: "Conversion Factor",
         cell: ({ row }) => {
           switch (row.original.invoiceLineType) {
-            case "Part":
-              return <span>{row.original.conversionFactor}</span>;
-            default:
+            case "Comment":
+            case "Service":
+            case "G/L Account":
+            case "Fixed Asset":
               return null;
+            default:
+              return <span>{row.original.conversionFactor}</span>;
           }
         },
       },

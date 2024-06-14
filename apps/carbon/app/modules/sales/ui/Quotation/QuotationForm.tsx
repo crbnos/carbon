@@ -69,7 +69,7 @@ const QuotationForm = ({ initialValues }: QuotationFormProps) => {
             <div
               className={cn(
                 "grid w-full gap-x-8 gap-y-2",
-                isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
+                isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-2"
               )}
             >
               <Customer
@@ -78,13 +78,7 @@ const QuotationForm = ({ initialValues }: QuotationFormProps) => {
                 label="Customer"
                 onChange={(value) => setCustomer(value?.value as string)}
               />
-              <Input
-                name="name"
-                label="Customer Reference"
-                helperText={
-                  isEditing ? undefined : "The name of the RFQ or a description"
-                }
-              />
+              <Input name="name" label="Customer Reference" />
 
               <Location name="locationId" label="Location" />
               <CustomerLocation

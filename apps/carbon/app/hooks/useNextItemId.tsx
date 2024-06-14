@@ -1,0 +1,52 @@
+import { useState } from "react";
+import { useSupabase } from "~/lib/supabase";
+import { useUser } from "./useUser";
+
+export function useNextItemId(
+  table: "Part" | "Service" | "Tool" | "Material" | "Consumable" | "Fixture"
+) {
+  const { company } = useUser();
+  const { supabase } = useSupabase();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [id, setId] = useState<string>("");
+
+  const onIdChange = async (newToolId: string) => {
+    if (newToolId.endsWith("...") && supabase) {
+      setLoading(true);
+
+      const prefix = newToolId.slice(0, -3);
+      try {
+        const { data } = await supabase
+          ?.from("item")
+          .select("readableId")
+          .eq("companyId", company.id)
+          .ilike("readableId", `${prefix}%`)
+          .order("readableId", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data?.readableId) {
+          const sequence = data.readableId.slice(prefix.length);
+          const currentSequence = parseInt(sequence);
+          const nextSequence = currentSequence + 1;
+          const nextId = `${prefix}${nextSequence
+            .toString()
+            .padStart(
+              sequence.length -
+                (data.readableId.split(`${currentSequence}`)?.[1].length ?? 0),
+              "0"
+            )}`;
+          setId(nextId);
+        } else {
+          setId(`${prefix}${(1).toString().padStart(9, "0")}`);
+        }
+      } catch {
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setId(newToolId);
+    }
+  };
+
+  return { id, onIdChange, loading };
+}

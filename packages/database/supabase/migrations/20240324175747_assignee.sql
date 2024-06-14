@@ -31,7 +31,7 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
     FROM "itemSupplier" ps
     GROUP BY "itemId"
   )  ps ON ps."itemId" = p."itemId"
-  LEFT JOIN "unitOfMeasure" uom ON uom.code = p."unitOfMeasureCode" AND uom."companyId" = p."companyId";
+  LEFT JOIN "unitOfMeasure" uom ON uom.code = i."unitOfMeasureCode" AND uom."companyId" = i."companyId";
   
 DROP VIEW "purchaseOrders";
 CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS

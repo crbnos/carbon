@@ -1,0 +1,77 @@
+import { VStack } from "@carbon/react";
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Outlet, useLoaderData } from "@remix-run/react";
+import {
+  ConsumablesTable,
+  getConsumables,
+  getItemGroupsList,
+} from "~/modules/items";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+import { getGenericQueryFilters } from "~/utils/query";
+import { error } from "~/utils/result";
+
+export const handle: Handle = {
+  breadcrumb: "Consumables",
+  to: path.to.consumables,
+};
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "parts",
+  });
+
+  const url = new URL(request.url);
+  const searchParams = new URLSearchParams(url.search);
+  const search = searchParams.get("search");
+  const supplierId = searchParams.get("supplierId");
+
+  const { limit, offset, sorts, filters } =
+    getGenericQueryFilters(searchParams);
+
+  const [consumables, itemGroups] = await Promise.all([
+    getConsumables(client, companyId, {
+      search,
+      supplierId,
+      limit,
+      offset,
+      sorts,
+      filters,
+    }),
+    getItemGroupsList(client, companyId),
+  ]);
+
+  if (consumables.error) {
+    redirect(
+      path.to.authenticatedRoot,
+      await flash(
+        request,
+        error(consumables.error, "Failed to fetch consumables")
+      )
+    );
+  }
+
+  return json({
+    count: consumables.count ?? 0,
+    consumables: consumables.data ?? [],
+    itemGroups: itemGroups.data ?? [],
+  });
+}
+
+export default function ConsumablesSearchRoute() {
+  const { count, consumables, itemGroups } = useLoaderData<typeof loader>();
+
+  return (
+    <VStack spacing={0} className="h-full">
+      <ConsumablesTable
+        data={consumables}
+        count={count}
+        itemGroups={itemGroups}
+      />
+      <Outlet />
+    </VStack>
+  );
+}

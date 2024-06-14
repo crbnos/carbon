@@ -31,6 +31,8 @@ export const path = {
       item: (type: string) => generatePath(`${api}/item/${type}`),
       locations: `${api}/resources/locations`,
       itemGroups: `${api}/items/groups`,
+      materialForms: `${api}/items/forms`,
+      materialSubstances: `${api}/items/substances`,
       rollback: (table: string, id: string) =>
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
@@ -106,6 +108,27 @@ export const path = {
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,
+    consumable: (id: string) => generatePath(`${x}/consumable/${id}`),
+    consumables: `${x}/items/consumables`,
+    consumableCosting: (id: string) =>
+      generatePath(`${x}/consumable/${id}/costing`),
+    consumableDetails: (id: string) =>
+      generatePath(`${x}/consumable/${id}/details`),
+    consumableInventory: (id: string) =>
+      generatePath(`${x}/consumable/${id}/inventory`),
+    consumableInventoryLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/consumable/${id}/inventory?location=${locationId}`),
+    consumablePlanning: (id: string) =>
+      generatePath(`${x}/consumable/${id}/planning`),
+    consumablePlanningLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/consumable/${id}/planning?location=${locationId}`),
+    consumablePurchasing: (id: string) =>
+      generatePath(`${x}/consumable/${id}/purchasing`),
+    consumableRoot: `${x}/consumable`,
+    consumableSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/consumable/${itemId}/suppliers/${id}`),
+    consumableSuppliers: (id: string) =>
+      generatePath(`${x}/consumable/${id}/suppliers`),
     convertQuoteToOrder: (id: string) =>
       generatePath(`${x}/quote/${id}/convert-to-order`),
     currency: (id: string) => generatePath(`${x}/accounting/currencies/${id}`),
@@ -185,6 +208,10 @@ export const path = {
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deleteItemGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
+    deleteMaterialForm: (id: string) =>
+      generatePath(`${x}/items/forms/delete/${id}`),
+    deleteMaterialSubstance: (id: string) =>
+      generatePath(`${x}/items/substances/delete/${id}`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePaymentTerm: (id: string) =>
@@ -260,6 +287,25 @@ export const path = {
     equipmentUnit: (id: string) =>
       generatePath(`${x}/resources/equipment/unit/${id}`),
     fiscalYears: `${x}/accounting/years`,
+    fixture: (id: string) => generatePath(`${x}/fixture/${id}`),
+    fixtures: `${x}/items/fixtures`,
+    fixtureCosting: (id: string) => generatePath(`${x}/fixture/${id}/costing`),
+    fixtureDetails: (id: string) => generatePath(`${x}/fixture/${id}/details`),
+    fixtureInventory: (id: string) =>
+      generatePath(`${x}/fixture/${id}/inventory`),
+    fixtureInventoryLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/fixture/${id}/inventory?location=${locationId}`),
+    fixturePlanning: (id: string) =>
+      generatePath(`${x}/fixture/${id}/planning`),
+    fixturePlanningLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/fixture/${id}/planning?location=${locationId}`),
+    fixturePurchasing: (id: string) =>
+      generatePath(`${x}/fixture/${id}/purchasing`),
+    fixtureRoot: `${x}/fixture`,
+    fixtureSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/fixture/${itemId}/suppliers/${id}`),
+    fixtureSuppliers: (id: string) =>
+      generatePath(`${x}/fixture/${id}/suppliers`),
     forgotPassword: "/forgot-password",
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),
     groups: `${x}/users/groups`,
@@ -271,12 +317,41 @@ export const path = {
     inventory: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
     items: `${x}/items`,
+    itemGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
+    itemGroups: `${x}/items/groups`,
     jobs: `${x}/jobs`,
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
-    messaging: `${x}/messaging`,
+    material: (id: string) => generatePath(`${x}/material/${id}`),
+    materialCosting: (id: string) =>
+      generatePath(`${x}/material/${id}/costing`),
+    materialDetails: (id: string) =>
+      generatePath(`${x}/material/${id}/details`),
+    materialForm: (id: string) => generatePath(`${x}/items/forms/${id}`),
+    materialForms: `${x}/items/forms`,
+    materialInventory: (id: string) =>
+      generatePath(`${x}/material/${id}/inventory`),
+    materialInventoryLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/material/${id}/inventory?location=${locationId}`),
+    materialPlanning: (id: string) =>
+      generatePath(`${x}/material/${id}/planning`),
+    materialPlanningLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/material/${id}/planning?location=${locationId}`),
+    materialPricing: (id: string) =>
+      generatePath(`${x}/material/${id}/pricing`),
+    materialPurchasing: (id: string) =>
+      generatePath(`${x}/material/${id}/purchasing`),
+    materialRoot: `${x}/material`,
+    materialSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/material/${itemId}/suppliers/${id}`),
+    materialSuppliers: (id: string) =>
+      generatePath(`${x}/material/${id}/suppliers`),
+    materials: `${x}/items/materials`,
+    materialSubstance: (id: string) =>
+      generatePath(`${x}/items/substances/${id}`),
+    materialSubstances: `${x}/items/substances`,
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
     newAccountingSubcategory: (id: string) =>
@@ -287,6 +362,9 @@ export const path = {
       generatePath(`${x}/resources/attributes/list/${id}/new`),
     newChartOfAccount: `${x}/accounting/charts/new`,
     newCompany: `${x}/settings/company/new`,
+    newConsumable: `${x}/consumable/new`,
+    newConsumableSupplier: (id: string) =>
+      generatePath(`${x}/consumable/${id}/suppliers/new`),
     newContractor: `${x}/resources/contractors/new`,
     newCurrency: `${x}/accounting/currencies/new`,
     newCustomer: `${x}/customer/new`,
@@ -309,12 +387,20 @@ export const path = {
       generatePath(`${x}/resources/equipment/list/${id}/new`),
     newEquipmentUnit: `${x}/resources/equipment/unit/new`,
     newEquipmentType: `${x}/resources/equipment/new`,
+    newFixture: `${x}/fixture/new`,
+    newFixtureSupplier: (id: string) =>
+      generatePath(`${x}/fixture/${id}/suppliers/new`),
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/resources/holidays/new`,
     newLocation: `${x}/resources/locations/new`,
+    newMaterial: `${x}/material/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newItemGroup: `${x}/items/groups/new`,
+    newMaterialForm: `${x}/items/forms/new`,
+    newMaterialSubstance: `${x}/items/substances/new`,
+    newMaterialSupplier: (id: string) =>
+      generatePath(`${x}/material/${id}/suppliers/new`),
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/suppliers/new`),
     newPartner: `${x}/resources/partners/new`,
@@ -363,6 +449,9 @@ export const path = {
       generatePath(`${x}/supplier/${id}/locations/new`),
     newSupplierStatus: `${x}/purchasing/supplier-statuses/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
+    newTool: `${x}/tool/new`,
+    newToolSupplier: (id: string) =>
+      generatePath(`${x}/tool/${id}/suppliers/new`),
     newUom: `${x}/items/uom/new`,
     newWorkCell: `${x}/resources/work-cells/cell/new`,
     newWorkCellUnit: (id: string) =>
@@ -371,8 +460,6 @@ export const path = {
     part: (id: string) => generatePath(`${x}/part/${id}`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/costing`),
     partDetails: (id: string) => generatePath(`${x}/part/${id}/details`),
-    itemGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
-    itemGroups: `${x}/items/groups`,
     partInventory: (id: string) => generatePath(`${x}/part/${id}/inventory`),
     partInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/part/${id}/inventory?location=${locationId}`),
@@ -388,7 +475,6 @@ export const path = {
     partSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/suppliers/${id}`),
     partSuppliers: (id: string) => generatePath(`${x}/part/${id}/suppliers`),
-
     parts: `${x}/items/parts`,
     partner: (id: string, abilityId: string) =>
       generatePath(`${x}/resources/partners/${id}/${abilityId}`),
@@ -543,6 +629,22 @@ export const path = {
       generatePath(`${x}/settings/sequences/${id}`),
     theme: `${x}/account/theme`,
     timecards: `${x}/timecards`,
+    tool: (id: string) => generatePath(`${x}/tool/${id}`),
+    toolCosting: (id: string) => generatePath(`${x}/tool/${id}/costing`),
+    toolDetails: (id: string) => generatePath(`${x}/tool/${id}/details`),
+    toolInventory: (id: string) => generatePath(`${x}/tool/${id}/inventory`),
+    toolInventoryLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/tool/${id}/inventory?location=${locationId}`),
+    toolPlanning: (id: string) => generatePath(`${x}/tool/${id}/planning`),
+    toolPlanningLocation: (id: string, locationId: string) =>
+      generatePath(`${x}/tool/${id}/planning?location=${locationId}`),
+    toolPricing: (id: string) => generatePath(`${x}/tool/${id}/pricing`),
+    toolPurchasing: (id: string) => generatePath(`${x}/tool/${id}/purchasing`),
+    toolRoot: `${x}/tool`,
+    toolSupplier: (itemId: string, id: string) =>
+      generatePath(`${x}/tool/${itemId}/suppliers/${id}`),
+    toolSuppliers: (id: string) => generatePath(`${x}/tool/${id}/suppliers`),
+    tools: `${x}/items/tools`,
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
     uoms: `${x}/items/uom`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),

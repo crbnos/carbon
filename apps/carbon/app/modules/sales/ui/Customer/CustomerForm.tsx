@@ -89,10 +89,10 @@ const CustomerForm = ({
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-2",
-                  isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
+                  isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-2"
                 )}
               >
-                <Input name="name" label="Name" />
+                <Input name="name" label="Name" autoFocus={!isEditing} />
                 <Input name="taxId" label="Tax ID" />
 
                 <CustomerType

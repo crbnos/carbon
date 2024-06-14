@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
-import { PartHeader, PartSidebar, getPart } from "~/modules/items";
+import { PartHeader, PartNavigation, getPart } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -37,7 +37,7 @@ export default function PartRoute() {
     <>
       <PartHeader />
       <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <PartSidebar />
+        <PartNavigation />
         <Outlet />
       </div>
     </>

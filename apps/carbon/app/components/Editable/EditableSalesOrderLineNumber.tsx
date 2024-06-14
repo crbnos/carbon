@@ -45,23 +45,20 @@ const EditableSalesOrderLineNumber =
       if (!row.id) throw new Error("Purchase order line ID not found");
 
       switch (row.salesOrderLineType) {
+        case "Consumable":
+        case "Tool":
+        case "Fixture":
+        case "Material":
         case "Part":
-          const [item, part, inventory] = await Promise.all([
+          const [item, inventory] = await Promise.all([
             client
               .from("item")
               .select(
-                "name, readableId, itemUnitSalePrice(unitSalePrice), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+                "name, readableId, unitOfMeasureCode, itemUnitSalePrice(unitSalePrice)"
               )
               .eq("id", itemId)
               .eq("companyId", row.companyId!)
               .single(),
-            client
-              .from("part")
-              .select("unitOfMeasureCode")
-              .eq("itemId", itemId)
-              .eq("companyId", row.companyId!)
-              .single(),
-
             client
               .from("itemInventory")
               .select("defaultShelfId")
@@ -72,9 +69,8 @@ const EditableSalesOrderLineNumber =
           ]);
 
           const itemUnitSalePrice = item?.data?.itemUnitSalePrice?.[0];
-          const itemReplenishment = item?.data?.itemReplenishment?.[0];
 
-          if (item.error || part.error || inventory.error) {
+          if (item.error || inventory.error) {
             onError();
             return;
           }
@@ -85,7 +81,7 @@ const EditableSalesOrderLineNumber =
             locationId: options.defaultLocationId,
             description: item.data?.name ?? "",
             unitPrice: itemUnitSalePrice?.unitSalePrice ?? 0,
-            unitOfMeasureCode: part.data?.unitOfMeasureCode ?? "EA",
+            unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
             shelfId: inventory.data?.defaultShelfId ?? null,
           });
 
@@ -98,7 +94,7 @@ const EditableSalesOrderLineNumber =
                 locationId: options.defaultLocationId,
                 description: item.data?.name ?? "",
                 unitPrice: itemUnitSalePrice?.unitSalePrice ?? 0,
-                unitOfMeasureCode: part.data?.unitOfMeasureCode ?? "EA",
+                unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
                 shelfId: inventory.data?.defaultShelfId ?? null,
                 updatedBy: userId,
               })

@@ -1,6 +1,6 @@
 import type { InputProps } from "@carbon/react";
 import { Input, useDebounce } from "@carbon/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useUrlParams } from "~/hooks";
 
 type DebounceInputProps = InputProps & {
@@ -8,15 +8,10 @@ type DebounceInputProps = InputProps & {
 };
 
 const DebouncedInput = ({ param, ...props }: DebounceInputProps) => {
-  const initialLoad = useRef(true);
   const [params, setParams] = useUrlParams();
   const [query, setQuery] = useState(params.get(param) || "");
   const debounceQuery = useDebounce((q: string) => {
-    if (initialLoad.current) {
-      initialLoad.current = false;
-    } else {
-      setParams({ [param]: q });
-    }
+    setParams({ [param]: q });
   }, 500);
 
   return (

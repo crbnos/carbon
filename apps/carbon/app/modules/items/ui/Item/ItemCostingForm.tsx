@@ -27,7 +27,7 @@ const currency = "USD"; // TODO: get from settings
 
 const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
   const permissions = usePermissions();
-  const [partCostingMethod, setPartCostingMethod] = useState<string>(
+  const [partCostingMethod, setItemCostingMethod] = useState<string>(
     initialValues.costingMethod
   );
 
@@ -56,7 +56,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               label="Part Costing Method"
               options={partCostingMethodOptions}
               onChange={(newValue) => {
-                if (newValue) setPartCostingMethod(newValue.value);
+                if (newValue) setItemCostingMethod(newValue.value);
               }}
             />
             <Number

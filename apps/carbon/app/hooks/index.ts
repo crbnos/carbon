@@ -1,5 +1,6 @@
 import { useMovingCellRef } from "./useMovingCellRef";
 import { useNanoStore } from "./useNanoStore";
+import { useNextItemId } from "./useNextItemId";
 import { useOnboarding } from "./useOnboarding";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import { usePermissions } from "./usePermissions";
@@ -12,6 +13,7 @@ import { useUser } from "./useUser";
 export {
   useMovingCellRef,
   useNanoStore,
+  useNextItemId,
   useOnboarding,
   useOptimisticLocation,
   usePermissions,

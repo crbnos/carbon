@@ -70,7 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ? json(insertItemGroup, { status: 201 })
     : redirect(
         `${path.to.itemGroups}?${getParams(request)}`,
-        await flash(request, success("Part group created"))
+        await flash(request, success("Item posting group created"))
       );
 }
 

@@ -189,6 +189,7 @@ export default function PartInventoryRoute() {
       quantities={quantities}
       locations={sharedPartssData?.locations ?? []}
       shelves={shelves}
+      type="Part"
     />
   );
 }

@@ -2,7 +2,7 @@ import { VStack } from "@carbon/react";
 import type { MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { usePartsSubmodules } from "~/modules/items";
+import { useItemsSubmodules } from "~/modules/items";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export default function PartsRoute() {
-  const { groups } = usePartsSubmodules();
+  const { groups } = useItemsSubmodules();
 
   return (
     <div className="grid grid-cols-[auto_1fr] w-full h-full">

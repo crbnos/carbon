@@ -87,22 +87,21 @@ const EditablePurchaseOrderLineNumber =
       if (!row.id) throw new Error("Purchase order line ID not found");
 
       switch (row.purchaseOrderLineType) {
+        case "Material":
         case "Part":
-          const [item, part, itemSupplier, inventory] = await Promise.all([
+        case "Tool":
+        case "Fixture":
+        case "Consumable":
+          const [item, itemSupplier, inventory] = await Promise.all([
             client
               .from("item")
               .select(
-                "name, readableId, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+                "name, readableId, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
               )
               .eq("id", itemId)
               .eq("companyId", row.companyId!)
               .single(),
-            client
-              .from("part")
-              .select("unitOfMeasureCode")
-              .eq("itemId", itemId)
-              .eq("companyId", row.companyId!)
-              .single(),
+
             client
               .from("itemSupplier")
               .select("*")
@@ -122,12 +121,7 @@ const EditablePurchaseOrderLineNumber =
           const itemCost = item?.data?.itemCost?.[0];
           const itemReplenishment = item?.data?.itemReplenishment?.[0];
 
-          if (
-            item.error ||
-            part.error ||
-            itemSupplier.error ||
-            inventory.error
-          ) {
+          if (item.error || itemSupplier.error || inventory.error) {
             onError();
             return;
           }
@@ -141,7 +135,7 @@ const EditablePurchaseOrderLineNumber =
             unitPrice: itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
             purchaseUnitOfMeasureCode:
               itemReplenishment?.purchasingUnitOfMeasureCode ??
-              part.data?.unitOfMeasureCode ??
+              item.data?.unitOfMeasureCode ??
               "EA",
 
             conversionFactor: itemReplenishment?.conversionFactor ?? 1,
@@ -161,7 +155,7 @@ const EditablePurchaseOrderLineNumber =
                   itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
                 purchaseUnitOfMeasureCode:
                   itemReplenishment?.purchasingUnitOfMeasureCode ??
-                  part.data?.unitOfMeasureCode ??
+                  item.data?.unitOfMeasureCode ??
                   "EA",
 
                 conversionFactor: itemReplenishment?.conversionFactor ?? 1,

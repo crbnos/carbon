@@ -157,6 +157,7 @@ export default function PartPlanningRoute() {
         ...getCustomFields(partPlanning.customFields),
       }}
       locations={sharedPartsData.locations ?? []}
+      type="Part"
     />
   );
 }

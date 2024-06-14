@@ -152,20 +152,18 @@ const PurchaseInvoiceLineForm = ({
   const onItemChange = async (itemId: string) => {
     if (!supabase) throw new Error("Supabase client not found");
     switch (type) {
+      case "Consumable":
+      case "Material":
       case "Part":
-        const [item, part, itemSupplier, inventory] = await Promise.all([
+      case "Tool":
+      case "Fixture":
+        const [item, itemSupplier, inventory] = await Promise.all([
           supabase
             .from("item")
             .select(
-              "name, readableId, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+              "name, readableId, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
             )
             .eq("id", itemId)
-            .eq("companyId", company.id)
-            .single(),
-          supabase
-            .from("part")
-            .select("unitOfMeasureCode")
-            .eq("itemId", itemId)
             .eq("companyId", company.id)
             .single(),
           supabase
@@ -195,9 +193,9 @@ const PurchaseInvoiceLineForm = ({
           unitPrice: itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
           purchaseUom:
             itemReplenishment?.purchasingUnitOfMeasureCode ??
-            part.data?.unitOfMeasureCode ??
+            item.data?.unitOfMeasureCode ??
             "EA",
-          inventoryUom: part.data?.unitOfMeasureCode ?? "EA",
+          inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
 
           conversionFactor: itemReplenishment?.conversionFactor ?? 1,
           shelfId: inventory.data?.defaultShelfId ?? null,
@@ -375,7 +373,7 @@ const PurchaseInvoiceLineForm = ({
                     }
                   />
 
-                  {["Part", "Material", "Consumable"] && (
+                  {["Part", "Material", "Consumable", "Tool"] && (
                     <>
                       <UnitOfMeasure
                         name="purchaseUnitOfMeasureCode"
