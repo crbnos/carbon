@@ -96,7 +96,7 @@ const ModalCardContent = forwardRef<
     return <div {...props} ref={ref} />;
   }
 
-  return <ModalContent {...props} ref={ref} />;
+  return <ModalContent {...props} size="xlarge" ref={ref} />;
 });
 ModalCardContent.displayName = "ModalCardContent";
 

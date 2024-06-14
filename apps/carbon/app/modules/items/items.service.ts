@@ -18,6 +18,7 @@ import type {
   itemValidator,
   materialFormValidator,
   materialSubstanceValidator,
+  materialValidator,
   partManufacturingValidator,
   partValidator,
   serviceValidator,
@@ -1171,6 +1172,96 @@ export async function upsertItemUnitSalePrice(
     .from("itemUnitSalePrice")
     .update(sanitize(itemUnitSalePrice))
     .eq("itemId", itemUnitSalePrice.itemId);
+}
+
+export async function upsertMaterial(
+  client: SupabaseClient<Database>,
+  material:
+    | (z.infer<typeof materialValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof materialValidator> & {
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in material) {
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: material.id,
+        name: material.name,
+        type: "Material",
+        itemGroupId: material.itemGroupId,
+        itemInventoryType: material.itemInventoryType,
+        unitOfMeasureCode: material.unitOfMeasureCode,
+        companyId: material.companyId,
+        createdBy: material.createdBy,
+      })
+      .select("id")
+      .single();
+    if (itemInsert.error) return itemInsert;
+    const itemId = itemInsert.data?.id;
+
+    return client
+      .from("material")
+      .insert({
+        id: material.id,
+        itemId: itemId,
+        materialFormId: material.materialFormId,
+        materialSubstanceId: material.materialSubstanceId,
+        finish: material.finish,
+        grade: material.grade,
+        dimensions: material.dimensions,
+        companyId: material.companyId,
+        createdBy: material.createdBy,
+        customFields: material.customFields,
+      })
+      .select("*")
+      .single();
+  }
+
+  const itemUpdate = {
+    id: material.id,
+    name: material.name,
+    description: material.description,
+    itemGroupId: material.itemGroupId,
+    itemInventoryType: material.itemInventoryType,
+    unitOfMeasureCode: material.unitOfMeasureCode,
+    active: material.active,
+    blocked: material.blocked,
+  };
+
+  const materialUpdate = {
+    materialFormId: material.materialFormId,
+    materialSubstanceId: material.materialSubstanceId,
+    finish: material.finish,
+    grade: material.grade,
+    dimensions: material.dimensions,
+    customFields: material.customFields,
+  };
+
+  const [updateItem, updatePart] = await Promise.all([
+    client
+      .from("item")
+      .update({
+        ...sanitize(itemUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", material.id),
+    client
+      .from("material")
+      .update({
+        ...sanitize(materialUpdate),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("itemId", material.id),
+  ]);
+
+  if (updateItem.error) return updateItem;
+  return updatePart;
 }
 
 export async function upsertMaterialForm(

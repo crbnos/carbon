@@ -23,6 +23,10 @@ export type Consumable = NonNullable<
   Awaited<ReturnType<typeof getConsumables>>["data"]
 >[number];
 
+export type Form = NonNullable<
+  Awaited<ReturnType<typeof getMaterialForms>>["data"]
+>[number];
+
 export type Fixture = NonNullable<
   Awaited<ReturnType<typeof getFixtures>>["data"]
 >[number];
@@ -63,14 +67,6 @@ export type Material = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
 >[number];
 
-export type MaterialForm = NonNullable<
-  Awaited<ReturnType<typeof getMaterialForms>>["data"]
->[number];
-
-export type MaterialSubstance = NonNullable<
-  Awaited<ReturnType<typeof getMaterialSubstances>>["data"]
->[number];
-
 export type PartManufacturingPolicy =
   Database["public"]["Enums"]["partManufacturingPolicy"];
 
@@ -87,6 +83,10 @@ export type Service = NonNullable<
 >[number];
 
 export type ServiceType = Database["public"]["Enums"]["serviceType"];
+
+export type Substance = NonNullable<
+  Awaited<ReturnType<typeof getMaterialSubstances>>["data"]
+>[number];
 
 export type Tool = NonNullable<
   Awaited<ReturnType<typeof getTools>>["data"]

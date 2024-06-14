@@ -9,26 +9,32 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Parts",
         to: path.to.parts,
+        // icon: <AiOutlinePartition />,
       },
       {
         name: "Materials",
         to: path.to.materials,
+        // icon: <GiIBeam />,
       },
       {
         name: "Tools",
         to: path.to.tools,
+        // icon: <LuHammer />,
       },
       {
         name: "Fixtures",
         to: path.to.fixtures,
+        // icon: <LuGrip />,
       },
       {
         name: "Consumables",
         to: path.to.consumables,
+        // icon: <CiFries />,
       },
       {
         name: "Services",
         to: path.to.services,
+        // icon: <RiCustomerServiceLine />,
       },
       // {
       //   name: "Routing",
@@ -43,10 +49,12 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Forms",
         to: path.to.materialForms,
+        // icon: <LuShapes />,
       },
       {
         name: "Substances",
         to: path.to.materialSubstances,
+        // icon: <GiWoodBeam />,
       },
       {
         name: "Posting Groups",
@@ -57,6 +65,7 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         name: "Units of Measure",
         to: path.to.uoms,
         role: "employee",
+        // icon: <FaRulerVertical />,
       },
     ],
   },

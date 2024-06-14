@@ -99,15 +99,13 @@ const MaterialHeader = () => {
             <CardAttribute>
               <CardAttributeLabel>Finish</CardAttributeLabel>
               <CardAttributeValue>
-                <Enumerable
-                  value={routeData?.materialSummary?.finish ?? null}
-                />
+                {routeData?.materialSummary?.finish ?? "-"}
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>
               <CardAttributeLabel>Grade</CardAttributeLabel>
               <CardAttributeValue>
-                <Enumerable value={routeData?.materialSummary?.grade ?? null} />
+                {routeData?.materialSummary?.grade ?? "-"}
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>

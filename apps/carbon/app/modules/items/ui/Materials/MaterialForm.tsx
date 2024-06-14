@@ -9,11 +9,12 @@ import {
   ModalCardTitle,
   cn,
   toast,
+  useMount,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { z } from "zod";
 import {
   Boolean,
@@ -27,15 +28,17 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
-import { useNextItemId, usePermissions } from "~/hooks";
+import { useNextItemId, usePermissions, useRouteData } from "~/hooks";
+import type {
+  getMaterialFormsList,
+  getMaterialSubstancesList,
+} from "~/modules/items";
 import { itemInventoryTypes, materialValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type MaterialFormProps = {
   initialValues: z.infer<typeof materialValidator>;
-  substances: ListItem[];
-  forms: ListItem[];
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -47,11 +50,11 @@ function startsWithLetter(value: string) {
 const MaterialForm = ({
   initialValues,
   type = "card",
-  substances,
-  forms,
   onClose,
 }: MaterialFormProps) => {
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  const forms = useMaterialForms();
+  const substances = useMaterialSubstances();
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -73,16 +76,6 @@ const MaterialForm = ({
       label: itemInventoryType,
       value: itemInventoryType,
     })) ?? [];
-
-  const substanceOptions = substances.map((substance) => ({
-    label: substance.name,
-    value: substance.id,
-  }));
-
-  const formOptions = forms.map((form) => ({
-    label: form.name,
-    value: form.id,
-  }));
 
   return (
     <ModalCardProvider type={type}>
@@ -111,7 +104,7 @@ const MaterialForm = ({
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-2",
-                  isEditing ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1"
+                  isEditing ? "grid-cols-1 md:grid-cols-3" : "grid-cols-2"
                 )}
               >
                 {isEditing ? (
@@ -136,13 +129,9 @@ const MaterialForm = ({
                 <Select
                   name="materialSubstanceId"
                   label="Substance"
-                  options={substanceOptions}
+                  options={substances}
                 />
-                <Select
-                  name="materialFormId"
-                  label="Form"
-                  options={formOptions}
-                />
+                <Select name="materialFormId" label="Form" options={forms} />
                 <Input name="finish" label="Finish" />
                 <Input name="grade" label="Grade" />
                 <Input name="dimensions" label="Dimensions" />
@@ -186,3 +175,65 @@ const MaterialForm = ({
 };
 
 export default MaterialForm;
+
+export const useMaterialForms = () => {
+  const formsFetcher =
+    useFetcher<Awaited<ReturnType<typeof getMaterialFormsList>>>();
+
+  const sharedPartData = useRouteData<{
+    forms: ListItem[];
+  }>(path.to.materialRoot);
+
+  const hasSharedPartData = sharedPartData?.forms?.length;
+
+  useMount(() => {
+    if (!hasSharedPartData) formsFetcher.load(path.to.api.materialForms);
+  });
+
+  const options = useMemo(() => {
+    const dataSource =
+      (hasSharedPartData ? sharedPartData?.forms : formsFetcher.data?.data) ??
+      [];
+
+    return dataSource.map((f) => ({
+      value: f.id,
+      label: f.name,
+    }));
+  }, [hasSharedPartData, sharedPartData?.forms, formsFetcher.data?.data]);
+
+  return options;
+};
+
+export const useMaterialSubstances = () => {
+  const substancesFetcher =
+    useFetcher<Awaited<ReturnType<typeof getMaterialSubstancesList>>>();
+
+  const sharedPartData = useRouteData<{
+    substances: ListItem[];
+  }>(path.to.materialRoot);
+
+  const hasSharedPartData = sharedPartData?.substances?.length;
+
+  useMount(() => {
+    if (!hasSharedPartData)
+      substancesFetcher.load(path.to.api.materialSubstances);
+  });
+
+  const options = useMemo(() => {
+    const dataSource =
+      (hasSharedPartData
+        ? sharedPartData?.substances
+        : substancesFetcher.data?.data) ?? [];
+
+    return dataSource.map((s) => ({
+      value: s.id,
+      label: s.name,
+    }));
+  }, [
+    hasSharedPartData,
+    sharedPartData?.substances,
+    substancesFetcher.data?.data,
+  ]);
+
+  return options;
+};

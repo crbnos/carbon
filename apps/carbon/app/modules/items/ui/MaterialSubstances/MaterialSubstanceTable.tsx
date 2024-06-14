@@ -6,11 +6,11 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { MaterialSubstance } from "~/modules/items";
+import type { Substance } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type MaterialSubstancesTableProps = {
-  data: MaterialSubstance[];
+  data: Substance[];
   count: number;
 };
 
@@ -21,8 +21,7 @@ const MaterialSubstancesTable = memo(
     const permissions = usePermissions();
 
     const rows = useMemo(() => data, [data]);
-    const customColumns =
-      useCustomColumns<MaterialSubstance>("materialSubstance");
+    const customColumns = useCustomColumns<Substance>("materialSubstance");
 
     const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
       const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [

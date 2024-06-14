@@ -6,11 +6,11 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { MaterialForm } from "~/modules/items";
+import type { Form } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type MaterialFormsTableProps = {
-  data: MaterialForm[];
+  data: Form[];
   count: number;
 };
 
@@ -20,7 +20,7 @@ const MaterialFormsTable = memo(({ data, count }: MaterialFormsTableProps) => {
   const permissions = usePermissions();
 
   const rows = useMemo(() => data, [data]);
-  const customColumns = useCustomColumns<MaterialForm>("materialForm");
+  const customColumns = useCustomColumns<Form>("materialForm");
 
   const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
     const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [

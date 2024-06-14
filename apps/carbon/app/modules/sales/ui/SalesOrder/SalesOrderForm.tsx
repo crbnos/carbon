@@ -13,21 +13,18 @@ import { useState } from "react";
 import type { z } from "zod";
 import {
   CustomFormFields,
+  Customer,
+  CustomerContact,
+  CustomerLocation,
   DatePicker,
   Hidden,
   Input,
   Select,
   Submit,
-  Customer,
-  CustomerContact,
-  CustomerLocation,
   TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import {
-  salesOrderStatusType,
-  salesOrderValidator,
-} from "~/modules/sales";
+import { salesOrderStatusType, salesOrderValidator } from "~/modules/sales";
 
 type SalesOrderFormValues = z.infer<typeof salesOrderValidator>;
 
@@ -56,13 +53,11 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>
-            {isEditing ? "Sales Order" : "New Sales Order"}
-          </CardTitle>
+          <CardTitle>{isEditing ? "Sales Order" : "New Sales Order"}</CardTitle>
           {!isEditing && (
             <CardDescription>
-              A sales order contains information about the agreement between
-              the company and a specific customer for parts and services.
+              A sales order contains information about the agreement between the
+              company and a specific customer for parts and services.
             </CardDescription>
           )}
         </CardHeader>
@@ -72,7 +67,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
             <div
               className={cn(
                 "grid w-full gap-x-8 gap-y-2",
-                isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
+                isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-2"
               )}
             >
               <Customer
