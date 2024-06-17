@@ -81,7 +81,7 @@ CREATE OR REPLACE VIEW "tools" WITH(SECURITY_INVOKER=true) AS
     SELECT 
       "itemId",
       array_agg(s."supplierId") AS "supplierIds"
-    FROM "itemSupplier" s
+    FROM "buyMethod" s
     GROUP BY "itemId"
   )  s ON s."itemId" = t."itemId"
   LEFT JOIN "unitOfMeasure" uom ON uom.code = i."unitOfMeasureCode" AND uom."companyId" = i."companyId";

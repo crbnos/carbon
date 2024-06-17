@@ -25,9 +25,13 @@ import { path } from "~/utils/path";
 
 type ItemPurchasingFormProps = {
   initialValues: z.infer<typeof itemPurchasingValidator>;
+  allowedSuppliers?: string[];
 };
 
-const ItemPurchasingForm = ({ initialValues }: ItemPurchasingFormProps) => {
+const ItemPurchasingForm = ({
+  initialValues,
+  allowedSuppliers,
+}: ItemPurchasingFormProps) => {
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
@@ -42,19 +46,23 @@ const ItemPurchasingForm = ({ initialValues }: ItemPurchasingFormProps) => {
   );
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={itemPurchasingValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={itemPurchasingValidator}
+        defaultValues={initialValues}
+      >
         <CardHeader>
           <CardTitle>Purchasing</CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2 w-full">
-            <Supplier name="preferredSupplierId" label="Preferred Supplier" />
+            <Supplier
+              name="preferredSupplierId"
+              label="Preferred Supplier"
+              allowedSuppliers={allowedSuppliers}
+            />
             <Number name="purchasingLeadTime" label="Lead Time (Days)" />
             <UnitOfMeasure
               name="purchasingUnitOfMeasureCode"
@@ -75,8 +83,8 @@ const ItemPurchasingForm = ({ initialValues }: ItemPurchasingFormProps) => {
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

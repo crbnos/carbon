@@ -1,17 +1,18 @@
 import type { Database } from "@carbon/database";
 import type {
+  getBuyMethods,
   getConsumables,
   getFixtures,
   getItemCost,
   getItemGroups,
   getItemGroupsList,
   getItemQuantities,
-  getItemSuppliers,
   getMaterialForms,
   getMaterialSubstances,
   getMaterials,
   getPart,
   getParts,
+  getPickMethods,
   getServices,
   getTool,
   getTools,
@@ -56,8 +57,8 @@ export type ItemReorderingPolicy =
 export type ItemReplenishmentSystem =
   Database["public"]["Enums"]["itemReplenishmentSystem"];
 
-export type ItemSupplier = NonNullable<
-  Awaited<ReturnType<typeof getItemSuppliers>>["data"]
+export type BuyMethod = NonNullable<
+  Awaited<ReturnType<typeof getBuyMethods>>["data"]
 >[number];
 
 export type InventoryItemType =
@@ -77,6 +78,10 @@ export type Part = NonNullable<
 export type PartSummary = NonNullable<
   Awaited<ReturnType<typeof getPart>>
 >["data"];
+
+export type PickMethod = NonNullable<
+  Awaited<ReturnType<typeof getPickMethods>>["data"]
+>[number];
 
 export type Service = NonNullable<
   Awaited<ReturnType<typeof getServices>>["data"]

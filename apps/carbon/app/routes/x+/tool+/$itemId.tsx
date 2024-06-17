@@ -4,8 +4,15 @@ import { Outlet } from "@remix-run/react";
 import { ToolHeader, ToolNavigation, getTool } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
+
+export const handle: Handle = {
+  breadcrumb: "Tools",
+  to: path.to.tools,
+  module: "parts",
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

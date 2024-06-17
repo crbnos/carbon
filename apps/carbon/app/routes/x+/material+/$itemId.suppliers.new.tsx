@@ -3,9 +3,9 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import {
-  ItemSupplierForm,
-  itemSupplierValidator,
-  upsertItemSupplier,
+  BuyMethodForm,
+  buyMethodValidator,
+  upsertBuyMethod,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(itemSupplierValidator).validate(formData);
+  const validation = await validator(buyMethodValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createMaterialSupplier = await upsertItemSupplier(client, {
+  const createMaterialSupplier = await upsertBuyMethod(client, {
     ...data,
     companyId,
     createdBy: userId,
@@ -70,5 +70,5 @@ export default function NewMaterialSupplierRoute() {
     conversionFactor: 1,
   };
 
-  return <ItemSupplierForm type="Material" initialValues={initialValues} />;
+  return <BuyMethodForm type="Material" initialValues={initialValues} />;
 }

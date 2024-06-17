@@ -418,7 +418,7 @@ CREATE POLICY "Employees with parts_update can update part sale prices" ON "item
     has_company_permission('parts_update', "companyId")
   );
 
-CREATE TABLE "itemSupplier" (
+CREATE TABLE "buyMethod" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "itemId" TEXT NOT NULL,
   "supplierId" TEXT NOT NULL,
@@ -434,21 +434,21 @@ CREATE TABLE "itemSupplier" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
 
-  CONSTRAINT "itemSupplier_id_pkey" PRIMARY KEY ("id", "companyId"),
-  CONSTRAINT "itemSupplier_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "itemSupplier_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON DELETE CASCADE,
-  CONSTRAINT "itemSupplier_part_supplier_unique" UNIQUE ("itemId", "supplierId", "companyId"),
-  CONSTRAINT "itemSupplier_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "itemSupplier_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "itemSupplier_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "buyMethod_id_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "buyMethod_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "buyMethod_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON DELETE CASCADE,
+  CONSTRAINT "buyMethod_part_supplier_unique" UNIQUE ("itemId", "supplierId", "companyId"),
+  CONSTRAINT "buyMethod_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "buyMethod_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "buyMethod_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "itemSupplier_itemId_idx" ON "itemSupplier"("itemId");
-CREATE INDEX "itemSupplier_companyId_idx" ON "itemSupplier"("companyId");
+CREATE INDEX "buyMethod_itemId_idx" ON "buyMethod"("itemId");
+CREATE INDEX "buyMethod_companyId_idx" ON "buyMethod"("companyId");
 
-ALTER TABLE "itemSupplier" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "buyMethod" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with part/purchasing_view can view part suppliers" ON "itemSupplier"
+CREATE POLICY "Employees with part/purchasing_view can view part suppliers" ON "buyMethod"
   FOR SELECT
   USING (
     (
@@ -458,28 +458,28 @@ CREATE POLICY "Employees with part/purchasing_view can view part suppliers" ON "
     AND has_role('employee')
   );
 
-CREATE POLICY "Employees with parts_create can create part suppliers" ON "itemSupplier"
+CREATE POLICY "Employees with parts_create can create part suppliers" ON "buyMethod"
   FOR INSERT
   WITH CHECK (
     has_role('employee') AND
     has_company_permission('parts_create', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update part suppliers" ON "itemSupplier"
+CREATE POLICY "Employees with parts_update can update part suppliers" ON "buyMethod"
   FOR UPDATE
   USING (
     has_role('employee') AND
     has_company_permission('parts_update', "companyId")
   );
 
-CREATE POLICY "Employees with parts_delete can delete part suppliers" ON "itemSupplier"
+CREATE POLICY "Employees with parts_delete can delete part suppliers" ON "buyMethod"
   FOR DELETE
   USING (
     has_role('employee') AND
     has_company_permission('parts_delete', "companyId")
   );
 
-CREATE POLICY "Suppliers with parts_view can view their own part suppliers" ON "itemSupplier"
+CREATE POLICY "Suppliers with parts_view can view their own part suppliers" ON "buyMethod"
   FOR SELECT
   USING (
     has_role('supplier') AND
@@ -489,7 +489,7 @@ CREATE POLICY "Suppliers with parts_view can view their own part suppliers" ON "
     )
   );
 
-CREATE POLICY "Suppliers with parts_update can update their own part suppliers" ON "itemSupplier"
+CREATE POLICY "Suppliers with parts_update can update their own part suppliers" ON "buyMethod"
   FOR UPDATE
   USING (
     has_role('supplier') AND
@@ -558,7 +558,7 @@ CREATE POLICY "Suppliers with parts can view parts they created or supply" ON "p
       "createdBy" = auth.uid()::text
       OR (
         id IN (
-          SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
+          SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
               SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
           )
         )              
@@ -582,7 +582,7 @@ CREATE POLICY "Suppliers with parts_update can update parts that they created or
       "createdBy" = auth.uid()::text
       OR (
         id IN (
-          SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
+          SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
               SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
           )
         )              
@@ -599,7 +599,7 @@ CREATE POLICY "Suppliers with parts_delete can delete parts that they created or
       "createdBy" = auth.uid()::text
       OR (
         id IN (
-          SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
+          SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
               SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
           )
         )              
@@ -614,7 +614,7 @@ CREATE POLICY "Suppliers with parts_view can view part costs they supply" ON "it
     has_company_permission('parts_view', "companyId")
     AND (
       "itemId" IN (
-        SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
+        SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
             SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
         )
       )                 
@@ -628,7 +628,7 @@ CREATE POLICY "Suppliers with parts_update can update parts costs that they supp
     has_company_permission('parts_update', "companyId")
     AND (
       "itemId" IN (
-        SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
+        SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
             SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
         )
       )                 
@@ -642,7 +642,7 @@ CREATE POLICY "Suppliers with parts_view can view part replenishments they suppl
     has_company_permission('parts_create', "companyId")
     AND (
       "itemId" IN (
-        SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
+        SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
             SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
         )
       )               
@@ -656,7 +656,7 @@ CREATE POLICY "Suppliers with parts_update can update parts replenishments that 
     has_company_permission('parts_update', "companyId")
     AND (
       "itemId" IN (
-        SELECT "itemId" FROM "itemSupplier" WHERE "supplierId" IN (
+        SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
             SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
         )
       )                
@@ -805,7 +805,7 @@ CREATE POLICY "Employees with parts_update can update part planning" ON "itemPla
   );
 
 
-CREATE TABLE "itemInventory" (
+CREATE TABLE "pickMethod" (
   "itemId" TEXT NOT NULL,
   "locationId" TEXT NOT NULL,
   "defaultShelfId" TEXT,
@@ -816,21 +816,21 @@ CREATE TABLE "itemInventory" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
 
-  CONSTRAINT "itemInventory_itemId_locationId_key" UNIQUE ("itemId", "locationId"),
-  CONSTRAINT "itemInventory_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "itemInventory_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "itemInventory_shelfId_fkey" FOREIGN KEY ("defaultShelfId", "locationId") REFERENCES "shelf"("id", "locationId") ON DELETE SET NULL,
-  CONSTRAINT "itemInventory_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "itemInventory_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "itemInventory_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "pickMethod_itemId_locationId_key" UNIQUE ("itemId", "locationId"),
+  CONSTRAINT "pickMethod_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "pickMethod_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "pickMethod_shelfId_fkey" FOREIGN KEY ("defaultShelfId", "locationId") REFERENCES "shelf"("id", "locationId") ON DELETE SET NULL,
+  CONSTRAINT "pickMethod_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "pickMethod_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "pickMethod_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "itemInventory_itemId_locationId_idx" ON "itemInventory" ("itemId", "locationId");
-CREATE INDEX "itemInventory_shelfId_idx" ON "itemInventory" ("defaultShelfId");
+CREATE INDEX "pickMethod_itemId_locationId_idx" ON "pickMethod" ("itemId", "locationId");
+CREATE INDEX "pickMethod_shelfId_idx" ON "pickMethod" ("defaultShelfId");
 
-ALTER TABLE "itemInventory" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "pickMethod" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with part_view can view part planning" ON "itemInventory"
+CREATE POLICY "Employees with part_view can view part planning" ON "pickMethod"
   FOR SELECT
   USING (
     has_role('employee') AND
@@ -838,14 +838,14 @@ CREATE POLICY "Employees with part_view can view part planning" ON "itemInventor
   );
 
 -- these are records are created lazily when a user attempts to view them
-CREATE POLICY "Employees with part_view can insert part planning" ON "itemInventory"
+CREATE POLICY "Employees with part_view can insert part planning" ON "pickMethod"
   FOR INSERT
   WITH CHECK (
     has_role('employee') AND
     has_company_permission('parts_view', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update part planning" ON "itemInventory"
+CREATE POLICY "Employees with parts_update can update part planning" ON "pickMethod"
   FOR UPDATE
   USING (
     has_role('employee') AND

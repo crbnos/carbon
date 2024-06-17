@@ -3,7 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import {
-  MaterialFormForm,
+  MaterialShapeForm,
   getMaterialForm,
   materialFormValidator,
   upsertMaterialForm,
@@ -81,7 +81,7 @@ export default function EditMaterialFormsRoute() {
   };
 
   return (
-    <MaterialFormForm
+    <MaterialShapeForm
       key={initialValues.id}
       initialValues={initialValues}
       onClose={() => navigate(-1)}

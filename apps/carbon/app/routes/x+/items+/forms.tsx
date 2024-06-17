@@ -11,7 +11,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 import { error } from "~/utils/result";
 
 export const handle: Handle = {
-  breadcrumb: "Forms",
+  breadcrumb: "Shapes",
   to: path.to.materialForms,
 };
 

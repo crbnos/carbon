@@ -4,12 +4,12 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import {
-  ItemInventoryForm,
-  getItemInventory,
+  PickMethodForm,
   getItemQuantities,
+  getPickMethod,
   getShelvesList,
-  itemInventoryValidator,
-  upsertItemInventory,
+  pickMethodValidator,
+  upsertPickMethod,
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -63,12 +63,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let [fixtureInventory, shelves] = await Promise.all([
-    getItemInventory(client, itemId, companyId, locationId),
+    getPickMethod(client, itemId, companyId, locationId),
     getShelvesList(client, locationId),
   ]);
 
   if (fixtureInventory.error || !fixtureInventory.data) {
-    const insertItemInventory = await upsertItemInventory(client, {
+    const insertPickMethod = await upsertPickMethod(client, {
       itemId,
       companyId,
       locationId,
@@ -76,17 +76,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       createdBy: userId,
     });
 
-    if (insertItemInventory.error) {
+    if (insertPickMethod.error) {
       throw redirect(
         path.to.fixture(itemId),
         await flash(
           request,
-          error(insertItemInventory.error, "Failed to insert fixture inventory")
+          error(insertPickMethod.error, "Failed to insert fixture inventory")
         )
       );
     }
 
-    fixtureInventory = await getItemInventory(
+    fixtureInventory = await getPickMethod(
       client,
       itemId,
       companyId,
@@ -144,7 +144,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   // validate with fixturesValidator
-  const validation = await validator(itemInventoryValidator).validate(formData);
+  const validation = await validator(pickMethodValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -152,18 +152,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { ...update } = validation.data;
 
-  const updateItemInventory = await upsertItemInventory(client, {
+  const updatePickMethod = await upsertPickMethod(client, {
     ...update,
     itemId,
     customFields: setCustomFields(formData),
     updatedBy: userId,
   });
-  if (updateItemInventory.error) {
+  if (updatePickMethod.error) {
     throw redirect(
       path.to.fixture(itemId),
       await flash(
         request,
-        error(updateItemInventory.error, "Failed to update fixture inventory")
+        error(updatePickMethod.error, "Failed to update fixture inventory")
       )
     );
   }
@@ -187,7 +187,7 @@ export default function FixtureInventoryRoute() {
     ...getCustomFields(fixtureInventory.customFields ?? {}),
   };
   return (
-    <ItemInventoryForm
+    <PickMethodForm
       key={initialValues.itemId}
       initialValues={initialValues}
       quantities={quantities}

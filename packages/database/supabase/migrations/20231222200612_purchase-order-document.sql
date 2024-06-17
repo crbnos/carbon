@@ -9,7 +9,7 @@ CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS
       ON po.id = pol."purchaseOrderId"
     LEFT OUTER JOIN "item" i
       ON i.id = pol."itemId"
-    LEFT OUTER JOIN "itemSupplier" sup 
+    LEFT OUTER JOIN "buyMethod" sup 
       ON i.id = sup."itemId" AND po."supplierId" = sup."supplierId";
 
 CREATE OR REPLACE VIEW "purchaseOrderLocations" WITH(SECURITY_INVOKER=true) AS

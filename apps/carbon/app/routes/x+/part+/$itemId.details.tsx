@@ -71,7 +71,7 @@ export default function PartDetailsRoute() {
   };
 
   return (
-    <VStack spacing={4}>
+    <VStack spacing={2} className="p-2">
       <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
     </VStack>
   );

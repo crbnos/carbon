@@ -1,15 +1,16 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import {
-  ItemInventoryForm,
-  getItemInventory,
+  PickMethodForm,
   getItemQuantities,
+  getPickMethod,
   getShelvesList,
-  itemInventoryValidator,
-  upsertItemInventory,
+  pickMethodValidator,
+  upsertPickMethod,
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -63,12 +64,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let [partInventory, shelves] = await Promise.all([
-    getItemInventory(client, itemId, companyId, locationId),
+    getPickMethod(client, itemId, companyId, locationId),
     getShelvesList(client, locationId),
   ]);
 
   if (partInventory.error || !partInventory.data) {
-    const insertItemInventory = await upsertItemInventory(client, {
+    const insertPickMethod = await upsertPickMethod(client, {
       itemId,
       companyId,
       locationId,
@@ -76,22 +77,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       createdBy: userId,
     });
 
-    if (insertItemInventory.error) {
+    if (insertPickMethod.error) {
       throw redirect(
         path.to.part(itemId),
         await flash(
           request,
-          error(insertItemInventory.error, "Failed to insert part inventory")
+          error(insertPickMethod.error, "Failed to insert part inventory")
         )
       );
     }
 
-    partInventory = await getItemInventory(
-      client,
-      itemId,
-      companyId,
-      locationId
-    );
+    partInventory = await getPickMethod(client, itemId, companyId, locationId);
     if (partInventory.error || !partInventory.data) {
       throw redirect(
         path.to.part(itemId),
@@ -141,7 +137,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   // validate with partsValidator
-  const validation = await validator(itemInventoryValidator).validate(formData);
+  const validation = await validator(pickMethodValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -149,18 +145,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { ...update } = validation.data;
 
-  const updateItemInventory = await upsertItemInventory(client, {
+  const updatePickMethod = await upsertPickMethod(client, {
     ...update,
     itemId,
     customFields: setCustomFields(formData),
     updatedBy: userId,
   });
-  if (updateItemInventory.error) {
+  if (updatePickMethod.error) {
     throw redirect(
       path.to.part(itemId),
       await flash(
         request,
-        error(updateItemInventory.error, "Failed to update part inventory")
+        error(updatePickMethod.error, "Failed to update part inventory")
       )
     );
   }
@@ -172,7 +168,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartInventoryRoute() {
-  const sharedPartssData = useRouteData<{ locations: ListItem[] }>(
+  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
     path.to.partRoot
   );
   const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
@@ -183,13 +179,15 @@ export default function PartInventoryRoute() {
     ...getCustomFields(partInventory.customFields ?? {}),
   };
   return (
-    <ItemInventoryForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-      quantities={quantities}
-      locations={sharedPartssData?.locations ?? []}
-      shelves={shelves}
-      type="Part"
-    />
+    <VStack spacing={2} className="p-2">
+      <PickMethodForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        quantities={quantities}
+        locations={sharedPartsData?.locations ?? []}
+        shelves={shelves}
+        type="Part"
+      />
+    </VStack>
   );
 }

@@ -1,3 +1,4 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
@@ -150,14 +151,16 @@ export default function PartPlanningRoute() {
   if (!sharedPartsData) throw new Error("Could not load shared parts data");
 
   return (
-    <ItemPlanningForm
-      key={partPlanning.itemId}
-      initialValues={{
-        ...partPlanning,
-        ...getCustomFields(partPlanning.customFields),
-      }}
-      locations={sharedPartsData.locations ?? []}
-      type="Part"
-    />
+    <VStack spacing={2} className="p-2">
+      <ItemPlanningForm
+        key={partPlanning.itemId}
+        initialValues={{
+          ...partPlanning,
+          ...getCustomFields(partPlanning.customFields),
+        }}
+        locations={sharedPartsData.locations ?? []}
+        type="Part"
+      />
+    </VStack>
   );
 }

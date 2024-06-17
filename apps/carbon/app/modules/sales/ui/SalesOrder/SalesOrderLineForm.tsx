@@ -134,7 +134,7 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
         .eq("companyId", company.id)
         .single(),
       supabase
-        .from("itemInventory")
+        .from("pickMethod")
         .select("defaultShelfId")
         .eq("itemId", itemId)
         .eq("companyId", company.id)
@@ -166,7 +166,7 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
     setLocationId(newLocation.value);
     if (!itemData.itemId) return;
     const shelf = await supabase
-      .from("itemInventory")
+      .from("pickMethod")
       .select("defaultShelfId")
       .eq("itemId", itemData.itemId)
       .eq("companyId", company.id)

@@ -29,12 +29,12 @@ const ItemSalePriceForm = ({ initialValues }: ItemSalePriceFormProps) => {
   const [currency, setCurrency] = useState(initialValues.currencyCode);
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={itemUnitSalePriceValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={itemUnitSalePriceValidator}
+        defaultValues={initialValues}
+      >
         <CardHeader>
           <CardTitle>Sale Price</CardTitle>
         </CardHeader>
@@ -75,8 +75,8 @@ const ItemSalePriceForm = ({ initialValues }: ItemSalePriceFormProps) => {
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import { usePermissions } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { ItemSupplier } from "~/modules/items";
+import type { BuyMethod } from "~/modules/items";
 
-export default function useItemSuppliers() {
+export default function useBuyMethods() {
   const { supabase } = useSupabase();
   const permissions = usePermissions();
 
@@ -11,10 +11,10 @@ export default function useItemSuppliers() {
   const canDelete = permissions.can("delete", "parts");
 
   const onCellEdit = useCallback(
-    async (id: string, value: unknown, row: ItemSupplier) => {
+    async (id: string, value: unknown, row: BuyMethod) => {
       if (!supabase) throw new Error("Supabase client not found");
       return await supabase
-        .from("itemSupplier")
+        .from("buyMethod")
         .update({
           [id]: value,
         })

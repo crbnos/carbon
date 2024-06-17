@@ -3,6 +3,7 @@ import {
   CollapsibleSidebar,
   ContentSidebar,
   DetailSidebar,
+  DetailsTopbar,
   GroupedContentSidebar,
   IconSidebar,
 } from "./Navigation";
@@ -16,6 +17,7 @@ export {
   CollapsibleSidebar,
   ContentSidebar,
   DetailSidebar,
+  DetailsTopbar,
   GroupedContentSidebar,
   IconSidebar,
   PageTitle,

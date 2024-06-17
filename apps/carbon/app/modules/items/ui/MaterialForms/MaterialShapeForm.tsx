@@ -21,19 +21,19 @@ import { usePermissions } from "~/hooks";
 import { materialFormValidator } from "~/modules/items";
 import { path } from "~/utils/path";
 
-type MaterialFormFormProps = {
+type MaterialShapeFormProps = {
   initialValues: z.infer<typeof materialFormValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: (data?: { id: string; name: string }) => void;
 };
 
-const MaterialFormForm = ({
+const MaterialShapeForm = ({
   initialValues,
   open = true,
   type = "drawer",
   onClose,
-}: MaterialFormFormProps) => {
+}: MaterialShapeFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string; name: string }>>();
 
@@ -78,7 +78,7 @@ const MaterialFormForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? "Edit" : "New"} Material Form
+                {isEditing ? "Edit" : "New"} Material Shape
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
@@ -104,4 +104,4 @@ const MaterialFormForm = ({
   );
 };
 
-export default MaterialFormForm;
+export default MaterialShapeForm;

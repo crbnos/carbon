@@ -5,22 +5,27 @@ import { useSuppliers } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
-type SupplierSelectProps = Omit<ComboboxProps, "options">;
+type SupplierSelectProps = Omit<ComboboxProps, "options"> & {
+  allowedSuppliers?: string[];
+};
 
-const Supplier = (props: SupplierSelectProps) => {
+const Supplier = ({ allowedSuppliers, ...props }: SupplierSelectProps) => {
   const [suppliers] = useSuppliers();
   const newSuppliersModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useMemo(
-    () =>
+  const options = useMemo(() => {
+    const result =
       suppliers.map((c) => ({
         value: c.id,
         label: c.name,
-      })) ?? [],
-    [suppliers]
-  );
+      })) ?? [];
+    if (allowedSuppliers) {
+      return result.filter((c) => allowedSuppliers.includes(c.value));
+    }
+    return result;
+  }, [suppliers, allowedSuppliers]);
 
   return (
     <>

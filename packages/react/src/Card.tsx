@@ -34,7 +34,7 @@ const CardAttribute = forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-row md:flex-col items-start justify-between gap-2",
+      "flex flex-row md:flex-col items-start justify-between gap-1",
       className
     )}
     {...props}
@@ -60,7 +60,7 @@ const CardAttributeLabel = forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-xs text-muted-foreground", className)}
     {...props}
   />
 ));

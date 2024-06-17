@@ -39,12 +39,12 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
   );
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={itemCostValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={itemCostValidator}
+        defaultValues={initialValues}
+      >
         <CardHeader>
           <CardTitle>Costing & Posting</CardTitle>
         </CardHeader>
@@ -102,8 +102,8 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

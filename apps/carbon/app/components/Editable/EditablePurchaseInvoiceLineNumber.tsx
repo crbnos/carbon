@@ -87,7 +87,7 @@ const EditablePurchaseInvoiceLineNumber =
         case "Tool":
         case "Fixture":
         case "Consumable":
-          const [item, itemSupplier, inventory] = await Promise.all([
+          const [item, buyMethod, inventory] = await Promise.all([
             client
               .from("item")
               .select(
@@ -97,14 +97,14 @@ const EditablePurchaseInvoiceLineNumber =
               .eq("companyId", row.companyId!)
               .single(),
             client
-              .from("itemSupplier")
+              .from("buyMethod")
               .select("*")
               .eq("itemId", itemId)
               .eq("companyId", row.companyId!)
               .eq("supplierId", supplierId)
               .maybeSingle(),
             client
-              .from("itemInventory")
+              .from("pickMethod")
               .select("defaultShelfId")
               .eq("itemId", itemId)
               .eq("companyId", row.companyId!)
@@ -115,7 +115,7 @@ const EditablePurchaseInvoiceLineNumber =
           const itemCost = item?.data?.itemCost?.[0];
           const itemReplenishment = item?.data?.itemReplenishment?.[0];
 
-          if (item.error || itemSupplier.error || inventory.error) {
+          if (item.error || buyMethod.error || inventory.error) {
             onError();
             return;
           }
@@ -125,8 +125,8 @@ const EditablePurchaseInvoiceLineNumber =
             itemReadableId: item.data?.readableId,
             locationId: options.defaultLocationId,
             description: item.data?.name ?? "",
-            quantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
-            unitPrice: itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+            quantity: buyMethod?.data?.minimumOrderQuantity ?? 1,
+            unitPrice: buyMethod?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
             purchaseUnitOfMeasureCode:
               itemReplenishment?.purchasingUnitOfMeasureCode ??
               item.data?.unitOfMeasureCode ??
@@ -144,9 +144,9 @@ const EditablePurchaseInvoiceLineNumber =
                 itemReadableId: item.data?.readableId,
                 locationId: options.defaultLocationId,
                 description: item.data?.name ?? "",
-                quantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
+                quantity: buyMethod?.data?.minimumOrderQuantity ?? 1,
                 unitPrice:
-                  itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+                  buyMethod?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
                 purchaseUnitOfMeasureCode:
                   itemReplenishment?.purchasingUnitOfMeasureCode ??
                   item.data?.unitOfMeasureCode ??
