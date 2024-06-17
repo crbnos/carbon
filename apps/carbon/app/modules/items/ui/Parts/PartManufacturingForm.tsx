@@ -37,12 +37,12 @@ const PartManufacturingForm = ({
     })) ?? [];
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={partManufacturingValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={partManufacturingValidator}
+        defaultValues={initialValues}
+      >
         <CardHeader>
           <CardTitle>Manufacturing</CardTitle>
         </CardHeader>
@@ -82,8 +82,8 @@ const PartManufacturingForm = ({
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

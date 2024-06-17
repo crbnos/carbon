@@ -214,7 +214,7 @@ CREATE OR REPLACE VIEW "materials" WITH(SECURITY_INVOKER=true) AS
     SELECT 
       "itemId",
       array_agg(s."supplierId") AS "supplierIds"
-    FROM "itemSupplier" s
+    FROM "buyMethod" s
     GROUP BY "itemId"
   )  s ON s."itemId" = m."itemId"
   LEFT JOIN "materialForm" mf ON mf.id = m."materialFormId"

@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { ItemSuppliers, getItemSuppliers } from "~/modules/items";
+import { BuyMethods, getBuyMethods } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -16,7 +16,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const [suppliers] = await Promise.all([
-    getItemSuppliers(client, itemId, companyId),
+    getBuyMethods(client, itemId, companyId),
   ]);
 
   if (suppliers.error) {
@@ -37,5 +37,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function ConsumableSuppliersRoute() {
   const { suppliers } = useLoaderData<typeof loader>();
 
-  return <ItemSuppliers suppliers={suppliers} />;
+  return <BuyMethods buyMethods={suppliers} />;
 }

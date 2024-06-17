@@ -364,7 +364,7 @@ export const path = {
     newCompany: `${x}/settings/company/new`,
     newConsumable: `${x}/consumable/new`,
     newConsumableSupplier: (id: string) =>
-      generatePath(`${x}/consumable/${id}/suppliers/new`),
+      generatePath(`${x}/consumable/${id}/purchasing/new`),
     newContractor: `${x}/resources/contractors/new`,
     newCurrency: `${x}/accounting/currencies/new`,
     newCustomer: `${x}/customer/new`,
@@ -389,7 +389,7 @@ export const path = {
     newEquipmentType: `${x}/resources/equipment/new`,
     newFixture: `${x}/fixture/new`,
     newFixtureSupplier: (id: string) =>
-      generatePath(`${x}/fixture/${id}/suppliers/new`),
+      generatePath(`${x}/fixture/${id}/purchasing/new`),
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/resources/holidays/new`,
     newLocation: `${x}/resources/locations/new`,
@@ -400,9 +400,9 @@ export const path = {
     newMaterialForm: `${x}/items/forms/new`,
     newMaterialSubstance: `${x}/items/substances/new`,
     newMaterialSupplier: (id: string) =>
-      generatePath(`${x}/material/${id}/suppliers/new`),
+      generatePath(`${x}/material/${id}/purchasing/new`),
     newPartSupplier: (id: string) =>
-      generatePath(`${x}/part/${id}/suppliers/new`),
+      generatePath(`${x}/part/${id}/purchasing/new`),
     newPartner: `${x}/resources/partners/new`,
     newPaymentTerm: `${x}/accounting/payment-terms/new`,
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
@@ -440,9 +440,9 @@ export const path = {
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
     newService: `${x}/service/new`,
     newServiceSupplier: (id: string) =>
-      generatePath(`${x}/service/${id}/suppliers/new`),
+      generatePath(`${x}/service/${id}/purchasing/new`),
     newSupplier: `${x}/supplier/new`,
-    newSupplierAccount: `${x}/users/suppliers/new`,
+    newSupplierAccount: `${x}/users/purchasing/new`,
     newSupplierContact: (id: string) =>
       generatePath(`${x}/supplier/${id}/contacts/new`),
     newSupplierLocation: (id: string) =>
@@ -451,7 +451,7 @@ export const path = {
     newSupplierType: `${x}/purchasing/supplier-types/new`,
     newTool: `${x}/tool/new`,
     newToolSupplier: (id: string) =>
-      generatePath(`${x}/tool/${id}/suppliers/new`),
+      generatePath(`${x}/tool/${id}/purchasing/new`),
     newUom: `${x}/items/uom/new`,
     newWorkCell: `${x}/resources/work-cells/cell/new`,
     newWorkCellUnit: (id: string) =>
@@ -474,7 +474,6 @@ export const path = {
     partSalePrice: (id: string) => generatePath(`${x}/part/${id}/sale-price`),
     partSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/suppliers/${id}`),
-    partSuppliers: (id: string) => generatePath(`${x}/part/${id}/suppliers`),
     parts: `${x}/items/parts`,
     partner: (id: string, abilityId: string) =>
       generatePath(`${x}/resources/partners/${id}/${abilityId}`),

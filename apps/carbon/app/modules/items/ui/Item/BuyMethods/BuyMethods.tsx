@@ -18,12 +18,12 @@ import {
 import Grid from "~/components/Grid";
 import { useRouteData } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { ItemSupplier, UnitOfMeasureListItem } from "~/modules/items";
+import type { BuyMethod, UnitOfMeasureListItem } from "~/modules/items";
 import { path } from "~/utils/path";
-import useItemSuppliers from "./useItemSuppliers";
+import useBuyMethods from "./useBuyMethods";
 
-type ItemSuppliersProps = {
-  suppliers: ItemSupplier[];
+type BuyMethodsProps = {
+  buyMethods: BuyMethod[];
 };
 
 // TODO: make dynamic
@@ -32,9 +32,9 @@ const formatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
-const ItemSuppliers = ({ suppliers }: ItemSuppliersProps) => {
+const BuyMethods = ({ buyMethods }: BuyMethodsProps) => {
   const navigate = useNavigate();
-  const { canEdit, onCellEdit } = useItemSuppliers();
+  const { canEdit, onCellEdit } = useBuyMethods();
   const sharedPartData = useRouteData<{
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.partRoot);
@@ -48,10 +48,10 @@ const ItemSuppliers = ({ suppliers }: ItemSuppliersProps) => {
     );
   }, [sharedPartData?.unitOfMeasures]);
 
-  const customColumns = useCustomColumns<ItemSupplier>("itemSupplier");
+  const customColumns = useCustomColumns<BuyMethod>("buyMethod");
 
-  const columns = useMemo<ColumnDef<ItemSupplier>[]>(() => {
-    const defaultColumns: ColumnDef<ItemSupplier>[] = [
+  const columns = useMemo<ColumnDef<BuyMethod>[]>(() => {
+    const defaultColumns: ColumnDef<BuyMethod>[] = [
       {
         accessorKey: "supplier.id",
         header: "Supplier",
@@ -123,13 +123,13 @@ const ItemSuppliers = ({ suppliers }: ItemSuppliersProps) => {
       <Card className="w-full h-full min-h-[50vh]">
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>Suppliers</CardTitle>
+            <CardTitle>Buy Methods</CardTitle>
           </CardHeader>
           <CardAction>{canEdit && <New to="new" />}</CardAction>
         </HStack>
         <CardContent>
-          <Grid<ItemSupplier>
-            data={suppliers}
+          <Grid<BuyMethod>
+            data={buyMethods}
             columns={columns}
             canEdit={canEdit}
             editableComponents={editableComponents}
@@ -142,4 +142,4 @@ const ItemSuppliers = ({ suppliers }: ItemSuppliersProps) => {
   );
 };
 
-export default ItemSuppliers;
+export default BuyMethods;

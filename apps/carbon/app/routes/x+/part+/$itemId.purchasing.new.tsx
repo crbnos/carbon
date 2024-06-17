@@ -3,9 +3,9 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import {
-  ItemSupplierForm,
-  itemSupplierValidator,
-  upsertItemSupplier,
+  BuyMethodForm,
+  buyMethodValidator,
+  upsertBuyMethod,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(itemSupplierValidator).validate(formData);
+  const validation = await validator(buyMethodValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createPartSupplier = await upsertItemSupplier(client, {
+  const createPartSupplier = await upsertBuyMethod(client, {
     ...data,
     companyId,
     createdBy: userId,
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createPartSupplier.error) {
     throw redirect(
-      path.to.partSuppliers(itemId),
+      path.to.partPurchasing(itemId),
       await flash(
         request,
         error(createPartSupplier.error, "Failed to create part supplier")
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.partSuppliers(itemId));
+  throw redirect(path.to.partPurchasing(itemId));
 }
 
 export default function NewPartSupplierRoute() {
@@ -67,5 +67,5 @@ export default function NewPartSupplierRoute() {
     conversionFactor: 1,
   };
 
-  return <ItemSupplierForm type="Part" initialValues={initialValues} />;
+  return <BuyMethodForm type="Part" initialValues={initialValues} />;
 }

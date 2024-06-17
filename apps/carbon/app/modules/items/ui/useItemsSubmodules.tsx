@@ -1,3 +1,10 @@
+import { AiOutlinePartition } from "react-icons/ai";
+import { CiFries } from "react-icons/ci";
+import { FaRulerVertical } from "react-icons/fa";
+import { GiIBeam, GiWoodBeam } from "react-icons/gi";
+import { LuGrip, LuHammer, LuShapes } from "react-icons/lu";
+import { PiPiggyBank } from "react-icons/pi";
+import { RiCustomerServiceLine } from "react-icons/ri";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -9,32 +16,32 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Parts",
         to: path.to.parts,
-        // icon: <AiOutlinePartition />,
+        icon: <AiOutlinePartition />,
       },
       {
         name: "Materials",
         to: path.to.materials,
-        // icon: <GiIBeam />,
+        icon: <GiIBeam />,
       },
       {
         name: "Tools",
         to: path.to.tools,
-        // icon: <LuHammer />,
+        icon: <LuHammer />,
       },
       {
         name: "Fixtures",
         to: path.to.fixtures,
-        // icon: <LuGrip />,
+        icon: <LuGrip />,
       },
       {
         name: "Consumables",
         to: path.to.consumables,
-        // icon: <CiFries />,
+        icon: <CiFries />,
       },
       {
         name: "Services",
         to: path.to.services,
-        // icon: <RiCustomerServiceLine />,
+        icon: <RiCustomerServiceLine />,
       },
       // {
       //   name: "Routing",
@@ -47,25 +54,26 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
-        name: "Forms",
+        name: "Shapes",
         to: path.to.materialForms,
-        // icon: <LuShapes />,
+        icon: <LuShapes />,
       },
       {
         name: "Substances",
         to: path.to.materialSubstances,
-        // icon: <GiWoodBeam />,
+        icon: <GiWoodBeam />,
       },
       {
         name: "Posting Groups",
         to: path.to.itemGroups,
         role: "employee",
+        icon: <PiPiggyBank />,
       },
       {
         name: "Units of Measure",
         to: path.to.uoms,
         role: "employee",
-        // icon: <FaRulerVertical />,
+        icon: <FaRulerVertical />,
       },
     ],
   },

@@ -21,25 +21,25 @@ import {
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { ItemQuantities } from "~/modules/items";
-import { itemInventoryValidator } from "~/modules/items";
+import { pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
-type ItemInventoryFormProps = {
-  initialValues: z.infer<typeof itemInventoryValidator>;
+type PickMethodFormProps = {
+  initialValues: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
   locations: ListItem[];
   shelves: string[];
   type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
 };
 
-const ItemInventoryForm = ({
+const PickMethodForm = ({
   initialValues,
   locations,
   quantities,
   shelves,
   type,
-}: ItemInventoryFormProps) => {
+}: PickMethodFormProps) => {
   const permissions = usePermissions();
   const { supabase } = useSupabase();
   const user = useUser();
@@ -52,12 +52,12 @@ const ItemInventoryForm = ({
   }));
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={itemInventoryValidator}
-      defaultValues={{ ...quantities, ...initialValues }}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={pickMethodValidator}
+        defaultValues={{ ...quantities, ...initialValues }}
+      >
         <HStack className="w-full justify-between items-start">
           <CardHeader>
             <CardTitle>Inventory</CardTitle>
@@ -130,12 +130,12 @@ const ItemInventoryForm = ({
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 
-export default ItemInventoryForm;
+export default PickMethodForm;
 
 function getLocationPath(
   itemId: string,

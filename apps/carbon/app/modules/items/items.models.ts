@@ -122,7 +122,7 @@ export const itemGroupValidator = z.object({
   description: z.string().optional(),
 });
 
-export const itemInventoryValidator = z.object({
+export const pickMethodValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   locationId: z.string().min(20, { message: "Location is required" }),
   defaultShelfId: zfd.text(z.string().optional()),
@@ -161,16 +161,16 @@ export const itemPlanningValidator = z.object({
     }),
   }),
   critical: zfd.checkbox(),
-  safetyStockQuantity: zfd.numeric(z.number().min(0)),
-  safetyStockLeadTime: zfd.numeric(z.number().min(0)),
-  demandAccumulationPeriod: zfd.numeric(z.number().min(0)),
-  demandReschedulingPeriod: zfd.numeric(z.number().min(0)),
-  demandAccumulationIncludesInventory: zfd.checkbox(),
-  reorderPoint: zfd.numeric(z.number().min(0)),
-  reorderQuantity: zfd.numeric(z.number().min(0)),
-  reorderMaximumInventory: zfd.numeric(z.number().min(0)),
-  minimumOrderQuantity: zfd.numeric(z.number().min(0)),
-  maximumOrderQuantity: zfd.numeric(z.number().min(0)),
+  safetyStockQuantity: zfd.numeric(z.number().min(0).optional()),
+  safetyStockLeadTime: zfd.numeric(z.number().min(0).optional()),
+  demandAccumulationPeriod: zfd.numeric(z.number().min(0).optional()),
+  demandReschedulingPeriod: zfd.numeric(z.number().min(0).optional()),
+  demandAccumulationIncludesInventory: zfd.checkbox().optional(),
+  reorderPoint: zfd.numeric(z.number().min(0).optional()).optional(),
+  reorderQuantity: zfd.numeric(z.number().min(0)).optional(),
+  reorderMaximumInventory: zfd.numeric(z.number().min(0)).optional(),
+  minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
+  maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
   orderMultiple: zfd.numeric(z.number().min(1)),
 });
 
@@ -183,7 +183,7 @@ export const itemPurchasingValidator = z.object({
   purchasingBlocked: zfd.checkbox(),
 });
 
-export const itemSupplierValidator = z.object({
+export const buyMethodValidator = z.object({
   id: zfd.text(z.string().optional()),
   itemId: z.string().min(1, { message: "Item ID is required" }),
   supplierId: z.string().min(36, { message: "Supplier ID is required" }),

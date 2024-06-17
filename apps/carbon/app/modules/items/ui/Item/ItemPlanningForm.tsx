@@ -8,6 +8,7 @@ import {
   HStack,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
+import { useState } from "react";
 import type { z } from "zod";
 import { Combobox } from "~/components";
 import {
@@ -41,13 +42,15 @@ const ItemPlanningForm = ({
     value: location.id,
   }));
 
+  const [policy, setPolicy] = useState(initialValues.reorderingPolicy);
+
   return (
-    <ValidatedForm
-      method="post"
-      validator={itemPlanningValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={itemPlanningValidator}
+        defaultValues={initialValues}
+      >
         <HStack className="w-full justify-between items-start">
           <CardHeader>
             <CardTitle>Planning</CardTitle>
@@ -79,49 +82,69 @@ const ItemPlanningForm = ({
                 label: policy,
                 value: policy,
               }))}
+              onChange={(selected) => {
+                // @ts-ignore
+                setPolicy(selected?.value || "Manual Reorder");
+              }}
             />
-            <Number name="safetyStockQuantity" label="Safety Stock Quantity" />
-            <Number
-              name="safetyStockLeadTime"
-              label="Safety Stock Lead Time (Days)"
-            />
-            <Number
-              name="minimumOrderQuantity"
-              label="Minimum Order Quantity"
-              minValue={0}
-            />
-            <Number
-              name="maximumOrderQuantity"
-              label="Maximum Order Quantity"
-              minValue={0}
-            />
-            <Number name="orderMultiple" label="Order Multiple" minValue={0} />
+            {policy === "Maximum Quantity" && (
+              <>
+                <Number
+                  name="safetyStockQuantity"
+                  label="Safety Stock Quantity"
+                />
+                <Number
+                  name="safetyStockLeadTime"
+                  label="Safety Stock Lead Time (Days)"
+                />
+                <Number
+                  name="minimumOrderQuantity"
+                  label="Minimum Order Quantity"
+                  minValue={0}
+                />
+                <Number
+                  name="maximumOrderQuantity"
+                  label="Maximum Order Quantity"
+                  minValue={0}
+                />
+              </>
+            )}
 
-            <Number
-              name="demandAccumulationPeriod"
-              label="Demand Accumulation Period (Days)"
-              minValue={0}
-            />
-            <Number
-              name="demandReschedulingPeriod"
-              label="Rescheduling Period (Days)"
-              minValue={0}
-            />
-            <Number name="reorderPoint" label="Reorder Point" />
-            <Number
-              name="reorderQuantity"
-              label="Reorder Quantity"
-              minValue={0}
-            />
-            <Number
-              name="reorderMaximumInventory"
-              label="Reorder Maximum Inventory"
-              minValue={0}
-            />
-            <Boolean
-              name="demandAccumulationIncludesInventory"
-              label="Demand Includes Inventory"
-            />
+            {policy === "Demand-Based Reorder" && (
+              <>
+                <Number
+                  name="demandAccumulationPeriod"
+                  label="Demand Accumulation Period (Days)"
+                  minValue={0}
+                />
+                <Number
+                  name="demandReschedulingPeriod"
+                  label="Rescheduling Period (Days)"
+                  minValue={0}
+                />
+                <Boolean
+                  name="demandAccumulationIncludesInventory"
+                  label="Demand Includes Inventory"
+                />
+              </>
+            )}
+            {policy === "Fixed Reorder Quantity" && (
+              <>
+                <Number name="reorderPoint" label="Reorder Point" />
+                <Number
+                  name="reorderQuantity"
+                  label="Reorder Quantity"
+                  minValue={0}
+                />
+                <Number
+                  name="reorderMaximumInventory"
+                  label="Reorder Maximum Inventory"
+                  minValue={0}
+                />
+              </>
+            )}
+
+            <Number name="orderMultiple" label="Order Multiple" minValue={0} />
             <Boolean name="critical" label="Critical" />
             <CustomFormFields table="partPlanning" />
           </div>
@@ -129,8 +152,8 @@ const ItemPlanningForm = ({
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

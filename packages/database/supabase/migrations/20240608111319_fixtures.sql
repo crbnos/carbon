@@ -78,7 +78,7 @@ CREATE OR REPLACE VIEW "fixtures" WITH(SECURITY_INVOKER=true) AS
     SELECT 
       "itemId",
       array_agg(s."supplierId") AS "supplierIds"
-    FROM "itemSupplier" s
+    FROM "buyMethod" s
     GROUP BY "itemId"
   )  s ON s."itemId" = f."itemId"
   LEFT JOIN "customer" c ON c.id = f."customerId";

@@ -30,7 +30,7 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
     SELECT 
       "itemId",
       array_agg(ps."supplierId") AS "supplierIds"
-    FROM "itemSupplier" ps
+    FROM "buyMethod" ps
     GROUP BY "itemId"
   )  ps ON ps."itemId" = p."itemId"
   LEFT JOIN "unitOfMeasure" uom ON uom.code = i."unitOfMeasureCode" AND uom."companyId" = i."companyId";
@@ -54,7 +54,7 @@ CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
     SELECT 
       "itemId",
       array_agg(ss."supplierId") AS "supplierIds"
-    FROM "itemSupplier" ss
+    FROM "buyMethod" ss
     GROUP BY "itemId"
   )  ss ON ss."itemId" = s."itemId";
 

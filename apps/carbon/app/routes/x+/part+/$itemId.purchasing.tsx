@@ -1,8 +1,12 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
+import { useRouteData } from "~/hooks";
+import type { BuyMethod } from "~/modules/items";
 import {
+  BuyMethods,
   ItemPurchasingForm,
   getItemReplenishment,
   itemPurchasingValidator,
@@ -22,7 +26,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const partPurchasing = await getItemReplenishment(client, itemId, companyId);
+  const [partPurchasing] = await Promise.all([
+    getItemReplenishment(client, itemId, companyId),
+  ]);
 
   if (partPurchasing.error) {
     throw redirect(
@@ -81,6 +87,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function PartPurchasingRoute() {
   const { partPurchasing } = useLoaderData<typeof loader>();
 
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("Could not find itemId");
+  const routeData = useRouteData<{ buyMethods: BuyMethod[] }>(
+    path.to.part(itemId)
+  );
+  const buyMethods = routeData?.buyMethods ?? [];
+
   const initialValues = {
     ...partPurchasing,
     preferredSupplierId: partPurchasing?.preferredSupplierId ?? undefined,
@@ -92,9 +105,15 @@ export default function PartPurchasingRoute() {
   };
 
   return (
-    <ItemPurchasingForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-    />
+    <VStack spacing={2} className="p-2">
+      <ItemPurchasingForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        allowedSuppliers={
+          buyMethods.map((s) => s.supplier?.id).filter(Boolean) as string[]
+        }
+      />
+      <BuyMethods buyMethods={buyMethods} />
+    </VStack>
   );
 }

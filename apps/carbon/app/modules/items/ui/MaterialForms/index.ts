@@ -1,4 +1,4 @@
-import MaterialFormForm from "./MaterialFormForm";
-import MaterialFormsTable from "./MaterialFormsTable";
+import MaterialShapeForm from "./MaterialShapeForm";
+import MaterialFormsTable from "./MaterialShapesTable";
 
-export { MaterialFormForm, MaterialFormsTable };
+export { MaterialFormsTable, MaterialShapeForm };

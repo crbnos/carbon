@@ -1,3 +1,4 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
@@ -92,9 +93,11 @@ export default function PartSalePriceRoute() {
   };
 
   return (
-    <ItemSalePriceForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-    />
+    <VStack spacing={2} className="p-2">
+      <ItemSalePriceForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+      />
+    </VStack>
   );
 }

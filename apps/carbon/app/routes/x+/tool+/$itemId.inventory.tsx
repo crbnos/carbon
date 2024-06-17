@@ -4,12 +4,12 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import {
-  ItemInventoryForm,
-  getItemInventory,
+  PickMethodForm,
   getItemQuantities,
+  getPickMethod,
   getShelvesList,
-  itemInventoryValidator,
-  upsertItemInventory,
+  pickMethodValidator,
+  upsertPickMethod,
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -63,12 +63,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let [toolInventory, shelves] = await Promise.all([
-    getItemInventory(client, itemId, companyId, locationId),
+    getPickMethod(client, itemId, companyId, locationId),
     getShelvesList(client, locationId),
   ]);
 
   if (toolInventory.error || !toolInventory.data) {
-    const insertItemInventory = await upsertItemInventory(client, {
+    const insertPickMethod = await upsertPickMethod(client, {
       itemId,
       companyId,
       locationId,
@@ -76,22 +76,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       createdBy: userId,
     });
 
-    if (insertItemInventory.error) {
+    if (insertPickMethod.error) {
       throw redirect(
         path.to.tool(itemId),
         await flash(
           request,
-          error(insertItemInventory.error, "Failed to insert tool inventory")
+          error(insertPickMethod.error, "Failed to insert tool inventory")
         )
       );
     }
 
-    toolInventory = await getItemInventory(
-      client,
-      itemId,
-      companyId,
-      locationId
-    );
+    toolInventory = await getPickMethod(client, itemId, companyId, locationId);
     if (toolInventory.error || !toolInventory.data) {
       throw redirect(
         path.to.tool(itemId),
@@ -141,7 +136,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   // validate with toolsValidator
-  const validation = await validator(itemInventoryValidator).validate(formData);
+  const validation = await validator(pickMethodValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -149,18 +144,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { ...update } = validation.data;
 
-  const updateItemInventory = await upsertItemInventory(client, {
+  const updatePickMethod = await upsertPickMethod(client, {
     ...update,
     itemId,
     customFields: setCustomFields(formData),
     updatedBy: userId,
   });
-  if (updateItemInventory.error) {
+  if (updatePickMethod.error) {
     throw redirect(
       path.to.tool(itemId),
       await flash(
         request,
-        error(updateItemInventory.error, "Failed to update tool inventory")
+        error(updatePickMethod.error, "Failed to update tool inventory")
       )
     );
   }
@@ -183,7 +178,7 @@ export default function ToolInventoryRoute() {
     ...getCustomFields(toolInventory.customFields ?? {}),
   };
   return (
-    <ItemInventoryForm
+    <PickMethodForm
       key={initialValues.itemId}
       initialValues={initialValues}
       quantities={quantities}

@@ -157,7 +157,7 @@ const PurchaseInvoiceLineForm = ({
       case "Part":
       case "Tool":
       case "Fixture":
-        const [item, itemSupplier, inventory] = await Promise.all([
+        const [item, buyMethod, inventory] = await Promise.all([
           supabase
             .from("item")
             .select(
@@ -167,14 +167,14 @@ const PurchaseInvoiceLineForm = ({
             .eq("companyId", company.id)
             .single(),
           supabase
-            .from("itemSupplier")
+            .from("buyMethod")
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", company.id)
             .eq("supplierId", routeData?.purchaseInvoice.supplierId!)
             .maybeSingle(),
           supabase
-            .from("itemInventory")
+            .from("pickMethod")
             .select("defaultShelfId")
             .eq("itemId", itemId)
             .eq("companyId", company.id)
@@ -189,8 +189,8 @@ const PurchaseInvoiceLineForm = ({
           itemId: itemId,
           itemReadableId: item.data?.readableId ?? "",
           description: item.data?.name ?? "",
-          quantity: itemSupplier?.data?.minimumOrderQuantity ?? 1,
-          unitPrice: itemSupplier?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+          quantity: buyMethod?.data?.minimumOrderQuantity ?? 1,
+          unitPrice: buyMethod?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
           purchaseUom:
             itemReplenishment?.purchasingUnitOfMeasureCode ??
             item.data?.unitOfMeasureCode ??
@@ -239,7 +239,7 @@ const PurchaseInvoiceLineForm = ({
     setLocationId(newLocation.value);
     if (!itemData.itemId) return;
     const shelf = await supabase
-      .from("itemInventory")
+      .from("pickMethod")
       .select("defaultShelfId")
       .eq("itemId", itemData.itemId)
       .eq("companyId", company.id)

@@ -24,7 +24,7 @@ CREATE OR REPLACE VIEW "suppliers" AS
     SELECT 
       "supplierId",
       COUNT(*) AS "count"
-    FROM "itemSupplier"
+    FROM "buyMethod"
     GROUP BY "supplierId"
   ) i ON i."supplierId" = s.id;
 

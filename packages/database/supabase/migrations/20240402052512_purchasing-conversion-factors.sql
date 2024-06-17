@@ -1,7 +1,7 @@
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "conversionFactor" NUMERIC(10, 2) DEFAULT 1;
 ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "conversionFactor" NUMERIC(10, 2) DEFAULT 1;
 
-ALTER TABLE "itemSupplier" ADD COLUMN "unitPrice" NUMERIC(10, 2) DEFAULT 0;
+ALTER TABLE "buyMethod" ADD COLUMN "unitPrice" NUMERIC(10, 2) DEFAULT 0;
 
 ALTER TABLE "unitOfMeasure" DROP CONSTRAINT "unitOfMeasure_code_check";
 
@@ -19,7 +19,7 @@ CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS
     -- TODO: this is an unnecessary join, we should remove it after replacing PO line with item instead of part
     LEFT OUTER JOIN "item" i
       ON i.id = pol."itemId"
-    LEFT OUTER JOIN "itemSupplier" ps 
+    LEFT OUTER JOIN "buyMethod" ps 
       ON i.id = ps."itemId" AND po."supplierId" = ps."supplierId";
 
 ALTER TABLE "receiptLine" ADD COLUMN "conversionFactor" NUMERIC(10, 2) DEFAULT 1;

@@ -55,8 +55,6 @@ const MaterialSubstanceForm = ({
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 
-  console.log(isEditing);
-
   return (
     <ModalDrawerProvider type={type}>
       <ModalDrawer

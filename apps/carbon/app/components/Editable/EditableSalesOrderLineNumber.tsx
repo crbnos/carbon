@@ -60,7 +60,7 @@ const EditableSalesOrderLineNumber =
               .eq("companyId", row.companyId!)
               .single(),
             client
-              .from("itemInventory")
+              .from("pickMethod")
               .select("defaultShelfId")
               .eq("itemId", itemId)
               .eq("companyId", row.companyId!)

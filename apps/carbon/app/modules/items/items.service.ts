@@ -6,14 +6,13 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  buyMethodValidator,
   consumableValidator,
   fixtureValidator,
   itemCostValidator,
   itemGroupValidator,
-  itemInventoryValidator,
   itemPlanningValidator,
   itemPurchasingValidator,
-  itemSupplierValidator,
   itemUnitSalePriceValidator,
   itemValidator,
   materialFormValidator,
@@ -21,6 +20,7 @@ import type {
   materialValidator,
   partManufacturingValidator,
   partValidator,
+  pickMethodValidator,
   serviceValidator,
   toolValidator,
   unitOfMeasureValidator,
@@ -52,6 +52,27 @@ export async function deleteUnitOfMeasure(
   id: string
 ) {
   return client.from("unitOfMeasure").delete().eq("id", id);
+}
+
+export async function getBuyMethods(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("buyMethod")
+    .select(
+      `
+      id, supplier(id, name),
+      supplierPartId, supplierUnitOfMeasureCode,
+      minimumOrderQuantity, conversionFactor,
+      unitPrice,
+      customFields
+    `
+    )
+    .eq("active", true)
+    .eq("itemId", id)
+    .eq("companyId", companyId);
 }
 
 export async function getConsumable(
@@ -226,21 +247,6 @@ export async function getItemGroupsList(
     .select("id, name", { count: "exact" })
     .eq("companyId", companyId)
     .order("name");
-}
-
-export async function getItemInventory(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string,
-  locationId: string
-) {
-  return client
-    .from("itemInventory")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .maybeSingle();
 }
 
 export async function getItemManufacturing(
@@ -429,6 +435,34 @@ export async function getMaterialSubstancesList(
     .order("name");
 }
 
+export async function getItemQuantities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("itemQuantities")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .maybeSingle();
+}
+
+export async function getItemUnitSalePrice(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("itemUnitSalePrice")
+    .select("*")
+    .eq("itemId", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
 export async function getPart(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -488,14 +522,14 @@ export async function getPartsList(
   return query.order("name");
 }
 
-export async function getItemQuantities(
+export async function getPickMethod(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string,
   locationId: string
 ) {
   return client
-    .from("itemQuantities")
+    .from("pickMethod")
     .select("*")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
@@ -503,38 +537,16 @@ export async function getItemQuantities(
     .maybeSingle();
 }
 
-export async function getItemSuppliers(
+export async function getPickMethods(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
-    .from("itemSupplier")
-    .select(
-      `
-      id, supplier(id, name),
-      supplierPartId, supplierUnitOfMeasureCode,
-      minimumOrderQuantity, conversionFactor,
-      unitPrice,
-      customFields
-    `
-    )
-    .eq("active", true)
-    .eq("itemId", id)
-    .eq("companyId", companyId);
-}
-
-export async function getItemUnitSalePrice(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("itemUnitSalePrice")
+    .from("pickMethod")
     .select("*")
-    .eq("itemId", id)
-    .eq("companyId", companyId)
-    .single();
+    .eq("itemId", itemId)
+    .eq("companyId", companyId);
 }
 
 export async function getServices(
@@ -1031,28 +1043,28 @@ export async function upsertItemCost(
     .eq("itemId", itemCost.itemId);
 }
 
-export async function upsertItemInventory(
+export async function upsertPickMethod(
   client: SupabaseClient<Database>,
-  itemInventory:
-    | (z.infer<typeof itemInventoryValidator> & {
+  pickMethod:
+    | (z.infer<typeof pickMethodValidator> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (z.infer<typeof itemInventoryValidator> & {
+    | (z.infer<typeof pickMethodValidator> & {
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in itemInventory) {
-    return client.from("itemInventory").insert(itemInventory);
+  if ("createdBy" in pickMethod) {
+    return client.from("pickMethod").insert(pickMethod);
   }
 
   return client
-    .from("itemInventory")
-    .update(sanitize(itemInventory))
-    .eq("itemId", itemInventory.itemId)
-    .eq("locationId", itemInventory.locationId);
+    .from("pickMethod")
+    .update(sanitize(pickMethod))
+    .eq("itemId", pickMethod.itemId)
+    .eq("locationId", pickMethod.locationId);
 }
 
 export async function upsertItemManufacturing(
@@ -1132,31 +1144,27 @@ export async function upsertItemGroup(
   );
 }
 
-export async function upsertItemSupplier(
+export async function upsertBuyMethod(
   client: SupabaseClient<Database>,
-  itemSupplier:
-    | (Omit<z.infer<typeof itemSupplierValidator>, "id"> & {
+  buyMethod:
+    | (Omit<z.infer<typeof buyMethodValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof itemSupplierValidator>, "id"> & {
+    | (Omit<z.infer<typeof buyMethodValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in itemSupplier) {
-    return client
-      .from("itemSupplier")
-      .insert([itemSupplier])
-      .select("id")
-      .single();
+  if ("createdBy" in buyMethod) {
+    return client.from("buyMethod").insert([buyMethod]).select("id").single();
   }
   return client
-    .from("itemSupplier")
-    .update(sanitize(itemSupplier))
-    .eq("id", itemSupplier.id)
+    .from("buyMethod")
+    .update(sanitize(buyMethod))
+    .eq("id", buyMethod.id)
     .select("id")
     .single();
 }
