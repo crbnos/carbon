@@ -1,6 +1,6 @@
 import FixtureForm from "./FixtureForm";
 import FixtureHeader from "./FixtureHeader";
-import FixtureNavigation from "./FixtureNavigation";
+import FixtureProperties from "./FixtureProperties";
 import FixturesTable from "./FixturesTable";
 
-export { FixtureForm, FixtureHeader, FixtureNavigation, FixturesTable };
+export { FixtureForm, FixtureHeader, FixtureProperties, FixturesTable };

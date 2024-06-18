@@ -75,7 +75,7 @@ export default function MaterialsNewRoute() {
   };
 
   return (
-    <div className="w-1/2 max-w-[600px] min-w-[420px] mx-auto">
+    <div className="w-1/2 max-w-[600px] min-w-[420px] mx-auto mt-8">
       <MaterialForm initialValues={initialValues} />
     </div>
   );

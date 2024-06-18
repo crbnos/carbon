@@ -32,30 +32,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createConsumableSupplier = await upsertBuyMethod(client, {
+  const createFixtureSupplier = await upsertBuyMethod(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (createConsumableSupplier.error) {
+  if (createFixtureSupplier.error) {
     throw redirect(
-      path.to.consumableSuppliers(itemId),
+      path.to.fixturePurchasing(itemId),
       await flash(
         request,
-        error(
-          createConsumableSupplier.error,
-          "Failed to create consumable supplier"
-        )
+        error(createFixtureSupplier.error, "Failed to create fixture supplier")
       )
     );
   }
 
-  throw redirect(path.to.consumableSuppliers(itemId));
+  throw redirect(path.to.fixturePurchasing(itemId));
 }
 
-export default function NewConsumableSupplierRoute() {
+export default function NewFixtureSupplierRoute() {
   const { itemId } = useParams();
 
   if (!itemId) throw new Error("itemId not found");
@@ -63,12 +60,12 @@ export default function NewConsumableSupplierRoute() {
   const initialValues = {
     itemId: itemId,
     supplierId: "",
-    supplierConsumableId: "",
+    supplierFixtureId: "",
     unitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
     conversionFactor: 1,
   };
 
-  return <BuyMethodForm type="Consumable" initialValues={initialValues} />;
+  return <BuyMethodForm type="Fixture" initialValues={initialValues} />;
 }

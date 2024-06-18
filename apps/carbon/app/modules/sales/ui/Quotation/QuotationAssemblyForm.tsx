@@ -155,7 +155,7 @@ const QuotationAssemblyForm = ({
           />
           <Hidden name="unitOfMeasureCode" value={partData?.uom} />
           <VStack>
-            <div className="grid w-full gap-x-8 gap-y-2 grid-cols-1 lg:grid-cols-3">
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
               <Part
                 name="itemId"
                 label="Manufactured Part"

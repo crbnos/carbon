@@ -1,7 +1,14 @@
+import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
-import { ToolHeader, ToolNavigation, getTool } from "~/modules/items";
+import {
+  ToolHeader,
+  ToolProperties,
+  getBuyMethods,
+  getPickMethods,
+  getTool,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -22,7 +29,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [toolSummary] = await Promise.all([getTool(client, itemId, companyId)]);
+  const [toolSummary, buyMethods, pickMethods] = await Promise.all([
+    getTool(client, itemId, companyId),
+    getBuyMethods(client, itemId, companyId),
+    getPickMethods(client, itemId, companyId),
+  ]);
 
   if (toolSummary.error) {
     throw redirect(
@@ -36,17 +47,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     toolSummary: toolSummary.data,
+    buyMethods: buyMethods.data ?? [],
+    pickMethods: pickMethods.data ?? [],
   });
 }
 
 export default function ToolRoute() {
   return (
-    <>
+    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <ToolHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <ToolNavigation />
-        <Outlet />
+      <div className="flex h-[calc(100vh-99px)] w-full">
+        <div className="flex h-full w-full overflow-y-auto">
+          <VStack spacing={2} className="p-2">
+            <Outlet />
+          </VStack>
+        </div>
+        <ToolProperties />
       </div>
-    </>
+    </div>
   );
 }

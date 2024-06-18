@@ -57,7 +57,7 @@ const ItemPurchasingForm = ({
         </CardHeader>
         <CardContent>
           <Hidden name="itemId" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Supplier
               name="preferredSupplierId"
               label="Preferred Supplier"

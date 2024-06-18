@@ -1,6 +1,6 @@
 import MaterialForm from "./MaterialForm";
 import MaterialHeader from "./MaterialHeader";
-import MaterialNavigation from "./MaterialNavigation";
+import MaterialProperties from "./MaterialProperties";
 import MaterialsTable from "./MaterialsTable";
 
-export { MaterialForm, MaterialHeader, MaterialNavigation, MaterialsTable };
+export { MaterialForm, MaterialHeader, MaterialProperties, MaterialsTable };

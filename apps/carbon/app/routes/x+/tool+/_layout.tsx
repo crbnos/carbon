@@ -1,4 +1,3 @@
-import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import { getUnitOfMeasuresList } from "~/modules/items";
@@ -34,9 +33,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ToolRoute() {
-  return (
-    <VStack spacing={4} className="h-full p-4">
-      <Outlet />
-    </VStack>
-  );
+  return <Outlet />;
 }

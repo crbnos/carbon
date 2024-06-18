@@ -167,7 +167,7 @@ const QuotationLineForm = ({ initialValues }: QuotationLineFormProps) => {
           <Hidden name="itemReadableId" value={itemData?.itemReadableId} />
           <Hidden name="unitOfMeasureCode" value={itemData?.uom} />
           <VStack>
-            <div className="grid w-full gap-x-8 gap-y-2 grid-cols-1 lg:grid-cols-3">
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
               <Item
                 name="itemId"
                 type="Part"

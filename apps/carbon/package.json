@@ -64,6 +64,7 @@
     "react-icons": "^4.12.0",
     "react-pdf": "^7.7.1",
     "react-phone-number-input": "^3.3.9",
+    "react-use-measure": "^2.1.1",
     "remix-flat-routes": "^0.6.4",
     "remix-typedjson": "^0.4.1",
     "resend": "^3.1.0",

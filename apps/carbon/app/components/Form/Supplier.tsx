@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { SupplierForm } from "~/modules/purchasing";
 import { useSuppliers } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
+import Combobox from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
 type SupplierSelectProps = Omit<ComboboxProps, "options"> & {
@@ -27,7 +28,9 @@ const Supplier = ({ allowedSuppliers, ...props }: SupplierSelectProps) => {
     return result;
   }, [suppliers, allowedSuppliers]);
 
-  return (
+  return allowedSuppliers ? (
+    <Combobox options={options} {...props} label={props?.label ?? "Supplier"} />
+  ) : (
     <>
       <CreatableCombobox
         ref={triggerRef}

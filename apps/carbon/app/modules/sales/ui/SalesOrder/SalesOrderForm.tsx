@@ -66,7 +66,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
           <VStack>
             <div
               className={cn(
-                "grid w-full gap-x-8 gap-y-2",
+                "grid w-full gap-x-8 gap-y-4",
                 isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-2"
               )}
             >

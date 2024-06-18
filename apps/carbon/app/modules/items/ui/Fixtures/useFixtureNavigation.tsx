@@ -1,13 +1,6 @@
 import { useParams } from "@remix-run/react";
 
-import {
-  LuBox,
-  LuFileText,
-  LuShare2,
-  LuShoppingCart,
-  LuTags,
-} from "react-icons/lu";
-import { DetailSidebar } from "~/components/Layout";
+import { LuBox, LuFileText, LuShoppingCart, LuTags } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -32,14 +25,6 @@ export function useFixtureNavigation() {
       shortcut: "Command+Shift+p",
     },
     {
-      name: "Suppliers",
-      to: path.to.fixtureSuppliers(itemId),
-      role: ["employee", "supplier"],
-      icon: LuShare2,
-      shortcut: "Command+Shift+s",
-    },
-
-    {
       name: "Costing",
       to: path.to.fixtureCosting(itemId),
       role: ["employee", "supplier"],
@@ -59,14 +44,3 @@ export function useFixtureNavigation() {
       item.role.some((role) => permissions.is(role as Role))
   );
 }
-
-const FixtureNavigation = () => {
-  const { itemId } = useParams();
-  if (!itemId) throw new Error("itemId not found");
-
-  const links = useFixtureNavigation();
-
-  return <DetailSidebar links={links} />;
-};
-
-export default FixtureNavigation;

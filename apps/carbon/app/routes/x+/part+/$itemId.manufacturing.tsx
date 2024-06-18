@@ -1,11 +1,5 @@
 import {
   Badge,
-  Button,
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
   ClientOnly,
   HStack,
   IconButton,
@@ -15,6 +9,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
+  ScrollArea,
   VStack,
   cn,
 } from "@carbon/react";
@@ -27,13 +22,13 @@ import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuPlus, LuSearch } from "react-icons/lu";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import {
+  BillOfProcess,
   MethodIcon,
   PartManufacturingForm,
   getItemManufacturing,
   partManufacturingValidator,
   upsertItemManufacturing,
 } from "~/modules/items";
-import type { StandardFactor } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -219,14 +214,16 @@ export default function Item() {
               defaultSize={20}
               className="bg-card"
             >
-              <div className="grid h-full overflow-hidden p-2">
-                <BoMExplorer
-                  methods={methods}
-                  onSelectedIdChanged={(selectedId) => {
-                    console.log(selectedId);
-                  }}
-                />
-              </div>
+              <ScrollArea className="h-[calc(100vh-99px)]">
+                <div className="grid h-full overflow-hidden p-2">
+                  <BoMExplorer
+                    methods={methods}
+                    onSelectedIdChanged={(selectedId) => {
+                      console.log(selectedId);
+                    }}
+                  />
+                </div>
+              </ScrollArea>
             </ResizablePanel>
             <ResizableHandle withHandle />
 
@@ -236,54 +233,33 @@ export default function Item() {
               defaultSize={60}
               className="border-t border-border"
             >
-              <VStack spacing={2} className="p-2">
-                <PartManufacturingForm
-                  key={itemId}
-                  initialValues={manufacturingInitialValues}
-                />
-                <BillOfProcesses key={itemId} processes={[]} />
-              </VStack>
+              <ScrollArea className="h-[calc(100vh-99px)]">
+                <VStack spacing={2} className="p-2">
+                  <PartManufacturingForm
+                    key={itemId}
+                    initialValues={manufacturingInitialValues}
+                  />
+                  <BillOfProcess key={itemId} processes={[]} />
+                </VStack>
+              </ScrollArea>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel
               order={3}
               minSize={20}
               defaultSize={20}
-              className="bg-card p-4 overflow-y-auto flex flex-col gap-4"
+              className="bg-card"
             >
-              <VStack spacing={2}>
-                <h3 className="text-xs text-muted-foreground">Properties</h3>
-              </VStack>
+              <ScrollArea className="h-[calc(100vh-99px)]">
+                <VStack spacing={2} className="px-4 py-2">
+                  <h3 className="text-xs text-muted-foreground">Properties</h3>
+                </VStack>
+              </ScrollArea>
             </ResizablePanel>
           </ResizablePanelGroup>
         )}
       </ClientOnly>
     </div>
-  );
-}
-
-type Process = {
-  workCenterTypeId: string;
-  equipmentTypeId?: string;
-  setupHours: number;
-  standardFactor: StandardFactor;
-  productionStandard: number;
-};
-
-function BillOfProcesses({ processes }: { processes: Process[] }) {
-  return (
-    <Card>
-      <HStack className="justify-between">
-        <CardHeader>
-          <CardTitle>Bill of Processes</CardTitle>
-        </CardHeader>
-
-        <CardAction>
-          <Button variant="secondary">Add Process</Button>
-        </CardAction>
-      </HStack>
-      <CardContent></CardContent>
-    </Card>
   );
 }
 

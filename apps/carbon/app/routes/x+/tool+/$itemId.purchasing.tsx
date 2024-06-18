@@ -1,8 +1,11 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
+import { useRouteData } from "~/hooks";
+import type { BuyMethod } from "~/modules/items";
 import {
+  BuyMethods,
   ItemPurchasingForm,
   getItemReplenishment,
   itemPurchasingValidator,
@@ -22,7 +25,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const toolPurchasing = await getItemReplenishment(client, itemId, companyId);
+  const [toolPurchasing] = await Promise.all([
+    getItemReplenishment(client, itemId, companyId),
+  ]);
 
   if (toolPurchasing.error) {
     throw redirect(
@@ -81,6 +86,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ToolPurchasingRoute() {
   const { toolPurchasing } = useLoaderData<typeof loader>();
 
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("Could not find itemId");
+  const routeData = useRouteData<{ buyMethods: BuyMethod[] }>(
+    path.to.tool(itemId)
+  );
+  const buyMethods = routeData?.buyMethods ?? [];
+
   const initialValues = {
     ...toolPurchasing,
     preferredSupplierId: toolPurchasing?.preferredSupplierId ?? undefined,
@@ -92,9 +104,15 @@ export default function ToolPurchasingRoute() {
   };
 
   return (
-    <ItemPurchasingForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-    />
+    <>
+      <ItemPurchasingForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        allowedSuppliers={
+          buyMethods.map((s) => s.supplier?.id).filter(Boolean) as string[]
+        }
+      />
+      <BuyMethods buyMethods={buyMethods} />
+    </>
   );
 }

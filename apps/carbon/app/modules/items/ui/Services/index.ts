@@ -1,6 +1,6 @@
 import ServiceForm from "./ServiceForm";
 import ServiceHeader from "./ServiceHeader";
-import ServiceNavigation from "./ServiceNavigation";
+import ServiceProperties from "./ServiceProperties";
 import ServicesTable from "./ServicesTable";
 
-export { ServiceForm, ServiceHeader, ServiceNavigation, ServicesTable };
+export { ServiceForm, ServiceHeader, ServiceProperties, ServicesTable };

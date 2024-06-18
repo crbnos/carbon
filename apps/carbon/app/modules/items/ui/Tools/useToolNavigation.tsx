@@ -4,11 +4,9 @@ import {
   LuBox,
   LuFileBarChart,
   LuFileText,
-  LuShare2,
   LuShoppingCart,
   LuTags,
 } from "react-icons/lu";
-import { DetailSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -32,14 +30,6 @@ export function useToolNavigation() {
       icon: LuShoppingCart,
       shortcut: "Command+Shift+p",
     },
-    {
-      name: "Suppliers",
-      to: path.to.toolSuppliers(itemId),
-      role: ["employee", "supplier"],
-      icon: LuShare2,
-      shortcut: "Command+Shift+s",
-    },
-
     {
       name: "Costing",
       to: path.to.toolCosting(itemId),
@@ -67,14 +57,3 @@ export function useToolNavigation() {
       item.role.some((role) => permissions.is(role as Role))
   );
 }
-
-const ToolNavigation = () => {
-  const { itemId } = useParams();
-  if (!itemId) throw new Error("itemId not found");
-
-  const links = useToolNavigation();
-
-  return <DetailSidebar links={links} />;
-};
-
-export default ToolNavigation;

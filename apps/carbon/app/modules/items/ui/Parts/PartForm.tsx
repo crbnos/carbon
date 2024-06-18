@@ -101,7 +101,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
               <Hidden name="type" value={type} />
               <div
                 className={cn(
-                  "grid w-full gap-x-8 gap-y-2",
+                  "grid w-full gap-x-8 gap-y-4",
                   isEditing ? "grid-cols-1 md:grid-cols-3" : "grid-cols-2"
                 )}
               >

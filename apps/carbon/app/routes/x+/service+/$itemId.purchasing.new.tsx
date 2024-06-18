@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createPartSupplier.error) {
     throw redirect(
-      path.to.serviceSuppliers(itemId),
+      path.to.servicePurchasing(itemId),
       await flash(
         request,
         error(createPartSupplier.error, "Failed to create service supplier")
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.serviceSuppliers(itemId));
+  throw redirect(path.to.servicePurchasing(itemId));
 }
 
 export default function NewPartSupplierRoute() {

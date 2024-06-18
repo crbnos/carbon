@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createToolSupplier.error) {
     throw redirect(
-      path.to.toolSuppliers(itemId),
+      path.to.toolPurchasing(itemId),
       await flash(
         request,
         error(createToolSupplier.error, "Failed to create tool supplier")
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.toolSuppliers(itemId));
+  throw redirect(path.to.toolPurchasing(itemId));
 }
 
 export default function NewToolSupplierRoute() {

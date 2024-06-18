@@ -1,11 +1,11 @@
 import ConsumableForm from "./ConsumableForm";
 import ConsumableHeader from "./ConsumableHeader";
-import ConsumableNavigation from "./ConsumableNavigation";
+import ConsumableProperties from "./ConsumableProperties";
 import ConsumablesTable from "./ConsumablesTable";
 
 export {
   ConsumableForm,
   ConsumableHeader,
-  ConsumableNavigation,
+  ConsumableProperties,
   ConsumablesTable,
 };

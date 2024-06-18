@@ -1,8 +1,11 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
+import { useRouteData } from "~/hooks";
+import type { BuyMethod } from "~/modules/items";
 import {
+  BuyMethods,
   ItemPurchasingForm,
   getItemReplenishment,
   itemPurchasingValidator,
@@ -22,11 +25,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const consumablePurchasing = await getItemReplenishment(
-    client,
-    itemId,
-    companyId
-  );
+  const [consumablePurchasing] = await Promise.all([
+    getItemReplenishment(client, itemId, companyId),
+  ]);
 
   if (consumablePurchasing.error) {
     throw redirect(
@@ -91,6 +92,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ConsumablePurchasingRoute() {
   const { consumablePurchasing } = useLoaderData<typeof loader>();
 
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("Could not find itemId");
+  const routeData = useRouteData<{ buyMethods: BuyMethod[] }>(
+    path.to.consumable(itemId)
+  );
+  const buyMethods = routeData?.buyMethods ?? [];
+
   const initialValues = {
     ...consumablePurchasing,
     preferredSupplierId: consumablePurchasing?.preferredSupplierId ?? undefined,
@@ -102,9 +110,15 @@ export default function ConsumablePurchasingRoute() {
   };
 
   return (
-    <ItemPurchasingForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-    />
+    <>
+      <ItemPurchasingForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        allowedSuppliers={
+          buyMethods.map((s) => s.supplier?.id).filter(Boolean) as string[]
+        }
+      />
+      <BuyMethods buyMethods={buyMethods} />
+    </>
   );
 }

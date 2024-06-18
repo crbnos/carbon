@@ -588,6 +588,8 @@ export const path = {
     services: `${x}/items/services`,
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
     serviceRoot: `${x}/service`,
+    servicePurchasing: (id: string) =>
+      generatePath(`${x}/service/${id}/purchasing`),
     serviceSupplier: (serviceId: string, id: string) =>
       generatePath(`${x}/service/${serviceId}/suppliers/${id}`),
     serviceSuppliers: (id: string) =>

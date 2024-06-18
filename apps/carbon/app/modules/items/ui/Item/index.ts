@@ -1,3 +1,4 @@
+import BillOfProcess from "./BillOfProcess";
 import BuyMethodForm from "./BuyMethodForm";
 import BuyMethods from "./BuyMethods";
 import ItemCostingForm from "./ItemCostingForm";
@@ -9,6 +10,7 @@ import { MethodIcon } from "./MethodIcon";
 import PickMethodForm from "./PickMethodForm";
 
 export {
+  BillOfProcess,
   BuyMethodForm,
   BuyMethods,
   ItemCostingForm,
