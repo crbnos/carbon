@@ -24,7 +24,7 @@ export const FormErrorMessage = forwardRef<
     <div
       {...field?.getErrorMessageProps(props, ref)}
       className={cn(
-        "text-destructive text-sm font-medium leading-none",
+        "text-destructive text-xs font-medium leading-none",
         props.className
       )}
     />

@@ -1,6 +1,6 @@
 import ToolForm from "./ToolForm";
 import ToolHeader from "./ToolHeader";
-import ToolNavigation from "./ToolNavigation";
+import ToolProperties from "./ToolProperties";
 import ToolsTable from "./ToolsTable";
 
-export { ToolForm, ToolHeader, ToolNavigation, ToolsTable };
+export { ToolForm, ToolHeader, ToolProperties, ToolsTable };

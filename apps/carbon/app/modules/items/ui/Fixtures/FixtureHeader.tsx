@@ -1,33 +1,14 @@
-import {
-  Card,
-  CardAction,
-  CardAttribute,
-  CardAttributeLabel,
-  CardAttributeValue,
-  CardAttributes,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Enumerable,
-  HStack,
-  Menubar,
-  VStack,
-} from "@carbon/react";
+import { Enumerable, HStack, Heading, VStack } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
-import {
-  Assign,
-  CustomerAvatar,
-  EmployeeAvatar,
-  useOptimisticAssignment,
-} from "~/components";
-import { usePermissions, useRouteData } from "~/hooks";
+import { DetailsTopbar } from "~/components/Layout";
+import { useRouteData } from "~/hooks";
 import type { Fixture } from "~/modules/items";
 import { path } from "~/utils/path";
+import { useFixtureNavigation } from "./useFixtureNavigation";
 
 const FixtureHeader = () => {
-  const permissions = usePermissions();
+  const links = useFixtureNavigation();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
@@ -35,74 +16,18 @@ const FixtureHeader = () => {
     path.to.fixture(itemId)
   );
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: itemId,
-    table: "item",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.fixtureSummary?.assignee;
-
   return (
-    <VStack>
-      {permissions.is("employee") && !!routeData?.fixtureSummary?.id && (
-        <Menubar>
-          <Assign
-            id={itemId}
-            table="item"
-            value={routeData?.fixtureSummary?.assignee ?? ""}
-          />
-        </Menubar>
-      )}
-      <Card>
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>{routeData?.fixtureSummary?.id}</CardTitle>
-            <CardDescription>{routeData?.fixtureSummary?.name}</CardDescription>
-          </CardHeader>
-          <CardAction>
-            {/* <Button
-            variant="secondary"
-            onClick={() => alert("TODO")}
-            leftIcon={<FaHistory />}
-          >
-            View History
-          </Button> */}
-          </CardAction>
+    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card">
+      <VStack spacing={0} className="flex-grow">
+        <HStack>
+          <Heading size="h2">{routeData?.fixtureSummary?.id}</Heading>
+          <Enumerable value="Fixture" />
         </HStack>
-        <CardContent>
-          <CardAttributes>
-            <CardAttribute>
-              <CardAttributeLabel>Assignee</CardAttributeLabel>
-              <CardAttributeValue>
-                {assignee ? (
-                  <EmployeeAvatar employeeId={assignee ?? null} />
-                ) : (
-                  "-"
-                )}
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>Inventory Type</CardAttributeLabel>
-              <CardAttributeValue>
-                <Enumerable
-                  value={routeData?.fixtureSummary?.itemInventoryType ?? null}
-                />
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>Customer</CardAttributeLabel>
-              <CardAttributeValue>
-                <CustomerAvatar
-                  customerId={routeData?.fixtureSummary?.customerId ?? null}
-                />
-              </CardAttributeValue>
-            </CardAttribute>
-          </CardAttributes>
-        </CardContent>
-      </Card>
-    </VStack>
+      </VStack>
+      <VStack spacing={0} className="flex-shrink justify-center items-end">
+        <DetailsTopbar links={links} />
+      </VStack>
+    </div>
   );
 };
 

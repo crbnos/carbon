@@ -80,7 +80,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
           <Hidden name="id" />
           <Hidden name="supplierId" value={supplierId ?? ""} />
           <VStack spacing={4} className="min-h-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 w-full">
               <Input name="receiptId" label="Receipt ID" isReadOnly />
               <ComboboxControlled
                 name="locationId"

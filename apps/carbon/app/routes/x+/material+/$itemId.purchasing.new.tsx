@@ -32,27 +32,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createFixtureSupplier = await upsertBuyMethod(client, {
+  const createMaterialSupplier = await upsertBuyMethod(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (createFixtureSupplier.error) {
+  if (createMaterialSupplier.error) {
     throw redirect(
-      path.to.fixtureSuppliers(itemId),
+      path.to.materialPurchasing(itemId),
       await flash(
         request,
-        error(createFixtureSupplier.error, "Failed to create fixture supplier")
+        error(
+          createMaterialSupplier.error,
+          "Failed to create material supplier"
+        )
       )
     );
   }
 
-  throw redirect(path.to.fixtureSuppliers(itemId));
+  throw redirect(path.to.materialPurchasing(itemId));
 }
 
-export default function NewFixtureSupplierRoute() {
+export default function NewMaterialSupplierRoute() {
   const { itemId } = useParams();
 
   if (!itemId) throw new Error("itemId not found");
@@ -60,12 +63,12 @@ export default function NewFixtureSupplierRoute() {
   const initialValues = {
     itemId: itemId,
     supplierId: "",
-    supplierFixtureId: "",
+    supplierMaterialId: "",
     unitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
     conversionFactor: 1,
   };
 
-  return <BuyMethodForm type="Fixture" initialValues={initialValues} />;
+  return <BuyMethodForm type="Material" initialValues={initialValues} />;
 }

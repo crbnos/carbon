@@ -1,10 +1,13 @@
+import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import {
   MaterialHeader,
-  MaterialNavigation,
+  MaterialProperties,
+  getBuyMethods,
   getMaterial,
+  getPickMethods,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -26,8 +29,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [materialSummary] = await Promise.all([
+  const [materialSummary, buyMethods, pickMethods] = await Promise.all([
     getMaterial(client, itemId, companyId),
+    getBuyMethods(client, itemId, companyId),
+    getPickMethods(client, itemId, companyId),
   ]);
 
   if (materialSummary.error) {
@@ -42,17 +47,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     materialSummary: materialSummary.data,
+    buyMethods: buyMethods.data ?? [],
+    pickMethods: pickMethods.data ?? [],
   });
 }
 
 export default function MaterialRoute() {
   return (
-    <>
+    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <MaterialHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <MaterialNavigation />
-        <Outlet />
+      <div className="flex h-[calc(100vh-99px)] w-full">
+        <div className="flex h-full w-full overflow-y-auto">
+          <VStack spacing={2} className="p-2">
+            <Outlet />
+          </VStack>
+        </div>
+        <MaterialProperties />
       </div>
-    </>
+    </div>
   );
 }

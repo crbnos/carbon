@@ -32,30 +32,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createMaterialSupplier = await upsertBuyMethod(client, {
+  const createConsumableSupplier = await upsertBuyMethod(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (createMaterialSupplier.error) {
+  if (createConsumableSupplier.error) {
     throw redirect(
-      path.to.materialSuppliers(itemId),
+      path.to.consumablePurchasing(itemId),
       await flash(
         request,
         error(
-          createMaterialSupplier.error,
-          "Failed to create material supplier"
+          createConsumableSupplier.error,
+          "Failed to create consumable supplier"
         )
       )
     );
   }
 
-  throw redirect(path.to.materialSuppliers(itemId));
+  throw redirect(path.to.consumablePurchasing(itemId));
 }
 
-export default function NewMaterialSupplierRoute() {
+export default function NewConsumableSupplierRoute() {
   const { itemId } = useParams();
 
   if (!itemId) throw new Error("itemId not found");
@@ -63,12 +63,12 @@ export default function NewMaterialSupplierRoute() {
   const initialValues = {
     itemId: itemId,
     supplierId: "",
-    supplierMaterialId: "",
+    supplierConsumableId: "",
     unitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
     conversionFactor: 1,
   };
 
-  return <BuyMethodForm type="Material" initialValues={initialValues} />;
+  return <BuyMethodForm type="Consumable" initialValues={initialValues} />;
 }

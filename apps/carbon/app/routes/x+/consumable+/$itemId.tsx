@@ -1,10 +1,13 @@
+import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import {
   ConsumableHeader,
-  ConsumableNavigation,
+  ConsumableProperties,
+  getBuyMethods,
   getConsumable,
+  getPickMethods,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -26,8 +29,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [consumableSummary] = await Promise.all([
+  const [consumableSummary, buyMethods, pickMethods] = await Promise.all([
     getConsumable(client, itemId, companyId),
+    getBuyMethods(client, itemId, companyId),
+    getPickMethods(client, itemId, companyId),
   ]);
 
   if (consumableSummary.error) {
@@ -42,17 +47,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     consumableSummary: consumableSummary.data,
+    buyMethods: buyMethods.data ?? [],
+    pickMethods: pickMethods.data ?? [],
   });
 }
 
 export default function ConsumableRoute() {
   return (
-    <>
+    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <ConsumableHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <ConsumableNavigation />
-        <Outlet />
+      <div className="flex h-[calc(100vh-99px)] w-full">
+        <div className="flex h-full w-full overflow-y-auto">
+          <VStack spacing={2} className="p-2">
+            <Outlet />
+          </VStack>
+        </div>
+        <ConsumableProperties />
       </div>
-    </>
+    </div>
   );
 }

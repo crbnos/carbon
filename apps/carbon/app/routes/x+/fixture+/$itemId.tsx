@@ -1,7 +1,14 @@
+import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
-import { FixtureHeader, FixtureNavigation, getFixture } from "~/modules/items";
+import {
+  FixtureHeader,
+  FixtureProperties,
+  getBuyMethods,
+  getFixture,
+  getPickMethods,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -21,8 +28,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [fixtureSummary] = await Promise.all([
+  const [fixtureSummary, buyMethods, pickMethods] = await Promise.all([
     getFixture(client, itemId, companyId),
+    getBuyMethods(client, itemId, companyId),
+    getPickMethods(client, itemId, companyId),
   ]);
 
   if (fixtureSummary.error) {
@@ -37,17 +46,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     fixtureSummary: fixtureSummary.data,
+    buyMethods: buyMethods.data ?? [],
+    pickMethods: pickMethods.data ?? [],
   });
 }
 
 export default function FixtureRoute() {
   return (
-    <>
+    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <FixtureHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <FixtureNavigation />
-        <Outlet />
+      <div className="flex h-[calc(100vh-99px)] w-full">
+        <div className="flex h-full w-full overflow-y-auto">
+          <VStack spacing={2} className="p-2">
+            <Outlet />
+          </VStack>
+        </div>
+        <FixtureProperties />
       </div>
-    </>
+    </div>
   );
 }

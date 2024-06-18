@@ -96,7 +96,7 @@ const FixtureForm = ({
               <Hidden name="unitOfMeasureCode" value="EA" />
               <div
                 className={cn(
-                  "grid w-full gap-x-8 gap-y-2",
+                  "grid w-full gap-x-8 gap-y-4",
                   isEditing ? "grid-cols-1 md:grid-cols-3" : "grid-cols-2"
                 )}
               >

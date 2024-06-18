@@ -1,28 +1,14 @@
-import {
-  Card,
-  CardAction,
-  CardAttribute,
-  CardAttributeLabel,
-  CardAttributeValue,
-  CardAttributes,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Enumerable,
-  HStack,
-  Menubar,
-  VStack,
-} from "@carbon/react";
+import { Enumerable, HStack, Heading, VStack } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
-import { Assign, EmployeeAvatar, useOptimisticAssignment } from "~/components";
-import { usePermissions, useRouteData } from "~/hooks";
+import { DetailsTopbar } from "~/components/Layout";
+import { useRouteData } from "~/hooks";
 import type { Consumable } from "~/modules/items";
 import { path } from "~/utils/path";
+import { useConsumableNavigation } from "./useConsumableNavigation";
 
 const ConsumableHeader = () => {
-  const permissions = usePermissions();
+  const links = useConsumableNavigation();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
@@ -30,78 +16,18 @@ const ConsumableHeader = () => {
     path.to.consumable(itemId)
   );
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: itemId,
-    table: "item",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.consumableSummary?.assignee;
-
   return (
-    <VStack>
-      {permissions.is("employee") && !!routeData?.consumableSummary?.id && (
-        <Menubar>
-          <Assign
-            id={itemId}
-            table="item"
-            value={routeData?.consumableSummary?.assignee ?? ""}
-          />
-        </Menubar>
-      )}
-      <Card>
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>{routeData?.consumableSummary?.id}</CardTitle>
-            <CardDescription>
-              {routeData?.consumableSummary?.name}
-            </CardDescription>
-          </CardHeader>
-          <CardAction>
-            {/* <Button
-            variant="secondary"
-            onClick={() => alert("TODO")}
-            leftIcon={<FaHistory />}
-          >
-            View History
-          </Button> */}
-          </CardAction>
+    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card">
+      <VStack spacing={0} className="flex-grow">
+        <HStack>
+          <Heading size="h2">{routeData?.consumableSummary?.id}</Heading>
+          <Enumerable value="Consumable" />
         </HStack>
-        <CardContent>
-          <CardAttributes>
-            <CardAttribute>
-              <CardAttributeLabel>Assignee</CardAttributeLabel>
-              <CardAttributeValue>
-                {assignee ? (
-                  <EmployeeAvatar employeeId={assignee ?? null} />
-                ) : (
-                  "-"
-                )}
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>Inventory Type</CardAttributeLabel>
-              <CardAttributeValue>
-                <Enumerable
-                  value={
-                    routeData?.consumableSummary?.itemInventoryType ?? null
-                  }
-                />
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>UoM</CardAttributeLabel>
-              <CardAttributeValue>
-                <Enumerable
-                  value={routeData?.consumableSummary?.unitOfMeasure ?? null}
-                />
-              </CardAttributeValue>
-            </CardAttribute>
-          </CardAttributes>
-        </CardContent>
-      </Card>
-    </VStack>
+      </VStack>
+      <VStack spacing={0} className="flex-shrink justify-center items-end">
+        <DetailsTopbar links={links} />
+      </VStack>
+    </div>
   );
 };
 

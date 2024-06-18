@@ -49,7 +49,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
         </CardHeader>
         <CardContent>
           <Hidden name="id" />
-          <div className="grid w-full gap-x-8 gap-y-2 grid-cols-1 md:grid-cols-3">
+          <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-3">
             <Input
               isReadOnly
               name="readableId"
