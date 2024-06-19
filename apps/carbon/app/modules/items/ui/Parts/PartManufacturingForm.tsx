@@ -12,14 +12,10 @@ import {
   CustomFormFields,
   Hidden,
   Number,
-  Select,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import {
-  partManufacturingPolicies,
-  partManufacturingValidator,
-} from "~/modules/items";
+import { partManufacturingValidator } from "~/modules/items";
 
 type PartManufacturingFormProps = {
   initialValues: z.infer<typeof partManufacturingValidator>;
@@ -29,12 +25,6 @@ const PartManufacturingForm = ({
   initialValues,
 }: PartManufacturingFormProps) => {
   const permissions = usePermissions();
-
-  const partManufacturingPolicyOptions =
-    partManufacturingPolicies?.map((policy) => ({
-      label: policy,
-      value: policy,
-    })) ?? [];
 
   return (
     <Card>
@@ -49,17 +39,6 @@ const PartManufacturingForm = ({
         <CardContent>
           <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <Select
-              name="manufacturingPolicy"
-              label="Manufacturing Policy"
-              options={partManufacturingPolicyOptions}
-            />
-            {/* <Select
-                name="routingId"
-                label="Routing ID"
-                options={[{ label: "", value: "" }]}
-              /> */}
-
             <Number name="manufacturingLeadTime" label="Lead Time (Days)" />
             <Number
               name="scrapPercentage"

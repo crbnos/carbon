@@ -140,11 +140,6 @@ export const materialSubstanceValidator = z.object({
 
 export const partManufacturingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  manufacturingPolicy: z.enum(partManufacturingPolicies, {
-    errorMap: (issue, ctx) => ({
-      message: "Manufacturing policy is required",
-    }),
-  }),
   manufacturingLeadTime: zfd.numeric(z.number().min(0)),
   manufacturingBlocked: zfd.checkbox(),
   requiresConfiguration: zfd.checkbox(),
