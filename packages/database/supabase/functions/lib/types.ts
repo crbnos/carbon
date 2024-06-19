@@ -6028,6 +6028,7 @@ export type Database = {
           itemGroupId: string | null
           itemInventoryType: Database["public"]["Enums"]["itemInventoryType"]
           name: string
+          pullFromInventory: boolean
           readableId: string
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string | null
@@ -6046,6 +6047,7 @@ export type Database = {
           itemGroupId?: string | null
           itemInventoryType: Database["public"]["Enums"]["itemInventoryType"]
           name: string
+          pullFromInventory?: boolean
           readableId: string
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
@@ -6064,6 +6066,7 @@ export type Database = {
           itemGroupId?: string | null
           itemInventoryType?: Database["public"]["Enums"]["itemInventoryType"]
           name?: string
+          pullFromInventory?: boolean
           readableId?: string
           type?: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
@@ -6872,7 +6875,6 @@ export type Database = {
           lotSize: number | null
           manufacturingBlocked: boolean
           manufacturingLeadTime: number
-          manufacturingPolicy: Database["public"]["Enums"]["partManufacturingPolicy"]
           preferredSupplierId: string | null
           purchasingBlocked: boolean
           purchasingLeadTime: number
@@ -6892,7 +6894,6 @@ export type Database = {
           lotSize?: number | null
           manufacturingBlocked?: boolean
           manufacturingLeadTime?: number
-          manufacturingPolicy?: Database["public"]["Enums"]["partManufacturingPolicy"]
           preferredSupplierId?: string | null
           purchasingBlocked?: boolean
           purchasingLeadTime?: number
@@ -6912,7 +6913,6 @@ export type Database = {
           lotSize?: number | null
           manufacturingBlocked?: boolean
           manufacturingLeadTime?: number
-          manufacturingPolicy?: Database["public"]["Enums"]["partManufacturingPolicy"]
           preferredSupplierId?: string | null
           purchasingBlocked?: boolean
           purchasingLeadTime?: number
@@ -7512,6 +7512,114 @@ export type Database = {
           },
         ]
       }
+      makeMethod: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          itemId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          itemId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          itemId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "method_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "method_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+        ]
+      }
       material: {
         Row: {
           approved: boolean
@@ -8060,6 +8168,338 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      methodMaterial: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          itemId: string
+          itemType: string
+          makeMethodId: string
+          methodType: Database["public"]["Enums"]["methodType"]
+          quantity: number
+          unitOfMeasureCode: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          itemId: string
+          itemType?: string
+          makeMethodId: string
+          methodType?: Database["public"]["Enums"]["methodType"]
+          quantity: number
+          unitOfMeasureCode: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          itemId?: string
+          itemType?: string
+          makeMethodId?: string
+          methodType?: Database["public"]["Enums"]["methodType"]
+          quantity?: number
+          unitOfMeasureCode?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "methodMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_methodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "makeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      methodOperation: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          description: string | null
+          equipmentTypeId: string | null
+          id: string
+          makeMethodId: string
+          operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
+          order: number
+          productionStandard: number
+          setupHours: number
+          standardFactor: Database["public"]["Enums"]["factor"]
+          updatedAt: string | null
+          updatedBy: string | null
+          workCellTypeId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          description?: string | null
+          equipmentTypeId?: string | null
+          id?: string
+          makeMethodId: string
+          operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
+          order?: number
+          productionStandard?: number
+          setupHours?: number
+          standardFactor?: Database["public"]["Enums"]["factor"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCellTypeId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          description?: string | null
+          equipmentTypeId?: string | null
+          id?: string
+          makeMethodId?: string
+          operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
+          order?: number
+          productionStandard?: number
+          setupHours?: number
+          standardFactor?: Database["public"]["Enums"]["factor"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCellTypeId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "methodOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "methodOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "methodOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodOperation_equipmentTypeId_fkey"
+            columns: ["equipmentTypeId"]
+            isOneToOne: false
+            referencedRelation: "equipmentType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_methodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "makeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodOperation_workCellTypeId_fkey"
+            columns: ["workCellTypeId"]
+            isOneToOne: false
+            referencedRelation: "workCellType"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -21195,14 +21635,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -24718,6 +25158,8 @@ export type Database = {
         | "Credit Memo"
         | "Blanket Order"
         | "Return Order"
+      methodOperationOrder: "After Previous" | "With Previous"
+      methodType: "Buy" | "Make" | "Pick"
       module:
         | "Accounting"
         | "Documents"
@@ -24747,7 +25189,6 @@ export type Database = {
         | "October"
         | "November"
         | "December"
-      partManufacturingPolicy: "Make to Order" | "Make to Stock"
       payableLineType:
         | "Comment"
         | "G/L Account"
