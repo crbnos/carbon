@@ -94,6 +94,7 @@ const FixtureForm = ({
             <ModalCardBody>
               <Hidden name="type" value={type} />
               <Hidden name="unitOfMeasureCode" value="EA" />
+              <Hidden name="pullFromInventory" value="on" />
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -126,13 +127,11 @@ const FixtureForm = ({
 
                 <Select
                   name="itemInventoryType"
-                  label="Fixture Type"
+                  label="Tracking Type"
                   options={itemInventoryTypeOptions}
                 />
                 <Customer name="customerId" label="Customer" />
-
-                <Boolean name="blocked" label="Blocked" />
-                {isEditing && <Boolean name="active" label="Active" />}
+                <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="fixture" />
               </div>

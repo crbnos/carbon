@@ -142,7 +142,7 @@ const MaterialForm = ({
 
                 <Select
                   name="itemInventoryType"
-                  label="Material Type"
+                  label="Tracking Type"
                   options={itemInventoryTypeOptions}
                 />
                 <UnitOfMeasure
@@ -150,8 +150,8 @@ const MaterialForm = ({
                   label="Unit of Measure"
                 />
 
-                <Boolean name="blocked" label="Blocked" />
-                {isEditing && <Boolean name="active" label="Active" />}
+                <Boolean name="pullFromInventory" label="Pull from Inventory" />
+                <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="material" />
               </div>

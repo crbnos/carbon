@@ -55,7 +55,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             itemInventoryType: "Inventory",
             replenishmentSystem: "Buy and Make",
             unitOfMeasureCode: "EA",
-            blocked: false,
+            pullFromInventory: false,
             active: true,
           }}
         />
@@ -74,7 +74,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             description: "",
             itemInventoryType: "Inventory",
             unitOfMeasureCode: "EA",
-            blocked: false,
+            pullFromInventory: false,
             active: true,
           }}
         />

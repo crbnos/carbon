@@ -47,7 +47,6 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         .select("id, readableId, name, type")
         .eq("companyId", companyId)
         .eq("active", true)
-        .eq("blocked", false)
         .order("name"),
       supabase
         .from("supplier")
@@ -110,7 +109,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           switch (payload.eventType) {
             case "INSERT":
               const { new: inserted } = payload;
-              if (inserted.active && !inserted.blocked) {
+              if (inserted.active) {
                 setItems((items) =>
                   [
                     ...items,
@@ -126,6 +125,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
               break;
             case "UPDATE":
               const { new: updated } = payload;
+              // TODO: handle active status changes
               setItems((items) =>
                 items
                   .map((i) => {

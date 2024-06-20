@@ -64,7 +64,7 @@ export default function ToolDetailsRoute() {
     itemGroupId: toolData.toolSummary?.itemGroupId ?? "",
     itemInventoryType: toolData.toolSummary?.itemInventoryType ?? "Inventory",
     active: toolData.toolSummary?.active ?? true,
-    blocked: toolData.toolSummary?.blocked ?? false,
+    pullFromInventory: toolData.toolSummary?.pullFromInventory ?? false,
     unitOfMeasureCode: toolData.toolSummary?.unitOfMeasureCode ?? "EA",
     ...getCustomFields(toolData.toolSummary?.customFields ?? {}),
   };

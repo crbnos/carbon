@@ -121,7 +121,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
 
                 <Select
                   name="itemInventoryType"
-                  label="Tool Type"
+                  label="Tracking Type"
                   options={itemInventoryTypeOptions}
                 />
                 <UnitOfMeasure
@@ -129,8 +129,8 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                   label="Unit of Measure"
                 />
 
-                <Boolean name="blocked" label="Blocked" />
-                {isEditing && <Boolean name="active" label="Active" />}
+                <Boolean name="pullFromInventory" label="Pull from Inventory" />
+                <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="tool" />
               </div>

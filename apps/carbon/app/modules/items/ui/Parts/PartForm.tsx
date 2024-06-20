@@ -135,7 +135,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 />
                 <Select
                   name="itemInventoryType"
-                  label="Part Type"
+                  label="Tracking Type"
                   options={itemInventoryTypeOptions}
                 />
                 <UnitOfMeasure
@@ -143,8 +143,8 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   label="Unit of Measure"
                 />
 
-                <Boolean name="blocked" label="Blocked" />
-                {isEditing && <Boolean name="active" label="Active" />}
+                <Boolean name="pullFromInventory" label="Pull from Inventory" />
+                <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="part" />
               </div>

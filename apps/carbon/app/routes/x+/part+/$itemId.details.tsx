@@ -64,7 +64,7 @@ export default function PartDetailsRoute() {
     itemGroupId: partData.partSummary?.itemGroupId ?? "",
     itemInventoryType: partData.partSummary?.itemInventoryType ?? "Inventory",
     active: partData.partSummary?.active ?? true,
-    blocked: partData.partSummary?.blocked ?? false,
+    pullFromInventory: partData.partSummary?.pullFromInventory ?? false,
     replenishmentSystem: partData.partSummary?.replenishmentSystem ?? "Buy",
     unitOfMeasureCode: partData.partSummary?.unitOfMeasureCode ?? "EA",
     ...getCustomFields(partData.partSummary?.customFields ?? {}),

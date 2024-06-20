@@ -59,6 +59,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
         <CardContent>
           <Hidden name="itemInventoryType" value="Non-Inventory" />
           <Hidden name="unitOfMeasureCode" value="EA" />
+          <Hidden name="pullFromInventory" value="off" />
           <div
             className={cn(
               "grid w-full gap-x-8 gap-y-4",
@@ -88,8 +89,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
               options={serviceTypeOptions}
             />
 
-            <Boolean name="blocked" label="Blocked" />
-            {isEditing && <Boolean name="active" label="Active" />}
+            <Boolean name="active" label="Active" />
             <CustomFormFields table="service" />
           </div>
         </CardContent>

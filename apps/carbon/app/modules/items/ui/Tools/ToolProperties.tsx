@@ -103,12 +103,10 @@ const ToolProperties = () => {
       </VStack>
 
       <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Inventory Type</h3>
+        <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
         <Enumerable
           className={cn(
-            (routeData?.toolSummary?.active === false ||
-              routeData?.toolSummary?.blocked) &&
-              "opacity-50"
+            routeData?.toolSummary?.active === false && "opacity-50"
           )}
           value={routeData?.toolSummary?.itemInventoryType ?? null}
         />

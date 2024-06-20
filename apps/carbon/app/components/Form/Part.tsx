@@ -52,7 +52,7 @@ const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
             itemInventoryType: "Inventory" as "Inventory",
             replenishmentSystem: partReplenishmentSystem ?? "Buy and Make",
             unitOfMeasureCode: "EA",
-            blocked: false,
+            pullFromInventory: false,
             active: true,
           }}
         />

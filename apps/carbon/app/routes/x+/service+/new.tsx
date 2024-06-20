@@ -31,7 +31,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const createService = await upsertService(client, {
     ...validation.data,
     companyId,
-    active: true,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
@@ -64,6 +63,7 @@ export default function ServiceNewRoute() {
     name: "",
     description: "",
     serviceType: "External" as "External",
+    active: true,
   };
 
   return (

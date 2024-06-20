@@ -81,7 +81,7 @@ export default function MaterialDetailsRoute() {
     itemInventoryType:
       materialData.materialSummary?.itemInventoryType ?? "Inventory",
     active: materialData.materialSummary?.active ?? true,
-    blocked: materialData.materialSummary?.blocked ?? false,
+    pullFromInventory: materialData.materialSummary?.pullFromInventory ?? false,
     unitOfMeasureCode: materialData.materialSummary?.unitOfMeasureCode ?? "EA",
     ...getCustomFields(materialData.materialSummary?.customFields ?? {}),
   };

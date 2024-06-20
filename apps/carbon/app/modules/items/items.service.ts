@@ -128,7 +128,6 @@ export async function getConsumablesList(
     .select("id, name, readableId")
     .eq("type", "Consumable")
     .eq("companyId", companyId)
-    .eq("blocked", false)
     .eq("active", true);
 
   return query.order("name");
@@ -187,7 +186,6 @@ export async function getFixturesList(
     .select("id, name, readableId")
     .eq("type", "Fixture")
     .eq("companyId", companyId)
-    .eq("blocked", false)
     .eq("active", true);
 
   return query.order("name");
@@ -343,7 +341,6 @@ export async function getMaterialsList(
     .select("id, name, readableId")
     .eq("type", "Material")
     .or(`companyId.eq.${companyId},companyId.is.null`)
-    .eq("blocked", false)
     .eq("active", true);
 
   return query.order("name");
@@ -516,7 +513,6 @@ export async function getPartsList(
     .select("id, name, readableId")
     .eq("type", "Part")
     .eq("companyId", companyId)
-    .eq("blocked", false)
     .eq("active", true);
 
   return query.order("name");
@@ -612,7 +608,6 @@ export async function getServicesList(
     .select("id, name")
     .eq("type", "Service")
     .eq("companyId", companyId)
-    .eq("blocked", false)
     .eq("active", true)
     .order("name");
 
@@ -684,7 +679,6 @@ export async function getToolsList(
     .select("id, name, readableId")
     .eq("type", "Tool")
     .eq("companyId", companyId)
-    .eq("blocked", false)
     .eq("active", true);
 
   return query.order("name");
@@ -794,6 +788,8 @@ export async function upsertConsumable(
         itemGroupId: consumable.itemGroupId,
         itemInventoryType: consumable.itemInventoryType,
         unitOfMeasureCode: consumable.unitOfMeasureCode,
+        pullFromInventory: consumable.pullFromInventory,
+        active: consumable.active,
         companyId: consumable.companyId,
         createdBy: consumable.createdBy,
       })
@@ -822,8 +818,8 @@ export async function upsertConsumable(
     itemGroupId: consumable.itemGroupId,
     itemInventoryType: consumable.itemInventoryType,
     unitOfMeasureCode: consumable.unitOfMeasureCode,
+    pullFromInventory: consumable.pullFromInventory,
     active: consumable.active,
-    blocked: consumable.blocked,
   };
 
   const consumableUpdate = {
@@ -874,6 +870,8 @@ export async function upsertFixture(
         itemGroupId: fixture.itemGroupId,
         itemInventoryType: fixture.itemInventoryType,
         unitOfMeasureCode: "EA",
+        pullFromInventory: true,
+        active: fixture.active,
         companyId: fixture.companyId,
         createdBy: fixture.createdBy,
       })
@@ -905,7 +903,7 @@ export async function upsertFixture(
     itemInventoryType: fixture.itemInventoryType,
     unitOfMeasureCode: "EA",
     active: fixture.active,
-    blocked: fixture.blocked,
+    pullFromInventory: fixture.pullFromInventory,
   };
 
   const fixtureUpdate = {
@@ -957,6 +955,8 @@ export async function upsertPart(
         itemGroupId: part.itemGroupId,
         itemInventoryType: part.itemInventoryType,
         unitOfMeasureCode: part.unitOfMeasureCode,
+        pullFromInventory: part.pullFromInventory,
+        active: part.active,
         companyId: part.companyId,
         createdBy: part.createdBy,
       })
@@ -987,7 +987,7 @@ export async function upsertPart(
     itemInventoryType: part.itemInventoryType,
     unitOfMeasureCode: part.unitOfMeasureCode,
     active: part.active,
-    blocked: part.blocked,
+    pullFromInventory: part.pullFromInventory,
   };
 
   const partUpdate = {
@@ -1205,6 +1205,8 @@ export async function upsertMaterial(
         itemGroupId: material.itemGroupId,
         itemInventoryType: material.itemInventoryType,
         unitOfMeasureCode: material.unitOfMeasureCode,
+        pullFromInventory: material.pullFromInventory,
+        active: material.active,
         companyId: material.companyId,
         createdBy: material.createdBy,
       })
@@ -1239,7 +1241,7 @@ export async function upsertMaterial(
     itemInventoryType: material.itemInventoryType,
     unitOfMeasureCode: material.unitOfMeasureCode,
     active: material.active,
-    blocked: material.blocked,
+    pullFromInventory: material.pullFromInventory,
   };
 
   const materialUpdate = {
@@ -1360,6 +1362,8 @@ export async function upsertService(
         itemGroupId: service.itemGroupId,
         itemInventoryType: service.itemInventoryType,
         unitOfMeasureCode: null,
+        pullFromInventory: false,
+        active: service.active,
         companyId: service.companyId,
         createdBy: service.createdBy,
       })
@@ -1388,7 +1392,7 @@ export async function upsertService(
     itemInventoryType: service.itemInventoryType,
     unitOfMeasureCode: null,
     active: service.active,
-    blocked: service.blocked,
+    pullFromInventory: service.pullFromInventory,
   };
 
   const serviceUpdate = {
@@ -1469,6 +1473,8 @@ export async function upsertTool(
         itemGroupId: tool.itemGroupId,
         itemInventoryType: tool.itemInventoryType,
         unitOfMeasureCode: tool.unitOfMeasureCode,
+        pullFromInventory: tool.pullFromInventory,
+        active: tool.active,
         companyId: tool.companyId,
         createdBy: tool.createdBy,
       })
@@ -1498,7 +1504,7 @@ export async function upsertTool(
     itemInventoryType: tool.itemInventoryType,
     unitOfMeasureCode: tool.unitOfMeasureCode,
     active: tool.active,
-    blocked: tool.blocked,
+    pullFromInventory: tool.pullFromInventory,
   };
 
   const toolUpdate = {

@@ -12,7 +12,6 @@ CREATE TABLE "makeMethod" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "updatedBy" TEXT,
 
-
   CONSTRAINT "method_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "method_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "method_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
@@ -25,7 +24,7 @@ BEGIN
   -- if part.replenishmentSystem is 'Make' or 'Buy and Make' then create a make method record
   IF new."replenishmentSystem" = 'Make' OR new."replenishmentSystem" = 'Buy and Make' THEN
     INSERT INTO public."makeMethod"("itemId", "createdBy", "companyId")
-    VALUES (new.id, new."createdBy", new."companyId");
+    VALUES (new."itemId", new."createdBy", new."companyId");
   END IF;
   
   RETURN new;
@@ -38,12 +37,7 @@ BEGIN
   -- if part.replenishmentSystem is 'Make' or 'Buy and Make' then create a make method record
   IF old."replenishmentSystem" = 'Buy' AND (new."replenishmentSystem" = 'Make' OR new."replenishmentSystem" = 'Buy and Make') THEN
     INSERT INTO public."makeMethod"("itemId", "createdBy", "companyId")
-    VALUES (new.id, new."createdBy", new."companyId");
-  END IF;
-
-  -- if old replenishment system is 'Make' or 'Buy and Make' and new replenishment system is 'Buy' then delete make method record
-  IF (old."replenishmentSystem" = 'Make' OR old."replenishmentSystem" = 'Buy and Make') AND new."replenishmentSystem" = 'Buy' THEN
-    DELETE FROM public."makeMethod" WHERE "itemId" = old.id;
+    VALUES (new."itemId", new."createdBy", new."companyId");
   END IF;
   
   RETURN new;

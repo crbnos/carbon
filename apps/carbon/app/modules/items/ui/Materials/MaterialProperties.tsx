@@ -115,12 +115,10 @@ const MaterialProperties = () => {
       </VStack>
 
       <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Inventory Type</h3>
+        <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
         <Enumerable
           className={cn(
-            (routeData?.materialSummary?.active === false ||
-              routeData?.materialSummary?.blocked) &&
-              "opacity-50"
+            routeData?.materialSummary?.active === false && "opacity-50"
           )}
           value={routeData?.materialSummary?.itemInventoryType ?? null}
         />

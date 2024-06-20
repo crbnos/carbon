@@ -37,10 +37,10 @@ export const itemValidator = z.object({
       message: "Part type is required",
     }),
   }),
+  pullFromInventory: zfd.checkbox(),
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of Measure is required" }),
-  blocked: zfd.checkbox(),
   active: zfd.checkbox(),
 });
 

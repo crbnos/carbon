@@ -296,7 +296,7 @@ const SearchButton = () => {
 
 function useGroupedSubmodules() {
   const modules = useModules();
-  const parts = useItemsSubmodules();
+  const items = useItemsSubmodules();
   // const jobs = useJobsSidebar();
   const inventory = useInventorySubmodules();
   // const scheduling = useSchedulingSidebar();
@@ -322,7 +322,7 @@ function useGroupedSubmodules() {
       }[];
     }
   > = {
-    parts,
+    items,
     inventory,
     sales,
     purchasing,

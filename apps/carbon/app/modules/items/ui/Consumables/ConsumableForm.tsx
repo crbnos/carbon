@@ -125,7 +125,7 @@ const ConsumableForm = ({
 
                 <Select
                   name="itemInventoryType"
-                  label="Consumable Type"
+                  label="Tracking Type"
                   options={itemInventoryTypeOptions}
                 />
                 <UnitOfMeasure
@@ -133,8 +133,8 @@ const ConsumableForm = ({
                   label="Unit of Measure"
                 />
 
-                <Boolean name="blocked" label="Blocked" />
-                {isEditing && <Boolean name="active" label="Active" />}
+                <Boolean name="pullFromInventory" label="Pull from Inventory" />
+                <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="consumable" />
               </div>
