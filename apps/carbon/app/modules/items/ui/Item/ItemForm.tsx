@@ -60,8 +60,6 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             <ItemGroup name="itemGroupId" label="Item Group" />
 
             <Boolean name="active" label="Active" />
-            <Boolean name="blocked" label="Blocked" />
-
             <CustomFormFields table="part" />
           </div>
         </CardContent>

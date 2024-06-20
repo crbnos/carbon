@@ -68,7 +68,7 @@ export default function FixtureDetailsRoute() {
     itemInventoryType:
       fixtureData.fixtureSummary?.itemInventoryType ?? "Inventory",
     active: fixtureData.fixtureSummary?.active ?? true,
-    blocked: fixtureData.fixtureSummary?.blocked ?? false,
+    pullFromInventory: fixtureData.fixtureSummary?.pullFromInventory ?? false,
     customerId: fixtureData.fixtureSummary?.customerId ?? "",
     unitOfMeasureCode: "EA",
     ...getCustomFields(fixtureData.fixtureSummary?.customFields ?? {}),

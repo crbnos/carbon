@@ -26,7 +26,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const createPart = await upsertPart(client, {
     ...validation.data,
-    active: true,
     companyId,
     customFields: setCustomFields(formData),
     createdBy: userId,
@@ -59,8 +58,8 @@ export default function PartsNewRoute() {
     itemInventoryType: "Inventory" as "Inventory",
     replenishmentSystem: "Buy" as "Buy",
     unitOfMeasureCode: "EA",
-    blocked: false,
-    active: false,
+    pullFromInventory: false,
+    active: true,
   };
 
   return (

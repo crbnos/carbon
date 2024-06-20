@@ -6019,7 +6019,6 @@ export type Database = {
         Row: {
           active: boolean
           assignee: string | null
-          blocked: boolean
           companyId: string | null
           createdAt: string
           createdBy: string
@@ -6038,7 +6037,6 @@ export type Database = {
         Insert: {
           active?: boolean
           assignee?: string | null
-          blocked?: boolean
           companyId?: string | null
           createdAt?: string
           createdBy: string
@@ -6057,7 +6055,6 @@ export type Database = {
         Update: {
           active?: boolean
           assignee?: string | null
-          blocked?: boolean
           companyId?: string | null
           createdAt?: string
           createdBy?: string
@@ -20108,7 +20105,6 @@ export type Database = {
           approved: boolean | null
           approvedBy: string | null
           assignee: string | null
-          blocked: boolean | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -20122,6 +20118,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemInventoryType"]
             | null
           name: string | null
+          pullFromInventory: boolean | null
           supplierIds: string[] | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -20846,7 +20843,6 @@ export type Database = {
           approved: boolean | null
           approvedBy: string | null
           assignee: string | null
-          blocked: boolean | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -20862,6 +20858,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemInventoryType"]
             | null
           name: string | null
+          pullFromInventory: boolean | null
           supplierIds: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -21304,7 +21301,6 @@ export type Database = {
           approved: boolean | null
           approvedBy: string | null
           assignee: string | null
-          blocked: boolean | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -21325,6 +21321,7 @@ export type Database = {
           materialSubstance: string | null
           materialSubstanceId: string | null
           name: string | null
+          pullFromInventory: boolean | null
           supplierIds: string[] | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -21635,14 +21632,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -21690,7 +21687,6 @@ export type Database = {
           approved: boolean | null
           approvedBy: string | null
           assignee: string | null
-          blocked: boolean | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -21705,6 +21701,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemInventoryType"]
             | null
           name: string | null
+          pullFromInventory: boolean | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -24030,7 +24027,6 @@ export type Database = {
           approved: boolean | null
           approvedBy: string | null
           assignee: string | null
-          blocked: boolean | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -24042,6 +24038,7 @@ export type Database = {
           itemGroupId: string | null
           itemId: string | null
           name: string | null
+          pullFromInventory: boolean | null
           serviceType: Database["public"]["Enums"]["serviceType"] | null
           supplierIds: string[] | null
           toDate: string | null
@@ -24604,7 +24601,6 @@ export type Database = {
           approved: boolean | null
           approvedBy: string | null
           assignee: string | null
-          blocked: boolean | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -24618,6 +24614,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemInventoryType"]
             | null
           name: string | null
+          pullFromInventory: boolean | null
           supplierIds: string[] | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null

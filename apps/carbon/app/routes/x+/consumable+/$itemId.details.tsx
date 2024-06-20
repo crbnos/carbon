@@ -72,7 +72,8 @@ export default function ConsumableDetailsRoute() {
     itemInventoryType:
       consumableData.consumableSummary?.itemInventoryType ?? "Inventory",
     active: consumableData.consumableSummary?.active ?? true,
-    blocked: consumableData.consumableSummary?.blocked ?? false,
+    pullFromInventory:
+      consumableData.consumableSummary?.pullFromInventory ?? false,
     unitOfMeasureCode:
       consumableData.consumableSummary?.unitOfMeasureCode ?? "EA",
     ...getCustomFields(consumableData.consumableSummary?.customFields ?? {}),

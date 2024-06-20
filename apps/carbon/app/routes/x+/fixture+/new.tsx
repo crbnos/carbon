@@ -26,7 +26,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const createFixture = await upsertFixture(client, {
     ...validation.data,
-    active: true,
     companyId,
     customFields: setCustomFields(formData),
     createdBy: userId,
@@ -64,8 +63,8 @@ export default function FixturesNewRoute() {
     description: "",
     itemInventoryType: "Inventory" as "Inventory",
     unitOfMeasureCode: "EA",
-    blocked: false,
-    active: false,
+    pullFromInventory: true,
+    active: true,
   };
 
   return (

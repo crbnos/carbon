@@ -63,7 +63,8 @@ export default function ServiceDetailsRoute() {
     itemGroupId: routeData.service?.itemGroupId ?? undefined,
     itemInventoryType: "Non-Inventory" as const,
     active: routeData.service?.active ?? true,
-    blocked: routeData.service?.blocked ?? false,
+    unitOfMeasureCode: "EA",
+    pullFromInventory: false,
     ...getCustomFields(routeData.service?.customFields),
   };
 

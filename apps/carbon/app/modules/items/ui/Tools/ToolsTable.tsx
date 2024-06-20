@@ -91,21 +91,6 @@ const ToolsTable = memo(({ data, count, itemGroups }: ToolsTableProps) => {
         },
       },
       {
-        accessorKey: "blocked",
-        header: "Blocked",
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
-        meta: {
-          filter: {
-            type: "static",
-            options: [
-              { value: "true", label: "Blocked" },
-              { value: "false", label: "Not Blocked" },
-            ],
-          },
-          pluralHeader: "Blocked Statuses",
-        },
-      },
-      {
         id: "assignee",
         header: "Assignee",
         cell: ({ row }) => (
@@ -190,7 +175,6 @@ const ToolsTable = memo(({ data, count, itemGroups }: ToolsTableProps) => {
         defaultColumnVisibility={{
           description: false,
           active: false,
-          blocked: false,
           createdBy: false,
           createdAt: false,
           updatedBy: false,

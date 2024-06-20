@@ -30,7 +30,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const createMaterial = await upsertMaterial(client, {
     ...validation.data,
-    active: true,
     companyId,
     customFields: setCustomFields(formData),
     createdBy: userId,
@@ -70,8 +69,8 @@ export default function MaterialsNewRoute() {
     materialSubstanceId: "",
     itemInventoryType: "Inventory" as "Inventory",
     unitOfMeasureCode: "EA",
-    blocked: false,
-    active: false,
+    pullFromInventory: false,
+    active: true,
   };
 
   return (

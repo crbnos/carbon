@@ -30,7 +30,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const createConsumable = await upsertConsumable(client, {
     ...validation.data,
-    active: true,
     companyId,
     customFields: setCustomFields(formData),
     createdBy: userId,
@@ -68,8 +67,8 @@ export default function ConsumablesNewRoute() {
     description: "",
     itemInventoryType: "Non-Inventory" as "Non-Inventory",
     unitOfMeasureCode: "EA",
-    blocked: false,
-    active: false,
+    pullFromInventory: true,
+    active: true,
   };
 
   return (
