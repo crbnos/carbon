@@ -204,7 +204,7 @@ const MaterialsTable = memo(
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
       return (row: Material) => (
-        <MenuItem onClick={() => navigate(path.to.material(row.id!))}>
+        <MenuItem onClick={() => navigate(path.to.material(row.itemId!))}>
           <MenuIcon icon={<LuPencil />} />
           Edit Material
         </MenuItem>

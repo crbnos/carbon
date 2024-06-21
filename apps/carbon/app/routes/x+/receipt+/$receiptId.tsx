@@ -30,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (receipt.error) {
     throw redirect(
       path.to.receipts,
-      await flash(request, error(receipt.error, "Failed to load part summary"))
+      await flash(request, error(receipt.error, "Failed to load receipt"))
     );
   }
 

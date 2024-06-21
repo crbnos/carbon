@@ -155,7 +155,7 @@ const ServicesTable = memo(
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
       return (row: Service) => (
-        <MenuItem onClick={() => navigate(path.to.part(row.id!))}>
+        <MenuItem onClick={() => navigate(path.to.service(row.itemId!))}>
           <MenuIcon icon={<LuPencil />} />
           Edit Service
         </MenuItem>

@@ -59,7 +59,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
         <CardContent>
           <Hidden name="itemInventoryType" value="Non-Inventory" />
           <Hidden name="unitOfMeasureCode" value="EA" />
-          <Hidden name="pullFromInventory" value="off" />
+          <Hidden name="pullFromInventory" value="on" />
           <div
             className={cn(
               "grid w-full gap-x-8 gap-y-4",

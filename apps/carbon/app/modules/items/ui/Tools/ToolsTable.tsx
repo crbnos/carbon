@@ -156,7 +156,7 @@ const ToolsTable = memo(({ data, count, itemGroups }: ToolsTableProps) => {
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
     return (row: Tool) => (
-      <MenuItem onClick={() => navigate(path.to.tool(row.id!))}>
+      <MenuItem onClick={() => navigate(path.to.tool(row.itemId!))}>
         <MenuIcon icon={<LuPencil />} />
         Edit Tool
       </MenuItem>

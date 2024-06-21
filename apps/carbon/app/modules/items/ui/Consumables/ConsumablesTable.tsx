@@ -157,7 +157,7 @@ const ConsumablesTable = memo(
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
       return (row: Consumable) => (
-        <MenuItem onClick={() => navigate(path.to.consumable(row.id!))}>
+        <MenuItem onClick={() => navigate(path.to.consumable(row.itemId!))}>
           <MenuIcon icon={<LuPencil />} />
           Edit Consumable
         </MenuItem>

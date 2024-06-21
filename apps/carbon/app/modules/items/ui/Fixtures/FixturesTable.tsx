@@ -180,7 +180,7 @@ const FixturesTable = memo(
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
       return (row: Fixture) => (
-        <MenuItem onClick={() => navigate(path.to.fixture(row.id!))}>
+        <MenuItem onClick={() => navigate(path.to.fixture(row.itemId!))}>
           <MenuIcon icon={<LuPencil />} />
           Edit Fixture
         </MenuItem>

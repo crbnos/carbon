@@ -170,7 +170,7 @@ const PartsTable = memo(({ data, count, itemGroups }: PartsTableProps) => {
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
     return (row: Part) => (
-      <MenuItem onClick={() => navigate(path.to.part(row.id!))}>
+      <MenuItem onClick={() => navigate(path.to.part(row.itemId!))}>
         <MenuIcon icon={<LuPencil />} />
         Edit Part
       </MenuItem>
