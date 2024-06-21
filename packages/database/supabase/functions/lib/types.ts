@@ -8173,6 +8173,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          customFields: Json | null
           id: string
           itemId: string
           itemType: string
@@ -8187,6 +8188,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          customFields?: Json | null
           id?: string
           itemId: string
           itemType?: string
@@ -8201,6 +8203,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          customFields?: Json | null
           id?: string
           itemId?: string
           itemType?: string
@@ -8331,6 +8334,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          customFields: Json | null
           description: string | null
           equipmentTypeId: string | null
           id: string
@@ -8348,6 +8352,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          customFields?: Json | null
           description?: string | null
           equipmentTypeId?: string | null
           id?: string
@@ -8365,6 +8370,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          customFields?: Json | null
           description?: string | null
           equipmentTypeId?: string | null
           id?: string
@@ -21632,14 +21638,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]

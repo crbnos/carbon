@@ -50,9 +50,11 @@ const EquipmentTypeForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created location`);
+      toast.success(`Created equipment type`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(`Failed to create location: ${fetcher.data.error.message}`);
+      toast.error(
+        `Failed to create equipment type: ${fetcher.data.error.message}`
+      );
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 
