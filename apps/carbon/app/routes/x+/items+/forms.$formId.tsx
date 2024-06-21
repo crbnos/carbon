@@ -26,6 +26,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const materialForm = await getMaterialForm(client, formId);
 
+  if (materialForm.data?.companyId === null) {
+    throw redirect(
+      path.to.materialForms,
+      await flash(
+        request,
+        error(new Error("Access Denied"), "Cannot edit global material shape")
+      )
+    );
+  }
+
   return json({
     materialForm: materialForm?.data ?? null,
   });

@@ -10,6 +10,8 @@ import type {
   getMaterialForms,
   getMaterialSubstances,
   getMaterials,
+  getMethodMaterials,
+  getMethodOperations,
   getPart,
   getParts,
   getPickMethods,
@@ -68,8 +70,13 @@ export type Material = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
 >[number];
 
-export type PartManufacturingPolicy =
-  Database["public"]["Enums"]["partManufacturingPolicy"];
+export type MethodMaterial = NonNullable<
+  Awaited<ReturnType<typeof getMethodMaterials>>["data"]
+>[number];
+
+export type MethodOperation = NonNullable<
+  Awaited<ReturnType<typeof getMethodOperations>>["data"]
+>[number];
 
 export type Part = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]

@@ -26,6 +26,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const materialSubstance = await getMaterialSubstance(client, substanceId);
 
+  if (materialSubstance.data?.companyId === null) {
+    throw redirect(
+      path.to.materialSubstances,
+      await flash(
+        request,
+        error(
+          new Error("Access denied"),
+          "Cannot edit global material substance"
+        )
+      )
+    );
+  }
+
   return json({
     materialSubstance: materialSubstance?.data ?? null,
   });

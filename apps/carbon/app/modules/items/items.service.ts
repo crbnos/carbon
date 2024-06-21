@@ -288,6 +288,34 @@ export async function getItemReplenishment(
     .single();
 }
 
+export async function getItemQuantities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("itemQuantities")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .maybeSingle();
+}
+
+export async function getItemUnitSalePrice(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("itemUnitSalePrice")
+    .select("*")
+    .eq("itemId", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
 export async function getMaterial(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -432,32 +460,24 @@ export async function getMaterialSubstancesList(
     .order("name");
 }
 
-export async function getItemQuantities(
+export async function getMethodMaterials(
   client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string,
-  locationId: string
+  makeMethodId: string
 ) {
   return client
-    .from("itemQuantities")
+    .from("methodMaterial")
     .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .maybeSingle();
+    .eq("makeMethodId", makeMethodId);
 }
 
-export async function getItemUnitSalePrice(
+export async function getMethodOperations(
   client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
+  makeMethodId: string
 ) {
   return client
-    .from("itemUnitSalePrice")
+    .from("methodOperation")
     .select("*")
-    .eq("itemId", id)
-    .eq("companyId", companyId)
-    .single();
+    .eq("makeMethodId", makeMethodId);
 }
 
 export async function getPart(

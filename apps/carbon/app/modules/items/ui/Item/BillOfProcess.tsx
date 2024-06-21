@@ -25,16 +25,8 @@ import {
   StandardFactor,
   WorkCellType,
 } from "~/components/Form";
-import type { Item } from "~/components/SortableList";
+import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-
-// type Process = {
-//   workCenterTypeId: string;
-//   equipmentTypeId?: string;
-//   setupHours: number;
-//   standardFactor: StandardFactor;
-//   productionStandard: number;
-// };
 
 export const workInstructions = {
   type: "doc",
@@ -172,35 +164,37 @@ export const workInstructions = {
   ],
 };
 
+type ItemWithData = Item & {};
+
 const initialState = [
   {
     id: "1",
     text: "Plasma Cut",
     checked: false,
-    description: "",
+    order: "After Previous",
   },
   {
     id: "2",
     text: "Deburring",
     checked: false,
-    description: "",
+    order: "With Previous",
   },
   {
     id: "3",
     text: "Brake Press",
     checked: false,
-    description: "",
+    order: "After Previous",
   },
   {
     id: "5",
     text: "Paint",
     checked: false,
-    description: "",
+    order: "After Previous",
   },
 ];
 
 const BillOfProcess = () => {
-  const [items, setItems] = useState<Item[]>(initialState);
+  const [items, setItems] = useState<ItemWithData[]>(initialState);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
 
@@ -219,7 +213,6 @@ const BillOfProcess = () => {
         text: `Item ${prevItems.length + 1}`,
         checked: false,
         id: Math.random().toString(16).slice(2),
-        description: "",
       },
     ]);
   };
@@ -237,12 +230,13 @@ const BillOfProcess = () => {
     });
   }, []);
 
-  const renderListItem = (
-    item: Item,
-    order: number,
-    onCompleteItem: (id: string) => void,
-    onRemoveItem: (id: string) => void
-  ) => {
+  const renderListItem = ({
+    item,
+    items,
+    order,
+    onCompleteItem,
+    onRemoveItem,
+  }: SortableItemRenderProps<ItemWithData>) => {
     const isOpen = item.id === openItemId;
 
     const tabs = [
@@ -341,8 +335,9 @@ const BillOfProcess = () => {
     ];
 
     return (
-      <SortableListItem
+      <SortableListItem<ItemWithData>
         item={item}
+        items={items}
         order={order}
         key={item.id}
         isExpanded={isOpen}
@@ -470,15 +465,18 @@ const BillOfProcess = () => {
 
         <CardAction>
           <Button variant="secondary" onClick={onAddItem}>
-            Add Process
+            Add Operation
           </Button>
         </CardAction>
       </HStack>
       <CardContent>
         <SortableList
           items={items}
-          setItems={setItems}
+          onReorder={setItems}
           onCompleteItem={onCompleteItem}
+          onRemoveItem={(id) =>
+            setItems((prevItems) => prevItems.filter((item) => item.id !== id))
+          }
           renderItem={renderListItem}
         />
       </CardContent>

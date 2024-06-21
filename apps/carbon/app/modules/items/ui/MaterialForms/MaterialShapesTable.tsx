@@ -28,15 +28,18 @@ const MaterialShapesTable = memo(
         {
           accessorKey: "name",
           header: "Name",
-          cell: ({ row }) => (
-            <Hyperlink
-              to={`${path.to.materialForm(
-                row.original.id
-              )}?${params.toString()}`}
-            >
-              {row.original.name}
-            </Hyperlink>
-          ),
+          cell: ({ row }) =>
+            row.original.companyId === null ? (
+              row.original.name
+            ) : (
+              <Hyperlink
+                to={`${path.to.materialForm(
+                  row.original.id
+                )}?${params.toString()}`}
+              >
+                {row.original.name}
+              </Hyperlink>
+            ),
         },
         {
           header: "Type",

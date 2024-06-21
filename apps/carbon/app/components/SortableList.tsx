@@ -7,33 +7,39 @@ import {
   motion,
   useDragControls,
 } from "framer-motion";
-import type { Dispatch, ReactNode, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import useMeasure from "react-use-measure";
 
 import { Checkbox, cn } from "@carbon/react";
 import { LuTrash } from "react-icons/lu";
 
-export type Item = {
+interface Item {
+  id: string;
   text: string;
   checked: boolean;
-  id: string;
-  description: string;
-};
+  order?: "With Previous" | "After Previous";
+}
 
-interface SortableListItemProps {
-  item: Item;
+interface SortableItem<T> extends Item {
+  data: T;
+}
+
+interface SortableListItemProps<T> {
+  item: SortableItem<T>;
+  items: SortableItem<T>[];
   order: number;
   onCompleteItem: (id: string) => void;
   onRemoveItem: (id: string) => void;
-  renderExtra?: (item: Item) => React.ReactNode;
+  renderExtra?: (item: SortableItem<T>) => React.ReactNode;
   isExpanded?: boolean;
   className?: string;
   handleDrag: () => void;
 }
 
-function SortableListItem({
+function SortableListItem<T>({
   item,
+  items,
   order,
   onCompleteItem,
   onRemoveItem,
@@ -41,7 +47,7 @@ function SortableListItem({
   handleDrag,
   isExpanded,
   className,
-}: SortableListItemProps) {
+}: SortableListItemProps<T>) {
   let [ref, bounds] = useMeasure();
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggable] = useState(true);
@@ -134,7 +140,7 @@ function SortableListItem({
                     />
                     {/* List Order */}
                     <p className="font-mono text-xs pl-1 text-foreground/50 flex flex-shrink-0">
-                      {order + 1}
+                      {getParallelizedOrder(order, item, items)}
                     </p>
 
                     {/* List Title */}
@@ -247,38 +253,47 @@ function SortableListItem({
 
 SortableListItem.displayName = "SortableListItem";
 
-interface SortableListProps {
-  items: Item[];
-  setItems: Dispatch<SetStateAction<Item[]>>;
+export type SortableItemRenderProps<T extends Item> = {
+  item: T;
+  items: T[];
+  order: number;
   onCompleteItem: (id: string) => void;
-  renderItem: (
-    item: Item,
-    order: number,
-    onCompleteItem: (id: string) => void,
-    onRemoveItem: (id: string) => void
-  ) => ReactNode;
+  onRemoveItem: (id: string) => void;
+};
+
+interface SortableListProps<T extends Item> {
+  items: T[];
+  onCompleteItem: (id: string) => void;
+  onRemoveItem: (id: string) => void;
+  onReorder: Dispatch<SetStateAction<Item[]>>;
+  renderItem: (props: SortableItemRenderProps<T>) => React.ReactNode;
 }
 
-function SortableList({
+function SortableList<T extends Item>({
   items,
-  setItems,
+  onRemoveItem,
   onCompleteItem,
+  onReorder,
   renderItem,
-}: SortableListProps) {
+}: SortableListProps<T>) {
   if (items) {
     return (
       <LayoutGroup>
         <Reorder.Group
           axis="y"
           values={items}
-          onReorder={setItems}
+          onReorder={onReorder}
           className="flex flex-col"
         >
           <AnimatePresence>
             {items?.map((item, index) =>
-              renderItem(item, index, onCompleteItem, (id: string) =>
-                setItems((items) => items.filter((item) => item.id !== id))
-              )
+              renderItem({
+                item,
+                items,
+                order: index,
+                onCompleteItem,
+                onRemoveItem,
+              })
             )}
           </AnimatePresence>
         </Reorder.Group>
@@ -291,3 +306,15 @@ function SortableList({
 SortableList.displayName = "SortableList";
 
 export { SortableList, SortableListItem };
+
+function getParallelizedOrder(index: number, item: Item, items: Item[]) {
+  if (item?.order !== "With Previous") return index + 1;
+  // traverse backwards through the list of items to find the first item that is not "With Previous" and return its index + 1
+  for (let i = index - 1; i >= 0; i--) {
+    if (items[i].order !== "With Previous") {
+      return i + 1;
+    }
+  }
+
+  return 1;
+}
