@@ -48,9 +48,9 @@ const DepartmentForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created location`);
+      toast.success(`Created department`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(`Failed to create location: ${fetcher.data.error.message}`);
+      toast.error(`Failed to create department: ${fetcher.data.error.message}`);
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 

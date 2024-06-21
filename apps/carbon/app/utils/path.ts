@@ -394,6 +394,8 @@ export const path = {
     newHoliday: `${x}/resources/holidays/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaterial: `${x}/material/new`,
+    newMethodOperation: (id: string) =>
+      generatePath(`${x}/items/methods/${id}/operations/new`),
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newItemGroup: `${x}/items/groups/new`,

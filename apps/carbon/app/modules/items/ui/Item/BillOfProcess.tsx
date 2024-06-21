@@ -10,23 +10,33 @@ import {
   Editor,
   HStack,
   cn,
-  toast,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
+import { useFetcher } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LuSettings2, LuX } from "react-icons/lu";
+import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
   EquipmentType,
+  Hidden,
   InputControlled,
   Number,
   NumberControlled,
+  Select,
   StandardFactor,
+  Submit,
   WorkCellType,
 } from "~/components/Form";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
+import { useSupabase } from "~/lib/supabase";
+import { path } from "~/utils/path";
+import {
+  methodOperationOrders,
+  methodOperationValidator,
+} from "../../items.models";
 
 export const workInstructions = {
   type: "doc",
@@ -164,37 +174,41 @@ export const workInstructions = {
   ],
 };
 
-type ItemWithData = Item & {};
+type Operation = z.infer<typeof methodOperationValidator>;
 
-const initialState = [
-  {
-    id: "1",
-    text: "Plasma Cut",
-    checked: false,
-    order: "After Previous",
-  },
-  {
-    id: "2",
-    text: "Deburring",
-    checked: false,
-    order: "With Previous",
-  },
-  {
-    id: "3",
-    text: "Brake Press",
-    checked: false,
-    order: "After Previous",
-  },
-  {
-    id: "5",
-    text: "Paint",
-    checked: false,
-    order: "After Previous",
-  },
-];
+type ItemWithData = Item & {
+  data: Operation;
+};
 
-const BillOfProcess = () => {
-  const [items, setItems] = useState<ItemWithData[]>(initialState);
+type BillOfProcessProps = {
+  makeMethodId: string;
+  operations: Operation[];
+};
+
+function makeItems(operations: Operation[]): ItemWithData[] {
+  return operations.map((operation) => ({
+    id: operation.id!,
+    text: operation.description ?? "",
+    checked: false,
+    order: operation.operationOrder,
+    data: operation,
+  }));
+}
+
+const initialMethodOperation: Omit<Operation, "order"> = {
+  description: "",
+  workCellTypeId: "",
+  equipmentTypeId: "",
+  setupHours: 0,
+  productionStandard: 0,
+  standardFactor: "Hours/Piece",
+  operationOrder: "After Previous",
+};
+
+const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
+  const [items, setItems] = useState<ItemWithData[]>(
+    makeItems(operations ?? [])
+  );
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
 
@@ -207,12 +221,19 @@ const BillOfProcess = () => {
   };
 
   const onAddItem = () => {
+    const temporaryId = Math.random().toString(16).slice(2);
+    setOpenItemId(temporaryId);
     setItems((prevItems) => [
       ...prevItems,
       {
-        text: `Item ${prevItems.length + 1}`,
+        text: "",
         checked: false,
-        id: Math.random().toString(16).slice(2),
+        id: temporaryId,
+        data: {
+          ...initialMethodOperation,
+          order: prevItems.length + 1,
+          makeMethodId,
+        },
       },
     ]);
   };
@@ -255,56 +276,7 @@ const BillOfProcess = () => {
                 delay: 0.15,
               }}
             >
-              <ValidatedForm className="w-full flex flex-col gap-y-4">
-                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                  <WorkCellType
-                    name="workCellTypeId"
-                    label="Work Cell"
-                    onChange={(value) => {
-                      // onWorkCellChange(value?.value as string);
-                    }}
-                  />
-                  <EquipmentType
-                    name="equipmentTypeId"
-                    label="Equipment"
-                    onChange={(value) =>
-                      // onEquipmentChange(value?.value as string)
-                      console.log(value)
-                    }
-                  />
-                </div>
-                <InputControlled
-                  name="description"
-                  label="Description"
-                  value={""}
-                  // value={workCellData.description}
-                  onChange={(newValue) => {
-                    // setWorkCellData((d) => ({ ...d, description: newValue }));
-                  }}
-                />
-                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                  <NumberControlled
-                    name="setupHours"
-                    label="Setup Time (hours)"
-                    minValue={0}
-                    value={0}
-                    // value={equipmentData.setupHours}
-                    onChange={(newValue) => {
-                      console.log(newValue);
-                      // setEquipmentData((d) => ({ ...d, setupHours: newValue }));
-                    }}
-                  />
-                  <Number
-                    name="productionStandard"
-                    label="Production Standard"
-                    minValue={0}
-                  />
-                  <StandardFactor
-                    name="standardFactor"
-                    label="Standard Factor"
-                  />
-                </div>
-              </ValidatedForm>
+              <OperationForm item={item} setItems={setItems} />
             </motion.div>
           </div>
         ),
@@ -312,6 +284,7 @@ const BillOfProcess = () => {
       {
         id: 1,
         label: "Work Instructions",
+        disabled: isTemporaryId(item.id),
         content: (
           <div className="flex flex-col p-2">
             <motion.div
@@ -335,7 +308,7 @@ const BillOfProcess = () => {
     ];
 
     return (
-      <SortableListItem<ItemWithData>
+      <SortableListItem<Operation>
         item={item}
         items={items}
         order={order}
@@ -355,7 +328,21 @@ const BillOfProcess = () => {
           >
             <motion.button
               layout
-              onClick={() => setOpenItemId(!isOpen ? item.id : null)}
+              onClick={
+                isOpen
+                  ? () => {
+                      console.log("onClose", item.id, isTemporaryId(item.id));
+                      if (isTemporaryId(item.id)) {
+                        setItems((prevItems) =>
+                          prevItems.filter((i) => i.id !== item.id)
+                        );
+                      }
+                      setOpenItemId(null);
+                    }
+                  : () => {
+                      setOpenItemId(item.id);
+                    }
+              }
               key="collapse"
               className={cn(
                 isOpen
@@ -422,30 +409,6 @@ const BillOfProcess = () => {
                         />
                       </motion.div>
                     </div>
-
-                    <motion.div
-                      key={`re-render-${tabChangeRerender}`} //  re-animates the button section on tab change
-                      className="flex w-full items-center justify-end p-2"
-                      initial={{ opacity: 0, filter: "blur(4px)" }}
-                      animate={{ opacity: 1, filter: "blur(0px)" }}
-                      transition={{
-                        type: "spring",
-                        bounce: 0,
-                        duration: 0.55,
-                      }}
-                    >
-                      <motion.div layout className="ml-auto mr-1  pt-2">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setOpenItemId(null);
-                            toast.info("Changes saved");
-                          }}
-                        >
-                          Save
-                        </Button>
-                      </motion.div>
-                    </motion.div>
                   </motion.div>
                 ) : null}
               </AnimatePresence>
@@ -464,7 +427,11 @@ const BillOfProcess = () => {
         </CardHeader>
 
         <CardAction>
-          <Button variant="secondary" onClick={onAddItem}>
+          <Button
+            variant="secondary"
+            isDisabled={openItemId !== null}
+            onClick={onAddItem}
+          >
             Add Operation
           </Button>
         </CardAction>
@@ -485,3 +452,155 @@ const BillOfProcess = () => {
 };
 
 export default BillOfProcess;
+
+function isTemporaryId(id: string) {
+  return id.length < 20;
+}
+
+function OperationForm({
+  item,
+  setItems,
+}: {
+  item: ItemWithData;
+  setItems: (items: ItemWithData[]) => void;
+}) {
+  const methodOperationFetcher = useFetcher();
+  const { supabase } = useSupabase();
+
+  useEffect(() => {
+    if (methodOperationFetcher.data) {
+      console.log({ fetcherData: methodOperationFetcher.data });
+    }
+  }, [methodOperationFetcher.data]);
+
+  const [workCellData, setWorkCellData] = useState<{
+    workCellTypeId: string;
+    description: string;
+  }>({
+    workCellTypeId: item.data.workCellTypeId ?? "",
+    description: item.data.description ?? "",
+  });
+
+  const onWorkCellChange = async (workCellTypeId: string) => {
+    if (!supabase || !workCellTypeId) return;
+    const { data, error } = await supabase
+      .from("workCellType")
+      .select("*")
+      .eq("id", workCellTypeId)
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    setWorkCellData({
+      workCellTypeId,
+      description: data?.name ?? "",
+    });
+  };
+
+  const [equipmentData, setEquipmentData] = useState<{
+    equipmentTypeId: string;
+    setupHours: number;
+  }>({
+    equipmentTypeId: item.data.equipmentTypeId ?? "",
+    setupHours: item.data.setupHours ?? 0,
+  });
+
+  const onEquipmentChange = async (equipmentTypeId: string) => {
+    if (!supabase || !equipmentTypeId) return;
+    const { data, error } = await supabase
+      .from("equipmentType")
+      .select("*")
+      .eq("id", equipmentTypeId)
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    setEquipmentData({
+      equipmentTypeId,
+      setupHours: data?.setupHours ?? 0,
+    });
+  };
+
+  return (
+    <ValidatedForm
+      action={
+        isTemporaryId(item.id)
+          ? path.to.newMethodOperation(item.data.makeMethodId!)
+          : path.to.methodOperation(item.data.makeMethodId)
+      }
+      method="post"
+      defaultValues={item.data}
+      validator={methodOperationValidator}
+      className="w-full flex flex-col gap-y-4"
+      fetcher={methodOperationFetcher}
+      onSubmit={(values) => {
+        console.log({ values });
+      }}
+    >
+      <Hidden name="makeMethodId" />
+      <Hidden name="order" />
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+        <WorkCellType
+          name="workCellTypeId"
+          label="Work Cell"
+          onChange={(value) => {
+            onWorkCellChange(value?.value as string);
+          }}
+        />
+        <EquipmentType
+          name="equipmentTypeId"
+          label="Equipment"
+          onChange={(value) => onEquipmentChange(value?.value as string)}
+        />
+        <Select
+          name="operationOrder"
+          label="Operation Order"
+          placeholder="Operation Order"
+          options={methodOperationOrders.map((o) => ({
+            value: o,
+            label: o,
+          }))}
+        />
+      </div>
+      <InputControlled
+        name="description"
+        label="Description"
+        value={workCellData.description}
+        onChange={(newValue) => {
+          setWorkCellData((d) => ({ ...d, description: newValue }));
+        }}
+      />
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+        <NumberControlled
+          name="setupHours"
+          label="Setup Time (hours)"
+          minValue={0}
+          value={equipmentData.setupHours}
+          onChange={(newValue) => {
+            setEquipmentData((d) => ({ ...d, setupHours: newValue }));
+          }}
+        />
+        <Number
+          name="productionStandard"
+          label="Production Standard"
+          minValue={0}
+        />
+        <StandardFactor name="standardFactor" label="Standard Factor" />
+      </div>
+      <motion.div
+        className="flex w-full items-center justify-end p-2"
+        initial={{ opacity: 0, filter: "blur(4px)" }}
+        animate={{ opacity: 1, filter: "blur(0px)" }}
+        transition={{
+          type: "spring",
+          bounce: 0,
+          duration: 0.55,
+        }}
+      >
+        <motion.div layout className="ml-auto mr-1  pt-2">
+          <Submit>Save</Submit>
+        </motion.div>
+      </motion.div>
+    </ValidatedForm>
+  );
+}

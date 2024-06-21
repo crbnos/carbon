@@ -18,6 +18,7 @@ import type {
   materialFormValidator,
   materialSubstanceValidator,
   materialValidator,
+  methodOperationValidator,
   partManufacturingValidator,
   partValidator,
   pickMethodValidator,
@@ -312,6 +313,19 @@ export async function getItemUnitSalePrice(
     .from("itemUnitSalePrice")
     .select("*")
     .eq("itemId", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getMakeMethod(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("makeMethod")
+    .select("*")
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
 }
@@ -1200,6 +1214,36 @@ export async function upsertItemUnitSalePrice(
     .from("itemUnitSalePrice")
     .update(sanitize(itemUnitSalePrice))
     .eq("itemId", itemUnitSalePrice.itemId);
+}
+
+export async function upsertMethodOperation(
+  client: SupabaseClient<Database>,
+
+  methodOperation:
+    | (Omit<z.infer<typeof methodOperationValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof methodOperationValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in methodOperation) {
+    return client
+      .from("methodOperation")
+      .insert([methodOperation])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("methodOperation")
+    .update(sanitize(methodOperation))
+    .eq("id", methodOperation.id)
+    .select("id")
+    .single();
 }
 
 export async function upsertMaterial(

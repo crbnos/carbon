@@ -14,7 +14,7 @@ import useMeasure from "react-use-measure";
 import { Checkbox, cn } from "@carbon/react";
 import { LuTrash } from "react-icons/lu";
 
-interface Item {
+export interface Item {
   id: string;
   text: string;
   checked: boolean;
@@ -265,7 +265,7 @@ interface SortableListProps<T extends Item> {
   items: T[];
   onCompleteItem: (id: string) => void;
   onRemoveItem: (id: string) => void;
-  onReorder: Dispatch<SetStateAction<Item[]>>;
+  onReorder: Dispatch<SetStateAction<T[]>>;
   renderItem: (props: SortableItemRenderProps<T>) => React.ReactNode;
 }
 

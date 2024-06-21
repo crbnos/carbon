@@ -26,6 +26,7 @@ import {
   MethodIcon,
   PartManufacturingForm,
   getItemManufacturing,
+  getMakeMethod,
   partManufacturingValidator,
   upsertItemManufacturing,
 } from "~/modules/items";
@@ -61,15 +62,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const partManufacturing = await getItemManufacturing(
-    client,
-    itemId,
-    companyId
-  );
+  const [partManufacturing, makeMethod] = await Promise.all([
+    getItemManufacturing(client, itemId, companyId),
+    getMakeMethod(client, itemId, companyId),
+  ]);
 
   if (partManufacturing.error) {
     throw redirect(
-      path.to.items,
+      path.to.partDetails(itemId),
       await flash(
         request,
         error(partManufacturing.error, "Failed to load part manufacturing")
@@ -77,8 +77,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (makeMethod.error) {
+    throw redirect(
+      path.to.partDetails(itemId),
+      await flash(
+        request,
+        error(makeMethod.error, "Failed to load make method")
+      )
+    );
+  }
+
   return typedjson({
     partManufacturing: partManufacturing.data,
+    makeMethod: makeMethod.data,
     methods: [
       {
         id: "1",
@@ -193,9 +204,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Item() {
-  const { methods, partManufacturing } = useTypedLoaderData<typeof loader>();
+  const { makeMethod, methods, partManufacturing } =
+    useTypedLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+  const makeMethodId = makeMethod?.id;
+  if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   const manufacturingInitialValues = {
     ...partManufacturing,
@@ -239,7 +253,11 @@ export default function Item() {
                     key={itemId}
                     initialValues={manufacturingInitialValues}
                   />
-                  <BillOfProcess key={itemId} processes={[]} />
+                  <BillOfProcess
+                    key={itemId}
+                    makeMethodId={makeMethodId}
+                    operations={[]}
+                  />
                 </VStack>
               </ScrollArea>
             </ResizablePanel>
