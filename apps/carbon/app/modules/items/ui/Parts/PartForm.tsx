@@ -124,24 +124,25 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 )}
 
                 <Input name="name" label="Name" />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
-                {isEditing && (
-                  <TextArea name="description" label="Description" />
-                )}
-                <Select
-                  name="replenishmentSystem"
-                  label="Replenishment System"
-                  options={partReplenishmentSystemOptions}
-                />
                 <Select
                   name="itemInventoryType"
                   label="Tracking Type"
                   options={itemInventoryTypeOptions}
                 />
+                {isEditing && (
+                  <TextArea name="description" label="Description" />
+                )}
+
+                <Select
+                  name="replenishmentSystem"
+                  label="Replenishment System"
+                  options={partReplenishmentSystemOptions}
+                />
                 <UnitOfMeasure
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
+                <ItemGroup name="itemGroupId" label="Posting Group" />
 
                 <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />

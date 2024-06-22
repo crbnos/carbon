@@ -108,7 +108,11 @@ export const methodOperationValidator = z.object({
   standardFactor: z.enum(standardFactorType, {
     errorMap: () => ({ message: "Standard factor is required" }),
   }),
-  productionStandard: zfd.numeric(z.number().min(0)),
+  productionStandard: zfd.numeric(
+    z.number().min(0.00000001, {
+      message: "Should be greater than 0",
+    })
+  ),
 });
 
 export const itemCostValidator = z.object({

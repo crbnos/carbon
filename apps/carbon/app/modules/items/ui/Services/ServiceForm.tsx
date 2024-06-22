@@ -80,7 +80,6 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
               />
             )}
             <Input name="name" label="Name" />
-            <ItemGroup name="itemGroupId" label="Posting Group" />
             <TextArea name="description" label="Description" />
 
             <Select
@@ -88,6 +87,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
               label="Service Type"
               options={serviceTypeOptions}
             />
+            <ItemGroup name="itemGroupId" label="Posting Group" />
 
             <Boolean name="active" label="Active" />
             <CustomFormFields table="service" />

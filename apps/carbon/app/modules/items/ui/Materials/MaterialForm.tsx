@@ -131,14 +131,13 @@ const MaterialForm = ({
                   label="Substance"
                   options={substances}
                 />
+                {isEditing && (
+                  <TextArea name="description" label="Description" />
+                )}
                 <Select name="materialFormId" label="Form" options={forms} />
                 <Input name="finish" label="Finish" />
                 <Input name="grade" label="Grade" />
                 <Input name="dimensions" label="Dimensions" />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
-                {isEditing && (
-                  <TextArea name="description" label="Description" />
-                )}
 
                 <Select
                   name="itemInventoryType"
@@ -149,6 +148,7 @@ const MaterialForm = ({
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
+                <ItemGroup name="itemGroupId" label="Posting Group" />
 
                 <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />

@@ -29,7 +29,7 @@ interface SortableListItemProps<T> {
   item: SortableItem<T>;
   items: SortableItem<T>[];
   order: number;
-  onCompleteItem: (id: string) => void;
+  onToggleItem: (id: string) => void;
   onRemoveItem: (id: string) => void;
   renderExtra?: (item: SortableItem<T>) => React.ReactNode;
   isExpanded?: boolean;
@@ -41,7 +41,7 @@ function SortableListItem<T>({
   item,
   items,
   order,
-  onCompleteItem,
+  onToggleItem,
   onRemoveItem,
   renderExtra,
   handleDrag,
@@ -135,7 +135,7 @@ function SortableListItem<T>({
                       checked={item.checked}
                       id={`checkbox-${item.id}`}
                       aria-label="Mark to delete"
-                      onCheckedChange={() => onCompleteItem(item.id)}
+                      onCheckedChange={() => onToggleItem(item.id)}
                       className=" ml-3 h-5 w-5 rounded-md border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200"
                     />
                     {/* List Order */}
@@ -257,13 +257,13 @@ export type SortableItemRenderProps<T extends Item> = {
   item: T;
   items: T[];
   order: number;
-  onCompleteItem: (id: string) => void;
+  onToggleItem: (id: string) => void;
   onRemoveItem: (id: string) => void;
 };
 
 interface SortableListProps<T extends Item> {
   items: T[];
-  onCompleteItem: (id: string) => void;
+  onToggleItem: (id: string) => void;
   onRemoveItem: (id: string) => void;
   onReorder: Dispatch<SetStateAction<T[]>>;
   renderItem: (props: SortableItemRenderProps<T>) => React.ReactNode;
@@ -272,7 +272,7 @@ interface SortableListProps<T extends Item> {
 function SortableList<T extends Item>({
   items,
   onRemoveItem,
-  onCompleteItem,
+  onToggleItem,
   onReorder,
   renderItem,
 }: SortableListProps<T>) {
@@ -291,7 +291,7 @@ function SortableList<T extends Item>({
                 item,
                 items,
                 order: index,
-                onCompleteItem,
+                onToggleItem,
                 onRemoveItem,
               })
             )}
@@ -308,6 +308,7 @@ SortableList.displayName = "SortableList";
 export { SortableList, SortableListItem };
 
 function getParallelizedOrder(index: number, item: Item, items: Item[]) {
+  console.log({ index, item });
   if (item?.order !== "With Previous") return index + 1;
   // traverse backwards through the list of items to find the first item that is not "With Previous" and return its index + 1
   for (let i = index - 1; i >= 0; i--) {
