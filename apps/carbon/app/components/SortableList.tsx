@@ -7,7 +7,6 @@ import {
   motion,
   useDragControls,
 } from "framer-motion";
-import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import useMeasure from "react-use-measure";
 
@@ -265,7 +264,7 @@ interface SortableListProps<T extends Item> {
   items: T[];
   onToggleItem: (id: string) => void;
   onRemoveItem: (id: string) => void;
-  onReorder: Dispatch<SetStateAction<T[]>>;
+  onReorder: (items: T[]) => void;
   renderItem: (props: SortableItemRenderProps<T>) => React.ReactNode;
 }
 
@@ -308,7 +307,6 @@ SortableList.displayName = "SortableList";
 export { SortableList, SortableListItem };
 
 function getParallelizedOrder(index: number, item: Item, items: Item[]) {
-  console.log({ index, item });
   if (item?.order !== "With Previous") return index + 1;
   // traverse backwards through the list of items to find the first item that is not "With Previous" and return its index + 1
   for (let i = index - 1; i >= 0; i--) {

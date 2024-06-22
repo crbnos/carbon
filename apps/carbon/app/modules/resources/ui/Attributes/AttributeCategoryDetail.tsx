@@ -12,6 +12,7 @@ import {
   IconButton,
   MenuIcon,
   MenuItem,
+  useDebounce,
   useDisclosure,
 } from "@carbon/react";
 import { Link, useFetcher } from "@remix-run/react";
@@ -91,11 +92,11 @@ const AttributeCategoryDetail = ({
     updateSortOrder(updates);
   };
 
-  const updateSortOrder = (updates: Record<string, number>) => {
+  const updateSortOrder = useDebounce((updates: Record<string, number>) => {
     let formData = new FormData();
     formData.append("updates", JSON.stringify(updates));
     sortOrderFetcher.submit(formData, { method: "post" });
-  };
+  }, 500);
 
   const deleteModal = useDisclosure();
   const [selectedAttribute, setSelectedAttribute] = useState<
