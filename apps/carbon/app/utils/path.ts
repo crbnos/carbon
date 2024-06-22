@@ -324,6 +324,8 @@ export const path = {
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
+    makeMethod: (id: string) =>
+      generatePath(`${x}/part/${id}/manufacturing/method`),
     material: (id: string) => generatePath(`${x}/material/${id}`),
     materialCosting: (id: string) =>
       generatePath(`${x}/material/${id}/costing`),
@@ -352,6 +354,8 @@ export const path = {
     materialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/${id}`),
     materialSubstances: `${x}/items/substances`,
+    methodOperation: (makeMethodId: string, id: string) =>
+      generatePath(`${x}/items/methods/${makeMethodId}/operation/${id}`),
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
     newAccountingSubcategory: (id: string) =>
@@ -395,7 +399,7 @@ export const path = {
     newLocation: `${x}/resources/locations/new`,
     newMaterial: `${x}/material/new`,
     newMethodOperation: (id: string) =>
-      generatePath(`${x}/items/methods/${id}/operations/new`),
+      generatePath(`${x}/items/methods/${id}/operation/new`),
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newItemGroup: `${x}/items/groups/new`,

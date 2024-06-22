@@ -120,7 +120,7 @@ const FixtureForm = ({
                 )}
 
                 <Input name="name" label="Name" />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
+                <Customer name="customerId" label="Customer" />
                 {isEditing && (
                   <TextArea name="description" label="Description" />
                 )}
@@ -130,7 +130,7 @@ const FixtureForm = ({
                   label="Tracking Type"
                   options={itemInventoryTypeOptions}
                 />
-                <Customer name="customerId" label="Customer" />
+                <ItemGroup name="itemGroupId" label="Posting Group" />
                 <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="fixture" />

@@ -14,7 +14,9 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
@@ -186,16 +188,20 @@ type BillOfProcessProps = {
 };
 
 function makeItems(operations: Operation[]): ItemWithData[] {
-  return operations.map((operation) => ({
+  return operations.map(makeItem);
+}
+
+function makeItem(operation: Operation): ItemWithData {
+  return {
     id: operation.id!,
     text: operation.description ?? "",
     checked: false,
     order: operation.operationOrder,
     data: operation,
-  }));
+  };
 }
 
-const initialMethodOperation: Omit<Operation, "order"> = {
+const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
   description: "",
   workCellTypeId: "",
   equipmentTypeId: "",
@@ -206,13 +212,14 @@ const initialMethodOperation: Omit<Operation, "order"> = {
 };
 
 const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
+  const { supabase } = useSupabase();
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(operations ?? [])
   );
-  const [openItemId, setOpenItemId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
 
-  const onCompleteItem = (id: string) => {
+  const onToggleItem = (id: string) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, checked: !item.checked } : item
@@ -220,22 +227,51 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     );
   };
 
+  // we create a temporary item and append it to the list
   const onAddItem = () => {
     const temporaryId = Math.random().toString(16).slice(2);
-    setOpenItemId(temporaryId);
-    setItems((prevItems) => [
-      ...prevItems,
-      {
-        text: "",
-        checked: false,
-        id: temporaryId,
-        data: {
-          ...initialMethodOperation,
-          order: prevItems.length + 1,
-          makeMethodId,
+    setSelectedItemId(temporaryId);
+    setItems((prevItems) => {
+      let newOrder = 1;
+      if (prevItems.length) {
+        newOrder = prevItems[prevItems.length - 1].data.order + 1;
+      }
+
+      return [
+        ...prevItems,
+        {
+          text: "",
+          checked: false,
+          id: temporaryId,
+          data: {
+            ...initialMethodOperation,
+            order: newOrder,
+            makeMethodId,
+          },
         },
-      },
-    ]);
+      ];
+    });
+  };
+
+  const onRemoveItem = async (id: string) => {
+    // get the item and it's order in the list
+    const itemIndex = items.findIndex((i) => i.id === id);
+    const item = items[itemIndex];
+
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+
+    const response = await supabase
+      ?.from("methodOperation")
+      .delete()
+      .eq("id", id);
+    if (response?.error) {
+      // add the item back to the list if there was an error
+      setItems((prevItems) => {
+        const updatedItems = [...prevItems];
+        updatedItems.splice(itemIndex, 0, item);
+        return updatedItems;
+      });
+    }
   };
 
   const onCloseOnDrag = useCallback(() => {
@@ -255,10 +291,10 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     item,
     items,
     order,
-    onCompleteItem,
+    onToggleItem,
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
-    const isOpen = item.id === openItemId;
+    const isOpen = item.id === selectedItemId;
 
     const tabs = [
       {
@@ -276,7 +312,11 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
                 delay: 0.15,
               }}
             >
-              <OperationForm item={item} setItems={setItems} />
+              <OperationForm
+                item={item}
+                setItems={setItems}
+                setSelectedItemId={setSelectedItemId}
+              />
             </motion.div>
           </div>
         ),
@@ -314,7 +354,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
         order={order}
         key={item.id}
         isExpanded={isOpen}
-        onCompleteItem={onCompleteItem}
+        onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
         className="my-2 "
@@ -331,16 +371,15 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
               onClick={
                 isOpen
                   ? () => {
-                      console.log("onClose", item.id, isTemporaryId(item.id));
                       if (isTemporaryId(item.id)) {
                         setItems((prevItems) =>
                           prevItems.filter((i) => i.id !== item.id)
                         );
                       }
-                      setOpenItemId(null);
+                      setSelectedItemId(null);
                     }
                   : () => {
-                      setOpenItemId(item.id);
+                      setSelectedItemId(item.id);
                     }
               }
               key="collapse"
@@ -429,7 +468,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
         <CardAction>
           <Button
             variant="secondary"
-            isDisabled={openItemId !== null}
+            isDisabled={selectedItemId !== null}
             onClick={onAddItem}
           >
             Add Operation
@@ -440,10 +479,8 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
         <SortableList
           items={items}
           onReorder={setItems}
-          onCompleteItem={onCompleteItem}
-          onRemoveItem={(id) =>
-            setItems((prevItems) => prevItems.filter((item) => item.id !== id))
-          }
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
           renderItem={renderListItem}
         />
       </CardContent>
@@ -460,18 +497,37 @@ function isTemporaryId(id: string) {
 function OperationForm({
   item,
   setItems,
+  setSelectedItemId,
 }: {
   item: ItemWithData;
-  setItems: (items: ItemWithData[]) => void;
+  setItems: Dispatch<SetStateAction<ItemWithData[]>>;
+  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
 }) {
-  const methodOperationFetcher = useFetcher();
+  const methodOperationFetcher = useFetcher<{ id: string }>();
   const { supabase } = useSupabase();
 
   useEffect(() => {
-    if (methodOperationFetcher.data) {
-      console.log({ fetcherData: methodOperationFetcher.data });
+    // replace the temporary id with the actual id
+    if (methodOperationFetcher.data && methodOperationFetcher.data.id) {
+      flushSync(() => {
+        setItems((prevItems) =>
+          prevItems.map((i) =>
+            i.id === item.id
+              ? {
+                  ...i,
+                  id: methodOperationFetcher.data!.id!,
+                  data: {
+                    ...i.data,
+                    ...methodOperationFetcher.data,
+                  },
+                }
+              : i
+          )
+        );
+      });
+      setSelectedItemId(null);
     }
-  }, [methodOperationFetcher.data]);
+  }, [item.id, methodOperationFetcher.data, setItems, setSelectedItemId]);
 
   const [workCellData, setWorkCellData] = useState<{
     workCellTypeId: string;
@@ -526,7 +582,7 @@ function OperationForm({
       action={
         isTemporaryId(item.id)
           ? path.to.newMethodOperation(item.data.makeMethodId!)
-          : path.to.methodOperation(item.data.makeMethodId)
+          : path.to.methodOperation(item.data.makeMethodId, item.id!)
       }
       method="post"
       defaultValues={item.data}
@@ -534,7 +590,11 @@ function OperationForm({
       className="w-full flex flex-col gap-y-4"
       fetcher={methodOperationFetcher}
       onSubmit={(values) => {
-        console.log({ values });
+        setItems((prevItems) =>
+          prevItems.map((i) =>
+            i.id === item.id ? { ...makeItem(values), id: item.id } : i
+          )
+        );
       }}
     >
       <Hidden name="makeMethodId" />

@@ -15,27 +15,13 @@ import {
 } from "@carbon/react";
 import { TreeView, useTree } from "~/components/TreeView/TreeView";
 
-import { validationError, validator } from "@carbon/remix-validated-form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useParams } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { Outlet, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuPlus, LuSearch } from "react-icons/lu";
-import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import {
-  BillOfProcess,
-  MethodIcon,
-  PartManufacturingForm,
-  getItemManufacturing,
-  getMakeMethod,
-  partManufacturingValidator,
-  upsertItemManufacturing,
-} from "~/modules/items";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { MethodIcon } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
-import { getCustomFields, setCustomFields } from "~/utils/form";
-import { assertIsPost } from "~/utils/http";
-import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 
 type Method = {
   id: string;
@@ -55,41 +41,14 @@ type Method = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
   });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partManufacturing, makeMethod] = await Promise.all([
-    getItemManufacturing(client, itemId, companyId),
-    getMakeMethod(client, itemId, companyId),
-  ]);
-
-  if (partManufacturing.error) {
-    throw redirect(
-      path.to.partDetails(itemId),
-      await flash(
-        request,
-        error(partManufacturing.error, "Failed to load part manufacturing")
-      )
-    );
-  }
-
-  if (makeMethod.error) {
-    throw redirect(
-      path.to.partDetails(itemId),
-      await flash(
-        request,
-        error(makeMethod.error, "Failed to load make method")
-      )
-    );
-  }
-
   return typedjson({
-    partManufacturing: partManufacturing.data,
-    makeMethod: makeMethod.data,
     methods: [
       {
         id: "1",
@@ -160,62 +119,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "parts",
-  });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(partManufacturingValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updatePartManufacturing = await upsertItemManufacturing(client, {
-    ...validation.data,
-    itemId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData),
-  });
-  if (updatePartManufacturing.error) {
-    throw redirect(
-      path.to.part(itemId),
-      await flash(
-        request,
-        error(
-          updatePartManufacturing.error,
-          "Failed to update part manufacturing"
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.partManufacturing(itemId),
-    await flash(request, success("Updated part manufacturing"))
-  );
-}
-
-export default function Item() {
-  const { makeMethod, methods, partManufacturing } =
-    useTypedLoaderData<typeof loader>();
+export default function PartManufacturing() {
+  const { methods } = useTypedLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  const makeMethodId = makeMethod?.id;
-  if (!makeMethodId) throw new Error("Could not find makeMethodId");
-
-  const manufacturingInitialValues = {
-    ...partManufacturing,
-    lotSize: partManufacturing.lotSize ?? 0,
-    ...getCustomFields(partManufacturing.customFields),
-  };
 
   return (
     <div className="flex flex-grow overflow-hidden">
@@ -241,39 +148,7 @@ export default function Item() {
             </ResizablePanel>
             <ResizableHandle withHandle />
 
-            <ResizablePanel
-              order={2}
-              minSize={40}
-              defaultSize={60}
-              className="border-t border-border"
-            >
-              <ScrollArea className="h-[calc(100vh-99px)]">
-                <VStack spacing={2} className="p-2">
-                  <PartManufacturingForm
-                    key={itemId}
-                    initialValues={manufacturingInitialValues}
-                  />
-                  <BillOfProcess
-                    key={itemId}
-                    makeMethodId={makeMethodId}
-                    operations={[]}
-                  />
-                </VStack>
-              </ScrollArea>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel
-              order={3}
-              minSize={20}
-              defaultSize={20}
-              className="bg-card"
-            >
-              <ScrollArea className="h-[calc(100vh-99px)]">
-                <VStack spacing={2} className="px-4 py-2">
-                  <h3 className="text-xs text-muted-foreground">Properties</h3>
-                </VStack>
-              </ScrollArea>
-            </ResizablePanel>
+            <Outlet />
           </ResizablePanelGroup>
         )}
       </ClientOnly>
@@ -299,10 +174,10 @@ function BoMExplorer({
     nodes,
     getTreeProps,
     getNodeProps,
-    toggleNodeSelection,
+    // toggleNodeSelection,
     toggleExpandNode,
     expandAllBelowDepth,
-    toggleExpandLevel,
+    // toggleExpandLevel,
     collapseAllBelowDepth,
     selectNode,
     scrollToNode,

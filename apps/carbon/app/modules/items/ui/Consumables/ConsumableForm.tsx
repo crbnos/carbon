@@ -118,20 +118,20 @@ const ConsumableForm = ({
                 )}
 
                 <Input name="name" label="Name" />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
-                {isEditing && (
-                  <TextArea name="description" label="Description" />
-                )}
-
                 <Select
                   name="itemInventoryType"
                   label="Tracking Type"
                   options={itemInventoryTypeOptions}
                 />
+                {isEditing && (
+                  <TextArea name="description" label="Description" />
+                )}
+
                 <UnitOfMeasure
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
+                <ItemGroup name="itemGroupId" label="Posting Group" />
 
                 <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />
