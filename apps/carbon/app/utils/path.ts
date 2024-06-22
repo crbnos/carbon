@@ -356,6 +356,8 @@ export const path = {
     materialSubstances: `${x}/items/substances`,
     methodOperation: (makeMethodId: string, id: string) =>
       generatePath(`${x}/items/methods/${makeMethodId}/operation/${id}`),
+    methodOperationsOrder: (makeMethodId: string) =>
+      generatePath(`${x}/items/methods/${makeMethodId}/operation/order`),
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
     newAccountingSubcategory: (id: string) =>

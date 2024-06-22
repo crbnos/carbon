@@ -491,7 +491,8 @@ export async function getMethodOperations(
   return client
     .from("methodOperation")
     .select("*")
-    .eq("makeMethodId", makeMethodId);
+    .eq("makeMethodId", makeMethodId)
+    .order("order", { ascending: true });
 }
 
 export async function getPart(
@@ -797,6 +798,20 @@ export async function insertShelf(
     ])
     .select("id")
     .single();
+}
+
+export async function updateOperationOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    order: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, order, updatedBy }) =>
+    client.from("methodOperation").update({ order, updatedBy }).eq("id", id)
+  );
+  return Promise.all(updatePromises);
 }
 
 export async function upsertConsumable(

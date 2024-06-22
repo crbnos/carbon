@@ -10,6 +10,7 @@ import {
   Editor,
   HStack,
   cn,
+  useDebounce,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
@@ -213,11 +214,12 @@ const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
 
 const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   const { supabase } = useSupabase();
+  const sortOrderFetcher = useFetcher();
+
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(operations ?? [])
   );
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
 
   const onToggleItem = (id: string) => {
     setItems((prevItems) =>
@@ -274,6 +276,34 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     }
   };
 
+  const onReorder = (items: ItemWithData[]) => {
+    const newItems = items.map((item, index) => ({
+      ...item,
+      data: {
+        ...item.data,
+        order: index + 1,
+      },
+    }));
+    const updates = newItems.reduce<Record<string, number>>((acc, item) => {
+      if (!isTemporaryId(item.id)) {
+        acc[item.id] = item.data.order;
+      }
+      return acc;
+    }, {});
+
+    setItems(newItems);
+    updateSortOrder(updates);
+  };
+
+  const updateSortOrder = useDebounce((updates: Record<string, number>) => {
+    let formData = new FormData();
+    formData.append("updates", JSON.stringify(updates));
+    sortOrderFetcher.submit(formData, {
+      method: "post",
+      action: path.to.methodOperationsOrder(makeMethodId),
+    });
+  }, 1000);
+
   const onCloseOnDrag = useCallback(() => {
     setItems((prevItems) => {
       const updatedItems = prevItems.map((item) =>
@@ -287,6 +317,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     });
   }, []);
 
+  const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,
     items,
@@ -478,7 +509,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
       <CardContent>
         <SortableList
           items={items}
-          onReorder={setItems}
+          onReorder={onReorder}
           onToggleItem={onToggleItem}
           onRemoveItem={onRemoveItem}
           renderItem={renderListItem}

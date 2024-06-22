@@ -3,6 +3,7 @@ import {
   LuCalendarHeart,
   LuGroup,
   LuHammer,
+  LuListChecks,
   LuMapPin,
   LuNetwork,
   LuShapes,
@@ -50,11 +51,11 @@ const resourcesRoutes: RouteGroup[] = [
         to: path.to.abilities,
         icon: <LuHammer />,
       },
-      // {
-      //   name: "Attributes",
-      //   to: path.to.attributes,
-      //   icon: <LuListChecks />,
-      // },
+      {
+        name: "Attributes",
+        to: path.to.attributes,
+        icon: <LuListChecks />,
+      },
       {
         name: "Departments",
         to: path.to.departments,
