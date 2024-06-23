@@ -490,7 +490,7 @@ export async function getMethodOperations(
 ) {
   return client
     .from("methodOperation")
-    .select("*")
+    .select("*, methodOperationWorkInstruction(content)")
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
 }

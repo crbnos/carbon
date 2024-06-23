@@ -32,3 +32,33 @@ CREATE TRIGGER create_part_make_method_related_records
 
 
 ALTER TABLE "methodOperation" ALTER COLUMN "description" SET NOT NULL;
+
+CREATE TABLE "methodOperationWorkInstruction" (
+  "methodOperationId" TEXT NOT NULL,
+  "content" JSON DEFAULT '{"type": "doc","content": [{"type": "heading","attrs": {"level": 2},"content": [{"type": "text","text": "Work Instructions"}]},{"type": "paragraph"}]}'::json,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "methodOperationWorkInstruction_pkey" PRIMARY KEY ("methodOperationId"),
+  CONSTRAINT "methodOperationWorkInstruction_methodOperationId_fkey" FOREIGN KEY ("methodOperationId") REFERENCES "methodOperation" ("id") ON DELETE CASCADE,
+  CONSTRAINT "methodOperationWorkInstruction_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE ON DELETE SET NULL,
+  CONSTRAINT "methodOperationWorkInstruction_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+CREATE FUNCTION public.create_method_operation_work_instruction()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public."methodOperationWorkInstruction"("methodOperationId", "createdBy", "companyId")
+  VALUES (new."id", new."createdBy", new."companyId");
+  
+  
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER create_part_make_method_related_records
+  AFTER INSERT on public."methodOperation"
+  FOR EACH ROW EXECUTE PROCEDURE public.create_method_operation_work_instruction();

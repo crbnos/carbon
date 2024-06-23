@@ -469,7 +469,6 @@ export async function getUserClaims(userId: string) {
   } finally {
     // if we don't have permissions from redis, get them from the database
     if (!claims) {
-      console.log("refetching claims from db");
       // TODO: remove service role from here, and move it up a level
       const rawClaims = await getClaims(getSupabaseServiceRole(), userId);
       if (rawClaims.error || rawClaims.data === null) {

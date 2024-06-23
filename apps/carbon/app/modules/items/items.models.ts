@@ -2,6 +2,17 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { standardFactorType } from "../shared";
 
+export const defaultWorkInstruction = {
+  type: "doc",
+  content: [
+    {
+      type: "heading",
+      attrs: { level: 2 },
+      content: [{ type: "text", text: "Work Instructions" }],
+    },
+    { type: "paragraph" },
+  ],
+};
 export const itemInventoryTypes = ["Inventory", "Non-Inventory"] as const;
 export const partReplenishmentSystems = [
   "Buy",
