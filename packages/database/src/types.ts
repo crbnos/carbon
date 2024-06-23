@@ -7514,6 +7514,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          customFields: Json | null
           id: string
           itemId: string
           updatedAt: string | null
@@ -7523,6 +7524,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          customFields?: Json | null
           id?: string
           itemId: string
           updatedAt?: string | null
@@ -7532,6 +7534,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          customFields?: Json | null
           id?: string
           itemId?: string
           updatedAt?: string | null
