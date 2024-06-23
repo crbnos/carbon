@@ -69,7 +69,7 @@ export default function ContactForm() {
           </Button>
         </form>
       </Form>
-      <Toaster richColors />
+      <Toaster />
     </>
   );
 }

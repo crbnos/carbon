@@ -13,6 +13,7 @@ export const defaultWorkInstruction = {
     { type: "paragraph" },
   ],
 };
+
 export const itemInventoryTypes = ["Inventory", "Non-Inventory"] as const;
 export const partReplenishmentSystems = [
   "Buy",
