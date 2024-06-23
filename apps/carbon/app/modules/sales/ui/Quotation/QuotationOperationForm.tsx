@@ -205,6 +205,7 @@ const QuotationOperationForm = ({
                 label="Production Standard"
                 minValue={0}
               />
+              {/* TODO: this should be controlled when the work center changes */}
               <StandardFactor name="standardFactor" label="Standard Factor" />
 
               <NumberControlled

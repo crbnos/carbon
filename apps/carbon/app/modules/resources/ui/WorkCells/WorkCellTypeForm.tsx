@@ -107,6 +107,7 @@ const WorkCellTypeForm = ({
                 <StandardFactor
                   name="defaultStandardFactor"
                   label="Default Standard Factor"
+                  value={initialValues.defaultStandardFactor}
                 />
                 <CustomFormFields table="workCellType" />
               </VStack>

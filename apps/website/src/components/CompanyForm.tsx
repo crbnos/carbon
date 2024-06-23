@@ -154,7 +154,7 @@ export default function CompanyForm() {
           </Card>
         </form>
       </Form>
-      <Toaster richColors />
+      <Toaster />
     </>
   );
 }

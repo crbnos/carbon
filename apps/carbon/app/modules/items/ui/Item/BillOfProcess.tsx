@@ -89,7 +89,10 @@ const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
 const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   const { supabase } = useSupabase();
   const sortOrderFetcher = useFetcher();
-  const { id: userId } = useUser();
+  const {
+    id: userId,
+    company: { id: companyId },
+  } = useUser();
 
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(operations ?? [])
@@ -218,6 +221,25 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
       .eq("methodOperationId", selectedItemId!);
   }, 1000);
 
+  const onUploadImage = async (file: File) => {
+    const fileName = `${companyId}/parts/${selectedItemId}/${Math.random()
+      .toString(16)
+      .slice(2)}-${file.name}`;
+    const result = await supabase?.storage
+      .from("private")
+      .upload(fileName, file);
+
+    if (result?.error) {
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return `/file/preview/private/${result.data.path}`;
+  };
+
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,
@@ -274,6 +296,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
                   item.data.methodOperationWorkInstruction?.content ??
                   ({} as JSONContent)
                 }
+                onUpload={onUploadImage}
                 onChange={onUpdateWorkInstruction}
               />
             </motion.div>
@@ -467,9 +490,11 @@ function OperationForm({
   const [workCellData, setWorkCellData] = useState<{
     workCellTypeId: string;
     description: string;
+    standardFactor: string;
   }>({
     workCellTypeId: item.data.workCellTypeId ?? "",
     description: item.data.description ?? "",
+    standardFactor: item.data.standardFactor ?? "Hours/Piece",
   });
 
   const onWorkCellChange = async (workCellTypeId: string) => {
@@ -485,6 +510,7 @@ function OperationForm({
     setWorkCellData({
       workCellTypeId,
       description: data?.name ?? "",
+      standardFactor: data?.defaultStandardFactor ?? "Hours/Piece",
     });
   };
 
@@ -590,7 +616,17 @@ function OperationForm({
           label="Production Standard"
           minValue={0}
         />
-        <StandardFactor name="standardFactor" label="Standard Factor" />
+        <StandardFactor
+          name="standardFactor"
+          label="Standard Factor"
+          value={workCellData.standardFactor}
+          onChange={(newValue) => {
+            setWorkCellData((d) => ({
+              ...d,
+              standardFactor: newValue?.value ?? "Hours/Piece",
+            }));
+          }}
+        />
       </div>
       <motion.div
         className="flex w-full items-center justify-end p-2"
@@ -602,7 +638,7 @@ function OperationForm({
           duration: 0.55,
         }}
       >
-        <motion.div layout className="ml-auto mr-1  pt-2">
+        <motion.div layout className="ml-auto mr-1 pt-2">
           <Submit>Save</Submit>
         </motion.div>
       </motion.div>
