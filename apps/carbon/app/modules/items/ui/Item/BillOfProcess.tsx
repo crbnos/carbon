@@ -13,6 +13,7 @@ import {
   useDebounce,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
@@ -34,150 +35,20 @@ import {
 } from "~/components/Form";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
+import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import {
+  defaultWorkInstruction,
   methodOperationOrders,
   methodOperationValidator,
 } from "../../items.models";
 
-export const workInstructions = {
-  type: "doc",
-  content: [
-    {
-      type: "heading",
-      attrs: {
-        level: 2,
-      },
-      content: [
-        {
-          type: "text",
-          text: "Work Instruction",
-        },
-      ],
-    },
-    {
-      type: "heading",
-      attrs: {
-        level: 3,
-      },
-      content: [
-        {
-          type: "text",
-          text: "Setup ",
-        },
-      ],
-    },
-    {
-      type: "paragraph",
-      content: [
-        {
-          type: "text",
-          text: "I'm baby letterpress franzen palo santo offal. XOXO lumbersexual farm-to-table mustache neutra selfies chillwave aesthetic green juice blue bottle letterpress fanny pack try-hard gorpcore. Selvage marfa butcher kale chips craft beer fashion axe lumbersexual mlkshk truffaut etsy same salvia activated charcoal kogi woke. Hoodie green juice put a bird on it, echo park swag disrupt ugh air plant vaporware vice hammock.",
-        },
-      ],
-    },
-    {
-      type: "taskList",
-      content: [
-        {
-          type: "taskItem",
-          attrs: {
-            checked: false,
-          },
-          content: [
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-
-                  text: "Slow-carb fam same vexillologist bitters.",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          type: "taskItem",
-          attrs: {
-            checked: false,
-          },
-          content: [
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-
-                  text: "Roof party franzen slow-carb heirloom viral small batch. ",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          type: "taskItem",
-          attrs: {
-            checked: false,
-          },
-          content: [
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-
-                  text: "Bitters next level listicle, +1 same godard 90's big mood heirloom shabby chic hella.",
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      type: "heading",
-      attrs: {
-        level: 3,
-      },
-      content: [
-        {
-          type: "text",
-          text: "Run",
-        },
-      ],
-    },
-    {
-      type: "taskList",
-      content: [
-        {
-          type: "taskItem",
-          attrs: {
-            checked: false,
-          },
-          content: [
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-
-                  text: "DIY enamel pin viral ramps banjo DSA chartreuse.",
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      type: "paragraph",
-    },
-  ],
+type Operation = z.infer<typeof methodOperationValidator> & {
+  methodOperationWorkInstruction: {
+    content: JSONContent | null;
+  };
 };
-
-type Operation = z.infer<typeof methodOperationValidator>;
 
 type ItemWithData = Item & {
   data: Operation;
@@ -210,11 +81,15 @@ const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
   productionStandard: 0,
   standardFactor: "Hours/Piece",
   operationOrder: "After Previous",
+  methodOperationWorkInstruction: {
+    content: defaultWorkInstruction,
+  },
 };
 
 const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   const { supabase } = useSupabase();
   const sortOrderFetcher = useFetcher();
+  const { id: userId } = useUser();
 
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(operations ?? [])
@@ -317,6 +192,32 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     });
   }, []);
 
+  const onUpdateWorkInstruction = useDebounce(async (content: JSONContent) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === selectedItemId
+          ? {
+              ...item,
+              data: {
+                ...item.data,
+                methodOperationWorkInstruction: {
+                  content,
+                },
+              },
+            }
+          : item
+      )
+    );
+    await supabase
+      ?.from("methodOperationWorkInstruction")
+      .update({
+        content,
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId,
+      })
+      .eq("methodOperationId", selectedItemId!);
+  }, 1000);
+
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,
@@ -369,8 +270,11 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
               }}
             >
               <Editor
-                initialValue={workInstructions as JSONContent}
-                onChange={(value) => console.log(value)}
+                initialValue={
+                  item.data.methodOperationWorkInstruction?.content ??
+                  ({} as JSONContent)
+                }
+                onChange={onUpdateWorkInstruction}
               />
             </motion.div>
           </div>
@@ -623,7 +527,17 @@ function OperationForm({
       onSubmit={(values) => {
         setItems((prevItems) =>
           prevItems.map((i) =>
-            i.id === item.id ? { ...makeItem(values), id: item.id } : i
+            i.id === item.id
+              ? {
+                  ...makeItem({
+                    ...values,
+                    methodOperationWorkInstruction: {
+                      content: i.data.methodOperationWorkInstruction?.content,
+                    },
+                  }),
+                  id: item.id,
+                }
+              : i
           )
         );
       }}
