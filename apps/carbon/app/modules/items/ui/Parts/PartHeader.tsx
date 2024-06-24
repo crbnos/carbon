@@ -1,9 +1,9 @@
-import { Enumerable, HStack, Heading, VStack } from "@carbon/react";
+import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { PartSummary } from "~/modules/items";
+import { MethodItemTypeIcon, type PartSummary } from "~/modules/items";
 import { path } from "~/utils/path";
 import { usePartNavigation } from "./usePartNavigation";
 
@@ -21,7 +21,9 @@ const PartHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Heading size="h2">{routeData?.partSummary?.id}</Heading>
-          <Enumerable value="Part" />
+          <Badge variant="secondary">
+            <MethodItemTypeIcon type="Part" />
+          </Badge>
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

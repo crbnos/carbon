@@ -7,7 +7,7 @@ import ItemForm from "./ItemForm";
 import ItemPlanningForm from "./ItemPlanningForm";
 import ItemPurchasingForm from "./ItemPurchasingForm";
 import ItemSalePriceForm from "./ItemSalePriceForm";
-import { MethodIcon } from "./MethodIcon";
+import { MethodIcon, MethodItemTypeIcon } from "./MethodIcon";
 import PickMethodForm from "./PickMethodForm";
 
 export {
@@ -21,5 +21,6 @@ export {
   ItemPurchasingForm,
   ItemSalePriceForm,
   MethodIcon,
+  MethodItemTypeIcon,
   PickMethodForm,
 };

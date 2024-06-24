@@ -80,13 +80,12 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
               />
             )}
             <Input name="name" label="Name" />
-            <TextArea name="description" label="Description" />
-
             <Select
               name="serviceType"
               label="Service Type"
               options={serviceTypeOptions}
             />
+            {isEditing && <TextArea name="description" label="Description" />}
 
             <Boolean name="active" label="Active" />
             <CustomFormFields table="service" />

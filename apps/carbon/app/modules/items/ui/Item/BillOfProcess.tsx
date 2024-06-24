@@ -1,6 +1,7 @@
 "use client";
 import type { JSONContent } from "@carbon/react";
 import {
+  Badge,
   Button,
   Card,
   CardAction,
@@ -69,6 +70,7 @@ function makeItem(operation: Operation): ItemWithData {
     text: operation.description ?? "",
     checked: false,
     order: operation.operationOrder,
+    details: <Badge variant="secondary">{operation.operationOrder}</Badge>,
     data: operation,
   };
 }
@@ -320,8 +322,8 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
           <div
             key={`${isOpen}`}
             className={cn(
-              "flex h-full w-full flex-col items-center justify-center gap-2 ",
-              isOpen ? "py-1 px-1" : "py-3 "
+              "flex h-full flex-col items-center justify-center gap-2 pl-2",
+              isOpen ? "py-1" : "py-3 "
             )}
           >
             <motion.button
@@ -420,7 +422,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     <Card>
       <HStack className="justify-between">
         <CardHeader>
-          <CardTitle>Bill of Processes</CardTitle>
+          <CardTitle>Bill of Process</CardTitle>
         </CardHeader>
 
         <CardAction>
