@@ -1,3 +1,4 @@
+import type { JSONContent } from "@carbon/react";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -9,11 +10,14 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, useLoaderData, useParams } from "@remix-run/react";
 import { redirect } from "remix-typedjson";
 
+import type { MethodItemType, MethodType } from "~/modules/items";
 import {
+  BillOfMaterial,
   BillOfProcess,
   PartManufacturingForm,
   getItemManufacturing,
   getMakeMethod,
+  getMethodMaterials,
   getMethodOperations,
   partManufacturingValidator,
   upsertItemManufacturing,
@@ -58,10 +62,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const methodOperations = await getMethodOperations(
-    client,
-    makeMethod.data.id
-  );
+  const [methodMaterials, methodOperations] = await Promise.all([
+    getMethodMaterials(client, makeMethod.data.id),
+    getMethodOperations(client, makeMethod.data.id),
+  ]);
   if (methodOperations.error) {
     throw redirect(
       path.to.partDetails(itemId),
@@ -71,14 +75,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+  if (methodMaterials.error) {
+    throw redirect(
+      path.to.partDetails(itemId),
+      await flash(
+        request,
+        error(methodMaterials.error, "Failed to load method materials")
+      )
+    );
+  }
 
   return json({
     partManufacturing: partManufacturing.data,
     makeMethod: makeMethod.data,
+    methodMaterials:
+      methodMaterials.data?.map((m) => ({
+        ...m,
+        methodType: m.methodType as MethodType,
+        itemType: m.itemType as MethodItemType,
+      })) ?? [],
     methodOperations:
       methodOperations.data?.map((operation) => ({
         ...operation,
         equipmentTypeId: operation.equipmentTypeId ?? undefined,
+        methodOperationWorkInstruction:
+          operation.methodOperationWorkInstruction as {
+            content: JSONContent | null;
+          },
       })) ?? [],
   });
 }
@@ -127,7 +150,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MakeMethodRoute() {
-  const { makeMethod, partManufacturing, methodOperations } =
+  const { makeMethod, methodMaterials, methodOperations, partManufacturing } =
     useLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -154,6 +177,11 @@ export default function MakeMethodRoute() {
               key={itemId}
               initialValues={manufacturingInitialValues}
             />
+            <BillOfMaterial
+              key={itemId}
+              makeMethodId={makeMethodId}
+              materials={methodMaterials}
+            />
             <BillOfProcess
               key={itemId}
               makeMethodId={makeMethodId}
@@ -165,7 +193,7 @@ export default function MakeMethodRoute() {
       <ResizableHandle withHandle />
       <ResizablePanel
         order={3}
-        minSize={20}
+        minSize={10}
         defaultSize={20}
         className="bg-card"
       >

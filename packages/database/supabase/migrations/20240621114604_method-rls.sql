@@ -1,6 +1,9 @@
 ALTER TABLE "makeMethod" ADD COLUMN "customFields" JSONB;
 ALTER TABLE "methodOperation" ADD COLUMN "customFields" JSONB;
 ALTER TABLE "methodMaterial" ADD COLUMN "customFields" JSONB;
+ALTER TABLE "methodMaterial" ADD COLUMN "itemReadableId" TEXT NOT NULL;
+ALTER TABLE "methodMaterial" ADD COLUMN "description" TEXT NOT NULL;
+ALTER TABLE "methodMaterial" ADD COLUMN "order" DOUBLE PRECISION NOT NULL DEFAULT 1;
 
 INSERT INTO "customFieldTable" ("table", "module", "name")
 VALUES 

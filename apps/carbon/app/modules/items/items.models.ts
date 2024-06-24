@@ -15,17 +15,14 @@ export const defaultWorkInstruction = {
 };
 
 export const itemInventoryTypes = ["Inventory", "Non-Inventory"] as const;
-export const partReplenishmentSystems = [
-  "Buy",
-  "Make",
-  "Buy and Make",
-] as const;
+
 export const itemCostingMethods = [
   "Standard",
   "Average",
   "FIFO",
   "LIFO",
 ] as const;
+
 export const itemReorderingPolicies = [
   "Manual Reorder",
   "Demand-Based Reorder",
@@ -33,9 +30,26 @@ export const itemReorderingPolicies = [
   "Maximum Quantity",
 ] as const;
 
+export const methodItemType = [
+  "Part",
+  "Material",
+  "Tool",
+  "Fixture",
+  "Consumable",
+  "Service",
+] as const;
+
+export const methodType = ["Buy", "Make", "Pick"] as const;
+
 export const methodOperationOrders = [
   "After Previous",
   "With Previous",
+] as const;
+
+export const partReplenishmentSystems = [
+  "Buy",
+  "Make",
+  "Buy and Make",
 ] as const;
 
 export const partManufacturingPolicies = [
@@ -101,6 +115,29 @@ export const materialValidator = itemValidator.merge(
     dimensions: z.string().optional(),
   })
 );
+
+export const methodMaterialValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  makeMethodId: z.string().min(20, { message: "Make method is required" }),
+  order: zfd.numeric(z.number().min(0)),
+  itemType: z.enum(methodItemType, {
+    errorMap: (issue, ctx) => ({
+      message: "Item type is required",
+    }),
+  }),
+  methodType: z.enum(methodType, {
+    errorMap: (issue, ctx) => ({
+      message: "Method type is required",
+    }),
+  }),
+  itemId: z.string().min(20, { message: "Item is required" }),
+  itemReadableId: z.string().min(1, { message: "Item ID is required" }),
+  description: z.string().min(1, { message: "Description is required" }),
+  quantity: zfd.numeric(z.number().min(0)),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of Measure is required" }),
+});
 
 export const methodOperationValidator = z.object({
   id: zfd.text(z.string().optional()),

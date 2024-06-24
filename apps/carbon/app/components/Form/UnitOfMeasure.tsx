@@ -26,7 +26,7 @@ const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
-        label={props?.label ?? "Item Group"}
+        label={props?.label ?? "Unit of Measure"}
         onCreateOption={(option) => {
           newUnitOfMeasureModal.onOpen();
           setCreated(option);

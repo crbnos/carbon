@@ -20,6 +20,7 @@ import { Outlet, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuPlus, LuSearch } from "react-icons/lu";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import type { MethodType } from "~/modules/items";
 import { MethodIcon } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 
@@ -34,7 +35,7 @@ type Method = {
     readableId: string;
     description: string;
     quantity: number;
-    fulfillmentMethod: "Buy" | "Make" | "Pick";
+    fulfillmentMethod: MethodType;
     isInherited: boolean;
     isRoot: boolean;
   };
@@ -131,7 +132,7 @@ export default function PartManufacturing() {
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel
               order={1}
-              minSize={20}
+              minSize={10}
               defaultSize={20}
               className="bg-card"
             >

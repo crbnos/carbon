@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import type { methodItemType, methodType } from "./items.models";
 import type {
   getBuyMethods,
   getConsumables,
@@ -70,6 +71,8 @@ export type Material = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
 >[number];
 
+export type MethodItemType = (typeof methodItemType)[number];
+
 export type MethodMaterial = NonNullable<
   Awaited<ReturnType<typeof getMethodMaterials>>["data"]
 >[number];
@@ -77,6 +80,8 @@ export type MethodMaterial = NonNullable<
 export type MethodOperation = NonNullable<
   Awaited<ReturnType<typeof getMethodOperations>>["data"]
 >[number];
+
+export type MethodType = (typeof methodType)[number];
 
 export type Part = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
