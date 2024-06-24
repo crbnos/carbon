@@ -1,8 +1,6 @@
 ALTER TABLE "itemReplenishment" DROP COLUMN "manufacturingPolicy";
 DROP TYPE "partManufacturingPolicy";
 
-ALTER TABLE "item" ADD COLUMN "pullFromInventory" BOOLEAN NOT NULL DEFAULT false;
-
 CREATE TABLE "makeMethod" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "itemId" TEXT NOT NULL,
@@ -85,11 +83,7 @@ CREATE TABLE "methodOperation" (
   CONSTRAINT "methodOperation_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
-CREATE TYPE "methodType" AS ENUM (
-  'Buy',
-  'Make',
-  'Pick'
-);
+
 
 CREATE TABLE "methodMaterial" (
   "id" TEXT NOT NULL DEFAULT xid(),

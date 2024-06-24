@@ -24,22 +24,22 @@ import {
   TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { itemGroupValidator } from "~/modules/items";
+import { itemPostingGroupValidator } from "~/modules/items";
 import { path } from "~/utils/path";
 
-type ItemGroupFormProps = {
-  initialValues: z.infer<typeof itemGroupValidator>;
+type ItemPostingGroupFormProps = {
+  initialValues: z.infer<typeof itemPostingGroupValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: (data?: { id: string; name: string }) => void;
 };
 
-const ItemGroupForm = ({
+const ItemPostingGroupForm = ({
   initialValues,
   open = true,
   type = "drawer",
   onClose,
-}: ItemGroupFormProps) => {
+}: ItemPostingGroupFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string; name: string }>>();
 
@@ -69,12 +69,12 @@ const ItemGroupForm = ({
       >
         <ModalDrawerContent>
           <ValidatedForm
-            validator={itemGroupValidator}
+            validator={itemPostingGroupValidator}
             method="post"
             action={
               isEditing
-                ? path.to.itemGroup(initialValues.id!)
-                : path.to.newItemGroup
+                ? path.to.itemPostingGroup(initialValues.id!)
+                : path.to.newItemPostingGroup
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -91,7 +91,7 @@ const ItemGroupForm = ({
               <VStack spacing={4}>
                 <Input name="name" label="Name" />
                 <TextArea name="description" label="Description" />
-                <CustomFormFields table="itemGroup" />
+                <CustomFormFields table="itemPostingGroup" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -109,4 +109,4 @@ const ItemGroupForm = ({
   );
 };
 
-export default ItemGroupForm;
+export default ItemPostingGroupForm;

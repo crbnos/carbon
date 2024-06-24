@@ -165,26 +165,29 @@ const Table = <T extends object>({
       // These are not part of the standard API, but are accessible via table.options.meta
       editableComponents,
       updateData: (rowIndex, updates) => {
-        setInternalData((previousData) =>
-          previousData.map((row, index) => {
+        setInternalData((previousData) => {
+          const newData = previousData.map((row, index) => {
             if (index === rowIndex) {
-              let newRow = { ...row };
-              Object.entries(updates).forEach(([columnId, value]) => {
-                if (columnId.includes("_") && !(columnId in newRow)) {
-                  updateNestedProperty(newRow, columnId, value);
-                  return newRow;
-                } else {
-                  return {
-                    ...newRow,
-                    [columnId]: value,
-                  };
-                }
-              });
-              return newRow;
+              return Object.entries(updates).reduce(
+                (newRow, [columnId, value]) => {
+                  if (columnId.includes("_") && !(columnId in newRow)) {
+                    updateNestedProperty(newRow, columnId, value);
+                    return newRow;
+                  } else {
+                    return {
+                      ...newRow,
+                      [columnId]: value,
+                    };
+                  }
+                },
+                row
+              );
             }
             return row;
-          })
-        );
+          });
+
+          return newData;
+        });
       },
     },
   });

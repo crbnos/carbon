@@ -6,10 +6,10 @@ import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
 type PartSelectProps = Omit<ComboboxProps, "options"> & {
-  partReplenishmentSystem?: ItemReplenishmentSystem;
+  itemReplenishmentSystem?: ItemReplenishmentSystem;
 };
 
-const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
+const Part = ({ itemReplenishmentSystem, ...props }: PartSelectProps) => {
   const parts = useParts();
   const newPartsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
@@ -49,10 +49,10 @@ const Part = ({ partReplenishmentSystem, ...props }: PartSelectProps) => {
             id: "",
             name: created,
             description: "",
-            itemInventoryType: "Inventory" as "Inventory",
-            replenishmentSystem: partReplenishmentSystem ?? "Buy and Make",
+            itemTrackingType: "Inventory" as "Inventory",
+            replenishmentSystem: itemReplenishmentSystem ?? "Buy and Make",
+            defaultMethodType: "Buy",
             unitOfMeasureCode: "EA",
-            pullFromInventory: false,
             active: true,
           }}
         />

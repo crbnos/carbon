@@ -3,10 +3,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import {
-  ItemGroupForm,
-  getItemGroup,
-  itemGroupValidator,
-  upsertItemGroup,
+  ItemPostingGroupForm,
+  getItemPostingGroup,
+  itemPostingGroupValidator,
+  upsertItemPostingGroup,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -24,10 +24,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const itemGroup = await getItemGroup(client, groupId);
+  const itemPostingGroup = await getItemPostingGroup(client, groupId);
 
   return json({
-    itemGroup: itemGroup?.data ?? null,
+    itemPostingGroup: itemPostingGroup?.data ?? null,
   });
 }
 
@@ -41,48 +41,50 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!groupId) throw new Error("Could not find groupId");
 
   const formData = await request.formData();
-  const validation = await validator(itemGroupValidator).validate(formData);
+  const validation = await validator(itemPostingGroupValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const updateItemGroup = await upsertItemGroup(client, {
+  const updateItemPostingGroup = await upsertItemPostingGroup(client, {
     id: groupId,
     ...validation.data,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (updateItemGroup.error) {
+  if (updateItemPostingGroup.error) {
     return json(
       {},
       await flash(
         request,
-        error(updateItemGroup.error, "Failed to update item group")
+        error(updateItemPostingGroup.error, "Failed to update item group")
       )
     );
   }
 
   throw redirect(
-    `${path.to.itemGroups}?${getParams(request)}`,
+    `${path.to.itemPostingGroups}?${getParams(request)}`,
     await flash(request, success("Updated item group"))
   );
 }
 
-export default function EditItemGroupsRoute() {
-  const { itemGroup } = useLoaderData<typeof loader>();
+export default function EditItemPostingGroupsRoute() {
+  const { itemPostingGroup } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   const initialValues = {
-    id: itemGroup?.id ?? undefined,
-    name: itemGroup?.name ?? "",
-    description: itemGroup?.description ?? "",
-    ...getCustomFields(itemGroup?.customFields),
+    id: itemPostingGroup?.id ?? undefined,
+    name: itemPostingGroup?.name ?? "",
+    description: itemPostingGroup?.description ?? "",
+    ...getCustomFields(itemPostingGroup?.customFields),
   };
 
   return (
-    <ItemGroupForm
+    <ItemPostingGroupForm
       key={initialValues.id}
       initialValues={initialValues}
       onClose={() => navigate(-1)}

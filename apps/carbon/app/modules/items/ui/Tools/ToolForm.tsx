@@ -21,14 +21,14 @@ import {
   Hidden,
   Input,
   InputControlled,
-  ItemGroup,
+  ItemPostingGroup,
   Select,
   Submit,
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
 import { useNextItemId, usePermissions } from "~/hooks";
-import { itemInventoryTypes, toolValidator } from "~/modules/items";
+import { itemTrackingTypes, toolValidator } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type ToolFormProps = {
@@ -59,10 +59,10 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
-  const itemInventoryTypeOptions =
-    itemInventoryTypes.map((itemInventoryType) => ({
-      label: itemInventoryType,
-      value: itemInventoryType,
+  const itemTrackingTypeOptions =
+    itemTrackingTypes.map((itemTrackingType) => ({
+      label: itemTrackingType,
+      value: itemTrackingType,
     })) ?? [];
 
   return (
@@ -115,9 +115,9 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
 
                 <Input name="name" label="Name" />
                 <Select
-                  name="itemInventoryType"
+                  name="itemTrackingType"
                   label="Tracking Type"
-                  options={itemInventoryTypeOptions}
+                  options={itemTrackingTypeOptions}
                 />
                 {isEditing && (
                   <TextArea name="description" label="Description" />
@@ -127,7 +127,10 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
+                <ItemPostingGroup
+                  name="itemPostingGroupId"
+                  label="Posting Group"
+                />
 
                 <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />

@@ -1,20 +1,20 @@
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
-import type { getItemGroupsList } from "~/modules/items";
-import { ItemGroupForm } from "~/modules/items";
+import type { getItemPostingGroupsList } from "~/modules/items";
+import { ItemPostingGroupForm } from "~/modules/items";
 import { path } from "~/utils/path";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
-type ItemGroupSelectProps = Omit<ComboboxProps, "options">;
+type ItemPostingGroupSelectProps = Omit<ComboboxProps, "options">;
 
-const ItemGroup = (props: ItemGroupSelectProps) => {
-  const newItemGroupModal = useDisclosure();
+const ItemPostingGroup = (props: ItemPostingGroupSelectProps) => {
+  const newItemPostingGroupModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useItemGroups();
+  const options = useItemPostingGroups();
 
   return (
     <>
@@ -22,18 +22,18 @@ const ItemGroup = (props: ItemGroupSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
-        label={props?.label ?? "Item Group"}
+        label={props?.label ?? "Posting Group"}
         onCreateOption={(option) => {
-          newItemGroupModal.onOpen();
+          newItemPostingGroupModal.onOpen();
           setCreated(option);
         }}
       />
-      {newItemGroupModal.isOpen && (
-        <ItemGroupForm
+      {newItemPostingGroupModal.isOpen && (
+        <ItemPostingGroupForm
           type="modal"
           onClose={() => {
             setCreated("");
-            newItemGroupModal.onClose();
+            newItemPostingGroupModal.onClose();
             triggerRef.current?.click();
           }}
           initialValues={{
@@ -45,16 +45,16 @@ const ItemGroup = (props: ItemGroupSelectProps) => {
   );
 };
 
-ItemGroup.displayName = "ItemGroup";
+ItemPostingGroup.displayName = "ItemPostingGroup";
 
-export default ItemGroup;
+export default ItemPostingGroup;
 
-export const useItemGroups = () => {
+export const useItemPostingGroups = () => {
   const itemGroupFetcher =
-    useFetcher<Awaited<ReturnType<typeof getItemGroupsList>>>();
+    useFetcher<Awaited<ReturnType<typeof getItemPostingGroupsList>>>();
 
   useMount(() => {
-    itemGroupFetcher.load(path.to.api.itemGroups);
+    itemGroupFetcher.load(path.to.api.itemPostingGroups);
   });
 
   const options = useMemo(

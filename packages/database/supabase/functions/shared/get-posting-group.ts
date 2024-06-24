@@ -4,16 +4,16 @@ import { Database } from "../lib/types.ts";
 export async function getInventoryPostingGroup(
   client: SupabaseClient<Database>,
   args: {
-    itemGroupId: string | null;
+    itemPostingGroupId: string | null;
     locationId: string | null;
   }
 ) {
   let query = client.from("postingGroupInventory").select("*");
 
-  if (args.itemGroupId === null) {
-    query = query.is("itemGroupId", null);
+  if (args.itemPostingGroupId === null) {
+    query = query.is("itemPostingGroupId", null);
   } else {
-    query = query.eq("itemGroupId", args.itemGroupId);
+    query = query.eq("itemPostingGroupId", args.itemPostingGroupId);
   }
 
   if (args.locationId === null) {
@@ -28,16 +28,16 @@ export async function getInventoryPostingGroup(
 export async function getPurchasingPostingGroup(
   client: SupabaseClient<Database>,
   args: {
-    itemGroupId: string | null;
+    itemPostingGroupId: string | null;
     supplierTypeId: string | null;
   }
 ) {
   let query = client.from("postingGroupPurchasing").select("*");
 
-  if (args.itemGroupId === null) {
-    query = query.is("itemGroupId", null);
+  if (args.itemPostingGroupId === null) {
+    query = query.is("itemPostingGroupId", null);
   } else {
-    query = query.eq("itemGroupId", args.itemGroupId);
+    query = query.eq("itemPostingGroupId", args.itemPostingGroupId);
   }
 
   if (args.supplierTypeId === null) {

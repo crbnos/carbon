@@ -94,7 +94,11 @@ export default function MaterialostingRoute() {
   return (
     <ItemCostingForm
       key={itemCost.itemId}
-      initialValues={{ ...itemCost, ...getCustomFields(itemCost.customFields) }}
+      initialValues={{
+        ...itemCost,
+        itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
+        ...getCustomFields(itemCost.customFields),
+      }}
     />
   );
 }

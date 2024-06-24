@@ -21,14 +21,14 @@ import {
   Hidden,
   Input,
   InputControlled,
-  ItemGroup,
+  ItemPostingGroup,
   Select,
   Submit,
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
 import { useNextItemId, usePermissions } from "~/hooks";
-import { consumableValidator, itemInventoryTypes } from "~/modules/items";
+import { consumableValidator, itemTrackingTypes } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type ConsumableFormProps = {
@@ -63,10 +63,10 @@ const ConsumableForm = ({
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
-  const itemInventoryTypeOptions =
-    itemInventoryTypes.map((itemInventoryType) => ({
-      label: itemInventoryType,
-      value: itemInventoryType,
+  const itemTrackingTypeOptions =
+    itemTrackingTypes.map((itemTrackingType) => ({
+      label: itemTrackingType,
+      value: itemTrackingType,
     })) ?? [];
 
   return (
@@ -119,9 +119,9 @@ const ConsumableForm = ({
 
                 <Input name="name" label="Name" />
                 <Select
-                  name="itemInventoryType"
+                  name="itemTrackingType"
                   label="Tracking Type"
-                  options={itemInventoryTypeOptions}
+                  options={itemTrackingTypeOptions}
                 />
                 {isEditing && (
                   <TextArea name="description" label="Description" />
@@ -131,7 +131,10 @@ const ConsumableForm = ({
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
+                <ItemPostingGroup
+                  name="itemPostingGroupId"
+                  label="Posting Group"
+                />
 
                 <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />

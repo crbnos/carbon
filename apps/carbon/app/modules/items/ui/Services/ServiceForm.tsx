@@ -15,7 +15,7 @@ import {
   Hidden,
   Input,
   InputControlled,
-  ItemGroup,
+  ItemPostingGroup,
   Select,
   Submit,
   TextArea,
@@ -57,7 +57,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
           )}
         </CardHeader>
         <CardContent>
-          <Hidden name="itemInventoryType" value="Non-Inventory" />
+          <Hidden name="itemTrackingType" value="Non-Inventory" />
           <Hidden name="unitOfMeasureCode" value="EA" />
           <Hidden name="pullFromInventory" value="on" />
           <div
@@ -87,7 +87,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
               label="Service Type"
               options={serviceTypeOptions}
             />
-            <ItemGroup name="itemGroupId" label="Posting Group" />
+            <ItemPostingGroup name="itemPostingGroupId" label="Posting Group" />
 
             <Boolean name="active" label="Active" />
             <CustomFormFields table="service" />

@@ -2,7 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteItemGroup, getItemGroup } from "~/modules/items";
+import { deleteItemPostingGroup, getItemPostingGroup } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { notFound } from "~/utils/http";
@@ -16,15 +16,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const itemGroup = await getItemGroup(client, groupId);
-  if (itemGroup.error) {
+  const itemPostingGroup = await getItemPostingGroup(client, groupId);
+  if (itemPostingGroup.error) {
     throw redirect(
-      path.to.itemGroups,
-      await flash(request, error(itemGroup.error, "Failed to get item group"))
+      path.to.itemPostingGroups,
+      await flash(
+        request,
+        error(itemPostingGroup.error, "Failed to get item group")
+      )
     );
   }
 
-  return json({ itemGroup: itemGroup.data });
+  return json({ itemPostingGroup: itemPostingGroup.data });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -35,15 +38,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { groupId } = params;
   if (!groupId) {
     throw redirect(
-      path.to.itemGroups,
+      path.to.itemPostingGroups,
       await flash(request, error(params, "Failed to get an item group id"))
     );
   }
 
-  const { error: deleteTypeError } = await deleteItemGroup(client, groupId);
+  const { error: deleteTypeError } = await deleteItemPostingGroup(
+    client,
+    groupId
+  );
   if (deleteTypeError) {
     throw redirect(
-      `${path.to.itemGroups}?${getParams(request)}`,
+      `${path.to.itemPostingGroups}?${getParams(request)}`,
       await flash(
         request,
         error(deleteTypeError, "Failed to delete item group")
@@ -52,27 +58,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.itemGroups,
+    path.to.itemPostingGroups,
     await flash(request, success("Successfully deleted item group"))
   );
 }
 
-export default function DeleteItemGroupRoute() {
+export default function DeleteItemPostingGroupRoute() {
   const { groupId } = useParams();
   if (!groupId) throw new Error("groupId not found");
 
-  const { itemGroup } = useLoaderData<typeof loader>();
+  const { itemPostingGroup } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  if (!itemGroup) return null;
+  if (!itemPostingGroup) return null;
 
   const onCancel = () => navigate(-1);
 
   return (
     <ConfirmDelete
-      action={path.to.deleteItemGroup(groupId)}
-      name={itemGroup.name}
-      text={`Are you sure you want to delete the item group: ${itemGroup.name}? This cannot be undone.`}
+      action={path.to.deleteItemPostingGroup(groupId)}
+      name={itemPostingGroup.name}
+      text={`Are you sure you want to delete the item group: ${itemPostingGroup.name}? This cannot be undone.`}
       onCancel={onCancel}
     />
   );

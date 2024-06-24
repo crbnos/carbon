@@ -21,12 +21,12 @@ import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import {
+  DefaultMethodType,
   Hidden,
   InputControlled,
   Item,
   Number,
   Select,
-  SelectControlled,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
@@ -393,15 +393,11 @@ function MaterialForm({
   }>({
     itemId: item.data.itemId ?? "",
     itemReadableId: item.data.itemReadableId ?? "",
-    methodType: item.data.methodType ?? "",
+    methodType: item.data.methodType ?? "Buy",
     description: item.data.description ?? "",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
   });
-  const [methodTypeOptions, setMethodTypeOptions] = useState<MethodType[]>([
-    "Buy",
-    "Pick",
-  ]);
 
   const onTypeChange = (value: MethodItemType) => {
     setItemType(value);
@@ -422,76 +418,26 @@ function MaterialForm({
       return;
     }
 
-    switch (itemType) {
-      case "Part":
-        const [partItem, part] = await Promise.all([
-          supabase
-            .from("item")
-            .select("name, readableId, unitOfMeasureCode, pullFromInventory")
-            .eq("id", itemId)
-            .eq("companyId", company.id)
-            .single(),
-          supabase
-            .from("part")
-            .select("replenishmentSystem")
-            .eq("itemId", itemId)
-            .eq("companyId", company.id)
-            .single(),
-        ]);
-        let partMethodType: MethodType = "Buy";
+    const item = await supabase
+      .from("item")
+      .select("name, readableId, unitOfMeasureCode, defaultMethodType")
+      .eq("id", itemId)
+      .eq("companyId", company.id)
+      .single();
 
-        if (part.data?.replenishmentSystem === "Buy") {
-          setMethodTypeOptions(["Buy", "Pick"]);
-          partMethodType = partItem.data?.pullFromInventory ? "Pick" : "Buy";
-        }
-
-        if (part.data?.replenishmentSystem === "Make") {
-          setMethodTypeOptions(["Make", "Pick"]);
-          partMethodType = partItem.data?.pullFromInventory ? "Pick" : "Make";
-        }
-
-        if (part.data?.replenishmentSystem === "Buy and Make") {
-          setMethodTypeOptions(["Buy", "Make", "Pick"]);
-          partMethodType = partItem.data?.pullFromInventory ? "Pick" : "Make";
-        }
-
-        setItemData((d) => ({
-          ...d,
-          itemId,
-          itemReadableId: partItem.data?.readableId ?? "",
-          description: partItem.data?.name ?? "",
-          unitOfMeasureCode: partItem.data?.unitOfMeasureCode ?? "EA",
-          methodType: partMethodType,
-        }));
-        break;
-      case "Consumable":
-      case "Material":
-      case "Tool":
-      case "Fixture":
-        const item = await supabase
-          .from("item")
-          .select("name, readableId, unitOfMeasureCode, pullFromInventory")
-          .eq("id", itemId)
-          .eq("companyId", company.id)
-          .single();
-
-        setMethodTypeOptions(["Buy", "Pick"]);
-        const methodType = item.data?.pullFromInventory ? "Pick" : "Buy";
-
-        setItemData((d) => ({
-          ...d,
-          itemId,
-          itemReadableId: item.data?.readableId ?? "",
-          description: item.data?.name ?? "",
-          unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
-          methodType: methodType,
-        }));
-        break;
-      case "Service":
-        break;
-      default:
-        throw new Error(`Invalid item type: ${itemType}`);
+    if (item.error) {
+      toast.error("Failed to load item details");
+      return;
     }
+
+    setItemData((d) => ({
+      ...d,
+      itemId,
+      itemReadableId: item.data?.readableId ?? "",
+      description: item.data?.name ?? "",
+      unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
+      methodType: item.data?.defaultMethodType ?? "Buy",
+    }));
   };
 
   return (
@@ -545,20 +491,11 @@ function MaterialForm({
               onItemChange(value?.value as string);
             }}
           />
-          <SelectControlled
+          <DefaultMethodType
             name="methodType"
-            label="Method"
+            label="Method Type"
             value={itemData.methodType}
-            options={methodTypeOptions.map((value) => ({
-              value,
-              label: value,
-            }))}
-            onChange={(newValue) =>
-              setItemData((d) => ({
-                ...d,
-                methodType: (newValue?.value ?? "Buy") as MethodType,
-              }))
-            }
+            replenishmentSystem="Buy and Make"
           />
           <InputControlled
             name="description"

@@ -5,8 +5,8 @@ import type {
   getConsumables,
   getFixtures,
   getItemCost,
-  getItemGroups,
-  getItemGroupsList,
+  getItemPostingGroups,
+  getItemPostingGroupsList,
   getItemQuantities,
   getMaterialForms,
   getMaterialSubstances,
@@ -42,12 +42,12 @@ export type ItemCost = NonNullable<
 export type ItemCostingMethod =
   Database["public"]["Enums"]["itemCostingMethod"];
 
-export type ItemGroup = NonNullable<
-  Awaited<ReturnType<typeof getItemGroups>>["data"]
+export type ItemPostingGroup = NonNullable<
+  Awaited<ReturnType<typeof getItemPostingGroups>>["data"]
 >[number];
 
-export type ItemGroupListItem = NonNullable<
-  Awaited<ReturnType<typeof getItemGroupsList>>["data"]
+export type ItemPostingGroupListItem = NonNullable<
+  Awaited<ReturnType<typeof getItemPostingGroupsList>>["data"]
 >[number];
 
 export type ItemQuantities = NonNullable<
@@ -64,8 +64,7 @@ export type BuyMethod = NonNullable<
   Awaited<ReturnType<typeof getBuyMethods>>["data"]
 >[number];
 
-export type InventoryItemType =
-  Database["public"]["Enums"]["itemInventoryType"];
+export type InventoryItemType = Database["public"]["Enums"]["itemTrackingType"];
 
 export type Material = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]

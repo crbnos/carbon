@@ -55,10 +55,10 @@ export default function PartsNewRoute() {
     id: "",
     name: "",
     description: "",
-    itemInventoryType: "Inventory" as "Inventory",
+    itemTrackingType: "Inventory" as "Inventory",
     replenishmentSystem: "Buy" as "Buy",
+    defaultMethodType: "Buy" as "Buy",
     unitOfMeasureCode: "EA",
-    pullFromInventory: false,
     active: true,
   };
 

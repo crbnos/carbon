@@ -1978,7 +1978,7 @@ export const paymentTerms: Omit<
 ];
 
 export const postingGroupInventory = {
-  itemGroupId: null,
+  itemPostingGroupId: null,
   locationId: null,
   costOfGoodsSoldAccount: getDefaultAccount("costOfGoodsSoldAccount"),
   inventoryAccount: getDefaultAccount("inventoryAccount"),
@@ -2008,7 +2008,7 @@ export const postingGroupInventory = {
 };
 
 export const postingGroupPurchasing = {
-  itemGroupId: null,
+  itemPostingGroupId: null,
   supplierTypeId: null,
   payablesAccount: getDefaultAccount("payablesAccount"),
   purchaseAccount: getDefaultAccount("purchaseAccount"),
@@ -2020,7 +2020,7 @@ export const postingGroupPurchasing = {
 };
 
 export const postingGroupSales = {
-  itemGroupId: null,
+  itemPostingGroupId: null,
   customerTypeId: null,
   receivablesAccount: getDefaultAccount("receivablesAccount"),
   salesAccount: getDefaultAccount("salesAccount"),

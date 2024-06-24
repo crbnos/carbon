@@ -68,12 +68,13 @@ export default function ConsumableDetailsRoute() {
     itemId: consumableData.consumableSummary?.itemId ?? "",
     name: consumableData.consumableSummary?.name ?? "",
     description: consumableData.consumableSummary?.description ?? "",
-    itemGroupId: consumableData.consumableSummary?.itemGroupId ?? "",
-    itemInventoryType:
-      consumableData.consumableSummary?.itemInventoryType ?? "Inventory",
+    replenishmentSystem:
+      consumableData.consumableSummary?.replenishmentSystem ?? "Buy",
+    defaultMethodType:
+      consumableData.consumableSummary?.defaultMethodType ?? "Buy",
+    itemTrackingType:
+      consumableData.consumableSummary?.itemTrackingType ?? "Inventory",
     active: consumableData.consumableSummary?.active ?? true,
-    pullFromInventory:
-      consumableData.consumableSummary?.pullFromInventory ?? false,
     unitOfMeasureCode:
       consumableData.consumableSummary?.unitOfMeasureCode ?? "EA",
     ...getCustomFields(consumableData.consumableSummary?.customFields ?? {}),

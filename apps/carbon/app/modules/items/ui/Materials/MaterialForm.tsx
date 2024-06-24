@@ -14,15 +14,15 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
+  DefaultMethodType,
   Hidden,
   Input,
   InputControlled,
-  ItemGroup,
   Select,
   Submit,
   TextArea,
@@ -33,7 +33,7 @@ import type {
   getMaterialFormsList,
   getMaterialSubstancesList,
 } from "~/modules/items";
-import { itemInventoryTypes, materialValidator } from "~/modules/items";
+import { itemTrackingTypes, materialValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -71,10 +71,14 @@ const MaterialForm = ({
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
-  const itemInventoryTypeOptions =
-    itemInventoryTypes.map((itemInventoryType) => ({
-      label: itemInventoryType,
-      value: itemInventoryType,
+  const [defaultMethodType, setDefaultMethodType] = useState<string>(
+    initialValues.defaultMethodType ?? "Buy"
+  );
+
+  const itemTrackingTypeOptions =
+    itemTrackingTypes.map((itemTrackingType) => ({
+      label: itemTrackingType,
+      value: itemTrackingType,
     })) ?? [];
 
   return (
@@ -101,6 +105,7 @@ const MaterialForm = ({
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
+              <Hidden name="replenishmentSystem" value="Buy" />
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -140,17 +145,25 @@ const MaterialForm = ({
                 <Input name="dimensions" label="Dimensions" />
 
                 <Select
-                  name="itemInventoryType"
+                  name="itemTrackingType"
                   label="Tracking Type"
-                  options={itemInventoryTypeOptions}
+                  options={itemTrackingTypeOptions}
+                />
+
+                <DefaultMethodType
+                  name="defaultMethodType"
+                  label="Default Method Type"
+                  replenishmentSystem="Buy"
+                  value={defaultMethodType}
+                  onChange={(newValue) =>
+                    setDefaultMethodType(newValue?.value ?? "Buy")
+                  }
                 />
                 <UnitOfMeasure
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
 
-                <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="material" />

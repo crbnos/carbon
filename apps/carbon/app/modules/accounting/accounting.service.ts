@@ -472,16 +472,16 @@ export async function getFiscalYearSettings(
 export async function getInventoryPostingGroup(
   client: SupabaseClient<Database>,
   args: {
-    itemGroupId: string | null;
+    itemPostingGroupId: string | null;
     locationId: string | null;
   }
 ) {
   let query = client.from("postingGroupInventory").select("*");
 
-  if (args.itemGroupId === null) {
-    query = query.is("itemGroupId", null);
+  if (args.itemPostingGroupId === null) {
+    query = query.is("itemPostingGroupId", null);
   } else {
-    query = query.eq("itemGroupId", args.itemGroupId);
+    query = query.eq("itemPostingGroupId", args.itemPostingGroupId);
   }
 
   if (args.locationId === null) {
@@ -506,7 +506,7 @@ export async function getInventoryPostingGroups(
     .eq("companyId", companyId);
 
   query = setGenericQueryFilters(query, args, [
-    { column: "itemGroupId", ascending: false },
+    { column: "itemPostingGroupId", ascending: false },
   ]);
   return query;
 }
@@ -562,16 +562,16 @@ export async function getPaymentTermsList(
 export async function getPurchasingPostingGroup(
   client: SupabaseClient<Database>,
   args: {
-    itemGroupId: string | null;
+    itemPostingGroupId: string | null;
     supplierTypeId: string | null;
   }
 ) {
   let query = client.from("postingGroupInventory").select("*");
 
-  if (args.itemGroupId === null) {
-    query = query.is("itemGroupId", null);
+  if (args.itemPostingGroupId === null) {
+    query = query.is("itemPostingGroupId", null);
   } else {
-    query = query.eq("itemGroupId", args.itemGroupId);
+    query = query.eq("itemPostingGroupId", args.itemPostingGroupId);
   }
 
   if (args.supplierTypeId === null) {
@@ -596,7 +596,7 @@ export async function getPurchasingPostingGroups(
     .eq("companyId", companyId);
 
   query = setGenericQueryFilters(query, args, [
-    { column: "itemGroupId", ascending: false },
+    { column: "itemPostingGroupId", ascending: false },
   ]);
   return query;
 }
@@ -604,16 +604,16 @@ export async function getPurchasingPostingGroups(
 export async function getPurchasingSalesGroup(
   client: SupabaseClient<Database>,
   args: {
-    itemGroupId: string | null;
+    itemPostingGroupId: string | null;
     customerTypeId: string | null;
   }
 ) {
   let query = client.from("postingGroupInventory").select("*");
 
-  if (args.itemGroupId === null) {
-    query = query.is("itemGroupId", null);
+  if (args.itemPostingGroupId === null) {
+    query = query.is("itemPostingGroupId", null);
   } else {
-    query = query.eq("itemGroupId", args.itemGroupId);
+    query = query.eq("itemPostingGroupId", args.itemPostingGroupId);
   }
 
   if (args.customerTypeId === null) {
@@ -638,7 +638,7 @@ export async function getSalesPostingGroups(
     .eq("companyId", companyId);
 
   query = setGenericQueryFilters(query, args, [
-    { column: "itemGroupId", ascending: false },
+    { column: "itemPostingGroupId", ascending: false },
   ]);
   return query;
 }

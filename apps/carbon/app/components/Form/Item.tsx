@@ -1,7 +1,13 @@
 import type { Database } from "@carbon/database";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { PartForm, ToolForm } from "~/modules/items";
+import {
+  ConsumableForm,
+  FixtureForm,
+  MaterialForm,
+  PartForm,
+  ToolForm,
+} from "~/modules/items";
 import { useItems } from "~/stores";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
@@ -9,6 +15,7 @@ import CreatableCombobox from "./CreatableCombobox";
 type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
   type: Database["public"]["Enums"]["itemType"];
   disabledItems?: string[];
+  replenishmentSystem?: string;
 };
 
 const Item = ({ type, ...props }: ItemSelectProps) => {
@@ -19,7 +26,14 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
 
   const options = useMemo(() => {
     const results =
-      items
+      (props?.replenishmentSystem
+        ? items.filter(
+            (item) =>
+              item.type === type &&
+              item.replenishmentSystem === props.replenishmentSystem
+          )
+        : items
+      )
         .filter((item) => item.type === type)
         .map((item) => ({
           value: item.id,
@@ -33,7 +47,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
     }
 
     return results;
-  }, [items, props.disabledItems, type]);
+  }, [items, props.disabledItems, props.replenishmentSystem, type]);
 
   return (
     <>
@@ -59,14 +73,77 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             id: "",
             name: created,
             description: "",
-            itemInventoryType: "Inventory",
+            itemTrackingType: "Inventory",
             replenishmentSystem: "Buy and Make",
             unitOfMeasureCode: "EA",
-            pullFromInventory: false,
+            defaultMethodType: "Make",
             active: true,
           }}
         />
       )}
+      {type === "Consumable" && newItemsModal.isOpen && (
+        <ConsumableForm
+          type="modal"
+          onClose={() => {
+            setCreated("");
+            newItemsModal.onClose();
+            triggerRef.current?.click();
+          }}
+          initialValues={{
+            id: "",
+            name: created,
+            description: "",
+            itemTrackingType: "Non-Inventory",
+            unitOfMeasureCode: "EA",
+            replenishmentSystem: "Buy and Make",
+            defaultMethodType: "Buy",
+            active: true,
+          }}
+        />
+      )}
+      {type === "Fixture" && newItemsModal.isOpen && (
+        <FixtureForm
+          type="modal"
+          onClose={() => {
+            setCreated("");
+            newItemsModal.onClose();
+            triggerRef.current?.click();
+          }}
+          initialValues={{
+            id: "",
+            name: created,
+            description: "",
+            itemTrackingType: "Inventory",
+            unitOfMeasureCode: "EA",
+            replenishmentSystem: "Buy and Make",
+            defaultMethodType: "Buy",
+            active: true,
+          }}
+        />
+      )}
+      {type === "Material" && newItemsModal.isOpen && (
+        <MaterialForm
+          type="modal"
+          onClose={() => {
+            setCreated("");
+            newItemsModal.onClose();
+            triggerRef.current?.click();
+          }}
+          initialValues={{
+            id: "",
+            name: created,
+            description: "",
+            materialFormId: "",
+            materialSubstanceId: "",
+            itemTrackingType: "Inventory",
+            unitOfMeasureCode: "EA",
+            replenishmentSystem: "Buy and Make",
+            defaultMethodType: "Buy",
+            active: true,
+          }}
+        />
+      )}
+      {/* TODO: Add service */}
       {type === "Tool" && newItemsModal.isOpen && (
         <ToolForm
           type="modal"
@@ -79,9 +156,10 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             id: "",
             name: created,
             description: "",
-            itemInventoryType: "Inventory",
+            itemTrackingType: "Inventory",
             unitOfMeasureCode: "EA",
-            pullFromInventory: false,
+            replenishmentSystem: "Buy and Make",
+            defaultMethodType: "Buy",
             active: true,
           }}
         />

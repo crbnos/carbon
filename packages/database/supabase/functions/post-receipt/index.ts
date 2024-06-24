@@ -38,20 +38,29 @@ serve(async (req: Request) => {
 
     const companyId = receipt.data?.companyId;
 
-    const items = await client
-      .from("item")
-      .select("id, itemGroupId, itemInventoryType")
-      .in(
-        "id",
-        receiptLines.data.reduce<string[]>((acc, receiptLine) => {
-          if (receiptLine.itemId && !acc.includes(receiptLine.itemId)) {
-            acc.push(receiptLine.itemId);
-          }
-          return acc;
-        }, [])
-      )
-      .eq("companyId", companyId);
-    if (items.error) throw new Error("Failed to fetch item groups");
+    const itemIds = receiptLines.data.reduce<string[]>((acc, receiptLine) => {
+      if (receiptLine.itemId && !acc.includes(receiptLine.itemId)) {
+        acc.push(receiptLine.itemId);
+      }
+      return acc;
+    }, []);
+    const [items, itemCosts] = await Promise.all([
+      client
+        .from("item")
+        .select("id, itemTrackingType")
+        .in("id", itemIds)
+        .eq("companyId", companyId),
+      client
+        .from("itemCost")
+        .select("itemId, itemPostingGroupId")
+        .in("itemId", itemIds),
+    ]);
+    if (items.error) {
+      throw new Error("Failed to fetch items");
+    }
+    if (itemCosts.error) {
+      throw new Error("Failed to fetch item costs");
+    }
 
     switch (receipt.data?.sourceDocument) {
       case "Purchase Order": {
@@ -194,26 +203,27 @@ serve(async (req: Request) => {
             | Database["public"]["Tables"]["postingGroupInventory"]["Row"]
             | null = null;
 
-          const itemInventoryType =
+          const itemTrackingType =
             items.data.find((item) => item.id === receiptLine.itemId)
-              ?.itemInventoryType ?? "Inventory";
+              ?.itemTrackingType ?? "Inventory";
 
-          const itemGroupId: string | null =
-            items.data.find((item) => item.id === receiptLine.itemId)
-              ?.itemGroupId ?? null;
+          const itemPostingGroupId =
+            itemCosts.data.find((item) => item.itemId === receiptLine.itemId)
+              ?.itemPostingGroupId ?? null;
+
           const locationId = receiptLine.locationId ?? null;
           const supplierTypeId: string | null =
             supplier.data.supplierTypeId ?? null;
 
           // inventory posting group
-          if (`${itemGroupId}-${locationId}` in inventoryPostingGroups) {
+          if (`${itemPostingGroupId}-${locationId}` in inventoryPostingGroups) {
             postingGroupInventory =
-              inventoryPostingGroups[`${itemGroupId}-${locationId}`];
+              inventoryPostingGroups[`${itemPostingGroupId}-${locationId}`];
           } else {
             const inventoryPostingGroup = await getInventoryPostingGroup(
               client,
               {
-                itemGroupId,
+                itemPostingGroupId,
                 locationId,
               }
             );
@@ -223,7 +233,7 @@ serve(async (req: Request) => {
             }
 
             postingGroupInventory = inventoryPostingGroup.data ?? null;
-            inventoryPostingGroups[`${itemGroupId}-${locationId}`] =
+            inventoryPostingGroups[`${itemPostingGroupId}-${locationId}`] =
               postingGroupInventory;
           }
 
@@ -241,14 +251,18 @@ serve(async (req: Request) => {
             | Database["public"]["Tables"]["postingGroupPurchasing"]["Row"]
             | null = null;
 
-          if (`${itemGroupId}-${supplierTypeId}` in purchasingPostingGroups) {
+          if (
+            `${itemPostingGroupId}-${supplierTypeId}` in purchasingPostingGroups
+          ) {
             postingGroupPurchasing =
-              purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`];
+              purchasingPostingGroups[
+                `${itemPostingGroupId}-${supplierTypeId}`
+              ];
           } else {
             const purchasingPostingGroup = await getPurchasingPostingGroup(
               client,
               {
-                itemGroupId,
+                itemPostingGroupId,
                 supplierTypeId,
               }
             );
@@ -258,7 +272,7 @@ serve(async (req: Request) => {
             }
 
             postingGroupPurchasing = purchasingPostingGroup.data ?? null;
-            purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`] =
+            purchasingPostingGroups[`${itemPostingGroupId}-${supplierTypeId}`] =
               postingGroupPurchasing;
           }
 
@@ -436,7 +450,7 @@ serve(async (req: Request) => {
 
             let journalLineReference = nanoid();
 
-            if (itemInventoryType === "Inventory") {
+            if (itemTrackingType === "Inventory") {
               // debit the inventory account
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.inventoryAccount,
@@ -581,7 +595,7 @@ serve(async (req: Request) => {
             });
           }
 
-          if (itemInventoryType === "Inventory") {
+          if (itemTrackingType === "Inventory") {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,

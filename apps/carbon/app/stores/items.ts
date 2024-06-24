@@ -7,6 +7,7 @@ import type { ListItem } from "~/types";
 export type Item = ListItem & {
   readableId: string;
   type: Database["public"]["Enums"]["itemType"];
+  replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
 };
 
 const $itemsStore = atom<Item[]>([]);

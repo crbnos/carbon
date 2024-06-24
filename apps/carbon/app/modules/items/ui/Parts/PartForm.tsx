@@ -13,15 +13,15 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
+  DefaultMethodType,
   Hidden,
   Input,
   InputControlled,
-  ItemGroup,
   Select,
   Submit,
   TextArea,
@@ -29,8 +29,8 @@ import {
 } from "~/components/Form";
 import { useNextItemId, usePermissions } from "~/hooks";
 import {
-  itemInventoryTypes,
-  partReplenishmentSystems,
+  itemReplenishmentSystems,
+  itemTrackingTypes,
   partValidator,
 } from "~/modules/items";
 import { path } from "~/utils/path";
@@ -63,16 +63,22 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
-  const itemInventoryTypeOptions =
-    itemInventoryTypes.map((itemInventoryType) => ({
-      label: itemInventoryType,
-      value: itemInventoryType,
+  const itemTrackingTypeOptions =
+    itemTrackingTypes.map((itemTrackingType) => ({
+      label: itemTrackingType,
+      value: itemTrackingType,
     })) ?? [];
 
-  const partReplenishmentSystemOptions =
-    partReplenishmentSystems.map((partReplenishmentSystem) => ({
-      label: partReplenishmentSystem,
-      value: partReplenishmentSystem,
+  const [replenishmentSystem, setReplenishmentSystem] = useState<string>(
+    initialValues.replenishmentSystem ?? "Buy"
+  );
+  const [defaultMethodType, setDefaultMethodType] = useState<string>(
+    initialValues.defaultMethodType ?? "Buy"
+  );
+  const itemReplenishmentSystemOptions =
+    itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
+      label: itemReplenishmentSystem,
+      value: itemReplenishmentSystem,
     })) ?? [];
 
   return (
@@ -125,9 +131,9 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
 
                 <Input name="name" label="Name" />
                 <Select
-                  name="itemInventoryType"
+                  name="itemTrackingType"
                   label="Tracking Type"
-                  options={itemInventoryTypeOptions}
+                  options={itemTrackingTypeOptions}
                 />
                 {isEditing && (
                   <TextArea name="description" label="Description" />
@@ -136,15 +142,30 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 <Select
                   name="replenishmentSystem"
                   label="Replenishment System"
-                  options={partReplenishmentSystemOptions}
+                  options={itemReplenishmentSystemOptions}
+                  onChange={(newValue) => {
+                    setReplenishmentSystem(newValue?.value ?? "Buy");
+                    if (newValue?.value === "Buy") {
+                      setDefaultMethodType("Buy");
+                    } else {
+                      setDefaultMethodType("Make");
+                    }
+                  }}
+                />
+                <DefaultMethodType
+                  name="defaultMethodType"
+                  label="Default Method Type"
+                  replenishmentSystem={replenishmentSystem}
+                  value={defaultMethodType}
+                  onChange={(newValue) =>
+                    setDefaultMethodType(newValue?.value ?? "Buy")
+                  }
                 />
                 <UnitOfMeasure
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
 
-                <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="part" />

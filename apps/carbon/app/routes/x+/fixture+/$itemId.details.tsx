@@ -64,11 +64,12 @@ export default function FixtureDetailsRoute() {
     itemId: fixtureData.fixtureSummary?.itemId ?? "",
     name: fixtureData.fixtureSummary?.name ?? "",
     description: fixtureData.fixtureSummary?.description ?? "",
-    itemGroupId: fixtureData.fixtureSummary?.itemGroupId ?? "",
-    itemInventoryType:
-      fixtureData.fixtureSummary?.itemInventoryType ?? "Inventory",
+    replenishmentSystem:
+      fixtureData.fixtureSummary?.replenishmentSystem ?? "Buy",
+    defaultMethodType: fixtureData.fixtureSummary?.defaultMethodType ?? "Buy",
+    itemTrackingType:
+      fixtureData.fixtureSummary?.itemTrackingType ?? "Inventory",
     active: fixtureData.fixtureSummary?.active ?? true,
-    pullFromInventory: fixtureData.fixtureSummary?.pullFromInventory ?? false,
     customerId: fixtureData.fixtureSummary?.customerId ?? "",
     unitOfMeasureCode: "EA",
     ...getCustomFields(fixtureData.fixtureSummary?.customFields ?? {}),

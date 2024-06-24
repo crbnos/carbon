@@ -108,7 +108,7 @@ const ToolProperties = () => {
           className={cn(
             routeData?.toolSummary?.active === false && "opacity-50"
           )}
-          value={routeData?.toolSummary?.itemInventoryType ?? null}
+          value={routeData?.toolSummary?.itemTrackingType ?? null}
         />
       </VStack>
 

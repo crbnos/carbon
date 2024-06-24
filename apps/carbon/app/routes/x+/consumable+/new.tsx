@@ -65,9 +65,10 @@ export default function ConsumablesNewRoute() {
     id: "",
     name: "",
     description: "",
-    itemInventoryType: "Non-Inventory" as "Non-Inventory",
+    itemTrackingType: "Non-Inventory" as "Non-Inventory",
+    replenishmentSystem: "Buy" as const,
+    defaultMethodType: "Buy" as const,
     unitOfMeasureCode: "EA",
-    pullFromInventory: true,
     active: true,
   };
 

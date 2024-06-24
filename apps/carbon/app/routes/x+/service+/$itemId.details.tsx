@@ -60,11 +60,11 @@ export default function ServiceDetailsRoute() {
     name: routeData.service?.name ?? "",
     description: routeData.service?.description ?? undefined,
     serviceType: routeData.service?.serviceType ?? "Internal",
-    itemGroupId: routeData.service?.itemGroupId ?? undefined,
-    itemInventoryType: "Non-Inventory" as const,
+    replenishmentSystem: routeData.service?.replenishmentSystem ?? "Make",
+    defaultMethodType: routeData.service?.defaultMethodType ?? "Make",
+    itemTrackingType: "Non-Inventory" as const,
     active: routeData.service?.active ?? true,
     unitOfMeasureCode: "EA",
-    pullFromInventory: false,
     ...getCustomFields(routeData.service?.customFields),
   };
 

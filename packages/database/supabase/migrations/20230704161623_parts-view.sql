@@ -4,12 +4,9 @@ CREATE OR REPLACE VIEW "parts" AS
     p."itemId",
     i.name,
     i.description,
-    i."itemGroupId",
-    i."itemInventoryType",
+    i."itemTrackingType",
     i."unitOfMeasureCode",
-    pg.name AS "itemGroup",
     uom.name as "unitOfMeasure",
-    p."replenishmentSystem",
     i.active,
     i.blocked,
     p."customFields",
@@ -17,17 +14,13 @@ CREATE OR REPLACE VIEW "parts" AS
     array_agg(s."supplierId") AS "supplierIds"
   FROM "part" p
   INNER JOIN "item" i ON i.id = p."itemId"
-  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN "buyMethod" s ON s."itemId" = p."itemId"
   LEFT JOIN "unitOfMeasure" uom ON uom.code = i."unitOfMeasureCode" AND uom."companyId" = i."companyId"
   GROUP BY p.id,
     i.name,
-    i.description,
-    i."itemGroupId",
-    i."itemInventoryType",
+    i.description, 
+    i."itemTrackingType",
     i."unitOfMeasureCode",
-    pg.name,
-    p."replenishmentSystem",
     i.active,
     i.blocked,
     p."customFields",

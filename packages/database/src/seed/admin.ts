@@ -1,5 +1,5 @@
 const admin = {
-  email: "admin@carbon.us.org",
+  email: "admin@carbonos.dev",
   password: "carbon",
   firstName: "Carbon",
   lastName: "Admin",

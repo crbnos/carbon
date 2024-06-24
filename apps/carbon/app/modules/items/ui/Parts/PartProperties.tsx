@@ -118,7 +118,7 @@ const PartProperties = () => {
           className={cn(
             routeData?.partSummary?.active === false && "opacity-50"
           )}
-          value={routeData?.partSummary?.itemInventoryType ?? null}
+          value={routeData?.partSummary?.itemTrackingType ?? null}
         />
       </VStack>
 

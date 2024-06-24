@@ -4,7 +4,7 @@ import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import {
   MaterialsTable,
-  getItemGroupsList,
+  getItemPostingGroupsList,
   getMaterials,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [materials, itemGroups] = await Promise.all([
+  const [materials, itemPostingGroups] = await Promise.all([
     getMaterials(client, companyId, {
       search,
       supplierId,
@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getItemGroupsList(client, companyId),
+    getItemPostingGroupsList(client, companyId),
   ]);
 
   if (materials.error) {
@@ -54,16 +54,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: materials.count ?? 0,
     materials: materials.data ?? [],
-    itemGroups: itemGroups.data ?? [],
+    itemPostingGroups: itemPostingGroups.data ?? [],
   });
 }
 
 export default function MaterialsSearchRoute() {
-  const { count, materials, itemGroups } = useLoaderData<typeof loader>();
+  const { count, materials, itemPostingGroups } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <MaterialsTable data={materials} count={count} itemGroups={itemGroups} />
+      <MaterialsTable
+        data={materials}
+        count={count}
+        itemPostingGroups={itemPostingGroups}
+      />
       <Outlet />
     </VStack>
   );

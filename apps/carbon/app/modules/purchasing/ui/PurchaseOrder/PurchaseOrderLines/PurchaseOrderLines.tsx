@@ -202,11 +202,17 @@ const PurchaseOrderLines = () => {
         cell: ({ row }) => {
           switch (row.original.purchaseOrderLineType) {
             case "Part":
+            case "Material":
+            case "Tool":
+            case "Fixture":
+            case "Consumable":
               return (
                 <span>
                   {locations.find((l) => l.id == row.original.locationId)?.name}
                 </span>
               );
+            default:
+              return null;
           }
         },
       },

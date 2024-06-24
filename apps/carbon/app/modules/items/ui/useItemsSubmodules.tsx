@@ -65,7 +65,7 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       },
       {
         name: "Posting Groups",
-        to: path.to.itemGroups,
+        to: path.to.itemPostingGroups,
         role: "employee",
         icon: <PiPiggyBank />,
       },

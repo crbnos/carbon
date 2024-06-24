@@ -44,7 +44,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     const [items, suppliers, customers, people] = await Promise.all([
       supabase
         .from("item")
-        .select("id, readableId, name, type")
+        .select("id, readableId, name, type, replenishmentSystem")
         .eq("companyId", companyId)
         .eq("active", true)
         .order("name"),
@@ -115,8 +115,9 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                     ...items,
                     {
                       id: inserted.id,
-                      readableId: inserted.readableId,
                       name: inserted.name,
+                      readableId: inserted.readableId,
+                      replenishmentSystem: inserted.replenishmentSystem,
                       type: inserted.type,
                     },
                   ].sort((a, b) => a.name.localeCompare(b.name))

@@ -18,6 +18,7 @@ import CustomerLocation from "./CustomerLocation";
 import CustomerStatus from "./CustomerStatus";
 import CustomerType from "./CustomerType";
 import DatePicker from "./DatePicker";
+import DefaultMethodType from "./DefaultMethodType";
 import Department from "./Department";
 import Employee from "./Employee";
 import Employees from "./Employees";
@@ -26,7 +27,7 @@ import Hidden from "./Hidden";
 import Input from "./Input";
 import InputControlled from "./InputControlled";
 import Item from "./Item";
-import ItemGroup from "./ItemGroup";
+import ItemPostingGroup from "./ItemPostingGroup";
 import Location from "./Location";
 import Number from "./Number";
 import NumberControlled from "./NumberControlled";
@@ -76,6 +77,7 @@ export {
   CustomerStatus,
   CustomerType,
   DatePicker,
+  DefaultMethodType,
   Department,
   Employee,
   Employees,
@@ -84,7 +86,7 @@ export {
   Input,
   InputControlled,
   Item,
-  ItemGroup,
+  ItemPostingGroup,
   Location,
   Number,
   NumberControlled,

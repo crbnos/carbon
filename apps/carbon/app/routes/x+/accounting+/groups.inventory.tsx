@@ -8,7 +8,7 @@ import {
   InventoryPostingGroupsTable,
   getInventoryPostingGroups,
 } from "~/modules/accounting";
-import { getItemGroupsList } from "~/modules/items";
+import { getItemPostingGroupsList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -33,14 +33,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [inventoryGroups, itemGroups, locations] = await Promise.all([
+  const [inventoryGroups, itemPostingGroups, locations] = await Promise.all([
     getInventoryPostingGroups(client, companyId, {
       limit,
       offset,
       sorts,
       filters,
     }),
-    getItemGroupsList(client, companyId),
+    getItemPostingGroupsList(client, companyId),
     getLocationsList(client, companyId),
   ]);
   if (inventoryGroups.error) {
@@ -55,14 +55,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return json({
     data: inventoryGroups.data ?? [],
-    itemGroups: itemGroups.data ?? [],
+    itemPostingGroups: itemPostingGroups.data ?? [],
     locations: locations.data ?? [],
     count: inventoryGroups.count ?? 0,
   });
 }
 
 export default function InventoryPostingGroupsRoute() {
-  const { data, itemGroups, locations, count } = useLoaderData<typeof loader>();
+  const { data, itemPostingGroups, locations, count } =
+    useLoaderData<typeof loader>();
 
   const routeData = useRouteData<{
     balanceSheetAccounts: AccountListItem[];
@@ -74,7 +75,7 @@ export default function InventoryPostingGroupsRoute() {
       <InventoryPostingGroupsTable
         data={data}
         count={count}
-        itemGroups={itemGroups}
+        itemPostingGroups={itemPostingGroups}
         locations={locations}
         balanceSheetAccounts={routeData?.balanceSheetAccounts ?? []}
         incomeStatementAccounts={routeData?.incomeStatementAccounts ?? []}

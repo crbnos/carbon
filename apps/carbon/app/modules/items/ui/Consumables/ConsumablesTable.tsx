@@ -8,19 +8,19 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Consumable } from "~/modules/items";
-import { itemInventoryTypes } from "~/modules/items";
+import { itemTrackingTypes, methodType } from "~/modules/items";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type ConsumablesTableProps = {
   data: Consumable[];
-  itemGroups: ListItem[];
+  itemPostingGroups: ListItem[];
   count: number;
 };
 
 const ConsumablesTable = memo(
-  ({ data, count, itemGroups }: ConsumablesTableProps) => {
+  ({ data, count, itemPostingGroups }: ConsumablesTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [params] = useUrlParams();
@@ -49,13 +49,13 @@ const ConsumablesTable = memo(
           cell: (item) => item.getValue(),
         },
         {
-          accessorKey: "itemInventoryType",
-          header: "Inventory",
+          accessorKey: "itemTrackingType",
+          header: "Tracking",
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
             filter: {
               type: "static",
-              options: itemInventoryTypes.map((type) => ({
+              options: itemTrackingTypes.map((type) => ({
                 value: type,
                 label: <Enumerable value={type} />,
               })),
@@ -63,15 +63,15 @@ const ConsumablesTable = memo(
           },
         },
         {
-          accessorKey: "itemGroup",
-          header: "Posting Group",
+          accessorKey: "defaultMethodType",
+          header: "Default Method",
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
             filter: {
               type: "static",
-              options: itemGroups.map(({ name }) => ({
-                value: name,
-                label: <Enumerable value={name} />,
+              options: methodType.map((value) => ({
+                value,
+                label: <Enumerable value={value} />,
               })),
             },
           },

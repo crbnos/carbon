@@ -149,7 +149,7 @@ $ npm run dev         # npm run dev in all apps & packages
 
 You can now sign in with:
 
-username: admin@carbon.us.org
+username: admin@carbonos.dev
 password: carbon
 
 Go ahead and create your own user account
