@@ -1,5 +1,6 @@
 "use client";
 import {
+  Badge,
   Button,
   Card,
   CardAction,
@@ -40,6 +41,7 @@ import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import { methodItemType, methodMaterialValidator } from "../../items.models";
 import type { MethodItemType, MethodType } from "../../types";
+import { MethodIcon, MethodItemTypeIcon } from "./MethodIcon";
 
 type Material = z.infer<typeof methodMaterialValidator>;
 
@@ -61,6 +63,18 @@ function makeItem(material: Material): ItemWithData {
     id: material.id!,
     text: material.description ?? "",
     checked: false,
+    details: (
+      <HStack spacing={2}>
+        <Badge variant="secondary">
+          <MethodIcon type={material.methodType} />
+        </Badge>
+
+        <Badge variant="secondary">{material.quantity}</Badge>
+        <Badge variant="secondary">
+          <MethodItemTypeIcon type={material.itemType} />
+        </Badge>
+      </HStack>
+    ),
     data: material,
   };
 }
@@ -204,8 +218,8 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
           <div
             key={`${isOpen}`}
             className={cn(
-              "flex h-full w-full flex-col items-center justify-center gap-2 ",
-              isOpen ? "py-1 px-1" : "py-3 "
+              "flex h-full flex-col items-center justify-center pl-2",
+              isOpen ? "py-1" : "py-3 "
             )}
           >
             <motion.button
@@ -313,7 +327,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
     <Card>
       <HStack className="justify-between">
         <CardHeader>
-          <CardTitle>Bill of Materials</CardTitle>
+          <CardTitle>Bill of Material</CardTitle>
         </CardHeader>
 
         <CardAction>

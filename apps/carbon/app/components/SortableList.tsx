@@ -7,16 +7,18 @@ import {
   motion,
   useDragControls,
 } from "framer-motion";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import useMeasure from "react-use-measure";
 
-import { Checkbox, cn } from "@carbon/react";
+import { Checkbox, HStack, cn } from "@carbon/react";
 import { LuTrash } from "react-icons/lu";
 
 export interface Item {
   id: string;
   text: string;
   checked: boolean;
+  details?: ReactNode;
   order?: "With Previous" | "After Previous";
 }
 
@@ -115,10 +117,10 @@ function SortableListItem<T>({
           }
           whileDrag={{ zIndex: 9999 }}
         >
-          <div ref={ref} className={cn(isExpanded ? "" : "", "z-20 ")}>
+          <div ref={ref} className={cn(isExpanded ? "w-full" : "", "z-20 ")}>
             <motion.div
               layout="position"
-              className="flex items-center justify-center "
+              className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2"
             >
               <AnimatePresence>
                 {!isExpanded ? (
@@ -127,7 +129,7 @@ function SortableListItem<T>({
                     animate={{ opacity: 1, filter: "blur(0px)" }}
                     exit={{ opacity: 0, filter: "blur(4px)" }}
                     transition={{ duration: 0.001 }}
-                    className="flex  items-center space-x-2 "
+                    className="flex w-full items-center gap-x-2 truncate"
                   >
                     {/* List Remove Actions */}
                     <Checkbox
@@ -135,7 +137,7 @@ function SortableListItem<T>({
                       id={`checkbox-${item.id}`}
                       aria-label="Mark to delete"
                       onCheckedChange={() => onToggleItem(item.id)}
-                      className=" ml-3 h-5 w-5 rounded-md border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200"
+                      className="ml-3 h-5 w-5 rounded-md border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
                     />
                     {/* List Order */}
                     <p className="font-mono text-xs pl-1 text-foreground/50 flex flex-shrink-0">
@@ -145,7 +147,7 @@ function SortableListItem<T>({
                     {/* List Title */}
                     <motion.div
                       key={`${item.checked}`}
-                      className=" px-1 flex flex-grow truncate"
+                      className="px-1 flex flex-grow truncate"
                       initial={{
                         opacity: 0,
                         filter: "blur(4px)",
@@ -157,16 +159,23 @@ function SortableListItem<T>({
                         type: "spring",
                       }}
                     >
-                      <h4
-                        className={cn(
-                          "tracking-tighter text-base md:text-lg ",
-                          item.checked
-                            ? "text-red-400"
-                            : "text-foreground dark:text-foreground/70"
+                      <HStack className="w-full justify-between">
+                        <h4
+                          className={cn(
+                            "flex tracking-tighter text-base md:text-lg truncate",
+                            item.checked
+                              ? "text-red-400"
+                              : "text-foreground dark:text-foreground/70"
+                          )}
+                        >
+                          {item.text}
+                        </h4>
+                        {item.details && (
+                          <div className="flex flex-shrink-0">
+                            {item.details}
+                          </div>
                         )}
-                      >
-                        {item.text}
-                      </h4>
+                      </HStack>
                     </motion.div>
                   </motion.div>
                 ) : null}

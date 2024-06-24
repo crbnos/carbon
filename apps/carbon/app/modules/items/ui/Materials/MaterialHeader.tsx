@@ -1,9 +1,9 @@
-import { Enumerable, HStack, Heading, VStack } from "@carbon/react";
+import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { Material } from "~/modules/items";
+import { MethodItemTypeIcon, type Material } from "~/modules/items";
 import { path } from "~/utils/path";
 import { useMaterialNavigation } from "./useMaterialNavigation";
 
@@ -21,7 +21,9 @@ const MaterialHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Heading size="h2">{routeData?.materialSummary?.id}</Heading>
-          <Enumerable value="Material" />
+          <Badge variant="secondary">
+            <MethodItemTypeIcon type="Material" />
+          </Badge>
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

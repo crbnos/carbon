@@ -1,9 +1,9 @@
-import { Enumerable, HStack, Heading, VStack } from "@carbon/react";
+import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { Service } from "~/modules/items";
+import { MethodItemTypeIcon, type Service } from "~/modules/items";
 import { path } from "~/utils/path";
 import { useServiceNavigation } from "./useServiceNavigation";
 
@@ -22,7 +22,9 @@ const ServiceHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Heading size="h2">{routeData?.service?.id}</Heading>
-          <Enumerable value="Service" />
+          <Badge variant="secondary">
+            <MethodItemTypeIcon type="Service" />
+          </Badge>
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

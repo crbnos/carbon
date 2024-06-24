@@ -1,9 +1,9 @@
-import { Enumerable, HStack, Heading, VStack } from "@carbon/react";
+import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { Tool } from "~/modules/items";
+import { MethodItemTypeIcon, type Tool } from "~/modules/items";
 import { path } from "~/utils/path";
 import { useToolNavigation } from "./useToolNavigation";
 
@@ -19,7 +19,9 @@ const ToolHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Heading size="h2">{routeData?.toolSummary?.id}</Heading>
-          <Enumerable value="Tool" />
+          <Badge variant="secondary">
+            <MethodItemTypeIcon type="Tool" />
+          </Badge>
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

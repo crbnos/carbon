@@ -1,9 +1,9 @@
-import { Enumerable, HStack, Heading, VStack } from "@carbon/react";
+import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { Fixture } from "~/modules/items";
+import { MethodItemTypeIcon, type Fixture } from "~/modules/items";
 import { path } from "~/utils/path";
 import { useFixtureNavigation } from "./useFixtureNavigation";
 
@@ -21,7 +21,9 @@ const FixtureHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Heading size="h2">{routeData?.fixtureSummary?.id}</Heading>
-          <Enumerable value="Fixture" />
+          <Badge variant="secondary">
+            <MethodItemTypeIcon type="Fixture" />
+          </Badge>
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">
