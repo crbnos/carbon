@@ -1,6 +1,7 @@
 import { Badge, HStack, cn } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { LuExternalLink } from "react-icons/lu";
+import type { MethodType } from "../../types";
 import { MethodIcon } from "./MethodIcon";
 
 type MethodBadgeProps = {
@@ -28,7 +29,7 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   );
 }
 
-function getBadgeColor(type: "Buy" | "Make" | "Pick") {
+function getBadgeColor(type: MethodType) {
   return type === "Buy"
     ? "bg-blue-500 hover:bg-blue-600 text-white"
     : type === "Make"

@@ -31,7 +31,7 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { getShelvesList } from "~/modules/items";
+import { methodItemType, type getShelvesList } from "~/modules/items";
 import type {
   PurchaseOrder,
   PurchaseOrderLineType,
@@ -290,14 +290,8 @@ const PurchaseOrderLineForm = ({
                   onTypeChange(value?.value as PurchaseOrderLineType);
                 }}
               />
-              {[
-                "Part",
-                "Service",
-                "Material",
-                "Tool",
-                "Fixture",
-                "Consumable",
-              ].includes(type) && (
+              {/* @ts-ignore */}
+              {methodItemType.includes(type) && (
                 <Item
                   name="itemId"
                   label={type}

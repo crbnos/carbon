@@ -8,6 +8,7 @@ import CreatableCombobox from "./CreatableCombobox";
 
 type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
   type: Database["public"]["Enums"]["itemType"];
+  disabledItems?: string[];
 };
 
 const Item = ({ type, ...props }: ItemSelectProps) => {
@@ -16,17 +17,23 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useMemo(
-    () =>
+  const options = useMemo(() => {
+    const results =
       items
         .filter((item) => item.type === type)
         .map((item) => ({
           value: item.id,
           label: item.readableId,
           helper: item.name,
-        })) ?? [],
-    [items, type]
-  );
+        })) ?? [];
+    if (props.disabledItems) {
+      return results.filter(
+        (item) => !props.disabledItems?.includes(item.value)
+      );
+    }
+
+    return results;
+  }, [items, props.disabledItems, type]);
 
   return (
     <>

@@ -8177,11 +8177,14 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          description: string
           id: string
           itemId: string
+          itemReadableId: string
           itemType: string
           makeMethodId: string
           methodType: Database["public"]["Enums"]["methodType"]
+          order: number
           quantity: number
           unitOfMeasureCode: string
           updatedAt: string | null
@@ -8192,11 +8195,14 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          description: string
           id?: string
           itemId: string
+          itemReadableId: string
           itemType?: string
           makeMethodId: string
           methodType?: Database["public"]["Enums"]["methodType"]
+          order?: number
           quantity: number
           unitOfMeasureCode: string
           updatedAt?: string | null
@@ -8207,11 +8213,14 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          description?: string
           id?: string
           itemId?: string
+          itemReadableId?: string
           itemType?: string
           makeMethodId?: string
           methodType?: Database["public"]["Enums"]["methodType"]
+          order?: number
           quantity?: number
           unitOfMeasureCode?: string
           updatedAt?: string | null

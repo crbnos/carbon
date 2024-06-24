@@ -354,6 +354,10 @@ export const path = {
     materialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/${id}`),
     materialSubstances: `${x}/items/substances`,
+    methodMaterial: (makeMethodId: string, id: string) =>
+      generatePath(`${x}/items/methods/${makeMethodId}/material/${id}`),
+    methodMaterialsOrder: (makeMethodId: string) =>
+      generatePath(`${x}/items/methods/${makeMethodId}/material/order`),
     methodOperation: (makeMethodId: string, id: string) =>
       generatePath(`${x}/items/methods/${makeMethodId}/operation/${id}`),
     methodOperationsOrder: (makeMethodId: string) =>
@@ -400,6 +404,8 @@ export const path = {
     newHoliday: `${x}/resources/holidays/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaterial: `${x}/material/new`,
+    newMethodMaterial: (id: string) =>
+      generatePath(`${x}/items/methods/${id}/material/new`),
     newMethodOperation: (id: string) =>
       generatePath(`${x}/items/methods/${id}/operation/new`),
     newNote: `${x}/shared/notes/new`,
@@ -450,7 +456,7 @@ export const path = {
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
     newSupplier: `${x}/supplier/new`,
-    newSupplierAccount: `${x}/users/purchasing/new`,
+    newSupplierAccount: `${x}/users/suppliers/new`,
     newSupplierContact: (id: string) =>
       generatePath(`${x}/supplier/${id}/contacts/new`),
     newSupplierLocation: (id: string) =>
