@@ -10,8 +10,8 @@ import type {
   consumableValidator,
   fixtureValidator,
   itemCostValidator,
-  itemGroupValidator,
   itemPlanningValidator,
+  itemPostingGroupValidator,
   itemPurchasingValidator,
   itemUnitSalePriceValidator,
   itemValidator,
@@ -27,11 +27,11 @@ import type {
   unitOfMeasureValidator,
 } from "./items.models";
 
-export async function deleteItemGroup(
+export async function deleteItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("itemGroup").delete().eq("id", id);
+  return client.from("itemPostingGroup").delete().eq("id", id);
 }
 
 export async function deleteMaterialForm(
@@ -205,20 +205,20 @@ export async function getItemCost(
     .single();
 }
 
-export async function getItemGroup(
+export async function getItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("itemGroup").select("*").eq("id", id).single();
+  return client.from("itemPostingGroup").select("*").eq("id", id).single();
 }
 
-export async function getItemGroups(
+export async function getItemPostingGroups(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
   let query = client
-    .from("itemGroup")
+    .from("itemPostingGroup")
     .select("*", {
       count: "exact",
     })
@@ -237,12 +237,12 @@ export async function getItemGroups(
   return query;
 }
 
-export async function getItemGroupsList(
+export async function getItemPostingGroupsList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   return client
-    .from("itemGroup")
+    .from("itemPostingGroup")
     .select("id, name", { count: "exact" })
     .eq("companyId", companyId)
     .order("name");
@@ -608,7 +608,7 @@ export async function getServices(
   }
 
   if (args.group) {
-    query = query.eq("itemGroupId", args.group);
+    query = query.eq("itemPostingGroupId", args.group);
   }
 
   if (args.supplierId) {
@@ -834,10 +834,10 @@ export async function upsertConsumable(
         readableId: consumable.id,
         name: consumable.name,
         type: "Consumable",
-        itemGroupId: consumable.itemGroupId,
-        itemInventoryType: consumable.itemInventoryType,
+        replenishmentSystem: consumable.replenishmentSystem,
+        defaultMethodType: consumable.defaultMethodType,
+        itemTrackingType: consumable.itemTrackingType,
         unitOfMeasureCode: consumable.unitOfMeasureCode,
-        pullFromInventory: consumable.pullFromInventory,
         active: consumable.active,
         companyId: consumable.companyId,
         createdBy: consumable.createdBy,
@@ -864,10 +864,10 @@ export async function upsertConsumable(
     id: consumable.id,
     name: consumable.name,
     description: consumable.description,
-    itemGroupId: consumable.itemGroupId,
-    itemInventoryType: consumable.itemInventoryType,
+    replenishmentSystem: consumable.replenishmentSystem,
+    defaultMethodType: consumable.defaultMethodType,
+    itemTrackingType: consumable.itemTrackingType,
     unitOfMeasureCode: consumable.unitOfMeasureCode,
-    pullFromInventory: consumable.pullFromInventory,
     active: consumable.active,
   };
 
@@ -916,10 +916,10 @@ export async function upsertFixture(
         readableId: fixture.id,
         name: fixture.name,
         type: "Fixture",
-        itemGroupId: fixture.itemGroupId,
-        itemInventoryType: fixture.itemInventoryType,
+        replenishmentSystem: fixture.replenishmentSystem,
+        defaultMethodType: fixture.defaultMethodType,
+        itemTrackingType: fixture.itemTrackingType,
         unitOfMeasureCode: "EA",
-        pullFromInventory: true,
         active: fixture.active,
         companyId: fixture.companyId,
         createdBy: fixture.createdBy,
@@ -948,11 +948,11 @@ export async function upsertFixture(
     id: fixture.id,
     name: fixture.name,
     description: fixture.description,
-    itemGroupId: fixture.itemGroupId,
-    itemInventoryType: fixture.itemInventoryType,
+    replenishmentSystem: fixture.replenishmentSystem,
+    defaultMethodType: fixture.defaultMethodType,
+    itemTrackingType: fixture.itemTrackingType,
     unitOfMeasureCode: "EA",
     active: fixture.active,
-    pullFromInventory: fixture.pullFromInventory,
   };
 
   const fixtureUpdate = {
@@ -1001,10 +1001,10 @@ export async function upsertPart(
         readableId: part.id,
         name: part.name,
         type: "Part",
-        itemGroupId: part.itemGroupId,
-        itemInventoryType: part.itemInventoryType,
+        replenishmentSystem: part.replenishmentSystem,
+        defaultMethodType: part.defaultMethodType,
+        itemTrackingType: part.itemTrackingType,
         unitOfMeasureCode: part.unitOfMeasureCode,
-        pullFromInventory: part.pullFromInventory,
         active: part.active,
         companyId: part.companyId,
         createdBy: part.createdBy,
@@ -1019,7 +1019,6 @@ export async function upsertPart(
       .insert({
         id: part.id,
         itemId: itemId,
-        replenishmentSystem: part.replenishmentSystem,
         companyId: part.companyId,
         createdBy: part.createdBy,
         customFields: part.customFields,
@@ -1032,15 +1031,14 @@ export async function upsertPart(
     id: part.id,
     name: part.name,
     description: part.description,
-    itemGroupId: part.itemGroupId,
-    itemInventoryType: part.itemInventoryType,
+    replenishmentSystem: part.replenishmentSystem,
+    defaultMethodType: part.defaultMethodType,
+    itemTrackingType: part.itemTrackingType,
     unitOfMeasureCode: part.unitOfMeasureCode,
     active: part.active,
-    pullFromInventory: part.pullFromInventory,
   };
 
   const partUpdate = {
-    replenishmentSystem: part.replenishmentSystem,
     customFields: part.customFields,
   };
 
@@ -1165,29 +1163,33 @@ export async function upsertItemPurchasing(
     .eq("itemId", itemPurchasing.itemId);
 }
 
-export async function upsertItemGroup(
+export async function upsertItemPostingGroup(
   client: SupabaseClient<Database>,
-  itemGroup:
-    | (Omit<z.infer<typeof itemGroupValidator>, "id"> & {
+  itemPostingGroup:
+    | (Omit<z.infer<typeof itemPostingGroupValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof itemGroupValidator>, "id"> & {
+    | (Omit<z.infer<typeof itemPostingGroupValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in itemGroup) {
-    return client.from("itemGroup").insert([itemGroup]).select("*").single();
+  if ("createdBy" in itemPostingGroup) {
+    return client
+      .from("itemPostingGroup")
+      .insert([itemPostingGroup])
+      .select("*")
+      .single();
   }
   return (
     client
-      .from("itemGroup")
-      .update(sanitize(itemGroup))
+      .from("itemPostingGroup")
+      .update(sanitize(itemPostingGroup))
       // @ts-ignore
-      .eq("id", itemGroup.id)
+      .eq("id", itemPostingGroup.id)
       .select("id")
       .single()
   );
@@ -1281,10 +1283,10 @@ export async function upsertMaterial(
         readableId: material.id,
         name: material.name,
         type: "Material",
-        itemGroupId: material.itemGroupId,
-        itemInventoryType: material.itemInventoryType,
+        replenishmentSystem: material.replenishmentSystem,
+        defaultMethodType: material.defaultMethodType,
+        itemTrackingType: material.itemTrackingType,
         unitOfMeasureCode: material.unitOfMeasureCode,
-        pullFromInventory: material.pullFromInventory,
         active: material.active,
         companyId: material.companyId,
         createdBy: material.createdBy,
@@ -1316,11 +1318,11 @@ export async function upsertMaterial(
     id: material.id,
     name: material.name,
     description: material.description,
-    itemGroupId: material.itemGroupId,
-    itemInventoryType: material.itemInventoryType,
+    replenishmentSystem: material.replenishmentSystem,
+    defaultMethodType: material.defaultMethodType,
+    itemTrackingType: material.itemTrackingType,
     unitOfMeasureCode: material.unitOfMeasureCode,
     active: material.active,
-    pullFromInventory: material.pullFromInventory,
   };
 
   const materialUpdate = {
@@ -1332,7 +1334,7 @@ export async function upsertMaterial(
     customFields: material.customFields,
   };
 
-  const [updateItem, updatePart] = await Promise.all([
+  const [updateItem, updateMaterial] = await Promise.all([
     client
       .from("item")
       .update({
@@ -1350,7 +1352,7 @@ export async function upsertMaterial(
   ]);
 
   if (updateItem.error) return updateItem;
-  return updatePart;
+  return updateMaterial;
 }
 
 export async function upsertMaterialForm(
@@ -1438,10 +1440,11 @@ export async function upsertService(
         readableId: service.id,
         name: service.name,
         type: "Service",
-        itemGroupId: service.itemGroupId,
-        itemInventoryType: service.itemInventoryType,
-        unitOfMeasureCode: null,
-        pullFromInventory: false,
+        replenishmentSystem:
+          service.serviceType === "External" ? "Buy" : "Make",
+        defaultMethodType: service.serviceType === "External" ? "Buy" : "Make",
+        itemTrackingType: service.itemTrackingType,
+        unitOfMeasureCode: "EA",
         active: service.active,
         companyId: service.companyId,
         createdBy: service.createdBy,
@@ -1467,11 +1470,11 @@ export async function upsertService(
     id: service.id,
     name: service.name,
     description: service.description,
-    itemGroupId: service.itemGroupId,
-    itemInventoryType: service.itemInventoryType,
+    replenishmentSystem: service.serviceType === "External" ? "Buy" : "Make",
+    defaultMethodType: service.serviceType === "External" ? "Buy" : "Make",
+    itemTrackingType: service.itemTrackingType,
     unitOfMeasureCode: null,
     active: service.active,
-    pullFromInventory: service.pullFromInventory,
   };
 
   const serviceUpdate = {
@@ -1549,10 +1552,10 @@ export async function upsertTool(
         readableId: tool.id,
         name: tool.name,
         type: "Tool",
-        itemGroupId: tool.itemGroupId,
-        itemInventoryType: tool.itemInventoryType,
+        replenishmentSystem: tool.replenishmentSystem,
+        defaultMethodType: tool.defaultMethodType,
+        itemTrackingType: tool.itemTrackingType,
         unitOfMeasureCode: tool.unitOfMeasureCode,
-        pullFromInventory: tool.pullFromInventory,
         active: tool.active,
         companyId: tool.companyId,
         createdBy: tool.createdBy,
@@ -1579,18 +1582,18 @@ export async function upsertTool(
     id: tool.id,
     name: tool.name,
     description: tool.description,
-    itemGroupId: tool.itemGroupId,
-    itemInventoryType: tool.itemInventoryType,
+    replenishmentSystem: tool.replenishmentSystem,
+    defaultMethodType: tool.defaultMethodType,
+    itemTrackingType: tool.itemTrackingType,
     unitOfMeasureCode: tool.unitOfMeasureCode,
     active: tool.active,
-    pullFromInventory: tool.pullFromInventory,
   };
 
   const toolUpdate = {
     customFields: tool.customFields,
   };
 
-  const [updateItem, updatePart] = await Promise.all([
+  const [updateItem, updateTool] = await Promise.all([
     client
       .from("item")
       .update({
@@ -1608,5 +1611,5 @@ export async function upsertTool(
   ]);
 
   if (updateItem.error) return updateItem;
-  return updatePart;
+  return updateTool;
 }

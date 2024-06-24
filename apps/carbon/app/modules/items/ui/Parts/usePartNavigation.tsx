@@ -58,9 +58,9 @@ export function usePartNavigation() {
       shortcut: "Command+Shift+i",
     },
     {
-      name: "Costing",
+      name: "Accounting",
       to: path.to.partCosting(itemId),
-      role: ["employee", "supplier"],
+      role: ["employee"],
       icon: LuTags,
       shortcut: "Command+Shift+c",
     },

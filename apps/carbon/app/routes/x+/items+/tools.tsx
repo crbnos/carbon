@@ -2,7 +2,11 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { ToolsTable, getItemGroupsList, getTools } from "~/modules/items";
+import {
+  ToolsTable,
+  getItemPostingGroupsList,
+  getTools,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -28,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [tools, itemGroups] = await Promise.all([
+  const [tools, itemPostingGroups] = await Promise.all([
     getTools(client, companyId, {
       search,
       supplierId,
@@ -37,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getItemGroupsList(client, companyId),
+    getItemPostingGroupsList(client, companyId),
   ]);
 
   if (tools.error) {
@@ -50,16 +54,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: tools.count ?? 0,
     tools: tools.data ?? [],
-    itemGroups: itemGroups.data ?? [],
+    itemPostingGroups: itemPostingGroups.data ?? [],
   });
 }
 
 export default function ToolsSearchRoute() {
-  const { count, tools, itemGroups } = useLoaderData<typeof loader>();
+  const { count, tools, itemPostingGroups } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ToolsTable data={tools} count={count} itemGroups={itemGroups} />
+      <ToolsTable
+        data={tools}
+        count={count}
+        itemPostingGroups={itemPostingGroups}
+      />
       <Outlet />
     </VStack>
   );

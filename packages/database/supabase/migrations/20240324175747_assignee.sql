@@ -13,17 +13,14 @@ CREATE OR REPLACE VIEW "parts" WITH(SECURITY_INVOKER=true) AS
   SELECT
     i.name,
     i.description,
-    i."itemGroupId",
-    i."itemInventoryType",
+    i."itemTrackingType",
     i.active,
     i.blocked,
     p.*,
-    pg.name AS "itemGroup",
     ps."supplierIds",
     uom.name as "unitOfMeasure"
   FROM "part" p
   INNER JOIN "item" i ON i.id = p."itemId"
-  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "itemId",
@@ -151,14 +148,11 @@ CREATE OR REPLACE VIEW "services" WITH(SECURITY_INVOKER=true) AS
     s.*,
     i.name,
     i.description,
-    i."itemGroupId",
     i.active,
     i.blocked,
-    pg.name AS "itemGroup",
     ss."supplierIds"
   FROM "service" s
   INNER JOIN "item" i ON i.id = s."itemId"
-  LEFT JOIN "itemGroup" pg ON pg.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "serviceId",

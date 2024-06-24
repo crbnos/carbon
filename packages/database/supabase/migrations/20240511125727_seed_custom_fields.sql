@@ -22,7 +22,7 @@ VALUES
 ('location', 'Location', 'Resources'),
 ('part', 'Part', 'Parts'),
 ('itemCost', 'Item Cost', 'Parts'),
-('itemGroup', 'Item Group', 'Parts'),
+('itemPostingGroup', 'Item Posting Group', 'Parts'),
 ('pickMethod', 'Item Inventory', 'Parts'),
 ('itemPlanning', 'Item Planning', 'Parts'),
 ('itemReplenishment', 'Item Replenishment', 'Parts'),

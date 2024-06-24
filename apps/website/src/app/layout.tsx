@@ -9,7 +9,7 @@ import { ThemeProvider } from "next-themes";
 import type { ReactElement } from "react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://carbon.us.org"),
+  metadataBase: new URL("https://carbonos.dev"),
   title: "Carbon | ERP for the builders",
   description:
     "Carbon is an open-source ERP to meet your exact manufacturing needs",

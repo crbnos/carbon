@@ -8,7 +8,7 @@ import {
   SalesPostingGroupsTable,
   getSalesPostingGroups,
 } from "~/modules/accounting";
-import { getItemGroupsList } from "~/modules/items";
+import { getItemPostingGroupsList } from "~/modules/items";
 import { getCustomerTypesList } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -32,14 +32,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [salesGroups, itemGroups, customerTypes] = await Promise.all([
+  const [salesGroups, itemPostingGroups, customerTypes] = await Promise.all([
     getSalesPostingGroups(client, companyId, {
       limit,
       offset,
       sorts,
       filters,
     }),
-    getItemGroupsList(client, companyId),
+    getItemPostingGroupsList(client, companyId),
     getCustomerTypesList(client, companyId),
   ]);
   if (salesGroups.error) {
@@ -55,13 +55,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     data: salesGroups.data ?? [],
     count: salesGroups.count ?? 0,
-    itemGroups: itemGroups.data ?? [],
+    itemPostingGroups: itemPostingGroups.data ?? [],
     customerTypes: customerTypes.data ?? [],
   });
 }
 
 export default function SalesPostingGroupsRoute() {
-  const { data, count, itemGroups, customerTypes } =
+  const { data, count, itemPostingGroups, customerTypes } =
     useLoaderData<typeof loader>();
 
   const routeData = useRouteData<{
@@ -74,7 +74,7 @@ export default function SalesPostingGroupsRoute() {
       <SalesPostingGroupsTable
         data={data}
         count={count}
-        itemGroups={itemGroups}
+        itemPostingGroups={itemPostingGroups}
         customerTypes={customerTypes}
         balanceSheetAccounts={routeData?.balanceSheetAccounts ?? []}
         incomeStatementAccounts={routeData?.incomeStatementAccounts ?? []}

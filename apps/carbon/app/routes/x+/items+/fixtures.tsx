@@ -2,7 +2,11 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { FixturesTable, getFixtures, getItemGroupsList } from "~/modules/items";
+import {
+  FixturesTable,
+  getFixtures,
+  getItemPostingGroupsList,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -28,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [fixtures, itemGroups] = await Promise.all([
+  const [fixtures, itemPostingGroups] = await Promise.all([
     getFixtures(client, companyId, {
       search,
       supplierId,
@@ -37,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getItemGroupsList(client, companyId),
+    getItemPostingGroupsList(client, companyId),
   ]);
 
   if (fixtures.error) {
@@ -50,16 +54,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: fixtures.count ?? 0,
     fixtures: fixtures.data ?? [],
-    itemGroups: itemGroups.data ?? [],
+    itemPostingGroups: itemPostingGroups.data ?? [],
   });
 }
 
 export default function FixturesSearchRoute() {
-  const { count, fixtures, itemGroups } = useLoaderData<typeof loader>();
+  const { count, fixtures, itemPostingGroups } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <FixturesTable data={fixtures} count={count} itemGroups={itemGroups} />
+      <FixturesTable
+        data={fixtures}
+        count={count}
+        itemPostingGroups={itemPostingGroups}
+      />
       <Outlet />
     </VStack>
   );

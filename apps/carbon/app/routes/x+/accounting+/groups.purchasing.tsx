@@ -8,7 +8,7 @@ import {
   PurchasingPostingGroupsTable,
   getPurchasingPostingGroups,
 } from "~/modules/accounting";
-import { getItemGroupsList } from "~/modules/items";
+import { getItemPostingGroupsList } from "~/modules/items";
 import { getSupplierTypesList } from "~/modules/purchasing";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -32,16 +32,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [purchasingGroups, itemGroups, supplierTypes] = await Promise.all([
-    getPurchasingPostingGroups(client, companyId, {
-      limit,
-      offset,
-      sorts,
-      filters,
-    }),
-    getItemGroupsList(client, companyId),
-    getSupplierTypesList(client, companyId),
-  ]);
+  const [purchasingGroups, itemPostingGroups, supplierTypes] =
+    await Promise.all([
+      getPurchasingPostingGroups(client, companyId, {
+        limit,
+        offset,
+        sorts,
+        filters,
+      }),
+      getItemPostingGroupsList(client, companyId),
+      getSupplierTypesList(client, companyId),
+    ]);
   if (purchasingGroups.error) {
     throw redirect(
       path.to.accounting,
@@ -57,14 +58,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return json({
     data: purchasingGroups.data ?? [],
-    itemGroups: itemGroups.data ?? [],
+    itemPostingGroups: itemPostingGroups.data ?? [],
     supplierTypes: supplierTypes.data ?? [],
     count: purchasingGroups.count ?? 0,
   });
 }
 
 export default function PurchasingPostingGroupsRoute() {
-  const { data, itemGroups, supplierTypes, count } =
+  const { data, itemPostingGroups, supplierTypes, count } =
     useLoaderData<typeof loader>();
 
   const routeData = useRouteData<{
@@ -77,7 +78,7 @@ export default function PurchasingPostingGroupsRoute() {
       <PurchasingPostingGroupsTable
         data={data}
         count={count}
-        itemGroups={itemGroups}
+        itemPostingGroups={itemPostingGroups}
         supplierTypes={supplierTypes}
         balanceSheetAccounts={routeData?.balanceSheetAccounts ?? []}
         incomeStatementAccounts={routeData?.incomeStatementAccounts ?? []}

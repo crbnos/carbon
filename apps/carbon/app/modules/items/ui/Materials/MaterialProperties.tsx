@@ -120,7 +120,7 @@ const MaterialProperties = () => {
           className={cn(
             routeData?.materialSummary?.active === false && "opacity-50"
           )}
-          value={routeData?.materialSummary?.itemInventoryType ?? null}
+          value={routeData?.materialSummary?.itemTrackingType ?? null}
         />
       </VStack>
 

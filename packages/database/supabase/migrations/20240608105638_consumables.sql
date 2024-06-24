@@ -60,19 +60,16 @@ CREATE OR REPLACE VIEW "consumables" WITH(SECURITY_INVOKER=true) AS
   SELECT
     i.name,
     i.description,
-    i."itemGroupId",
-    i."itemInventoryType",
+    i."itemTrackingType",
     i."unitOfMeasureCode",
     i.active,
     i.blocked,
     i.assignee,
     c.*,
-    ig.name AS "itemGroup",
     s."supplierIds",
     uom.name as "unitOfMeasure"
   FROM "consumable" c
   INNER JOIN "item" i ON i.id = c."itemId"
-  LEFT JOIN "itemGroup" ig ON ig.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "itemId",

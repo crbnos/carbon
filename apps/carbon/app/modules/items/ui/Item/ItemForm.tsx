@@ -14,7 +14,7 @@ import {
   CustomFormFields,
   Hidden,
   Input,
-  ItemGroup,
+  ItemPostingGroup,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -57,7 +57,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             />
 
             <Input name="name" label="Name" />
-            <ItemGroup name="itemGroupId" label="Item Group" />
+            <ItemPostingGroup name="itemPostingGroupId" label="Posting Group" />
 
             <Boolean name="active" label="Active" />
             <CustomFormFields table="part" />

@@ -137,7 +137,7 @@ const QuotationMaterialForm = ({
               <Part
                 name="itemId"
                 label="Part"
-                partReplenishmentSystem="Buy"
+                itemReplenishmentSystem="Buy"
                 onChange={(value) => {
                   onPartChange(value?.value as string);
                 }}

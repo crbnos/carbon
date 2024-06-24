@@ -12,6 +12,7 @@ import {
   Boolean,
   CustomFormFields,
   Hidden,
+  ItemPostingGroup,
   Number,
   Select,
   Submit,
@@ -59,6 +60,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
                 if (newValue) setItemCostingMethod(newValue.value);
               }}
             />
+            <ItemPostingGroup name="itemPostingGroupId" label="Posting Group" />
             <Number
               name="standardCost"
               label="Standard Cost"

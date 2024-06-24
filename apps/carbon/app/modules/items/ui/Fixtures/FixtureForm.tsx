@@ -22,13 +22,13 @@ import {
   Hidden,
   Input,
   InputControlled,
-  ItemGroup,
+  ItemPostingGroup,
   Select,
   Submit,
   TextArea,
 } from "~/components/Form";
 import { useNextItemId, usePermissions } from "~/hooks";
-import { fixtureValidator, itemInventoryTypes } from "~/modules/items";
+import { fixtureValidator, itemTrackingTypes } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type FixtureFormProps = {
@@ -63,10 +63,10 @@ const FixtureForm = ({
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
-  const itemInventoryTypeOptions =
-    itemInventoryTypes.map((itemInventoryType) => ({
-      label: itemInventoryType,
-      value: itemInventoryType,
+  const itemTrackingTypeOptions =
+    itemTrackingTypes.map((itemTrackingType) => ({
+      label: itemTrackingType,
+      value: itemTrackingType,
     })) ?? [];
 
   return (
@@ -126,11 +126,14 @@ const FixtureForm = ({
                 )}
 
                 <Select
-                  name="itemInventoryType"
+                  name="itemTrackingType"
                   label="Tracking Type"
-                  options={itemInventoryTypeOptions}
+                  options={itemTrackingTypeOptions}
                 />
-                <ItemGroup name="itemGroupId" label="Posting Group" />
+                <ItemPostingGroup
+                  name="itemPostingGroupId"
+                  label="Posting Group"
+                />
                 <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="fixture" />

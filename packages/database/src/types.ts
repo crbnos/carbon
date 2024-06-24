@@ -6022,13 +6022,13 @@ export type Database = {
           companyId: string | null
           createdAt: string
           createdBy: string
+          defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           id: string
-          itemGroupId: string | null
-          itemInventoryType: Database["public"]["Enums"]["itemInventoryType"]
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           name: string
-          pullFromInventory: boolean
           readableId: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -6040,13 +6040,13 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy: string
+          defaultMethodType?: Database["public"]["Enums"]["methodType"] | null
           description?: string | null
           id?: string
-          itemGroupId?: string | null
-          itemInventoryType: Database["public"]["Enums"]["itemInventoryType"]
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           name: string
-          pullFromInventory?: boolean
           readableId: string
+          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -6058,13 +6058,13 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy?: string
+          defaultMethodType?: Database["public"]["Enums"]["methodType"] | null
           description?: string | null
           id?: string
-          itemGroupId?: string | null
-          itemInventoryType?: Database["public"]["Enums"]["itemInventoryType"]
+          itemTrackingType?: Database["public"]["Enums"]["itemTrackingType"]
           name?: string
-          pullFromInventory?: boolean
           readableId?: string
+          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           type?: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -6170,13 +6170,6 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "item_itemGroupId_fkey"
-            columns: ["itemGroupId"]
-            isOneToOne: false
-            referencedRelation: "itemGroup"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "item_unitOfMeasureCode_fkey"
             columns: ["unitOfMeasureCode", "companyId"]
             isOneToOne: false
@@ -6229,6 +6222,7 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           itemId: string
+          itemPostingGroupId: string | null
           standardCost: number
           unitCost: number
           updatedAt: string | null
@@ -6242,6 +6236,7 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           itemId: string
+          itemPostingGroupId?: string | null
           standardCost?: number
           unitCost?: number
           updatedAt?: string | null
@@ -6255,6 +6250,7 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           itemId?: string
+          itemPostingGroupId?: string | null
           standardCost?: number
           unitCost?: number
           updatedAt?: string | null
@@ -6304,208 +6300,77 @@ export type Database = {
             referencedColumns: ["itemId"]
           },
           {
-            foreignKeyName: "itemGroup_createdBy_fkey"
+            foreignKeyName: "itemCost_itemPostingGroupId_fkey"
+            columns: ["itemPostingGroupId"]
+            isOneToOne: false
+            referencedRelation: "itemPostingGroup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemGroup_createdBy_fkey"
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemGroup_createdBy_fkey"
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemGroup_createdBy_fkey"
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemGroup_createdBy_fkey"
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      itemGroup: {
-        Row: {
-          active: boolean
-          companyId: string
-          createdAt: string
-          createdBy: string
-          customFields: Json | null
-          description: string | null
-          id: string
-          name: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          active?: boolean
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          customFields?: Json | null
-          description?: string | null
-          id?: string
-          name: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          active?: boolean
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          customFields?: Json | null
-          description?: string | null
-          id?: string
-          name?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "itemGroup_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemGroup_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemGroup_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemGroup_updatedBy_fkey"
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -6854,6 +6719,144 @@ export type Database = {
           },
           {
             foreignKeyName: "itemPlanning_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      itemPostingGroup: {
+        Row: {
+          active: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          description: string | null
+          id: string
+          name: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          description?: string | null
+          id?: string
+          name: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          description?: string | null
+          id?: string
+          name?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itemPostingGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPostingGroup_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -8737,7 +8740,6 @@ export type Database = {
           fromDate: string | null
           id: string
           itemId: string
-          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -8752,7 +8754,6 @@ export type Database = {
           fromDate?: string | null
           id: string
           itemId: string
-          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8767,7 +8768,6 @@ export type Database = {
           fromDate?: string | null
           id?: string
           itemId?: string
-          replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           toDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -9418,7 +9418,7 @@ export type Database = {
           inventoryInvoicedNotReceivedAccount: string
           inventoryReceivedNotInvoicedAccount: string
           inventoryShippedNotInvoicedAccount: string
-          itemGroupId: string | null
+          itemPostingGroupId: string | null
           locationId: string | null
           materialVarianceAccount: string
           overheadAccount: string
@@ -9439,7 +9439,7 @@ export type Database = {
           inventoryInvoicedNotReceivedAccount: string
           inventoryReceivedNotInvoicedAccount: string
           inventoryShippedNotInvoicedAccount: string
-          itemGroupId?: string | null
+          itemPostingGroupId?: string | null
           locationId?: string | null
           materialVarianceAccount: string
           overheadAccount: string
@@ -9460,7 +9460,7 @@ export type Database = {
           inventoryInvoicedNotReceivedAccount?: string
           inventoryReceivedNotInvoicedAccount?: string
           inventoryShippedNotInvoicedAccount?: string
-          itemGroupId?: string | null
+          itemPostingGroupId?: string | null
           locationId?: string | null
           materialVarianceAccount?: string
           overheadAccount?: string
@@ -9597,10 +9597,10 @@ export type Database = {
             referencedColumns: ["number", "companyId"]
           },
           {
-            foreignKeyName: "postingGroupInventory_itemGroupId_fkey"
-            columns: ["itemGroupId"]
+            foreignKeyName: "postingGroupInventory_itemPostingGroupId_fkey"
+            columns: ["itemPostingGroupId"]
             isOneToOne: false
-            referencedRelation: "itemGroup"
+            referencedRelation: "itemPostingGroup"
             referencedColumns: ["id"]
           },
           {
@@ -9742,7 +9742,7 @@ export type Database = {
         Row: {
           companyId: string
           id: string
-          itemGroupId: string | null
+          itemPostingGroupId: string | null
           payablesAccount: string
           purchaseAccount: string
           purchaseCreditAccount: string
@@ -9755,7 +9755,7 @@ export type Database = {
         Insert: {
           companyId: string
           id?: string
-          itemGroupId?: string | null
+          itemPostingGroupId?: string | null
           payablesAccount: string
           purchaseAccount: string
           purchaseCreditAccount: string
@@ -9768,7 +9768,7 @@ export type Database = {
         Update: {
           companyId?: string
           id?: string
-          itemGroupId?: string | null
+          itemPostingGroupId?: string | null
           payablesAccount?: string
           purchaseAccount?: string
           purchaseCreditAccount?: string
@@ -9808,10 +9808,10 @@ export type Database = {
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "postingGroupPurchasing_itemGroupId_fkey"
-            columns: ["itemGroupId"]
+            foreignKeyName: "postingGroupPurchasing_itemPostingGroupId_fkey"
+            columns: ["itemPostingGroupId"]
             isOneToOne: false
-            referencedRelation: "itemGroup"
+            referencedRelation: "itemPostingGroup"
             referencedColumns: ["id"]
           },
           {
@@ -9947,7 +9947,7 @@ export type Database = {
           companyId: string
           customerTypeId: string | null
           id: string
-          itemGroupId: string | null
+          itemPostingGroupId: string | null
           receivablesAccount: string
           salesAccount: string
           salesCreditAccount: string
@@ -9960,7 +9960,7 @@ export type Database = {
           companyId: string
           customerTypeId?: string | null
           id?: string
-          itemGroupId?: string | null
+          itemPostingGroupId?: string | null
           receivablesAccount: string
           salesAccount: string
           salesCreditAccount: string
@@ -9973,7 +9973,7 @@ export type Database = {
           companyId?: string
           customerTypeId?: string | null
           id?: string
-          itemGroupId?: string | null
+          itemPostingGroupId?: string | null
           receivablesAccount?: string
           salesAccount?: string
           salesCreditAccount?: string
@@ -10019,10 +10019,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "postingGroupSales_itemGroupId_fkey"
-            columns: ["itemGroupId"]
+            foreignKeyName: "postingGroupSales_itemPostingGroupId_fkey"
+            columns: ["itemPostingGroupId"]
             isOneToOne: false
-            referencedRelation: "itemGroup"
+            referencedRelation: "itemPostingGroup"
             referencedColumns: ["id"]
           },
           {
@@ -20235,16 +20235,17 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
+          defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           id: string | null
-          itemGroup: string | null
-          itemGroupId: string | null
           itemId: string | null
-          itemInventoryType:
-            | Database["public"]["Enums"]["itemInventoryType"]
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
             | null
           name: string | null
-          pullFromInventory: boolean | null
+          replenishmentSystem:
+            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | null
           supplierIds: string[] | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -20433,13 +20434,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_itemGroupId_fkey"
-            columns: ["itemGroupId"]
-            isOneToOne: false
-            referencedRelation: "itemGroup"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -20975,16 +20969,17 @@ export type Database = {
           customer: string | null
           customerId: string | null
           customFields: Json | null
+          defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           id: string | null
-          itemGroup: string | null
-          itemGroupId: string | null
           itemId: string | null
-          itemInventoryType:
-            | Database["public"]["Enums"]["itemInventoryType"]
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
             | null
           name: string | null
-          pullFromInventory: boolean | null
+          replenishmentSystem:
+            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | null
           supplierIds: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -21192,13 +21187,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_itemGroupId_fkey"
-            columns: ["itemGroupId"]
-            isOneToOne: false
-            referencedRelation: "itemGroup"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -21431,23 +21419,24 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
+          defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           dimensions: string | null
           finish: string | null
           grade: string | null
           id: string | null
-          itemGroup: string | null
-          itemGroupId: string | null
           itemId: string | null
-          itemInventoryType:
-            | Database["public"]["Enums"]["itemInventoryType"]
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
             | null
           materialForm: string | null
           materialFormId: string | null
           materialSubstance: string | null
           materialSubstanceId: string | null
           name: string | null
-          pullFromInventory: boolean | null
+          replenishmentSystem:
+            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | null
           supplierIds: string[] | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -21489,13 +21478,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_itemGroupId_fkey"
-            columns: ["itemGroupId"]
-            isOneToOne: false
-            referencedRelation: "itemGroup"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "material_approvedBy_fkey"
@@ -21817,17 +21799,15 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
+          defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           fromDate: string | null
           id: string | null
-          itemGroup: string | null
-          itemGroupId: string | null
           itemId: string | null
-          itemInventoryType:
-            | Database["public"]["Enums"]["itemInventoryType"]
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
             | null
           name: string | null
-          pullFromInventory: boolean | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -21873,13 +21853,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_itemGroupId_fkey"
-            columns: ["itemGroupId"]
-            isOneToOne: false
-            referencedRelation: "itemGroup"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "part_approvedBy_fkey"
@@ -24157,14 +24130,15 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
+          defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           fromDate: string | null
           id: string | null
-          itemGroup: string | null
-          itemGroupId: string | null
           itemId: string | null
           name: string | null
-          pullFromInventory: boolean | null
+          replenishmentSystem:
+            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | null
           serviceType: Database["public"]["Enums"]["serviceType"] | null
           supplierIds: string[] | null
           toDate: string | null
@@ -24206,13 +24180,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_itemGroupId_fkey"
-            columns: ["itemGroupId"]
-            isOneToOne: false
-            referencedRelation: "itemGroup"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "service_approvedBy_fkey"
@@ -24731,16 +24698,17 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
+          defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           id: string | null
-          itemGroup: string | null
-          itemGroupId: string | null
           itemId: string | null
-          itemInventoryType:
-            | Database["public"]["Enums"]["itemInventoryType"]
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
             | null
           name: string | null
-          pullFromInventory: boolean | null
+          replenishmentSystem:
+            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | null
           supplierIds: string[] | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -24782,13 +24750,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_itemGroupId_fkey"
-            columns: ["itemGroupId"]
-            isOneToOne: false
-            referencedRelation: "itemGroup"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "tool_approvedBy_fkey"
@@ -25233,7 +25194,6 @@ export type Database = {
       glConsolidatedRate: "Average" | "Current" | "Historical"
       glIncomeBalance: "Balance Sheet" | "Income Statement"
       itemCostingMethod: "Standard" | "Average" | "LIFO" | "FIFO"
-      itemInventoryType: "Inventory" | "Non-Inventory"
       itemLedgerDocumentType:
         | "Sales Shipment"
         | "Sales Invoice"
@@ -25268,6 +25228,7 @@ export type Database = {
         | "Fixed Reorder Quantity"
         | "Maximum Quantity"
       itemReplenishmentSystem: "Buy" | "Make" | "Buy and Make"
+      itemTrackingType: "Inventory" | "Non-Inventory"
       itemType:
         | "Part"
         | "Material"

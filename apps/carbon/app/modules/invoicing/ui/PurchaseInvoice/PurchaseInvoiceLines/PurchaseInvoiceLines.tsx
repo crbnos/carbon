@@ -184,6 +184,10 @@ const PurchaseInvoiceLines = () => {
         cell: ({ row }) => {
           switch (row.original.invoiceLineType) {
             case "Part":
+            case "Material":
+            case "Tool":
+            case "Fixture":
+            case "Consumable":
               return (
                 <span>
                   {
@@ -193,6 +197,8 @@ const PurchaseInvoiceLines = () => {
                   }
                 </span>
               );
+            default:
+              return null;
           }
         },
       },

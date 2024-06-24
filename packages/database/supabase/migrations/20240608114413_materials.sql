@@ -195,8 +195,7 @@ CREATE OR REPLACE VIEW "materials" WITH(SECURITY_INVOKER=true) AS
   SELECT
     i.name,
     i.description,
-    i."itemGroupId",
-    i."itemInventoryType",
+    i."itemTrackingType",
     i."unitOfMeasureCode",
     i.active,
     i.blocked,
@@ -204,12 +203,10 @@ CREATE OR REPLACE VIEW "materials" WITH(SECURITY_INVOKER=true) AS
     m.*,
     mf."name" AS "materialForm",
     ms."name" AS "materialSubstance",
-    ig.name AS "itemGroup",
     s."supplierIds",
     uom.name as "unitOfMeasure"
   FROM "material" m
   INNER JOIN "item" i ON i.id = m."itemId"
-  LEFT JOIN "itemGroup" ig ON ig.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "itemId",

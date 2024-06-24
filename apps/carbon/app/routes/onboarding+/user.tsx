@@ -90,7 +90,7 @@ export default function OnboardingUser() {
 
   const initialValues = {} as z.infer<typeof onboardingUserValidator>;
 
-  if (user?.email && user.email !== "admin@carbon.us.org") {
+  if (user?.email && user.email !== "admin@carbonos.dev") {
     initialValues.email = user.email;
   }
   if (

@@ -3,9 +3,9 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
 import {
-  ItemGroupForm,
-  itemGroupValidator,
-  upsertItemGroup,
+  ItemPostingGroupForm,
+  itemPostingGroupValidator,
+  upsertItemPostingGroup,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -31,7 +31,9 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const modal = formData.get("type") == "modal";
 
-  const validation = await validator(itemGroupValidator).validate(formData);
+  const validation = await validator(itemPostingGroupValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
@@ -39,42 +41,42 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const insertItemGroup = await upsertItemGroup(client, {
+  const insertItemPostingGroup = await upsertItemPostingGroup(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (insertItemGroup.error) {
+  if (insertItemPostingGroup.error) {
     return json(
       {},
       await flash(
         request,
-        error(insertItemGroup.error, "Failed to insert item group")
+        error(insertItemPostingGroup.error, "Failed to insert item group")
       )
     );
   }
 
-  const itemGroupId = insertItemGroup.data?.id;
-  if (!itemGroupId) {
+  const itemPostingGroupId = insertItemPostingGroup.data?.id;
+  if (!itemPostingGroupId) {
     return json(
       {},
       await flash(
         request,
-        error(insertItemGroup, "Failed to insert item group")
+        error(insertItemPostingGroup, "Failed to insert item group")
       )
     );
   }
 
   return modal
-    ? json(insertItemGroup, { status: 201 })
+    ? json(insertItemPostingGroup, { status: 201 })
     : redirect(
-        `${path.to.itemGroups}?${getParams(request)}`,
+        `${path.to.itemPostingGroups}?${getParams(request)}`,
         await flash(request, success("Item posting group created"))
       );
 }
 
-export default function NewItemGroupsRoute() {
+export default function NewItemPostingGroupsRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
@@ -82,6 +84,9 @@ export default function NewItemGroupsRoute() {
   };
 
   return (
-    <ItemGroupForm onClose={() => navigate(-1)} initialValues={initialValues} />
+    <ItemPostingGroupForm
+      onClose={() => navigate(-1)}
+      initialValues={initialValues}
+    />
   );
 }

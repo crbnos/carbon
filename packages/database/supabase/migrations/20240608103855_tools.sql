@@ -64,19 +64,16 @@ CREATE OR REPLACE VIEW "tools" WITH(SECURITY_INVOKER=true) AS
   SELECT
     i.name,
     i.description,
-    i."itemGroupId",
-    i."itemInventoryType",
+    i."itemTrackingType",
     i.active,
     i.blocked,
     i.assignee,
     i."unitOfMeasureCode",
     t.*,
-    ig.name AS "itemGroup",
     s."supplierIds",
     uom.name as "unitOfMeasure"
   FROM "tool" t
   INNER JOIN "item" i ON i.id = t."itemId"
-  LEFT JOIN "itemGroup" ig ON ig.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "itemId",

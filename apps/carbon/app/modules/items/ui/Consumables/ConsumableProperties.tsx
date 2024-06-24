@@ -108,7 +108,7 @@ const ConsumableProperties = () => {
           className={cn(
             routeData?.consumableSummary?.active === false && "opacity-50"
           )}
-          value={routeData?.consumableSummary?.itemInventoryType ?? null}
+          value={routeData?.consumableSummary?.itemTrackingType ?? null}
         />
       </VStack>
 

@@ -77,11 +77,13 @@ export default function MaterialDetailsRoute() {
     finish: materialData.materialSummary?.finish ?? "",
     grade: materialData.materialSummary?.grade ?? "",
     dimensions: materialData.materialSummary?.dimensions ?? "",
-    itemGroupId: materialData.materialSummary?.itemGroupId ?? "",
-    itemInventoryType:
-      materialData.materialSummary?.itemInventoryType ?? "Inventory",
+    replenishmentSystem:
+      materialData.materialSummary?.replenishmentSystem ?? "Buy",
+    defaultMethodType: materialData.materialSummary?.defaultMethodType ?? "Buy",
+
+    itemTrackingType:
+      materialData.materialSummary?.itemTrackingType ?? "Inventory",
     active: materialData.materialSummary?.active ?? true,
-    pullFromInventory: materialData.materialSummary?.pullFromInventory ?? false,
     unitOfMeasureCode: materialData.materialSummary?.unitOfMeasureCode ?? "EA",
     ...getCustomFields(materialData.materialSummary?.customFields ?? {}),
   };

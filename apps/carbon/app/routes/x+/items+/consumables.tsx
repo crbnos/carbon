@@ -5,7 +5,7 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import {
   ConsumablesTable,
   getConsumables,
-  getItemGroupsList,
+  getItemPostingGroupsList,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [consumables, itemGroups] = await Promise.all([
+  const [consumables, itemPostingGroups] = await Promise.all([
     getConsumables(client, companyId, {
       search,
       supplierId,
@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getItemGroupsList(client, companyId),
+    getItemPostingGroupsList(client, companyId),
   ]);
 
   if (consumables.error) {
@@ -57,19 +57,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: consumables.count ?? 0,
     consumables: consumables.data ?? [],
-    itemGroups: itemGroups.data ?? [],
+    itemPostingGroups: itemPostingGroups.data ?? [],
   });
 }
 
 export default function ConsumablesSearchRoute() {
-  const { count, consumables, itemGroups } = useLoaderData<typeof loader>();
+  const { count, consumables, itemPostingGroups } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <ConsumablesTable
         data={consumables}
         count={count}
-        itemGroups={itemGroups}
+        itemPostingGroups={itemPostingGroups}
       />
       <Outlet />
     </VStack>

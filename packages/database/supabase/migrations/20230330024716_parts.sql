@@ -54,7 +54,7 @@ CREATE POLICY "Employees with parts_delete can delete units of measure" ON "unit
   );
 
 
-CREATE TABLE "itemGroup" (
+CREATE TABLE "itemPostingGroup" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
   "description" TEXT,
@@ -66,18 +66,18 @@ CREATE TABLE "itemGroup" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
 
-  CONSTRAINT "itemGroup_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "itemGroup_name_key" UNIQUE ("name", "companyId"),
-  CONSTRAINT "itemGroup_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "itemGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "itemGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemPostingGroup_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "itemPostingGroup_name_key" UNIQUE ("name", "companyId"),
+  CONSTRAINT "itemPostingGroup_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemPostingGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemPostingGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
-CREATE INDEX "itemGroup_companyId_idx" ON "itemGroup" ("companyId");
+CREATE INDEX "itemPostingGroup_companyId_idx" ON "itemPostingGroup" ("companyId");
 
-ALTER TABLE "itemGroup" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "itemPostingGroup" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with parts_view can view item groups" ON "itemGroup"
+CREATE POLICY "Employees with parts_view can view item groups" ON "itemPostingGroup"
   FOR SELECT
   USING (
     has_role('employee') AND
@@ -85,21 +85,21 @@ CREATE POLICY "Employees with parts_view can view item groups" ON "itemGroup"
   );
   
 
-CREATE POLICY "Employees with parts_create can insert item groups" ON "itemGroup"
+CREATE POLICY "Employees with parts_create can insert item groups" ON "itemPostingGroup"
   FOR INSERT
   WITH CHECK (   
     has_role('employee') AND
     has_company_permission('parts_create', "companyId")
 );
 
-CREATE POLICY "Employees with parts_update can update item groups" ON "itemGroup"
+CREATE POLICY "Employees with parts_update can update item groups" ON "itemPostingGroup"
   FOR UPDATE
   USING (
     has_role('employee') AND
     has_company_permission('parts_update', "companyId")
   );
 
-CREATE POLICY "Employees with parts_delete can delete item groups" ON "itemGroup"
+CREATE POLICY "Employees with parts_delete can delete item groups" ON "itemPostingGroup"
   FOR DELETE
   USING (
     has_role('employee') AND
@@ -116,19 +116,32 @@ CREATE TYPE "itemType" AS ENUM (
   'Fixture'
 );
 
-CREATE TYPE "itemInventoryType" AS ENUM (
+CREATE TYPE "itemTrackingType" AS ENUM (
   'Inventory',
   'Non-Inventory'
+);
+
+CREATE TYPE "itemReplenishmentSystem" AS ENUM (
+  'Buy',
+  'Make',
+  'Buy and Make'
+);
+
+CREATE TYPE "methodType" AS ENUM (
+  'Buy',
+  'Make',
+  'Pick'
 );
 
 CREATE TABLE "item" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "readableId" TEXT NOT NULL,
   "type" "itemType" NOT NULL,
+  "replenishmentSystem" "itemReplenishmentSystem" NOT NULL DEFAULT 'Buy',
+  "defaultMethodType" "methodType" DEFAULT 'Buy',
   "name" TEXT NOT NULL,
   "description" TEXT,
-  "itemGroupId" TEXT,
-  "itemInventoryType" "itemInventoryType" NOT NULL,
+  "itemTrackingType" "itemTrackingType" NOT NULL,
   "unitOfMeasureCode" TEXT,
   "active" BOOLEAN NOT NULL DEFAULT true,
   "blocked" BOOLEAN NOT NULL DEFAULT false,
@@ -142,7 +155,6 @@ CREATE TABLE "item" (
   CONSTRAINT "item_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "item_unique" UNIQUE ("readableId", "companyId", "type"),
   CONSTRAINT "item_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "item_itemGroupId_fkey" FOREIGN KEY ("itemGroupId") REFERENCES "itemGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "item_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
   CONSTRAINT "item_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
@@ -152,6 +164,7 @@ ALTER publication supabase_realtime ADD TABLE "item";
 CREATE INDEX "item_companyId_idx" ON "item" ("companyId");
 CREATE INDEX "item_name_companyId_idx" ON "item" ("name", "companyId");
 CREATE INDEX "item_type_companyId_idx" ON "item" ("type", "companyId");
+CREATE INDEX "item_replenishmentSystem_idx" ON "item"("replenishmentSystem", "companyId");
 
 ALTER TABLE "item" ENABLE ROW LEVEL SECURITY;
 
@@ -186,11 +199,7 @@ CREATE POLICY "Employees with parts_delete can delete items" ON "item"
   );
 
 
-CREATE TYPE "itemReplenishmentSystem" AS ENUM (
-  'Buy',
-  'Make',
-  'Buy and Make'
-);
+
 
 CREATE TYPE "partManufacturingPolicy" AS ENUM (
   'Make to Order',
@@ -216,7 +225,6 @@ CREATE TYPE "itemReorderingPolicy" AS ENUM (
 CREATE TABLE "part" (
   "id" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
-  "replenishmentSystem" "itemReplenishmentSystem" NOT NULL,
   "approved" BOOLEAN NOT NULL DEFAULT false,
   "approvedBy" TEXT,
   "fromDate" DATE,
@@ -240,7 +248,7 @@ CREATE TABLE "part" (
 
 CREATE INDEX "part_itemId_idx" ON "part" ("itemId");
 CREATE INDEX "part_companyId_idx" ON "part" ("companyId");
-CREATE INDEX "part_replenishmentSystem_idx" ON "part"("replenishmentSystem", "companyId");
+
 
 ALTER publication supabase_realtime ADD TABLE "part";
 ALTER TABLE "part" ENABLE ROW LEVEL SECURITY;
@@ -340,6 +348,7 @@ CREATE TRIGGER delete_item_search_result
 
 CREATE TABLE "itemCost" (
   "itemId" TEXT NOT NULL,
+  "itemPostingGroupId" TEXT,
   "costingMethod" "itemCostingMethod" NOT NULL,
   "standardCost" NUMERIC(15,5) NOT NULL DEFAULT 0,
   "unitCost" NUMERIC(15,5) NOT NULL DEFAULT 0,
@@ -353,9 +362,10 @@ CREATE TABLE "itemCost" (
 
 
   CONSTRAINT "itemCost_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "itemCost_itemPostingGroupId_fkey" FOREIGN KEY ("itemPostingGroupId") REFERENCES "itemPostingGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "itemCost_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "itemGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
-  CONSTRAINT "itemGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
+  CONSTRAINT "itemPostingGroup_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "itemPostingGroup_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
 CREATE INDEX "itemCost_itemId_idx" ON "itemCost" ("itemId");

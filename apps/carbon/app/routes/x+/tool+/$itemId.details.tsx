@@ -61,10 +61,10 @@ export default function ToolDetailsRoute() {
     itemId: toolData.toolSummary?.itemId ?? "",
     name: toolData.toolSummary?.name ?? "",
     description: toolData.toolSummary?.description ?? "",
-    itemGroupId: toolData.toolSummary?.itemGroupId ?? "",
-    itemInventoryType: toolData.toolSummary?.itemInventoryType ?? "Inventory",
+    replenishmentSystem: toolData.toolSummary?.replenishmentSystem ?? "Buy",
+    defaultMethodType: toolData.toolSummary?.defaultMethodType ?? "Buy",
+    itemTrackingType: toolData.toolSummary?.itemTrackingType ?? "Inventory",
     active: toolData.toolSummary?.active ?? true,
-    pullFromInventory: toolData.toolSummary?.pullFromInventory ?? false,
     unitOfMeasureCode: toolData.toolSummary?.unitOfMeasureCode ?? "EA",
     ...getCustomFields(toolData.toolSummary?.customFields ?? {}),
   };

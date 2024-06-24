@@ -14,7 +14,7 @@ export const defaultWorkInstruction = {
   ],
 };
 
-export const itemInventoryTypes = ["Inventory", "Non-Inventory"] as const;
+export const itemTrackingTypes = ["Inventory", "Non-Inventory"] as const;
 
 export const itemCostingMethods = [
   "Standard",
@@ -46,7 +46,7 @@ export const methodOperationOrders = [
   "With Previous",
 ] as const;
 
-export const partReplenishmentSystems = [
+export const itemReplenishmentSystems = [
   "Buy",
   "Make",
   "Buy and Make",
@@ -63,13 +63,21 @@ export const itemValidator = z.object({
   id: z.string().min(1, { message: "Item ID is required" }).max(255),
   name: z.string().min(1, { message: "Name is required" }).max(255),
   description: zfd.text(z.string().optional()),
-  itemGroupId: zfd.text(z.string().optional()),
-  itemInventoryType: z.enum(itemInventoryTypes, {
+  replenishmentSystem: z.enum(itemReplenishmentSystems, {
+    errorMap: (issue, ctx) => ({
+      message: "Replenishment system is required",
+    }),
+  }),
+  defaultMethodType: z.enum(methodType, {
+    errorMap: (issue, ctx) => ({
+      message: "Default method is required",
+    }),
+  }),
+  itemTrackingType: z.enum(itemTrackingTypes, {
     errorMap: (issue, ctx) => ({
       message: "Part type is required",
     }),
   }),
-  pullFromInventory: zfd.checkbox(),
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of Measure is required" }),
@@ -166,6 +174,7 @@ export const methodOperationValidator = z.object({
 
 export const itemCostValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
+  itemPostingGroupId: zfd.text(z.string().optional()),
   costingMethod: z.enum(itemCostingMethods, {
     errorMap: (issue, ctx) => ({
       message: "Costing method is required",
@@ -176,7 +185,7 @@ export const itemCostValidator = z.object({
   costIsAdjusted: zfd.checkbox(),
 });
 
-export const itemGroupValidator = z.object({
+export const itemPostingGroupValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }).max(255),
   description: z.string().optional(),
@@ -238,11 +247,6 @@ export const materialSubstanceValidator = z.object({
 export const partValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Part ID is required" }).max(255),
-    replenishmentSystem: z.enum(partReplenishmentSystems, {
-      errorMap: (issue, ctx) => ({
-        message: "Replenishment system is required",
-      }),
-    }),
   })
 );
 

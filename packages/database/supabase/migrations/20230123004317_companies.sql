@@ -96,7 +96,7 @@ CREATE POLICY "Users can view other users from their same company" ON "user" FOR
 );
 
 INSERT INTO "user" ("id", "email", "firstName", "lastName")
-VALUES ('system', 'system@carbon.us.org', 'System', 'Operation');
+VALUES ('system', 'system@carbonos.dev', 'System', 'Operation');
 
 
 CREATE TABLE "userPermission" (

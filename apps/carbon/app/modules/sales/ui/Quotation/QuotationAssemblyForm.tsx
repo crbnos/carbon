@@ -159,7 +159,7 @@ const QuotationAssemblyForm = ({
               <Part
                 name="itemId"
                 label="Manufactured Part"
-                partReplenishmentSystem="Make"
+                itemReplenishmentSystem="Make"
                 onChange={(value) => {
                   onPartChange(value?.value as string);
                 }}

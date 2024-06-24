@@ -62,18 +62,15 @@ CREATE OR REPLACE VIEW "fixtures" WITH(SECURITY_INVOKER=true) AS
   SELECT
     i.name,
     i.description,
-    i."itemGroupId",
-    i."itemInventoryType",
+    i."itemTrackingType",
     i.active,
     i.blocked,
     i.assignee,
     f.*,
-    ig.name AS "itemGroup",
     s."supplierIds",
     c.name as "customer"
   FROM "fixture" f
   INNER JOIN "item" i ON i.id = f."itemId"
-  LEFT JOIN "itemGroup" ig ON ig.id = i."itemGroupId"
   LEFT JOIN (
     SELECT 
       "itemId",

@@ -30,7 +30,7 @@ export const path = {
         generatePath(`${api}/users/groups?type=${type}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
       locations: `${api}/resources/locations`,
-      itemGroups: `${api}/items/groups`,
+      itemPostingGroups: `${api}/items/groups`,
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
       rollback: (table: string, id: string) =>
@@ -206,7 +206,7 @@ export const path = {
     deleteLocation: (id: string) =>
       generatePath(`${x}/resources/locations/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
-    deleteItemGroup: (id: string) =>
+    deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
     deleteMaterialForm: (id: string) =>
       generatePath(`${x}/items/forms/delete/${id}`),
@@ -317,8 +317,8 @@ export const path = {
     inventory: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
     items: `${x}/items`,
-    itemGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
-    itemGroups: `${x}/items/groups`,
+    itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
+    itemPostingGroups: `${x}/items/groups`,
     jobs: `${x}/jobs`,
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
@@ -410,7 +410,7 @@ export const path = {
       generatePath(`${x}/items/methods/${id}/operation/new`),
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
-    newItemGroup: `${x}/items/groups/new`,
+    newItemPostingGroup: `${x}/items/groups/new`,
     newMaterialForm: `${x}/items/forms/new`,
     newMaterialSubstance: `${x}/items/substances/new`,
     newMaterialSupplier: (id: string) =>

@@ -25,9 +25,9 @@ export function useFixtureNavigation() {
       shortcut: "Command+Shift+p",
     },
     {
-      name: "Costing",
+      name: "Accounting",
       to: path.to.fixtureCosting(itemId),
-      role: ["employee", "supplier"],
+      role: ["employee"],
       icon: LuTags,
       shortcut: "Command+Shift+c",
     },

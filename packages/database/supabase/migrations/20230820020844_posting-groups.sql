@@ -126,7 +126,7 @@ CREATE POLICY "Employees with accounting_update can update account defaults" ON 
 
 CREATE TABLE "postingGroupInventory" (
   "id" TEXT NOT NULL DEFAULT xid(),
-  "itemGroupId" TEXT,
+  "itemPostingGroupId" TEXT,
   "locationId" TEXT,
   "costOfGoodsSoldAccount" TEXT NOT NULL,
   "inventoryAccount" TEXT NOT NULL,
@@ -146,8 +146,8 @@ CREATE TABLE "postingGroupInventory" (
   "updatedBy" TEXT,
 
   CONSTRAINT "postingGroupInventory_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "postingGroupInventory_id_itemGroupId_locationId_key" UNIQUE ("itemGroupId", "locationId"),
-  CONSTRAINT "postingGroupInventory_itemGroupId_fkey" FOREIGN KEY ("itemGroupId") REFERENCES "itemGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "postingGroupInventory_id_itemPostingGroupId_locationId_key" UNIQUE ("itemPostingGroupId", "locationId"),
+  CONSTRAINT "postingGroupInventory_itemPostingGroupId_fkey" FOREIGN KEY ("itemPostingGroupId") REFERENCES "itemPostingGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "postingGroupInventory_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "postingGroupInventory_costOfGoodsSoldAccount_fkey" FOREIGN KEY ("costOfGoodsSoldAccount", "companyId") REFERENCES "account" ("number", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "postingGroupInventory_inventoryAccount_fkey" FOREIGN KEY ("inventoryAccount", "companyId") REFERENCES "account" ("number", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -166,7 +166,7 @@ CREATE TABLE "postingGroupInventory" (
   CONSTRAINT "postingGroupInventory_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-CREATE INDEX "postingGroupInventory_itemGroupId_locationId_idx" ON "postingGroupInventory" ("itemGroupId", "locationId");
+CREATE INDEX "postingGroupInventory_itemPostingGroupId_locationId_idx" ON "postingGroupInventory" ("itemPostingGroupId", "locationId");
 CREATE INDEX "postingGroupInventory_companyId_idx" ON "postingGroupInventory" ("companyId");
 
 ALTER TABLE "postingGroupInventory" ENABLE ROW LEVEL SECURITY;
@@ -189,7 +189,7 @@ CREATE POLICY "Employees with accounting_update can update inventory posting gro
 CREATE TABLE "postingGroupPurchasing" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "supplierTypeId" TEXT,
-  "itemGroupId" TEXT,
+  "itemPostingGroupId" TEXT,
   "payablesAccount" TEXT NOT NULL,
   "purchaseAccount" TEXT NOT NULL,
   "purchaseDiscountAccount" TEXT NOT NULL,
@@ -200,8 +200,8 @@ CREATE TABLE "postingGroupPurchasing" (
   "updatedBy" TEXT,
 
   CONSTRAINT "postingGroupPurchasing_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "postingGroupPurchasing_id_supplierTypeId_itemGroupId_key" UNIQUE ("supplierTypeId", "itemGroupId"),
-  CONSTRAINT "postingGroupPurchasing_itemGroupId_fkey" FOREIGN KEY ("itemGroupId") REFERENCES "itemGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "postingGroupPurchasing_id_supplierTypeId_itemPostingGroupId_key" UNIQUE ("supplierTypeId", "itemPostingGroupId"),
+  CONSTRAINT "postingGroupPurchasing_itemPostingGroupId_fkey" FOREIGN KEY ("itemPostingGroupId") REFERENCES "itemPostingGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "postingGroupPurchasing_supplierTypeId_fkey" FOREIGN KEY ("supplierTypeId") REFERENCES "supplierType" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "postingGroupPurchasing_payablesAccount_fkey" FOREIGN KEY ("payablesAccount", "companyId") REFERENCES "account" ("number", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "postingGroupPurchasing_purchaseAccount_fkey" FOREIGN KEY ("purchaseAccount", "companyId") REFERENCES "account" ("number", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -213,7 +213,7 @@ CREATE TABLE "postingGroupPurchasing" (
   CONSTRAINT "postingGroupPurchasing_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-CREATE INDEX "postingGroupPurchasing_itemGroupId_supplierTypeId_idx" ON "postingGroupPurchasing" ("itemGroupId", "supplierTypeId");
+CREATE INDEX "postingGroupPurchasing_itemPostingGroupId_supplierTypeId_idx" ON "postingGroupPurchasing" ("itemPostingGroupId", "supplierTypeId");
 CREATE INDEX "postingGroupPurchasing_companyId_idx" ON "postingGroupPurchasing" ("companyId");
 
 ALTER TABLE "postingGroupPurchasing" ENABLE ROW LEVEL SECURITY;
@@ -235,7 +235,7 @@ CREATE POLICY "Employees with accounting_update can update purchasing posting gr
 CREATE TABLE "postingGroupSales" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "customerTypeId" TEXT,
-  "itemGroupId" TEXT,
+  "itemPostingGroupId" TEXT,
   "receivablesAccount" TEXT NOT NULL,
   "salesAccount" TEXT NOT NULL,
   "salesDiscountAccount" TEXT NOT NULL,
@@ -246,8 +246,8 @@ CREATE TABLE "postingGroupSales" (
   "updatedBy" TEXT,
 
   CONSTRAINT "postingGroupSales_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "postingGroupSales_id_customerTypeId_itemGroupId_key" UNIQUE ("customerTypeId", "itemGroupId"),
-  CONSTRAINT "postingGroupSales_itemGroupId_fkey" FOREIGN KEY ("itemGroupId") REFERENCES "itemGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "postingGroupSales_id_customerTypeId_itemPostingGroupId_key" UNIQUE ("customerTypeId", "itemPostingGroupId"),
+  CONSTRAINT "postingGroupSales_itemPostingGroupId_fkey" FOREIGN KEY ("itemPostingGroupId") REFERENCES "itemPostingGroup" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "postingGroupSales_customerTypeId_fkey" FOREIGN KEY ("customerTypeId") REFERENCES "customerType" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "postingGroupSales_receivablesAccount_fkey" FOREIGN KEY ("receivablesAccount", "companyId") REFERENCES "account" ("number", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "postingGroupSales_salesAccount_fkey" FOREIGN KEY ("salesAccount", "companyId") REFERENCES "account" ("number", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -259,7 +259,7 @@ CREATE TABLE "postingGroupSales" (
   CONSTRAINT "postingGroupSales_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-CREATE INDEX "postingGroupSales_itemGroupId_customerTypeId_idx" ON "postingGroupSales" ("itemGroupId", "customerTypeId");
+CREATE INDEX "postingGroupSales_itemPostingGroupId_customerTypeId_idx" ON "postingGroupSales" ("itemPostingGroupId", "customerTypeId");
 CREATE INDEX "postingGroupSales_companyId_idx" ON "postingGroupSales" ("companyId");
 
 CREATE POLICY "Employees with accounting_view can view sales posting groups" ON "postingGroupSales"
@@ -284,10 +284,10 @@ DECLARE
 BEGIN
   SELECT * INTO account_defaults FROM "accountDefault" WHERE "companyId" = new."companyId";
 
-  FOR part_group IN SELECT "id" FROM "itemGroup"
+  FOR part_group IN SELECT "id" FROM "itemPostingGroup"
   LOOP
     INSERT INTO "postingGroupInventory" (
-      "itemGroupId",
+      "itemPostingGroupId",
       "locationId",
       "costOfGoodsSoldAccount",
       "inventoryAccount",
@@ -329,7 +329,7 @@ BEGIN
 
   -- insert the null item group
   INSERT INTO "postingGroupInventory" (
-    "itemGroupId",
+    "itemPostingGroupId",
     "locationId",
     "costOfGoodsSoldAccount",
     "inventoryAccount",
@@ -388,7 +388,7 @@ BEGIN
   FOR rec IN SELECT "id" FROM "customerType"
   LOOP
     INSERT INTO "postingGroupSales" (
-      "itemGroupId",
+      "itemPostingGroupId",
       "customerTypeId",
       "receivablesAccount",
       "salesAccount",
@@ -414,7 +414,7 @@ BEGIN
 
   -- insert the null customer type
   INSERT INTO "postingGroupSales" (
-    "itemGroupId",
+    "itemPostingGroupId",
     "customerTypeId",
     "receivablesAccount",
     "salesAccount",
@@ -440,7 +440,7 @@ BEGIN
   FOR rec IN SELECT "id" FROM "supplierType"
   LOOP
     INSERT INTO "postingGroupPurchasing" (
-      "itemGroupId",
+      "itemPostingGroupId",
       "supplierTypeId",
       "payablesAccount", 
       "purchaseAccount",
@@ -466,7 +466,7 @@ BEGIN
 
   -- insert the null supplier type
   INSERT INTO "postingGroupPurchasing" (
-    "itemGroupId",
+    "itemPostingGroupId",
     "supplierTypeId",
     "payablesAccount",
     "purchaseAccount",
@@ -492,7 +492,7 @@ BEGIN
   FOR rec IN SELECT "id" FROM "location"
   LOOP
     INSERT INTO "postingGroupInventory" (
-      "itemGroupId",
+      "itemPostingGroupId",
       "locationId",
       "costOfGoodsSoldAccount",
       "inventoryAccount",
@@ -534,7 +534,7 @@ BEGIN
 
   -- insert the null location
   INSERT INTO "postingGroupInventory" (
-    "itemGroupId",
+    "itemPostingGroupId",
     "locationId",
     "costOfGoodsSoldAccount",
     "inventoryAccount",
@@ -579,7 +579,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 CREATE TRIGGER create_part_group
-  AFTER INSERT on public."itemGroup"
+  AFTER INSERT on public."itemPostingGroup"
   FOR EACH ROW EXECUTE PROCEDURE public.create_posting_groups_for_part_group();
 
 CREATE FUNCTION public.create_posting_groups_for_customer_type()
@@ -590,11 +590,11 @@ DECLARE
 BEGIN
   SELECT * INTO account_defaults FROM "accountDefault" WHERE "companyId" = new."companyId";
 
-  FOR rec IN SELECT "id" FROM "itemGroup"
+  FOR rec IN SELECT "id" FROM "itemPostingGroup"
   LOOP
     INSERT INTO "postingGroupSales" (
       "customerTypeId",
-      "itemGroupId",
+      "itemPostingGroupId",
       "receivablesAccount",
       "salesAccount",
       "salesDiscountAccount",
@@ -620,7 +620,7 @@ BEGIN
   -- insert the null item group
   INSERT INTO "postingGroupSales" (
     "customerTypeId",
-    "itemGroupId",
+    "itemPostingGroupId",
     "receivablesAccount",
     "salesAccount",
     "salesDiscountAccount",
@@ -659,11 +659,11 @@ DECLARE
 BEGIN
   SELECT * INTO account_defaults FROM "accountDefault" WHERE "companyId" = new."companyId";
 
-  FOR rec IN SELECT "id" FROM "itemGroup"
+  FOR rec IN SELECT "id" FROM "itemPostingGroup"
   LOOP
     INSERT INTO "postingGroupPurchasing" (
       "supplierTypeId",
-      "itemGroupId",
+      "itemPostingGroupId",
       "payablesAccount",
       "purchaseAccount",
       "purchaseDiscountAccount",
@@ -689,7 +689,7 @@ BEGIN
   -- insert the null item group
   INSERT INTO "postingGroupPurchasing" (
     "supplierTypeId",
-    "itemGroupId",
+    "itemPostingGroupId",
     "payablesAccount",
     "purchaseAccount",
     "purchaseDiscountAccount",

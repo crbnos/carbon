@@ -43,7 +43,13 @@ serve(async (req: Request) => {
         .from("purchaseOrderLine")
         .select("*")
         .eq("purchaseOrderId", purchaseOrderId)
-        .eq("purchaseOrderLineType", "Part")
+        .in("purchaseOrderLineType", [
+          "Part",
+          "Material",
+          "Tool",
+          "Fixture",
+          "Consumable",
+        ])
         .eq("locationId", locationId),
       client
         .from("receipt")

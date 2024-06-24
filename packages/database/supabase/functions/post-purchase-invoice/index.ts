@@ -41,22 +41,26 @@ serve(async (req: Request) => {
       throw new Error("Failed to fetch receipt lines");
 
     const companyId = purchaseInvoice.data.companyId;
+    const itemIds = purchaseInvoiceLines.data.reduce<string[]>(
+      (acc, invoiceLine) => {
+        if (invoiceLine.itemId && !acc.includes(invoiceLine.itemId)) {
+          acc.push(invoiceLine.itemId);
+        }
+        return acc;
+      },
+      []
+    );
 
-    const [items, purchaseOrderLines, supplier] = await Promise.all([
+    const [items, itemCosts, purchaseOrderLines, supplier] = await Promise.all([
       client
         .from("item")
-        .select("id, itemGroupId, itemInventoryType, readableId")
-        .in(
-          "id",
-          purchaseInvoiceLines.data.reduce<string[]>((acc, invoiceLine) => {
-            if (invoiceLine.itemId && !acc.includes(invoiceLine.itemId)) {
-              acc.push(invoiceLine.itemId);
-            }
-            return acc;
-          }, [])
-        )
+        .select("id, itemTrackingType, readableId")
+        .in("id", itemIds)
         .eq("companyId", companyId),
-
+      client
+        .from("itemCost")
+        .select("itemId, itemPostingGroupId")
+        .in("itemId", itemIds),
       client
         .from("purchaseOrderLine")
         .select("*")
@@ -79,7 +83,8 @@ serve(async (req: Request) => {
         .eq("companyId", companyId)
         .single(),
     ]);
-    if (items.error) throw new Error("Failed to fetch item groups");
+    if (items.error) throw new Error("Failed to fetch items");
+    if (itemCosts.error) throw new Error("Failed to fetch item costs");
     if (purchaseOrderLines.error)
       throw new Error("Failed to fetch purchase order lines");
     if (supplier.error) throw new Error("Failed to fetch supplier");
@@ -227,7 +232,7 @@ serve(async (req: Request) => {
         | Database["public"]["Tables"]["postingGroupInventory"]["Row"]
         | null = null;
 
-      let itemGroupId: string | null = null;
+      let itemPostingGroupId: string | null = null;
 
       // purchasing posting group
       const purchasingPostingGroups: Record<
@@ -252,23 +257,23 @@ serve(async (req: Request) => {
         case "Fixture":
         case "Material":
         case "Tool":
-          const itemInventoryType =
+          const itemTrackingType =
             items.data.find((item) => item.id === invoiceLine.itemId)
-              ?.itemInventoryType ?? "Inventory";
+              ?.itemTrackingType ?? "Inventory";
 
-          itemGroupId =
-            items.data.find((item) => item.id === invoiceLine.itemId)
-              ?.itemGroupId ?? null;
+          itemPostingGroupId =
+            itemCosts.data.find((item) => item.itemId === invoiceLine.itemId)
+              ?.itemPostingGroupId ?? null;
 
           // inventory posting group
-          if (`${itemGroupId}-${locationId}` in inventoryPostingGroups) {
+          if (`${itemPostingGroupId}-${locationId}` in inventoryPostingGroups) {
             postingGroupInventory =
-              inventoryPostingGroups[`${itemGroupId}-${locationId}`];
+              inventoryPostingGroups[`${itemPostingGroupId}-${locationId}`];
           } else {
             const inventoryPostingGroup = await getInventoryPostingGroup(
               client,
               {
-                itemGroupId,
+                itemPostingGroupId,
                 locationId,
               }
             );
@@ -278,7 +283,7 @@ serve(async (req: Request) => {
             }
 
             postingGroupInventory = inventoryPostingGroup.data ?? null;
-            inventoryPostingGroups[`${itemGroupId}-${locationId}`] =
+            inventoryPostingGroups[`${itemPostingGroupId}-${locationId}`] =
               postingGroupInventory;
           }
 
@@ -286,14 +291,18 @@ serve(async (req: Request) => {
             throw new Error("No inventory posting group found");
           }
 
-          if (`${itemGroupId}-${supplierTypeId}` in purchasingPostingGroups) {
+          if (
+            `${itemPostingGroupId}-${supplierTypeId}` in purchasingPostingGroups
+          ) {
             postingGroupPurchasing =
-              purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`];
+              purchasingPostingGroups[
+                `${itemPostingGroupId}-${supplierTypeId}`
+              ];
           } else {
             const purchasingPostingGroup = await getPurchasingPostingGroup(
               client,
               {
-                itemGroupId,
+                itemPostingGroupId,
                 supplierTypeId,
               }
             );
@@ -303,7 +312,7 @@ serve(async (req: Request) => {
             }
 
             postingGroupPurchasing = purchasingPostingGroup.data ?? null;
-            purchasingPostingGroups[`${itemGroupId}-${supplierTypeId}`] =
+            purchasingPostingGroups[`${itemPostingGroupId}-${supplierTypeId}`] =
               postingGroupPurchasing;
           }
 
@@ -328,7 +337,7 @@ serve(async (req: Request) => {
               companyId,
             });
 
-            if (itemInventoryType === "Inventory") {
+            if (itemTrackingType === "Inventory") {
               // create the part ledger line
               itemLedgerInserts.push({
                 postingDate: today,
@@ -367,7 +376,7 @@ serve(async (req: Request) => {
 
             journalLineReference = nanoid();
 
-            if (itemInventoryType === "Inventory") {
+            if (itemTrackingType === "Inventory") {
               // debit the inventory account
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.inventoryAccount,
@@ -645,7 +654,7 @@ serve(async (req: Request) => {
 
               journalLineReference = nanoid();
 
-              if (itemInventoryType === "Inventory") {
+              if (itemTrackingType === "Inventory") {
                 // debit the inventory account
                 journalLineInserts.push({
                   accountNumber: postingGroupInventory.inventoryAccount,
