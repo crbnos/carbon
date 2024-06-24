@@ -16,40 +16,6 @@ CREATE TABLE "makeMethod" (
   CONSTRAINT "method_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
-CREATE FUNCTION public.create_make_method_related_records()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- if part.replenishmentSystem is 'Make' or 'Buy and Make' then create a make method record
-  IF new."replenishmentSystem" = 'Make' OR new."replenishmentSystem" = 'Buy and Make' THEN
-    INSERT INTO public."makeMethod"("itemId", "createdBy", "companyId")
-    VALUES (new."itemId", new."createdBy", new."companyId");
-  END IF;
-  
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE FUNCTION public.update_make_method_related_records()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- if part.replenishmentSystem is 'Make' or 'Buy and Make' then create a make method record
-  IF old."replenishmentSystem" = 'Buy' AND (new."replenishmentSystem" = 'Make' OR new."replenishmentSystem" = 'Buy and Make') THEN
-    INSERT INTO public."makeMethod"("itemId", "createdBy", "companyId")
-    VALUES (new."itemId", new."createdBy", new."companyId");
-  END IF;
-  
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER create_part_make_method_related_records
-  AFTER INSERT on public.part
-  FOR EACH ROW EXECUTE PROCEDURE public.create_make_method_related_records();
-
-CREATE TRIGGER update_part_make_method_related_records
-  AFTER UPDATE on public.part
-  FOR EACH ROW EXECUTE PROCEDURE public.update_make_method_related_records();
-
 
 
 CREATE TYPE "methodOperationOrder" AS ENUM (

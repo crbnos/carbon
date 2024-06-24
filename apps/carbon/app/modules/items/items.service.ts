@@ -956,7 +956,7 @@ export async function upsertFixture(
   };
 
   const fixtureUpdate = {
-    customerId: fixture.customerId,
+    customerId: fixture.customerId ? fixture.customerId : undefined,
     customFields: fixture.customFields,
   };
 

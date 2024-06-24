@@ -13,12 +13,6 @@ VALUES
 
 ALTER TABLE "makeMethod" ADD CONSTRAINT "makeMethod_unique_itemId" UNIQUE ("itemId", "companyId");
 
-DROP TRIGGER IF EXISTS create_part_make_method_related_records ON public.part;
-DROP TRIGGER IF EXISTS update_part_make_method_related_records ON public.part;
-
-DROP FUNCTION IF EXISTS public.create_make_method_related_records();
-DROP FUNCTION IF EXISTS public.update_make_method_related_records();
-
 CREATE FUNCTION public.create_make_method_related_records()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -32,6 +26,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE TRIGGER create_part_make_method_related_records
   AFTER INSERT on public.part
+  FOR EACH ROW EXECUTE PROCEDURE public.create_make_method_related_records();
+
+CREATE TRIGGER create_fixture_make_method_related_records
+  AFTER INSERT on public.fixture
   FOR EACH ROW EXECUTE PROCEDURE public.create_make_method_related_records();
 
 

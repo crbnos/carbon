@@ -13,15 +13,15 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
+  DefaultMethodType,
   Hidden,
   Input,
   InputControlled,
-  ItemPostingGroup,
   Select,
   Submit,
   TextArea,
@@ -65,6 +65,10 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
       value: itemTrackingType,
     })) ?? [];
 
+  const [defaultMethodType, setDefaultMethodType] = useState<string>(
+    initialValues.defaultMethodType ?? "Buy"
+  );
+
   return (
     <ModalCardProvider type={type}>
       <ModalCard onClose={onClose}>
@@ -89,6 +93,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
+              <Hidden name="replenishmentSystem" value="Buy" />
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -123,16 +128,21 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                   <TextArea name="description" label="Description" />
                 )}
 
+                <DefaultMethodType
+                  name="defaultMethodType"
+                  label="Default Method Type"
+                  replenishmentSystem="Buy"
+                  value={defaultMethodType}
+                  onChange={(newValue) =>
+                    setDefaultMethodType(newValue?.value ?? "Buy")
+                  }
+                />
+
                 <UnitOfMeasure
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
-                <ItemPostingGroup
-                  name="itemPostingGroupId"
-                  label="Posting Group"
-                />
 
-                <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="tool" />
