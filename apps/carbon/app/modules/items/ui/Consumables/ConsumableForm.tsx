@@ -13,15 +13,15 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
+  DefaultMethodType,
   Hidden,
   Input,
   InputControlled,
-  ItemPostingGroup,
   Select,
   Submit,
   TextArea,
@@ -63,6 +63,10 @@ const ConsumableForm = ({
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
+  const [defaultMethodType, setDefaultMethodType] = useState<string>(
+    initialValues.defaultMethodType ?? "Buy"
+  );
+
   const itemTrackingTypeOptions =
     itemTrackingTypes.map((itemTrackingType) => ({
       label: itemTrackingType,
@@ -93,6 +97,7 @@ const ConsumableForm = ({
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
+              <Hidden name="replenishmentSystem" value="Buy" />
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -127,16 +132,20 @@ const ConsumableForm = ({
                   <TextArea name="description" label="Description" />
                 )}
 
+                <DefaultMethodType
+                  name="defaultMethodType"
+                  label="Default Method Type"
+                  replenishmentSystem="Buy"
+                  value={defaultMethodType}
+                  onChange={(newValue) =>
+                    setDefaultMethodType(newValue?.value ?? "Buy")
+                  }
+                />
                 <UnitOfMeasure
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
-                <ItemPostingGroup
-                  name="itemPostingGroupId"
-                  label="Posting Group"
-                />
 
-                <Boolean name="pullFromInventory" label="Pull from Inventory" />
                 <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="consumable" />

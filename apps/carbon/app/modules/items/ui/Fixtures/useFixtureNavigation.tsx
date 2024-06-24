@@ -1,14 +1,24 @@
 import { useParams } from "@remix-run/react";
 
+import { BiListCheck } from "react-icons/bi";
 import { LuBox, LuFileText, LuShoppingCart, LuTags } from "react-icons/lu";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
+import type { Fixture } from "../../types";
 
 export function useFixtureNavigation() {
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
+
+  const routeData = useRouteData<{
+    fixtureSummary: Fixture;
+  }>(path.to.fixture(itemId));
+  if (!routeData?.fixtureSummary?.replenishmentSystem)
+    throw new Error("Could not find replenishmentSystem in routeData");
+
+  const replenishment = routeData.fixtureSummary.replenishmentSystem;
 
   return [
     {
@@ -20,9 +30,18 @@ export function useFixtureNavigation() {
     {
       name: "Purchasing",
       to: path.to.fixturePurchasing(itemId),
+      isDisabled: replenishment === "Make",
       role: ["employee", "supplier"],
       icon: LuShoppingCart,
       shortcut: "Command+Shift+p",
+    },
+    {
+      name: "Manufacturing",
+      to: path.to.fixtureManufacturing(itemId),
+      isDisabled: replenishment === "Buy",
+      role: ["employee"],
+      icon: BiListCheck,
+      shortcut: "Command+Shift+m",
     },
     {
       name: "Accounting",
@@ -40,7 +59,8 @@ export function useFixtureNavigation() {
     },
   ].filter(
     (item) =>
-      item.role === undefined ||
-      item.role.some((role) => permissions.is(role as Role))
+      !item.isDisabled &&
+      (item.role === undefined ||
+        item.role.some((role) => permissions.is(role as Role)))
   );
 }

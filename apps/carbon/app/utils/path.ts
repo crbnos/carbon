@@ -295,6 +295,8 @@ export const path = {
       generatePath(`${x}/fixture/${id}/inventory`),
     fixtureInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/fixture/${id}/inventory?location=${locationId}`),
+    fixtureManufacturing: (id: string) =>
+      generatePath(`${x}/fixture/${id}/manufacturing`),
     fixturePlanning: (id: string) =>
       generatePath(`${x}/fixture/${id}/planning`),
     fixturePlanningLocation: (id: string, locationId: string) =>

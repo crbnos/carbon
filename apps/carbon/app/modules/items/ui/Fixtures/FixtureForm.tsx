@@ -13,22 +13,26 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
   Customer,
+  DefaultMethodType,
   Hidden,
   Input,
   InputControlled,
-  ItemPostingGroup,
   Select,
   Submit,
   TextArea,
 } from "~/components/Form";
 import { useNextItemId, usePermissions } from "~/hooks";
-import { fixtureValidator, itemTrackingTypes } from "~/modules/items";
+import {
+  fixtureValidator,
+  itemReplenishmentSystems,
+  itemTrackingTypes,
+} from "~/modules/items";
 import { path } from "~/utils/path";
 
 type FixtureFormProps = {
@@ -69,6 +73,18 @@ const FixtureForm = ({
       value: itemTrackingType,
     })) ?? [];
 
+  const [replenishmentSystem, setReplenishmentSystem] = useState<string>(
+    initialValues.replenishmentSystem ?? "Buy"
+  );
+  const [defaultMethodType, setDefaultMethodType] = useState<string>(
+    initialValues.defaultMethodType ?? "Buy"
+  );
+  const itemReplenishmentSystemOptions =
+    itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
+      label: itemReplenishmentSystem,
+      value: itemReplenishmentSystem,
+    })) ?? [];
+
   return (
     <ModalCardProvider type={type}>
       <ModalCard onClose={onClose}>
@@ -94,7 +110,7 @@ const FixtureForm = ({
             <ModalCardBody>
               <Hidden name="type" value={type} />
               <Hidden name="unitOfMeasureCode" value="EA" />
-              <Hidden name="pullFromInventory" value="on" />
+
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -120,20 +136,38 @@ const FixtureForm = ({
                 )}
 
                 <Input name="name" label="Name" />
-                <Customer name="customerId" label="Customer" />
-                {isEditing && (
-                  <TextArea name="description" label="Description" />
-                )}
-
                 <Select
                   name="itemTrackingType"
                   label="Tracking Type"
                   options={itemTrackingTypeOptions}
                 />
-                <ItemPostingGroup
-                  name="itemPostingGroupId"
-                  label="Posting Group"
+                {isEditing && (
+                  <TextArea name="description" label="Description" />
+                )}
+                <Select
+                  name="replenishmentSystem"
+                  label="Replenishment System"
+                  options={itemReplenishmentSystemOptions}
+                  onChange={(newValue) => {
+                    setReplenishmentSystem(newValue?.value ?? "Buy");
+                    if (newValue?.value === "Buy") {
+                      setDefaultMethodType("Buy");
+                    } else {
+                      setDefaultMethodType("Make");
+                    }
+                  }}
                 />
+                <DefaultMethodType
+                  name="defaultMethodType"
+                  label="Default Method Type"
+                  replenishmentSystem={replenishmentSystem}
+                  value={defaultMethodType}
+                  onChange={(newValue) =>
+                    setDefaultMethodType(newValue?.value ?? "Buy")
+                  }
+                />
+
+                <Customer name="customerId" label="Customer" />
                 <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="fixture" />
