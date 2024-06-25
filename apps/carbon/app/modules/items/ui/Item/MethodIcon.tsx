@@ -8,6 +8,26 @@ import { CiFries } from "react-icons/ci";
 import { GiIBeam } from "react-icons/gi";
 import { RiCustomerServiceLine } from "react-icons/ri";
 import { RxCodesandboxLogo } from "react-icons/rx";
+import { TbTargetArrow, TbTargetOff } from "react-icons/tb";
+
+export const TrackingTypeIcon = ({
+  type,
+  className,
+}: {
+  type: string;
+  className?: string;
+}) => {
+  switch (type) {
+    case "Inventory":
+      return <TbTargetArrow className={cn("text-blue-500", className)} />;
+    case "Non-Inventory":
+      return <TbTargetOff className={cn("text-red-500", className)} />;
+    default:
+      return (
+        <HiSquares2X2 className={cn("text-muted-foreground", className)} />
+      );
+  }
+};
 
 export const MethodItemTypeIcon = ({
   type,

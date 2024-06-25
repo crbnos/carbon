@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Enumerable,
   HStack,
@@ -6,6 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   VStack,
+  cn,
 } from "@carbon/react";
 import { useParams } from "@remix-run/react";
 import { LuCopy, LuLink } from "react-icons/lu";
@@ -14,6 +16,7 @@ import Assignee from "~/components/Assignee";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { BuyMethod, PickMethod, Service } from "../../types";
+import { MethodIcon } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 
 const ServiceProperties = () => {
@@ -96,6 +99,20 @@ const ServiceProperties = () => {
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Service Type</h3>
         <Enumerable value={routeData?.service?.serviceType ?? null} />
+      </VStack>
+
+      <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Default Method Type</h3>
+        <Badge variant="secondary">
+          <MethodIcon
+            type={routeData?.service?.defaultMethodType!}
+            className={cn(
+              "mr-2",
+              routeData?.service?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.service?.defaultMethodType!}</span>
+        </Badge>
       </VStack>
 
       <VStack spacing={2}>

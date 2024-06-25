@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Enumerable,
   HStack,
@@ -16,6 +17,7 @@ import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { BuyMethod, Material, PickMethod } from "../../types";
+import { MethodIcon, TrackingTypeIcon } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 
 const MaterialProperties = () => {
@@ -103,6 +105,34 @@ const MaterialProperties = () => {
       </VStack>
 
       <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
+        <Badge variant="secondary">
+          <TrackingTypeIcon
+            type={routeData?.materialSummary?.itemTrackingType!}
+            className={cn(
+              "mr-2",
+              routeData?.materialSummary?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.materialSummary?.itemTrackingType!}</span>
+        </Badge>
+      </VStack>
+
+      <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Default Method Type</h3>
+        <Badge variant="secondary">
+          <MethodIcon
+            type={routeData?.materialSummary?.defaultMethodType!}
+            className={cn(
+              "mr-2",
+              routeData?.materialSummary?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.materialSummary?.defaultMethodType!}</span>
+        </Badge>
+      </VStack>
+
+      <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Shape</h3>
         <Enumerable value={routeData?.materialSummary?.materialForm ?? null} />
       </VStack>
@@ -111,16 +141,6 @@ const MaterialProperties = () => {
         <h3 className="text-xs text-muted-foreground">Substance</h3>
         <Enumerable
           value={routeData?.materialSummary?.materialSubstance ?? null}
-        />
-      </VStack>
-
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
-        <Enumerable
-          className={cn(
-            routeData?.materialSummary?.active === false && "opacity-50"
-          )}
-          value={routeData?.materialSummary?.itemTrackingType ?? null}
         />
       </VStack>
 

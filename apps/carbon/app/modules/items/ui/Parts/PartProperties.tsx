@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Enumerable,
   HStack,
@@ -17,6 +18,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { BuyMethod, PartSummary, PickMethod } from "../../types";
 import { MethodBadge } from "../Item/MethodBadge";
+import { MethodIcon, TrackingTypeIcon } from "../Item/MethodIcon";
 
 const PartProperties = () => {
   const { itemId } = useParams();
@@ -103,6 +105,20 @@ const PartProperties = () => {
       </VStack>
 
       <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
+        <Badge variant="secondary">
+          <TrackingTypeIcon
+            type={routeData?.partSummary?.itemTrackingType!}
+            className={cn(
+              "mr-2",
+              routeData?.partSummary?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.partSummary?.itemTrackingType!}</span>
+        </Badge>
+      </VStack>
+
+      <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Replenishment</h3>
         <Enumerable
           className={cn(
@@ -113,13 +129,17 @@ const PartProperties = () => {
       </VStack>
 
       <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
-        <Enumerable
-          className={cn(
-            routeData?.partSummary?.active === false && "opacity-50"
-          )}
-          value={routeData?.partSummary?.itemTrackingType ?? null}
-        />
+        <h3 className="text-xs text-muted-foreground">Default Method Type</h3>
+        <Badge variant="secondary">
+          <MethodIcon
+            type={routeData?.partSummary?.defaultMethodType!}
+            className={cn(
+              "mr-2",
+              routeData?.partSummary?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.partSummary?.defaultMethodType!}</span>
+        </Badge>
       </VStack>
 
       <VStack spacing={2}>
