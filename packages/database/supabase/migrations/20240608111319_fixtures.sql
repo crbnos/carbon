@@ -28,7 +28,7 @@ ALTER TABLE "fixture" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view fixtures" ON "fixture"
   FOR SELECT
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -37,21 +37,21 @@ CREATE POLICY "Employees can view fixtures" ON "fixture"
 CREATE POLICY "Employees with parts_create can insert fixtures" ON "fixture"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update fixtures" ON "fixture"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete fixtures" ON "fixture"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 

@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/redis";
 import { redirect } from "@remix-run/node";
-import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";
@@ -32,6 +32,7 @@ export async function addUserToCompany(
   userToCompany: {
     userId: string;
     companyId: string;
+    role: "employee" | "customer" | "supplier";
   }
 ) {
   return client.from("userToCompany").insert(userToCompany);
@@ -100,7 +101,6 @@ export async function createCustomerAccount(
       updateContact,
       createCustomerAccount,
       userToCompany,
-      claimsUpdate,
       permissionsUpdate,
     ] = await Promise.all([
       client.from("customerContact").update({ userId }).eq("id", id),
@@ -109,10 +109,7 @@ export async function createCustomerAccount(
         customerId,
         companyId,
       }),
-      addUserToCompany(client, { userId, companyId }),
-      setUserClaims(supabaseAdmin, userId, {
-        role: "customer",
-      }),
+      addUserToCompany(client, { userId, companyId, role: "customer" }),
       setUserPermissions(supabaseAdmin, userId, permissions),
     ]);
 
@@ -132,11 +129,6 @@ export async function createCustomerAccount(
     if (userToCompany.error) {
       await deleteAuthAccount(userId);
       return error(userToCompany.error, "Failed to add user to company");
-    }
-
-    if (claimsUpdate.error) {
-      await deleteAuthAccount(userId);
-      return error(claimsUpdate.error, "Failed to add user");
     }
 
     if (permissionsUpdate.error) {
@@ -207,33 +199,20 @@ export async function createEmployeeAccount(
       return error(insertUser, "No data returned from create user");
   }
 
-  const [
-    employeeInsert,
-    jobInsert,
-    userToCompany,
-    permissionsUpdate,
-    claimsUpdate,
-  ] = await Promise.all([
-    insertEmployee(client, {
-      id: userId,
-      employeeTypeId: employeeType,
-      companyId,
-    }),
-    insertEmployeeJob(client, {
-      id: userId,
-      companyId,
-    }),
-    addUserToCompany(client, { userId, companyId }),
-    setUserPermissions(supabaseAdmin, userId, permissions),
-    userExists
-      ? new Promise<PostgrestResponse<unknown>>((resolve) =>
-          // @ts-ignore
-          resolve({ data: null, error: null })
-        )
-      : setUserClaims(supabaseAdmin, userId, {
-          role: "employee",
-        }),
-  ]);
+  const [employeeInsert, jobInsert, userToCompany, permissionsUpdate] =
+    await Promise.all([
+      insertEmployee(client, {
+        id: userId,
+        employeeTypeId: employeeType,
+        companyId,
+      }),
+      insertEmployeeJob(client, {
+        id: userId,
+        companyId,
+      }),
+      addUserToCompany(client, { userId, companyId, role: "employee" }),
+      setUserPermissions(supabaseAdmin, userId, permissions),
+    ]);
 
   if (employeeInsert.error) {
     if (!userExists) await deleteAuthAccount(userId);
@@ -248,13 +227,6 @@ export async function createEmployeeAccount(
   if (userToCompany.error) {
     if (!userExists) await deleteAuthAccount(userId);
     return error(userToCompany.error, "Failed to add user to company");
-  }
-
-  if (claimsUpdate.error) {
-    if (!userExists) await deleteAuthAccount(userId);
-    if (claimsUpdate.error) {
-      return error(claimsUpdate.error, "Failed to udpate user claims");
-    }
   }
 
   if (permissionsUpdate.error) {
@@ -293,7 +265,7 @@ export async function createSupplierAccount(
   const user = await getUserByEmail(email);
   if (user.data) {
     // TODO: user already exists -- send company invite
-    // await addUserToCompany(client, { userId: user.data.id, companyId });
+    // await addUserToCompany(client, { userId: user.data.id, companyId, role: "supplier"});
     return error(
       null,
       "User already exists. Adding to team not implemented yet."
@@ -328,7 +300,6 @@ export async function createSupplierAccount(
       updateContact,
       createSupplierAccount,
       userToCompany,
-      claimsUpdate,
       permissionsUpdate,
     ] = await Promise.all([
       client.from("supplierContact").update({ userId }).eq("id", id),
@@ -337,10 +308,7 @@ export async function createSupplierAccount(
         supplierId,
         companyId,
       }),
-      addUserToCompany(client, { userId, companyId }),
-      setUserClaims(supabaseAdmin, userId, {
-        role: "supplier",
-      }),
+      addUserToCompany(client, { userId, companyId, role: "supplier" }),
       setUserPermissions(supabaseAdmin, userId, permissions),
     ]);
 
@@ -360,11 +328,6 @@ export async function createSupplierAccount(
     if (userToCompany.error) {
       await deleteAuthAccount(userId);
       return error(userToCompany.error, "Failed to add user to company");
-    }
-
-    if (claimsUpdate.error) {
-      await deleteAuthAccount(userId);
-      return error(claimsUpdate.error, "Failed to create user");
     }
 
     if (permissionsUpdate.error) {
@@ -414,8 +377,12 @@ export async function deactivateUser(
   return success("Sucessfully deactivated user");
 }
 
-export async function getClaims(client: SupabaseClient<Database>, uid: string) {
-  return client.rpc("get_claims", { uid });
+export async function getClaims(
+  client: SupabaseClient<Database>,
+  uid: string,
+  company?: string
+) {
+  return client.rpc("get_claims", { uid, company: company ?? "" });
 }
 
 export async function getCurrentUser(
@@ -456,7 +423,7 @@ export async function getUserByEmail(email: string) {
     .maybeSingle();
 }
 
-export async function getUserClaims(userId: string) {
+export async function getUserClaims(userId: string, companyId: string) {
   let claims: {
     permissions: Record<string, Permission>;
     role: string | null;
@@ -470,7 +437,11 @@ export async function getUserClaims(userId: string) {
     // if we don't have permissions from redis, get them from the database
     if (!claims) {
       // TODO: remove service role from here, and move it up a level
-      const rawClaims = await getClaims(getSupabaseServiceRole(), userId);
+      const rawClaims = await getClaims(
+        getSupabaseServiceRole(),
+        userId,
+        companyId
+      );
       if (rawClaims.error || rawClaims.data === null) {
         logger.error(rawClaims);
         throw new Error("Failed to get claims");
@@ -799,22 +770,6 @@ export async function resendInvite(
 export async function resetPassword(userId: string, password: string) {
   return getSupabaseServiceRole().auth.admin.updateUserById(userId, {
     password,
-  });
-}
-
-async function setUserClaims(
-  client: SupabaseClient<Database>,
-  userId: string,
-  claims: Record<string, string>
-) {
-  const user = await client.auth.admin.getUserById(userId);
-  if (user.error) return user;
-
-  const currentClaims = user.data?.user.app_metadata ?? {};
-  const newClaims = { ...currentClaims, ...claims };
-
-  return client.auth.admin.updateUserById(userId, {
-    app_metadata: newClaims,
   });
 }
 

@@ -34,21 +34,21 @@ CREATE POLICY "Authenticated users can view currencies" ON "currency"
 CREATE POLICY "Employees with accounting_create can insert currencies" ON "currency"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_create', "companyId")
 );
 
 CREATE POLICY "Employees with accounting_update can update currencies" ON "currency"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_update', "companyId")
   );
 
 CREATE POLICY "Employees with accounting_delete can delete currencies" ON "currency"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_delete', "companyId")
   );
 
@@ -120,7 +120,7 @@ ALTER TABLE "accountCategory" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with accounting_view can view account categories" ON "accountCategory"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_view', "companyId")
   );
   
@@ -128,21 +128,21 @@ CREATE POLICY "Employees with accounting_view can view account categories" ON "a
 CREATE POLICY "Employees with accounting_create can insert account categories" ON "accountCategory"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_create', "companyId")
 );
 
 CREATE POLICY "Employees with accounting_update can update account categories" ON "accountCategory"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_update', "companyId")
   );
 
 CREATE POLICY "Employees with accounting_delete can delete account categories" ON "accountCategory"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_delete', "companyId")
   );
 
@@ -177,66 +177,30 @@ ALTER TABLE "accountSubcategory" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with accounting_view can view account subcategories" ON "accountSubcategory"
   FOR SELECT
   USING (
-    has_role('employee')
-    AND   (
-      '0' = ANY(get_permission_companies('accounting_view'))
-      OR (
-        "accountCategoryId" IN (
-          SELECT "id" FROM "accountCategory" WHERE "companyId" = ANY(
-            get_permission_companies('accounting_view')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("accountCategoryId", 'accountCategory')) AND
+    has_company_permission('accounting_view', get_company_id_from_foreign_key("accountCategoryId", 'accountCategory'))
   );
   
 
 CREATE POLICY "Employees with accounting_create can insert account subcategories" ON "accountSubcategory"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee')
-    AND   (
-      '0' = ANY(get_permission_companies('accounting_create'))
-      OR (
-        "accountCategoryId" IN (
-          SELECT "id" FROM "accountCategory" WHERE "companyId" = ANY(
-            get_permission_companies('accounting_create')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("accountCategoryId", 'accountCategory')) AND
+    has_company_permission('accounting_create', get_company_id_from_foreign_key("accountCategoryId", 'accountCategory'))
 );
 
 CREATE POLICY "Employees with accounting_update can update account subcategories" ON "accountSubcategory"
   FOR UPDATE
   USING (
-    has_role('employee')
-    AND   (
-      '0' = ANY(get_permission_companies('accounting_update'))
-      OR (
-        "accountCategoryId" IN (
-          SELECT "id" FROM "accountCategory" WHERE "companyId" = ANY(
-            get_permission_companies('accounting_update')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("accountCategoryId", 'accountCategory')) AND
+    has_company_permission('accounting_update', get_company_id_from_foreign_key("accountCategoryId", 'accountCategory'))
   );
 
 CREATE POLICY "Employees with accounting_delete can delete account subcategories" ON "accountSubcategory"
   FOR DELETE
   USING (
-    has_role('employee')
-    AND   (
-      '0' = ANY(get_permission_companies('accounting_delete'))
-      OR (
-        "accountCategoryId" IN (
-          SELECT "id" FROM "accountCategory" WHERE "companyId" = ANY(
-            get_permission_companies('accounting_delete')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("accountCategoryId", 'accountCategory')) AND
+    has_company_permission('accounting_delete', get_company_id_from_foreign_key("accountCategoryId", 'accountCategory'))
   );
 
 CREATE TABLE "account" (
@@ -280,7 +244,7 @@ ALTER TABLE "account" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Certain employees can view accounts" ON "account"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     (
       has_company_permission('accounting_view', "companyId") OR
       has_company_permission('parts_view', "companyId") OR
@@ -294,21 +258,21 @@ CREATE POLICY "Certain employees can view accounts" ON "account"
 CREATE POLICY "Employees with accounting_create can insert accounts" ON "account"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_create', "companyId")
 );
 
 CREATE POLICY "Employees with accounting_update can update accounts" ON "account"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_update', "companyId")
   );
 
 CREATE POLICY "Employees with accounting_delete can delete accounts" ON "account"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_delete', "companyId")
   );
 

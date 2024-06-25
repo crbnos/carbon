@@ -28,14 +28,14 @@ ALTER TABLE "customerPayment" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with sales_view can view customer payment" ON "customerPayment"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_view', "companyId")
   );
 
 CREATE POLICY "Employees with sales_update can update customer payment" ON "customerPayment"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_update', "companyId")
   );
 
@@ -68,14 +68,14 @@ ALTER TABLE "customerShipping" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with purchasing_view can view customer shipping" ON "customerShipping"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('purchasing_view', "companyId")
   );
 
 CREATE POLICY "Employees with purchasing_update can update customer shipping" ON "customerShipping"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('purchasing_update', "companyId")
   );
 

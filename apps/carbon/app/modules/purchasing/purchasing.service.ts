@@ -11,7 +11,6 @@ import type {
   purchaseOrderLineValidator,
   purchaseOrderPaymentValidator,
   purchaseOrderValidator,
-  requestForQuoteValidator,
   supplierContactValidator,
   supplierPaymentValidator,
   supplierShippingValidator,
@@ -52,23 +51,6 @@ export async function deletePurchaseOrderLine(
     .from("purchaseOrderLine")
     .delete()
     .eq("id", purchaseOrderLineId);
-}
-
-export async function deleteRequestForQuote(
-  client: SupabaseClient<Database>,
-  requestForQuoteId: string
-) {
-  return client.from("requestForQuote").delete().eq("id", requestForQuoteId);
-}
-
-export async function deleteRequestForQuoteLine(
-  client: SupabaseClient<Database>,
-  requestForQuoteLineId: string
-) {
-  return client
-    .from("requestForQuoteLine")
-    .delete()
-    .eq("id", requestForQuoteLineId);
 }
 
 export async function deleteSupplierContact(
@@ -236,31 +218,6 @@ export async function getPurchaseOrderSuppliers(
     .select("id, name")
     .eq("companyId", companyId)
     .order("name");
-}
-
-export async function getRequestsForQuotes(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-  }
-) {
-  let query = client
-    .from("requestForQuotes")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.or(
-      `id.ilike.%${args.search}%,requestForQuoteId.ilike.%${args.search}%,name.ilike.%${args.search}%`
-    );
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false },
-    { column: "id", ascending: false },
-  ]);
-  return query;
 }
 
 export async function getSupplier(
@@ -609,28 +566,6 @@ export async function updatePurchaseOrderFavorite(
   }
 }
 
-export async function updateRequestForQuoteFavorite(
-  client: SupabaseClient<Database>,
-  args: {
-    id: string;
-    favorite: boolean;
-    userId: string;
-  }
-) {
-  const { id, favorite, userId } = args;
-  if (!favorite) {
-    return client
-      .from("requestForQuoteFavorite")
-      .delete()
-      .eq("requestForQuoteId", id)
-      .eq("userId", userId);
-  } else {
-    return client
-      .from("requestForQuoteFavorite")
-      .insert({ requestForQuoteId: id, userId: userId });
-  }
-}
-
 export async function upsertSupplier(
   client: SupabaseClient<Database>,
   supplier:
@@ -923,44 +858,6 @@ export async function upsertPurchaseOrderPayment(
     .insert([purchaseOrderPayment])
     .select("id")
     .single();
-}
-
-export async function upsertRequestForQuote(
-  client: SupabaseClient<Database>,
-  requestForQuote:
-    | (Omit<
-        z.infer<typeof requestForQuoteValidator>,
-        "id" | "requestForQuoteId"
-      > & {
-        requestForQuoteId: string;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<
-        z.infer<typeof requestForQuoteValidator>,
-        "id" | "requestForQuoteId"
-      > & {
-        id: string;
-        requestForQuoteId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in requestForQuote) {
-    return client
-      .from("requestForQuote")
-      .insert([requestForQuote])
-      .select("id, requestForQuoteId");
-  } else {
-    return client
-      .from("requestForQuote")
-      .update({
-        ...sanitize(requestForQuote),
-        updatedAt: today(getLocalTimeZone()).toString(),
-      })
-      .eq("id", requestForQuote.id);
-  }
 }
 
 export async function upsertSupplierStatus(

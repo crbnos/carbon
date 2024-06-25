@@ -6,5 +6,3 @@ ALTER VIEW "documentLabels" SET (security_invoker = on);
 ALTER VIEW "documents" SET (security_invoker = on);
 ALTER VIEW "purchaseOrders" SET (security_invoker = on);
 ALTER VIEW "purchaseOrderSuppliers" SET (security_invoker = on);
-ALTER VIEW "suppliers" SET (security_invoker = on);
-ALTER VIEW "parts" SET (security_invoker = on);

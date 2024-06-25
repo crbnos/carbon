@@ -19,14 +19,17 @@ CREATE POLICY "Employees can view employees from their company" ON "employee" FO
 );
 
 CREATE POLICY "Employees with users_update can create employees" ON "employee" FOR INSERT WITH CHECK (
+    has_role('employee', "companyId") AND
     has_company_permission('users_create', "companyId")
 );
 
 CREATE POLICY "Employees with users_update can update employees" ON "employee" FOR UPDATE USING (
+    has_role('employee', "companyId") AND
     has_company_permission('users_update', "companyId")
 );
 
 CREATE POLICY "Employees with users_update can delete employees" ON "employee" FOR DELETE USING (
+    has_role('employee', "companyId") AND
     has_company_permission('users_delete', "companyId")
 );
 

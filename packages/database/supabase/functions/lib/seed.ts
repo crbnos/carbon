@@ -2078,15 +2078,6 @@ export const sequences = [
     step: 1,
   },
   {
-    table: "requestForQuote",
-    name: "Request For Quote",
-    prefix: "RFQ",
-    suffix: null,
-    next: 0,
-    size: 6,
-    step: 1,
-  },
-  {
     table: "quote",
     name: "Quote",
     prefix: "QO",

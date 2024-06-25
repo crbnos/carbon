@@ -30,7 +30,7 @@ ALTER TABLE "location" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view locations for their companies" ON "location"
   FOR SELECT
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -40,21 +40,21 @@ CREATE POLICY "Employees with resources_create can insert locations" ON "locatio
   FOR INSERT
   WITH CHECK (   
     has_company_permission('resources_create', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update locations" ON "location"
   FOR UPDATE
   USING (
     has_company_permission('resources_update', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete locations" ON "location"
   FOR DELETE
   USING (
     has_company_permission('resources_delete', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
 
 
@@ -93,7 +93,7 @@ ALTER TABLE "shift" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view shifts" ON "shift"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -102,21 +102,21 @@ CREATE POLICY "Employees can view shifts" ON "shift"
 CREATE POLICY "Employees with resources_create can insert shifts" ON "shift"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update shifts" ON "shift"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete shifts" ON "shift"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_delete', "companyId")
   );
 
@@ -138,71 +138,40 @@ ALTER TABLE "employeeShift" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view employee shifts" ON "employeeShift"
   FOR SELECT
   USING (
-    has_role('employee')
-    AND "shiftId" IN (
-      SELECT "id" FROM "shift" WHERE "companyId" = ANY(
-        select "companyId" from "userToCompany" where "userId" = auth.uid()::text
-      )
-    ) 
+    has_role('employee', get_company_id_from_foreign_key("employeeId", 'employee')) AND
+    has_company_permission('resources_view', get_company_id_from_foreign_key("employeeId", 'employee'))
   );
 
 CREATE POLICY "Employees with resources_create can insert employee shifts" ON "employeeShift"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee')
-    AND   (
-      '0' = ANY(get_permission_companies('resources_create'))
-      OR (
-        "shiftId" IN (
-          SELECT "id" FROM "shift" WHERE "companyId" = ANY(
-            get_permission_companies('resources_create')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("employeeId", 'employee')) AND
+    has_company_permission('resources_create', get_company_id_from_foreign_key("employeeId", 'employee'))
 );
 
 CREATE POLICY "Employees with resources_update can update employee shifts" ON "employeeShift"
   FOR UPDATE
   USING (
-    has_role('employee')
-    AND   (
-      '0' = ANY(get_permission_companies('resources_update'))
-      OR (
-        "shiftId" IN (
-          SELECT "id" FROM "shift" WHERE "companyId" = ANY(
-            get_permission_companies('resources_update')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("employeeId", 'employee')) AND
+    has_company_permission('resources_update', get_company_id_from_foreign_key("employeeId", 'employee'))
   );
 
 CREATE POLICY "Employees with resources_delete can delete employee shifts" ON "employeeShift"
   FOR DELETE
   USING (
-    has_role('employee')
-    AND   (
-      '0' = ANY(get_permission_companies('resources_delete'))
-      OR (
-        "shiftId" IN (
-          SELECT "id" FROM "shift" WHERE "companyId" = ANY(
-            get_permission_companies('resources_delete')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("employeeId", 'employee')) AND
+    has_company_permission('resources_delete', get_company_id_from_foreign_key("employeeId", 'employee'))
   );
 
 
 CREATE TABLE "employeeJob" (
   "id" TEXT NOT NULL,
-  "companyId" TEXT NOT NULL,
   "locationId" TEXT,
   "shiftId" TEXT,
   "managerId" TEXT,
   "title" TEXT,
   "startDate" DATE,
+  "companyId" TEXT NOT NULL,
   "updatedAt" TIMESTAMP,
   "updatedBy" TEXT,
   "customFields" JSONB,
@@ -220,7 +189,7 @@ ALTER TABLE "employeeJob" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view employee jobs" ON "employeeJob"
   FOR SELECT
   USING (
-    has_role('employee') AND 
+    has_role('employee', "companyId") AND 
     "companyId" = ANY(
         SELECT "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -229,21 +198,21 @@ CREATE POLICY "Employees can view employee jobs" ON "employeeJob"
 CREATE POLICY "Employees with resources_create can insert employee jobs" ON "employeeJob"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update employee jobs" ON "employeeJob"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete employee jobs" ON "employeeJob"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_delete', "companyId")
   );
 

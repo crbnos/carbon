@@ -30,14 +30,14 @@ ALTER TABLE "supplierPayment" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with purchasing_view can view supplier payment" ON "supplierPayment"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('purchasing_view', "companyId")
   );
 
 CREATE POLICY "Employees with purchasing_update can update supplier payment" ON "supplierPayment"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('purchasing_update', "companyId")
   );
 
@@ -72,14 +72,14 @@ CREATE INDEX "supplierShipping_supplierId_idx" ON "supplierShipping"("supplierId
 CREATE POLICY "Employees with purchasing_view can view supplier shipping" ON "supplierShipping"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('purchasing_view', "companyId")
   );
 
 CREATE POLICY "Employees with purchasing_update can update supplier shipping" ON "supplierShipping"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('purchasing_update', "companyId")
   );
 

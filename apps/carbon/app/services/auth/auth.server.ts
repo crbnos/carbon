@@ -100,7 +100,7 @@ export async function requirePermissions(
   if (Object.keys(requiredPermissions).length === 0)
     return { client, companyId, email, userId };
 
-  const myClaims = await getUserClaims(userId);
+  const myClaims = await getUserClaims(userId, companyId);
 
   const hasRequiredPermissions = Object.entries(requiredPermissions).every(
     ([action, permission]) => {

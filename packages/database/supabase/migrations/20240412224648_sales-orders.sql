@@ -312,13 +312,13 @@ CREATE POLICY "Employees with sales_view, inventory_view, or invoicing_view can 
     (
       has_company_permission('sales_view', "companyId") OR
       has_company_permission('invoicing_view', "companyId")
-    ) AND has_role('employee')
+    ) AND has_role('employee', "companyId")
   );
 
 CREATE POLICY "Customers with sales_view can their own sales orders" ON "salesOrder"
   FOR SELECT
   USING (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_view', "companyId") AND
     "customerId" IN (
       SELECT "customerId" FROM "customerAccount" WHERE id::uuid = auth.uid()
@@ -328,20 +328,20 @@ CREATE POLICY "Customers with sales_view can their own sales orders" ON "salesOr
 CREATE POLICY "Employees with sales_create can create sales orders" ON "salesOrder"
   FOR INSERT
   WITH CHECK (
-    has_company_permission('sales_create', "companyId") AND has_role('employee')
+    has_company_permission('sales_create', "companyId") AND has_role('employee', "companyId")
   );
 
 
 CREATE POLICY "Employees with sales_update can update sales orders" ON "salesOrder"
   FOR UPDATE
   USING (
-    has_company_permission('sales_update', "companyId") AND has_role('employee')
+    has_company_permission('sales_update', "companyId") AND has_role('employee', "companyId")
   );
 
 CREATE POLICY "Customers with sales_update can update their own sales orders" ON "salesOrder"
   FOR UPDATE
   USING (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_update', "companyId")
     AND "customerId" IN (
       SELECT "customerId" FROM "customerAccount" WHERE id::uuid = auth.uid()
@@ -351,14 +351,14 @@ CREATE POLICY "Customers with sales_update can update their own sales orders" ON
 CREATE POLICY "Employees with sales_delete can delete sales orders" ON "salesOrder"
   FOR DELETE
   USING (
-    has_company_permission('sales_delete', "companyId") AND has_role('employee')
+    has_company_permission('sales_delete', "companyId") AND has_role('employee', "companyId")
   );
 
 
 CREATE POLICY "Customers with sales_view can search for their own sales orders" ON "search"
   FOR SELECT
   USING (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_view', "companyId") AND
     entity = 'Sales Order' AND
     uuid IN (
@@ -420,7 +420,7 @@ ALTER TABLE "salesOrderStatusHistory" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone with sales_view can view sales order status history" ON "salesOrderStatusHistory"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', get_company_id_from_foreign_key("salesOrderId", 'salesOrder')) AND
     has_company_permission('sales_view', get_company_id_from_foreign_key("salesOrderId", 'salesOrder')) 
   );
 
@@ -431,14 +431,14 @@ ALTER TABLE "salesOrderLine" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with sales_view can view sales order lines" ON "salesOrderLine"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_view', "companyId")
   );
 
 CREATE POLICY "Customers with sales_view can their own sales order lines" ON "salesOrderLine"
   FOR SELECT
   USING (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_view', "companyId") AND
     "salesOrderId" IN (
       SELECT id FROM "salesOrder" WHERE "customerId" IN (
@@ -452,14 +452,14 @@ CREATE POLICY "Customers with sales_view can their own sales order lines" ON "sa
 CREATE POLICY "Employees with sales_create can create sales order lines" ON "salesOrderLine"
   FOR INSERT
   WITH CHECK (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_create', "companyId")
   );
 
 CREATE POLICY "Customers with sales_create can create lines on their own sales order" ON "salesOrderLine"
   FOR INSERT
   WITH CHECK (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_create', "companyId") AND
     "salesOrderId" IN (
       SELECT id FROM "salesOrder" WHERE "customerId" IN (
@@ -473,14 +473,14 @@ CREATE POLICY "Customers with sales_create can create lines on their own sales o
 CREATE POLICY "Employees with sales_update can update sales order lines" ON "salesOrderLine"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_update', "companyId")
   );
 
 CREATE POLICY "Customers with sales_update can update their own sales order lines" ON "salesOrderLine"
   FOR UPDATE
   USING (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_update', "companyId") AND
     "salesOrderId" IN (
       SELECT id FROM "salesOrder" WHERE "customerId" IN (
@@ -494,14 +494,14 @@ CREATE POLICY "Customers with sales_update can update their own sales order line
 CREATE POLICY "Employees with sales_delete can delete sales order lines" ON "salesOrderLine"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_delete', "companyId")
   );
 
 CREATE POLICY "Customers with sales_delete can delete lines on their own sales order" ON "salesOrderLine"
   FOR DELETE
   USING (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_delete', "companyId") AND
     "salesOrderId" IN (
       SELECT id FROM "salesOrder" WHERE "customerId" IN (
@@ -520,14 +520,14 @@ ALTER TABLE "salesOrderShipment" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with sales_view can view sales order shipments" ON "salesOrderShipment"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_view', "companyId")
   );
 
 CREATE POLICY "Customers with sales_view can their own sales order shipments" ON "salesOrderShipment"
   FOR SELECT
   USING (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_view', "companyId") AND
     id IN (
       SELECT id FROM "salesOrder" WHERE "customerId" IN (
@@ -541,21 +541,21 @@ CREATE POLICY "Customers with sales_view can their own sales order shipments" ON
 CREATE POLICY "Employees with sales_create can create sales order shipments" ON "salesOrderShipment"
   FOR INSERT
   WITH CHECK (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_create', "companyId")
   );
 
 CREATE POLICY "Employees with sales_update can update sales order shipments" ON "salesOrderShipment"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_update', "companyId")
   );
 
 CREATE POLICY "Customers with sales_update can their own sales order shipments" ON "salesOrderShipment"
   FOR UPDATE
   USING (
-    has_role('customer') AND
+    has_role('customer', "companyId") AND
     has_company_permission('sales_update', "companyId") AND
     id IN (
       SELECT id FROM "salesOrder" WHERE "customerId" IN (
@@ -569,7 +569,7 @@ CREATE POLICY "Customers with sales_update can their own sales order shipments" 
 CREATE POLICY "Employees with sales_delete can delete sales order shipments" ON "salesOrderShipment"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_delete', "companyId")
   );
 
@@ -581,28 +581,28 @@ ALTER TABLE "salesOrderPayment" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with sales_view can view sales order payments" ON "salesOrderPayment"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_view', "companyId")
   );
 
 CREATE POLICY "Employees with sales_create can create sales order payments" ON "salesOrderPayment"
   FOR INSERT
   WITH CHECK (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_create', "companyId")
   );
 
 CREATE POLICY "Employees with sales_update can update sales order payments" ON "salesOrderPayment"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_update', "companyId")
   );
 
 CREATE POLICY "Employees with sales_delete can delete sales order payments" ON "salesOrderPayment"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('sales_delete', "companyId")
   );
 

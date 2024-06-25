@@ -43,6 +43,28 @@ CREATE INDEX index_membership_groupId ON "membership" ("groupId");
 CREATE INDEX index_membership_memberGroupId ON "membership" ("memberGroupId");
 CREATE INDEX index_membership_memberUserId ON "membership" ("memberUserId");
 
+ALTER TABLE "membership" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "All employees can view memberships" ON "membership" FOR SELECT USING (
+  has_role('employee', get_company_id_from_foreign_key("groupId", 'group'))
+);
+
+CREATE POLICY "Employees with users_update can create memberships" ON "membership" FOR INSERT WITH CHECK (
+  has_role('employee', get_company_id_from_foreign_key("groupId", 'group')) AND
+  has_company_permission('users_update', get_company_id_from_foreign_key("groupId", 'group'))
+);
+
+CREATE POLICY "Employees with users_update can update memberships" ON "membership" FOR UPDATE USING (
+  has_role('employee', get_company_id_from_foreign_key("groupId", 'group')) AND
+  has_company_permission('users_update', get_company_id_from_foreign_key("groupId", 'group'))
+);
+
+CREATE POLICY "Employees with users_update can delete memberships" ON "membership" FOR DELETE USING (
+  has_role('employee', get_company_id_from_foreign_key("groupId", 'group')) AND
+  has_company_permission('users_update', get_company_id_from_foreign_key("groupId", 'group'))
+);
+
+
 CREATE FUNCTION public.create_employee_type_group()
 RETURNS TRIGGER AS $$
 BEGIN

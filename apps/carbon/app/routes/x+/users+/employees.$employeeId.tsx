@@ -34,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const client = getSupabaseServiceRole();
   const [rawClaims, employee, employeeTypes] = await Promise.all([
-    getClaims(client, employeeId),
+    getClaims(client, employeeId, companyId),
     getEmployee(client, employeeId, companyId),
     getEmployeeTypes(client, companyId),
   ]);

@@ -33,5 +33,5 @@ ALTER POLICY "Employees with parts can search for parts" ON "search"
     (
       "companyId" = NULL OR
       has_company_permission('parts_view', "companyId") 
-    ) AND entity = 'Part' AND has_role('employee')
+    ) AND entity = 'Part' AND has_role('employee', "companyId")
   );

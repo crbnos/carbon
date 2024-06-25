@@ -21,6 +21,36 @@ CREATE TABLE "partner" (
 CREATE INDEX "partner_abilityId_idx" ON "partner" ("abilityId");
 CREATE INDEX "partner_companyId_idx" ON "partner" ("companyId");
 
+ALTER TABLE "partner" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Employees with resources_view can view partners" ON "partner"
+  FOR SELECT
+  USING (
+    has_role('employee', "companyId") AND 
+    has_company_permission('resources_view', "companyId")
+  );
+
+CREATE POLICY "Employees with resources_create can insert partners" ON "partner"
+  FOR INSERT
+  WITH CHECK (   
+    has_role('employee', "companyId") AND 
+    has_company_permission('resources_create', "companyId")
+);
+
+CREATE POLICY "Employees with resources_update can update partners" ON "partner"
+  FOR UPDATE
+  USING (
+    has_role('employee', "companyId") AND 
+    has_company_permission('resources_update', "companyId")
+  );
+
+CREATE POLICY "Employees with resources_delete can delete partners" ON "partner"
+  FOR DELETE
+  USING (
+    has_role('employee', "companyId") AND 
+    has_company_permission('resources_delete', "companyId")
+  );
+
 CREATE OR REPLACE VIEW "partners" AS
   SELECT 
     p.*,

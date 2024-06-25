@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const attributeId = formData.get("userAttributeId") as string;
   if (!attributeId) throw new Error("No attribute id provided");
 
-  const clientClaims = await getUserClaims(userId);
+  const clientClaims = await getUserClaims(userId, companyId);
   const canUpdateAnyUser =
     clientClaims.permissions["users"]?.update?.includes(companyId);
 

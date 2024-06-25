@@ -18,15 +18,9 @@ VALUES
   ('exchange-rates-v1', 'Exchange Rates', 'Pulls currency rates from exchange rates API', '/integrations/exchange-rates.png', '{"type": "object", "properties": {"apiKey": {"type": "string"}}, "required": ["apiKey"]}'::json),
   ('resend', 'Resend Emails', 'Sends Transactional Emails with Resend API', '/integrations/resend.png', '{"type": "object", "properties": {"apiKey": {"type": "string"}}, "required": ["apiKey"]}'::json);
 
-CREATE POLICY "Employees with settings_view can view integrations." ON "integration"
+CREATE POLICY "Authenticated users can view integrations." ON "integration"
   FOR SELECT USING (
-    has_role('employee')
-  );
-
-CREATE POLICY "Employees with settings_update can update integrations." ON "integration"
-  FOR UPDATE
-  USING (
-    has_role('employee')
+    auth.role() = 'authenticated'
   );
 
 CREATE TABLE "companyIntegration" (
@@ -42,22 +36,20 @@ CREATE TABLE "companyIntegration" (
   CONSTRAINT "companyIntegration_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+ALTER TABLE "companyIntegration" ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY "Employees with settings_view can view company integrations." ON "companyIntegration"
   FOR SELECT USING (
-    has_role('employee') AND 
-    "companyId" = ANY(
-      select "companyId" from "userToCompany" where "userId" = auth.uid()::text
-    )
+    has_role('employee', "companyId") AND 
+    has_company_permission('settings_view', "companyId")
   );
 
 CREATE POLICY "Employees with settings_update can update company integrations." ON "companyIntegration"
   FOR UPDATE
   USING (
-    has_role('employee') AND 
+    has_role('employee', "companyId") AND 
     has_company_permission('settings_update', "companyId")
   );
-
-
 
 CREATE FUNCTION verify_integration() RETURNS trigger AS $verify_integration$
     DECLARE integration_schema JSON;

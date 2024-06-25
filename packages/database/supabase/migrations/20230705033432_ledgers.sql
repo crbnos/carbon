@@ -77,7 +77,7 @@ ALTER TABLE "journal" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with accounting_view can view journals" ON "journal"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_view', "companyId")
   );
   
@@ -85,7 +85,7 @@ CREATE POLICY "Employees with accounting_view can view journals" ON "journal"
 CREATE POLICY "Employees with accounting_create can insert journals" ON "journal"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_create', "companyId")
 );
 
@@ -128,7 +128,7 @@ ALTER TABLE "journalLine" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with accounting_view can view journal lines" ON "journalLine"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_view', "companyId")
   );
   
@@ -136,7 +136,7 @@ CREATE POLICY "Employees with accounting_view can view journal lines" ON "journa
 CREATE POLICY "Employees with accounting_create can insert journal lines" ON "journalLine"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_create', "companyId")
 );
 
@@ -213,7 +213,7 @@ ALTER TABLE "costLedger" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with accounting_view can view the value ledger" ON "costLedger"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_view', "companyId")
   );
 
@@ -246,7 +246,7 @@ ALTER TABLE "itemLedger" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Certain employees can view the parts ledger" ON "itemLedger"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     (
       has_company_permission('accounting_view', "companyId") OR
       has_company_permission('parts_view', "companyId")
@@ -284,7 +284,7 @@ ALTER TABLE "supplierLedger" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Certain employees can view the parts ledger" ON "supplierLedger"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     (
       has_company_permission('invoicing_view', "companyId") OR
       has_company_permission('purchasing_view', "companyId") OR

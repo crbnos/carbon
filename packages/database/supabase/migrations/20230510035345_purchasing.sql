@@ -40,7 +40,7 @@ CREATE POLICY "Certain employees can view payment terms" ON "paymentTerm"
       has_company_permission('sales_view', "companyId") = true OR
       has_company_permission('purchasing_view', "companyId") = true
     )
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
   
 
@@ -48,21 +48,21 @@ CREATE POLICY "Employees with accounting_create can insert payment terms" ON "pa
   FOR INSERT
   WITH CHECK (   
     has_company_permission('accounting_create', "companyId") 
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
 );
 
 CREATE POLICY "Employees with accounting_update can update payment terms" ON "paymentTerm"
   FOR UPDATE
   USING (
     has_company_permission('accounting_update', "companyId") = true 
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
 
 CREATE POLICY "Employees with accounting_delete can delete payment terms" ON "paymentTerm"
   FOR DELETE
   USING (
     has_company_permission('accounting_delete', "companyId") = true 
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
   
 
@@ -109,7 +109,7 @@ CREATE POLICY "Certain employees can view shipping methods" ON "shippingMethod"
       has_company_permission('purchasing_view', "companyId") OR
       has_company_permission('sales_view', "companyId")
     )
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
   
 
@@ -117,21 +117,21 @@ CREATE POLICY "Employees with inventory_create can insert shipping methods" ON "
   FOR INSERT
   WITH CHECK (   
     has_company_permission('inventory_create', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
 );
 
 CREATE POLICY "Employees with inventory_update can update shipping methods" ON "shippingMethod"
   FOR UPDATE
   USING (
     has_company_permission('inventory_update', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
 
 CREATE POLICY "Employees with inventory_delete can delete shipping methods" ON "shippingMethod"
   FOR DELETE
   USING (
     has_company_permission('inventory_delete', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
 
 CREATE TABLE "shippingTerm" (
@@ -163,28 +163,28 @@ CREATE POLICY "Certain employees can view shipping terms" ON "shippingTerm"
       has_company_permission('purchasing_view', "companyId") OR
       has_company_permission('sales_view', "companyId")
     )
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
 
 CREATE POLICY "Employees with inventory_create can insert shipping terms" ON "shippingTerm"
   FOR INSERT
   WITH CHECK (   
     has_company_permission('inventory_create', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
 );
 
 CREATE POLICY "Employees with inventory_update can update shipping terms" ON "shippingTerm"
   FOR UPDATE
   USING (
     has_company_permission('inventory_update', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
 
 CREATE POLICY "Employees with inventory_delete can delete shipping terms" ON "shippingTerm"
   FOR DELETE
   USING (
     has_company_permission('inventory_delete', "companyId")
-    AND has_role('employee')
+    AND has_role('employee', "companyId")
   );
 
 
@@ -448,7 +448,7 @@ ALTER TABLE "purchaseOrderTransaction" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Employees with purchasing_view can view purchase order transactions" ON "purchaseOrderTransaction" 
   FOR SELECT USING (
-    has_role('employee') AND
+    has_role('employee', get_company_id_from_foreign_key("purchaseOrderId", 'purchaseOrder')) AND
     has_company_permission('purchasing_view', get_company_id_from_foreign_key("purchaseOrderId", 'purchaseOrder'))
   );
 
