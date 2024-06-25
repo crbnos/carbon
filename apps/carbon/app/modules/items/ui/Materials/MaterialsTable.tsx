@@ -5,7 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { LuPencil } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Material } from "~/modules/items";
 import {
@@ -28,7 +28,7 @@ const MaterialsTable = memo(
   ({ data, count, itemPostingGroups }: MaterialsTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const [params] = useUrlParams();
+
     const [people] = usePeople();
     const customColumns = useCustomColumns<Material>("material");
 
@@ -226,8 +226,7 @@ const MaterialsTable = memo(
         },
       ];
       return [...defaultColumns, ...customColumns];
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [params]);
+    }, [customColumns, people]);
 
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name

@@ -11,7 +11,7 @@ import {
   New,
   Table,
 } from "~/components";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Fixture } from "~/modules/items";
 import {
@@ -35,7 +35,7 @@ const FixturesTable = memo(
   ({ data, count, itemPostingGroups }: FixturesTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const [params] = useUrlParams();
+
     const [customers] = useCustomers();
     const [people] = usePeople();
     const customColumns = useCustomColumns<Fixture>("fixture");
@@ -217,8 +217,7 @@ const FixturesTable = memo(
         },
       ];
       return [...defaultColumns, ...customColumns];
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [params]);
+    }, [customColumns, customers, people]);
 
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
