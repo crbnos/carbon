@@ -23,28 +23,28 @@ ALTER TABLE "ability" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with resources_view can view abilities" ON "ability"
   FOR SELECT
   USING (
-    has_role('employee') AND 
+    has_role('employee', "companyId") AND 
     has_company_permission('resources_view', "companyId")
   );
 
 CREATE POLICY "Employees with resources_create can insert abilities" ON "ability"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND 
+    has_role('employee', "companyId") AND 
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update abilities" ON "ability"
   FOR UPDATE
   USING (
-    has_role('employee') AND 
+    has_role('employee', "companyId") AND 
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete abilities" ON "ability"
   FOR DELETE
   USING (
-    has_role('employee') AND 
+    has_role('employee', "companyId") AND 
     has_company_permission('resources_delete', "companyId")
   );
 
@@ -69,55 +69,27 @@ ALTER TABLE "employeeAbility" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with resources_view can view employeeAbilities" ON "employeeAbility"
   FOR SELECT
   USING (
-    has_role('employee')
-    AND (
-      '0' = ANY(
-            get_permission_companies('resources_view')
-      ) 
-      OR "employeeId" IN (
-        SELECT "employeeId" FROM "employee" WHERE "companyId" = ANY(get_permission_companies('resources_view'))
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("employeeId", 'employee')) AND
+    has_company_permission('resources_view', get_company_id_from_foreign_key("employeeId", 'employee'))
   );
 
 CREATE POLICY "Employees with resources_create can insert employeeAbilities" ON "employeeAbility"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee')
-    AND (
-      '0' = ANY(
-            get_permission_companies('resources_create')
-      ) 
-      OR "employeeId" IN (
-        SELECT "employeeId" FROM "employee" WHERE "companyId" = ANY(get_permission_companies('resources_create'))
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("employeeId", 'employee')) AND
+    has_company_permission('resources_create', get_company_id_from_foreign_key("employeeId", 'employee'))
 );
 
 CREATE POLICY "Employees with resources_update can update employeeAbilities" ON "employeeAbility"
   FOR UPDATE
   USING (
-    has_role('employee')
-    AND (
-      '0' = ANY(
-            get_permission_companies('resources_update')
-      ) 
-      OR "employeeId" IN (
-        SELECT "employeeId" FROM "employee" WHERE "companyId" = ANY(get_permission_companies('resources_update'))
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("employeeId", 'employee')) AND
+    has_company_permission('resources_update', get_company_id_from_foreign_key("employeeId", 'employee'))
   );
 
 CREATE POLICY "Employees with resources_delete can delete employeeAbilities" ON "employeeAbility"
   FOR DELETE
   USING (
-    has_role('employee')
-    AND (
-      '0' = ANY(
-            get_permission_companies('resources_delete')
-      ) 
-      OR "employeeId" IN (
-        SELECT "employeeId" FROM "employee" WHERE "companyId" = ANY(get_permission_companies('resources_delete'))
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("employeeId", 'employee')) AND
+    has_company_permission('resources_delete', get_company_id_from_foreign_key("employeeId", 'employee'))
   );

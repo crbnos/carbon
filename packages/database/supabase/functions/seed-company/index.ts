@@ -43,7 +43,7 @@ serve(async (req: Request) => {
     await db.transaction().execute(async (trx) => {
       await trx
         .insertInto("userToCompany")
-        .values([{ userId, companyId }])
+        .values([{ userId, companyId, role: "employee" }])
         .execute();
 
       // high-order groups

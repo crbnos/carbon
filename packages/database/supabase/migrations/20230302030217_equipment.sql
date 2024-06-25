@@ -36,7 +36,7 @@ ALTER TABLE "department" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view departments" ON "department"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -45,21 +45,21 @@ CREATE POLICY "Employees can view departments" ON "department"
 CREATE POLICY "Employees with resources_create can insert departments" ON "department"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update departments" ON "department"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete departments" ON "department"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_delete', "companyId")
   );
 
@@ -94,7 +94,7 @@ ALTER TABLE "workCellType" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view work cell types" ON "workCellType"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -103,21 +103,21 @@ CREATE POLICY "Employees can view work cell types" ON "workCellType"
 CREATE POLICY "Employees with resources_create can insert work cell types" ON "workCellType"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update work cell types" ON "workCellType"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete work cell types" ON "workCellType"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_delete', "companyId")
   );
 
@@ -155,7 +155,7 @@ ALTER TABLE "workCell" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view work cells" ON "workCell"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -164,21 +164,21 @@ CREATE POLICY "Employees can view work cells" ON "workCell"
 CREATE POLICY "Employees with resources_create can insert work cells" ON "workCell"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update work cells" ON "workCell"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete work cells" ON "workCell"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_delete', "companyId")
   );
 
@@ -213,7 +213,7 @@ ALTER TABLE "crew" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view crews" ON "crew"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -222,21 +222,21 @@ CREATE POLICY "Employees can view crews" ON "crew"
 CREATE POLICY "Employees with resources_create can insert crews" ON "crew"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update crews" ON "crew"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete crews" ON "crew"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_delete', "companyId")
   );
 
@@ -256,65 +256,29 @@ ALTER TABLE "crewAbility" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with resources_view can view crew abilities" ON "crewAbility"
   FOR SELECT
   USING (
-    has_role('employee')
-    AND (
-      '0' = ANY(get_permission_companies('resources_view'))
-      OR (
-        "crewId" IN (
-          SELECT "id" FROM "crew" WHERE "companyId" = ANY(
-            get_permission_companies('resources_view')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("crewId", 'crew')) AND 
+    has_company_permission('resources_view', get_company_id_from_foreign_key("crewId", 'crew'))  
   );
 
 CREATE POLICY "Employees with resources_create can insert crew abilities" ON "crewAbility"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee')
-    AND (
-      '0' = ANY(get_permission_companies('resources_create'))
-      OR (
-        "crewId" IN (
-          SELECT "id" FROM "crew" WHERE "companyId" = ANY(
-            get_permission_companies('resources_create')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("crewId", 'crew')) AND 
+    has_company_permission('resources_create', get_company_id_from_foreign_key("crewId", 'crew')) 
 );
 
 CREATE POLICY "Employees with resources_update can update crew abilities" ON "crewAbility"
   FOR UPDATE
   USING (
-    has_role('employee')
-    AND (
-      '0' = ANY(get_permission_companies('resources_update'))
-      OR (
-        "crewId" IN (
-          SELECT "id" FROM "crew" WHERE "companyId" = ANY(
-            get_permission_companies('resources_update')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("crewId", 'crew')) AND 
+    has_company_permission('resources_update', get_company_id_from_foreign_key("crewId", 'crew')) 
   );
 
 CREATE POLICY "Employees with resources_delete can delete crew abilities" ON "crewAbility"
   FOR DELETE
   USING (
-    has_role('employee')
-    AND (
-      '0' = ANY(get_permission_companies('resources_delete'))
-      OR (
-        "crewId" IN (
-          SELECT "id" FROM "crew" WHERE "companyId" = ANY(
-            get_permission_companies('resources_delete')
-          )
-        )
-      )
-    )
+    has_role('employee', get_company_id_from_foreign_key("crewId", 'crew')) AND 
+    has_company_permission('resources_delete', get_company_id_from_foreign_key("crewId", 'crew')) 
   );
 
 CREATE TABLE "equipmentType" (
@@ -345,7 +309,7 @@ ALTER TABLE "equipmentType" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view equipment types" ON "equipmentType"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -354,21 +318,21 @@ CREATE POLICY "Employees can view equipment types" ON "equipmentType"
 CREATE POLICY "Employees with resources_create can insert equipment types" ON "equipmentType"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update equipment types" ON "equipmentType"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete equipment types" ON "equipmentType"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
@@ -406,7 +370,7 @@ ALTER TABLE "equipment" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view equipment" ON "equipment"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -415,21 +379,21 @@ CREATE POLICY "Employees can view equipment" ON "equipment"
 CREATE POLICY "Employees with resources_create can insert equipment" ON "equipment"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update equipment" ON "equipment"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete equipment" ON "equipment"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 

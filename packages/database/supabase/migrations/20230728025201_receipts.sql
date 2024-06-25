@@ -59,7 +59,7 @@ ALTER TABLE "receipt" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with inventory_view can view receipts" ON "receipt"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('inventory_view', "companyId")
   );
   
@@ -67,21 +67,21 @@ CREATE POLICY "Employees with inventory_view can view receipts" ON "receipt"
 CREATE POLICY "Employees with inventory_create can insert receipts" ON "receipt"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('inventory_create', "companyId")
 );
 
 CREATE POLICY "Employees with inventory_update can update receipts" ON "receipt"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('inventory_update', "companyId")
   );
 
 CREATE POLICY "Employees with inventory_delete can delete receipts" ON "receipt"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('inventory_delete', "companyId")
   );
 
@@ -124,7 +124,7 @@ ALTER TABLE "receiptLine" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with inventory_view can view receipt lines" ON "receiptLine"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('inventory_view', "companyId")
   );
   
@@ -132,21 +132,21 @@ CREATE POLICY "Employees with inventory_view can view receipt lines" ON "receipt
 CREATE POLICY "Employees with inventory_create can insert receipt lines" ON "receiptLine"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('inventory_create', "companyId")
 );
 
 CREATE POLICY "Employees with inventory_update can update receipt lines" ON "receiptLine"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('inventory_update', "companyId")
   );
 
 CREATE POLICY "Employees with inventory_delete can delete receipt lines" ON "receiptLine"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('inventory_delete', "companyId")
   );
 

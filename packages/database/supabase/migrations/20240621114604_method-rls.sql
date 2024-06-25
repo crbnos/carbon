@@ -71,28 +71,28 @@ ALTER TABLE "makeMethod" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with parts_view can view make methods" ON "makeMethod"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_view', "companyId")
   );
 
 CREATE POLICY "Employees with parts_create can create make methods" ON "makeMethod"
   FOR INSERT
   WITH CHECK (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update make methods" ON "makeMethod"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete make methods" ON "makeMethod"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 
@@ -101,28 +101,28 @@ ALTER TABLE "methodMaterial" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with parts_view can view method materials" ON "methodMaterial"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_view', "companyId")
   );
 
 CREATE POLICY "Employees with parts_create can create method materials" ON "methodMaterial"
   FOR INSERT
   WITH CHECK (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update method materials" ON "methodMaterial"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete method materials" ON "methodMaterial"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 
@@ -131,28 +131,28 @@ ALTER TABLE "methodOperation" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with parts_view can view method operation" ON "methodOperation"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_view', "companyId")
   );
 
 CREATE POLICY "Employees with parts_create can create method operation" ON "methodOperation"
   FOR INSERT
   WITH CHECK (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update method operation" ON "methodOperation"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete method operation" ON "methodOperation"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 
@@ -161,7 +161,7 @@ ALTER TABLE "methodOperationWorkInstruction" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view work instructions" ON "methodOperationWorkInstruction"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -170,20 +170,20 @@ CREATE POLICY "Employees can view work instructions" ON "methodOperationWorkInst
 CREATE POLICY "Employees with parts_create can create work instructions" ON "methodOperationWorkInstruction"
   FOR INSERT
   WITH CHECK (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update work instructions" ON "methodOperationWorkInstruction"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete work instructions" ON "methodOperationWorkInstruction"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );

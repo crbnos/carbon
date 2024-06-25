@@ -35,7 +35,7 @@ CREATE INDEX "service_serviceType_idx" ON "service"("serviceType", "companyId");
 CREATE POLICY "Employees can view services" ON "service"
   FOR SELECT
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -44,21 +44,21 @@ CREATE POLICY "Employees can view services" ON "service"
 CREATE POLICY "Employees with parts_create can insert services" ON "service"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update services" ON "service"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete services" ON "service"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 
@@ -92,7 +92,7 @@ ALTER TABLE "serviceSupplier" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with part/purchasing_view can view service suppliers" ON "serviceSupplier"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     (
       has_company_permission('parts_create', "companyId") OR
       has_company_permission('purchase_view', "companyId")
@@ -102,28 +102,28 @@ CREATE POLICY "Employees with part/purchasing_view can view service suppliers" O
 CREATE POLICY "Employees with parts_update can update service suppliers" ON "serviceSupplier"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_create can create service suppliers" ON "serviceSupplier"
   FOR INSERT
   WITH CHECK (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete service suppliers" ON "serviceSupplier"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 
 CREATE POLICY "Suppliers with parts_view can view their own part suppliers" ON "serviceSupplier"
   FOR SELECT
   USING (
-    has_role('supplier') AND
+    has_role('supplier', "companyId") AND
     has_company_permission('parts_view', "companyId")
     AND "supplierId" IN (
       SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
@@ -133,7 +133,7 @@ CREATE POLICY "Suppliers with parts_view can view their own part suppliers" ON "
 CREATE POLICY "Suppliers with parts_update can update their own part suppliers" ON "serviceSupplier"
   FOR UPDATE
   USING (
-    has_role('supplier') AND
+    has_role('supplier', "companyId") AND
     has_company_permission('parts_update', "companyId")
     AND "supplierId" IN (
       SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()

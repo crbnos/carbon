@@ -2,7 +2,7 @@ ALTER TABLE "item" ALTER COLUMN "companyId" DROP NOT NULL;
 
 ALTER POLICY "Employees can view items" ON "item"
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND (
       "companyId" IS NULL OR
       "companyId" = ANY(
@@ -33,7 +33,7 @@ ALTER TABLE "materialForm" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view material forms" ON "materialForm"
   FOR SELECT
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND (
       "companyId" IS NULL OR
       "companyId" = ANY(
@@ -45,21 +45,21 @@ CREATE POLICY "Employees can view material forms" ON "materialForm"
 CREATE POLICY "Employees with parts_create can insert material forms" ON "materialForm"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update material forms" ON "materialForm"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete material forms" ON "materialForm"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 
@@ -89,7 +89,7 @@ ALTER TABLE "materialSubstance" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view material substances" ON "materialSubstance"
   FOR SELECT
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND (
       "companyId" IS NULL OR
       "companyId" = ANY(
@@ -101,21 +101,21 @@ CREATE POLICY "Employees can view material substances" ON "materialSubstance"
 CREATE POLICY "Employees with parts_create can insert material substances" ON "materialSubstance"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update material substances" ON "materialSubstance"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete material substances" ON "materialSubstance"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 
@@ -158,7 +158,7 @@ ALTER TABLE "material" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view materials" ON "material"
   FOR SELECT
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND (
       "companyId" IS NULL OR
       "companyId" = ANY(
@@ -170,21 +170,21 @@ CREATE POLICY "Employees can view materials" ON "material"
 CREATE POLICY "Employees with parts_create can insert materials" ON "material"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update materials" ON "material"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete materials" ON "material"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 

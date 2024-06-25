@@ -64,28 +64,28 @@ ALTER TABLE "purchaseInvoice" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with invoicing_view can view AP invoices" ON "purchaseInvoice"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_view', "companyId")
   );
 
 CREATE POLICY "Employees with invoicing_create can insert AP invoices" ON "purchaseInvoice"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_create', "companyId")
 );
 
 CREATE POLICY "Employees with invoicing_update can update AP invoices" ON "purchaseInvoice"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_update', "companyId")
   );
 
 CREATE POLICY "Employees with invoicing_delete can delete AP invoices" ON "purchaseInvoice"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_delete', "companyId")
   );
 
@@ -106,7 +106,7 @@ ALTER TABLE "purchaseInvoiceStatusHistory" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with invoicing_view can view AP invoices status history" ON "purchaseInvoiceStatusHistory"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice')) AND
     has_company_permission('invoicing_view', get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice'))
   );
 
@@ -213,28 +213,28 @@ ALTER TABLE "purchaseInvoiceLine" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with invoicing_view can view AP invoice lines" ON "purchaseInvoiceLine"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_view', "companyId")
   );
 
 CREATE POLICY "Employees with invoicing_create can insert AP invoice lines" ON "purchaseInvoiceLine"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_create', "companyId")
 );
 
 CREATE POLICY "Employees with invoicing_update can update AP invoice lines" ON "purchaseInvoiceLine"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_update', "companyId")
   );
 
 CREATE POLICY "Employees with invoicing_delete can delete AP invoice lines" ON "purchaseInvoiceLine"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_delete', "companyId")
   );
 
@@ -259,7 +259,7 @@ ALTER TABLE "purchaseInvoicePriceChange" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with invoicing_view can view AP invoice price changes" ON "purchaseInvoicePriceChange"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice')) AND
     has_company_permission('invoicing_view', get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice'))
   );
 
@@ -324,21 +324,21 @@ ALTER TABLE "purchasePayment" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with invoicing_view can view AP payments" ON "purchasePayment"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_view', "companyId")
   );
 
 CREATE POLICY "Employees with invoicing_create can insert AP payments" ON "purchasePayment"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_create', "companyId")
 );
 
 CREATE POLICY "Employees with invoicing_update can update AP payments" ON "purchasePayment"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_update', "companyId")
   );
 
@@ -346,7 +346,7 @@ CREATE POLICY "Employees with invoicing_delete can delete AP payments" ON "purch
   FOR DELETE
   USING (
     "paymentDate" IS NULL AND
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('invoicing_delete', "companyId")
   );
 
@@ -365,7 +365,7 @@ ALTER TABLE "purchaseInvoicePaymentRelation" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with invoicing_view can view AP invoice/payment relations" ON "purchaseInvoicePaymentRelation"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice')) AND
     has_company_permission('invoicing_view', get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice'))
   );
 

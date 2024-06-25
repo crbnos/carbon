@@ -121,7 +121,11 @@ ALTER TABLE "search" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Employees with sales_view can search for customers and sales orders" ON "search"
   FOR SELECT
-  USING (has_company_permission('sales_view', "companyId") AND entity IN ('Customer', 'Sales Order', 'Quotation') AND has_role('employee'));
+  USING (
+    has_company_permission('sales_view', "companyId") AND 
+    entity IN ('Customer', 'Sales Order', 'Quotation') AND 
+    has_role('employee', "companyId")
+  );
 
 -- TODO: customers should be able to search for their own sales orders
 -- CREATE POLICY "Customers with sales_view can search for their own sales orders" ON "search"

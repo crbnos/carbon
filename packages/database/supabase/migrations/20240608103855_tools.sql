@@ -30,7 +30,7 @@ ALTER TABLE "tool" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view tools" ON "tool"
   FOR SELECT
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -39,21 +39,21 @@ CREATE POLICY "Employees can view tools" ON "tool"
 CREATE POLICY "Employees with parts_create can insert tools" ON "tool"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update tools" ON "tool"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete tools" ON "tool"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 

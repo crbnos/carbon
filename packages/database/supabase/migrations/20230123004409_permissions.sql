@@ -37,7 +37,7 @@ CREATE TABLE "employeeTypePermission" (
 ALTER TABLE "employeeTypePermission" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Employees with users_update can view/modify permissions for employee type permissions" ON "employeeTypePermission" FOR ALL USING (
-  has_role('employee') AND
+  has_role('employee', get_company_id_from_foreign_key("employeeTypeId", 'employeeType')) AND
   has_company_permission('users_update', get_company_id_from_foreign_key("employeeTypeId", 'employeeType'))
 );
 

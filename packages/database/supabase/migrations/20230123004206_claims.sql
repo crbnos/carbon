@@ -72,15 +72,14 @@ CREATE OR REPLACE FUNCTION get_permission_companies(claim text) RETURNS text[]
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION has_role(role text) RETURNS "bool"
+CREATE OR REPLACE FUNCTION has_role(required_role text, company text) RETURNS "bool"
     LANGUAGE "plpgsql" SECURITY DEFINER SET search_path = public
     AS $$
+    DECLARE
+      user_role text;
     BEGIN
-      IF (get_my_claim('role'::text)) = ('"' || role || '"'::text)::jsonb THEN
-        return true;
-      ELSE
-        return false;
-      END IF;
+      SELECT role INTO user_role FROM public."userToCompany" WHERE "userId" = auth.uid()::text AND "companyId" = company;
+      return user_role = required_role;
     END;
 $$;
 
@@ -133,18 +132,22 @@ CREATE OR REPLACE FUNCTION get_company_id_from_foreign_key(foreign_key TEXT, tbl
     END;
 $$;
 
-CREATE OR REPLACE FUNCTION get_claims(uid text) RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER SET search_path = public
-    AS $$
-    DECLARE claims jsonb;
-    DECLARE perms jsonb;
-    BEGIN
-      select raw_app_meta_data from auth.users into claims where id = uid::uuid;
-      select permissions from "userPermission" into perms where id = uid::text;
-        return (claims || perms)::jsonb;
-      
-    END;
+CREATE OR REPLACE FUNCTION get_claims(uid text, company text) RETURNS "jsonb"
+  LANGUAGE "plpgsql" SECURITY DEFINER SET search_path = public
+  AS $$
+  DECLARE company_role text;
+  DECLARE role_object jsonb;
+  DECLARE perms jsonb;
+  BEGIN
+    select role from "userToCompany" into company_role where "userId" = uid AND "companyId" = company;
+    select permissions from "userPermission" into perms where id = uid;
+    role_object := jsonb_build_object('role', company_role);
+
+
+    return (role_object || perms)::jsonb;
+  END;
 $$;
+
 
 
 NOTIFY pgrst, 'reload schema';

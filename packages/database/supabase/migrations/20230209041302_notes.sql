@@ -22,7 +22,7 @@ ALTER TABLE "note" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view notes" ON "note"
   FOR SELECT
   USING (
-    has_role('employee')
+    has_role('employee', "companyId")
     AND "companyId" = ANY(
         SELECT "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -31,7 +31,7 @@ CREATE POLICY "Employees can view notes" ON "note"
 CREATE POLICY "Employees can insert notes" ON "note"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee')
+    has_role('employee', "companyId")
     AND "companyId" = ANY(
         SELECT "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )  
@@ -40,13 +40,13 @@ CREATE POLICY "Employees can insert notes" ON "note"
 CREATE POLICY "Employees can update their own notes" ON "note"
   FOR UPDATE
   USING (
-   has_role('employee')
+   has_role('employee', "companyId")
     AND "createdBy"::uuid = auth.uid()
   );
 
 CREATE POLICY "Employees can delete their own notes" ON "note"
   FOR DELETE
   USING (
-    has_role('employee')
+    has_role('employee', "companyId")
     AND "createdBy"::uuid = auth.uid()
   );

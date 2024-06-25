@@ -57,11 +57,13 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         name: "Shapes",
         to: path.to.materialForms,
         icon: <LuShapes />,
+        role: "employee",
       },
       {
         name: "Substances",
         to: path.to.materialSubstances,
         icon: <GiWoodBeam />,
+        role: "employee",
       },
       {
         name: "Posting Groups",

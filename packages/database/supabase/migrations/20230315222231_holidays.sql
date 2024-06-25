@@ -26,7 +26,7 @@ ALTER TABLE "holiday" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view holidays" ON "holiday"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -35,20 +35,20 @@ CREATE POLICY "Employees can view holidays" ON "holiday"
 CREATE POLICY "Employees with resources_create can insert holidays" ON "holiday"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_create', "companyId")
 );
 
 CREATE POLICY "Employees with resources_update can update holidays" ON "holiday"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_update', "companyId")
   );
 
 CREATE POLICY "Employees with resources_delete can delete holidays" ON "holiday"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('resources_delete', "companyId")
   );

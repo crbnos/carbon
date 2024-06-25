@@ -26,7 +26,7 @@ ALTER TABLE "consumable" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view consumables" ON "consumable"
   FOR SELECT
   USING (
-    has_role('employee') 
+    has_role('employee', "companyId") 
     AND "companyId" = ANY(
       select "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
@@ -35,21 +35,21 @@ CREATE POLICY "Employees can view consumables" ON "consumable"
 CREATE POLICY "Employees with parts_create can insert consumables" ON "consumable"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
 CREATE POLICY "Employees with parts_update can update consumables" ON "consumable"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
 CREATE POLICY "Employees with parts_delete can delete consumables" ON "consumable"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('parts_delete', "companyId")
   );
 

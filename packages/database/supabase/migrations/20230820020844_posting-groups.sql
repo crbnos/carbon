@@ -111,14 +111,14 @@ ALTER TABLE "accountDefault" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with accounting_view can view account defaults" ON "accountDefault"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_view', "companyId")
   );
 
 CREATE POLICY "Employees with accounting_update can update account defaults" ON "accountDefault"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_update', "companyId")
   );
 
@@ -174,14 +174,14 @@ ALTER TABLE "postingGroupInventory" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with accounting_view can view inventory posting groups" ON "postingGroupInventory"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_view', "companyId")
   );
 
 CREATE POLICY "Employees with accounting_update can update inventory posting groups" ON "postingGroupInventory"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_update', "companyId")
   );
 
@@ -221,14 +221,14 @@ ALTER TABLE "postingGroupPurchasing" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees with accounting_view can view purchasing posting groups" ON "postingGroupPurchasing"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_view', "companyId")
   );
 
 CREATE POLICY "Employees with accounting_update can update purchasing posting groups" ON "postingGroupPurchasing"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_update', "companyId")
   );
 
@@ -265,26 +265,26 @@ CREATE INDEX "postingGroupSales_companyId_idx" ON "postingGroupSales" ("companyI
 CREATE POLICY "Employees with accounting_view can view sales posting groups" ON "postingGroupSales"
   FOR SELECT
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_view', "companyId")
   );
 
 CREATE POLICY "Employees with accounting_update can update sales posting groups" ON "postingGroupSales"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('accounting_update', "companyId")
   );
 
 CREATE FUNCTION public.create_posting_groups_for_location()
 RETURNS TRIGGER AS $$
 DECLARE
-  part_group RECORD;
+  item_posting_group RECORD;
   account_defaults RECORD;
 BEGIN
   SELECT * INTO account_defaults FROM "accountDefault" WHERE "companyId" = new."companyId";
 
-  FOR part_group IN SELECT "id" FROM "itemPostingGroup"
+  FOR item_posting_group IN SELECT "id" FROM "itemPostingGroup"
   LOOP
     INSERT INTO "postingGroupInventory" (
       "itemPostingGroupId",
@@ -306,7 +306,7 @@ BEGIN
       "companyId",
       "updatedBy"
     ) VALUES (
-      part_group."id",
+      item_posting_group."id",
       new."id",
       account_defaults."costOfGoodsSoldAccount",
       account_defaults."inventoryAccount",
@@ -377,7 +377,7 @@ CREATE TRIGGER create_location
   FOR EACH ROW EXECUTE PROCEDURE public.create_posting_groups_for_location();
 
 
-CREATE FUNCTION public.create_posting_groups_for_part_group()
+CREATE FUNCTION public.create_posting_groups_for_item_posting_group()
 RETURNS TRIGGER AS $$
 DECLARE
   rec RECORD;
@@ -578,9 +578,9 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
-CREATE TRIGGER create_part_group
+CREATE TRIGGER create_item_posting_group
   AFTER INSERT on public."itemPostingGroup"
-  FOR EACH ROW EXECUTE PROCEDURE public.create_posting_groups_for_part_group();
+  FOR EACH ROW EXECUTE PROCEDURE public.create_posting_groups_for_item_posting_group();
 
 CREATE FUNCTION public.create_posting_groups_for_customer_type()
 RETURNS TRIGGER AS $$

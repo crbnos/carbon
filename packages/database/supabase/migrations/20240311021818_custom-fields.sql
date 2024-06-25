@@ -12,10 +12,10 @@ CREATE INDEX "customFieldTable_module_idx" ON "customFieldTable" ("module");
 
 ALTER TABLE "customFieldTable" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees can view custom field tables" ON "customFieldTable"
+CREATE POLICY "Authenticated users can view custom field tables" ON "customFieldTable"
   FOR SELECT
   USING (
-    has_role('employee')
+    auth.role() = 'authenticated'
   );
 
 CREATE TABLE "customField" (
@@ -46,27 +46,27 @@ ALTER TABLE "customField" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Employees can view custom fields" ON "customField"
   FOR SELECT
   USING (
-    has_role('employee')
+    has_role('employee', "companyId")
   );
 
 CREATE POLICY "Employees with settings_create can insert custom fields" ON "customField"
   FOR INSERT
   WITH CHECK (   
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('settings_create', "companyId")
   );
 
 CREATE POLICY "Employees with settings_update can update custom fields" ON "customField"
   FOR UPDATE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('settings_update', "companyId")
   );
 
 CREATE POLICY "Employees with settings_delete can delete custom fields" ON "customField"
   FOR DELETE
   USING (
-    has_role('employee') AND
+    has_role('employee', "companyId") AND
     has_company_permission('settings_delete', "companyId")
   );
 
