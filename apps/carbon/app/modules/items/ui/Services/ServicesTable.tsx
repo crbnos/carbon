@@ -1,4 +1,4 @@
-import { Checkbox, Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, Checkbox, Enumerable, MenuIcon, MenuItem } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -8,7 +8,7 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Service } from "~/modules/items";
-import { methodType, serviceType } from "~/modules/items";
+import { MethodIcon, methodType, serviceType } from "~/modules/items";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -61,13 +61,23 @@ const ServicesTable = memo(({ data, count }: ServicesTableProps) => {
       {
         accessorKey: "defaultMethodType",
         header: "Default Method",
-        cell: (item) => <Enumerable value={item.getValue<string>()} />,
+        cell: (item) => (
+          <Badge variant="secondary">
+            <MethodIcon type={item.getValue<string>()} className="mr-2" />
+            <span>{item.getValue<string>()}</span>
+          </Badge>
+        ),
         meta: {
           filter: {
             type: "static",
             options: methodType.map((value) => ({
               value,
-              label: <Enumerable value={value} />,
+              label: (
+                <Badge variant="secondary">
+                  <MethodIcon type={value} className="mr-2" />
+                  <span>{value}</span>
+                </Badge>
+              ),
             })),
           },
         },

@@ -1,10 +1,13 @@
 import {
+  Badge,
   Button,
+  Enumerable,
   HStack,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   VStack,
+  cn,
 } from "@carbon/react";
 import { useParams } from "@remix-run/react";
 import { LuCopy, LuLink } from "react-icons/lu";
@@ -14,6 +17,7 @@ import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { BuyMethod, Fixture, PickMethod } from "../../types";
+import { MethodIcon, TrackingTypeIcon } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 
 const FixtureProperties = () => {
@@ -98,6 +102,44 @@ const FixtureProperties = () => {
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
         <Assignee id={itemId} table="item" value={assignee ?? ""} />
+      </VStack>
+
+      <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
+        <Badge variant="secondary">
+          <TrackingTypeIcon
+            type={routeData?.fixtureSummary?.itemTrackingType!}
+            className={cn(
+              "mr-2",
+              routeData?.fixtureSummary?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.fixtureSummary?.itemTrackingType!}</span>
+        </Badge>
+      </VStack>
+
+      <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Replenishment</h3>
+        <Enumerable
+          className={cn(
+            routeData?.fixtureSummary?.active === false && "opacity-50"
+          )}
+          value={routeData?.fixtureSummary?.replenishmentSystem ?? null}
+        />
+      </VStack>
+
+      <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Default Method Type</h3>
+        <Badge variant="secondary">
+          <MethodIcon
+            type={routeData?.fixtureSummary?.defaultMethodType!}
+            className={cn(
+              "mr-2",
+              routeData?.fixtureSummary?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.fixtureSummary?.defaultMethodType!}</span>
+        </Badge>
       </VStack>
 
       <VStack spacing={2}>

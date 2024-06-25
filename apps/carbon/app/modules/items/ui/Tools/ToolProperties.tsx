@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Enumerable,
   HStack,
@@ -16,6 +17,7 @@ import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { BuyMethod, PickMethod, Tool } from "../../types";
+import { MethodIcon, TrackingTypeIcon } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 
 const ToolProperties = () => {
@@ -104,12 +106,30 @@ const ToolProperties = () => {
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
-        <Enumerable
-          className={cn(
-            routeData?.toolSummary?.active === false && "opacity-50"
-          )}
-          value={routeData?.toolSummary?.itemTrackingType ?? null}
-        />
+        <Badge variant="secondary">
+          <TrackingTypeIcon
+            type={routeData?.toolSummary?.itemTrackingType!}
+            className={cn(
+              "mr-2",
+              routeData?.toolSummary?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.toolSummary?.itemTrackingType!}</span>
+        </Badge>
+      </VStack>
+
+      <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Default Method Type</h3>
+        <Badge variant="secondary">
+          <MethodIcon
+            type={routeData?.toolSummary?.defaultMethodType!}
+            className={cn(
+              "mr-2",
+              routeData?.toolSummary?.active === false && "opacity-50"
+            )}
+          />
+          <span>{routeData?.toolSummary?.defaultMethodType!}</span>
+        </Badge>
       </VStack>
 
       <VStack spacing={2}>

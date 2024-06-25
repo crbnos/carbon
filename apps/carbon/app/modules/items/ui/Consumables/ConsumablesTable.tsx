@@ -1,4 +1,4 @@
-import { Checkbox, Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, Checkbox, MenuIcon, MenuItem } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -8,7 +8,12 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Consumable } from "~/modules/items";
-import { itemTrackingTypes, methodType } from "~/modules/items";
+import {
+  MethodIcon,
+  TrackingTypeIcon,
+  itemTrackingTypes,
+  methodType,
+} from "~/modules/items";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -51,13 +56,26 @@ const ConsumablesTable = memo(
         {
           accessorKey: "itemTrackingType",
           header: "Tracking",
-          cell: (item) => <Enumerable value={item.getValue<string>()} />,
+          cell: (item) => (
+            <Badge variant="secondary">
+              <TrackingTypeIcon
+                type={item.getValue<string>()}
+                className="mr-2"
+              />
+              <span>{item.getValue<string>()}</span>
+            </Badge>
+          ),
           meta: {
             filter: {
               type: "static",
               options: itemTrackingTypes.map((type) => ({
                 value: type,
-                label: <Enumerable value={type} />,
+                label: (
+                  <Badge variant="secondary">
+                    <TrackingTypeIcon type={type} className="mr-2" />
+                    <span>{type}</span>
+                  </Badge>
+                ),
               })),
             },
           },
@@ -65,13 +83,23 @@ const ConsumablesTable = memo(
         {
           accessorKey: "defaultMethodType",
           header: "Default Method",
-          cell: (item) => <Enumerable value={item.getValue<string>()} />,
+          cell: (item) => (
+            <Badge variant="secondary">
+              <MethodIcon type={item.getValue<string>()} className="mr-2" />
+              <span>{item.getValue<string>()}</span>
+            </Badge>
+          ),
           meta: {
             filter: {
               type: "static",
               options: methodType.map((value) => ({
                 value,
-                label: <Enumerable value={value} />,
+                label: (
+                  <Badge variant="secondary">
+                    <MethodIcon type={value} className="mr-2" />
+                    <span>{value}</span>
+                  </Badge>
+                ),
               })),
             },
           },
