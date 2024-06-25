@@ -7,6 +7,7 @@ import { LuGrip, LuHammer, LuShoppingCart } from "react-icons/lu";
 import { CiFries } from "react-icons/ci";
 import { GiIBeam } from "react-icons/gi";
 import { RiCustomerServiceLine } from "react-icons/ri";
+import { RxCodesandboxLogo } from "react-icons/rx";
 
 export const MethodItemTypeIcon = ({
   type,
@@ -48,7 +49,7 @@ export const MethodIcon = ({
     case "Buy":
       return <LuShoppingCart className={cn("text-blue-500", className)} />;
     case "Make":
-      return <LuHammer className={cn("text-green-500", className)} />;
+      return <RxCodesandboxLogo className={cn("text-green-500", className)} />;
     case "Pick":
       return <FaCodePullRequest className={cn("text-yellow-500", className)} />;
   }
