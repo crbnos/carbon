@@ -39,22 +39,16 @@ const PartManufacturingForm = ({
         <CardContent>
           <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <Number name="manufacturingLeadTime" label="Lead Time (Days)" />
-            <Number
-              name="scrapPercentage"
-              label="Scrap Percentage"
-              formatOptions={{ style: "percent" }}
-            />
             <Number name="lotSize" label="Lot Size" />
 
             <Boolean
               name="manufacturingBlocked"
               label="Manufacturing Blocked"
             />
-            <Boolean
+            {/* <Boolean
               name="requiresConfiguration"
               label="Requires Configuration"
-            />
+            /> */}
             <CustomFormFields table="partReplenishment" />
           </div>
         </CardContent>

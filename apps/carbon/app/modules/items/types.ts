@@ -8,11 +8,13 @@ import type {
   getItemPostingGroups,
   getItemPostingGroupsList,
   getItemQuantities,
+  getMakeMethod,
   getMaterialForms,
   getMaterialSubstances,
   getMaterials,
   getMethodMaterials,
   getMethodOperations,
+  getMethodTreeArray,
   getPart,
   getParts,
   getPickMethods,
@@ -66,8 +68,16 @@ export type BuyMethod = NonNullable<
 
 export type InventoryItemType = Database["public"]["Enums"]["itemTrackingType"];
 
+export type MakeMethod = NonNullable<
+  Awaited<ReturnType<typeof getMakeMethod>>["data"]
+>;
+
 export type Material = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
+>[number];
+
+export type Method = NonNullable<
+  Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
 >[number];
 
 export type MethodItemType = (typeof methodItemType)[number];

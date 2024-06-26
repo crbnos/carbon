@@ -505,12 +505,6 @@ function MaterialForm({
               onItemChange(value?.value as string);
             }}
           />
-          <DefaultMethodType
-            name="methodType"
-            label="Method Type"
-            value={itemData.methodType}
-            replenishmentSystem="Buy and Make"
-          />
           <InputControlled
             name="description"
             label="Description"
@@ -518,6 +512,12 @@ function MaterialForm({
             onChange={(newValue) => {
               setItemData((d) => ({ ...d, description: newValue }));
             }}
+          />
+          <DefaultMethodType
+            name="methodType"
+            label="Method Type"
+            value={itemData.methodType}
+            replenishmentSystem="Buy and Make"
           />
           <Number name="quantity" label="Quantity" />
           <UnitOfMeasure

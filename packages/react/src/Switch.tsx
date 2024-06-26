@@ -8,8 +8,7 @@ import { cn } from "./utils/cn";
 
 const variations = {
   large: {
-    container:
-      "flex items-center gap-x-2 rounded-md hover:bg-muted p-2 transition",
+    container: "flex items-center gap-x-2 rounded-md hover:bg-muted transition",
     root: "h-6 w-11",
     thumb:
       "h-5 w-5 data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
