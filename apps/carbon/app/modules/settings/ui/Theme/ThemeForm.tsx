@@ -44,6 +44,7 @@ const ThemeForm = ({ theme: defaultValues }: ThemeFormProps) => {
     if (t) {
       onThemeChange(t);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 

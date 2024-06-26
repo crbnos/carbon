@@ -16,7 +16,7 @@ import { LuTrash } from "react-icons/lu";
 
 export interface Item {
   id: string;
-  text: string;
+  title: ReactNode;
   checked: boolean;
   details?: ReactNode;
   order?: "With Previous" | "After Previous";
@@ -120,7 +120,7 @@ function SortableListItem<T>({
           <div ref={ref} className={cn(isExpanded ? "w-full" : "", "z-20 ")}>
             <motion.div
               layout="position"
-              className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2"
+              className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2 py-1"
             >
               <AnimatePresence>
                 {!isExpanded ? (
@@ -137,7 +137,7 @@ function SortableListItem<T>({
                       id={`checkbox-${item.id}`}
                       aria-label="Mark to delete"
                       onCheckedChange={() => onToggleItem(item.id)}
-                      className="ml-3 h-5 w-5 rounded-md border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
+                      className="ml-3 border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
                     />
                     {/* List Order */}
                     <p className="font-mono text-xs pl-1 text-foreground/50 flex flex-shrink-0">
@@ -160,16 +160,23 @@ function SortableListItem<T>({
                       }}
                     >
                       <HStack className="w-full justify-between">
-                        <h4
-                          className={cn(
-                            "flex tracking-tighter text-base md:text-lg truncate",
-                            item.checked
-                              ? "text-red-400"
-                              : "text-foreground dark:text-foreground/70"
-                          )}
-                        >
-                          {item.text}
-                        </h4>
+                        {typeof item.title === "string" ? (
+                          <h4
+                            className={cn(
+                              "flex tracking-tighter text-base md:text-lg truncate",
+                              item.checked
+                                ? "text-red-400"
+                                : "text-foreground dark:text-foreground/70"
+                            )}
+                          >
+                            {item.title}
+                          </h4>
+                        ) : (
+                          <div className={item.checked ? "text-red-400" : ""}>
+                            {item.title}
+                          </div>
+                        )}
+
                         {item.details && (
                           <div className="flex flex-shrink-0">
                             {item.details}

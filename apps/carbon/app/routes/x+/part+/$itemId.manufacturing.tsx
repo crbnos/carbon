@@ -114,6 +114,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function PartManufacturing() {
   const { methods } = useLoaderData<typeof loader>();
+
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
@@ -197,6 +198,7 @@ function BoMExplorer({
         return false;
       },
     },
+    isEager: true,
   });
 
   return (

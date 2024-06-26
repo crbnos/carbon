@@ -212,6 +212,8 @@ export const path = {
       generatePath(`${x}/items/forms/delete/${id}`),
     deleteMaterialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/delete/${id}`),
+    deleteMethodMaterial: (makeMethodId: string, id: string) =>
+      generatePath(`${x}/items/methods/${makeMethodId}/material/delete/${id}`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePaymentTerm: (id: string) =>

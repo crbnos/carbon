@@ -81,20 +81,7 @@ const PartsTable = memo(
             },
           },
         },
-        {
-          accessorKey: "replenishmentSystem",
-          header: "Replenishment",
-          cell: (item) => <Enumerable value={item.getValue<string>()} />,
-          meta: {
-            filter: {
-              type: "static",
-              options: itemReplenishmentSystems.map((type) => ({
-                value: type,
-                label: <Enumerable value={type} />,
-              })),
-            },
-          },
-        },
+
         {
           accessorKey: "defaultMethodType",
           header: "Default Method",
@@ -115,6 +102,20 @@ const PartsTable = memo(
                     <span>{value}</span>
                   </Badge>
                 ),
+              })),
+            },
+          },
+        },
+        {
+          accessorKey: "replenishmentSystem",
+          header: "Replenishment",
+          cell: (item) => <Enumerable value={item.getValue<string>()} />,
+          meta: {
+            filter: {
+              type: "static",
+              options: itemReplenishmentSystems.map((type) => ({
+                value: type,
+                label: <Enumerable value={type} />,
               })),
             },
           },

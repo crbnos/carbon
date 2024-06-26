@@ -49,6 +49,13 @@ export async function deleteMaterialSubstance(
   return client.from("materialSubstance").delete().eq("id", id);
 }
 
+export async function deleteMethodMaterial(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("methodMaterial").delete().eq("id", id);
+}
+
 export async function deleteUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string
@@ -482,7 +489,8 @@ export async function getMethodMaterials(
   return client
     .from("methodMaterial")
     .select("*")
-    .eq("makeMethodId", makeMethodId);
+    .eq("makeMethodId", makeMethodId)
+    .order("order", { ascending: true });
 }
 
 export async function getMethodOperations(
