@@ -67,7 +67,7 @@ function makeItems(operations: Operation[]): ItemWithData[] {
 function makeItem(operation: Operation): ItemWithData {
   return {
     id: operation.id!,
-    text: operation.description ?? "",
+    title: operation.description ?? "",
     checked: false,
     order: operation.operationOrder,
     details: <Badge variant="secondary">{operation.operationOrder}</Badge>,
@@ -122,7 +122,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
       return [
         ...prevItems,
         {
-          text: "",
+          title: "",
           checked: false,
           id: temporaryId,
           data: {

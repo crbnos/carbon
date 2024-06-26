@@ -149,6 +149,7 @@ type TreeStateHookProps<TData, TFilterValue> = {
   }) => number;
   parentRef: RefObject<any>;
   filter?: Filter<TData, TFilterValue>;
+  isEager?: boolean;
 };
 
 //this is so Framer Motion can be used to render the components
@@ -192,6 +193,7 @@ export function useTree<TData, TFilterValue>({
   parentRef,
   estimatedRowHeight,
   filter,
+  isEager,
 }: TreeStateHookProps<TData, TFilterValue>): UseTreeStateOutput {
   const previousNodeCount = useRef(tree.length);
   const previousSelectedId = useRef<string | undefined>(selectedId);
@@ -210,13 +212,12 @@ export function useTree<TData, TFilterValue>({
     }
   }, [state.changes.selectedId]);
 
-  //update tree when the number of nodes changes
+  //update tree when the data changes or the tree length changes
   useEffect(() => {
-    if (tree.length !== previousNodeCount.current) {
-      previousNodeCount.current = tree.length;
+    if (isEager || tree.length !== previousNodeCount.current) {
       dispatch({ type: "UPDATE_TREE", payload: { tree } });
     }
-  }, [previousNodeCount.current, tree.length]);
+  }, [previousNodeCount.current, tree]);
 
   //update the filter, if it's changed
   const previousFilter = useRef(filter);
@@ -241,7 +242,7 @@ export function useTree<TData, TFilterValue>({
     estimateSize: (index: number) => {
       return estimatedRowHeight({
         node: tree[index],
-        state: state.nodes[tree[index].id],
+        state: state.nodes[tree[index]?.id],
         index,
       });
     },

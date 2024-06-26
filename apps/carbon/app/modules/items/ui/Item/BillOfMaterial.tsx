@@ -61,7 +61,16 @@ function makeItems(materials: Material[]): ItemWithData[] {
 function makeItem(material: Material): ItemWithData {
   return {
     id: material.id!,
-    text: material.description ?? "",
+    title: (
+      <VStack spacing={0}>
+        <h4 className="font-mono">{material.itemReadableId}</h4>
+        {material?.description && (
+          <span className="text-xs text-muted-foreground">
+            {material.description}{" "}
+          </span>
+        )}
+      </VStack>
+    ),
     checked: false,
     details: (
       <HStack spacing={2}>
@@ -90,8 +99,7 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> = {
 };
 
 const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
-  const { supabase } = useSupabase();
-  const sortOrderFetcher = useFetcher();
+  const fetcher = useFetcher();
 
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(materials ?? [])
@@ -119,7 +127,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
       return [
         ...prevItems,
         {
-          text: "",
+          title: "",
           checked: false,
           id: temporaryId,
           data: {
@@ -139,18 +147,10 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
 
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
 
-    const response = await supabase
-      ?.from("methodMaterial")
-      .delete()
-      .eq("id", id);
-    if (response?.error) {
-      // add the item back to the list if there was an error
-      setItems((prevItems) => {
-        const updatedItems = [...prevItems];
-        updatedItems.splice(itemIndex, 0, item);
-        return updatedItems;
-      });
-    }
+    fetcher.submit(new FormData(), {
+      method: "post",
+      action: path.to.deleteMethodMaterial(makeMethodId, item.id),
+    });
   };
 
   const onReorder = (items: ItemWithData[]) => {
@@ -175,7 +175,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
   const updateSortOrder = useDebounce((updates: Record<string, number>) => {
     let formData = new FormData();
     formData.append("updates", JSON.stringify(updates));
-    sortOrderFetcher.submit(formData, {
+    fetcher.submit(formData, {
       method: "post",
       action: path.to.methodMaterialsOrder(makeMethodId),
     });
