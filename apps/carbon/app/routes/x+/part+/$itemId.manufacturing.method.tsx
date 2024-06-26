@@ -1,4 +1,3 @@
-import type { JSONContent } from "@carbon/react";
 import {
   Button,
   HStack,
@@ -17,15 +16,17 @@ import { LuCopy, LuLink } from "react-icons/lu";
 import { redirect } from "remix-typedjson";
 import { useRouteData } from "~/hooks";
 
-import type { MethodItemType, MethodType, PartSummary } from "~/modules/items";
+import type {
+  MakeMethod,
+  Material,
+  MethodOperation,
+  PartSummary,
+} from "~/modules/items";
 import {
   BillOfMaterial,
   BillOfProcess,
   PartManufacturingForm,
   getItemManufacturing,
-  getMakeMethod,
-  getMethodMaterials,
-  getMethodOperations,
   partManufacturingValidator,
   upsertItemManufacturing,
 } from "~/modules/items";
@@ -44,9 +45,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partManufacturing, makeMethod] = await Promise.all([
+  const [partManufacturing] = await Promise.all([
     getItemManufacturing(client, itemId, companyId),
-    getMakeMethod(client, itemId, companyId),
   ]);
 
   if (partManufacturing.error) {
@@ -59,57 +59,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (makeMethod.error) {
-    throw redirect(
-      path.to.partDetails(itemId),
-      await flash(
-        request,
-        error(makeMethod.error, "Failed to load make method")
-      )
-    );
-  }
-
-  const [methodMaterials, methodOperations] = await Promise.all([
-    getMethodMaterials(client, makeMethod.data.id),
-    getMethodOperations(client, makeMethod.data.id),
-  ]);
-  if (methodOperations.error) {
-    throw redirect(
-      path.to.partDetails(itemId),
-      await flash(
-        request,
-        error(methodOperations.error, "Failed to load method operations")
-      )
-    );
-  }
-  if (methodMaterials.error) {
-    throw redirect(
-      path.to.partDetails(itemId),
-      await flash(
-        request,
-        error(methodMaterials.error, "Failed to load method materials")
-      )
-    );
-  }
-
   return json({
     partManufacturing: partManufacturing.data,
-    makeMethod: makeMethod.data,
-    methodMaterials:
-      methodMaterials.data?.map((m) => ({
-        ...m,
-        methodType: m.methodType as MethodType,
-        itemType: m.itemType as MethodItemType,
-      })) ?? [],
-    methodOperations:
-      methodOperations.data?.map((operation) => ({
-        ...operation,
-        equipmentTypeId: operation.equipmentTypeId ?? undefined,
-        methodOperationWorkInstruction:
-          operation.methodOperationWorkInstruction as {
-            content: JSONContent | null;
-          },
-      })) ?? [],
   });
 }
 
@@ -157,11 +108,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MakeMethodRoute() {
-  const { makeMethod, methodMaterials, methodOperations, partManufacturing } =
-    useLoaderData<typeof loader>();
+  const { partManufacturing } = useLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  const makeMethodId = makeMethod?.id;
+
+  const manufacturingRouteData = useRouteData<{
+    makeMethod: MakeMethod;
+    methodMaterials: Material[];
+    methodOperations: MethodOperation[];
+  }>(path.to.partManufacturing(itemId));
+
+  const makeMethodId = manufacturingRouteData?.makeMethod?.id;
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   const manufacturingInitialValues = {
@@ -191,12 +148,14 @@ export default function MakeMethodRoute() {
             <BillOfMaterial
               key={itemId}
               makeMethodId={makeMethodId}
-              materials={methodMaterials}
+              // @ts-ignore
+              materials={manufacturingRouteData?.methodMaterials ?? []}
             />
             <BillOfProcess
               key={itemId}
               makeMethodId={makeMethodId}
-              operations={methodOperations}
+              // @ts-ignore
+              operations={manufacturingRouteData?.methodOperations ?? []}
             />
           </VStack>
         </ScrollArea>

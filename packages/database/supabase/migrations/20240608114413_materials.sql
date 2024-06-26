@@ -30,6 +30,14 @@ CREATE TABLE "materialForm" (
 CREATE INDEX "materialForm_companyId_idx" ON "materialForm"("companyId");
 
 ALTER TABLE "materialForm" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can view global material forms" ON "materialForm"
+  FOR SELECT
+  USING (
+    auth.role() = 'authenticated' AND
+    "companyId" IS NULL
+  );
+
 CREATE POLICY "Employees can view material forms" ON "materialForm"
   FOR SELECT
   USING (
@@ -96,6 +104,13 @@ CREATE POLICY "Employees can view material substances" ON "materialSubstance"
         select "companyId" from "userToCompany" where "userId" = auth.uid()::text
       )
     )
+  );
+
+CREATE POLICY "Authenticated users can view global material substances" ON "materialSubstance"
+  FOR SELECT
+  USING (
+    auth.role() = 'authenticated' AND
+    "companyId" IS NULL
   );
 
 CREATE POLICY "Employees with parts_create can insert material substances" ON "materialSubstance"

@@ -1,3 +1,4 @@
+import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   ClientOnly,
@@ -13,115 +14,106 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
-import { TreeView, useTree } from "~/components/TreeView/TreeView";
+import type { FlatTreeItem } from "~/components/TreeView/TreeView";
+import { TreeView, flattenTree, useTree } from "~/components/TreeView/TreeView";
 
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet, useParams } from "@remix-run/react";
+import { Outlet, json, useLoaderData, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuPlus, LuSearch } from "react-icons/lu";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
-import type { MethodType } from "~/modules/items";
-import { MethodIcon } from "~/modules/items";
+import { redirect } from "remix-typedjson";
+import type { Method, MethodItemType, MethodType } from "~/modules/items";
+import {
+  MethodIcon,
+  getMakeMethod,
+  getMethodMaterials,
+  getMethodOperations,
+  getMethodTree,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
-
-type Method = {
-  id: string;
-  parentId: string | undefined;
-  children: string[];
-  hasChildren: boolean;
-  level: number;
-  data: {
-    itemId: string;
-    readableId: string;
-    description: string;
-    quantity: number;
-    fulfillmentMethod: MethodType;
-    isInherited: boolean;
-    isRoot: boolean;
-  };
-};
+import { flash } from "~/services/session.server";
+import { path } from "~/utils/path";
+import { error } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "parts",
   });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  return typedjson({
-    methods: [
-      {
-        id: "1",
-        parentId: undefined,
-        hasChildren: true,
-        children: ["2", "3"],
-        level: 0,
-        data: {
-          itemId: "1",
-          readableId: "F02134",
-          description: '1/2" x 3" x 4" Bracket',
-          quantity: 1,
-          fulfillmentMethod: "Make",
-          isInherited: false,
-          isRoot: true,
-        },
-      },
-      {
-        id: "2",
-        parentId: "1",
-        hasChildren: true,
-        children: ["4"],
-        level: 1,
-        data: {
-          itemId: "2",
-          readableId: "F501932",
-          description: '1/2" x 3" x 4" Cutout',
-          quantity: 1,
-          fulfillmentMethod: "Make",
-          isInherited: false,
-          isRoot: false,
-        },
-      },
+  const makeMethod = await getMakeMethod(client, itemId, companyId);
 
-      {
-        id: "4",
-        parentId: "2",
-        hasChildren: false,
-        children: [],
-        level: 2,
-        data: {
-          itemId: "4",
-          readableId: "F41858",
-          description: "1/8 X 5/8 6061-T6511 Aluminum Flat",
-          quantity: 2.8,
-          fulfillmentMethod: "Pick",
-          isInherited: true,
-          isRoot: false,
-        },
-      },
-      {
-        id: "3",
-        parentId: "1",
-        hasChildren: false,
-        children: [],
-        level: 1,
-        data: {
-          itemId: "3",
-          readableId: "91772A061",
-          description: '5/16" Threaded Machine Screw',
-          quantity: 4,
-          fulfillmentMethod: "Buy",
-          isInherited: false,
-          isRoot: false,
-        },
-      },
-    ] satisfies Method[],
+  if (makeMethod.error) {
+    throw redirect(
+      path.to.partDetails(itemId),
+      await flash(
+        request,
+        error(makeMethod.error, "Failed to load make method")
+      )
+    );
+  }
+
+  const [methodTree, methodMaterials, methodOperations] = await Promise.all([
+    getMethodTree(client, makeMethod.data.id),
+    getMethodMaterials(client, makeMethod.data.id),
+    getMethodOperations(client, makeMethod.data.id),
+  ]);
+  if (methodTree?.error) {
+    throw redirect(
+      path.to.partDetails(itemId),
+      await flash(
+        request,
+        error(methodTree.error, "Failed to load method tree")
+      )
+    );
+  }
+
+  if (methodOperations.error) {
+    throw redirect(
+      path.to.partDetails(itemId),
+      await flash(
+        request,
+        error(methodOperations.error, "Failed to load method operations")
+      )
+    );
+  }
+  if (methodMaterials.error) {
+    throw redirect(
+      path.to.partDetails(itemId),
+      await flash(
+        request,
+        error(methodMaterials.error, "Failed to load method materials")
+      )
+    );
+  }
+
+  return json({
+    makeMethod: makeMethod.data,
+    methodMaterials:
+      methodMaterials.data?.map((m) => ({
+        ...m,
+        methodType: m.methodType as MethodType,
+        itemType: m.itemType as MethodItemType,
+      })) ?? [],
+    methodOperations:
+      methodOperations.data?.map((operation) => ({
+        ...operation,
+        equipmentTypeId: operation.equipmentTypeId ?? undefined,
+        methodOperationWorkInstruction:
+          operation.methodOperationWorkInstruction as {
+            content: JSONContent | null;
+          },
+      })) ?? [],
+    methods: (methodTree.data.length > 0
+      ? flattenTree(methodTree.data[0])
+      : []) satisfies FlatTreeItem<Method>[],
   });
 }
 
 export default function PartManufacturing() {
-  const { methods } = useTypedLoaderData<typeof loader>();
+  const { methods } = useLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
@@ -139,6 +131,7 @@ export default function PartManufacturing() {
               <ScrollArea className="h-[calc(100vh-99px)]">
                 <div className="grid h-full overflow-hidden p-2">
                   <BoMExplorer
+                    // @ts-ignore
                     methods={methods}
                     onSelectedIdChanged={(selectedId) => {
                       console.log(selectedId);
@@ -158,7 +151,7 @@ export default function PartManufacturing() {
 }
 
 type BoMExplorerProps = {
-  methods: Method[];
+  methods: FlatTreeItem<Method>[];
   selectedId?: string;
   onSelectedIdChanged: (selectedId: string | undefined) => void;
 };
@@ -195,7 +188,9 @@ function BoMExplorer({
       fn: (value, node) => {
         if (value.text === "") return true;
         if (
-          node.data.readableId.toLowerCase().includes(value.text.toLowerCase())
+          node.data.itemReadableId
+            .toLowerCase()
+            .includes(value.text.toLowerCase())
         ) {
           return true;
         }
@@ -283,13 +278,13 @@ function BoMExplorer({
                 <div
                   className={cn(
                     "flex items-center gap-2 overflow-x-hidden",
-                    node.data.isInherited && "opacity-50"
+                    node.level > 1 && "opacity-50"
                   )}
                 >
                   <MethodIcon
                     type={
                       // node.data.isRoot ? "Method" :
-                      node.data.fulfillmentMethod
+                      node.data.methodType
                     }
                     className="h-4 min-h-4 w-4 min-w-4"
                   />
@@ -313,15 +308,15 @@ function BoMExplorer({
   );
 }
 
-function NodeText({ node }: { node: Method }) {
+function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-sm font-mono">{node.data.readableId}</span>
+      <span className="text-sm font-mono">{node.data.itemReadableId}</span>
     </div>
   );
 }
 
-function NodeQuantity({ node }: { node: Method }) {
+function NodeQuantity({ node }: { node: FlatTreeItem<Method> }) {
   return (
     <Badge className="text-xs" variant="outline">
       {node.data.quantity}

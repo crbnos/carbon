@@ -55,6 +55,7 @@ CREATE TABLE "methodMaterial" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "makeMethodId" TEXT NOT NULL,
   "methodType" "methodType" NOT NULL DEFAULT 'Buy',
+  "materialMakeMethodId" TEXT,
   "itemType" TEXT NOT NULL DEFAULT 'Material',
   "itemId" TEXT NOT NULL,
   "quantity" NUMERIC NOT NULL,
@@ -67,6 +68,7 @@ CREATE TABLE "methodMaterial" (
 
   CONSTRAINT "methodMaterial_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "methodMaterial_methodId_fkey" FOREIGN KEY ("makeMethodId") REFERENCES "makeMethod" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "methodMaterial_materialMakeMethodId_fkey" FOREIGN KEY ("materialMakeMethodId") REFERENCES "makeMethod" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "methodMaterial_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure" ("code", "companyId") ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT "methodMaterial_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "methodMaterial_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON UPDATE CASCADE ON DELETE RESTRICT,

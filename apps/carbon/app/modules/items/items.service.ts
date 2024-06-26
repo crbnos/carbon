@@ -496,6 +496,69 @@ export async function getMethodOperations(
     .order("order", { ascending: true });
 }
 
+type Method = NonNullable<
+  Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
+>[number];
+type MethodTreeItem = {
+  id: string;
+  data: Method;
+  children: MethodTreeItem[];
+};
+
+export async function getMethodTree(
+  client: SupabaseClient<Database>,
+  makeMethodId: string
+) {
+  const items = await getMethodTreeArray(client, makeMethodId);
+  if (items.error) return items;
+  const tree = getMethodTreeArrayToTree(items.data);
+  return {
+    data: tree,
+    error: null,
+  };
+}
+
+export async function getMethodTreeArray(
+  client: SupabaseClient<Database>,
+  makeMethodId: string
+) {
+  return client.rpc("get_method_tree", {
+    uid: makeMethodId,
+  });
+}
+
+function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
+  const rootItems: MethodTreeItem[] = [];
+  const lookup: { [id: string]: MethodTreeItem } = {};
+
+  for (const item of items) {
+    const itemId = item.materialMakeMethodId ?? item.methodMaterialId;
+    const parentId = item.makeMethodId;
+
+    if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
+      // @ts-ignore
+      lookup[itemId] = { id: itemId, children: [] };
+    }
+
+    lookup[itemId]["data"] = item;
+
+    const treeItem = lookup[itemId];
+
+    if (parentId === null || parentId === undefined) {
+      rootItems.push(treeItem);
+    } else {
+      if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
+        // @ts-ignore
+        lookup[parentId] = { id: parentId, children: [] };
+      }
+
+      lookup[parentId]["children"].push(treeItem);
+    }
+  }
+
+  return rootItems;
+}
+
 export async function getPart(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1263,16 +1326,33 @@ export async function upsertMethodMaterial(
         customFields?: Json;
       })
 ) {
+  let materialMakeMethodId: string | null = null;
+  if (methodMaterial.methodType === "Make") {
+    const makeMethod = await client
+      .from("makeMethod")
+      .select("id")
+      .eq("itemId", methodMaterial.itemId)
+      .single();
+
+    if (makeMethod.error) return makeMethod;
+    materialMakeMethodId = makeMethod.data?.id;
+  }
+
   if ("createdBy" in methodMaterial) {
     return client
       .from("methodMaterial")
-      .insert([methodMaterial])
+      .insert([
+        {
+          ...methodMaterial,
+          materialMakeMethodId,
+        },
+      ])
       .select("id")
       .single();
   }
   return client
     .from("methodMaterial")
-    .update(sanitize(methodMaterial))
+    .update(sanitize({ ...methodMaterial, materialMakeMethodId }))
     .eq("id", methodMaterial.id)
     .select("id")
     .single();

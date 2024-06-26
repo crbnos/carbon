@@ -119,16 +119,6 @@ const FixtureProperties = () => {
       </VStack>
 
       <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Replenishment</h3>
-        <Enumerable
-          className={cn(
-            routeData?.fixtureSummary?.active === false && "opacity-50"
-          )}
-          value={routeData?.fixtureSummary?.replenishmentSystem ?? null}
-        />
-      </VStack>
-
-      <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Default Method Type</h3>
         <Badge variant="secondary">
           <MethodIcon
@@ -140,6 +130,16 @@ const FixtureProperties = () => {
           />
           <span>{routeData?.fixtureSummary?.defaultMethodType!}</span>
         </Badge>
+      </VStack>
+
+      <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Replenishment</h3>
+        <Enumerable
+          className={cn(
+            routeData?.fixtureSummary?.active === false && "opacity-50"
+          )}
+          value={routeData?.fixtureSummary?.replenishmentSystem ?? null}
+        />
       </VStack>
 
       <VStack spacing={2}>

@@ -136,14 +136,15 @@ CREATE TYPE "methodType" AS ENUM (
 CREATE TABLE "item" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "readableId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "description" TEXT,
   "type" "itemType" NOT NULL,
   "replenishmentSystem" "itemReplenishmentSystem" NOT NULL DEFAULT 'Buy',
   "defaultMethodType" "methodType" DEFAULT 'Buy',
-  "name" TEXT NOT NULL,
-  "description" TEXT,
   "itemTrackingType" "itemTrackingType" NOT NULL,
   "unitOfMeasureCode" TEXT,
   "active" BOOLEAN NOT NULL DEFAULT true,
+  "thumbnailUrl" TEXT,
   "blocked" BOOLEAN NOT NULL DEFAULT false,
   "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
@@ -249,9 +250,9 @@ CREATE INDEX "part_companyId_idx" ON "part" ("companyId");
 
 
 ALTER publication supabase_realtime ADD TABLE "part";
-ALTER TABLE "item" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "part" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees can view parts" ON "item"
+CREATE POLICY "Employees can view parts" ON "part"
   FOR SELECT
   USING (
     has_role('employee', "companyId") 
@@ -260,21 +261,21 @@ CREATE POLICY "Employees can view parts" ON "item"
     )
   );
 
-CREATE POLICY "Employees with parts_create can insert parts" ON "item"
+CREATE POLICY "Employees with parts_create can insert parts" ON "part"
   FOR INSERT
   WITH CHECK (   
     has_role('employee', "companyId") AND
     has_company_permission('parts_create', "companyId")
   );
 
-CREATE POLICY "Employees with parts_update can update parts" ON "item"
+CREATE POLICY "Employees with parts_update can update parts" ON "part"
   FOR UPDATE
   USING (
     has_role('employee', "companyId") AND
     has_company_permission('parts_update', "companyId")
   );
 
-CREATE POLICY "Employees with parts_delete can delete parts" ON "item"
+CREATE POLICY "Employees with parts_delete can delete parts" ON "part"
   FOR DELETE
   USING (
     has_role('employee', "companyId") AND
@@ -516,10 +517,8 @@ CREATE TABLE "itemReplenishment" (
   "conversionFactor" NUMERIC(15,5) NOT NULL DEFAULT 1,
   "purchasingBlocked" BOOLEAN NOT NULL DEFAULT false,
   "manufacturingPolicy" "partManufacturingPolicy" NOT NULL DEFAULT 'Make to Stock',
-  "manufacturingLeadTime" INTEGER NOT NULL DEFAULT 0,
   "manufacturingBlocked" BOOLEAN NOT NULL DEFAULT false,
   "requiresConfiguration" BOOLEAN NOT NULL DEFAULT false,
-  "scrapPercentage" NUMERIC(15,5) NOT NULL DEFAULT 0,
   "lotSize" INTEGER,
   "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
@@ -557,7 +556,7 @@ CREATE POLICY "Employees with parts_update can update part costs" ON "itemReplen
   );
 
 
-CREATE POLICY "Suppliers with parts can view parts they created or supply" ON "item"
+CREATE POLICY "Suppliers with parts_view can view items they created or supply" ON "item"
   FOR SELECT
   USING (
     has_role('supplier', "companyId") AND
@@ -574,7 +573,7 @@ CREATE POLICY "Suppliers with parts can view parts they created or supply" ON "i
     )
   );
 
-CREATE POLICY "Supliers with parts_create can insert parts" ON "item"
+CREATE POLICY "Supliers with parts_create can insert items" ON "item"
   FOR INSERT
   WITH CHECK (   
     has_role('supplier', "companyId") AND
@@ -598,7 +597,7 @@ CREATE POLICY "Suppliers with parts_update can update parts that they created or
     )
   );
 
-CREATE POLICY "Suppliers with parts_delete can delete parts that they created or supply" ON "item"
+CREATE POLICY "Suppliers with parts_delete can delete items that they created or supply" ON "item"
   FOR DELETE
   USING (
     has_role('supplier', "companyId") AND
@@ -615,7 +614,65 @@ CREATE POLICY "Suppliers with parts_delete can delete parts that they created or
     ) 
   );
 
-CREATE POLICY "Suppliers with parts_view can view part costs they supply" ON "itemCost"
+CREATE POLICY "Suppliers with parts_view can view parts they created or supply" ON "part"
+  FOR SELECT
+  USING (
+    has_role('supplier', "companyId") AND
+    has_company_permission('parts_view', "companyId")
+    AND (
+      "createdBy" = auth.uid()::text
+      OR (
+        "itemId" IN (
+          SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
+              SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
+          )
+        )              
+      ) 
+    )
+  );
+
+CREATE POLICY "Supliers with parts_create can insert parts" ON "part"
+  FOR INSERT
+  WITH CHECK (   
+    has_role('supplier', "companyId") AND
+    has_company_permission('parts_create', "companyId")
+  );
+
+CREATE POLICY "Suppliers with parts_update can update parts that they created or supply" ON "part"
+  FOR UPDATE
+  USING (
+    has_role('supplier', "companyId") AND
+    has_company_permission('parts_create', "companyId")
+    AND (
+      "createdBy" = auth.uid()::text
+      OR (
+        "itemId" IN (
+          SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
+              SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
+          )
+        )              
+      ) 
+    )
+  );
+
+CREATE POLICY "Suppliers with parts_delete can delete parts that they created or supply" ON "part"
+  FOR DELETE
+  USING (
+    has_role('supplier', "companyId") AND
+    has_company_permission('parts_create', "companyId")
+    AND (
+      "createdBy" = auth.uid()::text
+      OR (
+        "itemId" IN (
+          SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (
+              SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = auth.uid()
+          )
+        )              
+      ) 
+    ) 
+  );
+
+CREATE POLICY "Suppliers with parts_view can view item costs they supply" ON "itemCost"
   FOR SELECT
   USING (
     has_role('supplier', "companyId") AND
@@ -643,11 +700,11 @@ CREATE POLICY "Suppliers with parts_update can update parts costs that they supp
     )
   );
 
-CREATE POLICY "Suppliers with parts_view can view part replenishments they supply" ON "itemReplenishment"
+CREATE POLICY "Suppliers with parts_view can view part replenishment they supply" ON "itemReplenishment"
   FOR SELECT
   USING (
     has_role('supplier', "companyId") AND
-    has_company_permission('parts_create', "companyId")
+    has_company_permission('parts_view', "companyId")
     AND (
       "itemId" IN (
         SELECT "itemId" FROM "buyMethod" WHERE "supplierId" IN (

@@ -6029,6 +6029,7 @@ export type Database = {
           name: string
           readableId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailUrl: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -6047,6 +6048,7 @@ export type Database = {
           name: string
           readableId: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailUrl?: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -6065,6 +6067,7 @@ export type Database = {
           name?: string
           readableId?: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailUrl?: string | null
           type?: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -6874,13 +6877,11 @@ export type Database = {
           itemId: string
           lotSize: number | null
           manufacturingBlocked: boolean
-          manufacturingLeadTime: number
           preferredSupplierId: string | null
           purchasingBlocked: boolean
           purchasingLeadTime: number
           purchasingUnitOfMeasureCode: string | null
           requiresConfiguration: boolean
-          scrapPercentage: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -6893,13 +6894,11 @@ export type Database = {
           itemId: string
           lotSize?: number | null
           manufacturingBlocked?: boolean
-          manufacturingLeadTime?: number
           preferredSupplierId?: string | null
           purchasingBlocked?: boolean
           purchasingLeadTime?: number
           purchasingUnitOfMeasureCode?: string | null
           requiresConfiguration?: boolean
-          scrapPercentage?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6912,13 +6911,11 @@ export type Database = {
           itemId?: string
           lotSize?: number | null
           manufacturingBlocked?: boolean
-          manufacturingLeadTime?: number
           preferredSupplierId?: string | null
           purchasingBlocked?: boolean
           purchasingLeadTime?: number
           purchasingUnitOfMeasureCode?: string | null
           requiresConfiguration?: boolean
-          scrapPercentage?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8186,6 +8183,7 @@ export type Database = {
           itemReadableId: string
           itemType: string
           makeMethodId: string
+          materialMakeMethodId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
           quantity: number
@@ -8204,6 +8202,7 @@ export type Database = {
           itemReadableId: string
           itemType?: string
           makeMethodId: string
+          materialMakeMethodId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity: number
@@ -8222,6 +8221,7 @@ export type Database = {
           itemReadableId?: string
           itemType?: string
           makeMethodId?: string
+          materialMakeMethodId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity?: number
@@ -8292,6 +8292,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_materialMakeMethodId_fkey"
+            columns: ["materialMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "makeMethod"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "methodMaterial_methodId_fkey"
@@ -23973,6 +23980,22 @@ export type Database = {
           tbl: string
         }
         Returns: string
+      }
+      get_method_tree: {
+        Args: {
+          uid: string
+        }
+        Returns: {
+          methodMaterialId: string
+          makeMethodId: string
+          materialMakeMethodId: string
+          itemId: string
+          itemReadableId: string
+          itemType: string
+          quantity: number
+          methodType: Database["public"]["Enums"]["methodType"]
+          isRoot: boolean
+        }[]
       }
       get_my_claim: {
         Args: {
