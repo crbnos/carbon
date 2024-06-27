@@ -70,7 +70,14 @@ function makeItem(operation: Operation): ItemWithData {
     title: operation.description ?? "",
     checked: false,
     order: operation.operationOrder,
-    details: <Badge variant="secondary">{operation.operationOrder}</Badge>,
+    details: (
+      <HStack spacing={1}>
+        <Badge variant="secondary">
+          {operation.productionStandard} {operation.standardFactor}
+        </Badge>
+        <Badge variant="secondary">{operation.operationOrder}</Badge>
+      </HStack>
+    ),
     data: operation,
   };
 }

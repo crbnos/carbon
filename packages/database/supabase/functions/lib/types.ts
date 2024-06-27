@@ -8177,7 +8177,6 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          description: string
           id: string
           itemId: string
           itemReadableId: string
@@ -8196,7 +8195,6 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          description: string
           id?: string
           itemId: string
           itemReadableId: string
@@ -8215,7 +8213,6 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          description?: string
           id?: string
           itemId?: string
           itemReadableId?: string
@@ -8292,6 +8289,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
           },
           {
             foreignKeyName: "methodMaterial_materialMakeMethodId_fkey"
@@ -23994,6 +24005,8 @@ export type Database = {
           itemType: string
           quantity: number
           methodType: Database["public"]["Enums"]["methodType"]
+          parentMaterialId: string
+          order: number
           isRoot: boolean
         }[]
       }

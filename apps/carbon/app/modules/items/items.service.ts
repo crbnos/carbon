@@ -200,6 +200,10 @@ export async function getFixturesList(
   return query.order("name");
 }
 
+export async function getItem(client: SupabaseClient<Database>, id: string) {
+  return client.from("item").select("*").eq("id", id).single();
+}
+
 export async function getItemCost(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -482,13 +486,24 @@ export async function getMaterialSubstancesList(
     .order("name");
 }
 
+export async function getMethodMaterial(
+  client: SupabaseClient<Database>,
+  materialId: string
+) {
+  return client
+    .from("methodMaterial")
+    .select("*, item(name)")
+    .eq("id", materialId)
+    .single();
+}
+
 export async function getMethodMaterials(
   client: SupabaseClient<Database>,
   makeMethodId: string
 ) {
   return client
     .from("methodMaterial")
-    .select("*")
+    .select("*, item(name)")
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
 }
@@ -540,8 +555,8 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   const lookup: { [id: string]: MethodTreeItem } = {};
 
   for (const item of items) {
-    const itemId = item.materialMakeMethodId ?? item.methodMaterialId;
-    const parentId = item.makeMethodId;
+    const itemId = item.methodMaterialId;
+    const parentId = item.parentMaterialId;
 
     if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
       // @ts-ignore

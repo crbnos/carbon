@@ -140,7 +140,7 @@ export const methodMaterialValidator = z.object({
   }),
   itemId: z.string().min(20, { message: "Item is required" }),
   itemReadableId: z.string().min(1, { message: "Item ID is required" }),
-  description: z.string().min(1, { message: "Description is required" }),
+  // description: z.string().min(1, { message: "Description is required" }),
   quantity: zfd.numeric(z.number().min(0)),
   unitOfMeasureCode: z
     .string()
