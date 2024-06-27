@@ -74,6 +74,8 @@ const Assign = forwardRef<HTMLButtonElement, ComboboxProps>(
         <PopoverTrigger asChild>
           <button
             className="rounded-md px-2.5 py-0.5 text-sm hover:bg-muted/50 transition-colors cursor-pointer border border-border"
+            role="combobox"
+            aria-expanded={open}
             ref={ref}
             onClick={() => setOpen(true)}
             {...props}
@@ -85,10 +87,7 @@ const Assign = forwardRef<HTMLButtonElement, ComboboxProps>(
             )}
           </button>
         </PopoverTrigger>
-        <PopoverContent
-          className="min-w-[200px] w-[--radix-popover-trigger-width] p-0"
-          id="assign-popover"
-        >
+        <PopoverContent className="min-w-[200px] w-[--radix-popover-trigger-width] p-0">
           <Command>
             <CommandInput placeholder="Search..." className="h-9" />
             <CommandEmpty>No option found.</CommandEmpty>
