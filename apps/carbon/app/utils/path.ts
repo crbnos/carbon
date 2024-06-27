@@ -483,6 +483,14 @@ export const path = {
       generatePath(`${x}/part/${id}/inventory?location=${locationId}`),
     partManufacturing: (id: string) =>
       generatePath(`${x}/part/${id}/manufacturing`),
+    partManufacturingMaterial: (
+      itemId: string,
+      makeMethodId: string,
+      methodMaterialId: string
+    ) =>
+      generatePath(
+        `${x}/part/${itemId}/manufacturing/${makeMethodId}/${methodMaterialId}`
+      ),
     partPlanning: (id: string) => generatePath(`${x}/part/${id}/planning`),
     partPlanningLocation: (id: string, locationId: string) =>
       generatePath(`${x}/part/${id}/planning?location=${locationId}`),

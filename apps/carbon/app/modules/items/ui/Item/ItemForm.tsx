@@ -1,24 +1,37 @@
 import type { Database } from "@carbon/database";
 import {
+  Button,
   Card,
+  CardAction,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
+  HStack,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useFetcher } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
+import { useState } from "react";
+import { LuExternalLink } from "react-icons/lu";
 import type { z } from "zod";
 import {
   Boolean,
-  CustomFormFields,
+  DefaultMethodType,
   Hidden,
   Input,
-  ItemPostingGroup,
+  Select,
   Submit,
+  TextArea,
+  UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { itemValidator } from "~/modules/items";
+import type { MethodItemType } from "~/modules/items";
+import {
+  MethodItemTypeIcon,
+  itemReplenishmentSystems,
+  itemTrackingTypes,
+  itemValidator,
+} from "~/modules/items";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 
@@ -35,6 +48,24 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher();
 
+  const itemTrackingTypeOptions =
+    itemTrackingTypes.map((itemTrackingType) => ({
+      label: itemTrackingType,
+      value: itemTrackingType,
+    })) ?? [];
+
+  const [replenishmentSystem, setReplenishmentSystem] = useState<string>(
+    initialValues.replenishmentSystem ?? "Buy"
+  );
+  const [defaultMethodType, setDefaultMethodType] = useState<string>(
+    initialValues.defaultMethodType ?? "Buy"
+  );
+  const itemReplenishmentSystemOptions =
+    itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
+      label: itemReplenishmentSystem,
+      value: itemReplenishmentSystem,
+    })) ?? [];
+
   return (
     <Card>
       <ValidatedForm
@@ -44,11 +75,26 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
         defaultValues={initialValues}
         fetcher={fetcher}
       >
-        <CardHeader>
-          <CardTitle>{getLabel(type)}</CardTitle>
-        </CardHeader>
+        <HStack className="w-full justify-between">
+          <CardHeader>
+            <CardTitle>
+              <HStack spacing={2}>
+                <MethodItemTypeIcon type={type} />
+                <span>{getLabel(type)}</span>
+              </HStack>
+            </CardTitle>
+          </CardHeader>
+          <CardAction>
+            <Button isIcon asChild variant="ghost" size="lg">
+              <Link to={getLink(type, initialValues.id)}>
+                <LuExternalLink />
+              </Link>
+            </Button>
+          </CardAction>
+        </HStack>
         <CardContent>
           <Hidden name="id" />
+          <Hidden name="type" />
           <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-3">
             <Input
               isReadOnly
@@ -57,10 +103,39 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             />
 
             <Input name="name" label="Name" />
-            <ItemPostingGroup name="itemPostingGroupId" label="Posting Group" />
+            <Select
+              name="itemTrackingType"
+              label="Tracking Type"
+              options={itemTrackingTypeOptions}
+            />
+
+            <TextArea name="description" label="Description" />
+
+            <Select
+              name="replenishmentSystem"
+              label="Replenishment System"
+              options={itemReplenishmentSystemOptions}
+              onChange={(newValue) => {
+                setReplenishmentSystem(newValue?.value ?? "Buy");
+                if (newValue?.value === "Buy") {
+                  setDefaultMethodType("Buy");
+                } else {
+                  setDefaultMethodType("Make");
+                }
+              }}
+            />
+            <DefaultMethodType
+              name="defaultMethodType"
+              label="Default Method Type"
+              replenishmentSystem={replenishmentSystem}
+              value={defaultMethodType}
+              onChange={(newValue) =>
+                setDefaultMethodType(newValue?.value ?? "Buy")
+              }
+            />
+            <UnitOfMeasure name="unitOfMeasureCode" label="Unit of Measure" />
 
             <Boolean name="active" label="Active" />
-            <CustomFormFields table="part" />
           </div>
         </CardContent>
         <CardFooter>
@@ -72,3 +147,22 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
 };
 
 export default ItemForm;
+
+function getLink(type: MethodItemType, id: string) {
+  switch (type) {
+    case "Part":
+      return path.to.partDetails(id);
+    case "Material":
+      return path.to.materialDetails(id);
+    case "Tool":
+      return path.to.toolDetails(id);
+    case "Consumable":
+      return path.to.consumableDetails(id);
+    case "Service":
+      return path.to.serviceDetails(id);
+    case "Fixture":
+      return path.to.fixtureDetails(id);
+    default:
+      throw new Error("Invalid type");
+  }
+}

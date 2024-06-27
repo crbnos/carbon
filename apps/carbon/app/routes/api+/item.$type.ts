@@ -14,16 +14,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { type } = params;
   if (!type) throw new Error("Could not find type");
+
   if (
-    ![
-      "part",
-      "material",
-      "tool",
-      "hardware",
-      "service",
-      "consumable",
-      "fixture",
-    ].includes(type)
+    !["Part", "Material", "Tool", "Service", "Consumable", "Fixture"].includes(
+      type
+    )
   ) {
     throw new Error("Invalid type");
   }

@@ -1,5 +1,6 @@
 import BillOfMaterial from "./BillOfMaterial";
 import BillOfProcess from "./BillOfProcess";
+import BoMExplorer from "./BoMExplorer";
 import BuyMethodForm from "./BuyMethodForm";
 import BuyMethods from "./BuyMethods";
 import ItemCostingForm from "./ItemCostingForm";
@@ -13,6 +14,7 @@ import PickMethodForm from "./PickMethodForm";
 export {
   BillOfMaterial,
   BillOfProcess,
+  BoMExplorer,
   BuyMethodForm,
   BuyMethods,
   ItemCostingForm,

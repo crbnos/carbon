@@ -99,6 +99,7 @@ const PartProperties = () => {
         </HStack>
         <span className="text-sm">{routeData?.partSummary?.name}</span>
       </VStack>
+
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
         <Assignee id={itemId} table="item" value={assignee ?? ""} />

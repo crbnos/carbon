@@ -1,30 +1,38 @@
 import type { JSONContent } from "@carbon/react";
 import {
-  Badge,
+  Button,
   ClientOnly,
   HStack,
-  IconButton,
-  Input,
-  InputGroup,
-  InputLeftElement,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack,
-  cn,
 } from "@carbon/react";
-import type { FlatTreeItem } from "~/components/TreeView/TreeView";
-import { TreeView, flattenTree, useTree } from "~/components/TreeView/TreeView";
-
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet, json, useLoaderData, useParams } from "@remix-run/react";
-import { useRef, useState } from "react";
-import { LuChevronDown, LuChevronUp, LuPlus, LuSearch } from "react-icons/lu";
-import { redirect } from "remix-typedjson";
-import type { Method, MethodItemType, MethodType } from "~/modules/items";
 import {
-  MethodIcon,
+  Outlet,
+  json,
+  redirect,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
+import { LuCopy, LuLink } from "react-icons/lu";
+
+import type { FlatTreeItem } from "~/components/TreeView/TreeView";
+import { flattenTree } from "~/components/TreeView/TreeView";
+import { useRouteData } from "~/hooks";
+import type {
+  Method,
+  MethodItemType,
+  MethodType,
+  PartSummary,
+} from "~/modules/items";
+import {
+  BoMExplorer,
   getMakeMethod,
   getMethodMaterials,
   getMethodOperations,
@@ -94,6 +102,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     methodMaterials:
       methodMaterials.data?.map((m) => ({
         ...m,
+        description: m.item?.name ?? "",
         methodType: m.methodType as MethodType,
         itemType: m.itemType as MethodItemType,
       })) ?? [],
@@ -115,8 +124,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function PartManufacturing() {
   const { methods } = useLoaderData<typeof loader>();
 
-  const { itemId } = useParams();
+  const params = useParams();
+  const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+
+  const routeData = useRouteData<{
+    partSummary: PartSummary;
+  }>(path.to.part(itemId));
 
   return (
     <div className="flex flex-grow overflow-hidden">
@@ -134,205 +148,86 @@ export default function PartManufacturing() {
                   <BoMExplorer
                     // @ts-ignore
                     methods={methods}
-                    onSelectedIdChanged={(selectedId) => {
-                      console.log(selectedId);
-                    }}
                   />
                 </div>
               </ScrollArea>
             </ResizablePanel>
             <ResizableHandle withHandle />
-
-            <Outlet />
+            <ResizablePanel
+              order={2}
+              minSize={40}
+              defaultSize={60}
+              className="border-t border-border"
+            >
+              <ScrollArea className="h-[calc(100vh-99px)]">
+                <Outlet key={JSON.stringify(params)} />
+              </ScrollArea>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel
+              order={3}
+              minSize={10}
+              defaultSize={20}
+              className="bg-card"
+            >
+              <ScrollArea className="h-[calc(100vh-99px)] px-4 py-2">
+                <VStack spacing={2}>
+                  <HStack className="w-full justify-between">
+                    <h3 className="text-xs text-muted-foreground">
+                      Properties
+                    </h3>
+                    <HStack spacing={1}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            aria-label="Link"
+                            size="sm"
+                            className="p-1"
+                            onClick={() =>
+                              navigator.clipboard.writeText(
+                                window.location.origin + path.to.part(itemId)
+                              )
+                            }
+                          >
+                            <LuLink className="w-3 h-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <span>Copy link to part</span>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            aria-label="Copy"
+                            size="sm"
+                            className="p-1"
+                            onClick={() =>
+                              navigator.clipboard.writeText(
+                                routeData?.partSummary?.id ?? ""
+                              )
+                            }
+                          >
+                            <LuCopy className="w-3 h-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <span>Copy part number</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </HStack>
+                  </HStack>
+                  <span className="text-sm">
+                    {routeData?.partSummary?.name}
+                  </span>
+                </VStack>
+              </ScrollArea>
+            </ResizablePanel>
           </ResizablePanelGroup>
         )}
       </ClientOnly>
     </div>
-  );
-}
-
-type BoMExplorerProps = {
-  methods: FlatTreeItem<Method>[];
-  selectedId?: string;
-  onSelectedIdChanged: (selectedId: string | undefined) => void;
-};
-
-function BoMExplorer({
-  methods,
-  selectedId,
-  onSelectedIdChanged,
-}: BoMExplorerProps) {
-  const [filterText, setFilterText] = useState("");
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const {
-    nodes,
-    getTreeProps,
-    getNodeProps,
-    // toggleNodeSelection,
-    toggleExpandNode,
-    expandAllBelowDepth,
-    // toggleExpandLevel,
-    collapseAllBelowDepth,
-    selectNode,
-    scrollToNode,
-    virtualizer,
-  } = useTree({
-    tree: methods,
-    selectedId,
-    // collapsedIds,
-    onSelectedIdChanged,
-    estimatedRowHeight: () => 32,
-    parentRef,
-    filter: {
-      value: { text: filterText },
-      fn: (value, node) => {
-        if (value.text === "") return true;
-        if (
-          node.data.itemReadableId
-            .toLowerCase()
-            .includes(value.text.toLowerCase())
-        ) {
-          return true;
-        }
-        return false;
-      },
-    },
-    isEager: true,
-  });
-
-  return (
-    <VStack>
-      <HStack className="w-full">
-        <InputGroup size="sm" className="flex flex-grow">
-          <InputLeftElement>
-            <LuSearch className="h-4 w-4" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
-        </InputGroup>
-        <IconButton
-          aria-label="Add"
-          variant="secondary"
-          icon={<LuPlus className="h-4 w-4" />}
-        />
-      </HStack>
-      <TreeView
-        parentRef={parentRef}
-        virtualizer={virtualizer}
-        autoFocus
-        tree={methods}
-        nodes={nodes}
-        getNodeProps={getNodeProps}
-        getTreeProps={getTreeProps}
-        renderNode={({ node, state }) => (
-          <>
-            <div
-              className={cn(
-                "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2",
-                state.selected
-                  ? "bg-muted hover:bg-muted/90"
-                  : "bg-transparent hover:bg-muted/90"
-              )}
-              onClick={() => {
-                selectNode(node.id);
-              }}
-            >
-              <div className="flex h-8 items-center">
-                {Array.from({ length: node.level }).map((_, index) => (
-                  <TaskLine key={index} isSelected={state.selected} />
-                ))}
-                <div
-                  className={cn(
-                    "flex h-8 w-4 items-center",
-                    node.hasChildren && "hover:bg-accent"
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (e.altKey) {
-                      if (state.expanded) {
-                        collapseAllBelowDepth(node.level);
-                      } else {
-                        expandAllBelowDepth(node.level);
-                      }
-                    } else {
-                      toggleExpandNode(node.id);
-                    }
-                    scrollToNode(node.id);
-                  }}
-                >
-                  {node.hasChildren ? (
-                    state.expanded ? (
-                      <LuChevronDown className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <LuChevronUp className="h-4 w-4 text-gray-400" />
-                    )
-                  ) : (
-                    <div className="h-8 w-4" />
-                  )}
-                </div>
-              </div>
-
-              <div className="flex w-full items-center justify-between gap-2">
-                <div
-                  className={cn(
-                    "flex items-center gap-2 overflow-x-hidden",
-                    node.level > 1 && "opacity-50"
-                  )}
-                >
-                  <MethodIcon
-                    type={
-                      // node.data.isRoot ? "Method" :
-                      node.data.methodType
-                    }
-                    className="h-4 min-h-4 w-4 min-w-4"
-                  />
-                  <NodeText node={node} />
-                </div>
-                <div className="flex items-center gap-1">
-                  {node.data.isRoot ? (
-                    <Badge variant="outline" className="text-xs">
-                      Method
-                    </Badge>
-                  ) : (
-                    <NodeQuantity node={node} />
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      />
-    </VStack>
-  );
-}
-
-function NodeText({ node }: { node: FlatTreeItem<Method> }) {
-  return (
-    <div className="flex items-center gap-1">
-      <span className="text-sm font-mono">{node.data.itemReadableId}</span>
-    </div>
-  );
-}
-
-function NodeQuantity({ node }: { node: FlatTreeItem<Method> }) {
-  return (
-    <Badge className="text-xs" variant="outline">
-      {node.data.quantity}
-    </Badge>
-  );
-}
-
-function TaskLine({ isSelected }: { isSelected: boolean }) {
-  return (
-    <div
-      className={cn(
-        "h-8 w-2 border-r border-border",
-        isSelected && "border-foreground/30"
-      )}
-    />
   );
 }

@@ -43,7 +43,9 @@ import { methodItemType, methodMaterialValidator } from "../../items.models";
 import type { MethodItemType, MethodType } from "../../types";
 import { MethodIcon, MethodItemTypeIcon } from "./MethodIcon";
 
-type Material = z.infer<typeof methodMaterialValidator>;
+type Material = z.infer<typeof methodMaterialValidator> & {
+  description: string;
+};
 
 type ItemWithData = SortableItem & {
   data: Material;
@@ -88,7 +90,9 @@ function makeItem(material: Material): ItemWithData {
   };
 }
 
-const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> = {
+const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
+  description: string;
+} = {
   itemId: "",
   itemReadableId: "",
   itemType: "Part" as const,
@@ -471,7 +475,7 @@ function MaterialForm({
           prevItems.map((i) =>
             i.id === item.id
               ? {
-                  ...makeItem(values),
+                  ...makeItem({ ...values, description: itemData.description }),
                   id: item.id,
                 }
               : i
@@ -508,6 +512,7 @@ function MaterialForm({
           <InputControlled
             name="description"
             label="Description"
+            isReadOnly
             value={itemData.description}
             onChange={(newValue) => {
               setItemData((d) => ({ ...d, description: newValue }));
