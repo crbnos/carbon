@@ -76,7 +76,7 @@ export default function FixtureDetailsRoute() {
   };
 
   return (
-    <VStack spacing={4}>
+    <VStack spacing={2} className="p-2">
       <FixtureForm
         key={fixtureInitialValues.id}
         initialValues={fixtureInitialValues}

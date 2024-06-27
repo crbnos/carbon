@@ -74,7 +74,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             name: created,
             description: "",
             itemTrackingType: "Inventory",
-            replenishmentSystem: "Buy and Make",
+            replenishmentSystem: "Make",
             unitOfMeasureCode: "EA",
             defaultMethodType: "Make",
             active: true,
@@ -95,7 +95,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             description: "",
             itemTrackingType: "Non-Inventory",
             unitOfMeasureCode: "EA",
-            replenishmentSystem: "Buy and Make",
+            replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
             active: true,
           }}
@@ -115,7 +115,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             description: "",
             itemTrackingType: "Inventory",
             unitOfMeasureCode: "EA",
-            replenishmentSystem: "Buy and Make",
+            replenishmentSystem: "Make",
             defaultMethodType: "Buy",
             active: true,
           }}
@@ -137,7 +137,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             materialSubstanceId: "",
             itemTrackingType: "Inventory",
             unitOfMeasureCode: "EA",
-            replenishmentSystem: "Buy and Make",
+            replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
             active: true,
           }}
@@ -158,7 +158,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             description: "",
             itemTrackingType: "Inventory",
             unitOfMeasureCode: "EA",
-            replenishmentSystem: "Buy and Make",
+            replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
             active: true,
           }}

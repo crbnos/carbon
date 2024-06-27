@@ -1,3 +1,4 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
@@ -107,7 +108,7 @@ export default function FixturePurchasingRoute() {
   };
 
   return (
-    <>
+    <VStack spacing={2} className="p-2">
       <ItemPurchasingForm
         key={initialValues.itemId}
         initialValues={initialValues}
@@ -116,6 +117,6 @@ export default function FixturePurchasingRoute() {
         }
       />
       <BuyMethods buyMethods={buyMethods} />
-    </>
+    </VStack>
   );
 }

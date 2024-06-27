@@ -1,3 +1,4 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
@@ -187,13 +188,15 @@ export default function FixtureInventoryRoute() {
     ...getCustomFields(fixtureInventory.customFields ?? {}),
   };
   return (
-    <PickMethodForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-      quantities={quantities}
-      locations={sharedFixturesData?.locations ?? []}
-      shelves={shelves}
-      type="Fixture"
-    />
+    <VStack spacing={2} className="p-2">
+      <PickMethodForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        quantities={quantities}
+        locations={sharedFixturesData?.locations ?? []}
+        shelves={shelves}
+        type="Fixture"
+      />
+    </VStack>
   );
 }

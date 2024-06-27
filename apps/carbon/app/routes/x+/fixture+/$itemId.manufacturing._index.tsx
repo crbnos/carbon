@@ -6,5 +6,5 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  throw redirect(path.to.partMakeMethod(itemId));
+  throw redirect(path.to.fixtureMakeMethod(itemId));
 }

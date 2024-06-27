@@ -1,7 +1,6 @@
-import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
+import { Outlet, useMatches } from "@remix-run/react";
 import {
   FixtureHeader,
   FixtureProperties,
@@ -52,16 +51,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function FixtureRoute() {
+  const matches = useMatches();
+  const isManufacturing = matches.some(
+    (match) => match.id === "routes/x+/fixture+/$itemId.manufacturing"
+  );
+
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <FixtureHeader />
       <div className="flex h-[calc(100vh-99px)] w-full">
         <div className="flex h-full w-full overflow-y-auto">
-          <VStack spacing={2} className="p-2">
-            <Outlet />
-          </VStack>
+          <Outlet />
         </div>
-        <FixtureProperties />
+        {!isManufacturing && <FixtureProperties />}
       </div>
     </div>
   );

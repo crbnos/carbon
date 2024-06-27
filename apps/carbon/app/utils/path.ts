@@ -297,8 +297,18 @@ export const path = {
       generatePath(`${x}/fixture/${id}/inventory`),
     fixtureInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/fixture/${id}/inventory?location=${locationId}`),
+    fixtureMakeMethod: (id: string) =>
+      generatePath(`${x}/fixture/${id}/manufacturing/method`),
     fixtureManufacturing: (id: string) =>
       generatePath(`${x}/fixture/${id}/manufacturing`),
+    fixtureManufacturingMaterial: (
+      itemId: string,
+      makeMethodId: string,
+      methodMaterialId: string
+    ) =>
+      generatePath(
+        `${x}/fixture/${itemId}/manufacturing/${makeMethodId}/${methodMaterialId}`
+      ),
     fixturePlanning: (id: string) =>
       generatePath(`${x}/fixture/${id}/planning`),
     fixturePlanningLocation: (id: string, locationId: string) =>
@@ -328,8 +338,6 @@ export const path = {
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
-    makeMethod: (id: string) =>
-      generatePath(`${x}/part/${id}/manufacturing/method`),
     material: (id: string) => generatePath(`${x}/material/${id}`),
     materialCosting: (id: string) =>
       generatePath(`${x}/material/${id}/costing`),
@@ -481,6 +489,8 @@ export const path = {
     partInventory: (id: string) => generatePath(`${x}/part/${id}/inventory`),
     partInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/part/${id}/inventory?location=${locationId}`),
+    partMakeMethod: (id: string) =>
+      generatePath(`${x}/part/${id}/manufacturing/method`),
     partManufacturing: (id: string) =>
       generatePath(`${x}/part/${id}/manufacturing`),
     partManufacturingMaterial: (

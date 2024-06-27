@@ -146,6 +146,7 @@ export default function PartManufacturing() {
               <ScrollArea className="h-[calc(100vh-99px)]">
                 <div className="grid h-full overflow-hidden p-2">
                   <BoMExplorer
+                    itemType="Part"
                     // @ts-ignore
                     methods={methods}
                   />

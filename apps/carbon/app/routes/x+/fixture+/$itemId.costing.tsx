@@ -1,3 +1,4 @@
+import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
@@ -92,13 +93,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function FixtureCostingRoute() {
   const { itemCost } = useLoaderData<typeof loader>();
   return (
-    <ItemCostingForm
-      key={itemCost.itemId}
-      initialValues={{
-        ...itemCost,
-        itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
-        ...getCustomFields(itemCost.customFields),
-      }}
-    />
+    <VStack spacing={2} className="p-2">
+      <ItemCostingForm
+        key={itemCost.itemId}
+        initialValues={{
+          ...itemCost,
+          itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
+          ...getCustomFields(itemCost.customFields),
+        }}
+      />
+    </VStack>
   );
 }

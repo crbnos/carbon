@@ -14,15 +14,16 @@ import { LuChevronDown, LuChevronUp, LuSearch } from "react-icons/lu";
 import type { FlatTreeItem } from "~/components/TreeView/TreeView";
 import { TreeView, useTree } from "~/components/TreeView/TreeView";
 import { path } from "~/utils/path";
-import type { Method } from "../../types";
+import type { Method, MethodItemType } from "../../types";
 import { MethodIcon } from "./MethodIcon";
 
 type BoMExplorerProps = {
+  itemType: MethodItemType;
   methods: FlatTreeItem<Method>[];
   selectedId?: string;
 };
 
-const BoMExplorer = ({ methods, selectedId }: BoMExplorerProps) => {
+const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
   const [filterText, setFilterText] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -109,10 +110,11 @@ const BoMExplorer = ({ methods, selectedId }: BoMExplorerProps) => {
               onClick={() => {
                 selectNode(node.id);
                 if (node.data.isRoot) {
-                  navigate(path.to.makeMethod(itemId));
+                  navigate(getRootLink(itemType, itemId));
                 } else {
                   navigate(
-                    path.to.partManufacturingMaterial(
+                    getMaterialLink(
+                      itemType,
                       itemId,
                       node.data.materialMakeMethodId ??
                         node.data.methodType.toLowerCase(),
@@ -218,4 +220,39 @@ function TaskLine({ isSelected }: { isSelected: boolean }) {
       )}
     />
   );
+}
+
+function getRootLink(itemType: MethodItemType, itemId: string) {
+  switch (itemType) {
+    case "Part":
+      return path.to.partMakeMethod(itemId);
+    case "Fixture":
+      return path.to.fixtureMakeMethod(itemId);
+    default:
+      throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
+  }
+}
+
+function getMaterialLink(
+  itemType: MethodItemType,
+  itemId: string,
+  makeMethodId: string,
+  materialId: string
+) {
+  switch (itemType) {
+    case "Part":
+      return path.to.partManufacturingMaterial(
+        itemId,
+        makeMethodId,
+        materialId
+      );
+    case "Fixture":
+      return path.to.fixtureManufacturingMaterial(
+        itemId,
+        makeMethodId,
+        materialId
+      );
+    default:
+      throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
+  }
 }
