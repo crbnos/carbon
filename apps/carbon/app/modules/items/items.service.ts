@@ -528,26 +528,13 @@ type MethodTreeItem = {
   children: MethodTreeItem[];
 };
 
-function removeDuplicateIdsFromTree(tree: MethodTreeItem[]): MethodTreeItem[] {
-  // traverse the tree and assign random ids to the nodes
-  // to solve the issue of duplicate ids
-
-  function traverse(node: MethodTreeItem) {
-    const newNode = JSON.parse(JSON.stringify(node));
-    newNode.id = `node-${Math.random().toString(16).slice(2)}`;
-    newNode.children = node.children.map((n) => traverse(n));
-    return newNode;
-  }
-  return tree.map((n) => traverse(n));
-}
-
 export async function getMethodTree(
   client: SupabaseClient<Database>,
   makeMethodId: string
 ) {
   const items = await getMethodTreeArray(client, makeMethodId);
   if (items.error) return items;
-  const tree = removeDuplicateIdsFromTree(getMethodTreeArrayToTree(items.data));
+  const tree = getMethodTreeArrayToTree(items.data);
 
   return {
     data: tree,
@@ -565,6 +552,13 @@ export async function getMethodTreeArray(
 }
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
+  function traverseAndRenameIds(node: MethodTreeItem) {
+    const newNode = JSON.parse(JSON.stringify(node));
+    newNode.id = `node-${Math.random().toString(16).slice(2)}`;
+    newNode.children = node.children.map((n) => traverseAndRenameIds(n));
+    return newNode;
+  }
+
   const rootItems: MethodTreeItem[] = [];
   const lookup: { [id: string]: MethodTreeItem } = {};
 
@@ -593,7 +587,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
     }
   }
 
-  return rootItems;
+  return rootItems.map((item) => traverseAndRenameIds(item));
 }
 
 export async function getPart(
