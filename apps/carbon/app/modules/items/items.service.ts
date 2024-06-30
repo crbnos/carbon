@@ -553,10 +553,10 @@ export async function getMethodTreeArray(
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   function traverseAndRenameIds(node: MethodTreeItem) {
-    const newNode = JSON.parse(JSON.stringify(node));
-    newNode.id = `node-${Math.random().toString(16).slice(2)}`;
-    newNode.children = node.children.map((n) => traverseAndRenameIds(n));
-    return newNode;
+    const clone = structuredClone(node);
+    clone.id = `node-${Math.random().toString(16).slice(2)}`;
+    clone.children = node.children.map((n) => traverseAndRenameIds(n));
+    return clone;
   }
 
   const rootItems: MethodTreeItem[] = [];

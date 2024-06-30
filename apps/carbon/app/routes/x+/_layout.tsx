@@ -5,6 +5,7 @@ import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import NProgress from "nprogress";
 import { useEffect } from "react";
 import { IconSidebar, Topbar } from "~/components/Layout";
+import { AutodeskProvider } from "~/lib/autodesk";
 import { SupabaseProvider, getSupabase } from "~/lib/supabase";
 import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
 import { RealtimeDataProvider } from "~/modules/shared";
@@ -22,6 +23,7 @@ import {
 import { path } from "~/utils/path";
 
 import type { ShouldRevalidateFunction } from "@remix-run/react";
+import { getAutodeskToken } from "~/lib/autodesk/autodesk.server";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -53,6 +55,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     claims,
     groups,
     defaults,
+    autodesk,
   ] = await Promise.all([
     getCompanies(client, userId),
     getCustomFieldsSchemas(client, { companyId }),
@@ -61,6 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
+    getAutodeskToken(),
   ]);
 
   if (!claims || user.error || !user.data || !groups.data) {
@@ -80,6 +84,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       expiresIn,
       expiresAt,
     },
+    autodesk: autodesk.data,
     company,
     companies: companies.data ?? [],
     customFields: customFields.data ?? [],
@@ -93,7 +98,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session } = useLoaderData<typeof loader>();
+  const { autodesk, session } = useLoaderData<typeof loader>();
 
   const transition = useNavigation();
 
@@ -112,27 +117,29 @@ export default function AuthenticatedRoute() {
   return (
     <SupabaseProvider session={session}>
       <RealtimeDataProvider>
-        <TooltipProvider>
-          <div className="min-h-full flex flex-col">
-            <div className="flex-none" />
-            <div className="h-screen min-h-[0px] basis-0 flex-1">
-              <div className="flex h-full">
-                <IconSidebar />
-                <div className="flex w-full h-full">
-                  <div className="w-full h-full flex-1 overflow-hidden">
-                    <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-x-hidden bg-muted">
-                      <Topbar />
-                      <main className="flex-1 overflow-y-auto max-h-[calc(100vh-49px)]">
-                        <Outlet />
+        <AutodeskProvider token={autodesk}>
+          <TooltipProvider>
+            <div className="min-h-full flex flex-col">
+              <div className="flex-none" />
+              <div className="h-screen min-h-[0px] basis-0 flex-1">
+                <div className="flex h-full">
+                  <IconSidebar />
+                  <div className="flex w-full h-full">
+                    <div className="w-full h-full flex-1 overflow-hidden">
+                      <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-x-hidden bg-muted">
+                        <Topbar />
+                        <main className="flex-1 overflow-y-auto max-h-[calc(100vh-49px)]">
+                          <Outlet />
+                        </main>
                       </main>
-                    </main>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <Toaster position="bottom-right" />
-        </TooltipProvider>
+            <Toaster position="bottom-right" />
+          </TooltipProvider>
+        </AutodeskProvider>
       </RealtimeDataProvider>
     </SupabaseProvider>
   );

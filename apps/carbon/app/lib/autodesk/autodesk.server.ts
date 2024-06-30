@@ -1,0 +1,317 @@
+import { redis } from "@carbon/redis";
+import axios from "axios";
+
+import { z } from "zod";
+import {
+  AUTODESK_BUCKET_NAME,
+  AUTODESK_CLIENT_ID,
+  AUTODESK_CLIENT_SECRET,
+} from "~/config/env";
+import type { AutodeskTokenResponse } from "./types";
+
+const SIGNED_URL_EXPIRATION = 15;
+
+const endpoints = {
+  finalizeAutodeskUpload: {
+    url: (bucketName: string, filename: string) =>
+      `https://developer.api.autodesk.com/oss/v2/buckets/${bucketName}/objects/${filename}/signeds3upload?minutesExpiration=${SIGNED_URL_EXPIRATION}`,
+    method: "POST",
+  },
+  getSignedUrl: {
+    url: (bucketName: string, filename: string) =>
+      `https://developer.api.autodesk.com/oss/v2/buckets/${bucketName}/objects/${filename}/signeds3upload?minutesExpiration=${SIGNED_URL_EXPIRATION}`,
+    method: "GET",
+  },
+  getToken: {
+    url: "https://developer.api.autodesk.com/authentication/v2/token",
+    method: "POST",
+  },
+  getTranslationStatus: {
+    url: (urn: string) =>
+      `https://developer.api.autodesk.com/modelderivative/v2/designdata/${urn}/manifest`,
+    method: "GET",
+  },
+  translateFile: {
+    url: "https://developer.api.autodesk.com/modelderivative/v2/designdata/job",
+    method: "POST",
+  },
+};
+
+export async function finalizeAutodeskUpload(
+  encodedFilename: string,
+  token: string,
+  uploadKey: string
+): Promise<{ urn: string }> {
+  const url = endpoints.finalizeAutodeskUpload.url(
+    AUTODESK_BUCKET_NAME,
+    encodedFilename
+  );
+  const body = {
+    ossbucketKey: AUTODESK_BUCKET_NAME,
+    ossSourceFileObjectKey: encodedFilename,
+    access: "full",
+    uploadKey,
+  };
+
+  let response;
+
+  try {
+    response = await axios(url, {
+      method: endpoints.finalizeAutodeskUpload.method,
+      data: body,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (err) {
+    const message = (err as Error).message || "Something went wrong";
+    console.error(message, err);
+  }
+
+  const data = response?.data;
+
+  return {
+    urn: data?.objectId,
+  };
+}
+
+export type AutodeskSignedUrl = {
+  uploadKey: string;
+  url: string;
+};
+
+export const signedUrlSchema = z.object({
+  uploadKey: z.string(),
+  urls: z.array(z.string()),
+});
+
+export async function getAutodeskSignedUrl(
+  encodedFilename: string,
+  token: string
+) {
+  let result: AutodeskSignedUrl | null = null;
+  let cacheKey = `autodesk:${AUTODESK_BUCKET_NAME}:${encodedFilename}`;
+
+  try {
+    result = JSON.parse((await redis.get(cacheKey)) || "null");
+  } finally {
+    if (result)
+      return {
+        data: result,
+        error: null,
+      };
+  }
+
+  const uploadUrl = endpoints.getSignedUrl.url(
+    AUTODESK_BUCKET_NAME,
+    encodedFilename
+  );
+
+  let response;
+
+  try {
+    response = await fetch(uploadUrl, {
+      method: endpoints.getSignedUrl.method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (err) {
+    const message = (err as Error).message || "Something went wrong";
+    console.error(message, err);
+    return {
+      data: null,
+      error: {
+        message,
+      },
+    };
+  }
+
+  const reponseJson = await response?.json();
+  const parsed = signedUrlSchema.safeParse(reponseJson);
+
+  if (parsed.success === false) {
+    return {
+      data: null,
+      error: {
+        message: `Invalid response format: ${JSON.stringify(parsed.error)}`,
+      },
+    };
+  }
+
+  result = {
+    uploadKey: parsed.data.uploadKey,
+    url: parsed.data.urls?.[0] ?? "",
+  };
+
+  redis.set(cacheKey, JSON.stringify(result));
+  redis.expire(cacheKey, SIGNED_URL_EXPIRATION - 1);
+
+  return {
+    data: result,
+    error: null,
+  };
+}
+
+export async function getAutodeskToken(refresh = false, scope?: string) {
+  if (!refresh) {
+    try {
+      const [token, ttl] = await Promise.all([
+        redis.get("autodesk_token"),
+        redis.ttl("autodesk_token"),
+      ]);
+      if (token && ttl > 60) {
+        return {
+          data: {
+            token: token as string,
+            expiresAt: Date.now() + ttl * 1000,
+          },
+          error: null,
+        };
+      }
+    } catch {}
+  }
+
+  const url = endpoints.getToken.url;
+  const basic = `Basic ${Buffer.from(
+    `${AUTODESK_CLIENT_ID}:${AUTODESK_CLIENT_SECRET}`
+  ).toString("base64")}`;
+
+  const postBody = {
+    grant_type: "client_credentials",
+    scope: scope || "data:write data:read bucket:create bucket:delete",
+  };
+  let response;
+
+  try {
+    response = await fetch(url, {
+      method: endpoints.getToken.method,
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+        Authorization: basic,
+      },
+      body: new URLSearchParams(postBody),
+    });
+    const result = (await response.json()) as AutodeskTokenResponse;
+    if (result?.access_token) {
+      redis.set("autodesk_token", result.access_token);
+      redis.expire("autodesk_token", result.expires_in - 60);
+
+      return {
+        data: {
+          token: result.access_token,
+          expiresAt: Date.now() + (result.expires_in - 60) * 1000,
+        },
+        error: null,
+      };
+    } else {
+      return {
+        data: null,
+        error: {
+          message: "Failed to get token",
+        },
+      };
+    }
+  } catch (err) {
+    const message = (err as Error).message || "Something went wrong";
+    console.error(message, err);
+    return {
+      data: null,
+      error: {
+        message,
+      },
+    };
+  }
+}
+
+export async function getTranslationStatus(urn: string, token: string) {
+  const url = endpoints.getTranslationStatus.url(urn);
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: endpoints.getTranslationStatus.method,
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    return data.status;
+  } catch (err) {
+    const message = (err as Error).message || "Something went wrong.";
+
+    console.error(`[getTranslationStatus]`, message, err);
+  }
+}
+
+export async function translateFile(urn: string, token: string) {
+  const url = endpoints.translateFile.url;
+
+  const body = {
+    input: {
+      urn: urn,
+    },
+    output: {
+      destination: {
+        region: "us",
+      },
+      formats: [
+        {
+          type: "svf2",
+          views: ["3d"],
+        },
+        {
+          type: "thumbnail",
+        },
+      ],
+    },
+  };
+
+  let response;
+  try {
+    response = await axios(url, {
+      method: endpoints.translateFile.method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      data: body,
+    });
+
+    const data = response.data;
+    console.log(data);
+    //
+  } catch (err) {
+    const message = (err as Error).message || "Something went wrong";
+    console.error(message, err);
+  }
+
+  const data = response?.data;
+  return { urn: data?.urn, token };
+}
+
+export async function uploadToAutodesk(url: string, file: File, token: string) {
+  let response;
+
+  try {
+    response = await axios(url, {
+      method: "PUT",
+      data: await file.arrayBuffer(),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/octet-stream",
+      },
+    });
+  } catch (err) {
+    const message = (err as Error).message || "Something went wrong";
+
+    console.error(message, err);
+  }
+
+  const data = response?.data;
+  return data;
+}

@@ -4,6 +4,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
+import { useAutodeskToken } from "~/lib/autodesk";
 import type { PartSummary } from "~/modules/items";
 import { PartForm, partValidator, upsertPart } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -69,9 +70,12 @@ export default function PartDetailsRoute() {
     ...getCustomFields(partData.partSummary?.customFields ?? {}),
   };
 
+  const { autodeskToken } = useAutodeskToken();
+
   return (
     <VStack spacing={2} className="p-2">
       <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
+      <pre className="p-2">{autodeskToken}</pre>
     </VStack>
   );
 }
