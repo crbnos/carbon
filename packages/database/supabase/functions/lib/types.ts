@@ -6029,6 +6029,7 @@ export type Database = {
           name: string
           readableId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath: string | null
           thumbnailUrl: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string | null
@@ -6048,6 +6049,7 @@ export type Database = {
           name: string
           readableId: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath?: string | null
           thumbnailUrl?: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
@@ -6067,6 +6069,7 @@ export type Database = {
           name?: string
           readableId?: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath?: string | null
           thumbnailUrl?: string | null
           type?: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
@@ -8640,6 +8643,155 @@ export type Database = {
           },
           {
             foreignKeyName: "methodOperationWorkInstruction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      modelUpload: {
+        Row: {
+          autodeskUrn: string | null
+          companyId: string
+          createdAt: string | null
+          createdBy: string
+          id: string
+          itemId: string | null
+          modelPath: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          autodeskUrn?: string | null
+          companyId: string
+          createdAt?: string | null
+          createdBy: string
+          id?: string
+          itemId?: string | null
+          modelPath?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          autodeskUrn?: string | null
+          companyId?: string
+          createdAt?: string | null
+          createdBy?: string
+          id?: string
+          itemId?: string | null
+          modelPath?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modelUpload_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "modelUpload_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "modelUpload_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "modelUpload_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "modelUpload_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelUpload_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -14034,6 +14186,18 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
+      }
+      requestForQuote: {
+        Row: {
+          id: string
+        }
+        Insert: {
+          id?: string
+        }
+        Update: {
+          id?: string
+        }
+        Relationships: []
       }
       salesOrder: {
         Row: {

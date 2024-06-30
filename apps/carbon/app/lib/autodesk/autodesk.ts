@@ -71,12 +71,6 @@ const autodesk = {
       return false;
     }
 
-    console.log(
-      "timeLeft()",
-      this._timeLeft() < RENEW_TOKEN_TIME,
-      this._timeLeft()
-    );
-
     return this._timeLeft() < RENEW_TOKEN_TIME;
   },
 

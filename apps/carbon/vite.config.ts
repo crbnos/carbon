@@ -10,7 +10,7 @@ installGlobals();
 
 export default defineConfig({
   ssr: {
-    noExternal: ["react-icons", "react-phone-number-input"],
+    noExternal: ["react-dropzone", "react-icons", "react-phone-number-input"],
   },
   server: {
     port: 3000,

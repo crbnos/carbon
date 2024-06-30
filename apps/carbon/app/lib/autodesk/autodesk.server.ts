@@ -11,7 +11,7 @@ import type { AutodeskTokenResponse } from "./types";
 
 const SIGNED_URL_EXPIRATION = 15;
 
-const endpoints = {
+const autodeskAPI = {
   finalizeAutodeskUpload: {
     url: (bucketName: string, filename: string) =>
       `https://developer.api.autodesk.com/oss/v2/buckets/${bucketName}/objects/${filename}/signeds3upload?minutesExpiration=${SIGNED_URL_EXPIRATION}`,
@@ -41,8 +41,8 @@ export async function finalizeAutodeskUpload(
   encodedFilename: string,
   token: string,
   uploadKey: string
-): Promise<{ urn: string }> {
-  const url = endpoints.finalizeAutodeskUpload.url(
+) {
+  const url = autodeskAPI.finalizeAutodeskUpload.url(
     AUTODESK_BUCKET_NAME,
     encodedFilename
   );
@@ -57,7 +57,7 @@ export async function finalizeAutodeskUpload(
 
   try {
     response = await axios(url, {
-      method: endpoints.finalizeAutodeskUpload.method,
+      method: autodeskAPI.finalizeAutodeskUpload.method,
       data: body,
       headers: {
         Authorization: `Bearer ${token}`,
@@ -66,12 +66,19 @@ export async function finalizeAutodeskUpload(
   } catch (err) {
     const message = (err as Error).message || "Something went wrong";
     console.error(message, err);
+    return {
+      data: null,
+      error: {
+        message,
+      },
+    };
   }
 
-  const data = response?.data;
-
   return {
-    urn: data?.objectId,
+    data: {
+      urn: response?.data?.objectId as string,
+    },
+    error: null,
   };
 }
 
@@ -102,7 +109,7 @@ export async function getAutodeskSignedUrl(
       };
   }
 
-  const uploadUrl = endpoints.getSignedUrl.url(
+  const uploadUrl = autodeskAPI.getSignedUrl.url(
     AUTODESK_BUCKET_NAME,
     encodedFilename
   );
@@ -111,7 +118,7 @@ export async function getAutodeskSignedUrl(
 
   try {
     response = await fetch(uploadUrl, {
-      method: endpoints.getSignedUrl.method,
+      method: autodeskAPI.getSignedUrl.method,
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -172,7 +179,7 @@ export async function getAutodeskToken(refresh = false, scope?: string) {
     } catch {}
   }
 
-  const url = endpoints.getToken.url;
+  const url = autodeskAPI.getToken.url;
   const basic = `Basic ${Buffer.from(
     `${AUTODESK_CLIENT_ID}:${AUTODESK_CLIENT_SECRET}`
   ).toString("base64")}`;
@@ -185,7 +192,7 @@ export async function getAutodeskToken(refresh = false, scope?: string) {
 
   try {
     response = await fetch(url, {
-      method: endpoints.getToken.method,
+      method: autodeskAPI.getToken.method,
       cache: "no-store",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -227,12 +234,12 @@ export async function getAutodeskToken(refresh = false, scope?: string) {
 }
 
 export async function getTranslationStatus(urn: string, token: string) {
-  const url = endpoints.getTranslationStatus.url(urn);
+  const url = autodeskAPI.getTranslationStatus.url(urn);
 
   let response;
   try {
     response = await fetch(url, {
-      method: endpoints.getTranslationStatus.method,
+      method: autodeskAPI.getTranslationStatus.method,
       cache: "no-store",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -250,7 +257,7 @@ export async function getTranslationStatus(urn: string, token: string) {
 }
 
 export async function translateFile(urn: string, token: string) {
-  const url = endpoints.translateFile.url;
+  const url = autodeskAPI.translateFile.url;
 
   const body = {
     input: {
@@ -275,7 +282,7 @@ export async function translateFile(urn: string, token: string) {
   let response;
   try {
     response = await axios(url, {
-      method: endpoints.translateFile.method,
+      method: autodeskAPI.translateFile.method,
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -302,16 +309,22 @@ export async function uploadToAutodesk(url: string, file: File, token: string) {
       method: "PUT",
       data: await file.arrayBuffer(),
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/octet-stream",
       },
     });
   } catch (err) {
     const message = (err as Error).message || "Something went wrong";
 
-    console.error(message, err);
+    return {
+      data: null,
+      error: {
+        message,
+      },
+    };
   }
 
-  const data = response?.data;
-  return data;
+  return {
+    data: response?.data,
+    error: null,
+  };
 }

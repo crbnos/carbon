@@ -16,6 +16,7 @@ export const path = {
         generatePath(`${api}/accounting/subcategories?accountCategoryId=${id}`),
       assign: `${api}/assign`,
       autodeskToken: `${api}/autodesk/token`,
+      autodeskUpload: `${api}/autodesk/upload`,
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
         generatePath(`${api}/sales/customer-contacts?customerId=${id}`),

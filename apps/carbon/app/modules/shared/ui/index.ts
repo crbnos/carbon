@@ -1,4 +1,5 @@
+import CadModelUpload from "./CadModelUpload";
 import Notes from "./Notes";
-import RealtimeDataProvider from "./Realtime";
+import RealtimeDataProvider from "./RealtimeDataProvider";
 
-export { RealtimeDataProvider, Notes };
+export { CadModelUpload, Notes, RealtimeDataProvider };
