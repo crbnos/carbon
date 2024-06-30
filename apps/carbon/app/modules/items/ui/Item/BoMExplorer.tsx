@@ -24,7 +24,6 @@ type BoMExplorerProps = {
 };
 
 const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
-  console.log({ methods });
   const [filterText, setFilterText] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
 

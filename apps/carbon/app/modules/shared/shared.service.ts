@@ -39,3 +39,19 @@ export async function updateNote(
 ) {
   return client.from("note").update({ note }).eq("id", id);
 }
+
+export async function upsertModelUpload(
+  client: SupabaseClient<Database>,
+  upload: {
+    id: string;
+    autodeskUrn: string;
+    modelPath: string;
+    itemId?: string;
+    // rfqId?: string;
+    // quoteId?: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client.from("modelUpload").insert(upload);
+}

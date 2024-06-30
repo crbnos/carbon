@@ -1,12 +1,16 @@
-import { VStack } from "@carbon/react";
+import { VStack, toast } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { useParams } from "@remix-run/react";
-import { useRouteData } from "~/hooks";
+import { useFetcher, useParams } from "@remix-run/react";
+import { nanoid } from "nanoid";
+import { useState } from "react";
+import { useRouteData, useUser } from "~/hooks";
 import { useAutodeskToken } from "~/lib/autodesk";
+import { useSupabase } from "~/lib/supabase";
 import type { PartSummary } from "~/modules/items";
 import { PartForm, partValidator, upsertPart } from "~/modules/items";
+import { CadModelUpload } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -70,12 +74,54 @@ export default function PartDetailsRoute() {
     ...getCustomFields(partData.partSummary?.customFields ?? {}),
   };
 
-  const { autodeskToken } = useAutodeskToken();
-
   return (
     <VStack spacing={2} className="p-2">
       <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
-      <pre className="p-2">{autodeskToken}</pre>
+      <CadModel />
     </VStack>
   );
+}
+
+function CadModel() {
+  const {
+    company: { id: companyId },
+  } = useUser();
+  const { supabase } = useSupabase();
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("Could not find itemId");
+
+  const { autodeskToken } = useAutodeskToken();
+  const fetcher = useFetcher<{ urn: string }>();
+  const [file, setFile] = useState<File | null>(null);
+
+  const onFileChange = async (file: File | null) => {
+    setFile(file);
+    if (file) {
+      if (!supabase) throw new Error("Failed to initialize supabase client");
+      const fileId = nanoid();
+      const fileExtension = file.name.split(".").pop();
+      const fileName = `${companyId}/models/${fileId}.${fileExtension}`;
+
+      const modelUpload = await supabase.storage
+        .from("private")
+        .upload(fileName, file, {
+          upsert: true,
+        });
+
+      if (modelUpload.error) {
+        toast.error("Failed to upload file to storage");
+      }
+
+      const formData = new FormData();
+      formData.append("fileId", fileId);
+      formData.append("storagePath", modelUpload.data!.path);
+      formData.append("itemId", itemId);
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.api.autodeskUpload,
+      });
+    }
+  };
+  return <CadModelUpload file={file} onFileChange={onFileChange} />;
 }
