@@ -111,3 +111,13 @@
     text-rendering: optimizeLegibility;
   }
 }
+
+.forgeViewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.forgeViewer > div {
+  border-radius: var(--radius);
+}

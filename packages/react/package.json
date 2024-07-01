@@ -62,6 +62,7 @@
     "@carbon/utils": "*",
     "@testing-library/dom": "^8.11.1",
     "@types/dompurify": "^2.4.0",
+    "@types/forge-viewer": "7.89.1",
     "@types/jest": "^26.0.22",
     "@types/react": "^18.2.74",
     "@types/react-dom": "^18.2.24",

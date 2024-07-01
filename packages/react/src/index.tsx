@@ -1,6 +1,7 @@
 import type { JSONContent } from "novel";
 import { ActionMenu } from "./ActionMenu";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
+import { AutodeskViewer } from "./AutodeskViewer";
 import type { AvatarProps } from "./Avatar";
 import {
   Avatar,
@@ -240,6 +241,7 @@ export {
   Alert,
   AlertDescription,
   AlertTitle,
+  AutodeskViewer,
   Avatar,
   AvatarGroup,
   AvatarGroupList,

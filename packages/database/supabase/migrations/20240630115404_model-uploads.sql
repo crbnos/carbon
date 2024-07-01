@@ -27,6 +27,32 @@ CREATE TABLE "modelUpload" (
   CONSTRAINT "modelUpload_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id")
 );
 
+ALTER TABLE "modelUpload" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Employees can view model uploads" ON "modelUpload"
+FOR SELECT USING (
+    has_role('employee', "companyId")
+);
+
+CREATE POLICY "Employees with parts_create can create model uploads" ON "modelUpload"
+FOR INSERT WITH CHECK (
+    has_role('employee', "companyId")
+    AND has_company_permission('parts_create', "companyId")
+);
+
+CREATE POLICY "Employees with parts_update can update model uploads" ON "modelUpload"
+FOR UPDATE USING (
+    has_role('employee', "companyId")
+    AND has_company_permission('parts_update', "companyId")
+);
+
+CREATE POLICY "Employees with parts_delete can delete model uploads" ON "modelUpload"
+FOR DELETE USING (
+    has_role('employee', "companyId")
+    AND has_company_permission('parts_delete', "companyId")
+);
+
+
 -- Parts documents
 CREATE POLICY "Employees can view part models" ON storage.objects 
 FOR SELECT USING (
