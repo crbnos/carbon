@@ -13,13 +13,6 @@ type CadModelUploadProps = {
 const CadModelUpload = ({ file, onFileChange }: CadModelUploadProps) => {
   const hasFile = !!file;
   const { getRootProps, getInputProps } = useDropzone({
-    // accept: {
-    //   "application/pdf": [], // ".pdf"
-    //   "application/vnd.ms-excel": [], // ".xls"
-    //   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [], // ".xlsx"
-    //   "text/csv": [], // ".csv"
-    //   "application/vnd.oasis.opendocument.spreadsheet": [], // ".ods"
-    // },
     disabled: hasFile,
     multiple: false,
     maxSize: fileSizeLimitMb * 1024 * 1024, // 50 MB
@@ -30,9 +23,17 @@ const CadModelUpload = ({ file, onFileChange }: CadModelUploadProps) => {
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
       if (
         !fileExtension ||
-        !["step", "stp", "stl", "obj", "fbx", "amf", "iges"].includes(
-          fileExtension
-        )
+        ![
+          "step",
+          "stp",
+          "stl",
+          "obj",
+          "fbx",
+          "amf",
+          "iges",
+          "ipt",
+          "prt",
+        ].includes(fileExtension)
       ) {
         toast.error("File type not supported");
         return;
@@ -74,7 +75,7 @@ const CadModelUpload = ({ file, onFileChange }: CadModelUploadProps) => {
           <CardTitle>CAD Model</CardTitle>
         </CardHeader>
 
-        <div className="flex flex-col flex-grow items-center justify-center gap-2">
+        <div className="flex flex-col flex-grow items-center justify-center gap-2 p-2">
           {file ? (
             <>
               <Spinner className="h-16 w-16 -mt-16" />
@@ -95,8 +96,9 @@ const CadModelUpload = ({ file, onFileChange }: CadModelUploadProps) => {
               <p className="text-lg text-muted-foreground group-hover:text-foreground mt-8">
                 Choose file to upload or drag and drop
               </p>
-              <p className="text-muted-foreground group-hover:text-foreground">
-                {`Only *.stp, *.step, *.stl, *.obj, *.fbx, *.amf, *.iges & ${fileSizeLimitMb} MB limit`}
+              <p className="text-xs text-muted-foreground group-hover:text-foreground">
+                Supports *.stp, *.step, *.stl, *.obj, *.fbx, *.amf, *.iges,
+                *.ipt, *.prt files
               </p>
             </>
           )}
