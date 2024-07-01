@@ -116,6 +116,7 @@ function Document({
         <ScrollRestoration />
         <Scripts />
         <Analytics />
+        <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"></script>
       </body>
     </html>
   );

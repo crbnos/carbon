@@ -3,6 +3,7 @@ import {
   finalizeAutodeskUpload,
   getAutodeskSignedUrl,
   getAutodeskToken,
+  translateFile,
   uploadToAutodesk,
 } from "~/lib/autodesk/autodesk.server";
 import { upsertModelUpload } from "~/modules/shared";
@@ -16,7 +17,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const modelPath = formData.get("modelPath") as string;
   const itemId = (formData.get("itemId") ?? undefined) as string | undefined;
 
-  console.log({ fileId, modelPath, itemId });
   // const rfqId = (formData.get("rfqId") ?? undefined) as string | undefined;
   // const quoteId = (formData.get("quoteId") ?? undefined) as string | undefined;
 
@@ -59,6 +59,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { urn } = upload.data;
   const autodeskUrn = Buffer.from(urn).toString("base64");
+
+  const translation = await translateFile(autodeskUrn, token);
+  if (translation.error) {
+    throw new Error("Failed to translate file: " + translation.error.message);
+  }
 
   const modelRecord = await upsertModelUpload(client, {
     id: fileId,

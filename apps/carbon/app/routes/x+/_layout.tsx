@@ -4,6 +4,7 @@ import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import NProgress from "nprogress";
 import { useEffect } from "react";
+
 import { IconSidebar, Topbar } from "~/components/Layout";
 import { AutodeskProvider } from "~/lib/autodesk";
 import { SupabaseProvider, getSupabase } from "~/lib/supabase";
@@ -38,6 +39,15 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 
   return defaultShouldRevalidate;
 };
+
+export function links() {
+  return [
+    {
+      rel: "stylesheet",
+      href: "https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.min.css",
+    },
+  ];
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =

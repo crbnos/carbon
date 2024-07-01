@@ -295,10 +295,16 @@ export async function translateFile(urn: string, token: string) {
   } catch (err) {
     const message = (err as Error).message || "Something went wrong";
     console.error(message, err);
+    return {
+      data: null,
+      error: {
+        message,
+      },
+    };
   }
 
   const data = response?.data;
-  return { urn: data?.urn, token };
+  return { data: { urn: data?.urn, token }, error: null };
 }
 
 export async function uploadToAutodesk(url: string, file: File, token: string) {

@@ -1,4 +1,4 @@
-import { VStack, toast } from "@carbon/react";
+import { AutodeskViewer, VStack, toast } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
@@ -74,10 +74,19 @@ export default function PartDetailsRoute() {
     ...getCustomFields(partData.partSummary?.customFields ?? {}),
   };
 
+  const { autodeskToken } = useAutodeskToken();
+
   return (
     <VStack spacing={2} className="p-2">
       <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
-      <CadModel />
+      {/* <CadModel /> */}
+      {autodeskToken && (
+        <AutodeskViewer
+          accessToken={autodeskToken}
+          urn="dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6Y2FyYm9ub3MtZGV2L1F4aUR4N2t0MDVpR0xTS0U2Mzh1ZS5zdGVw"
+          showDefaultToolbar
+        />
+      )}
     </VStack>
   );
 }
@@ -114,7 +123,7 @@ function CadModel() {
 
       const formData = new FormData();
       formData.append("fileId", fileId);
-      formData.append("storagePath", modelUpload.data!.path);
+      formData.append("modelPath", modelUpload.data!.path);
       formData.append("itemId", itemId);
 
       fetcher.submit(formData, {
