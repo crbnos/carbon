@@ -115,7 +115,11 @@ const ForgeViewer: React.FC<ForgeViewerProps> = ({
 
 const AutodeskViewer = (props: ForgeViewerProps) => {
   return (
-    <ClientOnly fallback={null}>
+    <ClientOnly
+      fallback={
+        <div className="w-full h-full rounded bg-gradient-to-tr from-[#979797] to-[#BEBEBE]" />
+      }
+    >
       {() => {
         return <ForgeViewer {...props} />;
       }}
