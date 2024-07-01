@@ -860,6 +860,32 @@ export async function getUnitOfMeasuresList(
     .order("name");
 }
 
+export async function getModelUploadByItemId(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("modelUpload")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export async function getModelUploadByUrn(
+  client: SupabaseClient<Database>,
+  urn: string,
+  companyId: string
+) {
+  return client
+    .from("modelUpload")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("autodeskUrn", urn)
+    .single();
+}
+
 export async function insertShelf(
   client: SupabaseClient<Database>,
   shelfId: string,

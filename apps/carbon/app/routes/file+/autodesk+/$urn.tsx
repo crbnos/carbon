@@ -3,6 +3,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { AutodeskProvider, useAutodeskToken } from "~/lib/autodesk";
 import { getAutodeskToken } from "~/lib/autodesk/autodesk.server";
+import { getModelUploadByUrn } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 
 export function links() {
@@ -15,14 +16,23 @@ export function links() {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {});
 
   const { urn } = params;
   if (!urn) throw new Error("Could not find urn");
 
-  const autodesk = await getAutodeskToken();
+  const [autodesk, uploadModel] = await Promise.all([
+    getAutodeskToken(),
+    getModelUploadByUrn(client, urn, companyId),
+  ]);
   if (autodesk.error) {
     throw new Error("Failed to get Autodesk token: " + autodesk.error.message);
+  }
+
+  if (uploadModel.error) {
+    throw new Error(
+      "Access denied: Please verify that you are signed in as the company who owns this file"
+    );
   }
 
   return json({ autodesk: autodesk.data });

@@ -1,14 +1,14 @@
-import { VStack, toast } from "@carbon/react";
+import { AutodeskViewer, VStack, toast } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useFetcher, useParams } from "@remix-run/react";
 import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouteData, useUser } from "~/hooks";
 import { useAutodeskToken } from "~/lib/autodesk";
 import { useSupabase } from "~/lib/supabase";
-import type { PartSummary } from "~/modules/items";
+import type { ModelUpload, PartSummary } from "~/modules/items";
 import { PartForm, partValidator, upsertPart } from "~/modules/items";
 import { CadModelUpload } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -56,9 +56,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function PartDetailsRoute() {
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  const partData = useRouteData<{ partSummary: PartSummary }>(
-    path.to.part(itemId)
-  );
+  const partData = useRouteData<{
+    partSummary: PartSummary;
+    modelUpload?: ModelUpload;
+  }>(path.to.part(itemId));
   if (!partData) throw new Error("Could not find part data");
 
   const partInitialValues = {
@@ -74,26 +75,21 @@ export default function PartDetailsRoute() {
     ...getCustomFields(partData.partSummary?.customFields ?? {}),
   };
 
-  const { autodeskToken } = useAutodeskToken();
-
   return (
     <VStack spacing={2} className="p-2">
       <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
       <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
-        <CadModel />
-        {/* {autodeskToken && (
-          <AutodeskViewer
-            accessToken={autodeskToken}
-            urn="dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6Y2FyYm9ub3MtZGV2L1F4aUR4N2t0MDVpR0xTS0U2Mzh1ZS5zdGVw"
-            showDefaultToolbar
-          />
-        )} */}
+        <CadModel autodeskUrn={partData?.modelUpload?.autodeskUrn ?? null} />
       </div>
     </VStack>
   );
 }
 
-function CadModel() {
+type CadModelProps = {
+  autodeskUrn: string | null;
+};
+
+function CadModel({ autodeskUrn }: CadModelProps) {
   const {
     company: { id: companyId },
   } = useUser();
@@ -103,7 +99,14 @@ function CadModel() {
 
   const { autodeskToken } = useAutodeskToken();
   const fetcher = useFetcher<{ urn: string }>();
+  const [urn, setUrn] = useState<string | null>(autodeskUrn ?? null);
   const [file, setFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (fetcher.data?.urn) {
+      setUrn(fetcher.data.urn);
+    }
+  }, [fetcher.data]);
 
   const onFileChange = async (file: File | null) => {
     setFile(file);
@@ -134,5 +137,9 @@ function CadModel() {
       });
     }
   };
-  return <CadModelUpload file={file} onFileChange={onFileChange} />;
+  return urn && autodeskToken ? (
+    <AutodeskViewer accessToken={autodeskToken} urn={urn} showDefaultToolbar />
+  ) : (
+    <CadModelUpload file={file} onFileChange={onFileChange} />
+  );
 }

@@ -27,6 +27,7 @@ CREATE TABLE "modelUpload" (
   CONSTRAINT "modelUpload_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id")
 );
 
+ALTER publication supabase_realtime ADD TABLE "modelUpload";
 ALTER TABLE "modelUpload" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Employees can view model uploads" ON "modelUpload"
