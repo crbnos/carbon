@@ -1,4 +1,4 @@
-import { AutodeskViewer, VStack, toast } from "@carbon/react";
+import { VStack, toast } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
@@ -9,7 +9,7 @@ import { useRouteData, useUser } from "~/hooks";
 import { useAutodeskToken } from "~/lib/autodesk";
 import { useSupabase } from "~/lib/supabase";
 import type { PartSummary } from "~/modules/items";
-import { partValidator, upsertPart } from "~/modules/items";
+import { PartForm, partValidator, upsertPart } from "~/modules/items";
 import { CadModelUpload } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -78,15 +78,17 @@ export default function PartDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      {/* <PartForm key={partInitialValues.id} initialValues={partInitialValues} /> */}
-      {/* <CadModel /> */}
-      {autodeskToken && (
-        <AutodeskViewer
-          accessToken={autodeskToken}
-          urn="dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6Y2FyYm9ub3MtZGV2L1F4aUR4N2t0MDVpR0xTS0U2Mzh1ZS5zdGVw"
-          showDefaultToolbar
-        />
-      )}
+      <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
+      <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
+        <CadModel />
+        {/* {autodeskToken && (
+          <AutodeskViewer
+            accessToken={autodeskToken}
+            urn="dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6Y2FyYm9ub3MtZGV2L1F4aUR4N2t0MDVpR0xTS0U2Mzh1ZS5zdGVw"
+            showDefaultToolbar
+          />
+        )} */}
+      </div>
     </VStack>
   );
 }
