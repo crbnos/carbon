@@ -9,7 +9,7 @@ import { useRouteData, useUser } from "~/hooks";
 import { useAutodeskToken } from "~/lib/autodesk";
 import { useSupabase } from "~/lib/supabase";
 import type { PartSummary } from "~/modules/items";
-import { PartForm, partValidator, upsertPart } from "~/modules/items";
+import { partValidator, upsertPart } from "~/modules/items";
 import { CadModelUpload } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -78,7 +78,7 @@ export default function PartDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
+      {/* <PartForm key={partInitialValues.id} initialValues={partInitialValues} /> */}
       {/* <CadModel /> */}
       {autodeskToken && (
         <AutodeskViewer
