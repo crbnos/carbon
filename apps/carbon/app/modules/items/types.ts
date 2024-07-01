@@ -15,6 +15,7 @@ import type {
   getMethodMaterials,
   getMethodOperations,
   getMethodTreeArray,
+  getModelUploadByItemId,
   getPart,
   getParts,
   getPickMethods,
@@ -91,6 +92,10 @@ export type MethodOperation = NonNullable<
 >[number];
 
 export type MethodType = (typeof methodType)[number];
+
+export type ModelUpload = NonNullable<
+  Awaited<ReturnType<typeof getModelUploadByItemId>>
+>["data"];
 
 export type Part = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
