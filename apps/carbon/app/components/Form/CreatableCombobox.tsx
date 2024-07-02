@@ -57,6 +57,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             setValue(newValue ?? "");
             onChange(newValue ?? "");
           }}
+          label={label}
           className="w-full"
         />
 

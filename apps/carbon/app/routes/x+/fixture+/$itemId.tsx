@@ -6,6 +6,8 @@ import {
   FixtureProperties,
   getBuyMethods,
   getFixture,
+  getItemFiles,
+  getModelUploadByItemId,
   getPickMethods,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -27,11 +29,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [fixtureSummary, buyMethods, pickMethods] = await Promise.all([
-    getFixture(client, itemId, companyId),
-    getBuyMethods(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
-  ]);
+  const [fixtureSummary, files, modelUpload, buyMethods, pickMethods] =
+    await Promise.all([
+      getFixture(client, itemId, companyId),
+      getItemFiles(client, itemId, companyId),
+      getModelUploadByItemId(client, itemId, companyId),
+      getBuyMethods(client, itemId, companyId),
+      getPickMethods(client, itemId, companyId),
+    ]);
 
   if (fixtureSummary.error) {
     throw redirect(
@@ -45,6 +50,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     fixtureSummary: fixtureSummary.data,
+    files: files.data ?? [],
+    modelUpload: modelUpload.data,
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
   });

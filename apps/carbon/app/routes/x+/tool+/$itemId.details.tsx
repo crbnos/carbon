@@ -3,9 +3,14 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
-import { useRouteData } from "~/hooks";
-import type { ToolSummary } from "~/modules/items";
-import { ToolForm, toolValidator, upsertTool } from "~/modules/items";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { ItemFile, ToolSummary } from "~/modules/items";
+import {
+  ItemDocuments,
+  ToolForm,
+  toolValidator,
+  upsertTool,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -49,11 +54,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ToolDetailsRoute() {
+  const permissions = usePermissions();
+
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  const toolData = useRouteData<{ toolSummary: ToolSummary }>(
-    path.to.tool(itemId)
-  );
+
+  const toolData = useRouteData<{
+    toolSummary: ToolSummary;
+    files: ItemFile[];
+  }>(path.to.tool(itemId));
   if (!toolData) throw new Error("Could not find tool data");
 
   const toolInitialValues = {
@@ -70,8 +79,15 @@ export default function ToolDetailsRoute() {
   };
 
   return (
-    <VStack spacing={4}>
+    <VStack spacing={2} className="w-full h-full">
       <ToolForm key={toolInitialValues.id} initialValues={toolInitialValues} />
+      {permissions.is("employee") && (
+        <ItemDocuments
+          files={toolData?.files ?? []}
+          itemId={itemId}
+          type="Tool"
+        />
+      )}
     </VStack>
   );
 }

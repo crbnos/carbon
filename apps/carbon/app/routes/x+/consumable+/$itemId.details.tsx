@@ -3,10 +3,11 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
-import { useRouteData } from "~/hooks";
-import type { Consumable } from "~/modules/items";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { Consumable, ItemFile } from "~/modules/items";
 import {
   ConsumableForm,
+  ItemDocuments,
   consumableValidator,
   upsertConsumable,
 } from "~/modules/items";
@@ -56,11 +57,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ConsumableDetailsRoute() {
+  const permissions = usePermissions();
+
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  const consumableData = useRouteData<{ consumableSummary: Consumable }>(
-    path.to.consumable(itemId)
-  );
+
+  const consumableData = useRouteData<{
+    consumableSummary: Consumable;
+    files: ItemFile[];
+  }>(path.to.consumable(itemId));
   if (!consumableData) throw new Error("Could not find consumable data");
 
   const consumableInitialValues = {
@@ -81,11 +86,18 @@ export default function ConsumableDetailsRoute() {
   };
 
   return (
-    <VStack spacing={4}>
+    <VStack spacing={2} className="w-full h-full">
       <ConsumableForm
         key={consumableInitialValues.id}
         initialValues={consumableInitialValues}
       />
+      {permissions.is("employee") && (
+        <ItemDocuments
+          files={consumableData?.files ?? []}
+          itemId={itemId}
+          type="Consumable"
+        />
+      )}
     </VStack>
   );
 }

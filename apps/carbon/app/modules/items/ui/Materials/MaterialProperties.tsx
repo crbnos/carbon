@@ -16,8 +16,8 @@ import Assignee from "~/components/Assignee";
 import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import type { BuyMethod, Material, PickMethod } from "../../types";
-import { MethodIcon, TrackingTypeIcon } from "../Item";
+import type { BuyMethod, ItemFile, Material, PickMethod } from "../../types";
+import { FileBadge, MethodIcon, TrackingTypeIcon } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 
 const MaterialProperties = () => {
@@ -29,6 +29,7 @@ const MaterialProperties = () => {
   );
   const routeData = useRouteData<{
     materialSummary: Material;
+    files: ItemFile[];
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
   }>(path.to.material(itemId));
@@ -153,14 +154,16 @@ const MaterialProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Methods</h3>
         </HStack>
-        {buyMethods.map((method) => (
-          <MethodBadge
-            key={method.id}
-            type="Buy"
-            text={method?.supplier?.name ?? ""}
-            to={path.to.materialPurchasing(itemId)}
-          />
-        ))}
+
+        {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") &&
+          buyMethods.map((method) => (
+            <MethodBadge
+              key={method.id}
+              type="Buy"
+              text={method?.supplier?.name ?? ""}
+              to={path.to.partPurchasing(itemId)}
+            />
+          ))}
         {pickMethods.map((method) => (
           <MethodBadge
             key={method.locationId}
@@ -170,9 +173,19 @@ const MaterialProperties = () => {
               locations.find((l) => l.id === method.locationId)?.name ??
               ""
             }
-            to={path.to.materialInventoryLocation(itemId, method.locationId)}
+            to={path.to.partInventoryLocation(itemId, method.locationId)}
           />
         ))}
+      </VStack>
+
+      <VStack spacing={2}>
+        <HStack className="w-full justify-between">
+          <h3 className="text-xs text-muted-foreground">Files</h3>
+        </HStack>
+
+        {routeData?.files.map((file) => {
+          return <FileBadge key={file.id} file={file} itemId={itemId} />;
+        })}
       </VStack>
     </VStack>
   );

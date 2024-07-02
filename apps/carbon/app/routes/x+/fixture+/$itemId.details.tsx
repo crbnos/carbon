@@ -3,9 +3,15 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
-import { useRouteData } from "~/hooks";
-import type { Fixture } from "~/modules/items";
-import { FixtureForm, fixtureValidator, upsertFixture } from "~/modules/items";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { Fixture, ItemFile, ModelUpload } from "~/modules/items";
+import {
+  CadModel,
+  FixtureForm,
+  ItemDocuments,
+  fixtureValidator,
+  upsertFixture,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -52,11 +58,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function FixtureDetailsRoute() {
+  const permissions = usePermissions();
+
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  const fixtureData = useRouteData<{ fixtureSummary: Fixture }>(
-    path.to.fixture(itemId)
-  );
+
+  const fixtureData = useRouteData<{
+    fixtureSummary: Fixture;
+    modelUpload?: ModelUpload;
+    files: ItemFile[];
+  }>(path.to.fixture(itemId));
   if (!fixtureData) throw new Error("Could not find fixture data");
 
   const fixtureInitialValues = {
@@ -81,6 +92,19 @@ export default function FixtureDetailsRoute() {
         key={fixtureInitialValues.id}
         initialValues={fixtureInitialValues}
       />
+      {permissions.is("employee") && (
+        <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
+          <CadModel
+            autodeskUrn={fixtureData?.modelUpload?.autodeskUrn ?? null}
+          />
+          <ItemDocuments
+            files={fixtureData?.files ?? []}
+            modelUpload={fixtureData.modelUpload}
+            itemId={itemId}
+            type="Fixture"
+          />
+        </div>
+      )}
     </VStack>
   );
 }

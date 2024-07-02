@@ -6,6 +6,7 @@ import {
   ToolHeader,
   ToolProperties,
   getBuyMethods,
+  getItemFiles,
   getPickMethods,
   getTool,
 } from "~/modules/items";
@@ -29,8 +30,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [toolSummary, buyMethods, pickMethods] = await Promise.all([
+  const [toolSummary, files, buyMethods, pickMethods] = await Promise.all([
     getTool(client, itemId, companyId),
+    getItemFiles(client, itemId, companyId),
     getBuyMethods(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
   ]);
@@ -47,6 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     toolSummary: toolSummary.data,
+    files: files.data ?? [],
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
   });
@@ -58,7 +61,7 @@ export default function ToolRoute() {
       <ToolHeader />
       <div className="flex h-[calc(100vh-99px)] w-full">
         <div className="flex h-full w-full overflow-y-auto">
-          <VStack spacing={2} className="p-2">
+          <VStack spacing={2} className="p-2 w-full h-full">
             <Outlet />
           </VStack>
         </div>

@@ -3,9 +3,14 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
-import { useRouteData } from "~/hooks";
-import type { Service } from "~/modules/items";
-import { ServiceForm, serviceValidator, upsertService } from "~/modules/items";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { ItemFile, Service } from "~/modules/items";
+import {
+  ItemDocuments,
+  ServiceForm,
+  serviceValidator,
+  upsertService,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -50,9 +55,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ServiceDetailsRoute() {
+  const permissions = usePermissions();
+
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  const routeData = useRouteData<{ service: Service }>(path.to.service(itemId));
+
+  const routeData = useRouteData<{ service: Service; files: ItemFile[] }>(
+    path.to.service(itemId)
+  );
   if (!routeData) throw new Error("Could not find part data");
 
   const serviceInitialValues = {
@@ -69,11 +79,18 @@ export default function ServiceDetailsRoute() {
   };
 
   return (
-    <VStack spacing={4}>
+    <VStack spacing={2} className="w-full h-full">
       <ServiceForm
         key={serviceInitialValues.id}
         initialValues={serviceInitialValues}
       />
+      {permissions.is("employee") && (
+        <ItemDocuments
+          files={routeData?.files ?? []}
+          itemId={itemId}
+          type="Material"
+        />
+      )}
     </VStack>
   );
 }

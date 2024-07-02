@@ -5,8 +5,13 @@ import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, ModelUpload, PartSummary } from "~/modules/items";
-import { CadModel, PartForm, partValidator, upsertPart } from "~/modules/items";
-import ItemDocuments from "~/modules/items/ui/Item/ItemDocuments/ItemDocuments";
+import {
+  CadModel,
+  ItemDocuments,
+  PartForm,
+  partValidator,
+  upsertPart,
+} from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";

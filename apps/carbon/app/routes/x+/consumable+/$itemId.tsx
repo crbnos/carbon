@@ -7,6 +7,7 @@ import {
   ConsumableProperties,
   getBuyMethods,
   getConsumable,
+  getItemFiles,
   getPickMethods,
 } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -29,11 +30,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [consumableSummary, buyMethods, pickMethods] = await Promise.all([
-    getConsumable(client, itemId, companyId),
-    getBuyMethods(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
-  ]);
+  const [consumableSummary, files, buyMethods, pickMethods] = await Promise.all(
+    [
+      getConsumable(client, itemId, companyId),
+      getItemFiles(client, itemId, companyId),
+      getBuyMethods(client, itemId, companyId),
+      getPickMethods(client, itemId, companyId),
+    ]
+  );
 
   if (consumableSummary.error) {
     throw redirect(
@@ -47,6 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     consumableSummary: consumableSummary.data,
+    files: files.data ?? [],
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
   });
@@ -58,7 +63,7 @@ export default function ConsumableRoute() {
       <ConsumableHeader />
       <div className="flex h-[calc(100vh-99px)] w-full">
         <div className="flex h-full w-full overflow-y-auto">
-          <VStack spacing={2} className="p-2">
+          <VStack spacing={2} className="p-2 w-full h-full">
             <Outlet />
           </VStack>
         </div>

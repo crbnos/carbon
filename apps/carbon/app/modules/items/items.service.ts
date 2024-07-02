@@ -1396,7 +1396,7 @@ export async function upsertMethodMaterial(
     const makeMethod = await client
       .from("makeMethod")
       .select("id")
-      .eq("itemId", methodMaterial.itemId)
+      .eq("itemId", methodMaterial.itemId!)
       .single();
 
     if (makeMethod.error) return makeMethod;
@@ -1409,6 +1409,8 @@ export async function upsertMethodMaterial(
       .insert([
         {
           ...methodMaterial,
+          itemId: methodMaterial.itemId!,
+          itemReadableId: methodMaterial.itemReadableId!,
           materialMakeMethodId,
         },
       ])

@@ -30,6 +30,7 @@ export type CreatableComboboxProps = Omit<
   selected?: string[];
   isClearable?: boolean;
   isReadOnly?: boolean;
+  label?: string;
   placeholder?: string;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
@@ -46,7 +47,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       isReadOnly,
       placeholder,
       onChange,
-
+      label,
       ...props
     },
     ref
@@ -58,6 +59,8 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         search.toLowerCase()
       )
     );
+
+    console.log({ search, label });
 
     return (
       <HStack spacing={1}>
@@ -125,15 +128,16 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                     </CommandItem>
                   );
                 })}
-                {!isExactMatch && search.trim() !== "" && (
+                {!isExactMatch && (
                   <CommandItem
                     onSelect={() => {
                       props.onCreateOption?.(search);
                     }}
-                    value={search.trim()}
+                    value={search.trim() || ""}
+                    className="cursor-pointer"
                   >
                     <span>Create</span>
-                    <span className="ml-1 font-bold">{search}</span>
+                    <span className="ml-1 font-bold">{search || label}</span>
                   </CommandItem>
                 )}
               </CommandGroup>

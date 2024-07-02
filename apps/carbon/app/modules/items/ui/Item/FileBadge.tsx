@@ -16,22 +16,24 @@ export function FileBadge({ file, itemId, className }: FileBadgeProps) {
   const type = getDocumentType(file.name);
   return (
     <HStack className="group" spacing={1}>
-      <Badge variant="secondary" className={cn(className)}>
-        <DocumentIcon type={type} className="w-3 h-3 mr-1" />
-
-        {["PDF", "Image"].includes(type) ? (
-          <DocumentPreview
-            bucket="private"
-            pathToFile={getPath(file)}
-            // @ts-ignore
-            type={type}
-          >
+      {["PDF", "Image"].includes(type) ? (
+        <DocumentPreview
+          bucket="private"
+          pathToFile={getPath(file)}
+          // @ts-ignore
+          type={type}
+        >
+          <Badge variant="secondary" className={cn("max-w-[240px]", className)}>
+            <DocumentIcon type={type} className="flex-shrink-0 w-3 h-3 mr-1" />
             {file.name}
-          </DocumentPreview>
-        ) : (
-          file.name
-        )}
-      </Badge>
+          </Badge>
+        </DocumentPreview>
+      ) : (
+        <Badge variant="secondary" className={cn("max-w-[240px]", className)}>
+          <DocumentIcon type={type} className="flex-shrink-0 w-3 h-3 mr-1" />
+          {file.name}
+        </Badge>
+      )}
 
       <LuDownload
         onClick={() => download(file)}

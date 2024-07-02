@@ -3,9 +3,10 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
-import { useRouteData } from "~/hooks";
-import type { Material } from "~/modules/items";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { ItemFile, Material } from "~/modules/items";
 import {
+  ItemDocuments,
   MaterialForm,
   materialValidator,
   upsertMaterial,
@@ -57,10 +58,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MaterialDetailsRoute() {
+  const permissions = usePermissions();
+
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+
   const materialData = useRouteData<{
     materialSummary: Material;
+    files: ItemFile[];
     forms: ListItem[];
     substances: ListItem[];
   }>(path.to.material(itemId));
@@ -89,11 +94,18 @@ export default function MaterialDetailsRoute() {
   };
 
   return (
-    <VStack spacing={4}>
+    <VStack spacing={2} className="w-full h-full">
       <MaterialForm
         key={materialInitialValues.id}
         initialValues={materialInitialValues}
       />
+      {permissions.is("employee") && (
+        <ItemDocuments
+          files={materialData?.files ?? []}
+          itemId={itemId}
+          type="Material"
+        />
+      )}
     </VStack>
   );
 }

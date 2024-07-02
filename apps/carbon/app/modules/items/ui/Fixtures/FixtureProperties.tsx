@@ -9,15 +9,21 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
-import { useParams } from "@remix-run/react";
-import { LuCopy, LuLink } from "react-icons/lu";
+import { Link, useParams } from "@remix-run/react";
+import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import { CustomerAvatar, useOptimisticAssignment } from "~/components";
 import Assignee from "~/components/Assignee";
 import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import type { BuyMethod, Fixture, PickMethod } from "../../types";
-import { MethodIcon, TrackingTypeIcon } from "../Item";
+import type {
+  BuyMethod,
+  Fixture,
+  ItemFile,
+  ModelUpload,
+  PickMethod,
+} from "../../types";
+import { FileBadge, MethodIcon, TrackingTypeIcon } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 
 const FixtureProperties = () => {
@@ -29,6 +35,8 @@ const FixtureProperties = () => {
   );
   const routeData = useRouteData<{
     fixtureSummary: Fixture;
+    files: ItemFile[];
+    modelUpload?: ModelUpload;
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
   }>(path.to.fixture(itemId));
@@ -155,14 +163,22 @@ const FixtureProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Methods</h3>
         </HStack>
-        {buyMethods.map((method) => (
+        {routeData?.fixtureSummary?.replenishmentSystem?.includes("Make") && (
           <MethodBadge
-            key={method.id}
-            type="Buy"
-            text={method?.supplier?.name ?? ""}
-            to={path.to.fixturePurchasing(itemId)}
+            type="Make"
+            text={routeData?.fixtureSummary?.id ?? ""}
+            to={path.to.fixtureManufacturing(itemId)}
           />
-        ))}
+        )}
+        {routeData?.fixtureSummary?.replenishmentSystem?.includes("Buy") &&
+          buyMethods.map((method) => (
+            <MethodBadge
+              key={method.id}
+              type="Buy"
+              text={method?.supplier?.name ?? ""}
+              to={path.to.fixturePurchasing(itemId)}
+            />
+          ))}
         {pickMethods.map((method) => (
           <MethodBadge
             key={method.locationId}
@@ -175,6 +191,30 @@ const FixtureProperties = () => {
             to={path.to.fixtureInventoryLocation(itemId, method.locationId)}
           />
         ))}
+      </VStack>
+
+      <VStack spacing={2}>
+        <HStack className="w-full justify-between">
+          <h3 className="text-xs text-muted-foreground">Files</h3>
+        </HStack>
+        {routeData?.modelUpload && (
+          <HStack className="group" spacing={1}>
+            <Badge variant="secondary">
+              <LuMove3D className="w-3 h-3 mr-1 text-green-500" />
+              3D Model
+            </Badge>
+            <Link
+              className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
+              to={path.to.file.cadModel(routeData?.modelUpload.autodeskUrn!)}
+              target="_blank"
+            >
+              <LuExternalLink />
+            </Link>
+          </HStack>
+        )}
+        {routeData?.files.map((file) => {
+          return <FileBadge key={file.id} file={file} itemId={itemId} />;
+        })}
       </VStack>
     </VStack>
   );

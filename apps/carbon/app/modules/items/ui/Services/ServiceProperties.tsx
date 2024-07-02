@@ -15,8 +15,8 @@ import { useOptimisticAssignment } from "~/components";
 import Assignee from "~/components/Assignee";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
-import type { BuyMethod, PickMethod, Service } from "../../types";
-import { MethodIcon } from "../Item";
+import type { BuyMethod, ItemFile, PickMethod, Service } from "../../types";
+import { FileBadge, MethodIcon } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 
 const ServiceProperties = () => {
@@ -25,6 +25,7 @@ const ServiceProperties = () => {
 
   const routeData = useRouteData<{
     service: Service;
+    files: ItemFile[];
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
   }>(path.to.service(itemId));
@@ -119,14 +120,26 @@ const ServiceProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Methods</h3>
         </HStack>
-        {buyMethods.map((method) => (
-          <MethodBadge
-            key={method.id}
-            type="Buy"
-            text={method?.supplier?.name ?? ""}
-            to={path.to.servicePurchasing(itemId)}
-          />
-        ))}
+
+        {routeData?.service?.replenishmentSystem?.includes("Buy") &&
+          buyMethods.map((method) => (
+            <MethodBadge
+              key={method.id}
+              type="Buy"
+              text={method?.supplier?.name ?? ""}
+              to={path.to.partPurchasing(itemId)}
+            />
+          ))}
+      </VStack>
+
+      <VStack spacing={2}>
+        <HStack className="w-full justify-between">
+          <h3 className="text-xs text-muted-foreground">Files</h3>
+        </HStack>
+
+        {routeData?.files.map((file) => {
+          return <FileBadge key={file.id} file={file} itemId={itemId} />;
+        })}
       </VStack>
     </VStack>
   );
