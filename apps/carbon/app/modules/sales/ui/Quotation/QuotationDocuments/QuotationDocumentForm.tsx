@@ -1,7 +1,7 @@
 import { File, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
-import { IoMdAdd } from "react-icons/io";
+import { LuUpload } from "react-icons/lu";
 import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
@@ -70,7 +70,7 @@ const QuotationDocumentForm = ({
   };
 
   return (
-    <File leftIcon={<IoMdAdd />} onChange={uploadFile}>
+    <File leftIcon={<LuUpload />} onChange={uploadFile}>
       New
     </File>
   );

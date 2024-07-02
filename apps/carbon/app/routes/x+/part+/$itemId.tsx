@@ -1,10 +1,11 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Outlet, useMatches } from "@remix-run/react";
+import { Outlet } from "@remix-run/react";
 import {
   PartHeader,
   PartProperties,
   getBuyMethods,
+  getItemFiles,
   getModelUploadByItemId,
   getPart,
   getPickMethods,
@@ -29,14 +30,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partSummary, modelUpload, buyMethods, pickMethods] = await Promise.all(
-    [
+  const [partSummary, files, modelUpload, buyMethods, pickMethods] =
+    await Promise.all([
       getPart(client, itemId, companyId),
+      getItemFiles(client, itemId, companyId),
       getModelUploadByItemId(client, itemId, companyId),
       getBuyMethods(client, itemId, companyId),
       getPickMethods(client, itemId, companyId),
-    ]
-  );
+    ]);
 
   if (partSummary.error) {
     throw redirect(
@@ -50,6 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     partSummary: partSummary.data,
+    files: files.data ?? [],
     modelUpload: modelUpload.data,
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
@@ -57,11 +59,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function PartRoute() {
-  const matches = useMatches();
-  const isManufacturing = matches.some(
-    (match) => match.id === "routes/x+/part+/$itemId.manufacturing"
-  );
-
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <PartHeader />
@@ -69,7 +66,7 @@ export default function PartRoute() {
         <div className="flex h-full w-full overflow-y-auto">
           <Outlet />
         </div>
-        {!isManufacturing && <PartProperties />}
+        <PartProperties />
       </div>
     </div>
   );

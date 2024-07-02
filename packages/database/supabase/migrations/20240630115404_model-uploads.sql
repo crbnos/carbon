@@ -4,9 +4,16 @@ CREATE TABLE "requestForQuote" (
 );
 
 ALTER TABLE "item" ADD COLUMN "thumbnailPath" TEXT;
+ALTER TYPE "sourceDocumentType" ADD VALUE 'Material';
+ALTER TYPE "sourceDocumentType" ADD VALUE 'Tool';
+ALTER TYPE "sourceDocumentType" ADD VALUE 'Fixture';
+ALTER TYPE "sourceDocumentType" ADD VALUE 'Consumable';
+ALTER TYPE "sourceDocumentType" ADD VALUE 'Service';
 
 CREATE TABLE "modelUpload" (
   "id" TEXT NOT NULL DEFAULT xid(),
+  "name" TEXT NOT NULL,
+  "size" BIGINT NOT NULL,
   "modelPath" TEXT,
   "autodeskUrn" TEXT,
   "itemId" TEXT,

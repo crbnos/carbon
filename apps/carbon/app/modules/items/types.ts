@@ -5,6 +5,7 @@ import type {
   getConsumables,
   getFixtures,
   getItemCost,
+  getItemFiles,
   getItemPostingGroups,
   getItemPostingGroupsList,
   getItemQuantities,
@@ -26,6 +27,10 @@ import type {
   getUnitOfMeasuresList,
 } from "./items.service";
 
+export type BuyMethod = NonNullable<
+  Awaited<ReturnType<typeof getBuyMethods>>["data"]
+>[number];
+
 export type Consumable = NonNullable<
   Awaited<ReturnType<typeof getConsumables>>["data"]
 >[number];
@@ -38,12 +43,18 @@ export type Fixture = NonNullable<
   Awaited<ReturnType<typeof getFixtures>>["data"]
 >[number];
 
+export type InventoryItemType = Database["public"]["Enums"]["itemTrackingType"];
+
 export type ItemCost = NonNullable<
   Awaited<ReturnType<typeof getItemCost>>
 >["data"];
 
 export type ItemCostingMethod =
   Database["public"]["Enums"]["itemCostingMethod"];
+
+export type ItemFile = NonNullable<
+  Awaited<ReturnType<typeof getItemFiles>>["data"]
+>[number];
 
 export type ItemPostingGroup = NonNullable<
   Awaited<ReturnType<typeof getItemPostingGroups>>["data"]
@@ -62,12 +73,6 @@ export type ItemReorderingPolicy =
 
 export type ItemReplenishmentSystem =
   Database["public"]["Enums"]["itemReplenishmentSystem"];
-
-export type BuyMethod = NonNullable<
-  Awaited<ReturnType<typeof getBuyMethods>>["data"]
->[number];
-
-export type InventoryItemType = Database["public"]["Enums"]["itemTrackingType"];
 
 export type MakeMethod = NonNullable<
   Awaited<ReturnType<typeof getMakeMethod>>["data"]

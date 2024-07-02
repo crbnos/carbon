@@ -25,7 +25,7 @@ export const usePurchaseOrderDocuments = ({ isExternal, orderId }: Props) => {
 
   const getPath = useCallback(
     (attachment: PurchaseOrderAttachment) => {
-      return `/${company.id}/purchasing/${
+      return `${company.id}/purchasing/${
         isExternal ? "external" : "internal"
       }/${orderId}/${attachment.name}`;
     },

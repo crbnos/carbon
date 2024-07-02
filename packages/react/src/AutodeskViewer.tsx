@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ClientOnly } from "./ClientOnly";
 import { cn } from "./utils/cn";
 
 interface ForgeViewerProps {
@@ -16,7 +15,7 @@ interface ForgeViewerProps {
   showDefaultToolbar?: boolean;
 }
 
-const ForgeViewer: React.FC<ForgeViewerProps> = ({
+const AutodeskViewer: React.FC<ForgeViewerProps> = ({
   urn,
   accessToken,
   registerExtensionsCallback,
@@ -110,20 +109,6 @@ const ForgeViewer: React.FC<ForgeViewerProps> = ({
     <div>Please include viewer3D.min.js to the index.html </div>
   ) : (
     <div ref={viewerRef} className={cn("forgeViewer", className)}></div>
-  );
-};
-
-const AutodeskViewer = (props: ForgeViewerProps) => {
-  return (
-    <ClientOnly
-      fallback={
-        <div className="w-full h-full rounded bg-gradient-to-tr from-[#979797] to-[#BEBEBE]" />
-      }
-    >
-      {() => {
-        return <ForgeViewer {...props} />;
-      }}
-    </ClientOnly>
   );
 };
 

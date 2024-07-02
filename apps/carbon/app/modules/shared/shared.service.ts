@@ -44,6 +44,8 @@ export async function upsertModelUpload(
   client: SupabaseClient<Database>,
   upload: {
     id: string;
+    name: string;
+    size: number;
     autodeskUrn: string;
     modelPath: string;
     itemId?: string;

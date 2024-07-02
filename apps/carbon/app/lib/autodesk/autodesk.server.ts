@@ -288,10 +288,6 @@ export async function translateFile(urn: string, token: string) {
       },
       data: body,
     });
-
-    const data = response.data;
-    console.log(data);
-    //
   } catch (err) {
     const message = (err as Error).message || "Something went wrong";
     console.error(message, err);
