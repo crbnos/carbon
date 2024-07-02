@@ -4,11 +4,11 @@ CREATE TABLE "requestForQuote" (
 );
 
 ALTER TABLE "item" ADD COLUMN "thumbnailPath" TEXT;
-ALTER TYPE "sourceDocumentType" ADD VALUE 'Material';
-ALTER TYPE "sourceDocumentType" ADD VALUE 'Tool';
-ALTER TYPE "sourceDocumentType" ADD VALUE 'Fixture';
-ALTER TYPE "sourceDocumentType" ADD VALUE 'Consumable';
-ALTER TYPE "sourceDocumentType" ADD VALUE 'Service';
+
+ALTER TYPE "documentSourceType" ADD VALUE 'Material';
+ALTER TYPE "documentSourceType" ADD VALUE 'Tool';
+ALTER TYPE "documentSourceType" ADD VALUE 'Fixture';
+ALTER TYPE "documentSourceType" ADD VALUE 'Consumable';
 
 CREATE TABLE "modelUpload" (
   "id" TEXT NOT NULL DEFAULT xid(),

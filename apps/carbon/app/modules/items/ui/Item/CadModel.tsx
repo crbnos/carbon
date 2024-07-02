@@ -26,7 +26,11 @@ const CadModel = ({ autodeskUrn }: CadModelProps) => {
   const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
-    if (autodeskUrn !== urn) setUrn(autodeskUrn);
+    // handle deleted urn
+    if (autodeskUrn === null && urn) {
+      setUrn(autodeskUrn);
+      setFile(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autodeskUrn]);
 
