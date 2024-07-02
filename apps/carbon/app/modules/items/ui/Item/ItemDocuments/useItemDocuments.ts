@@ -47,6 +47,8 @@ export const useItemDocuments = ({ itemId }: Props) => {
     async (model: ModelUpload) => {
       if (!model || !supabase) return;
 
+      // TODO: delete from Autodesk server
+
       if (model.modelPath) {
         const fileDelete = await supabase?.storage
           .from("private")

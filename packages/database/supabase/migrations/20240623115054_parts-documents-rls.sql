@@ -1,8 +1,9 @@
 -- Parts documents
-CREATE POLICY "Employees can view internal parts documents" ON storage.objects 
+CREATE POLICY "Employees with parts_view can view internal parts documents" ON storage.objects 
 FOR SELECT USING (
     bucket_id = 'private'
     AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('parts_view', (storage.foldername(name))[1])
     AND (storage.foldername(name))[2] = 'parts'
 );
 
