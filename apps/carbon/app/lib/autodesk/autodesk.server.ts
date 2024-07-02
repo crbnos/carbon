@@ -17,6 +17,11 @@ const autodeskAPI = {
       `https://developer.api.autodesk.com/oss/v2/buckets/${bucketName}/objects/${filename}/signeds3upload?minutesExpiration=${SIGNED_URL_EXPIRATION}`,
     method: "POST",
   },
+  getManifest: {
+    url: (urn: string) =>
+      `https://developer.api.autodesk.com/modelderivative/v2/designdata/${urn}/manifest`,
+    method: "GET",
+  },
   getSignedUrl: {
     url: (bucketName: string, filename: string) =>
       `https://developer.api.autodesk.com/oss/v2/buckets/${bucketName}/objects/${filename}/signeds3upload?minutesExpiration=${SIGNED_URL_EXPIRATION}`,
@@ -36,6 +41,16 @@ const autodeskAPI = {
     method: "POST",
   },
 };
+
+export type AutodeskSignedUrl = {
+  uploadKey: string;
+  url: string;
+};
+
+export const signedUrlSchema = z.object({
+  uploadKey: z.string(),
+  urls: z.array(z.string()),
+});
 
 export async function finalizeAutodeskUpload(
   encodedFilename: string,
@@ -81,16 +96,6 @@ export async function finalizeAutodeskUpload(
     error: null,
   };
 }
-
-export type AutodeskSignedUrl = {
-  uploadKey: string;
-  url: string;
-};
-
-export const signedUrlSchema = z.object({
-  uploadKey: z.string(),
-  urls: z.array(z.string()),
-});
 
 export async function getAutodeskSignedUrl(
   encodedFilename: string,
@@ -231,6 +236,56 @@ export async function getAutodeskToken(refresh = false, scope?: string) {
       },
     };
   }
+}
+
+export async function getManifest(urn: string, token: string) {
+  // poll the manifest endpoint once every second for 30 seconds until we get a response with progress === "complete"
+
+  let response;
+  let progress = "inprogress";
+  let tries = 0;
+
+  while (progress !== "complete" && tries < 30) {
+    try {
+      response = await fetch(autodeskAPI.getManifest.url(urn), {
+        method: autodeskAPI.getManifest.method,
+        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      // TODO: there are thumbnails here that we want to return
+      progress = data.progress;
+    } catch (err) {
+      const message = (err as Error).message || "Something went wrong";
+      console.error(message, err);
+      return {
+        data: null,
+        error: {
+          message,
+        },
+      };
+    }
+
+    tries++;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  if (tries > 30) {
+    return {
+      data: null,
+      error: {
+        message: "Timeout",
+      },
+    };
+  }
+
+  return {
+    data: { urn },
+    error: null,
+  };
 }
 
 export async function getTranslationStatus(urn: string, token: string) {

@@ -3,6 +3,7 @@ import {
   finalizeAutodeskUpload,
   getAutodeskSignedUrl,
   getAutodeskToken,
+  getManifest,
   translateFile,
   uploadToAutodesk,
 } from "~/lib/autodesk/autodesk.server";
@@ -81,6 +82,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (modelRecord.error) {
     throw new Error("Failed to record upload: " + modelRecord.error.message);
+  }
+
+  const manifest = await getManifest(autodeskUrn, token);
+  if (manifest.error) {
+    throw new Error("Failed to get manifest: " + manifest.error.message);
   }
 
   return json({

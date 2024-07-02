@@ -24337,6 +24337,10 @@ export type Database = {
         | "Sales Return Order"
         | "Service"
         | "Shipment"
+        | "Material"
+        | "Tool"
+        | "Fixture"
+        | "Consumable"
       documentTransactionType:
         | "Download"
         | "Edit"

@@ -1,5 +1,5 @@
 import { toast } from "@carbon/react";
-import { useFetcher, useNavigate } from "@remix-run/react";
+import { useNavigate, useRevalidator } from "@remix-run/react";
 import { useCallback } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
@@ -11,19 +11,13 @@ type Props = {
 };
 
 export const useItemDocuments = ({ itemId }: Props) => {
-  const fetcher = useFetcher();
   const navigate = useNavigate();
   const permissions = usePermissions();
+  const revalidator = useRevalidator();
   const { supabase } = useSupabase();
   const { company } = useUser();
 
   const canDelete = permissions.can("delete", "parts");
-
-  const refresh = useCallback(
-    () => fetcher.submit(null, { method: "post" }),
-    [fetcher]
-  );
-
   const getPath = useCallback(
     (file: ItemFile) => {
       return `${company.id}/parts/${itemId}/${file.name}`;
@@ -44,9 +38,9 @@ export const useItemDocuments = ({ itemId }: Props) => {
       }
 
       toast.success("File deleted successfully");
-      refresh();
+      revalidator.revalidate();
     },
-    [supabase, getPath, refresh]
+    [getPath, supabase?.storage, revalidator]
   );
 
   const deleteModel = useCallback(
@@ -74,9 +68,9 @@ export const useItemDocuments = ({ itemId }: Props) => {
       }
 
       toast.success("File deleted successfully");
-      refresh();
+      revalidator.revalidate();
     },
-    [supabase, refresh]
+    [supabase, revalidator]
   );
 
   const download = useCallback(
