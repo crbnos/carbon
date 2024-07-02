@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Outlet, useMatches } from "@remix-run/react";
+import { Outlet } from "@remix-run/react";
 import {
   FixtureHeader,
   FixtureProperties,
@@ -51,11 +51,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function FixtureRoute() {
-  const matches = useMatches();
-  const isManufacturing = matches.some(
-    (match) => match.id === "routes/x+/fixture+/$itemId.manufacturing"
-  );
-
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <FixtureHeader />
@@ -63,7 +58,7 @@ export default function FixtureRoute() {
         <div className="flex h-full w-full overflow-y-auto">
           <Outlet />
         </div>
-        {!isManufacturing && <FixtureProperties />}
+        <FixtureProperties />
       </div>
     </div>
   );

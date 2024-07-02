@@ -8659,6 +8659,8 @@ export type Database = {
           id: string
           itemId: string | null
           modelPath: string | null
+          name: string
+          size: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8670,6 +8672,8 @@ export type Database = {
           id?: string
           itemId?: string | null
           modelPath?: string | null
+          name: string
+          size: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8681,6 +8685,8 @@ export type Database = {
           id?: string
           itemId?: string | null
           modelPath?: string | null
+          name?: string
+          size?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }

@@ -1,16 +1,10 @@
 import type { JSONContent } from "@carbon/react";
 import {
-  Button,
   ClientOnly,
-  HStack,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  VStack,
 } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import {
@@ -20,7 +14,6 @@ import {
   useLoaderData,
   useParams,
 } from "@remix-run/react";
-import { LuCopy, LuLink } from "react-icons/lu";
 
 import type { FlatTreeItem } from "~/components/TreeView/TreeView";
 import { flattenTree } from "~/components/TreeView/TreeView";
@@ -162,68 +155,6 @@ export default function FixtureManufacturing() {
             >
               <ScrollArea className="h-[calc(100vh-99px)]">
                 <Outlet key={JSON.stringify(params)} />
-              </ScrollArea>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel
-              order={3}
-              minSize={10}
-              defaultSize={20}
-              className="bg-card"
-            >
-              <ScrollArea className="h-[calc(100vh-99px)] px-4 py-2">
-                <VStack spacing={2}>
-                  <HStack className="w-full justify-between">
-                    <h3 className="text-xs text-muted-foreground">
-                      Properties
-                    </h3>
-                    <HStack spacing={1}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            aria-label="Link"
-                            size="sm"
-                            className="p-1"
-                            onClick={() =>
-                              navigator.clipboard.writeText(
-                                window.location.origin + path.to.fixture(itemId)
-                              )
-                            }
-                          >
-                            <LuLink className="w-3 h-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <span>Copy link to fixture</span>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            aria-label="Copy"
-                            size="sm"
-                            className="p-1"
-                            onClick={() =>
-                              navigator.clipboard.writeText(
-                                routeData?.fixtureSummary?.id ?? ""
-                              )
-                            }
-                          >
-                            <LuCopy className="w-3 h-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <span>Copy fixture number</span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </HStack>
-                  </HStack>
-                  <span className="text-sm">
-                    {routeData?.fixtureSummary?.name}
-                  </span>
-                </VStack>
               </ScrollArea>
             </ResizablePanel>
           </ResizablePanelGroup>

@@ -3,6 +3,8 @@ import BillOfProcess from "./BillOfProcess";
 import BoMExplorer from "./BoMExplorer";
 import BuyMethodForm from "./BuyMethodForm";
 import BuyMethods from "./BuyMethods";
+import CadModel from "./CadModel";
+import { FileBadge } from "./FileBadge";
 import ItemCostingForm from "./ItemCostingForm";
 import ItemForm from "./ItemForm";
 import ItemPlanningForm from "./ItemPlanningForm";
@@ -17,6 +19,8 @@ export {
   BoMExplorer,
   BuyMethodForm,
   BuyMethods,
+  CadModel,
+  FileBadge,
   ItemCostingForm,
   ItemForm,
   ItemPlanningForm,

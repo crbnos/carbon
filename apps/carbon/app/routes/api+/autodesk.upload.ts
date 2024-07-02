@@ -14,6 +14,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const fileId = formData.get("fileId") as string;
+  const name = formData.get("name") as string;
   const modelPath = formData.get("modelPath") as string;
   const itemId = (formData.get("itemId") ?? undefined) as string | undefined;
 
@@ -67,6 +68,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const modelRecord = await upsertModelUpload(client, {
     id: fileId,
+    name,
+    size: file.size,
     autodeskUrn,
     modelPath,
     itemId: itemId,

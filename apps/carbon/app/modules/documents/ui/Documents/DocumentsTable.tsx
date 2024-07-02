@@ -601,6 +601,18 @@ function getDocumentLocation(
   sourceDocumentId: string
 ) {
   switch (sourceDocument) {
+    case "Part":
+      return path.to.part(sourceDocumentId);
+    case "Material":
+      return path.to.material(sourceDocumentId);
+    case "Tool":
+      return path.to.tool(sourceDocumentId);
+    case "Fixture":
+      return path.to.fixture(sourceDocumentId);
+    case "Consumable":
+      return path.to.consumable(sourceDocumentId);
+    case "Service":
+      return path.to.service(sourceDocumentId);
     case "Purchase Order":
       return path.to.purchaseOrder(sourceDocumentId);
     case "Quote":

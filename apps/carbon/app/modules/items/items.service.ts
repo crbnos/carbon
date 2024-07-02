@@ -217,6 +217,14 @@ export async function getItemCost(
     .single();
 }
 
+export async function getItemFiles(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client.storage.from("private").list(`${companyId}/parts/${itemId}`);
+}
+
 export async function getItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string

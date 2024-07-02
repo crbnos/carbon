@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { methodItemType } from "../items";
 
 export const documentTypes = [
   "Archive",
@@ -13,7 +14,11 @@ export const documentTypes = [
   "Other",
 ] as const;
 
-export const documentSourceTypes = ["Purchase Order", "Quote"] as const;
+export const documentSourceTypes = [
+  "Purchase Order",
+  "Quote",
+  ...methodItemType,
+] as const;
 
 export const documentValidator = z.object({
   id: z.string().min(1, { message: "Document ID is required" }),

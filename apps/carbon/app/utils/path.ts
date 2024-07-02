@@ -57,6 +57,7 @@ export const path = {
       workCellTypes: `${api}/resources/work-cell-types`,
     },
     file: {
+      cadModel: (urn: string) => generatePath(`${file}/autodesk/${urn}`),
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
@@ -240,8 +241,6 @@ export const path = {
     deleteQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/quote/${id}/lines/${lineId}/details/delete`),
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/delete/${id}`),
-    deleteRequestForQuote: (id: string) =>
-      generatePath(`${x}/rfq/delete/${id}`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/delete/${id}`),
     deleteSalesOrderLine: (orderId: string, lineId: string) =>
@@ -460,7 +459,6 @@ export const path = {
         `${x}/quote/${quoteId}/lines/${lineId}/operation/${operationId}/material/new`
       ),
     newReceipt: `${x}/receipt/new`,
-    newRequestForQuote: `${x}/rfq/new`,
     newSalesOrder: `${x}/sales-order/new`,
     newSalesOrderLine: (id: string) =>
       generatePath(`${x}/sales-order/${id}/lines/new`),
