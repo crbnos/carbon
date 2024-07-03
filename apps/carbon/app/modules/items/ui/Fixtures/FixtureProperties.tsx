@@ -197,7 +197,7 @@ const FixtureProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Files</h3>
         </HStack>
-        {routeData?.modelUpload && (
+        {routeData?.modelUpload?.autodeskUrn && (
           <HStack className="group" spacing={1}>
             <Badge variant="secondary">
               <LuMove3D className="w-3 h-3 mr-1 text-green-500" />

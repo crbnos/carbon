@@ -65,7 +65,7 @@ const ItemDocuments = ({
             </Tr>
           </Thead>
           <Tbody>
-            {modelUpload && (
+            {modelUpload?.autodeskUrn && (
               <Tr>
                 <Td>
                   <HStack>

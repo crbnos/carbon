@@ -60,8 +60,6 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       )
     );
 
-    console.log({ search, label });
-
     return (
       <HStack spacing={1}>
         <Popover open={open} onOpenChange={setOpen}>

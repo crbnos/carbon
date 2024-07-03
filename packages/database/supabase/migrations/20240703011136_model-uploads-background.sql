@@ -1,0 +1,3 @@
+ALTER TABLE "modelUpload" ALTER COLUMN "name" DROP NOT NULL;
+ALTER TABLE "modelUpload" ALTER COLUMN "size" DROP NOT NULL;
+ALTER TABLE "modelUpload" ALTER COLUMN "modelPath" SET NOT NULL;

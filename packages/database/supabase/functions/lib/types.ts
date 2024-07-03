@@ -8658,9 +8658,9 @@ export type Database = {
           createdBy: string
           id: string
           itemId: string | null
-          modelPath: string | null
-          name: string
-          size: number
+          modelPath: string
+          name: string | null
+          size: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8671,9 +8671,9 @@ export type Database = {
           createdBy: string
           id?: string
           itemId?: string | null
-          modelPath?: string | null
-          name: string
-          size: number
+          modelPath: string
+          name?: string | null
+          size?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8684,9 +8684,9 @@ export type Database = {
           createdBy?: string
           id?: string
           itemId?: string | null
-          modelPath?: string | null
-          name?: string
-          size?: number
+          modelPath?: string
+          name?: string | null
+          size?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }

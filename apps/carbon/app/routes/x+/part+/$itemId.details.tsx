@@ -85,7 +85,10 @@ export default function PartDetailsRoute() {
       <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
-          <CadModel autodeskUrn={partData?.modelUpload?.autodeskUrn ?? null} />
+          <CadModel
+            autodeskUrn={partData?.modelUpload?.autodeskUrn ?? null}
+            modelPath={partData?.modelUpload?.modelPath ?? null}
+          />
           <ItemDocuments
             files={partData?.files ?? []}
             modelUpload={partData.modelUpload}

@@ -2,7 +2,7 @@ import { AutodeskViewer, ClientOnly, toast } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
-import { useUser } from "~/hooks";
+import { useRealtime, useUser } from "~/hooks";
 import { useAutodeskToken } from "~/lib/autodesk";
 import { useSupabase } from "~/lib/supabase";
 import { CadModelUpload } from "~/modules/shared";
@@ -10,35 +10,28 @@ import { path } from "~/utils/path";
 
 type CadModelProps = {
   autodeskUrn: string | null;
+  modelPath: string | null;
 };
 
-const CadModel = ({ autodeskUrn }: CadModelProps) => {
+const CadModel = ({ autodeskUrn, modelPath }: CadModelProps) => {
+  useRealtime("modelUpload", `modelPath=eq.${modelPath ?? "unknown"}`);
+
   const {
     company: { id: companyId },
   } = useUser();
+
   const { supabase } = useSupabase();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
   const { autodeskToken } = useAutodeskToken();
-  const fetcher = useFetcher<{ urn: string }>();
-  const [urn, setUrn] = useState<string | null>(autodeskUrn ?? null);
+  const fetcher = useFetcher();
   const [file, setFile] = useState<File | null>(null);
+  const loading = (!!file && !autodeskUrn) || (!!modelPath && !autodeskUrn);
 
   useEffect(() => {
-    // handle deleted urn
-    if (autodeskUrn === null && urn) {
-      setUrn(autodeskUrn);
-      setFile(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autodeskUrn]);
-
-  useEffect(() => {
-    if (fetcher.data?.urn) {
-      setUrn(fetcher.data.urn);
-    }
-  }, [fetcher.data]);
+    if (!loading) setFile(null);
+  }, [loading]);
 
   const onFileChange = async (file: File | null) => {
     setFile(file);
@@ -77,14 +70,18 @@ const CadModel = ({ autodeskUrn }: CadModelProps) => {
       }
     >
       {() => {
-        return urn && autodeskToken ? (
+        return autodeskUrn && autodeskToken ? (
           <AutodeskViewer
             accessToken={autodeskToken}
-            urn={urn}
+            urn={autodeskUrn}
             showDefaultToolbar
           />
         ) : (
-          <CadModelUpload file={file} onFileChange={onFileChange} />
+          <CadModelUpload
+            file={file}
+            loading={loading}
+            onFileChange={onFileChange}
+          />
         );
       }}
     </ClientOnly>

@@ -17,8 +17,6 @@ CREATE TABLE "modelUpload" (
   "modelPath" TEXT,
   "autodeskUrn" TEXT,
   "itemId" TEXT,
-  -- "requestForQuoteId" TEXT,
-  -- "quoteId" TEXT,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT now(),
   "createdBy" TEXT NOT NULL,

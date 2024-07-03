@@ -239,13 +239,13 @@ export async function getAutodeskToken(refresh = false, scope?: string) {
 }
 
 export async function getManifest(urn: string, token: string) {
-  // poll the manifest endpoint for 15s until we get a response with progress === "complete"
+  // poll the manifest endpoint for 30s until we get a response with progress === "complete"
 
   let response;
   let progress = "inprogress";
   let tries = 0;
 
-  while (progress !== "complete" && tries < 10) {
+  while (progress !== "complete" && tries < 20) {
     try {
       response = await fetch(autodeskAPI.getManifest.url(urn), {
         method: autodeskAPI.getManifest.method,

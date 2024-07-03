@@ -96,6 +96,7 @@ export default function FixtureDetailsRoute() {
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
             autodeskUrn={fixtureData?.modelUpload?.autodeskUrn ?? null}
+            modelPath={fixtureData?.modelUpload?.modelPath ?? null}
           />
           <ItemDocuments
             files={fixtureData?.files ?? []}

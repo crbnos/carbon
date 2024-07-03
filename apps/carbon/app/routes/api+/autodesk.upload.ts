@@ -1,17 +1,14 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
-import {
-  finalizeAutodeskUpload,
-  getAutodeskSignedUrl,
-  getAutodeskToken,
-  getManifest,
-  translateFile,
-  uploadToAutodesk,
-} from "~/lib/autodesk/autodesk.server";
+import { triggerClient } from "~/lib/trigger.server";
 import { upsertModelUpload } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import { error } from "~/utils/result";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "parts",
+  });
 
   const formData = await request.formData();
   const fileId = formData.get("fileId") as string;
@@ -19,77 +16,37 @@ export async function action({ request }: ActionFunctionArgs) {
   const modelPath = formData.get("modelPath") as string;
   const itemId = (formData.get("itemId") ?? undefined) as string | undefined;
 
-  // const rfqId = (formData.get("rfqId") ?? undefined) as string | undefined;
-  // const quoteId = (formData.get("quoteId") ?? undefined) as string | undefined;
-
-  const autodeskToken = await getAutodeskToken();
-  if (autodeskToken.error) {
-    throw new Error(
-      "Failed to get Autodesk token: " + autodeskToken.error.message
-    );
-  }
-  const token = autodeskToken.data?.token;
-  const encodedFilename = modelPath.split("/").pop() as string;
-
-  const [signedUrl, blob] = await Promise.all([
-    getAutodeskSignedUrl(encodedFilename, token),
-    client.storage.from("private").download(modelPath),
-  ]);
-  if (signedUrl.error) {
-    throw new Error("Failed to get signed URL: " + signedUrl.error.message);
-  }
-  if (blob.error) {
-    throw new Error("Failed to download blob: " + blob.error.message);
-  }
-
-  const file = new File([blob.data], encodedFilename);
-  const { uploadKey, url } = signedUrl.data;
-
-  const initialUpload = await uploadToAutodesk(url, file, uploadKey);
-  if (initialUpload.error) {
-    throw new Error("Failed to upload file: " + initialUpload.error.message);
-  }
-
-  const upload = await finalizeAutodeskUpload(
-    encodedFilename,
-    token,
-    uploadKey
-  );
-  if (upload.error) {
-    throw new Error("Failed to finalize upload: " + upload.error.message);
-  }
-
-  const { urn } = upload.data;
-  const autodeskUrn = Buffer.from(urn).toString("base64");
-
-  const translation = await translateFile(autodeskUrn, token);
-  if (translation.error) {
-    throw new Error("Failed to translate file: " + translation.error.message);
-  }
-
+  console.log("uploading model");
   const modelRecord = await upsertModelUpload(client, {
     id: fileId,
-    name,
-    size: file.size,
-    autodeskUrn,
     modelPath,
-    itemId: itemId,
-    // rfqId,
-    // quoteId,
+    itemId,
     companyId,
     createdBy: userId,
   });
+
+  console.log("modelRecord", modelRecord);
 
   if (modelRecord.error) {
     throw new Error("Failed to record upload: " + modelRecord.error.message);
   }
 
-  const manifest = await getManifest(autodeskUrn, token);
-  if (manifest.error) {
-    throw new Error("Failed to get manifest: " + manifest.error.message);
+  console.log("sending event");
+  try {
+    await triggerClient.sendEvent({
+      name: "upload.autodesk",
+      payload: {
+        name,
+        modelPath,
+        companyId,
+        fileId,
+        itemId,
+        userId,
+      },
+    });
+  } catch (err) {
+    return json({}, await flash(request, error(err, "Failed to upload model")));
   }
 
-  return json({
-    urn: autodeskUrn,
-  });
+  return json({});
 }

@@ -7,13 +7,19 @@ const fileSizeLimitMb = 50;
 
 type CadModelUploadProps = {
   file: File | null;
+  loading: boolean;
   onFileChange: (file: File | null) => void;
 };
 
-const CadModelUpload = ({ file, onFileChange }: CadModelUploadProps) => {
+const CadModelUpload = ({
+  file,
+  loading,
+  onFileChange,
+}: CadModelUploadProps) => {
   const hasFile = !!file;
+
   const { getRootProps, getInputProps } = useDropzone({
-    disabled: hasFile,
+    disabled: loading || hasFile,
     multiple: false,
     maxSize: fileSizeLimitMb * 1024 * 1024, // 50 MB
     onDropAccepted: (acceptedFiles) => {
@@ -76,16 +82,16 @@ const CadModelUpload = ({ file, onFileChange }: CadModelUploadProps) => {
         </CardHeader>
 
         <div className="flex flex-col flex-grow items-center justify-center gap-2 p-2">
-          {file ? (
+          {(file || loading) && <Spinner className="h-16 w-16 -mt-16" />}
+          {file && (
             <>
-              <Spinner className="h-16 w-16 -mt-16" />
-
               <p className="text-lg text-card-foreground mt-8">{file.name}</p>
               <p className="text-muted-foreground group-hover:text-foreground">
                 {convertKbToString(Math.ceil(file.size / 1024))}
               </p>
             </>
-          ) : (
+          )}
+          {!file && !loading && (
             <>
               <div className="p-4 bg-accent rounded-full group-hover:bg-primary -mt-16">
                 <HiArrowUpTray
