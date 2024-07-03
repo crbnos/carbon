@@ -102,17 +102,6 @@ export async function getAutodeskSignedUrl(
   token: string
 ) {
   let result: AutodeskSignedUrl | null = null;
-  let cacheKey = `autodesk:${AUTODESK_BUCKET_NAME}:${encodedFilename}`;
-
-  try {
-    result = JSON.parse((await redis.get(cacheKey)) || "null");
-  } finally {
-    if (result)
-      return {
-        data: result,
-        error: null,
-      };
-  }
 
   const uploadUrl = autodeskAPI.getSignedUrl.url(
     AUTODESK_BUCKET_NAME,
@@ -155,9 +144,6 @@ export async function getAutodeskSignedUrl(
     uploadKey: parsed.data.uploadKey,
     url: parsed.data.urls?.[0] ?? "",
   };
-
-  redis.set(cacheKey, JSON.stringify(result));
-  redis.expire(cacheKey, SIGNED_URL_EXPIRATION - 1);
 
   return {
     data: result,

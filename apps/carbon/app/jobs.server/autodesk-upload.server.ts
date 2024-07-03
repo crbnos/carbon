@@ -4,14 +4,12 @@ import {
   finalizeAutodeskUpload,
   getAutodeskSignedUrl,
   getAutodeskToken,
-  getManifest,
   translateFile,
   uploadToAutodesk,
 } from "~/lib/autodesk/autodesk.server";
 
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { triggerClient } from "~/lib/trigger.server";
-import { upsertModelUpload } from "~/modules/shared";
 
 const supabaseClient = getSupabaseServiceRole();
 
@@ -75,44 +73,17 @@ const job = triggerClient.defineJob({
       throw new Error("Failed to translate file: " + translation.error.message);
     }
 
-    const response = await io.runTask(
-      "autodesk-manifest-poll",
-      async () => {
-        const freshToken = await getAutodeskToken();
-        if (freshToken.error) {
-          throw new Error(
-            "Failed to get Autodesk token: " + freshToken.error.message
-          );
-        }
-
-        const manifest = await getManifest(autodeskUrn, freshToken.data.token);
-        if (manifest.error) {
-          throw new Error("Failed to get manifest: " + manifest.error.message);
-        }
-
-        const modelRecord = await upsertModelUpload(supabaseClient, {
-          id: fileId,
-          name,
-          size: file.size,
-          autodeskUrn,
-        });
-
-        if (modelRecord.error) {
-          throw new Error(
-            "Failed to record upload: " + modelRecord.error.message
-          );
-        }
+    const event = await triggerClient.sendEvent({
+      name: "autodesk.poll",
+      payload: {
+        id: fileId,
+        size: file.size,
+        name,
+        autodeskUrn,
       },
-      {
-        name: "Autodesk Manifest Poll",
-        retry: {
-          limit: 5,
-          maxTimeoutInMs: 1000 * 15,
-        },
-      }
-    );
+    });
 
-    return response;
+    io.logger.info("Event sent", event);
   },
 });
 

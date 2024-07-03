@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  triggerClient.sendEvent({
+  await triggerClient.sendEvent({
     name: "post.transactions",
     payload: {
       type: "purchase-invoice",
