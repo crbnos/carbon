@@ -65,7 +65,7 @@ const ItemDocuments = ({
             </Tr>
           </Thead>
           <Tbody>
-            {modelUpload?.autodeskUrn && (
+            {modelUpload && (
               <Tr>
                 <Td>
                   <HStack>
@@ -74,14 +74,18 @@ const ItemDocuments = ({
                       target="_blank"
                       onClick={() => viewModel(modelUpload)}
                     >
-                      {modelUpload.name}
+                      {modelUpload?.autodeskUrn
+                        ? modelUpload.name
+                        : "Uploading..."}
                     </Hyperlink>
                   </HStack>
                 </Td>
                 <Td>
-                  {convertKbToString(
-                    Math.floor((modelUpload.size ?? 0) / 1024)
-                  )}
+                  {modelUpload.size
+                    ? convertKbToString(
+                        Math.floor((modelUpload.size ?? 0) / 1024)
+                      )
+                    : "--"}
                 </Td>
                 <Td>
                   <div className="flex justify-end w-full">
