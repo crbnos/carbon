@@ -28,6 +28,10 @@ import type {
   unitOfMeasureValidator,
 } from "./items.models";
 
+export async function deleteItem(client: SupabaseClient<Database>, id: string) {
+  return client.from("item").update({ active: false }).eq("id", id);
+}
+
 export async function deleteItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
@@ -110,6 +114,7 @@ export async function getConsumables(
     .select("*", {
       count: "exact",
     })
+    .eq("active", true)
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -168,6 +173,7 @@ export async function getFixtures(
     .select("*", {
       count: "exact",
     })
+    .eq("active", true)
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -376,6 +382,7 @@ export async function getMaterials(
     .select("*", {
       count: "exact",
     })
+    .eq("active", true)
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args.search) {
@@ -624,6 +631,7 @@ export async function getParts(
     .select("*", {
       count: "exact",
     })
+    .eq("active", true)
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -698,6 +706,7 @@ export async function getServices(
     .select("*", {
       count: "exact",
     })
+    .eq("active", true)
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -790,6 +799,7 @@ export async function getTools(
     .select("*", {
       count: "exact",
     })
+    .eq("active", true)
     .eq("companyId", companyId);
 
   if (args.search) {

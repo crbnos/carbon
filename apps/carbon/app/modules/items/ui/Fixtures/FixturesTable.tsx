@@ -1,9 +1,16 @@
-import { Badge, Checkbox, Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Badge,
+  Checkbox,
+  Enumerable,
+  MenuIcon,
+  MenuItem,
+  useDisclosure,
+} from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
-import { LuPencil } from "react-icons/lu";
+import { memo, useMemo, useState } from "react";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   CustomerAvatar,
   EmployeeAvatar,
@@ -11,6 +18,7 @@ import {
   New,
   Table,
 } from "~/components";
+import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Fixture } from "~/modules/items";
@@ -35,6 +43,9 @@ const FixturesTable = memo(
   ({ data, count, itemPostingGroups }: FixturesTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
+
+    const deleteItemModal = useDisclosure();
+    const [selectedItem, setSelectedItem] = useState<Fixture | null>(null);
 
     const [customers] = useCustomers();
     const [people] = usePeople();
@@ -223,12 +234,24 @@ const FixturesTable = memo(
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
       return (row: Fixture) => (
-        <MenuItem onClick={() => navigate(path.to.fixture(row.itemId!))}>
-          <MenuIcon icon={<LuPencil />} />
-          Edit Fixture
-        </MenuItem>
+        <>
+          <MenuItem onClick={() => navigate(path.to.fixture(row.itemId!))}>
+            <MenuIcon icon={<LuPencil />} />
+            Edit Fixture
+          </MenuItem>
+          <MenuItem
+            disabled={!permissions.can("delete", "parts")}
+            onClick={() => {
+              setSelectedItem(row);
+              deleteItemModal.onOpen();
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            Delete Fixture
+          </MenuItem>
+        </>
       );
-    }, [navigate]);
+    }, [deleteItemModal, navigate, permissions]);
 
     return (
       <>
@@ -255,6 +278,22 @@ const FixturesTable = memo(
           renderContextMenu={renderContextMenu}
           withColumnOrdering
         />
+        {selectedItem && selectedItem.id && (
+          <ConfirmDelete
+            action={path.to.deleteItem(selectedItem.itemId!)}
+            isOpen={deleteItemModal.isOpen}
+            name={selectedItem.id!}
+            text={`Are you sure you want to delete ${selectedItem.id!}? This cannot be undone.`}
+            onCancel={() => {
+              deleteItemModal.onClose();
+              setSelectedItem(null);
+            }}
+            onSubmit={() => {
+              deleteItemModal.onClose();
+              setSelectedItem(null);
+            }}
+          />
+        )}
       </>
     );
   }

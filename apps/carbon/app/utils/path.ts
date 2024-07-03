@@ -208,7 +208,7 @@ export const path = {
       generatePath(`${x}/resources/holidays/delete/${id}`),
     deleteLocation: (id: string) =>
       generatePath(`${x}/resources/locations/delete/${id}`),
-    deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
+    deleteItem: (id: string) => generatePath(`${x}/items/delete/${id}`),
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
     deleteMaterialForm: (id: string) =>
@@ -217,6 +217,7 @@ export const path = {
       generatePath(`${x}/items/substances/delete/${id}`),
     deleteMethodMaterial: (makeMethodId: string, id: string) =>
       generatePath(`${x}/items/methods/${makeMethodId}/material/delete/${id}`),
+    deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePaymentTerm: (id: string) =>

@@ -4,23 +4,21 @@ import {
   finalizeAutodeskUpload,
   getAutodeskSignedUrl,
   getAutodeskToken,
-  getManifest,
   translateFile,
   uploadToAutodesk,
 } from "~/lib/autodesk/autodesk.server";
 
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { triggerClient } from "~/lib/trigger.server";
-import { upsertModelUpload } from "~/modules/shared";
 
 const supabaseClient = getSupabaseServiceRole();
 
 const job = triggerClient.defineJob({
-  id: "upload-autodesk",
+  id: "autodesk-upload",
   name: "Upload CAD Model to Autodesk",
   version: "0.0.1",
   trigger: eventTrigger({
-    name: "upload.autodesk",
+    name: "autodesk.upload",
     schema: z.object({
       name: z.string(),
       modelPath: z.string(),
@@ -75,21 +73,15 @@ const job = triggerClient.defineJob({
       throw new Error("Failed to translate file: " + translation.error.message);
     }
 
-    const manifest = await getManifest(autodeskUrn, token);
-    if (manifest.error) {
-      throw new Error("Failed to get manifest: " + manifest.error.message);
-    }
-
-    const modelRecord = await upsertModelUpload(supabaseClient, {
-      id: fileId,
-      name,
-      size: file.size,
-      autodeskUrn,
+    triggerClient.sendEvent({
+      name: "autodesk.poll",
+      payload: {
+        id: fileId,
+        name,
+        size: file.size,
+        autodeskUrn,
+      },
     });
-
-    if (modelRecord.error) {
-      throw new Error("Failed to record upload: " + modelRecord.error.message);
-    }
   },
 });
 

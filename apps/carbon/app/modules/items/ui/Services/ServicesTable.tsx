@@ -1,10 +1,18 @@
-import { Badge, Checkbox, Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Badge,
+  Checkbox,
+  Enumerable,
+  MenuIcon,
+  MenuItem,
+  useDisclosure,
+} from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
-import { LuPencil } from "react-icons/lu";
+import { memo, useMemo, useState } from "react";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Service } from "~/modules/items";
@@ -20,6 +28,10 @@ type ServicesTableProps = {
 const ServicesTable = memo(({ data, count }: ServicesTableProps) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
+
+  const deleteItemModal = useDisclosure();
+  const [selectedItem, setSelectedItem] = useState<Service | null>(null);
+
   const customColumns = useCustomColumns<Service>("part");
   const [people] = usePeople();
 
@@ -162,12 +174,24 @@ const ServicesTable = memo(({ data, count }: ServicesTableProps) => {
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
     return (row: Service) => (
-      <MenuItem onClick={() => navigate(path.to.part(row.itemId!))}>
-        <MenuIcon icon={<LuPencil />} />
-        Edit Service
-      </MenuItem>
+      <>
+        <MenuItem onClick={() => navigate(path.to.part(row.itemId!))}>
+          <MenuIcon icon={<LuPencil />} />
+          Edit Service
+        </MenuItem>
+        <MenuItem
+          disabled={!permissions.can("delete", "parts")}
+          onClick={() => {
+            setSelectedItem(row);
+            deleteItemModal.onOpen();
+          }}
+        >
+          <MenuIcon icon={<LuTrash />} />
+          Delete Service
+        </MenuItem>
+      </>
     );
-  }, [navigate]);
+  }, [deleteItemModal, navigate, permissions]);
 
   return (
     <>
@@ -194,6 +218,22 @@ const ServicesTable = memo(({ data, count }: ServicesTableProps) => {
         renderContextMenu={renderContextMenu}
         withColumnOrdering
       />
+      {selectedItem && selectedItem.id && (
+        <ConfirmDelete
+          action={path.to.deleteItem(selectedItem.itemId!)}
+          isOpen={deleteItemModal.isOpen}
+          name={selectedItem.id!}
+          text={`Are you sure you want to delete ${selectedItem.id!}? This cannot be undone.`}
+          onCancel={() => {
+            deleteItemModal.onClose();
+            setSelectedItem(null);
+          }}
+          onSubmit={() => {
+            deleteItemModal.onClose();
+            setSelectedItem(null);
+          }}
+        />
+      )}
     </>
   );
 });

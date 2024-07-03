@@ -25,16 +25,13 @@ export async function action({ request }: ActionFunctionArgs) {
     createdBy: userId,
   });
 
-  console.log("modelRecord", modelRecord);
-
   if (modelRecord.error) {
     throw new Error("Failed to record upload: " + modelRecord.error.message);
   }
 
-  console.log("sending event");
   try {
     await triggerClient.sendEvent({
-      name: "upload.autodesk",
+      name: "autodesk.upload",
       payload: {
         name,
         modelPath,

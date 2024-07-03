@@ -1,4 +1,4 @@
-import { AutodeskViewer, ClientOnly, toast } from "@carbon/react";
+import { AutodeskViewer, ClientOnly, Spinner, toast } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
@@ -66,7 +66,9 @@ const CadModel = ({ autodeskUrn, modelPath }: CadModelProps) => {
   return (
     <ClientOnly
       fallback={
-        <div className="w-full h-full rounded bg-gradient-to-tr from-[#979797] to-[#BEBEBE]" />
+        <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+          <Spinner className="h-10 w-10" />
+        </div>
       }
     >
       {() => {

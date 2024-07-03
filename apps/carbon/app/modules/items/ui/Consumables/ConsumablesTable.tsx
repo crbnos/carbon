@@ -1,10 +1,17 @@
-import { Badge, Checkbox, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Badge,
+  Checkbox,
+  MenuIcon,
+  MenuItem,
+  useDisclosure,
+} from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
-import { LuPencil } from "react-icons/lu";
+import { memo, useMemo, useState } from "react";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Consumable } from "~/modules/items";
@@ -28,6 +35,9 @@ const ConsumablesTable = memo(
   ({ data, count, itemPostingGroups }: ConsumablesTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
+
+    const deleteItemModal = useDisclosure();
+    const [selectedItem, setSelectedItem] = useState<Consumable | null>(null);
 
     const [people] = usePeople();
     const customColumns = useCustomColumns<Consumable>("consumable");
@@ -184,12 +194,24 @@ const ConsumablesTable = memo(
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
       return (row: Consumable) => (
-        <MenuItem onClick={() => navigate(path.to.consumable(row.itemId!))}>
-          <MenuIcon icon={<LuPencil />} />
-          Edit Consumable
-        </MenuItem>
+        <>
+          <MenuItem onClick={() => navigate(path.to.consumable(row.itemId!))}>
+            <MenuIcon icon={<LuPencil />} />
+            Edit Consumable
+          </MenuItem>
+          <MenuItem
+            disabled={!permissions.can("delete", "parts")}
+            onClick={() => {
+              setSelectedItem(row);
+              deleteItemModal.onOpen();
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            Delete Consumable
+          </MenuItem>
+        </>
       );
-    }, [navigate]);
+    }, [deleteItemModal, navigate, permissions]);
 
     return (
       <>
@@ -216,6 +238,22 @@ const ConsumablesTable = memo(
           renderContextMenu={renderContextMenu}
           withColumnOrdering
         />
+        {selectedItem && selectedItem.id && (
+          <ConfirmDelete
+            action={path.to.deleteItem(selectedItem.itemId!)}
+            isOpen={deleteItemModal.isOpen}
+            name={selectedItem.id!}
+            text={`Are you sure you want to delete ${selectedItem.id!}? This cannot be undone.`}
+            onCancel={() => {
+              deleteItemModal.onClose();
+              setSelectedItem(null);
+            }}
+            onSubmit={() => {
+              deleteItemModal.onClose();
+              setSelectedItem(null);
+            }}
+          />
+        )}
       </>
     );
   }

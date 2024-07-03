@@ -327,9 +327,6 @@ export async function translateFile(urn: string, token: string) {
           type: "svf2",
           views: ["3d"],
         },
-        {
-          type: "thumbnail",
-        },
       ],
     },
   };
