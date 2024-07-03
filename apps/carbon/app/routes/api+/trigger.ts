@@ -1,6 +1,10 @@
-import { triggerClient } from "~/lib/trigger.server";
-import serverRuntime from "@remix-run/server-runtime";
 import type { ActionFunction } from "@remix-run/node";
+import serverRuntime from "@remix-run/server-runtime";
+import { triggerClient } from "~/lib/trigger.server";
+
+export const config = {
+  maxDuration: 5 * 60, // 5 minutes
+};
 
 // Job registration has been moved to entry.server.tsx;
 export const action: ActionFunction = async ({ request }) => {
