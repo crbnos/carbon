@@ -3,7 +3,7 @@ import serverRuntime from "@remix-run/server-runtime";
 import { triggerClient } from "~/lib/trigger.server";
 
 export const config = {
-  maxDuration: 5 * 60, // 5 minutes
+  maxDuration: 300, // 5 minutes
 };
 
 // Job registration has been moved to entry.server.tsx;
