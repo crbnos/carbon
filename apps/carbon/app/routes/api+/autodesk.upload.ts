@@ -16,7 +16,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const modelPath = formData.get("modelPath") as string;
   const itemId = (formData.get("itemId") ?? undefined) as string | undefined;
 
-  console.log("uploading model");
   const modelRecord = await upsertModelUpload(client, {
     id: fileId,
     modelPath,
