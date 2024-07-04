@@ -109,15 +109,15 @@ export default function MethodMaterialMakePage() {
         type={item.type}
         initialValues={item}
       />
-      <BillOfMaterial
-        key={`bom:${itemId}:${makeMethodId}:${materialId}`}
-        makeMethodId={makeMethodId}
-        materials={methodMaterials}
-      />
       <BillOfProcess
         key={`bop:${itemId}:${makeMethodId}:${materialId}`}
         makeMethodId={makeMethodId}
         operations={methodOperations}
+      />
+      <BillOfMaterial
+        key={`bom:${itemId}:${makeMethodId}:${materialId}`}
+        makeMethodId={makeMethodId}
+        materials={methodMaterials}
       />
     </VStack>
   );

@@ -117,17 +117,17 @@ export default function MakeMethodRoute() {
         key={itemId}
         initialValues={manufacturingInitialValues}
       />
-      <BillOfMaterial
-        key={itemId}
-        makeMethodId={makeMethodId}
-        // @ts-ignore
-        materials={manufacturingRouteData?.methodMaterials ?? []}
-      />
       <BillOfProcess
         key={itemId}
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
+      />
+      <BillOfMaterial
+        key={itemId}
+        makeMethodId={makeMethodId}
+        // @ts-ignore
+        materials={manufacturingRouteData?.methodMaterials ?? []}
       />
     </VStack>
   );

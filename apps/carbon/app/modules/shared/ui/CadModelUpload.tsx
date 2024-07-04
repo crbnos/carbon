@@ -11,6 +11,24 @@ type CadModelUploadProps = {
   onFileChange: (file: File | null) => void;
 };
 
+const supportedFileTypes = [
+  "step",
+  "stp",
+  "stl",
+  "obj",
+  "fbx",
+  "amf",
+  "iges",
+  "ipt",
+  "prt",
+  "sldprt",
+  "sldasm",
+  "asm",
+  "iam",
+  "3dm",
+  "3ds",
+];
+
 const CadModelUpload = ({
   file,
   loading,
@@ -27,21 +45,9 @@ const CadModelUpload = ({
       const fileSizeLimit = fileSizeLimitMb * 1024 * 1024;
 
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
-      if (
-        !fileExtension ||
-        ![
-          "step",
-          "stp",
-          "stl",
-          "obj",
-          "fbx",
-          "amf",
-          "iges",
-          "ipt",
-          "prt",
-        ].includes(fileExtension)
-      ) {
+      if (!fileExtension || !supportedFileTypes.includes(fileExtension)) {
         toast.error("File type not supported");
+
         return;
       }
 
@@ -103,8 +109,7 @@ const CadModelUpload = ({
                 Choose file to upload or drag and drop
               </p>
               <p className="text-xs text-muted-foreground group-hover:text-foreground">
-                Supports *.stp, *.step, *.stl, *.obj, *.fbx, *.amf, *.iges,
-                *.ipt, *.prt files
+                Supports {supportedFileTypes.join(", ")} files
               </p>
             </>
           )}

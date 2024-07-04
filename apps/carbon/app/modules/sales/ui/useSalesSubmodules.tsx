@@ -7,16 +7,20 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
     name: "Manage",
     routes: [
       {
-        name: "Sales Orders",
-        to: path.to.salesOrders,
+        name: "Customers",
+        to: path.to.customers,
       },
       {
-        name: "Quotations",
+        name: "RFQs",
+        to: "#", // path.to.rfqs,
+      },
+      {
+        name: "Quotes",
         to: path.to.quotes,
       },
       {
-        name: "Customers",
-        to: path.to.customers,
+        name: "Orders",
+        to: path.to.salesOrders,
       },
     ],
   },
