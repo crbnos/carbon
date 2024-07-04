@@ -1,7 +1,6 @@
 CREATE TYPE "salesRfqStatus" AS ENUM (
   'Draft',
   'Ready for Quote',
-  'Quoted',
   'Closed'
 );
 
@@ -18,6 +17,7 @@ CREATE TABLE "salesRfq" (
   "expirationDate" DATE,
   "internalNotes" TEXT,
   "externalNotes" TEXT,
+  "locationId" TEXT,
   "assignee" TEXT,
   "companyId" TEXT NOT NULL,
   "customFields" JSONB,
@@ -30,6 +30,7 @@ CREATE TABLE "salesRfq" (
   CONSTRAINT "salesRfq_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "user" ("id") ON DELETE SET NULL,
   CONSTRAINT "salesRfq_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer" ("id") ON DELETE SET NULL,
   CONSTRAINT "salesRfq_customerContactId_fkey" FOREIGN KEY ("customerContactId") REFERENCES "customerContact" ("id") ON DELETE SET NULL,
+  CONSTRAINT "salesRfq_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location" ("id") ON DELETE SET NULL,
   CONSTRAINT "salesRfq_assigneeId_fkey" FOREIGN KEY ("assignee") REFERENCES "user" ("id") ON DELETE RESTRICT,
   CONSTRAINT "salesRfq_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE,
   CONSTRAINT "salesRfq_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON DELETE RESTRICT,
@@ -62,3 +63,41 @@ CREATE INDEX "salesRfqLine_salesRfqId_idx" ON "salesRfqLine" ("salesRfqId");
 CREATE INDEX "salesRfqLine_partNumber_idx" ON "salesRfqLine" ("partNumber", "companyId");
 
 ALTER TABLE "modelUpload" ADD COLUMN "salesRfqLineId" TEXT;
+
+CREATE TABLE "salesRfqFavorite" (
+  "rfqId" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+
+  CONSTRAINT "salesRfqFavorites_pkey" PRIMARY KEY ("rfqId", "userId"),
+  CONSTRAINT "salesRfqFavorites_salesRfqId_fkey" FOREIGN KEY ("rfqId") REFERENCES "salesRfq"("id") ON DELETE CASCADE,
+  CONSTRAINT "salesRfqFavorites_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE
+);
+
+CREATE INDEX "salesRfqFavorites_userId_idx" ON "salesRfqFavorite" ("userId");
+CREATE INDEX "salesRfqFavorites_salesRfqId_idx" ON "salesRfqFavorite" ("rfqId");
+
+ALTER TABLE "salesRfqFavorite" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own salesRfq favorites" ON "salesRfqFavorite" 
+  FOR SELECT USING (
+    auth.uid()::text = "userId"
+  );
+
+CREATE POLICY "Users can create their own salesRfq favorites" ON "salesRfqFavorite" 
+  FOR INSERT WITH CHECK (
+    auth.uid()::text = "userId"
+  );
+
+CREATE POLICY "Users can delete their own salesRfq favorites" ON "salesRfqFavorite"
+  FOR DELETE USING (
+    auth.uid()::text = "userId"
+  ); 
+
+CREATE OR REPLACE VIEW "salesRfqs" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+  rfq.*,
+  l."name" AS "locationName",
+  EXISTS(SELECT 1 FROM "salesRfqFavorite" rf WHERE rf."rfqId" = rfq.id AND rf."userId" = auth.uid()::text) AS favorite
+  FROM "salesRfq" rfq
+  LEFT JOIN "location" l
+    ON l.id = rfq."locationId";

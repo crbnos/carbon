@@ -7,4 +7,6 @@ export * from "./Quotation";
 export * from "./Quotations";
 export * from "./SalesOrder";
 export * from "./SalesOrders";
+export * from "./SalesRFQ";
+export * from "./SalesRFQs";
 export { useSalesSubmodules };

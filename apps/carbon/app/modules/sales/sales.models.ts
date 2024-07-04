@@ -4,6 +4,12 @@ import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting";
 import { standardFactorType } from "../shared/types";
 
+export const salesRFQStatusType = [
+  "Draft",
+  "Ready for Quote",
+  "Closed",
+] as const;
+
 export const customerValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
