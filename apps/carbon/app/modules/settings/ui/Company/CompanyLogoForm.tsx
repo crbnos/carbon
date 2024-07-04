@@ -71,6 +71,7 @@ const CompanyLogoForm = ({ company }: CompanyLogoFormProps) => {
           width="128"
           height="auto"
           src={company.logo}
+          className="rounded-lg"
         />
       ) : (
         <Avatar name={company?.name ?? undefined} size="2xl" />

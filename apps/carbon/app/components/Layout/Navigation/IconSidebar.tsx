@@ -56,7 +56,7 @@ const IconSidebar = () => {
                   <img
                     src={company.logo}
                     alt={`${company.name} logo`}
-                    className="w-full h-auto"
+                    className="w-full h-auto rounded"
                   />
                 ) : (
                   <BsFillHexagonFill />
