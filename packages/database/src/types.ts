@@ -8660,6 +8660,7 @@ export type Database = {
           itemId: string | null
           modelPath: string
           name: string | null
+          salesRfqLineId: string | null
           size: number | null
           updatedAt: string | null
           updatedBy: string | null
@@ -8673,6 +8674,7 @@ export type Database = {
           itemId?: string | null
           modelPath: string
           name?: string | null
+          salesRfqLineId?: string | null
           size?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8686,6 +8688,7 @@ export type Database = {
           itemId?: string | null
           modelPath?: string
           name?: string | null
+          salesRfqLineId?: string | null
           size?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -15319,6 +15322,345 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      salesRfq: {
+        Row: {
+          assignee: string | null
+          companyId: string
+          createdAt: string | null
+          createdBy: string | null
+          customerContactId: string | null
+          customerId: string
+          customerReference: string | null
+          customFields: Json | null
+          employeeId: string | null
+          expirationDate: string | null
+          externalNotes: string | null
+          id: string
+          internalNotes: string | null
+          revisionId: number
+          rfqDate: string
+          rfqId: string
+          status: Database["public"]["Enums"]["salesRfqStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          assignee?: string | null
+          companyId: string
+          createdAt?: string | null
+          createdBy?: string | null
+          customerContactId?: string | null
+          customerId: string
+          customerReference?: string | null
+          customFields?: Json | null
+          employeeId?: string | null
+          expirationDate?: string | null
+          externalNotes?: string | null
+          id?: string
+          internalNotes?: string | null
+          revisionId?: number
+          rfqDate: string
+          rfqId: string
+          status?: Database["public"]["Enums"]["salesRfqStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          assignee?: string | null
+          companyId?: string
+          createdAt?: string | null
+          createdBy?: string | null
+          customerContactId?: string | null
+          customerId?: string
+          customerReference?: string | null
+          customFields?: Json | null
+          employeeId?: string | null
+          expirationDate?: string | null
+          externalNotes?: string | null
+          id?: string
+          internalNotes?: string | null
+          revisionId?: number
+          rfqDate?: string
+          rfqId?: string
+          status?: Database["public"]["Enums"]["salesRfqStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salesRfq_assigneeId_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_assigneeId_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_assigneeId_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_assigneeId_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_assigneeId_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesRfq_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesRfq_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesRfq_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesRfq_customerContactId_fkey"
+            columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesRfq_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      salesRfqLine: {
+        Row: {
+          companyId: string
+          description: string | null
+          drawingPath: string | null
+          id: string
+          partNumber: string
+          quantity: number
+          salesRfqId: string
+          unitOfMeasureCode: string
+        }
+        Insert: {
+          companyId: string
+          description?: string | null
+          drawingPath?: string | null
+          id?: string
+          partNumber: string
+          quantity: number
+          salesRfqId: string
+          unitOfMeasureCode: string
+        }
+        Update: {
+          companyId?: string
+          description?: string | null
+          drawingPath?: string | null
+          id?: string
+          partNumber?: string
+          quantity?: number
+          salesRfqId?: string
+          unitOfMeasureCode?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salesRfqLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfq"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
           },
         ]
       }
@@ -24569,6 +24911,7 @@ export type Database = {
         | "Approved"
         | "Reject"
         | "Request Approval"
+      salesRfqStatus: "Draft" | "Ready for Quote" | "Quoted" | "Closed"
       searchEntity:
         | "Resource"
         | "Person"
