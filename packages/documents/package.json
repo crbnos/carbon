@@ -4,7 +4,7 @@
     "@hookform/resolvers": "^3.3.4",
     "@react-email/components": "0.0.16",
     "@react-pdf/renderer": "^3.1.14",
-    "react-icons": "^4.12.0",
+    "react-icons": "^5.2.1",
     "react-hook-form": "7.51.2"
   },
   "devDependencies": {

@@ -1,3 +1,9 @@
+import { LuShapes, LuStar, LuUserSquare } from "react-icons/lu";
+import {
+  RiProgress2Line,
+  RiProgress4Line,
+  RiProgress8Line,
+} from "react-icons/ri";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -9,18 +15,22 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Customers",
         to: path.to.customers,
+        icon: <LuUserSquare />,
       },
       {
         name: "RFQs",
         to: "#", // path.to.rfqs,
+        icon: <RiProgress2Line />,
       },
       {
         name: "Quotes",
         to: path.to.quotes,
+        icon: <RiProgress4Line />,
       },
       {
         name: "Orders",
         to: path.to.salesOrders,
+        icon: <RiProgress8Line />,
       },
     ],
   },
@@ -28,14 +38,16 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
-        name: "Customer Statuses",
+        name: "Statuses",
         to: path.to.customerStatuses,
         role: "employee",
+        icon: <LuStar />,
       },
       {
-        name: "Customer Types",
+        name: "Types",
         to: path.to.customerTypes,
         role: "employee",
+        icon: <LuShapes />,
       },
     ],
   },

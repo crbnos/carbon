@@ -5,7 +5,7 @@ import { forwardRef, type AnchorHTMLAttributes } from "react";
 import { BsFillHexagonFill } from "react-icons/bs";
 import { LuUserCircle } from "react-icons/lu";
 import { z } from "zod";
-import { useOptimisticLocation } from "~/hooks";
+import { useOptimisticLocation, useUser } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
 import { useModules } from "./useModules";
@@ -15,6 +15,8 @@ export const ModuleHandle = z.object({
 });
 
 const IconSidebar = () => {
+  const { company } = useUser();
+
   const navigationPanel = useDisclosure();
   const location = useOptimisticLocation();
   const currentModule = getModule(location.pathname);
@@ -50,7 +52,15 @@ const IconSidebar = () => {
           <VStack spacing={1}>
             <Button isIcon asChild variant="ghost" size="lg">
               <Link to="/">
-                <BsFillHexagonFill />
+                {company?.logo ? (
+                  <img
+                    src={company.logo}
+                    alt={`${company.name} logo`}
+                    className="w-full h-auto"
+                  />
+                ) : (
+                  <BsFillHexagonFill />
+                )}
               </Link>
             </Button>
             {links.map((link) => {
