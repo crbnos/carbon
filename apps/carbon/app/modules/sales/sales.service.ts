@@ -857,6 +857,28 @@ export async function upsertCustomerType(
   }
 }
 
+export async function updateSalesRFQFavorite(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    favorite: boolean;
+    userId: string;
+  }
+) {
+  const { id, favorite, userId } = args;
+  if (!favorite) {
+    return client
+      .from("salesRfqFavorite")
+      .delete()
+      .eq("rfqId", id)
+      .eq("userId", userId);
+  } else {
+    return client
+      .from("salesRfqFavorite")
+      .insert({ rfqId: id, userId: userId });
+  }
+}
+
 export async function updateQuoteFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -1162,6 +1184,31 @@ export async function getSalesOrderLine(
     .select("*")
     .eq("id", salesOrderLineId)
     .single();
+}
+
+export async function getSalesRFQs(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("salesRfqs")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `rfqId.ilike.%${args.search}%,name.ilike.%${args.search}%,customerReference.ilike%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "favorite", ascending: false },
+    { column: "id", ascending: false },
+  ]);
+  return query;
 }
 
 export async function insertSalesOrderLines(

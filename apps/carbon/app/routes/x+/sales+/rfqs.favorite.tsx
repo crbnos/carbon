@@ -1,6 +1,6 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { json, type ActionFunctionArgs } from "@remix-run/node";
-import { updateQuoteFavorite } from "~/modules/sales";
+import { updateSalesRFQFavorite } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { favoriteSchema } from "~/types/validators";
@@ -20,7 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, favorite } = validation.data;
 
-  const result = await updateQuoteFavorite(client, {
+  const result = await updateSalesRFQFavorite(client, {
     id,
     favorite: favorite === "favorite",
     userId,
@@ -29,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (result.error) {
     return json(
       {},
-      await flash(request, error(result, "Failed to favorite Quote"))
+      await flash(request, error(result, "Failed to favorite rfq"))
     );
   }
 

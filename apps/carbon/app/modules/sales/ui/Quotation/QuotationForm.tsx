@@ -96,7 +96,7 @@ const QuotationForm = ({ initialValues }: QuotationFormProps) => {
                 <>
                   <DatePicker name="expirationDate" label="Expiration Date" />
                   <TextArea name="notes" label="Notes" />
-                  {permissions.can("delete", "purchasing") && (
+                  {permissions.can("delete", "sales") && (
                     <Select
                       name="status"
                       label="Status"

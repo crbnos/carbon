@@ -115,9 +115,7 @@ const SalesOrderShipmentForm = ({
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "purchasing")}>
-            Save
-          </Submit>
+          <Submit isDisabled={!permissions.can("update", "sales")}>Save</Submit>
         </CardFooter>
       </Card>
     </ValidatedForm>

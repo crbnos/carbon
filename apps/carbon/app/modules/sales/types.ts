@@ -15,6 +15,7 @@ import type {
   getSalesOrderExternalDocuments,
   getSalesOrderLines,
   getSalesOrders,
+  getSalesRFQs,
 } from "./sales.service";
 
 // TODO: we should just use the FileObject type from supabase
@@ -87,3 +88,7 @@ export type SalesOrderStatus = Database["public"]["Enums"]["salesOrderStatus"];
 
 export type SalesOrderTransactionType =
   Database["public"]["Enums"]["salesOrderTransactionType"];
+
+export type SalesRFQ = NonNullable<
+  Awaited<ReturnType<typeof getSalesRFQs>>["data"]
+>[number];

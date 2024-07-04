@@ -617,6 +617,9 @@ export const path = {
     salesOrderRelease: (id: string) =>
       generatePath(`${x}/sales-order/${id}/release`),
     salesOrders: `${x}/sales/orders`,
+    salesRFQDetails: (id: string) => generatePath(`${x}/sales-rfq/${id}`),
+    salesRFQFavorite: `${x}/sales/rfqs/favorite`,
+    salesRFQs: `${x}/sales/rfqs`,
     scheduling: `${x}/scheduling`,
     service: (id: string) => generatePath(`${x}/service/${id}`),
     services: `${x}/items/services`,

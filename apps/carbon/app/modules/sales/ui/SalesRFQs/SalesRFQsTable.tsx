@@ -20,35 +20,34 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Quotation } from "~/modules/sales";
-import { quoteStatusType } from "~/modules/sales";
-import { useCustomers, useItems, usePeople } from "~/stores";
+import type { SalesRFQ } from "~/modules/sales";
+import { salesRFQStatusType } from "~/modules/sales";
+import { useCustomers, usePeople } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
-import { QuotationStatus } from "../Quotation";
+import { SalesRFQStatus } from "../SalesRFQ";
 
-type QuotationsTableProps = {
-  data: Quotation[];
+type SalesRFQsTableProps = {
+  data: SalesRFQ[];
   count: number;
 };
 
-const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
+const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
 
-  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(
+  const [selectedSalesRFQ, setSelectedSalesRFQ] = useState<SalesRFQ | null>(
     null
   );
-  const deleteQuotationModal = useDisclosure();
+  const deleteSalesRFQModal = useDisclosure();
 
   const [customers] = useCustomers();
-  const [items] = useItems();
   const [people] = usePeople();
 
   const fetcher = useFetcher();
   const optimisticFavorite = useOptimisticFavorite();
 
-  const rows = useMemo<Quotation[]>(
+  const rows = useMemo<SalesRFQ[]>(
     () =>
       data.map((d) =>
         d.id === optimisticFavorite?.id
@@ -62,18 +61,18 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
       ),
     [data, optimisticFavorite]
   );
-  const customColumns = useCustomColumns<Quotation>("quote");
-  const columns = useMemo<ColumnDef<Quotation>[]>(() => {
-    const defaultColumns: ColumnDef<Quotation>[] = [
+  const customColumns = useCustomColumns<SalesRFQ>("salesRFQ");
+  const columns = useMemo<ColumnDef<SalesRFQ>[]>(() => {
+    const defaultColumns: ColumnDef<SalesRFQ>[] = [
       {
-        accessorKey: "quoteId",
-        header: "Quote Number",
+        accessorKey: "rfqId",
+        header: "RFQ Number",
         cell: ({ row }) => (
           <HStack>
             {row.original.favorite ? (
               <fetcher.Form
                 method="post"
-                action={path.to.quoteFavorite}
+                action={path.to.salesRFQFavorite}
                 className="flex items-center"
               >
                 <input type="hidden" name="id" value={row.original.id!} />
@@ -88,7 +87,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
             ) : (
               <fetcher.Form
                 method="post"
-                action={path.to.quoteFavorite}
+                action={path.to.salesRFQFavorite}
                 className="flex items-center"
               >
                 <input type="hidden" name="id" value={row.original.id!} />
@@ -101,8 +100,8 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
                 </button>
               </fetcher.Form>
             )}
-            <Hyperlink to={path.to.quoteDetails(row.original.id!)}>
-              {row.original.quoteId}
+            <Hyperlink to={path.to.salesRFQDetails(row.original.id!)}>
+              {row.original.rfqId}
             </Hyperlink>
           </HStack>
         ),
@@ -124,47 +123,52 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
         },
       },
       {
-        accessorKey: "name",
-        header: "Name",
-        cell: (item) => {
-          if (item.getValue<string>()) {
-            return item.getValue<string>().substring(0, 50);
-          }
-          return null;
-        },
+        accessorKey: "rfqDate",
+        header: "RFQ Date",
+        cell: (item) => item.getValue(),
       },
       {
-        id: "itemIds",
-        header: "Parts",
-        cell: ({ row }) => row.original.itemIds?.length ?? 0,
-        meta: {
-          filter: {
-            type: "static",
-            options: items.map((item) => ({
-              value: item.id,
-              label: item.id,
-              helperText: item.name,
-            })),
-            isArray: true,
-          },
-        },
+        accessorKey: "expirationDate",
+        header: "Expiration Date",
+        cell: (item) => item.getValue(),
+      },
+      {
+        accessorKey: "customerReference",
+        header: "Customer Reference",
+        cell: (item) => item.getValue(),
       },
       {
         accessorKey: "status",
         header: "Status",
         cell: (item) => {
-          const status = item.getValue<(typeof quoteStatusType)[number]>();
-          return <QuotationStatus status={status} />;
+          const status = item.getValue<(typeof salesRFQStatusType)[number]>();
+          return <SalesRFQStatus status={status} />;
         },
         meta: {
           filter: {
             type: "static",
-            options: quoteStatusType.map((status) => ({
+            options: salesRFQStatusType.map((status) => ({
               value: status,
-              label: <QuotationStatus status={status} />,
+              label: <SalesRFQStatus status={status} />,
             })),
           },
           pluralHeader: "Statuses",
+        },
+      },
+      {
+        id: "employeeId",
+        header: "Quoter",
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={row.original.employeeId} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: people.map((employee) => ({
+              value: employee.id,
+              label: employee.name,
+            })),
+          },
         },
       },
       {
@@ -183,16 +187,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
           },
         },
       },
-      {
-        accessorKey: "quoteDate",
-        header: "Quote Date",
-        cell: (item) => item.getValue(),
-      },
-      {
-        accessorKey: "expirationDate",
-        header: "Expiration Date",
-        cell: (item) => item.getValue(),
-      },
+
       {
         accessorKey: "locationName",
         header: "Location",
@@ -209,11 +204,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
           },
         },
       },
-      {
-        accessorKey: "customerReference",
-        header: "Customer Reference",
-        cell: (item) => item.getValue(),
-      },
+
       {
         id: "createdBy",
         header: "Created By",
@@ -259,21 +250,21 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, items, people, customColumns, fetcher]);
+  }, [customers, people, customColumns, fetcher]);
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
-    return (row: Quotation) => (
+    return (row: SalesRFQ) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.quote(row.id!))}>
+        <MenuItem onClick={() => navigate(path.to.salesRFQDetails(row.id!))}>
           <MenuIcon icon={<LuPencil />} />
           Edit
         </MenuItem>
         <MenuItem
           disabled={!permissions.can("delete", "sales")}
           onClick={() => {
-            setSelectedQuotation(row);
-            deleteQuotationModal.onOpen();
+            setSelectedSalesRFQ(row);
+            deleteSalesRFQModal.onOpen();
           }}
         >
           <MenuIcon icon={<LuTrash />} />
@@ -281,16 +272,16 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
         </MenuItem>
       </>
     );
-  }, [deleteQuotationModal, navigate, permissions]);
+  }, [deleteSalesRFQModal, navigate, permissions]);
 
   return (
     <>
-      <Table<Quotation>
+      <Table<SalesRFQ>
         count={count}
         columns={columns}
         data={rows}
         defaultColumnPinning={{
-          left: ["quoteId"],
+          left: ["rfqId"],
         }}
         defaultColumnVisibility={{
           createdAt: false,
@@ -306,19 +297,19 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
         withColumnOrdering
         renderContextMenu={renderContextMenu}
       />
-      {selectedQuotation && selectedQuotation.id && (
+      {selectedSalesRFQ && selectedSalesRFQ.id && (
         <ConfirmDelete
-          action={path.to.deleteQuote(selectedQuotation.id)}
-          isOpen={deleteQuotationModal.isOpen}
-          name={selectedQuotation.quoteId!}
-          text={`Are you sure you want to delete ${selectedQuotation.quoteId!}? This cannot be undone.`}
+          action={path.to.deleteQuote(selectedSalesRFQ.id)}
+          isOpen={deleteSalesRFQModal.isOpen}
+          name={selectedSalesRFQ.rfqId!}
+          text={`Are you sure you want to delete ${selectedSalesRFQ.rfqId!}? This cannot be undone.`}
           onCancel={() => {
-            deleteQuotationModal.onClose();
-            setSelectedQuotation(null);
+            deleteSalesRFQModal.onClose();
+            setSelectedSalesRFQ(null);
           }}
           onSubmit={() => {
-            deleteQuotationModal.onClose();
-            setSelectedQuotation(null);
+            deleteSalesRFQModal.onClose();
+            setSelectedSalesRFQ(null);
           }}
         />
       )}
@@ -326,14 +317,14 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
   );
 });
 
-QuotationsTable.displayName = "QuotationsTable";
+SalesRFQsTable.displayName = "SalesRFQsTable";
 
-export default QuotationsTable;
+export default SalesRFQsTable;
 
 function useOptimisticFavorite() {
   const fetchers = useFetchers();
   const favoriteFetcher = fetchers.find(
-    (f) => f.formAction === path.to.quoteFavorite
+    (f) => f.formAction === path.to.salesRFQFavorite
   );
 
   if (favoriteFetcher && favoriteFetcher.formData) {
