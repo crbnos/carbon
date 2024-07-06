@@ -23,6 +23,7 @@ import type {
   salesOrderPaymentValidator,
   salesOrderShipmentValidator,
   salesOrderValidator,
+  salesRfqValidator,
 } from "./sales.models";
 
 export async function closeSalesOrder(
@@ -467,6 +468,26 @@ export async function getQuoteCustomerDetails(
     .single();
 }
 
+export async function getSalesOrderExternalDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  salesOrderId: string
+) {
+  return client.storage
+    .from("private")
+    .list(`${companyId}/sales/external/${salesOrderId}`);
+}
+
+/*export async function getSalesOrderInternalDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  salesOrderId: string
+) {
+  return client.storage
+    .from("private")
+    .list(`${companyId}/sales/internal/${salesOrderId}`);
+}*/
+
 export async function getQuoteLinePrice(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -542,6 +563,129 @@ export async function getQuoteOperations(
   quoteId: string
 ) {
   return client.from("quoteOperation").select("*").eq("quoteId", quoteId);
+}
+
+export async function getSalesOrder(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client.from("salesOrders").select("*").eq("id", salesOrderId).single();
+}
+
+export async function getSalesOrders(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    status: string | null;
+    customerId: string | null;
+  }
+) {
+  let query = client
+    .from("salesOrders")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `salesOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.customerId) {
+    query = query.eq("customerId", args.customerId);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "favorite", ascending: false },
+    { column: "salesOrderId", ascending: false },
+  ]);
+
+  return query;
+}
+
+export async function getSalesOrderShipment(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("salesOrderShipment")
+    .select("*")
+    .eq("id", salesOrderId)
+    .single();
+}
+
+/*export async function getSalesOrderLocations(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("salesOrderLocations")
+    .select("*")
+    .eq("id", salesOrderId)
+    .single();
+}*/
+
+/*export async function getSalesOrderPayment(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("salesOrderPayment")
+    .select("*")
+    .eq("id", salesOrderId)
+    .single();
+}*/
+
+export async function getSalesOrderCustomers(client: SupabaseClient<Database>) {
+  return client.from("salesOrderCustomers").select("id, name");
+}
+
+export async function getSalesOrderLines(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("salesOrderLines")
+    .select("*")
+    .eq("salesOrderId", salesOrderId)
+    .order("createdAt", { ascending: true });
+}
+
+export async function getSalesOrderLine(
+  client: SupabaseClient<Database>,
+  salesOrderLineId: string
+) {
+  return client
+    .from("salesOrderLine")
+    .select("*")
+    .eq("id", salesOrderLineId)
+    .single();
+}
+
+export async function getSalesRFQs(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("salesRfqs")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `rfqId.ilike.%${args.search}%,name.ilike.%${args.search}%,customerReference.ilike%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "favorite", ascending: false },
+    { column: "id", ascending: false },
+  ]);
+  return query;
 }
 
 export async function insertCustomerContact(
@@ -670,6 +814,18 @@ export async function insertQuoteLinePrice(
   ]);
 }
 
+export async function insertSalesOrderLines(
+  client: SupabaseClient<Database>,
+  salesOrderLines:
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })[]
+) {
+  return client.from("salesOrderLine").insert(salesOrderLines).select("id");
+}
+
 export async function releaseQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -697,6 +853,21 @@ export async function releaseQuote(
       updatedBy: userId,
     })
     .eq("quoteId", quoteId);
+}
+
+export async function releaseSalesOrder(
+  client: SupabaseClient<Database>,
+  salesOrderId: string,
+  userId: string
+) {
+  return client
+    .from("salesOrder")
+    .update({
+      status: "Confirmed",
+      updatedAt: today(getLocalTimeZone()).toString(),
+      updatedBy: userId,
+    })
+    .eq("id", salesOrderId);
 }
 
 export async function upsertCustomer(
@@ -1068,176 +1239,6 @@ export async function upsertQuoteOperation(
     .single();
 }
 
-export async function getSalesOrderExternalDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  salesOrderId: string
-) {
-  return client.storage
-    .from("private")
-    .list(`${companyId}/sales/external/${salesOrderId}`);
-}
-
-/*export async function getSalesOrderInternalDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  salesOrderId: string
-) {
-  return client.storage
-    .from("private")
-    .list(`${companyId}/sales/internal/${salesOrderId}`);
-}*/
-
-export async function getSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client.from("salesOrders").select("*").eq("id", salesOrderId).single();
-}
-
-export async function getSalesOrders(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-    status: string | null;
-    customerId: string | null;
-  }
-) {
-  let query = client
-    .from("salesOrders")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.or(
-      `salesOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
-    );
-  }
-
-  if (args.customerId) {
-    query = query.eq("customerId", args.customerId);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false },
-    { column: "salesOrderId", ascending: false },
-  ]);
-
-  return query;
-}
-
-export async function getSalesOrderShipment(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderShipment")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}
-
-/*export async function getSalesOrderLocations(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderLocations")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}*/
-
-/*export async function getSalesOrderPayment(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderPayment")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}*/
-
-export async function getSalesOrderCustomers(client: SupabaseClient<Database>) {
-  return client.from("salesOrderCustomers").select("id, name");
-}
-
-export async function getSalesOrderLines(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderLines")
-    .select("*")
-    .eq("salesOrderId", salesOrderId)
-    .order("createdAt", { ascending: true });
-}
-
-export async function getSalesOrderLine(
-  client: SupabaseClient<Database>,
-  salesOrderLineId: string
-) {
-  return client
-    .from("salesOrderLine")
-    .select("*")
-    .eq("id", salesOrderLineId)
-    .single();
-}
-
-export async function getSalesRFQs(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-  }
-) {
-  let query = client
-    .from("salesRfqs")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.or(
-      `rfqId.ilike.%${args.search}%,name.ilike.%${args.search}%,customerReference.ilike%${args.search}%`
-    );
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false },
-    { column: "id", ascending: false },
-  ]);
-  return query;
-}
-
-export async function insertSalesOrderLines(
-  client: SupabaseClient<Database>,
-  salesOrderLines:
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })[]
-) {
-  return client.from("salesOrderLine").insert(salesOrderLines).select("id");
-}
-
-export async function releaseSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string,
-  userId: string
-) {
-  return client
-    .from("salesOrder")
-    .update({
-      status: "Confirmed",
-      updatedAt: today(getLocalTimeZone()).toString(),
-      updatedBy: userId,
-    })
-    .eq("id", salesOrderId);
-}
-
 export async function updateSalesOrderFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -1432,4 +1433,33 @@ export async function upsertSalesOrderPayment(
     .insert([salesOrderPayment])
     .select("id")
     .single();
+}
+
+export async function upsertSalesRFQ(
+  client: SupabaseClient<Database>,
+  rfq:
+    | (Omit<z.infer<typeof salesRfqValidator>, "id" | "rfqId"> & {
+        rfqId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof salesRfqValidator>, "id" | "rfqId"> & {
+        id: string;
+        rfqId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in rfq) {
+    return client.from("salesRfq").insert([rfq]).select("id, rfqId");
+  } else {
+    return client
+      .from("salesRfq")
+      .update({
+        ...sanitize(rfq),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", rfq.id);
+  }
 }

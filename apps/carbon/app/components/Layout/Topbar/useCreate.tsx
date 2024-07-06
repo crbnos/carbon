@@ -2,12 +2,15 @@ import { useMemo } from "react";
 import {
   LuComponent,
   LuContainer,
-  LuPenSquare,
-  LuReceipt,
   LuShoppingCart,
   LuUserSquare,
   LuUsers,
 } from "react-icons/lu";
+import {
+  RiProgress2Line,
+  RiProgress4Line,
+  RiProgress8Line,
+} from "react-icons/ri";
 import { usePermissions } from "~/hooks";
 
 import type { Route } from "~/types";
@@ -46,17 +49,22 @@ export default function useCreate(): Route[] {
       links.push({
         name: "Customer",
         to: path.to.newCustomer,
-        icon: <LuUsers />,
+        icon: <LuUserSquare />,
       });
       links.push({
-        name: "Quotation",
+        name: "RFQ",
+        to: path.to.newSalesRFQ,
+        icon: <RiProgress2Line />,
+      });
+      links.push({
+        name: "Quote",
         to: path.to.newQuote,
-        icon: <LuPenSquare />,
+        icon: <RiProgress4Line />,
       });
       links.push({
         name: "Sales Order",
         to: path.to.newSalesOrder,
-        icon: <LuReceipt />,
+        icon: <RiProgress8Line />,
       });
     }
 
@@ -64,7 +72,7 @@ export default function useCreate(): Route[] {
       links.push({
         name: "Employee",
         to: path.to.newEmployee,
-        icon: <LuUserSquare />,
+        icon: <LuUsers />,
       });
     }
 

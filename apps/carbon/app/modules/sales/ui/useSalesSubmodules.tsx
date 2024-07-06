@@ -19,7 +19,7 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
       },
       {
         name: "RFQs",
-        to: path.to.salesRFQs,
+        to: path.to.salesRfqs,
         icon: <RiProgress2Line />,
       },
       {

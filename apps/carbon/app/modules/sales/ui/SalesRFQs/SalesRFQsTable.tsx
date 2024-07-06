@@ -72,7 +72,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
             {row.original.favorite ? (
               <fetcher.Form
                 method="post"
-                action={path.to.salesRFQFavorite}
+                action={path.to.salesRfqFavorite}
                 className="flex items-center"
               >
                 <input type="hidden" name="id" value={row.original.id!} />
@@ -87,7 +87,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
             ) : (
               <fetcher.Form
                 method="post"
-                action={path.to.salesRFQFavorite}
+                action={path.to.salesRfqFavorite}
                 className="flex items-center"
               >
                 <input type="hidden" name="id" value={row.original.id!} />
@@ -100,7 +100,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
                 </button>
               </fetcher.Form>
             )}
-            <Hyperlink to={path.to.salesRFQDetails(row.original.id!)}>
+            <Hyperlink to={path.to.salesRfqDetails(row.original.id!)}>
               {row.original.rfqId}
             </Hyperlink>
           </HStack>
@@ -256,7 +256,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
     // eslint-disable-next-line react/display-name
     return (row: SalesRFQ) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.salesRFQDetails(row.id!))}>
+        <MenuItem onClick={() => navigate(path.to.salesRfqDetails(row.id!))}>
           <MenuIcon icon={<LuPencil />} />
           Edit
         </MenuItem>
@@ -291,7 +291,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         }}
         primaryAction={
           permissions.can("create", "sales") && (
-            <New label="Quote" to={path.to.newQuote} />
+            <New label="RFQ" to={path.to.newSalesRFQ} />
           )
         }
         withColumnOrdering
@@ -299,7 +299,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       />
       {selectedSalesRFQ && selectedSalesRFQ.id && (
         <ConfirmDelete
-          action={path.to.deleteQuote(selectedSalesRFQ.id)}
+          action={path.to.deleteSalesRfq(selectedSalesRFQ.id)}
           isOpen={deleteSalesRFQModal.isOpen}
           name={selectedSalesRFQ.rfqId!}
           text={`Are you sure you want to delete ${selectedSalesRFQ.rfqId!}? This cannot be undone.`}
@@ -324,7 +324,7 @@ export default SalesRFQsTable;
 function useOptimisticFavorite() {
   const fetchers = useFetchers();
   const favoriteFetcher = fetchers.find(
-    (f) => f.formAction === path.to.salesRFQFavorite
+    (f) => f.formAction === path.to.salesRfqFavorite
   );
 
   if (favoriteFetcher && favoriteFetcher.formData) {

@@ -101,3 +101,30 @@ CREATE OR REPLACE VIEW "salesRfqs" WITH(SECURITY_INVOKER=true) AS
   FROM "salesRfq" rfq
   LEFT JOIN "location" l
     ON l.id = rfq."locationId";
+
+
+ALTER TABLE "sequence" DROP CONSTRAINT "sequence_pkey";
+ALTER TABLE "sequence" ADD CONSTRAINT "sequence_pkey" PRIMARY KEY ("table", "companyId");
+
+-- salesRfq sequence for existing companies
+INSERT INTO "sequence" (
+  "table", 
+  "name", 
+  "prefix", 
+  "suffix", 
+  "next", 
+  "size", 
+  "step", 
+  "companyId"
+) 
+SELECT 
+  'salesRfq',
+  'RFQ (Sales)',
+  'RFQ',
+  null,
+  0,
+  6,
+  1,
+  id
+FROM "company" 
+ON CONFLICT DO NOTHING;

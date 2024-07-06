@@ -302,3 +302,17 @@ export const salesOrderReleaseValidator = z
       path: ["customerContact"], // path of error
     }
   );
+
+export const salesRfqValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  rfqId: zfd.text(z.string().optional()),
+  customerContactId: zfd.text(z.string().optional()),
+  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerReference: zfd.text(z.string().optional()),
+  employeeId: z.string().min(36, { message: "Quoter is required" }),
+  expirationDate: zfd.text(z.string().optional()),
+  externalNotes: zfd.text(z.string().optional()),
+  internalNotes: zfd.text(z.string().optional()),
+  rfqDate: z.string().min(1, { message: "Order Date is required" }),
+  status: z.enum(salesRFQStatusType).optional(),
+});
