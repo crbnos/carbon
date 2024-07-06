@@ -22,7 +22,7 @@ CREATE TABLE "sequence" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "updatedBy" TEXT,
 
-  CONSTRAINT "sequence_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "sequence_pkey" PRIMARY KEY ("id", "companyId"), -- this is replaced with "table", "companyId"
   CONSTRAINT "sequence_next_check" CHECK ("next" >= 0),
   CONSTRAINT "sequence_size_check" CHECK ("size" >= 1),
   CONSTRAINT "sequence_step_check" CHECK ("step" >= 1),
@@ -31,4 +31,6 @@ CREATE TABLE "sequence" (
 );
 
 CREATE INDEX "sequence_companyId_idx" ON "sequence" ("companyId");
+
+
 

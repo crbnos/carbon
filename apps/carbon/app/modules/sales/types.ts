@@ -92,3 +92,5 @@ export type SalesOrderTransactionType =
 export type SalesRFQ = NonNullable<
   Awaited<ReturnType<typeof getSalesRFQs>>["data"]
 >[number];
+
+export type SalesRFQStatus = Database["public"]["Enums"]["salesRfqStatus"];

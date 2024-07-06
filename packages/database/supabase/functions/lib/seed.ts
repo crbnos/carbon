@@ -2060,6 +2060,15 @@ export const sequences = [
     step: 1,
   },
   {
+    table: "salesRfq",
+    name: "RFQ (Sales)",
+    prefix: "RFQ",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1,
+  },
+  {
     table: "salesOrder",
     name: "Sales Order",
     prefix: "SO",

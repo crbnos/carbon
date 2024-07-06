@@ -1,3 +1,4 @@
+import SalesRFQForm from "./SalesRFQForm";
 import SalesRFQStatus from "./SalesRFQStatus";
 
-export { SalesRFQStatus };
+export { SalesRFQForm, SalesRFQStatus };

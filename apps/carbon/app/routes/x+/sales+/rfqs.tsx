@@ -12,7 +12,7 @@ import { error } from "~/utils/result";
 
 export const handle: Handle = {
   breadcrumb: "RFQs",
-  to: path.to.salesRFQs,
+  to: path.to.salesRfqs,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
