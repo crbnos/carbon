@@ -3,7 +3,7 @@ import { getBucket } from "./hash";
 const cache: Record<string, number> = {};
 
 const colors = [
-  { background: "#f4bb98", color: "#aa5f32" },
+  { background: "#f4bb98", color: "#723c1b" },
   { background: "#264653", color: "#ffffff" },
   { background: "#2a9d8f", color: "#ffffff" },
   { background: "#4ff38c", color: "#000000" },
@@ -17,7 +17,6 @@ const colors = [
   { background: "#cef5ef", color: "#1f9c87" },
   { background: "#4f46e5", color: "#ffffff" },
   { background: "#caffbf", color: "#000000" },
-  { background: "#d5f3d1", color: "#5a9a62" },
   { background: "#e2eeff", color: "#3671c7" },
   { background: "#ffc6ff", color: "#7f47b3" },
   { background: "#cdbef5", color: "#5b3baf" },

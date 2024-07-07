@@ -312,6 +312,7 @@ export const salesRfqValidator = z.object({
   expirationDate: zfd.text(z.string().optional()),
   externalNotes: zfd.text(z.string().optional()),
   internalNotes: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
   rfqDate: z.string().min(1, { message: "Order Date is required" }),
   status: z.enum(salesRFQStatusType).optional(),
 });

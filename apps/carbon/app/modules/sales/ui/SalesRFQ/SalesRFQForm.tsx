@@ -45,12 +45,12 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
   }));
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={salesRfqValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={salesRfqValidator}
+        defaultValues={initialValues}
+      >
         <CardHeader>
           <CardTitle>{isEditing ? "RFQ" : "New RFQ"}</CardTitle>
           {!isEditing && (
@@ -100,7 +100,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 isDisabled={isCustomer}
               />
               <DatePicker
-                name="expirateDate"
+                name="expirationDate"
                 label="Expiration Date"
                 isDisabled={isCustomer}
               />
@@ -120,8 +120,8 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
             Save
           </Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

@@ -118,6 +118,17 @@ const SalesRFQProperties = () => {
         />
       </VStack>
 
+      {routeData?.rfqSummary?.customerReference && (
+        <VStack spacing={2}>
+          <h3 className="text-xs text-muted-foreground">
+            Customer Reference Number
+          </h3>
+          <span className="text-sm">
+            {routeData.rfqSummary.customerReference}
+          </span>
+        </VStack>
+      )}
+
       {routeData?.rfqSummary?.rfqDate && (
         <VStack spacing={2}>
           <h3 className="text-xs text-muted-foreground">RFQ Date</h3>
@@ -152,17 +163,6 @@ const SalesRFQProperties = () => {
               )?.name ?? null
             }
           />
-        </VStack>
-      )}
-
-      {routeData?.rfqSummary?.customerReference && (
-        <VStack spacing={2}>
-          <h3 className="text-xs text-muted-foreground">
-            Customer Order Number
-          </h3>
-          <span className="text-sm">
-            {routeData.rfqSummary.customerReference}
-          </span>
         </VStack>
       )}
     </VStack>
