@@ -107,6 +107,24 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         ),
       },
       {
+        accessorKey: "status",
+        header: "Status",
+        cell: (item) => {
+          const status = item.getValue<(typeof salesRFQStatusType)[number]>();
+          return <SalesRFQStatus status={status} />;
+        },
+        meta: {
+          filter: {
+            type: "static",
+            options: salesRFQStatusType.map((status) => ({
+              value: status,
+              label: <SalesRFQStatus status={status} />,
+            })),
+          },
+          pluralHeader: "Statuses",
+        },
+      },
+      {
         id: "customerId",
         header: "Customer",
         cell: ({ row }) => (
@@ -138,40 +156,6 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         cell: (item) => item.getValue(),
       },
       {
-        accessorKey: "status",
-        header: "Status",
-        cell: (item) => {
-          const status = item.getValue<(typeof salesRFQStatusType)[number]>();
-          return <SalesRFQStatus status={status} />;
-        },
-        meta: {
-          filter: {
-            type: "static",
-            options: salesRFQStatusType.map((status) => ({
-              value: status,
-              label: <SalesRFQStatus status={status} />,
-            })),
-          },
-          pluralHeader: "Statuses",
-        },
-      },
-      {
-        id: "employeeId",
-        header: "Quoter",
-        cell: ({ row }) => (
-          <EmployeeAvatar employeeId={row.original.employeeId} />
-        ),
-        meta: {
-          filter: {
-            type: "static",
-            options: people.map((employee) => ({
-              value: employee.id,
-              label: employee.name,
-            })),
-          },
-        },
-      },
-      {
         id: "assignee",
         header: "Assignee",
         cell: ({ row }) => (
@@ -187,7 +171,22 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           },
         },
       },
-
+      {
+        id: "createdBy",
+        header: "Created By",
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={row.original.employeeId} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: people.map((employee) => ({
+              value: employee.id,
+              label: employee.name,
+            })),
+          },
+        },
+      },
       {
         accessorKey: "locationName",
         header: "Location",
@@ -201,23 +200,6 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
                 value: name,
                 label: <Enumerable value={name} />,
               })) ?? [],
-          },
-        },
-      },
-
-      {
-        id: "createdBy",
-        header: "Created By",
-        cell: ({ row }) => (
-          <EmployeeAvatar employeeId={row.original.createdBy} />
-        ),
-        meta: {
-          filter: {
-            type: "static",
-            options: people.map((employee) => ({
-              value: employee.id,
-              label: employee.name,
-            })),
           },
         },
       },
@@ -285,7 +267,6 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         }}
         defaultColumnVisibility={{
           createdAt: false,
-          createdBy: false,
           updatedAt: false,
           updatedBy: false,
         }}

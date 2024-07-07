@@ -13,7 +13,7 @@ export const meta: MetaFunction = () => {
 export const handle: Handle = {
   breadcrumb: "Items",
   to: path.to.parts,
-  module: "parts",
+  module: "items",
 };
 
 export default function PartsRoute() {
