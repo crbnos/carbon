@@ -11,14 +11,14 @@ export const meta: MetaFunction = () => {
 };
 
 export const handle: Handle = {
-  breadcrumb: "Items",
-  to: path.to.items,
-  module: "items",
+  breadcrumb: "Sales",
+  to: path.to.sales,
+  module: "sales",
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
+    view: "sales",
   });
 
   const [unitOfMeasures, locations] = await Promise.all([
@@ -32,6 +32,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export default function PartRoute() {
+export default function SalesRFQRoute() {
   return <Outlet />;
 }

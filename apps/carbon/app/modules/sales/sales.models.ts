@@ -309,7 +309,6 @@ export const salesRfqValidator = z.object({
   customerContactId: zfd.text(z.string().optional()),
   customerId: z.string().min(36, { message: "Customer is required" }),
   customerReference: zfd.text(z.string().optional()),
-  employeeId: z.string().min(36, { message: "Quoter is required" }),
   expirationDate: zfd.text(z.string().optional()),
   externalNotes: zfd.text(z.string().optional()),
   internalNotes: zfd.text(z.string().optional()),

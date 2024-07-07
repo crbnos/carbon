@@ -363,6 +363,24 @@ export async function getCustomerTypesList(
     .order("name");
 }
 
+export async function getModelUploadsByRfqId(
+  client: SupabaseClient<Database>,
+  rfqId: string
+) {
+  const lines = await client
+    .from("salesRfqLine")
+    .select("id")
+    .eq("salesRfqId", rfqId);
+  if (lines.error) {
+    return lines;
+  }
+  const lineIds = lines.data?.map((line) => line.id);
+  return client
+    .from("modelUpload")
+    .select("*")
+    .in("salesRfqLineId", lineIds ?? []);
+}
+
 export async function getQuote(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -661,6 +679,13 @@ export async function getSalesOrderLine(
     .select("*")
     .eq("id", salesOrderLineId)
     .single();
+}
+
+export async function getSalesRFQ(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("salesRfqs").select("*").eq("id", id).single();
 }
 
 export async function getSalesRFQs(

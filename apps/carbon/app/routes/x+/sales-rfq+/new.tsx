@@ -64,15 +64,14 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function SalesRFQNewRoute() {
-  const { id, defaults } = useUser();
+  const { defaults } = useUser();
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
   const initialValues = {
     customerContactId: "",
     customerId: customerId ?? "",
     customerReference: "",
-    employeeId: id,
-    expirateDate: "",
+    expirationDate: "",
     id: undefined,
     locationId: defaults?.locationId ?? "",
     rfqDate: today(getLocalTimeZone()).toString(),

@@ -65,14 +65,10 @@ const IconSidebar = () => {
             </Button>
             {links.map((link) => {
               const m = getModule(link.to);
-              const moduleMatches = matchedModules.has(m);
-              const anotherModuleMatches = links.some((l) => {
-                const m = getModule(l.to);
-                return matchedModules.has(m);
-              });
 
-              const isActive =
-                currentModule === m || (moduleMatches && !anotherModuleMatches);
+              const moduleMatches = matchedModules.has(m);
+
+              const isActive = currentModule === m || moduleMatches;
               return (
                 <NavigationIconLink
                   key={link.name}

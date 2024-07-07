@@ -19,7 +19,7 @@ import { error } from "~/utils/result";
 export const handle: Handle = {
   breadcrumb: "Materials",
   to: path.to.materials,
-  module: "parts",
+  module: "items",
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

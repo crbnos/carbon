@@ -63,6 +63,7 @@ CREATE INDEX "salesRfqLine_salesRfqId_idx" ON "salesRfqLine" ("salesRfqId");
 CREATE INDEX "salesRfqLine_partNumber_idx" ON "salesRfqLine" ("partNumber", "companyId");
 
 ALTER TABLE "modelUpload" ADD COLUMN "salesRfqLineId" TEXT;
+ALTER TABLE "modelUpload" ADD CONSTRAINT "modelUpload_salesRfqLineId_fkey" FOREIGN KEY ("salesRfqLineId") REFERENCES "salesRfqLine" ("id") ON DELETE SET NULL;
 
 CREATE TABLE "salesRfqFavorite" (
   "rfqId" TEXT NOT NULL,

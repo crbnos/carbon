@@ -13,7 +13,7 @@ export const meta: MetaFunction = () => {
 export const handle: Handle = {
   breadcrumb: "Items",
   to: path.to.items,
-  module: "parts",
+  module: "items",
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

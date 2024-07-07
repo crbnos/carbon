@@ -16,7 +16,6 @@ import {
   Customer,
   CustomerContact,
   DatePicker,
-  Employee,
   Hidden,
   Input,
   Location,
@@ -56,8 +55,8 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
           <CardTitle>{isEditing ? "RFQ" : "New RFQ"}</CardTitle>
           {!isEditing && (
             <CardDescription>
-              A sales request for quote (RFQ) is an inquiry for pricing on a set
-              of parts and quantities.
+              A sales request for quote (RFQ) is a customer inquiry for pricing
+              on a set of parts and quantities. It may result in a quote.
             </CardDescription>
           )}
         </CardHeader>
@@ -94,7 +93,6 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 label="Customer Contact"
                 customer={customer}
               />
-              <Employee name="employeeId" label="Quoter" />
 
               <DatePicker
                 name="rfqDate"
