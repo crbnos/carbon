@@ -8772,6 +8772,13 @@ export type Database = {
             referencedColumns: ["itemId"]
           },
           {
+            foreignKeyName: "modelUpload_salesRfqLineId_fkey"
+            columns: ["salesRfqLineId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLine"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "modelUpload_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -15687,33 +15694,54 @@ export type Database = {
       salesRfqLine: {
         Row: {
           companyId: string
+          createdAt: string | null
+          createdBy: string
+          customerPartNumber: string
+          customerRevisionId: string | null
+          customFields: Json | null
           description: string | null
-          drawingPath: string | null
           id: string
-          partNumber: string
-          quantity: number
+          itemId: string | null
+          order: number
+          quantity: number[] | null
           salesRfqId: string
           unitOfMeasureCode: string
+          updatedAt: string | null
+          updatedBy: string | null
         }
         Insert: {
           companyId: string
+          createdAt?: string | null
+          createdBy: string
+          customerPartNumber: string
+          customerRevisionId?: string | null
+          customFields?: Json | null
           description?: string | null
-          drawingPath?: string | null
           id?: string
-          partNumber: string
-          quantity: number
+          itemId?: string | null
+          order?: number
+          quantity?: number[] | null
           salesRfqId: string
           unitOfMeasureCode: string
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Update: {
           companyId?: string
+          createdAt?: string | null
+          createdBy?: string
+          customerPartNumber?: string
+          customerRevisionId?: string | null
+          customFields?: Json | null
           description?: string | null
-          drawingPath?: string | null
           id?: string
-          partNumber?: string
-          quantity?: number
+          itemId?: string | null
+          order?: number
+          quantity?: number[] | null
           salesRfqId?: string
           unitOfMeasureCode?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Relationships: [
           {
@@ -15745,6 +15773,55 @@ export type Database = {
             referencedColumns: ["companyId"]
           },
           {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+          {
             foreignKeyName: "salesRfqLine_salesRfqId_fkey"
             columns: ["salesRfqId"]
             isOneToOne: false
@@ -15764,6 +15841,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "unitOfMeasure"
             referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }

@@ -23,6 +23,7 @@ import type {
   salesOrderPaymentValidator,
   salesOrderShipmentValidator,
   salesOrderValidator,
+  salesRfqLineValidator,
   salesRfqValidator,
 } from "./sales.models";
 
@@ -157,6 +158,13 @@ export async function deleteSalesOrderLine(
   salesOrderLineId: string
 ) {
   return client.from("salesOrderLine").delete().eq("id", salesOrderLineId);
+}
+
+export async function deleteSalesRFQLine(
+  client: SupabaseClient<Database>,
+  salesRFQLineId: string
+) {
+  return client.from("salesRfqLine").delete().eq("id", salesRFQLineId);
 }
 
 export async function getCustomer(
@@ -713,6 +721,17 @@ export async function getSalesRFQs(
   return query;
 }
 
+export async function getSalesRFQLines(
+  client: SupabaseClient<Database>,
+  salesRfqId: string
+) {
+  return client
+    .from("salesRfqLine")
+    .select("*")
+    .eq("salesRfqId", salesRfqId)
+    .order("order", { ascending: true });
+}
+
 export async function insertCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
@@ -1073,6 +1092,20 @@ export async function updateSalesRFQFavorite(
       .from("salesRfqFavorite")
       .insert({ rfqId: id, userId: userId });
   }
+}
+
+export async function updateSalesRFQLineOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    order: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, order, updatedBy }) =>
+    client.from("salesRfqLine").update({ order, updatedBy }).eq("id", id)
+  );
+  return Promise.all(updatePromises);
 }
 
 export async function updateQuoteFavorite(
@@ -1487,4 +1520,34 @@ export async function upsertSalesRFQ(
       })
       .eq("id", rfq.id);
   }
+}
+
+export async function upsertSalesRFQLine(
+  client: SupabaseClient<Database>,
+
+  salesRfqLine:
+    | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in salesRfqLine) {
+    return client
+      .from("salesRfqLine")
+      .insert([salesRfqLine])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("salesRfqLine")
+    .update(sanitize(salesRfqLine))
+    .eq("id", salesRfqLine.id)
+    .select("id")
+    .single();
 }

@@ -17,13 +17,7 @@ import {
 
 import type { FlatTreeItem } from "~/components/TreeView/TreeView";
 import { flattenTree } from "~/components/TreeView/TreeView";
-import { useRouteData } from "~/hooks";
-import type {
-  Method,
-  MethodItemType,
-  MethodType,
-  PartSummary,
-} from "~/modules/items";
+import type { Method, MethodItemType, MethodType } from "~/modules/items";
 import {
   BoMExplorer,
   getMakeMethod,
@@ -120,10 +114,6 @@ export default function PartManufacturing() {
   const params = useParams();
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
-
-  const routeData = useRouteData<{
-    partSummary: PartSummary;
-  }>(path.to.part(itemId));
 
   return (
     <div className="flex flex-grow overflow-hidden">

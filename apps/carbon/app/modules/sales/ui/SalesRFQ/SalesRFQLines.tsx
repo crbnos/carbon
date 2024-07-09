@@ -12,6 +12,7 @@ import {
   cn,
   toast,
   useDebounce,
+  useMount,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher, useParams } from "@remix-run/react";
@@ -22,12 +23,11 @@ import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import {
-  DefaultMethodType,
+  ArrayNumeric,
   Hidden,
+  Input,
   InputControlled,
   Item,
-  Number,
-  Select,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
@@ -39,36 +39,34 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
-import { methodItemType, methodMaterialValidator } from "../../items.models";
-import type { MethodItemType, MethodType } from "../../types";
-import { MethodIcon, MethodItemTypeIcon } from "./MethodIcon";
+import { salesRfqLineValidator } from "../../sales.models";
 
-type Material = z.infer<typeof methodMaterialValidator> & {
-  description: string;
-};
+type Line = z.infer<typeof salesRfqLineValidator>;
 
 type ItemWithData = SortableItem & {
-  data: Material;
+  data: Line;
 };
 
-type BillOfMaterialProps = {
-  makeMethodId: string;
-  materials: Material[];
+type SalesRFQLinesProps = {
+  lines: Line[];
 };
 
-function makeItems(materials: Material[]): ItemWithData[] {
-  return materials.map(makeItem);
+function makeItems(lines: Line[]): ItemWithData[] {
+  return lines.map(makeItem);
 }
 
-function makeItem(material: Material): ItemWithData {
+function makeItem(line: Line): ItemWithData {
   return {
-    id: material.id!,
+    id: line.id!,
     title: (
       <VStack spacing={0}>
-        <h4 className="font-mono">{material.itemReadableId}</h4>
-        {material?.description && (
+        <h4 className="font-mono">
+          {line.customerPartNumber}{" "}
+          {line.customerRevisionId && `(${line.customerRevisionId})`}
+        </h4>
+        {line?.description && (
           <span className="text-xs text-muted-foreground">
-            {material.description}{" "}
+            {line.description}{" "}
           </span>
         )}
       </VStack>
@@ -76,38 +74,33 @@ function makeItem(material: Material): ItemWithData {
     checked: false,
     details: (
       <HStack spacing={2}>
-        <Badge variant="secondary">
-          <MethodIcon type={material.methodType} />
-        </Badge>
-
-        <Badge variant="secondary">{material.quantity}</Badge>
-        <Badge variant="secondary">
-          <MethodItemTypeIcon type={material.itemType} />
-        </Badge>
+        {line.quantity.map((q, i) => (
+          <Badge key={i} variant="secondary">
+            {q}
+          </Badge>
+        ))}
       </HStack>
     ),
-    data: material,
+    data: line,
   };
 }
 
-const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
-  description: string;
-} = {
+const initialMethodLine: Omit<Line, "salesRfqId" | "order"> = {
+  customerPartNumber: "",
+  customerRevisionId: "",
   itemId: "",
-  itemReadableId: "",
-  itemType: "Part" as const,
-  methodType: "Buy" as const,
   description: "",
-  quantity: 1,
+  quantity: [1],
   unitOfMeasureCode: "EA",
 };
 
-const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
+const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
+  const { rfqId } = useParams();
+  if (!rfqId) throw new Error("rfqId not found");
+
   const fetcher = useFetcher();
 
-  const [items, setItems] = useState<ItemWithData[]>(
-    makeItems(materials ?? [])
-  );
+  const [items, setItems] = useState<ItemWithData[]>(makeItems(lines ?? []));
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const onToggleItem = (id: string) => {
@@ -117,6 +110,12 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
       )
     );
   };
+
+  useMount(() => {
+    if (lines.length === 0 && !selectedItemId) {
+      onAddItem();
+    }
+  });
 
   // we create a temporary item and append it to the list
   const onAddItem = () => {
@@ -135,9 +134,9 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
           checked: false,
           id: temporaryId,
           data: {
-            ...initialMethodMaterial,
+            ...initialMethodLine,
             order: newOrder,
-            makeMethodId,
+            salesRfqId: rfqId,
           },
         },
       ];
@@ -153,7 +152,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
 
     fetcher.submit(new FormData(), {
       method: "post",
-      action: path.to.deleteMethodMaterial(makeMethodId, item.id),
+      action: path.to.deleteSalesRfqLine(rfqId, item.id),
     });
   };
 
@@ -181,7 +180,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
     formData.append("updates", JSON.stringify(updates));
     fetcher.submit(formData, {
       method: "post",
-      action: path.to.methodMaterialsOrder(makeMethodId),
+      action: path.to.salesRfqLinesOrder(rfqId),
     });
   }, 1000);
 
@@ -208,7 +207,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
     const isOpen = item.id === selectedItemId;
 
     return (
-      <SortableListItem<Material>
+      <SortableListItem<Line>
         item={item}
         items={items}
         order={order}
@@ -309,7 +308,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
                             delay: 0.15,
                           }}
                         >
-                          <MaterialForm
+                          <SalesRFQLineForm
                             item={item}
                             setItems={setItems}
                             setSelectedItemId={setSelectedItemId}
@@ -331,7 +330,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
     <Card>
       <HStack className="justify-between">
         <CardHeader>
-          <CardTitle>Bill of Material</CardTitle>
+          <CardTitle>Lines</CardTitle>
         </CardHeader>
 
         <CardAction>
@@ -340,7 +339,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
             isDisabled={selectedItemId !== null}
             onClick={onAddItem}
           >
-            Add Material
+            Add Line
           </Button>
         </CardAction>
       </HStack>
@@ -357,13 +356,13 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
   );
 };
 
-export default BillOfMaterial;
+export default SalesRFQLines;
 
 function isTemporaryId(id: string) {
   return id.length < 20;
 }
 
-function MaterialForm({
+function SalesRFQLineForm({
   item,
   setItems,
   setSelectedItemId,
@@ -373,23 +372,23 @@ function MaterialForm({
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
 }) {
   const { supabase } = useSupabase();
-  const methodMaterialFetcher = useFetcher<{ id: string }>();
-  const params = useParams();
+  const salesRfqLineFetcher = useFetcher<{ id: string }>();
+
   const { company } = useUser();
 
   useEffect(() => {
     // replace the temporary id with the actual id
-    if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
+    if (salesRfqLineFetcher.data && salesRfqLineFetcher.data.id) {
       flushSync(() => {
         setItems((prevItems) =>
           prevItems.map((i) =>
             i.id === item.id
               ? {
                   ...i,
-                  id: methodMaterialFetcher.data!.id!,
+                  id: salesRfqLineFetcher.data!.id!,
                   data: {
                     ...i.data,
-                    ...methodMaterialFetcher.data,
+                    ...salesRfqLineFetcher.data,
                   },
                 }
               : i
@@ -398,47 +397,24 @@ function MaterialForm({
       });
       setSelectedItemId(null);
     }
-  }, [item.id, methodMaterialFetcher.data, setItems, setSelectedItemId]);
+  }, [item.id, salesRfqLineFetcher.data, setItems, setSelectedItemId]);
 
-  const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId: string;
-    methodType: MethodType;
     description: string;
     unitOfMeasureCode: string;
-    quantity: number;
   }>({
     itemId: item.data.itemId ?? "",
-    itemReadableId: item.data.itemReadableId ?? "",
-    methodType: item.data.methodType ?? "Buy",
     description: item.data.description ?? "",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
-    quantity: item.data.quantity ?? 1,
   });
-
-  const onTypeChange = (value: MethodItemType) => {
-    setItemType(value);
-    setItemData({
-      itemId: "",
-      itemReadableId: "",
-      methodType: "" as "Buy",
-      quantity: 1,
-      description: "",
-      unitOfMeasureCode: "EA",
-    });
-  };
 
   const onItemChange = async (itemId: string) => {
     if (!supabase) return;
-    if (itemId === params.itemId) {
-      toast.error("An item cannot be added to itself.");
-      return;
-    }
 
     const item = await supabase
       .from("item")
-      .select("name, readableId, unitOfMeasureCode, defaultMethodType")
+      .select("name, unitOfMeasureCode")
       .eq("id", itemId)
       .eq("companyId", company.id)
       .single();
@@ -451,10 +427,8 @@ function MaterialForm({
     setItemData((d) => ({
       ...d,
       itemId,
-      itemReadableId: item.data?.readableId ?? "",
       description: item.data?.name ?? "",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
-      methodType: item.data?.defaultMethodType ?? "Buy",
     }));
   };
 
@@ -462,14 +436,14 @@ function MaterialForm({
     <ValidatedForm
       action={
         isTemporaryId(item.id)
-          ? path.to.newMethodMaterial(item.data.makeMethodId!)
-          : path.to.methodMaterial(item.data.makeMethodId, item.id!)
+          ? path.to.newSalesRFQLine(item.data.salesRfqId!)
+          : path.to.salesRfqLine(item.data.salesRfqId, item.id!)
       }
       method="post"
       defaultValues={item.data}
-      validator={methodMaterialValidator}
+      validator={salesRfqLineValidator}
       className="w-full"
-      fetcher={methodMaterialFetcher}
+      fetcher={salesRfqLineFetcher}
       onSubmit={(values) => {
         setItems((prevItems) =>
           prevItems.map((i) =>
@@ -483,28 +457,20 @@ function MaterialForm({
         );
       }}
     >
-      <Hidden name="makeMethodId" />
-      <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+      <Hidden name="salesRfqId" />
       <Hidden name="order" />
       <VStack className="pt-4">
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-          <Select
-            name="itemType"
-            label="Type"
-            options={methodItemType.map((value) => ({
-              value,
-              label: value,
-            }))}
-            onChange={(value) => {
-              onTypeChange(value?.value as MethodItemType);
-            }}
+          <Input
+            name="customerPartNumber"
+            label="Customer Part Number"
+            autoFocus
           />
+          <Input name="customerRevisionId" label="Customer Revision" />
           <Item
-            disabledItems={[params.itemId!]}
             name="itemId"
-            label={itemType}
-            // @ts-ignore
-            type={itemType}
+            label="Part"
+            type="Part"
             onChange={(value) => {
               onItemChange(value?.value as string);
             }}
@@ -512,19 +478,11 @@ function MaterialForm({
           <InputControlled
             name="description"
             label="Description"
-            isReadOnly
             value={itemData.description}
             onChange={(newValue) => {
               setItemData((d) => ({ ...d, description: newValue }));
             }}
           />
-          <DefaultMethodType
-            name="methodType"
-            label="Method Type"
-            value={itemData.methodType}
-            replenishmentSystem="Buy and Make"
-          />
-          <Number name="quantity" label="Quantity" />
           <UnitOfMeasure
             name="unitOfMeasureCode"
             value={itemData.unitOfMeasureCode}
@@ -535,6 +493,7 @@ function MaterialForm({
               }))
             }
           />
+          <ArrayNumeric name="quantity" label="Quantity" />
         </div>
 
         <motion.div

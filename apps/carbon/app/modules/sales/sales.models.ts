@@ -316,3 +316,19 @@ export const salesRfqValidator = z.object({
   rfqDate: z.string().min(1, { message: "Order Date is required" }),
   status: z.enum(salesRFQStatusType).optional(),
 });
+
+export const salesRfqLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  salesRfqId: z.string().min(20, { message: "RFQ is required" }),
+  customerPartNumber: z.string().min(1, { message: "Part Number is required" }),
+  customerRevisionId: zfd.text(z.string().optional()),
+  itemId: zfd.text(z.string().optional()),
+  description: zfd.text(z.string().optional()),
+  quantity: z.array(
+    zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
+  ),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of measure is required" }),
+  order: zfd.numeric(z.number().min(0)),
+});
