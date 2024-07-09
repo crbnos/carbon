@@ -570,7 +570,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   function traverseAndRenameIds(node: MethodTreeItem) {
     const clone = structuredClone(node);
     clone.id = `node-${Math.random().toString(16).slice(2)}`;
-    clone.children = node.children.map((n) => traverseAndRenameIds(n));
+    clone.children = clone.children.map((n) => traverseAndRenameIds(n));
     return clone;
   }
 

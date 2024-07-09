@@ -46,21 +46,32 @@ CREATE INDEX "salesRfq_status_idx" ON "salesRfq" ("status", "companyId");
 CREATE TABLE "salesRfqLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "salesRfqId" TEXT NOT NULL,
-  "partNumber" TEXT NOT NULL,
+  "customerPartNumber" TEXT NOT NULL,
+  "customerRevisionId" TEXT,
+  "itemId" TEXT,
   "description" TEXT,
-  "quantity" NUMERIC(20, 2) NOT NULL,
+  "quantity" NUMERIC(20, 2)[] DEFAULT ARRAY[]::NUMERIC(20, 2)[],
   "unitOfMeasureCode" TEXT NOT NULL,
-  "drawingPath" TEXT,
+  "order" DOUBLE PRECISION NOT NULL DEFAULT 0,
   "companyId" TEXT NOT NULL,
+  "customFields" JSONB DEFAULT '{}',
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
 
   CONSTRAINT "salesRfqLine_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "salesRfqLine_salesRfqId_fkey" FOREIGN KEY ("salesRfqId") REFERENCES "salesRfq" ("id") ON DELETE CASCADE,
+  CONSTRAINT "salesRfqLine_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT "salesRfqLine_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE,
-  CONSTRAINT "salesRfqLine_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure" ("code", "companyId") ON DELETE RESTRICT
+  CONSTRAINT "salesRfqLine_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure" ("code", "companyId") ON DELETE RESTRICT,
+  CONSTRAINT "salesRfqLine_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON DELETE RESTRICT,
+  CONSTRAINT "salesRfqLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE RESTRICT,
+  CONSTRAINT "salesRfqLine_quantity_check" CHECK (array_length("quantity", 1) > 0)
 );
 
 CREATE INDEX "salesRfqLine_salesRfqId_idx" ON "salesRfqLine" ("salesRfqId");
-CREATE INDEX "salesRfqLine_partNumber_idx" ON "salesRfqLine" ("partNumber", "companyId");
+CREATE INDEX "salesRfqLine_partNumber_idx" ON "salesRfqLine" ("customerPartNumber", "companyId");
 
 ALTER TABLE "modelUpload" ADD COLUMN "salesRfqLineId" TEXT;
 ALTER TABLE "modelUpload" ADD CONSTRAINT "modelUpload_salesRfqLineId_fkey" FOREIGN KEY ("salesRfqLineId") REFERENCES "salesRfqLine" ("id") ON DELETE SET NULL;

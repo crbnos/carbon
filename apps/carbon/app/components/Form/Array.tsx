@@ -10,7 +10,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { useField, useFieldArray } from "@carbon/remix-validated-form";
-import { forwardRef } from "react";
+import { forwardRef, useRef } from "react";
 import { IoMdAdd, IoMdClose } from "react-icons/io";
 
 type FormArrayProps = InputProps & {
@@ -21,15 +21,21 @@ type FormArrayProps = InputProps & {
 
 const Array = forwardRef<HTMLInputElement, FormArrayProps>(
   ({ name, label, isRequired, ...rest }, ref) => {
+    const listRef = useRef<HTMLDivElement>(null);
     const [items, { push, remove }, error] = useFieldArray<string>(name);
+    const onAdd = () => {
+      push("");
+      const lastInput =
+        listRef.current?.lastElementChild?.querySelector("input");
+      lastInput?.focus();
+    };
 
     return (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
         {label && <FormLabel htmlFor={`${name}`}>{label}</FormLabel>}
-        <VStack className="mb-4">
+        <VStack className="mb-4" ref={listRef}>
           {items.map((item, index) => (
             <ArrayInput
-              autoFocus={index === items.length - 1}
               key={`${item}-${index}`}
               id={`${name}[${index}]`}
               name={`${name}[${index}]`}
@@ -38,11 +44,7 @@ const Array = forwardRef<HTMLInputElement, FormArrayProps>(
               {...rest}
             />
           ))}
-          <Button
-            variant="secondary"
-            leftIcon={<IoMdAdd />}
-            onClick={() => push("")}
-          >
+          <Button variant="secondary" leftIcon={<IoMdAdd />} onClick={onAdd}>
             New Option
           </Button>
         </VStack>

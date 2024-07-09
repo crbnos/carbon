@@ -4,6 +4,7 @@ import Account from "./Account";
 import AccountCategory from "./AccountCategory";
 import AccountSubcategory from "./AccountSubcategory";
 import Array from "./Array";
+import ArrayNumeric from "./ArrayNumeric";
 import Boolean from "./Boolean";
 import Color from "./Color";
 import Combobox from "./Combobox";
@@ -63,6 +64,7 @@ export {
   AccountCategory,
   AccountSubcategory,
   Array,
+  ArrayNumeric,
   Boolean,
   Color,
   Combobox,

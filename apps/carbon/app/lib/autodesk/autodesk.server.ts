@@ -231,7 +231,7 @@ export async function getManifest(urn: string, token: string) {
   let progress = "inprogress";
   let tries = 0;
 
-  while (progress !== "complete" && tries < 20) {
+  while (progress !== "complete" && tries < 100) {
     try {
       response = await fetch(autodeskAPI.getManifest.url(urn), {
         method: autodeskAPI.getManifest.method,
@@ -259,7 +259,7 @@ export async function getManifest(urn: string, token: string) {
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
 
-  if (tries > 30) {
+  if (tries > 100) {
     return {
       data: null,
       error: {
