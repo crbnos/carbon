@@ -1,3 +1,4 @@
+import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { parseDate } from "@internationalized/date";
@@ -38,7 +39,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return json({
-    lines: lines.data ?? [],
+    lines: lines.data.map((line) => ({
+      ...line,
+      customerRevisionId: line.customerRevisionId ?? "",
+      description: line.description ?? "",
+      externalNotes: (line.externalNotes ?? {}) as JSONContent,
+      internalNotes: (line.internalNotes ?? {}) as JSONContent,
+      itemId: line.itemId ?? "",
+      quantity: line.quantity ?? [1],
+    })) ?? [1],
   });
 }
 

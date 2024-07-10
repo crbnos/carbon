@@ -15700,7 +15700,9 @@ export type Database = {
           customerRevisionId: string | null
           customFields: Json | null
           description: string | null
+          externalNotes: Json | null
           id: string
+          internalNotes: Json | null
           itemId: string | null
           order: number
           quantity: number[] | null
@@ -15717,7 +15719,9 @@ export type Database = {
           customerRevisionId?: string | null
           customFields?: Json | null
           description?: string | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           itemId?: string | null
           order?: number
           quantity?: number[] | null
@@ -15734,7 +15738,9 @@ export type Database = {
           customerRevisionId?: string | null
           customFields?: Json | null
           description?: string | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           itemId?: string | null
           order?: number
           quantity?: number[] | null
