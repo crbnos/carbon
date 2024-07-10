@@ -1526,13 +1526,12 @@ export async function upsertSalesRFQLine(
   client: SupabaseClient<Database>,
 
   salesRfqLine:
-    | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
+    | (z.infer<typeof salesRfqLineValidator> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
-        id: string;
+    | (z.infer<typeof salesRfqLineValidator> & {
         updatedBy: string;
         customFields?: Json;
       })

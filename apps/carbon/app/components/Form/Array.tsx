@@ -11,6 +11,7 @@ import {
 } from "@carbon/react";
 import { useField, useFieldArray } from "@carbon/remix-validated-form";
 import { forwardRef, useRef } from "react";
+import { flushSync } from "react-dom";
 import { IoMdAdd, IoMdClose } from "react-icons/io";
 
 type FormArrayProps = InputProps & {
@@ -24,9 +25,12 @@ const Array = forwardRef<HTMLInputElement, FormArrayProps>(
     const listRef = useRef<HTMLDivElement>(null);
     const [items, { push, remove }, error] = useFieldArray<string>(name);
     const onAdd = () => {
-      push("");
-      const lastInput =
-        listRef.current?.lastElementChild?.querySelector("input");
+      flushSync(() => {
+        push("");
+      });
+      const lastInput = listRef.current?.querySelectorAll("input")?.[
+        items.length
+      ] as HTMLInputElement | undefined;
       lastInput?.focus();
     };
 

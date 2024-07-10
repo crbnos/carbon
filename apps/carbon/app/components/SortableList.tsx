@@ -8,18 +8,19 @@ import {
   useDragControls,
 } from "framer-motion";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import useMeasure from "react-use-measure";
 
 import { Checkbox, HStack, cn } from "@carbon/react";
 import { LuTrash } from "react-icons/lu";
 
 export interface Item {
-  id: string;
-  title: ReactNode;
   checked: boolean;
   details?: ReactNode;
+  id: string;
+  isTemporary?: boolean;
   order?: "With Previous" | "After Previous";
+  title: ReactNode;
 }
 
 interface SortableItem<T> extends Item {
@@ -38,7 +39,7 @@ interface SortableListItemProps<T> {
   handleDrag: () => void;
 }
 
-function SortableListItem<T>({
+function _SortableListItem<T>({
   item,
   items,
   order,
@@ -266,7 +267,14 @@ function SortableListItem<T>({
   );
 }
 
-SortableListItem.displayName = "SortableListItem";
+const SortableListItem = memo(_SortableListItem, (prevProps, nextProps) => {
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.checked === nextProps.item.checked &&
+    prevProps.item.order === nextProps.item.order &&
+    prevProps.isExpanded === nextProps.isExpanded
+  );
+}) as typeof _SortableListItem;
 
 export type SortableItemRenderProps<T extends Item> = {
   item: T;

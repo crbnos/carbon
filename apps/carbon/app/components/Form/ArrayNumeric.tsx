@@ -16,6 +16,7 @@ import {
 } from "@carbon/react";
 import { useField, useFieldArray } from "@carbon/remix-validated-form";
 import { forwardRef, useRef } from "react";
+import { flushSync } from "react-dom";
 import { IoMdAdd, IoMdClose } from "react-icons/io";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 
@@ -23,16 +24,21 @@ type FormArrayNumericProps = InputProps & {
   name: string;
   label?: string;
   isRequired?: boolean;
+  defaults?: number[];
 };
 
 const ArrayNumeric = forwardRef<HTMLInputElement, FormArrayNumericProps>(
-  ({ name, label, isRequired, ...rest }, ref) => {
+  ({ name, label, isRequired, defaults, ...rest }, ref) => {
     const listRef = useRef<HTMLDivElement>(null);
     const [items, { push, remove }, error] = useFieldArray<number>(name);
     const onAdd = () => {
-      push(0);
-      const lastInput =
-        listRef.current?.lastElementChild?.querySelector("input");
+      flushSync(() => {
+        const next = defaults?.[items.length] ?? 0;
+        push(next);
+      });
+      const lastInput = listRef.current?.querySelectorAll(
+        "input[inputmode='numeric']"
+      )?.[items.length] as HTMLInputElement | undefined;
       lastInput?.focus();
     };
 

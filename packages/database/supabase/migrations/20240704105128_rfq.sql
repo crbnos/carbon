@@ -53,6 +53,8 @@ CREATE TABLE "salesRfqLine" (
   "quantity" NUMERIC(20, 2)[] DEFAULT ARRAY[]::NUMERIC(20, 2)[],
   "unitOfMeasureCode" TEXT NOT NULL,
   "order" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "internalNotes" JSON DEFAULT '{}',
+  "externalNotes" JSON DEFAULT '{}',
   "companyId" TEXT NOT NULL,
   "customFields" JSONB DEFAULT '{}',
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -140,3 +142,38 @@ SELECT
   id
 FROM "company" 
 ON CONFLICT DO NOTHING;
+
+-- documents
+
+-- rfq documents
+CREATE POLICY "Sales RFQ documents view requires sales_view" ON storage.objects 
+FOR SELECT USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('sales_view', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'sales-rfq'
+);
+
+CREATE POLICY "Sales RFQ documents insert requires sales_create" ON storage.objects 
+FOR INSERT WITH CHECK (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('sales_create', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'sales-rfq'
+);
+
+CREATE POLICY "Sales RFQ documents update requires sales_update" ON storage.objects 
+FOR UPDATE USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('sales_update', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'sales-rfq'
+);
+
+CREATE POLICY "Sales RFQ documents delete requires sales_delete" ON storage.objects 
+FOR DELETE USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('sales_delete', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'sales-rfq'
+);

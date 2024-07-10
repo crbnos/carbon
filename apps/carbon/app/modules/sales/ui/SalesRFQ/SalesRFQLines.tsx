@@ -1,4 +1,5 @@
 "use client";
+import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   Button,
@@ -7,6 +8,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Editor,
   HStack,
   VStack,
   cn,
@@ -15,13 +17,15 @@ import {
   useMount,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
+import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
   ArrayNumeric,
   Hidden,
@@ -41,7 +45,10 @@ import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import { salesRfqLineValidator } from "../../sales.models";
 
-type Line = z.infer<typeof salesRfqLineValidator>;
+type Line = z.infer<typeof salesRfqLineValidator> & {
+  internalNotes: JSONContent;
+  externalNotes: JSONContent;
+};
 
 type ItemWithData = SortableItem & {
   data: Line;
@@ -71,6 +78,7 @@ function makeItem(line: Line): ItemWithData {
         )}
       </VStack>
     ),
+    isTemporary: false,
     checked: false,
     details: (
       <HStack spacing={2}>
@@ -85,13 +93,15 @@ function makeItem(line: Line): ItemWithData {
   };
 }
 
-const initialMethodLine: Omit<Line, "salesRfqId" | "order"> = {
+const initialLine: Omit<Line, "id" | "salesRfqId" | "order"> = {
   customerPartNumber: "",
   customerRevisionId: "",
   itemId: "",
   description: "",
   quantity: [1],
   unitOfMeasureCode: "EA",
+  internalNotes: {} as JSONContent,
+  externalNotes: {} as JSONContent,
 };
 
 const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
@@ -99,9 +109,14 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
   if (!rfqId) throw new Error("rfqId not found");
 
   const fetcher = useFetcher();
+  const { supabase } = useSupabase();
+  const {
+    company: { id: companyId },
+    id: userId,
+  } = useUser();
 
   const [items, setItems] = useState<ItemWithData[]>(makeItems(lines ?? []));
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
 
   const onToggleItem = (id: string) => {
     setItems((prevItems) =>
@@ -112,15 +127,15 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
   };
 
   useMount(() => {
-    if (lines.length === 0 && !selectedItemId) {
+    if (lines.length === 0 && !selectedLineId) {
       onAddItem();
     }
   });
 
   // we create a temporary item and append it to the list
   const onAddItem = () => {
-    const temporaryId = Math.random().toString(16).slice(2);
-    setSelectedItemId(temporaryId);
+    const id = nanoid();
+    setSelectedLineId(id);
     setItems((prevItems) => {
       let newOrder = 1;
       if (prevItems.length) {
@@ -132,9 +147,11 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
         {
           title: "",
           checked: false,
-          id: temporaryId,
+          id: id,
+          isTemporary: true,
           data: {
-            ...initialMethodLine,
+            ...initialLine,
+            id,
             order: newOrder,
             salesRfqId: rfqId,
           },
@@ -165,7 +182,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
       },
     }));
     const updates = newItems.reduce<Record<string, number>>((acc, item) => {
-      if (!isTemporaryId(item.id)) {
+      if (!item.isTemporary) {
         acc[item.id] = item.data.order;
       }
       return acc;
@@ -197,6 +214,74 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
     });
   }, []);
 
+  const onUploadImage = async (file: File) => {
+    const fileName = `${companyId}/sales-rfqs/${selectedLineId}/${Math.random()
+      .toString(16)
+      .slice(2)}-${file.name}`;
+    const result = await supabase?.storage
+      .from("private")
+      .upload(fileName, file);
+
+    if (result?.error) {
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return `/file/preview/private/${result.data.path}`;
+  };
+
+  const onUpdateInternalNotes = useDebounce(async (content: JSONContent) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === selectedLineId
+          ? {
+              ...item,
+              data: {
+                ...item.data,
+                internalNotes: content,
+              },
+            }
+          : item
+      )
+    );
+    await supabase
+      ?.from("salesRfqLine")
+      .update({
+        internalNotes: content,
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId,
+      })
+      .eq("id", selectedLineId!);
+  }, 1000);
+
+  const onUpdateExternalNotes = useDebounce(async (content: JSONContent) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === selectedLineId
+          ? {
+              ...item,
+              data: {
+                ...item.data,
+                externalNotes: content,
+              },
+            }
+          : item
+      )
+    );
+    await supabase
+      ?.from("salesRfqLine")
+      .update({
+        externalNotes: content,
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId,
+      })
+      .eq("id", selectedLineId!);
+  }, 1000);
+
+  const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,
     items,
@@ -204,14 +289,134 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
     onToggleItem,
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
-    const isOpen = item.id === selectedItemId;
+    const isOpen = item.id === selectedLineId;
+
+    const tabs = [
+      {
+        id: 0,
+        label: "Details",
+        content: (
+          <div className="flex w-full flex-col pr-2 py-2">
+            <motion.div
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                type: "spring",
+                bounce: 0.2,
+                duration: 0.75,
+                delay: 0.15,
+              }}
+            >
+              <SalesRFQLineForm
+                item={item}
+                setItems={setItems}
+                setSelectedLineId={setSelectedLineId}
+              />
+            </motion.div>
+          </div>
+        ),
+      },
+    ];
+
+    if (!item.isTemporary) {
+      tabs.push(
+        {
+          id: 1,
+          label: "Model",
+
+          content: (
+            <div className="flex flex-col p-2">
+              <motion.div
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{
+                  type: "spring",
+                  bounce: 0.2,
+                  duration: 0.75,
+                  delay: 0.15,
+                }}
+              ></motion.div>
+            </div>
+          ),
+        },
+        {
+          id: 2,
+          label: "Drawing",
+
+          content: (
+            <div className="flex flex-col p-2">
+              <motion.div
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{
+                  type: "spring",
+                  bounce: 0.2,
+                  duration: 0.75,
+                  delay: 0.15,
+                }}
+              ></motion.div>
+            </div>
+          ),
+        },
+        {
+          id: 3,
+          label: "Internal Notes",
+
+          content: (
+            <div className="flex flex-col p-2">
+              <motion.div
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{
+                  type: "spring",
+                  bounce: 0.2,
+                  duration: 0.75,
+                  delay: 0.15,
+                }}
+              >
+                <Editor
+                  initialValue={item.data.internalNotes}
+                  onUpload={onUploadImage}
+                  onChange={onUpdateInternalNotes}
+                />
+              </motion.div>
+            </div>
+          ),
+        },
+        {
+          id: 4,
+          label: "External Notes",
+
+          content: (
+            <div className="flex flex-col p-2">
+              <motion.div
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{
+                  type: "spring",
+                  bounce: 0.2,
+                  duration: 0.75,
+                  delay: 0.15,
+                }}
+              >
+                <Editor
+                  initialValue={item.data.externalNotes ?? ({} as JSONContent)}
+                  onUpload={onUploadImage}
+                  onChange={onUpdateExternalNotes}
+                />
+              </motion.div>
+            </div>
+          ),
+        }
+      );
+    }
 
     return (
       <SortableListItem<Line>
         item={item}
         items={items}
         order={order}
-        key={item.id}
+        key={`${item.id}:${item.isTemporary}`}
         isExpanded={isOpen}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
@@ -219,7 +424,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
         className="my-2 "
         renderExtra={(item) => (
           <div
-            key={`${isOpen}`}
+            key={`${isOpen}:${item.isTemporary}`}
             className={cn(
               "flex h-full flex-col items-center justify-center pl-2",
               isOpen ? "py-1" : "py-3 "
@@ -230,15 +435,15 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
               onClick={
                 isOpen
                   ? () => {
-                      if (isTemporaryId(item.id)) {
+                      if (item.isTemporary) {
                         setItems((prevItems) =>
                           prevItems.filter((i) => i.id !== item.id)
                         );
                       }
-                      setSelectedItemId(null);
+                      setSelectedLineId(null);
                     }
                   : () => {
-                      setSelectedItemId(item.id);
+                      setSelectedLineId(item.id);
                     }
               }
               key="collapse"
@@ -275,7 +480,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
               )}
             </motion.button>
 
-            <LayoutGroup id={`${item.id}`}>
+            <LayoutGroup id={`${item.id}:${item.isTemporary}`}>
               <AnimatePresence mode="popLayout">
                 {isOpen ? (
                   <motion.div className="flex w-full flex-col ">
@@ -298,22 +503,13 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
                         layout
                         className="w-full "
                       >
-                        <motion.div
-                          initial={{ opacity: 0, filter: "blur(4px)" }}
-                          animate={{ opacity: 1, filter: "blur(0px)" }}
-                          transition={{
-                            type: "spring",
-                            bounce: 0.2,
-                            duration: 0.75,
-                            delay: 0.15,
-                          }}
-                        >
-                          <SalesRFQLineForm
-                            item={item}
-                            setItems={setItems}
-                            setSelectedItemId={setSelectedItemId}
-                          />
-                        </motion.div>
+                        <DirectionAwareTabs
+                          className="mr-auto"
+                          tabs={tabs}
+                          onChange={() =>
+                            setTabChangeRerender(tabChangeRerender + 1)
+                          }
+                        />
                       </motion.div>
                     </div>
                   </motion.div>
@@ -336,7 +532,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
         <CardAction>
           <Button
             variant="secondary"
-            isDisabled={selectedItemId !== null}
+            isDisabled={selectedLineId !== null}
             onClick={onAddItem}
           >
             Add Line
@@ -358,18 +554,14 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
 
 export default SalesRFQLines;
 
-function isTemporaryId(id: string) {
-  return id.length < 20;
-}
-
 function SalesRFQLineForm({
   item,
   setItems,
-  setSelectedItemId,
+  setSelectedLineId,
 }: {
   item: ItemWithData;
   setItems: Dispatch<SetStateAction<ItemWithData[]>>;
-  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
+  setSelectedLineId: Dispatch<SetStateAction<string | null>>;
 }) {
   const { supabase } = useSupabase();
   const salesRfqLineFetcher = useFetcher<{ id: string }>();
@@ -377,27 +569,22 @@ function SalesRFQLineForm({
   const { company } = useUser();
 
   useEffect(() => {
-    // replace the temporary id with the actual id
     if (salesRfqLineFetcher.data && salesRfqLineFetcher.data.id) {
-      flushSync(() => {
-        setItems((prevItems) =>
-          prevItems.map((i) =>
-            i.id === item.id
-              ? {
-                  ...i,
-                  id: salesRfqLineFetcher.data!.id!,
-                  data: {
-                    ...i.data,
-                    ...salesRfqLineFetcher.data,
-                  },
-                }
-              : i
-          )
+      setItems((prevItems) => {
+        return prevItems.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                isTemporary: false,
+                data: {
+                  ...i.data,
+                },
+              }
+            : i
         );
       });
-      setSelectedItemId(null);
     }
-  }, [item.id, salesRfqLineFetcher.data, setItems, setSelectedItemId]);
+  }, [item.id, salesRfqLineFetcher.data, setItems, setSelectedLineId]);
 
   const [itemData, setItemData] = useState<{
     itemId: string;
@@ -435,7 +622,7 @@ function SalesRFQLineForm({
   return (
     <ValidatedForm
       action={
-        isTemporaryId(item.id)
+        item.isTemporary
           ? path.to.newSalesRFQLine(item.data.salesRfqId!)
           : path.to.salesRfqLine(item.data.salesRfqId, item.id!)
       }
@@ -449,7 +636,13 @@ function SalesRFQLineForm({
           prevItems.map((i) =>
             i.id === item.id
               ? {
-                  ...makeItem({ ...values, description: itemData.description }),
+                  ...makeItem({
+                    ...values,
+                    description: itemData.description,
+                    internalNotes: item.data.internalNotes,
+                    externalNotes: item.data.externalNotes,
+                  }),
+                  isTemporary: false,
                   id: item.id,
                 }
               : i
@@ -457,6 +650,7 @@ function SalesRFQLineForm({
         );
       }}
     >
+      <Hidden name="id" />
       <Hidden name="salesRfqId" />
       <Hidden name="order" />
       <VStack className="pt-4">
@@ -493,7 +687,11 @@ function SalesRFQLineForm({
               }))
             }
           />
-          <ArrayNumeric name="quantity" label="Quantity" />
+          <ArrayNumeric
+            name="quantity"
+            label="Quantity"
+            defaults={[1, 25, 50, 100]}
+          />
         </div>
 
         <motion.div
