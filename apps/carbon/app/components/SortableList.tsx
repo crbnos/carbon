@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  AnimatePresence,
-  LayoutGroup,
-  Reorder,
-  motion,
-  useDragControls,
-} from "framer-motion";
+import { LayoutGroup, Reorder, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
-import { memo, useState } from "react";
-import useMeasure from "react-use-measure";
+import { useState } from "react";
 
 import { Checkbox, HStack, cn } from "@carbon/react";
 import { LuTrash } from "react-icons/lu";
@@ -39,7 +32,7 @@ interface SortableListItemProps<T> {
   handleDrag: () => void;
 }
 
-function _SortableListItem<T>({
+function SortableListItem<T>({
   item,
   items,
   order,
@@ -50,7 +43,6 @@ function _SortableListItem<T>({
   isExpanded,
   className,
 }: SortableListItemProps<T>) {
-  let [ref, bounds] = useMeasure();
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggable] = useState(true);
   const dragControls = useDragControls();
@@ -66,7 +58,7 @@ function _SortableListItem<T>({
   };
 
   return (
-    <motion.div className={cn("", className)} key={item.id}>
+    <div className={cn("", className)} key={item.id}>
       <div className="flex w-full items-center">
         <Reorder.Item
           value={item}
@@ -79,26 +71,6 @@ function _SortableListItem<T>({
             item.checked && !isDragging ? "w-7/10" : "w-full"
           )}
           key={item.id}
-          initial={{ opacity: 0 }}
-          animate={{
-            opacity: 1,
-            height: bounds.height > 0 ? bounds.height : undefined,
-            transition: {
-              type: "spring",
-              bounce: 0,
-              duration: 0.4,
-            },
-          }}
-          exit={{
-            opacity: 0,
-            transition: {
-              duration: 0.05,
-              type: "spring",
-              bounce: 0.1,
-            },
-          }}
-          layout
-          layoutId={`item-${item.id}`}
           dragListener={!item.checked}
           dragControls={dragControls}
           onDragEnd={handleDragEnd}
@@ -118,80 +90,57 @@ function _SortableListItem<T>({
           }
           whileDrag={{ zIndex: 9999 }}
         >
-          <div ref={ref} className={cn(isExpanded ? "w-full" : "", "z-20 ")}>
-            <motion.div
-              layout="position"
-              className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2 py-1"
-            >
-              <AnimatePresence>
-                {!isExpanded ? (
-                  <motion.div
-                    initial={{ opacity: 0, filter: "blur(4px)" }}
-                    animate={{ opacity: 1, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, filter: "blur(4px)" }}
-                    transition={{ duration: 0.001 }}
-                    className="flex w-full items-center gap-x-2 truncate"
+          <div className={cn(isExpanded ? "w-full" : "", "z-20 ")}>
+            <div className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2 py-1">
+              {!isExpanded ? (
+                <div className="flex w-full items-center gap-x-2 truncate">
+                  {/* List Remove Actions */}
+                  <Checkbox
+                    checked={item.checked}
+                    id={`checkbox-${item.id}`}
+                    aria-label="Mark to delete"
+                    onCheckedChange={() => onToggleItem(item.id)}
+                    className="ml-3 border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
+                  />
+                  {/* List Order */}
+                  <p className="font-mono text-xs pl-1 text-foreground/50 flex flex-shrink-0">
+                    {getParallelizedOrder(order, item, items)}
+                  </p>
+
+                  {/* List Title */}
+                  <div
+                    key={`${item.checked}`}
+                    className="px-1 flex flex-grow truncate"
                   >
-                    {/* List Remove Actions */}
-                    <Checkbox
-                      checked={item.checked}
-                      id={`checkbox-${item.id}`}
-                      aria-label="Mark to delete"
-                      onCheckedChange={() => onToggleItem(item.id)}
-                      className="ml-3 border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
-                    />
-                    {/* List Order */}
-                    <p className="font-mono text-xs pl-1 text-foreground/50 flex flex-shrink-0">
-                      {getParallelizedOrder(order, item, items)}
-                    </p>
+                    <HStack className="w-full justify-between">
+                      {typeof item.title === "string" ? (
+                        <h4
+                          className={cn(
+                            "flex tracking-tighter text-base md:text-lg truncate",
+                            item.checked
+                              ? "text-red-400"
+                              : "text-foreground dark:text-foreground/70"
+                          )}
+                        >
+                          {item.title}
+                        </h4>
+                      ) : (
+                        <div className={item.checked ? "text-red-400" : ""}>
+                          {item.title}
+                        </div>
+                      )}
 
-                    {/* List Title */}
-                    <motion.div
-                      key={`${item.checked}`}
-                      className="px-1 flex flex-grow truncate"
-                      initial={{
-                        opacity: 0,
-                        filter: "blur(4px)",
-                      }}
-                      animate={{ opacity: 1, filter: "blur(0px)" }}
-                      transition={{
-                        bounce: 0.2,
-                        delay: item.checked ? 0.2 : 0,
-                        type: "spring",
-                      }}
-                    >
-                      <HStack className="w-full justify-between">
-                        {typeof item.title === "string" ? (
-                          <h4
-                            className={cn(
-                              "flex tracking-tighter text-base md:text-lg truncate",
-                              item.checked
-                                ? "text-red-400"
-                                : "text-foreground dark:text-foreground/70"
-                            )}
-                          >
-                            {item.title}
-                          </h4>
-                        ) : (
-                          <div className={item.checked ? "text-red-400" : ""}>
-                            {item.title}
-                          </div>
-                        )}
-
-                        {item.details && (
-                          <div className="flex flex-shrink-0">
-                            {item.details}
-                          </div>
-                        )}
-                      </HStack>
-                    </motion.div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
+                      {item.details && (
+                        <div className="flex flex-shrink-0">{item.details}</div>
+                      )}
+                    </HStack>
+                  </div>
+                </div>
+              ) : null}
 
               {/* List Item Children */}
               {renderExtra && renderExtra(item)}
-            </motion.div>
+            </div>
           </div>
           <div
             onPointerDown={isDraggable ? handleDragStart : undefined}
@@ -199,82 +148,23 @@ function _SortableListItem<T>({
           />
         </Reorder.Item>
         {/* List Delete Action Animation */}
-        <AnimatePresence mode="popLayout">
-          {item.checked ? (
-            <motion.div
-              layout
-              initial={{ opacity: 0, x: -10 }}
-              animate={{
-                opacity: 1,
-                x: 0,
-                transition: {
-                  delay: 0.17,
-                  duration: 0.17,
-                  type: "spring",
-                  bounce: 0.6,
-                },
-                zIndex: 5,
-              }}
-              exit={{
-                opacity: 0,
-                x: -5,
-                transition: {
-                  delay: 0,
-                  duration: 0.0,
-                  type: "spring",
-                  bounce: 0,
-                },
-              }}
-              className="h-[1.5rem] w-3"
-            />
-          ) : null}
-        </AnimatePresence>
-        <AnimatePresence mode="popLayout">
-          {item.checked ? (
-            <motion.div
-              layout
-              initial={{ opacity: 0, x: -5, filter: "blur(4px)" }}
-              animate={{
-                opacity: 1,
-                x: 0,
-                filter: "blur(0px)",
-                transition: {
-                  delay: 0.3,
-                  duration: 0.15,
-                  type: "spring",
-                  bounce: 0.9,
-                },
-              }}
-              exit={{
-                opacity: 0,
-                filter: "blur(4px)",
-                x: -10,
-                transition: { delay: 0, duration: 0.12 },
-              }}
-              className="inset-0 z-0 rounded-full bg-card border-border border dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset,0_0_0_1px_rgba(255,255,255,0.03)_inset,0_0_0_1px_rgba(0,0,0,0.1),0_2px_2px_0_rgba(0,0,0,0.1),0_4px_4px_0_rgba(0,0,0,0.1),0_8px_8px_0_rgba(0,0,0,0.1)] dark:bg-[#161716]/50"
+
+        {item.checked ? <div className="h-[1.5rem] w-3" /> : null}
+
+        {item.checked ? (
+          <div className="inset-0 z-0 rounded-full bg-card border-border border dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset,0_0_0_1px_rgba(255,255,255,0.03)_inset,0_0_0_1px_rgba(0,0,0,0.1),0_2px_2px_0_rgba(0,0,0,0.1),0_4px_4px_0_rgba(0,0,0,0.1),0_8px_8px_0_rgba(0,0,0,0.1)] dark:bg-[#161716]/50">
+            <button
+              className="inline-flex h-10 items-center justify-center space-nowrap rounded-md px-3 text-sm font-medium  transition-colors duration-150  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+              onClick={() => onRemoveItem(item.id)}
             >
-              <button
-                className="inline-flex h-10 items-center justify-center space-nowrap rounded-md px-3 text-sm font-medium  transition-colors duration-150  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-                onClick={() => onRemoveItem(item.id)}
-              >
-                <LuTrash className="h-4 w-4 text-red-400 transition-colors duration-150 fill-red-400/60 " />
-              </button>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+              <LuTrash className="h-4 w-4 text-red-400 transition-colors duration-150 fill-red-400/60 " />
+            </button>
+          </div>
+        ) : null}
       </div>
-    </motion.div>
+    </div>
   );
 }
-
-const SortableListItem = memo(_SortableListItem, (prevProps, nextProps) => {
-  return (
-    prevProps.item.id === nextProps.item.id &&
-    prevProps.item.checked === nextProps.item.checked &&
-    prevProps.item.order === nextProps.item.order &&
-    prevProps.isExpanded === nextProps.isExpanded
-  );
-}) as typeof _SortableListItem;
 
 export type SortableItemRenderProps<T extends Item> = {
   item: T;
@@ -308,17 +198,15 @@ function SortableList<T extends Item>({
           onReorder={onReorder}
           className="flex flex-col"
         >
-          <AnimatePresence>
-            {items?.map((item, index) =>
-              renderItem({
-                item,
-                items,
-                order: index,
-                onToggleItem,
-                onRemoveItem,
-              })
-            )}
-          </AnimatePresence>
+          {items?.map((item, index) =>
+            renderItem({
+              item,
+              items,
+              order: index,
+              onToggleItem,
+              onRemoveItem,
+            })
+          )}
         </Reorder.Group>
       </LayoutGroup>
     );

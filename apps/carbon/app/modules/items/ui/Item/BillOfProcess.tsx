@@ -289,7 +289,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
         label: "Work Instructions",
         disabled: isTemporaryId(item.id),
         content: (
-          <div className="flex flex-col p-2">
+          <div className="flex flex-col">
             <motion.div
               initial={{ opacity: 0, filter: "blur(4px)" }}
               animate={{ opacity: 1, filter: "blur(0px)" }}

@@ -23,7 +23,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { LuSettings2, LuX } from "react-icons/lu";
+import { LuMove3D, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
@@ -42,6 +42,8 @@ import type {
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
+import type { ModelUpload } from "~/modules/items";
+import { CadModel } from "~/modules/items";
 import { path } from "~/utils/path";
 import { salesRfqLineValidator } from "../../sales.models";
 
@@ -52,17 +54,24 @@ type Line = z.infer<typeof salesRfqLineValidator> & {
 
 type ItemWithData = SortableItem & {
   data: Line;
+  modelUpload?: ModelUpload;
 };
 
 type SalesRFQLinesProps = {
   lines: Line[];
+  modelUploads: ModelUpload[];
 };
 
-function makeItems(lines: Line[]): ItemWithData[] {
-  return lines.map(makeItem);
+function makeItems(lines: Line[], modelUploads: ModelUpload[]): ItemWithData[] {
+  return lines.map((line) =>
+    makeItem(
+      line,
+      modelUploads.find((m) => m?.salesRfqLineId === line.id)
+    )
+  );
 }
 
-function makeItem(line: Line): ItemWithData {
+function makeItem(line: Line, modelUpload?: ModelUpload): ItemWithData {
   return {
     id: line.id!,
     title: (
@@ -87,9 +96,15 @@ function makeItem(line: Line): ItemWithData {
             {q}
           </Badge>
         ))}
+        {modelUpload && (
+          <Badge variant="secondary">
+            <LuMove3D className="w-4 h-4 text-green-500" />
+          </Badge>
+        )}
       </HStack>
     ),
     data: line,
+    modelUpload,
   };
 }
 
@@ -104,7 +119,7 @@ const initialLine: Omit<Line, "id" | "salesRfqId" | "order"> = {
   externalNotes: {} as JSONContent,
 };
 
-const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
+const SalesRFQLines = ({ lines, modelUploads }: SalesRFQLinesProps) => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
 
@@ -115,8 +130,15 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
     id: userId,
   } = useUser();
 
-  const [items, setItems] = useState<ItemWithData[]>(makeItems(lines ?? []));
+  const [items, setItems] = useState<ItemWithData[]>(
+    makeItems(lines ?? [], modelUploads)
+  );
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(makeItems(lines, modelUploads));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelUploads]);
 
   const onToggleItem = (id: string) => {
     setItems((prevItems) =>
@@ -325,7 +347,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
           label: "Model",
 
           content: (
-            <div className="flex flex-col p-2">
+            <div className="flex flex-col py-4">
               <motion.div
                 initial={{ opacity: 0, filter: "blur(4px)" }}
                 animate={{ opacity: 1, filter: "blur(0px)" }}
@@ -335,7 +357,16 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
                   duration: 0.75,
                   delay: 0.15,
                 }}
-              ></motion.div>
+              >
+                <CadModel
+                  autodeskUrn={item.modelUpload?.autodeskUrn ?? null}
+                  metadata={{
+                    salesRfqLineId: item.id,
+                  }}
+                  modelPath={item.modelUpload?.modelPath ?? null}
+                  uploadClassName="min-h-[300px]"
+                />
+              </motion.div>
             </div>
           ),
         },
@@ -344,7 +375,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
           label: "Drawing",
 
           content: (
-            <div className="flex flex-col p-2">
+            <div className="flex flex-col">
               <motion.div
                 initial={{ opacity: 0, filter: "blur(4px)" }}
                 animate={{ opacity: 1, filter: "blur(0px)" }}
@@ -363,7 +394,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
           label: "Internal Notes",
 
           content: (
-            <div className="flex flex-col p-2">
+            <div className="flex flex-col">
               <motion.div
                 initial={{ opacity: 0, filter: "blur(4px)" }}
                 animate={{ opacity: 1, filter: "blur(0px)" }}
@@ -375,6 +406,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
                 }}
               >
                 <Editor
+                  className="min-h-[300px]"
                   initialValue={item.data.internalNotes}
                   onUpload={onUploadImage}
                   onChange={onUpdateInternalNotes}
@@ -388,7 +420,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
           label: "External Notes",
 
           content: (
-            <div className="flex flex-col p-2">
+            <div className="flex flex-col">
               <motion.div
                 initial={{ opacity: 0, filter: "blur(4px)" }}
                 animate={{ opacity: 1, filter: "blur(0px)" }}
@@ -400,6 +432,7 @@ const SalesRFQLines = ({ lines }: SalesRFQLinesProps) => {
                 }}
               >
                 <Editor
+                  className="min-h-[300px]"
                   initialValue={item.data.externalNotes ?? ({} as JSONContent)}
                   onUpload={onUploadImage}
                   onChange={onUpdateExternalNotes}
