@@ -1,5 +1,5 @@
 import { AutodeskViewer, ClientOnly, Spinner, toast } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { useRealtime, useUser } from "~/hooks";
@@ -11,9 +11,23 @@ import { path } from "~/utils/path";
 type CadModelProps = {
   autodeskUrn: string | null;
   modelPath: string | null;
+  metadata?: {
+    itemId?: string;
+    salesRfqLineId?: string;
+  };
+  title?: string;
+  uploadClassName?: string;
+  viewerClassName?: string;
 };
 
-const CadModel = ({ autodeskUrn, modelPath }: CadModelProps) => {
+const CadModel = ({
+  autodeskUrn,
+  metadata,
+  modelPath,
+  title,
+  uploadClassName,
+  viewerClassName,
+}: CadModelProps) => {
   useRealtime("modelUpload", `modelPath=eq.${modelPath ?? "unknown"}`);
 
   const {
@@ -21,8 +35,6 @@ const CadModel = ({ autodeskUrn, modelPath }: CadModelProps) => {
   } = useUser();
 
   const { supabase } = useSupabase();
-  const { itemId } = useParams();
-  if (!itemId) throw new Error("Could not find itemId");
 
   const { autodeskToken } = useAutodeskToken();
   const fetcher = useFetcher();
@@ -55,7 +67,11 @@ const CadModel = ({ autodeskUrn, modelPath }: CadModelProps) => {
       formData.append("name", file.name);
       formData.append("fileId", fileId);
       formData.append("modelPath", modelUpload.data!.path);
-      formData.append("itemId", itemId);
+      if (metadata) {
+        if (metadata.itemId) formData.append("itemId", metadata.itemId);
+        if (metadata.salesRfqLineId)
+          formData.append("salesRfqLineId", metadata.salesRfqLineId);
+      }
 
       fetcher.submit(formData, {
         method: "post",
@@ -63,6 +79,7 @@ const CadModel = ({ autodeskUrn, modelPath }: CadModelProps) => {
       });
     }
   };
+
   return (
     <ClientOnly
       fallback={
@@ -75,13 +92,16 @@ const CadModel = ({ autodeskUrn, modelPath }: CadModelProps) => {
         return autodeskUrn && autodeskToken ? (
           <AutodeskViewer
             accessToken={autodeskToken}
-            urn={autodeskUrn}
+            className={viewerClassName}
             showDefaultToolbar
+            urn={autodeskUrn}
           />
         ) : (
           <CadModelUpload
+            className={uploadClassName}
             file={file}
             loading={loading}
+            title={title}
             onFileChange={onFileChange}
           />
         );

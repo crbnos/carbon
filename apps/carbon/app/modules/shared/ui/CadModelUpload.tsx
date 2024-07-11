@@ -6,8 +6,10 @@ import { HiArrowUpTray } from "react-icons/hi2";
 const fileSizeLimitMb = 50;
 
 type CadModelUploadProps = {
+  title?: string;
   file: File | null;
   loading: boolean;
+  className?: string;
   onFileChange: (file: File | null) => void;
 };
 
@@ -30,9 +32,11 @@ const supportedFileTypes = [
 ];
 
 const CadModelUpload = ({
+  title,
   file,
   loading,
   onFileChange,
+  className,
 }: CadModelUploadProps) => {
   const hasFile = !!file;
 
@@ -78,17 +82,20 @@ const CadModelUpload = ({
       className={cn(
         "group flex flex-col flex-grow rounded-lg border border-border bg-gradient-to-tr from-background to-card text-card-foreground shadow-sm w-full",
         !hasFile &&
-          "cursor-pointer hover:border-primary/30 hover:border-dashed hover:to-primary/10 hover:via-card"
+          "cursor-pointer hover:border-primary/30 hover:border-dashed hover:to-primary/10 hover:via-card",
+        className
       )}
     >
       <input {...getInputProps()} name="file" className="sr-only" />
       <div className="flex flex-col h-full w-full">
         <CardHeader>
-          <CardTitle>CAD Model</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
 
-        <div className="flex flex-col flex-grow items-center justify-center gap-2 p-2">
-          {(file || loading) && <Spinner className="h-16 w-16 -mt-16" />}
+        <div className="flex flex-col flex-grow items-center justify-center gap-2 p-6">
+          {(file || loading) && (
+            <Spinner className={cn("h-16 w-16", title && "-mt-16")} />
+          )}
           {file && (
             <>
               <p className="text-lg text-card-foreground mt-8">{file.name}</p>
@@ -99,7 +106,12 @@ const CadModelUpload = ({
           )}
           {!file && !loading && (
             <>
-              <div className="p-4 bg-accent rounded-full group-hover:bg-primary -mt-16">
+              <div
+                className={cn(
+                  "p-4 bg-accent rounded-full group-hover:bg-primary",
+                  title ? "-mt-16" : "-mt-6"
+                )}
+              >
                 <HiArrowUpTray
                   className="h-10 w-10 text-foreground group-hover:text-primary-foreground"
                   aria-hidden="true"

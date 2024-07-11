@@ -87,12 +87,14 @@ export default function PartDetailsRoute() {
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
             autodeskUrn={partData?.modelUpload?.autodeskUrn ?? null}
+            metadata={{ itemId }}
             modelPath={partData?.modelUpload?.modelPath ?? null}
+            title="CAD Model"
           />
           <ItemDocuments
             files={partData?.files ?? []}
-            modelUpload={partData.modelUpload}
             itemId={itemId}
+            modelUpload={partData.modelUpload}
             type="Part"
           />
         </div>

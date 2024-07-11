@@ -15,11 +15,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const name = formData.get("name") as string;
   const modelPath = formData.get("modelPath") as string;
   const itemId = (formData.get("itemId") ?? undefined) as string | undefined;
+  const salesRfqLineId = (formData.get("salesRfqLineId") ?? undefined) as
+    | string
+    | undefined;
 
   const modelRecord = await upsertModelUpload(client, {
     id: fileId,
     modelPath,
     itemId,
+    salesRfqLineId,
     companyId,
     createdBy: userId,
   });

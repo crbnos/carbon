@@ -47,6 +47,7 @@ export async function upsertModelUpload(
         id: string;
         modelPath: string;
         itemId?: string;
+        salesRfqLineId?: string;
         companyId: string;
         createdBy: string;
       }

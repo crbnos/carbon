@@ -123,7 +123,7 @@ export default function SalesRFQDetailsRoute() {
   return (
     <VStack spacing={2} className="p-2">
       <SalesRFQForm key={initialValues.id} initialValues={initialValues} />
-      <SalesRFQLines lines={lines} />
+      <SalesRFQLines lines={lines} modelUploads={rfqData?.modelUploads ?? []} />
     </VStack>
   );
 }
