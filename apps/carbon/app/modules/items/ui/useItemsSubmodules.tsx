@@ -1,8 +1,7 @@
 import { AiOutlinePartition } from "react-icons/ai";
 import { CiFries } from "react-icons/ci";
-import { FaRulerVertical } from "react-icons/fa";
 import { GiIBeam, GiWoodBeam } from "react-icons/gi";
-import { LuGrip, LuHammer, LuShapes } from "react-icons/lu";
+import { LuGrip, LuHammer, LuRuler, LuShapes } from "react-icons/lu";
 import { PiPiggyBank } from "react-icons/pi";
 import { RiCustomerServiceLine } from "react-icons/ri";
 import { usePermissions } from "~/hooks";
@@ -75,7 +74,7 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         name: "Units of Measure",
         to: path.to.uoms,
         role: "employee",
-        icon: <FaRulerVertical />,
+        icon: <LuRuler />,
       },
     ],
   },

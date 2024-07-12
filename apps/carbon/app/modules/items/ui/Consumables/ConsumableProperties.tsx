@@ -11,8 +11,7 @@ import {
 } from "@carbon/react";
 import { useParams } from "@remix-run/react";
 import { LuCopy, LuLink } from "react-icons/lu";
-import { useOptimisticAssignment } from "~/components";
-import Assignee from "~/components/Assignee";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

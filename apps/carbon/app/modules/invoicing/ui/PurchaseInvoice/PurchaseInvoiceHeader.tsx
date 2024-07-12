@@ -16,7 +16,7 @@ import {
 import { formatDate } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { useMemo, useState } from "react";
-import { Assign, EmployeeAvatar, useOptimisticAssignment } from "~/components";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { PurchaseInvoice } from "~/modules/invoicing";
@@ -106,11 +106,6 @@ const PurchaseInvoiceHeader = () => {
       <VStack>
         {permissions.is("employee") && (
           <Menubar>
-            <Assign
-              id={invoiceId}
-              table="purchaseInvoice"
-              value={assignee ?? undefined}
-            />
             <MenubarItem
               isDisabled={!permissions.can("update", "invoicing") || isPosted}
               onClick={showPostModal}
@@ -131,11 +126,11 @@ const PurchaseInvoiceHeader = () => {
               <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
-                  {assignee ? (
-                    <EmployeeAvatar employeeId={assignee ?? null} />
-                  ) : (
-                    "-"
-                  )}
+                  <Assignee
+                    id={invoiceId}
+                    table="purchaseInvoice"
+                    value={assignee ?? undefined}
+                  />
                 </CardAttributeValue>
               </CardAttribute>
 

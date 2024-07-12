@@ -19,7 +19,7 @@ import {
 import { formatDate } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { useMemo } from "react";
-import { Assign, EmployeeAvatar, useOptimisticAssignment } from "~/components";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { PurchasingStatus, usePurchaseOrderTotals } from "~/modules/purchasing";
@@ -73,11 +73,6 @@ const PurchaseOrderHeader = () => {
       <VStack>
         {permissions.is("employee") && (
           <Menubar>
-            <Assign
-              id={orderId}
-              table="purchaseOrder"
-              value={assignee ?? undefined}
-            />
             <MenubarItem asChild>
               <a
                 target="_blank"
@@ -142,11 +137,11 @@ const PurchaseOrderHeader = () => {
               <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
-                  {assignee ? (
-                    <EmployeeAvatar employeeId={assignee ?? null} />
-                  ) : (
-                    "-"
-                  )}
+                  <Assignee
+                    id={orderId}
+                    table="purchaseOrder"
+                    value={assignee ?? undefined}
+                  />
                 </CardAttributeValue>
               </CardAttribute>
 

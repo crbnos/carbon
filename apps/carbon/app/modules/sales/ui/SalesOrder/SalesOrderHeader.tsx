@@ -10,14 +10,13 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  Menubar,
   VStack,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { useMemo } from "react";
-import { Assign, EmployeeAvatar, useOptimisticAssignment } from "~/components";
-import { usePermissions, useRouteData } from "~/hooks";
+import { Assignee, useOptimisticAssignment } from "~/components";
+import { useRouteData } from "~/hooks";
 import type { SalesOrder } from "~/modules/sales";
 import { SalesStatus, useSalesOrderTotals } from "~/modules/sales";
 import { useCustomers } from "~/stores";
@@ -25,7 +24,6 @@ import { path } from "~/utils/path";
 // import { useSalesOrder } from "../SalesOrders/useSalesOrder";
 
 const SalesOrderHeader = () => {
-  const permissions = usePermissions();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -63,54 +61,7 @@ const SalesOrderHeader = () => {
   return (
     <>
       <VStack>
-        {permissions.is("employee") && (
-          <Menubar>
-            <Assign
-              id={orderId}
-              table="salesOrder"
-              value={assignee ?? undefined}
-            />
-            {/*<MenubarItem asChild>
-              <a
-                target="_blank"
-                href={path.to.file.salesOrder(orderId)}
-                rel="noreferrer"
-              >
-                Preview
-              </a>
-            </MenubarItem>
-
-            <MenubarItem
-              onClick={releaseDisclosure.onOpen}
-              isDisabled={isReleased}
-            >
-              Release
-            </MenubarItem>*/}
-            {/*<MenubarItem
-              onClick={() => {
-                receive(routeData.salesOrder);
-              }}
-              isDisabled={
-                routeData?.salesOrder?.status !== "To Receive" &&
-                routeData?.salesOrder?.status !== "To Receive and Invoice"
-              }
-            >
-              Receive
-            </MenubarItem>
-            <MenubarItem
-              onClick={() => {
-                invoice(routeData.salesOrder);
-              }}
-              isDisabled={
-                routeData?.salesOrder?.status !== "To Invoice" &&
-                routeData?.salesOrder?.status !== "To Receive and Invoice"
-              }
-            >
-              Invoice
-            </MenubarItem>*/}
-          </Menubar>
-        )}
-
+        {/* Menubar */}
         <Card>
           <HStack className="justify-between items-start">
             <CardHeader>
@@ -134,11 +85,11 @@ const SalesOrderHeader = () => {
               <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
-                  {assignee ? (
-                    <EmployeeAvatar employeeId={assignee ?? null} />
-                  ) : (
-                    "-"
-                  )}
+                  <Assignee
+                    id={orderId}
+                    table="salesOrder"
+                    value={assignee ?? undefined}
+                  />
                 </CardAttributeValue>
               </CardAttribute>
 

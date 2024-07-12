@@ -10,8 +10,11 @@ import {
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
 import { useParams } from "@remix-run/react";
 import { LuCopy, LuLink } from "react-icons/lu";
-import { CustomerAvatar, useOptimisticAssignment } from "~/components";
-import Assignee from "~/components/Assignee";
+import {
+  Assignee,
+  CustomerAvatar,
+  useOptimisticAssignment,
+} from "~/components";
 import { useRouteData } from "~/hooks";
 import type { ModelUpload } from "~/modules/items";
 import type { ListItem } from "~/types";

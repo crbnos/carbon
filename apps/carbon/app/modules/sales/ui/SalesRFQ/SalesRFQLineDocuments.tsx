@@ -15,6 +15,7 @@ import {
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
+import type { FileObject } from "@supabase/storage-js";
 import { LuAxis3D, LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, Hyperlink } from "~/components";
@@ -45,7 +46,7 @@ const useSalesRFQLineDocuments = ({
   const canDelete = permissions.can("delete", "sales");
   const getPath = useCallback(
     (file: ItemFile) => {
-      return `${company.id}/sales-rfq/${rfqId}/${salesRfqLineId}:${file.name}`;
+      return `${company.id}/sales-rfq/${rfqId}/${salesRfqLineId}/${file.name}`;
     },
     [company.id, rfqId, salesRfqLineId]
   );
@@ -147,7 +148,7 @@ const useSalesRFQLineDocuments = ({
 };
 
 type SalesRFQLineDocumentsProps = {
-  files: ItemFile[];
+  files: (FileObject & { salesRfqLineId: string | null })[];
   rfqId: string;
   salesRfqLineId: string;
   modelUpload?: ModelUpload;
@@ -168,21 +169,19 @@ const SalesRFQLineDocuments = ({
   console.log({ files });
 
   return (
-    <>
-      <HStack className="justify-between items-end">
-        <SalesRFQLineDocumentForm
-          rfqId={rfqId}
-          salesRfqLineId={salesRfqLineId}
-        />
-      </HStack>
-
+    <div className="min-h-[300px]">
       <Table>
         <Thead>
           <Tr>
             <Th>Name</Th>
             <Th>Size</Th>
 
-            <Th></Th>
+            <Th className="flex items-center justify-end">
+              <SalesRFQLineDocumentForm
+                rfqId={rfqId}
+                salesRfqLineId={salesRfqLineId}
+              />
+            </Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -301,7 +300,7 @@ const SalesRFQLineDocuments = ({
           )}
         </Tbody>
       </Table>
-    </>
+    </div>
   );
 };
 
@@ -323,7 +322,7 @@ const SalesRFQLineDocumentForm = ({
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && supabase && company) {
       const file = e.target.files[0];
-      const fileName = `${company.id}/sales-rfq/${rfqId}/${salesRfqLineId}:${file.name}`;
+      const fileName = `${company.id}/sales-rfq/${rfqId}/${salesRfqLineId}/${file.name}`;
 
       const fileUpload = await supabase.storage
         .from("private")

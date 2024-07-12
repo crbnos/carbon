@@ -10,12 +10,15 @@ import {
   CardTitle,
   Enumerable,
   HStack,
-  Menubar,
   VStack,
 } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
-import { Assign, EmployeeAvatar, useOptimisticAssignment } from "~/components";
+import {
+  Assignee,
+  EmployeeAvatar,
+  useOptimisticAssignment,
+} from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
   SupplierDetail,
@@ -59,15 +62,6 @@ const SupplierHeader = () => {
 
   return (
     <VStack>
-      {permissions.is("employee") && (
-        <Menubar>
-          <Assign
-            id={supplierId}
-            table="supplier"
-            value={routeData?.supplier?.assignee ?? ""}
-          />
-        </Menubar>
-      )}
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
@@ -93,16 +87,20 @@ const SupplierHeader = () => {
                 )}
               </CardAttributeValue>
             </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>Assignee</CardAttributeLabel>
-              <CardAttributeValue>
-                {assignee ? (
-                  <EmployeeAvatar employeeId={assignee ?? null} />
-                ) : (
-                  "-"
-                )}
-              </CardAttributeValue>
-            </CardAttribute>
+
+            {permissions.is("employee") && (
+              <CardAttribute>
+                <CardAttributeLabel>Assignee</CardAttributeLabel>
+                <CardAttributeValue>
+                  <Assignee
+                    id={supplierId}
+                    table="supplier"
+                    value={assignee ?? ""}
+                  />
+                </CardAttributeValue>
+              </CardAttribute>
+            )}
+
             <CardAttribute>
               <CardAttributeLabel>Type</CardAttributeLabel>
               <CardAttributeValue>

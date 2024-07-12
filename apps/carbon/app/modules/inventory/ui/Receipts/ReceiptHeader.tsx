@@ -19,7 +19,7 @@ import {
 import { formatDate } from "@carbon/utils";
 
 import { useParams } from "@remix-run/react";
-import { Assign, EmployeeAvatar, useOptimisticAssignment } from "~/components";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import { ReceiptPostModal, ReceiptStatus } from "~/modules/inventory";
@@ -59,11 +59,6 @@ const ReceiptHeader = () => {
       <VStack>
         {permissions.is("employee") && (
           <Menubar>
-            <Assign
-              id={receiptId}
-              table="receipt"
-              value={routeData?.receipt?.assignee ?? ""}
-            />
             <MenubarItem
               isDisabled={!canPost || isPosted}
               onClick={postingModal.onOpen}
@@ -95,11 +90,11 @@ const ReceiptHeader = () => {
               <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
-                  {assignee ? (
-                    <EmployeeAvatar employeeId={assignee ?? null} />
-                  ) : (
-                    "-"
-                  )}
+                  <Assignee
+                    id={receiptId}
+                    table="receipt"
+                    value={assignee ?? ""}
+                  />
                 </CardAttributeValue>
               </CardAttribute>
               <CardAttribute>

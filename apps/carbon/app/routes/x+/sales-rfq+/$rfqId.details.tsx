@@ -5,8 +5,9 @@ import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
+import type { FileObject } from "@supabase/storage-js";
 import { useRouteData } from "~/hooks";
-import type { ItemFile, ModelUpload } from "~/modules/items";
+import type { ModelUpload } from "~/modules/items";
 import type { SalesRFQ, SalesRFQStatus } from "~/modules/sales";
 import {
   SalesRFQForm,
@@ -98,7 +99,7 @@ export default function SalesRFQDetailsRoute() {
 
   const rfqData = useRouteData<{
     rfqSummary: SalesRFQ;
-    files: ItemFile[];
+    files: (FileObject & { salesRfqLineId: string | null })[];
     modelUploads?: ModelUpload[];
   }>(path.to.salesRfq(rfqId));
 

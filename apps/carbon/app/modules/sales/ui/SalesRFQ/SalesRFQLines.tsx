@@ -24,7 +24,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { LuMove3D, LuSettings2, LuX } from "react-icons/lu";
+import { LuMove3D, LuPaperclip, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
@@ -57,27 +57,26 @@ type Line = z.infer<typeof salesRfqLineValidator> & {
 type ItemWithData = SortableItem & {
   data: Line;
   modelUpload?: ModelUpload;
-  files?: FileObject[];
+  files?: (FileObject & { salesRfqLineId: string | null })[];
 };
 
 type SalesRFQLinesProps = {
   lines: Line[];
-  files: FileObject[];
+  files: (FileObject & { salesRfqLineId: string | null })[];
   modelUploads: ModelUpload[];
 };
 
 function makeItems(
   lines: Line[],
   modelUploads: ModelUpload[],
-  files: FileObject[]
+  files: (FileObject & { salesRfqLineId: string | null })[]
 ): ItemWithData[] {
   return lines.map((line) =>
     makeItem(
       line,
       modelUploads.find((m) => m?.salesRfqLineId === line.id),
       files.filter((f) => {
-        const [lineId] = f.name.split(":");
-        return lineId === line.id;
+        return f.salesRfqLineId === line.id;
       })
     )
   );
@@ -86,7 +85,7 @@ function makeItems(
 function makeItem(
   line: Line,
   modelUpload?: ModelUpload,
-  files?: FileObject[]
+  files?: (FileObject & { salesRfqLineId: string | null })[]
 ): ItemWithData {
   return {
     id: line.id!,
@@ -115,6 +114,11 @@ function makeItem(
         {modelUpload && (
           <Badge variant="secondary">
             <LuMove3D className="w-4 h-4 text-green-500" />
+          </Badge>
+        )}
+        {files && files.length > 0 && (
+          <Badge variant="secondary">
+            <LuPaperclip className="w-4 h-4" />
           </Badge>
         )}
       </HStack>
