@@ -6,7 +6,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
-import type { ModelUpload } from "~/modules/items";
+import type { ItemFile, ModelUpload } from "~/modules/items";
 import type { SalesRFQ, SalesRFQStatus } from "~/modules/sales";
 import {
   SalesRFQForm,
@@ -98,6 +98,7 @@ export default function SalesRFQDetailsRoute() {
 
   const rfqData = useRouteData<{
     rfqSummary: SalesRFQ;
+    files: ItemFile[];
     modelUploads?: ModelUpload[];
   }>(path.to.salesRfq(rfqId));
 
@@ -123,7 +124,11 @@ export default function SalesRFQDetailsRoute() {
   return (
     <VStack spacing={2} className="p-2">
       <SalesRFQForm key={initialValues.id} initialValues={initialValues} />
-      <SalesRFQLines lines={lines} modelUploads={rfqData?.modelUploads ?? []} />
+      <SalesRFQLines
+        lines={lines}
+        files={rfqData?.files ?? []}
+        modelUploads={rfqData?.modelUploads ?? []}
+      />
     </VStack>
   );
 }
