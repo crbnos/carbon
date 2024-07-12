@@ -19,6 +19,7 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useParams } from "@remix-run/react";
+import type { FileObject } from "@supabase/storage-js";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
@@ -46,6 +47,7 @@ import type { ModelUpload } from "~/modules/items";
 import { CadModel } from "~/modules/items";
 import { path } from "~/utils/path";
 import { salesRfqLineValidator } from "../../sales.models";
+import SalesRFQLineDocuments from "./SalesRFQLineDocuments";
 
 type Line = z.infer<typeof salesRfqLineValidator> & {
   internalNotes: JSONContent;
@@ -55,23 +57,37 @@ type Line = z.infer<typeof salesRfqLineValidator> & {
 type ItemWithData = SortableItem & {
   data: Line;
   modelUpload?: ModelUpload;
+  files?: FileObject[];
 };
 
 type SalesRFQLinesProps = {
   lines: Line[];
+  files: FileObject[];
   modelUploads: ModelUpload[];
 };
 
-function makeItems(lines: Line[], modelUploads: ModelUpload[]): ItemWithData[] {
+function makeItems(
+  lines: Line[],
+  modelUploads: ModelUpload[],
+  files: FileObject[]
+): ItemWithData[] {
   return lines.map((line) =>
     makeItem(
       line,
-      modelUploads.find((m) => m?.salesRfqLineId === line.id)
+      modelUploads.find((m) => m?.salesRfqLineId === line.id),
+      files.filter((f) => {
+        const [lineId] = f.name.split(":");
+        return lineId === line.id;
+      })
     )
   );
 }
 
-function makeItem(line: Line, modelUpload?: ModelUpload): ItemWithData {
+function makeItem(
+  line: Line,
+  modelUpload?: ModelUpload,
+  files?: FileObject[]
+): ItemWithData {
   return {
     id: line.id!,
     title: (
@@ -105,6 +121,7 @@ function makeItem(line: Line, modelUpload?: ModelUpload): ItemWithData {
     ),
     data: line,
     modelUpload,
+    files,
   };
 }
 
@@ -119,7 +136,7 @@ const initialLine: Omit<Line, "id" | "salesRfqId" | "order"> = {
   externalNotes: {} as JSONContent,
 };
 
-const SalesRFQLines = ({ lines, modelUploads }: SalesRFQLinesProps) => {
+const SalesRFQLines = ({ lines, files, modelUploads }: SalesRFQLinesProps) => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
 
@@ -131,14 +148,14 @@ const SalesRFQLines = ({ lines, modelUploads }: SalesRFQLinesProps) => {
   } = useUser();
 
   const [items, setItems] = useState<ItemWithData[]>(
-    makeItems(lines ?? [], modelUploads)
+    makeItems(lines ?? [], modelUploads, files)
   );
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
 
   useEffect(() => {
-    setItems(makeItems(lines, modelUploads));
+    setItems(makeItems(lines, modelUploads, files));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelUploads]);
+  }, [modelUploads, files]);
 
   const onToggleItem = (id: string) => {
     setItems((prevItems) =>
@@ -237,7 +254,7 @@ const SalesRFQLines = ({ lines, modelUploads }: SalesRFQLinesProps) => {
   }, []);
 
   const onUploadImage = async (file: File) => {
-    const fileName = `${companyId}/sales-rfqs/${selectedLineId}/${Math.random()
+    const fileName = `${companyId}/sales-rfqs/${selectedLineId}:${Math.random()
       .toString(16)
       .slice(2)}-${file.name}`;
     const result = await supabase?.storage
@@ -372,7 +389,7 @@ const SalesRFQLines = ({ lines, modelUploads }: SalesRFQLinesProps) => {
         },
         {
           id: 2,
-          label: "Drawing",
+          label: "Files",
 
           content: (
             <div className="flex flex-col">
@@ -385,7 +402,14 @@ const SalesRFQLines = ({ lines, modelUploads }: SalesRFQLinesProps) => {
                   duration: 0.75,
                   delay: 0.15,
                 }}
-              ></motion.div>
+              >
+                <SalesRFQLineDocuments
+                  files={item.files ?? []}
+                  modelUpload={item.modelUpload}
+                  rfqId={rfqId}
+                  salesRfqLineId={item.id}
+                />
+              </motion.div>
             </div>
           ),
         },

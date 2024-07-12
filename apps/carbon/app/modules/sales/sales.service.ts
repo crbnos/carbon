@@ -371,9 +371,10 @@ export async function getCustomerTypesList(
     .order("name");
 }
 
-export async function getModelUploadsByRfqId(
+export async function getFilesByRfqId(
   client: SupabaseClient<Database>,
-  rfqId: string
+  rfqId: string,
+  companyId: string
 ) {
   const lines = await client
     .from("salesRfqLine")
@@ -383,10 +384,27 @@ export async function getModelUploadsByRfqId(
     return lines;
   }
   const lineIds = lines.data?.map((line) => line.id);
-  return client
-    .from("modelUpload")
-    .select("*")
-    .in("salesRfqLineId", lineIds ?? []);
+  const [modelUploads, files] = await Promise.all([
+    client
+      .from("modelUpload")
+      .select("*")
+      .in("salesRfqLineId", lineIds ?? []),
+    client.storage.from("private").list(`${companyId}/sales-rfq/${rfqId}`),
+  ]);
+
+  if (modelUploads.error) {
+    return modelUploads;
+  }
+  if (files.error) {
+    return files;
+  }
+
+  return {
+    data: {
+      modelUploads: modelUploads.data,
+      files: files.data,
+    },
+  };
 }
 
 export async function getQuote(

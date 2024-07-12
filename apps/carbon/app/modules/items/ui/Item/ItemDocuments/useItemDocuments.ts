@@ -27,7 +27,6 @@ export const useItemDocuments = ({ itemId }: Props) => {
 
   const deleteFile = useCallback(
     async (file: ItemFile) => {
-      console.log(`deleting file ${file.name}: ${getPath(file)}`);
       const fileDelete = await supabase?.storage
         .from("private")
         .remove([getPath(file)]);

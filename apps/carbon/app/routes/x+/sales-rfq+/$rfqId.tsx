@@ -4,7 +4,7 @@ import { Outlet } from "@remix-run/react";
 import {
   SalesRFQHeader,
   SalesRFQProperties,
-  getModelUploadsByRfqId,
+  getFilesByRfqId,
   getSalesRFQ,
 } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -19,16 +19,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const [rfqSummary, modelUpload] = await Promise.all([
+  const [rfqSummary, files] = await Promise.all([
     getSalesRFQ(client, rfqId),
-    getModelUploadsByRfqId(client, rfqId),
+    getFilesByRfqId(client, rfqId, companyId),
   ]);
 
   if (rfqSummary.error) {
@@ -41,9 +41,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  console.log({ files: files.data?.files });
+
   return json({
     rfqSummary: rfqSummary.data,
-    modelUploads: modelUpload.data,
+    files: files.data?.files ?? [],
+    modelUploads: files.data?.modelUploads ?? [],
   });
 }
 
