@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
+import type { FileObject } from "@supabase/storage-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/resources";
@@ -384,25 +385,41 @@ export async function getFilesByRfqId(
     return lines;
   }
   const lineIds = lines.data?.map((line) => line.id);
-  const [modelUploads, files] = await Promise.all([
+  const fileQueries = lineIds.map((lineId) =>
+    client.storage
+      .from("private")
+      .list(`${companyId}/sales-rfq/${rfqId}/${lineId}`)
+  );
+  const [modelUploads, ...files] = await Promise.all([
     client
       .from("modelUpload")
       .select("*")
       .in("salesRfqLineId", lineIds ?? []),
-    client.storage.from("private").list(`${companyId}/sales-rfq/${rfqId}`),
+    ...fileQueries,
   ]);
 
   if (modelUploads.error) {
     return modelUploads;
   }
-  if (files.error) {
-    return files;
-  }
 
   return {
     data: {
       modelUploads: modelUploads.data,
-      files: files.data,
+      files: files.reduce<(FileObject & { salesRfqLineId: string | null })[]>(
+        (acc, file, index) => {
+          if (file.data) {
+            return [
+              ...acc,
+              ...file.data?.map((f) => ({
+                ...f,
+                salesRfqLineId: lineIds[index],
+              })),
+            ];
+          }
+          return acc;
+        },
+        []
+      ),
     },
   };
 }

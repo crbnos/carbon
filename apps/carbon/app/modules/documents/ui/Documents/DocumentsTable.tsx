@@ -617,6 +617,8 @@ function getDocumentLocation(
       return path.to.purchaseOrder(sourceDocumentId);
     case "Quote":
       return path.to.quote(sourceDocumentId);
+    case "Request for Quote":
+      return path.to.salesRfq(sourceDocumentId);
     default:
       return "#";
   }

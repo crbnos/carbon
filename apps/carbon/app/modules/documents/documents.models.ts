@@ -17,6 +17,7 @@ export const documentTypes = [
 export const documentSourceTypes = [
   "Purchase Order",
   "Quote",
+  "Request for Quote",
   ...methodItemType,
 ] as const;
 

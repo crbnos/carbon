@@ -11,8 +11,11 @@ import {
 } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
-import { CustomerAvatar, useOptimisticAssignment } from "~/components";
-import Assignee from "~/components/Assignee";
+import {
+  Assignee,
+  CustomerAvatar,
+  useOptimisticAssignment,
+} from "~/components";
 import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

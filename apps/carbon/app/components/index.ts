@@ -1,5 +1,5 @@
 import Address from "./Address";
-import Assign, { useOptimisticAssignment } from "./Assign";
+import Assignee, { useOptimisticAssignment } from "./Assignee";
 import Avatar from "./Avatar";
 import { BreadcrumbItem, BreadcrumbLink, Breadcrumbs } from "./Breadcrumb";
 import Combobox from "./Combobox";
@@ -19,7 +19,7 @@ import Table from "./Table";
 
 export {
   Address,
-  Assign,
+  Assignee,
   Avatar,
   BreadcrumbItem,
   BreadcrumbLink,

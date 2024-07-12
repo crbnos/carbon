@@ -12,9 +12,8 @@ import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import {
-  Assign,
+  Assignee,
   CustomerAvatar,
-  EmployeeAvatar,
   useOptimisticAssignment,
 } from "~/components";
 import { useSupabase } from "~/lib/supabase";
@@ -183,7 +182,7 @@ export default function QuotationRoute() {
         <VStack className="border-b border-border px-4 py-2 text-sm">
           <HStack className="justify-between w-full">
             <span className="text-xs text-muted-foreground">Assignee</span>
-            {assignee && <EmployeeAvatar employeeId={assignee} />}
+            <Assignee id={id} table="quote" value={assignee ?? undefined} />
           </HStack>
         </VStack>
         <QuotationExplorer />
@@ -196,7 +195,6 @@ export default function QuotationRoute() {
             className="h-full w-full overflow-x-hidden flex-1 p-4"
           >
             <Menubar>
-              <Assign id={id} table="quote" value={assignee ?? undefined} />
               <MenubarItem asChild>
                 <a
                   target="_blank"
