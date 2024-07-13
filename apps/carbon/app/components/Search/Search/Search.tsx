@@ -22,11 +22,16 @@ import { nanoid } from "nanoid";
 import { useCallback, useEffect, useState } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { BiListCheck } from "react-icons/bi";
-import { BsCartDash, BsCartPlus } from "react-icons/bs";
+import { BsCartDash } from "react-icons/bs";
 import { CgProfile } from "react-icons/cg";
 import { HiOutlineDocumentDuplicate } from "react-icons/hi";
-import { LuSearch } from "react-icons/lu";
+import { LuSearch, LuUserSquare } from "react-icons/lu";
 import { PiShareNetworkFill } from "react-icons/pi";
+import {
+  RiProgress2Line,
+  RiProgress4Line,
+  RiProgress8Line,
+} from "react-icons/ri";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { useModules } from "~/components/Layout/Navigation/useModules";
 import { ShortcutKey } from "~/components/ShortcutKey";
@@ -178,7 +183,7 @@ const SearchModal = ({
                       // append with : so we're not sharing a value with a static result
                       value={`:${result.to}`}
                     >
-                      <RxMagnifyingGlass className="w-4 h-4 mr-2 " />
+                      <RxMagnifyingGlass className="w-4 h-4 mr-2" />
                       {result.name}
                     </CommandItem>
                   ))}
@@ -196,7 +201,7 @@ const SearchModal = ({
                       value={`${module} ${submodule.name}`}
                     >
                       {submodule.icon && (
-                        <submodule.icon className="w-4 h-4 mr-2 " />
+                        <submodule.icon className="w-4 h-4 mr-2" />
                       )}
                       <span>{submodule.name}</span>
                     </CommandItem>
@@ -243,26 +248,29 @@ const SearchModal = ({
 function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
   switch (entity) {
     case "Customer":
-      return <PiShareNetworkFill className="w-4 h-4 mr-2 " />;
+      return <LuUserSquare className="w-4 h-4 mr-2" />;
     case "Document":
-      return <HiOutlineDocumentDuplicate className="w-4 h-4 mr-2 " />;
+      return <HiOutlineDocumentDuplicate className="w-4 h-4 mr-2" />;
     case "Job":
-      return <BiListCheck className="w-4 h-4 mr-2 " />;
+      return <BiListCheck className="w-4 h-4 mr-2" />;
     case "Part":
-      return <AiOutlinePartition className="w-4 h-4 mr-2 " />;
+      return <AiOutlinePartition className="w-4 h-4 mr-2" />;
     case "Person":
-      return <CgProfile className="w-4 h-4 mr-2 " />;
+      return <CgProfile className="w-4 h-4 mr-2" />;
     case "Resource":
-      return <CgProfile className="w-4 h-4 mr-2 " />;
+      return <CgProfile className="w-4 h-4 mr-2" />;
     case "Purchase Order":
-      return <BsCartDash className="w-4 h-4 mr-2 " />;
+      return <BsCartDash className="w-4 h-4 mr-2" />;
     case "Opportunity":
     case "Lead":
+    case "Sales RFQ":
+      return <RiProgress2Line className="w-4 h-4 mr-2" />;
     case "Quotation":
+      return <RiProgress4Line className="w-4 h-4 mr-2" />;
     case "Sales Order":
-      return <BsCartPlus className="w-4 h-4 mr-2 " />;
+      return <RiProgress8Line className="w-4 h-4 mr-2" />;
     case "Supplier":
-      return <PiShareNetworkFill className="w-4 h-4 mr-2 " />;
+      return <PiShareNetworkFill className="w-4 h-4 mr-2" />;
     default:
       return null;
   }

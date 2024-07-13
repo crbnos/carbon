@@ -166,8 +166,6 @@ const SalesRFQLineDocuments = ({
       salesRfqLineId,
     });
 
-  console.log({ files });
-
   return (
     <div className="min-h-[300px]">
       <Table>
