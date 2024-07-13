@@ -6,9 +6,7 @@ import { flatRoutes } from "remix-flat-routes";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-installGlobals({
-  nativeFetch: true,
-});
+installGlobals();
 
 export default defineConfig({
   ssr: {
@@ -28,9 +26,7 @@ export default defineConfig({
       //   port: 3601,
       // },
       presets: [vercelPreset()],
-      future: {
-        unstable_singleFetch: true,
-      },
+      future: {},
       ignoredRouteFiles: ["**/.*"],
       serverModuleFormat: "esm",
       //serverPlatform: "node",
