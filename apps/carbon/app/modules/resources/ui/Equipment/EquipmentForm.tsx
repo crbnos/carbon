@@ -114,6 +114,7 @@ const EquipmentForm = ({
             <Hidden name="id" />
             <VStack spacing={4}>
               <Input name="name" label="Name" />
+              <Input name="equipmentId" label="Equipment ID" />
               <TextArea name="description" label="Description" />
               <Select
                 name="equipmentTypeId"

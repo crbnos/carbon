@@ -5143,6 +5143,7 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           description: string | null
+          equipmentId: string | null
           equipmentTypeId: string
           id: string
           locationId: string
@@ -5161,6 +5162,7 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description?: string | null
+          equipmentId?: string | null
           equipmentTypeId: string
           id?: string
           locationId: string
@@ -5179,6 +5181,7 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           description?: string | null
+          equipmentId?: string | null
           equipmentTypeId?: string
           id?: string
           locationId?: string

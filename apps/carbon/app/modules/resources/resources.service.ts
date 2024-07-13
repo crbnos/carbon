@@ -433,7 +433,9 @@ export async function getEquipmentType(
 ) {
   return client
     .from("equipmentType")
-    .select("*, equipment(id, name, location(id, name))")
+    .select(
+      "*, equipment(id, name, equipmentId, description, location(id, name))"
+    )
     .eq("active", true)
     .eq("id", equipmentTypeId)
     .single();
@@ -446,7 +448,7 @@ export async function getEquipmentTypes(
 ) {
   let query = client
     .from("equipmentType")
-    .select("*, equipment(id, name)", {
+    .select("*, equipment(id, name, equipmentId, description)", {
       count: "exact",
     })
     .eq("companyId", companyId)

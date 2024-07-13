@@ -113,7 +113,8 @@ export const employeeJobValidator = z.object({
 export const equipmentValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
-  description: z.string(),
+  equipmentId: zfd.text(z.string().optional()),
+  description: zfd.text(z.string().optional()),
   equipmentTypeId: z.string().min(1, { message: "Type is required" }),
   operatorsRequired: zfd.numeric(z.number().optional()),
   locationId: z.string().min(1, { message: "Location is required" }),

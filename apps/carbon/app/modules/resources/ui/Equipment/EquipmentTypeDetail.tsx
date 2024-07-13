@@ -9,6 +9,7 @@ import {
   DrawerTitle,
   DropdownMenuIcon,
   DropdownMenuItem,
+  Enumerable,
   HStack,
   VStack,
   useDisclosure,
@@ -70,12 +71,14 @@ const EquipmentTypeDetail = ({
                 {equipmentType.equipment.map((equipment) => {
                   return (
                     <HStack key={equipment.id} className="w-full">
-                      <VStack spacing={0} className="flex-grow">
-                        <span className="font-bold">{equipment.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {/* @ts-ignore */}
-                          {equipment.location?.name}
-                        </span>
+                      <VStack spacing={1} className="flex-grow">
+                        <HStack>
+                          <span className="font-bold">{equipment.name}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {equipment.equipmentId ?? null}
+                          </span>
+                        </HStack>
+                        <Enumerable value={equipment?.location?.name ?? null} />
                       </VStack>
                       <ActionMenu>
                         <DropdownMenuItem asChild>
