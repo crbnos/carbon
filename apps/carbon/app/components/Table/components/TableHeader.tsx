@@ -26,7 +26,6 @@ type HeaderProps<T> = {
   selectedRows: T[];
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
-  withColumnOrdering: boolean;
   withInlineEditing: boolean;
   withPagination: boolean;
   withSearch: boolean;
@@ -45,7 +44,6 @@ const TableHeader = <T extends object>({
   selectedRows,
   setColumnOrder,
   setEditMode,
-  withColumnOrdering,
   withInlineEditing,
   withPagination,
   withSearch,
@@ -86,14 +84,14 @@ const TableHeader = <T extends object>({
               </Button>
             ))}
           <Sort columnAccessors={columnAccessors} />
-          {withColumnOrdering && (
-            <Columns
-              columnOrder={columnOrder}
-              columns={columns}
-              setColumnOrder={setColumnOrder}
-              withSelectableRows={withSelectableRows}
-            />
-          )}
+
+          <Columns
+            columnOrder={columnOrder}
+            columns={columns}
+            setColumnOrder={setColumnOrder}
+            withSelectableRows={withSelectableRows}
+          />
+
           {withPagination &&
             (pagination.canNextPage || pagination.canPreviousPage) && (
               <PaginationButtons {...pagination} condensed />

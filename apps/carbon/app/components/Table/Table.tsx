@@ -34,6 +34,7 @@ import type {
   Position,
 } from "~/components/Editable";
 import {
+  ColumnScroller,
   IndeterminateCheckbox,
   Pagination,
   Row,
@@ -55,7 +56,6 @@ interface TableProps<T extends object> {
   defaultColumnVisibility?: Record<string, boolean>;
   editableComponents?: Record<string, EditableTableCellComponent<T>>;
   primaryAction?: ReactNode;
-  withColumnOrdering?: boolean;
   withInlineEditing?: boolean;
   withPagination?: boolean;
   withSearch?: boolean;
@@ -78,7 +78,6 @@ const Table = <T extends object>({
   editableComponents,
   primaryAction,
   withInlineEditing = false,
-  withColumnOrdering = false,
   withPagination = true,
   withSearch = true,
   withSelectableRows = false,
@@ -110,7 +109,7 @@ const Table = <T extends object>({
     defaultColumnOrder ?? []
   );
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(
-    withColumnOrdering ? defaultColumnPinning : {}
+    defaultColumnPinning ?? {}
   );
 
   /* Sorting */
@@ -458,7 +457,6 @@ const Table = <T extends object>({
         setEditMode={setEditMode}
         pagination={pagination}
         withInlineEditing={withInlineEditing}
-        withColumnOrdering={withColumnOrdering}
         withPagination={withPagination}
         withSearch={withSearch}
         withSelectableRows={withSelectableRows}
@@ -470,134 +468,11 @@ const Table = <T extends object>({
         ref={tableContainerRef}
         onKeyDown={editMode ? onKeyDown : undefined}
       >
-        <div
-          className={cn(
-            "grid w-full h-full overflow-auto",
-            withColumnOrdering ? "grid-cols-[auto_1fr]" : "grid-cols-1"
-          )}
-        >
-          {/* Pinned left columns */}
-          {withColumnOrdering ? (
-            <TableBase className="bg-background border-r-4 border-border relative">
-              <Thead className="sticky top-0 z-10">
-                {table.getLeftHeaderGroups().map((headerGroup) => (
-                  <Tr key={headerGroup.id} className="h-10">
-                    {headerGroup.headers.map((header) => {
-                      const accessorKey = getAccessorKey(
-                        header.column.columnDef
-                      );
-                      const sortable =
-                        withSimpleSorting &&
-                        accessorKey &&
-                        !accessorKey.endsWith(".id") &&
-                        header.column.columnDef.enableSorting !== false;
-
-                      const sorted = isSorted(accessorKey ?? "");
-
-                      return (
-                        <Th
-                          key={header.id}
-                          // layout
-                          onClick={
-                            sortable && !editMode
-                              ? () => toggleSortBy(accessorKey ?? "")
-                              : undefined
-                          }
-                          className={cn(
-                            "px-4 py-2 whitespace-nowrap",
-                            editMode && "cursor-pointer border-r border-border"
-                          )}
-                          colSpan={header.colSpan}
-                        >
-                          {header.isPlaceholder ? null : (
-                            <div className="flex justify-start items-center text-xs text-muted-foreground">
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                              <span className="pl-2">
-                                {sorted ? (
-                                  sorted === -1 ? (
-                                    <FaSortDown
-                                      aria-label="sorted descending"
-                                      className="text-primary"
-                                    />
-                                  ) : (
-                                    <FaSortUp
-                                      aria-label="sorted ascending"
-                                      className="text-primary"
-                                    />
-                                  )
-                                ) : sortable ? (
-                                  <FaSort aria-label="sort" />
-                                ) : null}
-                              </span>
-                            </div>
-                          )}
-                        </Th>
-                      );
-                    })}
-                  </Tr>
-                ))}
-              </Thead>
-              <Tbody>
-                {rows.map((row) => {
-                  return renderContextMenu ? (
-                    <Menu type="context" key={row.index}>
-                      <ContextMenu>
-                        <ContextMenuTrigger asChild>
-                          <Row
-                            editableComponents={editableComponents}
-                            isEditing={isEditing}
-                            isEditMode={editMode}
-                            isFrozenColumn
-                            isRowSelected={
-                              row.index in rowSelection &&
-                              !!rowSelection[row.index]
-                            }
-                            selectedCell={selectedCell}
-                            row={row}
-                            rowIsSelected={selectedCell?.row === row.index}
-                            withColumnOrdering={withColumnOrdering}
-                            onCellClick={onCellClick}
-                            onCellUpdate={onCellUpdate}
-                          />
-                        </ContextMenuTrigger>
-                        <ContextMenuContent className="w-128">
-                          {renderContextMenu(row.original)}
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    </Menu>
-                  ) : (
-                    <Row
-                      key={row.id}
-                      editableComponents={editableComponents}
-                      isEditing={isEditing}
-                      isEditMode={editMode}
-                      isFrozenColumn
-                      isRowSelected={
-                        row.index in rowSelection && !!rowSelection[row.index]
-                      }
-                      selectedCell={selectedCell}
-                      row={row}
-                      rowIsSelected={selectedCell?.row === row.index}
-                      withColumnOrdering={withColumnOrdering}
-                      onCellClick={onCellClick}
-                      onCellUpdate={onCellUpdate}
-                    />
-                  );
-                })}
-              </Tbody>
-            </TableBase>
-          ) : null}
-
-          {/* Unpinned columns */}
-          <TableBase className="relative">
+        <div className="flex max-w-full h-full">
+          <ColumnScroller direction="left" visible={canScrollLeft} />
+          <TableBase className="relative table-fixed border-separate border-spacing-0">
             <Thead className="sticky top-0 z-10">
-              {(withColumnOrdering
-                ? table.getCenterHeaderGroups()
-                : table.getHeaderGroups()
-              ).map((headerGroup) => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <Tr key={headerGroup.id} className="h-10">
                   {headerGroup.headers.map((header) => {
                     const accessorKey = getAccessorKey(header.column.columnDef);
@@ -613,17 +488,20 @@ const Table = <T extends object>({
                       <Th
                         key={header.id}
                         colSpan={header.colSpan}
-                        onClick={
-                          sortable
-                            ? () => toggleSortBy(accessorKey ?? "")
-                            : undefined
-                        }
                         className={cn(
                           "px-4 py-3 whitespace-nowrap",
                           editMode && "border-r-1 border-border",
                           sortable && "cursor-pointer"
                         )}
-                        style={{ width: header.getSize() }}
+                        style={{
+                          ...getCommonPinninyStyles(header.column),
+                          width: header.getSize(),
+                        }}
+                        onClick={
+                          sortable
+                            ? () => toggleSortBy(accessorKey ?? "")
+                            : undefined
+                        }
                       >
                         {header.isPlaceholder ? null : (
                           <div className="flex justify-start items-center text-xs text-muted-foreground">
@@ -682,7 +560,6 @@ const Table = <T extends object>({
                           selectedCell={selectedCell}
                           row={row}
                           rowIsSelected={selectedCell?.row === row.index}
-                          withColumnOrdering={withColumnOrdering}
                           onCellClick={onCellClick}
                           onCellUpdate={onCellUpdate}
                         />
@@ -710,7 +587,6 @@ const Table = <T extends object>({
                     selectedCell={selectedCell}
                     row={row}
                     rowIsSelected={selectedCell?.row === row.index}
-                    withColumnOrdering={withColumnOrdering}
                     onCellClick={onCellClick}
                     onCellUpdate={onCellUpdate}
                   />
@@ -718,6 +594,7 @@ const Table = <T extends object>({
               })}
             </Tbody>
           </TableBase>
+          <ColumnScroller direction="right" visible={canScrollRight} />
         </div>
       </div>
       {withPagination && <Pagination {...pagination} />}

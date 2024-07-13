@@ -1,6 +1,6 @@
 import { Tr, cn } from "@carbon/react";
 import type { Row as RowType } from "@tanstack/react-table";
-import type { ComponentProps } from "react";
+import type { CSSProperties, ComponentProps } from "react";
 import { memo } from "react";
 import type {
   EditableTableCellComponent,
@@ -19,7 +19,7 @@ type RowProps<T> = ComponentProps<typeof Tr> & {
   selectedCell: Position;
   row: RowType<T>;
   rowIsSelected: boolean;
-  withColumnOrdering: boolean;
+  getCommonPinningStyles?: (column: Column<any, unknown>) => CSSProperties;
   onCellClick: (row: number, column: number) => void;
   onCellUpdate: (row: number) => (updates: Record<string, unknown>) => void;
 };
@@ -35,7 +35,6 @@ const Row = <T extends object>({
   row,
   rowIsSelected,
   selectedCell,
-  withColumnOrdering,
   onCellClick,
   onCellUpdate,
   ...props
@@ -51,12 +50,7 @@ const Row = <T extends object>({
       )}
       {...props}
     >
-      {(isFrozenColumn
-        ? row.getLeftVisibleCells()
-        : withColumnOrdering
-        ? row.getCenterVisibleCells()
-        : row.getVisibleCells()
-      ).map((cell, columnIndex) => {
+      {row.getVisibleCells().map((cell, columnIndex) => {
         const isSelected = isFrozenColumn
           ? selectedCell?.row === cell.row.index &&
             selectedCell?.column === columnIndex - 1
