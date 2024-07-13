@@ -25401,6 +25401,7 @@ export type Database = {
         | "Sales Invoice"
         | "Purchase Invoice"
         | "Document"
+        | "Sales RFQ"
       serviceType: "Internal" | "External"
       shippingCarrier: "UPS" | "FedEx" | "USPS" | "DHL" | "Other"
       supplierLedgerDocumentType:
