@@ -39,6 +39,7 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
+import type { methodOperationValidator } from "../../items.models";
 import { methodItemType, methodMaterialValidator } from "../../items.models";
 import type { MethodItemType, MethodType } from "../../types";
 import { MethodIcon, MethodItemTypeIcon } from "./MethodIcon";
@@ -47,6 +48,8 @@ type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
 };
 
+type Operation = z.infer<typeof methodOperationValidator>;
+
 type ItemWithData = SortableItem & {
   data: Material;
 };
@@ -54,6 +57,7 @@ type ItemWithData = SortableItem & {
 type BillOfMaterialProps = {
   makeMethodId: string;
   materials: Material[];
+  operations: Operation[];
 };
 
 function makeItems(materials: Material[]): ItemWithData[] {
@@ -102,7 +106,11 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
   unitOfMeasureCode: "EA",
 };
 
-const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
+const BillOfMaterial = ({
+  makeMethodId,
+  materials,
+  operations,
+}: BillOfMaterialProps) => {
   const fetcher = useFetcher();
 
   const [items, setItems] = useState<ItemWithData[]>(
@@ -313,6 +321,7 @@ const BillOfMaterial = ({ makeMethodId, materials }: BillOfMaterialProps) => {
                             item={item}
                             setItems={setItems}
                             setSelectedItemId={setSelectedItemId}
+                            methodOperations={operations}
                           />
                         </motion.div>
                       </motion.div>
@@ -367,10 +376,12 @@ function MaterialForm({
   item,
   setItems,
   setSelectedItemId,
+  methodOperations,
 }: {
   item: ItemWithData;
   setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
+  methodOperations: Operation[];
 }) {
   const { supabase } = useSupabase();
   const methodMaterialFetcher = useFetcher<{ id: string }>();
@@ -509,15 +520,26 @@ function MaterialForm({
               onItemChange(value?.value as string);
             }}
           />
-          <InputControlled
-            name="description"
-            label="Description"
-            isReadOnly
-            value={itemData.description}
-            onChange={(newValue) => {
-              setItemData((d) => ({ ...d, description: newValue }));
-            }}
+          <Select
+            name="methodOperationId"
+            label="Operation"
+            isClearable
+            options={methodOperations.map((o) => ({
+              value: o.id!,
+              label: o.description,
+            }))}
           />
+        </div>
+        <InputControlled
+          name="description"
+          label="Description"
+          isReadOnly
+          value={itemData.description}
+          onChange={(newValue) => {
+            setItemData((d) => ({ ...d, description: newValue }));
+          }}
+        />
+        <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
           <DefaultMethodType
             name="methodType"
             label="Method Type"

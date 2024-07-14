@@ -8189,6 +8189,7 @@ export type Database = {
           itemType: string
           makeMethodId: string
           materialMakeMethodId: string | null
+          methodOperationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
           quantity: number
@@ -8207,6 +8208,7 @@ export type Database = {
           itemType?: string
           makeMethodId: string
           materialMakeMethodId?: string | null
+          methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity: number
@@ -8225,6 +8227,7 @@ export type Database = {
           itemType?: string
           makeMethodId?: string
           materialMakeMethodId?: string | null
+          methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity?: number
@@ -8322,6 +8325,13 @@ export type Database = {
             columns: ["makeMethodId"]
             isOneToOne: false
             referencedRelation: "makeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_methodOperation_fkey"
+            columns: ["methodOperationId"]
+            isOneToOne: false
+            referencedRelation: "methodOperation"
             referencedColumns: ["id"]
           },
           {

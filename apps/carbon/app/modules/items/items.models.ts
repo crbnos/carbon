@@ -141,6 +141,7 @@ export const methodMaterialValidator = z
     }),
     itemId: z.string().optional(),
     itemReadableId: z.string().optional(),
+    methodOperationId: zfd.text(z.string().optional()),
     // description: z.string().min(1, { message: "Description is required" }),
     quantity: zfd.numeric(z.number().min(0)),
     unitOfMeasureCode: z

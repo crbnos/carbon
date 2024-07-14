@@ -128,6 +128,8 @@ export default function MakeMethodRoute() {
         makeMethodId={makeMethodId}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}
+        // @ts-ignore
+        operations={manufacturingRouteData?.methodOperations}
       />
     </VStack>
   );

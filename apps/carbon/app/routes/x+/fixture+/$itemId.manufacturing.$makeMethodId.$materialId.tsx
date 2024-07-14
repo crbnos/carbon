@@ -81,6 +81,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         description: m.item?.name ?? "",
         methodType: m.methodType as MethodType,
         itemType: m.itemType as MethodItemType,
+        methodOperationId: m.methodOperationId ?? undefined,
       })) ?? [],
     methodOperations:
       methodOperations.data?.map((operation) => ({
@@ -118,6 +119,7 @@ export default function MethodMaterialMakePage() {
         key={`bom:${itemId}:${makeMethodId}:${materialId}`}
         makeMethodId={makeMethodId}
         materials={methodMaterials}
+        operations={methodOperations}
       />
     </VStack>
   );
