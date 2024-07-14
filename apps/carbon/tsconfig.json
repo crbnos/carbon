@@ -20,6 +20,7 @@
     "paths": {
       "~/*": ["./app/*"]
     },
+    "types": ["@remix-run/react/future/single-fetch.d.ts"],
     "noEmit": true,
     "isolatedModules": true,
     "skipLibCheck": true,
