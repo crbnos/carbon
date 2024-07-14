@@ -13,7 +13,7 @@
     "turbo": "^1.13.2"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "lint-staged": {
     "(apps|packages)/**/*.{js,ts,jsx,tsx}": [
