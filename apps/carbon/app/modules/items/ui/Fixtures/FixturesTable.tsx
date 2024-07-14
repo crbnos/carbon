@@ -276,7 +276,6 @@ const FixturesTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          withColumnOrdering
         />
         {selectedItem && selectedItem.id && (
           <ConfirmDelete

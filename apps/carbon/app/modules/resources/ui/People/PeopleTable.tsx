@@ -223,7 +223,6 @@ const PeopleTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          withColumnOrdering
         />
       </>
     );

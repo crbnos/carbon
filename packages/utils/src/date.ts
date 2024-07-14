@@ -1,4 +1,4 @@
-import { getLocalTimeZone, parseDate } from "@internationalized/date";
+import { getLocalTimeZone, parseAbsolute } from "@internationalized/date";
 const relativeFormatter = new Intl.RelativeTimeFormat(undefined, {
   numeric: "auto",
 });
@@ -27,12 +27,13 @@ export function formatDate(
   options?: Intl.DateTimeFormatOptions
 ) {
   if (!dateString) return "";
-  const date = parseDate(dateString);
+  // @ts-expect-error
+  const date = parseAbsolute(dateString);
 
   return new Intl.DateTimeFormat(
     undefined,
     options || defaultFormatOptions
-  ).format(date.toDate(getLocalTimeZone()));
+  ).format(date.toDate());
 }
 
 export function formatRelativeTime(isoString: string) {

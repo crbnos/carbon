@@ -1,6 +1,6 @@
 import { Tr, cn } from "@carbon/react";
-import type { Row as RowType } from "@tanstack/react-table";
-import type { ComponentProps } from "react";
+import type { Column, Row as RowType } from "@tanstack/react-table";
+import type { CSSProperties, ComponentProps } from "react";
 import { memo } from "react";
 import type {
   EditableTableCellComponent,
@@ -15,11 +15,11 @@ type RowProps<T> = ComponentProps<typeof Tr> & {
   isEditMode: boolean;
   isFrozenColumn?: boolean;
   isRowSelected?: boolean;
-  pinnedColumns?: number;
+  pinnedColumns: string;
   selectedCell: Position;
   row: RowType<T>;
   rowIsSelected: boolean;
-  withColumnOrdering: boolean;
+  getPinnedStyles: (column: Column<any, unknown>) => CSSProperties;
   onCellClick: (row: number, column: number) => void;
   onCellUpdate: (row: number) => (updates: Record<string, unknown>) => void;
 };
@@ -31,11 +31,11 @@ const Row = <T extends object>({
   isEditMode,
   isFrozenColumn = false,
   isRowSelected = false,
-  pinnedColumns = 0,
+  pinnedColumns,
   row,
   rowIsSelected,
   selectedCell,
-  withColumnOrdering,
+  getPinnedStyles,
   onCellClick,
   onCellUpdate,
   ...props
@@ -51,17 +51,10 @@ const Row = <T extends object>({
       )}
       {...props}
     >
-      {(isFrozenColumn
-        ? row.getLeftVisibleCells()
-        : withColumnOrdering
-        ? row.getCenterVisibleCells()
-        : row.getVisibleCells()
-      ).map((cell, columnIndex) => {
-        const isSelected = isFrozenColumn
-          ? selectedCell?.row === cell.row.index &&
-            selectedCell?.column === columnIndex - 1
-          : selectedCell?.row === cell.row.index &&
-            selectedCell?.column === columnIndex + pinnedColumns;
+      {row.getVisibleCells().map((cell, columnIndex) => {
+        const isSelected =
+          selectedCell?.row === cell.row.index &&
+          selectedCell?.column === columnIndex;
 
         return (
           <Cell<T>
@@ -75,15 +68,11 @@ const Row = <T extends object>({
             isSelected={isSelected}
             isEditing={isEditing}
             isEditMode={isEditMode}
+            pinnedColumns={pinnedColumns}
+            getPinnedStyles={getPinnedStyles}
             onClick={
               isEditMode
-                ? () =>
-                    onCellClick(
-                      cell.row.index,
-                      isFrozenColumn
-                        ? columnIndex - 1
-                        : columnIndex + pinnedColumns
-                    )
+                ? () => onCellClick(cell.row.index, columnIndex)
                 : undefined
             }
             onUpdate={onUpdate}
@@ -104,7 +93,8 @@ const MemoizedRow = memo(
     next.row.index === prev.selectedCell?.row &&
     next.selectedCell?.column === prev.selectedCell?.column &&
     next.isEditing === prev.isEditing &&
-    next.isEditMode === prev.isEditMode
+    next.isEditMode === prev.isEditMode &&
+    prev.pinnedColumns === next.pinnedColumns
 ) as typeof Row;
 
 export default MemoizedRow;

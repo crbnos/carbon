@@ -280,7 +280,6 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
-        withColumnOrdering
       />
       {selectedItem && selectedItem.id && (
         <ConfirmDelete

@@ -231,7 +231,6 @@ const SupplierAccountsTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          withColumnOrdering
           withSelectableRows={canEdit}
         />
 

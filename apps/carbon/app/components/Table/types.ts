@@ -8,6 +8,8 @@ declare module "@tanstack/react-table" {
     pluralHeader?: string;
   }
 }
+
+export type ColumnSizeMap = Map<string, { width: number; startX: number }>;
 export interface TableAction<T> {
   label: string;
   onClick: (rows: T[]) => void;

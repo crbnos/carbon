@@ -177,7 +177,6 @@ const CustomersTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          withColumnOrdering
         />
       </>
     );

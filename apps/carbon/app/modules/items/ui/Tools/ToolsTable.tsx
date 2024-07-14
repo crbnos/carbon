@@ -232,7 +232,6 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
-        withColumnOrdering
       />
       {selectedItem && selectedItem.id && (
         <ConfirmDelete

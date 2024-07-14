@@ -238,7 +238,6 @@ const CustomerAccountsTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          withColumnOrdering
           withSelectableRows={canEdit}
         />
 

@@ -298,7 +298,6 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
-        withColumnOrdering
       />
       {selectedReceipt && selectedReceipt.id && (
         <ConfirmDelete

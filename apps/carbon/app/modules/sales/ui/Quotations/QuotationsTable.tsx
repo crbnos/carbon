@@ -303,7 +303,6 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
             <New label="Quote" to={path.to.newQuote} />
           )
         }
-        withColumnOrdering
         renderContextMenu={renderContextMenu}
       />
       {selectedQuotation && selectedQuotation.id && (

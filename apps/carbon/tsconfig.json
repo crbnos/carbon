@@ -6,7 +6,7 @@
     "app/modules/documents/documents.service.ts"
   ],
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "ES2019"],
+    "lib": ["dom", "dom.iterable", "ESNext"],
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "module": "ESNext",

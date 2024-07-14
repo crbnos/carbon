@@ -8,7 +8,10 @@ const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
     <div className="w-full">
       <table
         ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          "w-full border-b border-border caption-bottom text-sm",
+          className
+        )}
         {...props}
       />
     </div>
@@ -53,7 +56,7 @@ const Tr = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElement>>(
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        "group border-b transition-colors data-[state=selected]:bg-muted",
         className
       )}
       {...props}
@@ -69,7 +72,7 @@ const Th = forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-11 px-6 text-left align-middle uppercase font-semibold tracking-tight text-muted-foreground [&:has([role=checkbox])]:pr-0",
+      "group-hover:bg-muted h-11 px-6 text-left align-middle uppercase bg-card font-semibold tracking-tight text-muted-foreground [&:has([role=checkbox])]:pr-0 border-b border-border",
       className
     )}
     {...props}
@@ -84,7 +87,7 @@ const Td = forwardRef<
   <td
     ref={ref}
     className={cn(
-      "text-foreground px-6 align-middle [&:has([role=checkbox])]:pr-0 h-11",
+      "group-hover:bg-muted text-foreground px-6 bg-card align-middle [&:has([role=checkbox])]:pr-0 h-11",
       className
     )}
     {...props}

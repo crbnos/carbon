@@ -482,8 +482,6 @@ const DocumentsTable = memo(
             primaryAction={
               permissions.can("create", "documents") && <DocumentCreateForm />
             }
-            withColumnOrdering
-            // withSelectableRows
             renderContextMenu={renderContextMenu}
           />
         )}

@@ -205,7 +205,6 @@ const SuppliersTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          withColumnOrdering
         />
       </>
     );

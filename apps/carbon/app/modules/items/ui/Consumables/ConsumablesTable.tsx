@@ -236,7 +236,6 @@ const ConsumablesTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          withColumnOrdering
         />
         {selectedItem && selectedItem.id && (
           <ConfirmDelete

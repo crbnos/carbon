@@ -317,7 +317,6 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             <New label="Sales Order" to={path.to.newSalesOrder} />
           )
         }
-        withColumnOrdering
         renderContextMenu={renderContextMenu}
       />
 

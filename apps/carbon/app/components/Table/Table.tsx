@@ -16,6 +16,7 @@ import {
 } from "@carbon/react";
 import { clamp } from "@carbon/utils";
 import type {
+  Column,
   ColumnDef,
   ColumnOrderState,
   ColumnPinningState,
@@ -26,7 +27,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaSort, FaSortDown, FaSortUp } from "react-icons/fa";
 import type {
@@ -42,8 +43,10 @@ import {
   useSort,
 } from "./components";
 import type { ColumnFilter } from "./components/Filter/types";
-import type { TableAction } from "./types";
+import type { ColumnSizeMap, TableAction } from "./types";
 import { getAccessorKey, updateNestedProperty } from "./utils";
+
+const PINNED_COLUMNS_BORDER_WIDTH = 2;
 
 interface TableProps<T extends object> {
   columns: ColumnDef<T>[];
@@ -55,7 +58,6 @@ interface TableProps<T extends object> {
   defaultColumnVisibility?: Record<string, boolean>;
   editableComponents?: Record<string, EditableTableCellComponent<T>>;
   primaryAction?: ReactNode;
-  withColumnOrdering?: boolean;
   withInlineEditing?: boolean;
   withPagination?: boolean;
   withSearch?: boolean;
@@ -71,14 +73,11 @@ const Table = <T extends object>({
   actions = [],
   count = 0,
   defaultColumnOrder,
-  defaultColumnPinning = {
-    left: ["Select"],
-  },
+  defaultColumnPinning,
   defaultColumnVisibility,
   editableComponents,
   primaryAction,
   withInlineEditing = false,
-  withColumnOrdering = false,
   withPagination = true,
   withSearch = true,
   withSelectableRows = false,
@@ -109,9 +108,28 @@ const Table = <T extends object>({
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
     defaultColumnOrder ?? []
   );
-  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(
-    withColumnOrdering ? defaultColumnPinning : {}
-  );
+  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() => {
+    const left: string[] = [];
+    const right: string[] = [];
+    if (withSelectableRows) {
+      left.push("Select");
+    }
+    if (renderContextMenu) {
+      right.push("Actions");
+    }
+    if (
+      defaultColumnPinning &&
+      "left" in defaultColumnPinning &&
+      Array.isArray(defaultColumnPinning.left)
+    ) {
+      left.push(...defaultColumnPinning.left);
+    }
+
+    return {
+      left,
+      right,
+    };
+  });
 
   /* Sorting */
   const { isSorted, toggleSortBy } = useSort();
@@ -442,6 +460,73 @@ const Table = <T extends object>({
   );
 
   const rows = table.getRowModel().rows;
+  const visibleColumns = table.getVisibleLeafColumns();
+
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  // Getter for the nested table wrapper element
+  const getTableWrapperEl = useCallback(
+    () => tableRef.current?.parentElement as HTMLDivElement | undefined,
+    []
+  );
+  const getHeaderElSelector = (id: string) => `#header-${id}`;
+
+  const pinnedColumnsKey = visibleColumns.reduce<string>(
+    (acc, col) => (col.getIsPinned() ? `${acc}:${col.id}` : acc),
+    ""
+  );
+  const [columnSizeMap, setColumnSizeMap] = useState<ColumnSizeMap>(new Map());
+
+  useEffect(() => {
+    // Allow time for the table to render and delayed column size transitions to occur before calculating column widths
+    const timeout = setTimeout(() => {
+      const tableWrapperEl = getTableWrapperEl();
+      const columnWidths: ColumnSizeMap = new Map();
+
+      let totalWidth = 0;
+
+      table.getHeaderGroups().forEach(({ headers }) => {
+        headers.forEach((header) => {
+          const headerEl = tableWrapperEl?.querySelector(
+            getHeaderElSelector(header.id)
+          );
+
+          columnWidths.set(header.id, {
+            width: headerEl?.clientWidth ?? 0,
+            startX: totalWidth,
+          });
+          totalWidth += headerEl?.clientWidth ?? 0;
+        });
+      });
+
+      setColumnSizeMap(columnWidths);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [getTableWrapperEl, table, visibleColumns, pinnedColumnsKey, columnOrder]);
+
+  const lastLeftPinnedColumn = table
+    .getLeftVisibleLeafColumns()
+    .findLast((c) => c.getIsPinned() === "left");
+
+  const getPinnedStyles = (column: Column<T>): CSSProperties => {
+    const isPinned = column.getIsPinned();
+
+    return {
+      left:
+        isPinned === "left"
+          ? columnSizeMap.get(column.id)?.startX ?? 0
+          : undefined,
+      right: isPinned === "right" ? column.getAfter("right") : undefined,
+      position: isPinned ? "sticky" : "relative",
+      zIndex: isPinned ? 1 : 0,
+      borderColor: "hsl(var(--border))",
+      borderRightWidth:
+        lastLeftPinnedColumn?.id === column.id
+          ? PINNED_COLUMNS_BORDER_WIDTH
+          : 0,
+    };
+  };
 
   return (
     <VStack spacing={0} className="h-full">
@@ -458,7 +543,6 @@ const Table = <T extends object>({
         setEditMode={setEditMode}
         pagination={pagination}
         withInlineEditing={withInlineEditing}
-        withColumnOrdering={withColumnOrdering}
         withPagination={withPagination}
         withSearch={withSearch}
         withSelectableRows={withSelectableRows}
@@ -470,134 +554,13 @@ const Table = <T extends object>({
         ref={tableContainerRef}
         onKeyDown={editMode ? onKeyDown : undefined}
       >
-        <div
-          className={cn(
-            "grid w-full h-full overflow-auto",
-            withColumnOrdering ? "grid-cols-[auto_1fr]" : "grid-cols-1"
-          )}
-        >
-          {/* Pinned left columns */}
-          {withColumnOrdering ? (
-            <TableBase className="bg-background border-r-4 border-border relative">
-              <Thead className="sticky top-0 z-10">
-                {table.getLeftHeaderGroups().map((headerGroup) => (
-                  <Tr key={headerGroup.id} className="h-10">
-                    {headerGroup.headers.map((header) => {
-                      const accessorKey = getAccessorKey(
-                        header.column.columnDef
-                      );
-                      const sortable =
-                        withSimpleSorting &&
-                        accessorKey &&
-                        !accessorKey.endsWith(".id") &&
-                        header.column.columnDef.enableSorting !== false;
-
-                      const sorted = isSorted(accessorKey ?? "");
-
-                      return (
-                        <Th
-                          key={header.id}
-                          // layout
-                          onClick={
-                            sortable && !editMode
-                              ? () => toggleSortBy(accessorKey ?? "")
-                              : undefined
-                          }
-                          className={cn(
-                            "px-4 py-2 whitespace-nowrap",
-                            editMode && "cursor-pointer border-r border-border"
-                          )}
-                          colSpan={header.colSpan}
-                        >
-                          {header.isPlaceholder ? null : (
-                            <div className="flex justify-start items-center text-xs text-muted-foreground">
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                              <span className="pl-2">
-                                {sorted ? (
-                                  sorted === -1 ? (
-                                    <FaSortDown
-                                      aria-label="sorted descending"
-                                      className="text-primary"
-                                    />
-                                  ) : (
-                                    <FaSortUp
-                                      aria-label="sorted ascending"
-                                      className="text-primary"
-                                    />
-                                  )
-                                ) : sortable ? (
-                                  <FaSort aria-label="sort" />
-                                ) : null}
-                              </span>
-                            </div>
-                          )}
-                        </Th>
-                      );
-                    })}
-                  </Tr>
-                ))}
-              </Thead>
-              <Tbody>
-                {rows.map((row) => {
-                  return renderContextMenu ? (
-                    <Menu type="context" key={row.index}>
-                      <ContextMenu>
-                        <ContextMenuTrigger asChild>
-                          <Row
-                            editableComponents={editableComponents}
-                            isEditing={isEditing}
-                            isEditMode={editMode}
-                            isFrozenColumn
-                            isRowSelected={
-                              row.index in rowSelection &&
-                              !!rowSelection[row.index]
-                            }
-                            selectedCell={selectedCell}
-                            row={row}
-                            rowIsSelected={selectedCell?.row === row.index}
-                            withColumnOrdering={withColumnOrdering}
-                            onCellClick={onCellClick}
-                            onCellUpdate={onCellUpdate}
-                          />
-                        </ContextMenuTrigger>
-                        <ContextMenuContent className="w-128">
-                          {renderContextMenu(row.original)}
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    </Menu>
-                  ) : (
-                    <Row
-                      key={row.id}
-                      editableComponents={editableComponents}
-                      isEditing={isEditing}
-                      isEditMode={editMode}
-                      isFrozenColumn
-                      isRowSelected={
-                        row.index in rowSelection && !!rowSelection[row.index]
-                      }
-                      selectedCell={selectedCell}
-                      row={row}
-                      rowIsSelected={selectedCell?.row === row.index}
-                      withColumnOrdering={withColumnOrdering}
-                      onCellClick={onCellClick}
-                      onCellUpdate={onCellUpdate}
-                    />
-                  );
-                })}
-              </Tbody>
-            </TableBase>
-          ) : null}
-
-          {/* Unpinned columns */}
-          <TableBase className="relative">
+        <div className="flex max-w-full h-full">
+          <TableBase
+            ref={tableRef}
+            className="relative table-fixed border-separate border-spacing-0"
+          >
             <Thead className="sticky top-0 z-10">
-              {(withColumnOrdering
-                ? table.getCenterHeaderGroups()
-                : table.getHeaderGroups()
-              ).map((headerGroup) => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <Tr key={headerGroup.id} className="h-10">
                   {headerGroup.headers.map((header) => {
                     const accessorKey = getAccessorKey(header.column.columnDef);
@@ -613,17 +576,21 @@ const Table = <T extends object>({
                       <Th
                         key={header.id}
                         colSpan={header.colSpan}
-                        onClick={
-                          sortable
-                            ? () => toggleSortBy(accessorKey ?? "")
-                            : undefined
-                        }
+                        id={`header-${header.id}`}
                         className={cn(
                           "px-4 py-3 whitespace-nowrap",
                           editMode && "border-r-1 border-border",
                           sortable && "cursor-pointer"
                         )}
-                        style={{ width: header.getSize() }}
+                        style={{
+                          ...getPinnedStyles(header.column),
+                          width: header.getSize(),
+                        }}
+                        onClick={
+                          sortable
+                            ? () => toggleSortBy(accessorKey ?? "")
+                            : undefined
+                        }
                       >
                         {header.isPlaceholder ? null : (
                           <div className="flex justify-start items-center text-xs text-muted-foreground">
@@ -673,16 +640,11 @@ const Table = <T extends object>({
                             row.index in rowSelection &&
                             !!rowSelection[row.index]
                           }
-                          pinnedColumns={
-                            columnPinning?.left
-                              ? columnPinning.left?.length -
-                                (withSelectableRows ? 1 : 0)
-                              : 0
-                          }
+                          pinnedColumns={pinnedColumnsKey}
                           selectedCell={selectedCell}
                           row={row}
                           rowIsSelected={selectedCell?.row === row.index}
-                          withColumnOrdering={withColumnOrdering}
+                          getPinnedStyles={getPinnedStyles}
                           onCellClick={onCellClick}
                           onCellUpdate={onCellUpdate}
                         />
@@ -701,16 +663,11 @@ const Table = <T extends object>({
                     isRowSelected={
                       row.index in rowSelection && !!rowSelection[row.index]
                     }
-                    pinnedColumns={
-                      columnPinning?.left
-                        ? columnPinning.left?.length -
-                          (withSelectableRows ? 1 : 0)
-                        : 0
-                    }
+                    pinnedColumns={pinnedColumnsKey}
                     selectedCell={selectedCell}
                     row={row}
                     rowIsSelected={selectedCell?.row === row.index}
-                    withColumnOrdering={withColumnOrdering}
+                    getPinnedStyles={getPinnedStyles}
                     onCellClick={onCellClick}
                     onCellUpdate={onCellUpdate}
                   />
@@ -729,7 +686,7 @@ function getRowSelectionColumn<T>(): ColumnDef<T>[] {
   return [
     {
       id: "Select",
-      size: 40,
+      size: 60,
       header: ({ table }) => (
         <IndeterminateCheckbox
           {...{
@@ -764,6 +721,7 @@ function getActionColumn<T>(
           <ActionMenu>{renderContextMenu(item.row.original)}</ActionMenu>
         </div>
       ),
+      size: 60,
     },
   ];
 }

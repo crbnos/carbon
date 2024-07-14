@@ -1,6 +1,7 @@
 import { Td, cn } from "@carbon/react";
-import type { Cell as CellType } from "@tanstack/react-table";
+import type { Cell as CellType, Column } from "@tanstack/react-table";
 import { flexRender } from "@tanstack/react-table";
+import type { CSSProperties } from "react";
 import { memo, useState } from "react";
 import type { EditableTableCellComponent } from "~/components/Editable";
 import { useMovingCellRef } from "~/hooks";
@@ -15,6 +16,8 @@ type CellProps<T> = {
   isEditMode: boolean;
   isRowSelected: boolean;
   isSelected: boolean;
+  pinnedColumns: string;
+  getPinnedStyles: (column: Column<any, unknown>) => CSSProperties;
   onClick?: () => void;
   onUpdate?: (updates: Record<string, unknown>) => void;
 };
@@ -27,6 +30,7 @@ const Cell = <T extends object>({
   isEditing,
   isEditMode,
   isSelected,
+  getPinnedStyles,
   onClick,
   onUpdate,
 }: CellProps<T>) => {
@@ -57,6 +61,10 @@ const Cell = <T extends object>({
         isSelected && "ring-inset ring-2 ring-ring"
       )}
       ref={ref}
+      style={{
+        ...getPinnedStyles(cell.column),
+        width: cell.column.getSize(),
+      }}
       data-row={cell.row.index}
       data-column={columnIndex}
       tabIndex={tabIndex}
@@ -96,7 +104,8 @@ const MemoizedCell = memo(
     next.isEditing === prev.isEditing &&
     next.isEditMode === prev.isEditMode &&
     next.cell.getValue() === prev.cell.getValue() &&
-    next.cell.getContext() === prev.cell.getContext()
+    next.cell.getContext() === prev.cell.getContext() &&
+    next.pinnedColumns === prev.pinnedColumns
 ) as typeof Cell;
 
 export default MemoizedCell;

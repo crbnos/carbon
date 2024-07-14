@@ -226,7 +226,6 @@ const EmployeesTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          withColumnOrdering
           withSelectableRows={canEdit}
         />
         {bulkEditDrawer.isOpen && (

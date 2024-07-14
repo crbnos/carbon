@@ -35,7 +35,7 @@ interface GridProps<T extends object> {
   defaultColumnOrder?: string[];
   defaultColumnVisibility?: Record<string, boolean>;
   editableComponents?: Record<string, EditableTableCellComponent<T>>;
-  withColumnOrdering?: boolean;
+
   withNewRow?: boolean;
   withSimpleSorting?: boolean;
   onDataChange?: (data: T[]) => void;
@@ -51,7 +51,6 @@ const Grid = <T extends object>({
   editableComponents,
   defaultColumnOrder,
   defaultColumnVisibility,
-  withColumnOrdering = false,
   withSimpleSorting = true,
   onDataChange,
   onEditRow,
@@ -323,15 +322,6 @@ const Grid = <T extends object>({
 
   return (
     <VStack spacing={0} className="h-full">
-      {/* {withColumnOrdering && (
-        <GridHeader
-          columnAccessors={columnAccessors}
-          columnOrder={columnOrder}
-          columns={table.getAllLeafColumns()}
-          setColumnOrder={setColumnOrder}
-          withColumnOrdering={withColumnOrdering}
-        />
-      )} */}
       <div
         className="w-full h-full bg-card overflow-x-auto"
         style={{

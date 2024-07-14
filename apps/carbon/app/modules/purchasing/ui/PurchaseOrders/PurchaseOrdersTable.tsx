@@ -323,7 +323,6 @@ const PurchaseOrdersTable = memo(
               <New label="Purchase Order" to={path.to.newPurchaseOrder} />
             )
           }
-          withColumnOrdering
           renderContextMenu={renderContextMenu}
         />
 

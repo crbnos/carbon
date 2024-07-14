@@ -216,7 +216,6 @@ const ServicesTable = memo(({ data, count }: ServicesTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
-        withColumnOrdering
       />
       {selectedItem && selectedItem.id && (
         <ConfirmDelete

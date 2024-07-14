@@ -275,7 +275,6 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
             <New label="RFQ" to={path.to.newSalesRFQ} />
           )
         }
-        withColumnOrdering
         renderContextMenu={renderContextMenu}
       />
       {selectedSalesRFQ && selectedSalesRFQ.id && (

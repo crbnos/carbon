@@ -246,7 +246,6 @@ const PurchaseInvoicesTable = memo(
               <New label="Purchase Invoice" to={path.to.newPurchaseInvoice} />
             )
           }
-          withColumnOrdering
           renderContextMenu={renderContextMenu}
         />
 
