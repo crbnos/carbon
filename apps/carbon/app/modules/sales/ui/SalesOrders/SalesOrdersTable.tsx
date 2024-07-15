@@ -44,7 +44,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   const [people] = usePeople();
   const [customers] = useCustomers();
 
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
   const optimisticFavorite = useOptimisticFavorite();
 
   const rows = useMemo<SalesOrder[]>(

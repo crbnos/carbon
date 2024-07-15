@@ -80,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 }
 
 export default function AuthCallback() {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
   const isAuthenticating = useRef(false);
 
   useEffect(() => {

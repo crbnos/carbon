@@ -40,7 +40,7 @@ const CustomerContactForm = ({
   type = "drawer",
   onClose,
 }: CustomerContactFormProps) => {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
 
   const permissions = usePermissions();
   const isEditing = !!initialValues?.id;

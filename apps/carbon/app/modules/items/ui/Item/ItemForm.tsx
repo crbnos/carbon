@@ -46,7 +46,7 @@ function getLabel(type: Database["public"]["Enums"]["itemType"]) {
 
 const ItemForm = ({ initialValues, type }: ItemFormProps) => {
   const permissions = usePermissions();
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
 
   const itemTrackingTypeOptions =
     itemTrackingTypes.map((itemTrackingType) => ({

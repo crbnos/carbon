@@ -11,7 +11,7 @@ type Props = {
 };
 
 export const usePurchaseOrderDocuments = ({ isExternal, orderId }: Props) => {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
   const { supabase } = useSupabase();
   const { company } = useUser();

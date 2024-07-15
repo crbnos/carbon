@@ -46,7 +46,7 @@ const CustomFieldCategoryDetail = ({
   dataTypes,
   onClose,
 }: CustomFieldCategoryDetailProps) => {
-  const sortOrderFetcher = useFetcher();
+  const sortOrderFetcher = useFetcher<{}>();
   const { table } = useParams();
   if (!table) throw new Error("table is not found");
   const [params] = useUrlParams();

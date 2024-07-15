@@ -45,7 +45,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
   const [items] = useItems();
   const [people] = usePeople();
 
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
   const optimisticFavorite = useOptimisticFavorite();
 
   const rows = useMemo<Quotation[]>(

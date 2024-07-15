@@ -40,7 +40,7 @@ export default function WysiwygRoute() {
   const { content } = useLoaderData<{ content: JSONContent }>();
   const [value, setValue] = useState<JSONContent>(content);
   console.log(value);
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
 
   const debounceSearch = useDebounce((c: JSONContent) => {
     const formData = new FormData();

@@ -38,7 +38,7 @@ const Assign = forwardRef<HTMLButtonElement, ComboboxProps>(
   ) => {
     const [open, setOpen] = useState(false);
     const [people] = usePeople();
-    const fetcher = useFetcher();
+    const fetcher = useFetcher<{}>();
     const user = useUser();
 
     const handleChange = (value: string) => {

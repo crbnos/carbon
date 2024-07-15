@@ -33,7 +33,7 @@ const CustomerLocationForm = ({
   type = "drawer",
   onClose,
 }: CustomerLocationFormProps) => {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
 
   const permissions = usePermissions();
   const isEditing = !!initialValues?.id;
