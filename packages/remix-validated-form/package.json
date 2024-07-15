@@ -1,8 +1,8 @@
 {
   "name": "@carbon/remix-validated-form",
   "peerDependencies": {
-    "@remix-run/node": "~2.9.1",
-    "@remix-run/react": "~2.9.1",
+    "@remix-run/node": "~2.10.2",
+    "@remix-run/react": "~2.10.2",
     "@remix-run/server-runtime": ">= 1.16.1 <3.0.0",
     "react": "^18.2.0"
   },
