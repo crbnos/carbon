@@ -8,12 +8,16 @@ import { PassThrough } from "stream";
 import logger from "~/lib/logger";
 import type { OperatingSystemPlatform } from "./components/OperatingSystem";
 import { OperatingSystemContextProvider } from "./components/OperatingSystem";
+import { installAndLockGlobals } from "./utils/installGlobals";
 
 const ABORT_DELAY = 30000;
 
 // This code has the effect of registering jobs with trigger.dev
 // in a way that doesn't interfere with the vite compiler.
 export * from "~/jobs.server";
+
+// Workaround for vite single fetch mode
+installAndLockGlobals();
 
 export default function handleRequest(
   request: Request,
