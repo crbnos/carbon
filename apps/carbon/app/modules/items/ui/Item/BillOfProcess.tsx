@@ -97,7 +97,7 @@ const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
 
 const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   const { supabase } = useSupabase();
-  const sortOrderFetcher = useFetcher();
+  const sortOrderFetcher = useFetcher<{}>();
   const {
     id: userId,
     company: { id: companyId },

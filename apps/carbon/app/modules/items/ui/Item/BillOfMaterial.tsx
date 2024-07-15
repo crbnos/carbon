@@ -111,7 +111,7 @@ const BillOfMaterial = ({
   materials,
   operations,
 }: BillOfMaterialProps) => {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
 
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(materials ?? [])

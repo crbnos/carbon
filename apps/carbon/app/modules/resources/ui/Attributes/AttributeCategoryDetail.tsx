@@ -43,7 +43,7 @@ const AttributeCategoryDetail = ({
   onClose,
 }: AttributeCategoryDetailProps) => {
   const [params] = useUrlParams();
-  const sortOrderFetcher = useFetcher();
+  const sortOrderFetcher = useFetcher<{}>();
 
   const attributeMap: Record<string, Attribute> = useMemo(
     () =>

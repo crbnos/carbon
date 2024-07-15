@@ -40,7 +40,7 @@ export const SupabaseProvider = ({
       if (isBrowser) return getSupabase();
     }
   );
-  const refresh = useFetcher();
+  const refresh = useFetcher<{}>();
 
   useInterval(() => {
     if (!initialLoad.current && expiresIn) {

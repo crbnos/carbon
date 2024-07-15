@@ -37,7 +37,7 @@ const CadModel = ({
   const { supabase } = useSupabase();
 
   const { autodeskToken } = useAutodeskToken();
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
   const loading = (!!file && !autodeskUrn) || (!!modelPath && !autodeskUrn);
 

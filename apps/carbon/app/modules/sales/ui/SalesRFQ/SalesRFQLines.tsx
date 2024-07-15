@@ -144,7 +144,7 @@ const SalesRFQLines = ({ lines, files, modelUploads }: SalesRFQLinesProps) => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
 
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
   const { supabase } = useSupabase();
   const {
     company: { id: companyId },

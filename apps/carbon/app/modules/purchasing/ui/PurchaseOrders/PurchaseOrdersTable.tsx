@@ -49,7 +49,7 @@ const PurchaseOrdersTable = memo(
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
 
-    const fetcher = useFetcher();
+    const fetcher = useFetcher<{}>();
     const optimisticFavorite = useOptimisticFavorite();
 
     const rows = useMemo<PurchaseOrder[]>(

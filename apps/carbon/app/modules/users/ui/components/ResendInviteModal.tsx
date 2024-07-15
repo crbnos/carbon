@@ -25,7 +25,7 @@ const ResendInviteModal = ({
   isOpen,
   onClose,
 }: ResendInviteModalProps) => {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
   const isSingleUser = userIds.length === 1;
 
   return (

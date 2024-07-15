@@ -44,7 +44,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
   const [customers] = useCustomers();
   const [people] = usePeople();
 
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{}>();
   const optimisticFavorite = useOptimisticFavorite();
 
   const rows = useMemo<SalesRFQ[]>(
