@@ -8,7 +8,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   ssr: {
     noExternal: [
-      "novel",
+      "react-tweet",
       "react-dropzone",
       "react-icons",
       "react-phone-number-input",
