@@ -289,7 +289,7 @@ const SearchButton = () => {
       <Button
         leftIcon={<LuSearch />}
         variant="secondary"
-        className="w-[145px] px-2 text-muted-foreground "
+        className="w-[200px] px-2 text-muted-foreground "
         onClick={searchModal.onOpen}
       >
         <HStack className="w-full">
