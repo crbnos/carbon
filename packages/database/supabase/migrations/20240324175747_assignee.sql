@@ -86,24 +86,7 @@ CREATE OR REPLACE VIEW "purchaseInvoices" WITH(SECURITY_INVOKER=true) AS
   FROM "purchaseInvoice" pi
   LEFT JOIN "paymentTerm" pt ON pt."id" = pi."paymentTermId";
 
-DROP VIEW "quotes";
-ALTER TABLE "quote" DROP COLUMN "ownerId";
-CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
-  SELECT 
-  q.*,
-  l."name" AS "locationName",
-  ql."itemIds",
-  EXISTS(SELECT 1 FROM "quoteFavorite" pf WHERE pf."quoteId" = q.id AND pf."userId" = auth.uid()::text) AS favorite
-  FROM "quote" q
-  LEFT JOIN (
-    SELECT 
-      "quoteId",
-      array_agg("itemId") AS "itemIds"
-    FROM "quoteLine"
-    GROUP BY "quoteId"
-  ) ql ON ql."quoteId" = q.id
-  LEFT JOIN "location" l
-    ON l.id = q."locationId";
+
 
 DROP VIEW "receipts";
 CREATE OR REPLACE VIEW "receipts" WITH(SECURITY_INVOKER=true) AS

@@ -20,7 +20,7 @@ CREATE TABLE "salesOrder" (
   "customerLocationId" TEXT,
   "customerContactId" TEXT,
   "customerReference" TEXT,
-  "quoteId" TEXT,
+  -- "quoteId" TEXT,
   "assignee" TEXT,
   "companyId" TEXT NOT NULL,
   "closedAt" DATE,
@@ -38,7 +38,7 @@ CREATE TABLE "salesOrder" (
   CONSTRAINT "salesOrder_currencyCode_fkey" FOREIGN KEY ("currencyCode", "companyId") REFERENCES "currency" ("code", "companyId") ON DELETE RESTRICT,
   CONSTRAINT "salesOrder_customerLocationId_fkey" FOREIGN KEY ("customerLocationId") REFERENCES "customerLocation" ("id") ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT "salesOrder_customerContactId_fkey" FOREIGN KEY ("customerContactId") REFERENCES "customerContact" ("id") ON UPDATE CASCADE ON DELETE RESTRICT,
-  CONSTRAINT "salesOrder_quoteId_fkey" FOREIGN KEY ("quoteId") REFERENCES "quote"("id") ON UPDATE CASCADE ON DELETE RESTRICT,
+  -- CONSTRAINT "salesOrder_quoteId_fkey" FOREIGN KEY ("quoteId") REFERENCES "quote"("id") ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT "salesOrder_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "salesOrder_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesOrder_closedBy_fkey" FOREIGN KEY ("closedBy") REFERENCES "user" ("id") ON DELETE RESTRICT,
@@ -49,7 +49,7 @@ CREATE TABLE "salesOrder" (
 CREATE INDEX "salesOrder_salesOrderId_idx" ON "salesOrder" ("salesOrderId", "companyId");
 CREATE INDEX "salesOrder_customerId_idx" ON "salesOrder" ("customerId", "companyId");
 CREATE INDEX "salesOrder_status_idx" ON "salesOrder" ("status", "companyId");
-CREATE INDEX "salesOrder_quoteId_idx" ON "salesOrder" ("quoteId", "companyId");
+-- CREATE INDEX "salesOrder_quoteId_idx" ON "salesOrder" ("quoteId", "companyId");
 CREATE INDEX "salesOrder_companyId_idx" ON "salesOrder" ("companyId");
 
 CREATE TYPE "salesOrderLineType" AS ENUM (

@@ -153,16 +153,16 @@ CREATE POLICY "Customers with sales_delete can delete lines on their own quote" 
     )
   );
 
-ALTER TABLE "quoteAssembly" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "quoteMakeMethod" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Employees with sales_view can view quote assemblies" ON "quoteAssembly"
+CREATE POLICY "Employees with sales_view can view quote make methods" ON "quoteMakeMethod"
   FOR SELECT
   USING (
     has_role('employee', get_company_id_from_foreign_key("quoteId", 'quote')) AND
     has_company_permission('sales_view', get_company_id_from_foreign_key("quoteId", 'quote'))  
   );
 
-CREATE POLICY "Customers with sales_view can their own quote assemblies" ON "quoteAssembly"
+CREATE POLICY "Customers with sales_view can their own quote make methods" ON "quoteMakeMethod"
   FOR SELECT
   USING (
     has_role('customer', get_company_id_from_foreign_key("quoteId", 'quote')) AND
@@ -176,21 +176,21 @@ CREATE POLICY "Customers with sales_view can their own quote assemblies" ON "quo
     )
   );
 
-CREATE POLICY "Employees with sales_create can create quote assemblies" ON "quoteAssembly"
+CREATE POLICY "Employees with sales_create can create quote make methods" ON "quoteMakeMethod"
   FOR INSERT
   WITH CHECK (
     has_role('employee', get_company_id_from_foreign_key("quoteId", 'quote')) AND
     has_company_permission('sales_create', get_company_id_from_foreign_key("quoteId", 'quote'))
   );
 
-CREATE POLICY "Employees with sales_update can update quote assemblies" ON "quoteAssembly"
+CREATE POLICY "Employees with sales_update can update quote make methods" ON "quoteMakeMethod"
   FOR UPDATE
   USING (
     has_role('employee', get_company_id_from_foreign_key("quoteId", 'quote')) AND
     has_company_permission('sales_update', get_company_id_from_foreign_key("quoteId", 'quote'))
   );
 
-CREATE POLICY "Employees with sales_delete can delete quote assemblies" ON "quoteAssembly"
+CREATE POLICY "Employees with sales_delete can delete quote make methods" ON "quoteMakeMethod"
   FOR DELETE
   USING (
     has_role('employee', get_company_id_from_foreign_key("quoteId", 'quote')) AND
