@@ -27,12 +27,12 @@ import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
 import { QuotationStatus } from "../Quotation";
 
-type QuotationsTableProps = {
+type QuotesTableProps = {
   data: Quotation[];
   count: number;
 };
 
-const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
+const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
 
@@ -64,6 +64,11 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
   );
   const customColumns = useCustomColumns<Quotation>("quote");
   const columns = useMemo<ColumnDef<Quotation>[]>(() => {
+    const employeeOptions = people.map((employee) => ({
+      value: employee.id,
+      label: employee.name,
+    }));
+
     const defaultColumns: ColumnDef<Quotation>[] = [
       {
         accessorKey: "quoteId",
@@ -168,6 +173,32 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
         },
       },
       {
+        accessorKey: "salesPersonId",
+        header: "Sales Person",
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={row.original.salesPersonId} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: employeeOptions,
+          },
+        },
+      },
+      {
+        accessorKey: "estimatorId",
+        header: "Estimator",
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={row.original.estimatorId} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: employeeOptions,
+          },
+        },
+      },
+      {
         id: "assignee",
         header: "Assignee",
         cell: ({ row }) => (
@@ -176,10 +207,7 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
         meta: {
           filter: {
             type: "static",
-            options: people.map((employee) => ({
-              value: employee.id,
-              label: employee.name,
-            })),
+            options: employeeOptions,
           },
         },
       },
@@ -325,9 +353,9 @@ const QuotationsTable = memo(({ data, count }: QuotationsTableProps) => {
   );
 });
 
-QuotationsTable.displayName = "QuotationsTable";
+QuotesTable.displayName = "QuotesTable";
 
-export default QuotationsTable;
+export default QuotesTable;
 
 function useOptimisticFavorite() {
   const fetchers = useFetchers();
