@@ -109,6 +109,7 @@ import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { RichText, useRichText } from "./RichText";
 
+import { generateHTML } from "@tiptap/react";
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
 import {
@@ -447,6 +448,7 @@ export {
   VStack,
   buttonVariants,
   cn,
+  generateHTML,
   getValidChildren,
   multiSelectTriggerVariants,
   reactNodeToString,

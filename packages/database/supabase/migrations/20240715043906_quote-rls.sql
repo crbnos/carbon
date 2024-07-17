@@ -268,8 +268,8 @@ CREATE POLICY "Employees with sales_delete can delete quote materials" ON "quote
 CREATE FUNCTION public.create_quotation_search_result()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.search(name, description, entity, uuid, link, "companyId")
-  VALUES (new."quoteId", new.name, 'Quotation', new.id, '/x/quote/' || new.id, new."companyId");
+  INSERT INTO public.search(name, entity, uuid, link, "companyId")
+  VALUES (new."quoteId",  'Quotation', new.id, '/x/quote/' || new.id, new."companyId");
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -281,8 +281,8 @@ CREATE TRIGGER create_quotation_search_result
 CREATE OR REPLACE FUNCTION public.update_quotation_search_result()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF (old."quoteId" <> new."quoteId" OR old."name" <> new."name") THEN
-    UPDATE public.search SET name = new."quoteId", description = new.name
+  IF (old."quoteId" <> new."quoteId") THEN
+    UPDATE public.search SET name = new."quoteId"
     WHERE entity = 'Quotation' AND uuid = new.id AND "companyId" = new."companyId";
   END IF;
   RETURN new;

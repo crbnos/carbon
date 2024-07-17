@@ -1,18 +1,27 @@
-import type { MetaFunction } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import { json, Outlet } from "@remix-run/react";
+import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Quotation" }];
+  return [{ title: "Carbon | Quote" }];
 };
 
 export const handle: Handle = {
   breadcrumb: "Sales",
-  to: path.to.quotes,
+  to: path.to.sales,
   module: "sales",
 };
 
-export default function QuotationRoute() {
+export async function loader({ request }: LoaderFunctionArgs) {
+  await requirePermissions(request, {
+    view: "sales",
+  });
+
+  return json({});
+}
+
+export default function QuoteRoute() {
   return <Outlet />;
 }

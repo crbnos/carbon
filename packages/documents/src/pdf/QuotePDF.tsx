@@ -1,4 +1,6 @@
 import type { Database } from "@carbon/database";
+import type { JSONContent } from "@carbon/react";
+import { generateHTML } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { StyleSheet, Text, View } from "@react-pdf/renderer";
 
@@ -129,7 +131,9 @@ const QuotePDF = ({
           <View style={styles.row}>
             <View style={styles.colHalf}>
               <Text style={styles.label}>Notes</Text>
-              <Text>{quote?.notes}</Text>
+              <Text>
+                {generateHTML((quote?.notes ?? {}) as JSONContent, [])}
+              </Text>
             </View>
           </View>
         )}
