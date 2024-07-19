@@ -52,29 +52,25 @@ import SalesRFQLineDocuments from "./SalesRFQLineDocuments";
 type Line = z.infer<typeof salesRfqLineValidator> & {
   internalNotes: JSONContent;
   externalNotes: JSONContent;
-};
+} & ModelUpload;
 
 type ItemWithData = SortableItem & {
   data: Line;
-  modelUpload?: ModelUpload;
   files?: (FileObject & { salesRfqLineId: string | null })[];
 };
 
 type SalesRFQLinesProps = {
   lines: Line[];
   files: (FileObject & { salesRfqLineId: string | null })[];
-  modelUploads: ModelUpload[];
 };
 
 function makeItems(
   lines: Line[],
-  modelUploads: ModelUpload[],
   files: (FileObject & { salesRfqLineId: string | null })[]
 ): ItemWithData[] {
   return lines.map((line) =>
     makeItem(
       line,
-      modelUploads.find((m) => m?.salesRfqLineId === line.id),
       files.filter((f) => {
         return f.salesRfqLineId === line.id;
       })
@@ -84,7 +80,6 @@ function makeItems(
 
 function makeItem(
   line: Line,
-  modelUpload?: ModelUpload,
   files?: (FileObject & { salesRfqLineId: string | null })[]
 ): ItemWithData {
   return {
@@ -111,7 +106,7 @@ function makeItem(
             {q}
           </Badge>
         ))}
-        {modelUpload && (
+        {line.autodeskUrn && (
           <Badge variant="secondary">
             <LuMove3D className="w-4 h-4 text-green-500" />
           </Badge>
@@ -124,7 +119,6 @@ function makeItem(
       </HStack>
     ),
     data: line,
-    modelUpload,
     files,
   };
 }
@@ -136,11 +130,18 @@ const initialLine: Omit<Line, "id" | "salesRfqId" | "order"> = {
   description: "",
   quantity: [1],
   unitOfMeasureCode: "EA",
+  modelUploadId: undefined,
+  autodeskUrn: null,
+  modelId: "",
+  modelName: "",
+  modelPath: null,
+  modelSize: 0,
+  thumbnailPath: null,
   internalNotes: {} as JSONContent,
   externalNotes: {} as JSONContent,
 };
 
-const SalesRFQLines = ({ lines, files, modelUploads }: SalesRFQLinesProps) => {
+const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
 
@@ -152,14 +153,14 @@ const SalesRFQLines = ({ lines, files, modelUploads }: SalesRFQLinesProps) => {
   } = useUser();
 
   const [items, setItems] = useState<ItemWithData[]>(
-    makeItems(lines ?? [], modelUploads, files)
+    makeItems(lines ?? [], files)
   );
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
 
   useEffect(() => {
-    setItems(makeItems(lines, modelUploads, files));
+    setItems(makeItems(lines, files));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelUploads, files]);
+  }, [files]);
 
   const onToggleItem = (id: string) => {
     setItems((prevItems) =>
@@ -380,11 +381,11 @@ const SalesRFQLines = ({ lines, files, modelUploads }: SalesRFQLinesProps) => {
                 }}
               >
                 <CadModel
-                  autodeskUrn={item.modelUpload?.autodeskUrn ?? null}
+                  autodeskUrn={item.data.autodeskUrn ?? null}
                   metadata={{
                     salesRfqLineId: item.id,
                   }}
-                  modelPath={item.modelUpload?.modelPath ?? null}
+                  modelPath={item.data.modelPath ?? null}
                   uploadClassName="min-h-[300px]"
                 />
               </motion.div>
@@ -409,7 +410,7 @@ const SalesRFQLines = ({ lines, files, modelUploads }: SalesRFQLinesProps) => {
               >
                 <SalesRFQLineDocuments
                   files={item.files ?? []}
-                  modelUpload={item.modelUpload}
+                  modelUpload={item.data}
                   rfqId={rfqId}
                   salesRfqLineId={item.id}
                 />
@@ -651,10 +652,12 @@ function SalesRFQLineForm({
     itemId: string;
     description: string;
     unitOfMeasureCode: string;
+    modelUploadId: string | null;
   }>({
     itemId: item.data.itemId ?? "",
     description: item.data.description ?? "",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
+    modelUploadId: item.data.modelUploadId ?? null,
   });
 
   const onItemChange = async (itemId: string) => {
@@ -662,7 +665,7 @@ function SalesRFQLineForm({
 
     const item = await supabase
       .from("item")
-      .select("name, unitOfMeasureCode")
+      .select("name, unitOfMeasureCode, modelUploadId")
       .eq("id", itemId)
       .eq("companyId", company.id)
       .single();
@@ -677,6 +680,7 @@ function SalesRFQLineForm({
       itemId,
       description: item.data?.name ?? "",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
+      modelUploadId: item.data?.modelUploadId ?? null,
     }));
   };
 
@@ -698,10 +702,8 @@ function SalesRFQLineForm({
             i.id === item.id
               ? {
                   ...makeItem({
+                    ...item.data,
                     ...values,
-                    description: itemData.description,
-                    internalNotes: item.data.internalNotes,
-                    externalNotes: item.data.externalNotes,
                   }),
                   isTemporary: false,
                   id: item.id,
@@ -714,6 +716,10 @@ function SalesRFQLineForm({
       <Hidden name="id" />
       <Hidden name="salesRfqId" />
       <Hidden name="order" />
+      <Hidden
+        name="modelUploadId"
+        value={itemData.modelUploadId ?? undefined}
+      />
       <VStack className="pt-4">
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
           <Input

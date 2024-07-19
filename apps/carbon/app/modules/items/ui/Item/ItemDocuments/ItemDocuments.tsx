@@ -65,7 +65,7 @@ const ItemDocuments = ({
             </Tr>
           </Thead>
           <Tbody>
-            {modelUpload && (
+            {modelUpload?.autodeskUrn && (
               <Tr>
                 <Td>
                   <HStack>
@@ -75,15 +75,15 @@ const ItemDocuments = ({
                       onClick={() => viewModel(modelUpload)}
                     >
                       {modelUpload?.autodeskUrn
-                        ? modelUpload.name
+                        ? modelUpload.modelName
                         : "Uploading..."}
                     </Hyperlink>
                   </HStack>
                 </Td>
                 <Td>
-                  {modelUpload.size
+                  {modelUpload.modelSize
                     ? convertKbToString(
-                        Math.floor((modelUpload.size ?? 0) / 1024)
+                        Math.floor((modelUpload.modelSize ?? 0) / 1024)
                       )
                     : "--"}
                 </Td>
@@ -105,7 +105,7 @@ const ItemDocuments = ({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!canDelete}
-                          onClick={() => deleteModel(modelUpload)}
+                          onClick={() => deleteModel()}
                         >
                           Delete
                         </DropdownMenuItem>

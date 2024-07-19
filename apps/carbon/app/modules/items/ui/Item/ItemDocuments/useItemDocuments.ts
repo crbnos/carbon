@@ -1,9 +1,10 @@
 import { toast } from "@carbon/react";
 import { useNavigate, useRevalidator } from "@remix-run/react";
+import type { FileObject } from "@supabase/storage-js";
 import { useCallback } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { ItemFile, ModelUpload } from "~/modules/items";
+import type { ModelUpload } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type Props = {
@@ -19,14 +20,14 @@ export const useItemDocuments = ({ itemId }: Props) => {
 
   const canDelete = permissions.can("delete", "parts");
   const getPath = useCallback(
-    (file: ItemFile) => {
+    (file: FileObject) => {
       return `${company.id}/parts/${itemId}/${file.name}`;
     },
     [company.id, itemId]
   );
 
   const deleteFile = useCallback(
-    async (file: ItemFile) => {
+    async (file: FileObject) => {
       const fileDelete = await supabase?.storage
         .from("private")
         .remove([getPath(file)]);
@@ -42,40 +43,23 @@ export const useItemDocuments = ({ itemId }: Props) => {
     [getPath, supabase?.storage, revalidator]
   );
 
-  const deleteModel = useCallback(
-    async (model: ModelUpload) => {
-      if (!model || !supabase) return;
+  const deleteModel = useCallback(async () => {
+    if (!supabase) return;
 
-      // TODO: delete from Autodesk server
-
-      if (model.modelPath) {
-        const fileDelete = await supabase?.storage
-          .from("private")
-          .remove([model?.modelPath]);
-
-        if (!fileDelete || fileDelete.error) {
-          toast.error(fileDelete?.error?.message || "Error deleting file");
-          return;
-        }
-      }
-
-      const modelDelete = await supabase
-        ?.from("modelUpload")
-        .delete()
-        .eq("id", model.id);
-      if (modelDelete.error) {
-        toast.error(modelDelete.error.message);
-        return;
-      }
-
-      toast.success("File deleted successfully");
-      revalidator.revalidate();
-    },
-    [supabase, revalidator]
-  );
+    const { error } = await supabase
+      .from("item")
+      .update({ modelUploadId: null })
+      .eq("id", itemId);
+    if (error) {
+      toast.error("Error removing model from item");
+      return;
+    }
+    toast.success("Model removed from item");
+    revalidator.revalidate();
+  }, [supabase, itemId, revalidator]);
 
   const download = useCallback(
-    async (file: ItemFile) => {
+    async (file: FileObject) => {
       const result = await supabase?.storage
         .from("private")
         .download(getPath(file));

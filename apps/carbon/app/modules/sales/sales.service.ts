@@ -54,7 +54,6 @@ export async function convertQuoteToOrder(
     .from("quote")
     .update({
       status: "Ordered",
-      quoteDate: today(getLocalTimeZone()).toString(),
       updatedAt: today(getLocalTimeZone()).toString(),
       updatedBy: userId,
     })
@@ -119,11 +118,11 @@ export async function deleteQuote(
   return client.from("quote").delete().eq("id", quoteId);
 }
 
-export async function deleteQuoteAssembly(
+export async function deleteQuoteMakeMethod(
   client: SupabaseClient<Database>,
-  quoteAssemblyId: string
+  quoteMakeMethodId: string
 ) {
-  return client.from("quoteAssembly").delete().eq("id", quoteAssemblyId);
+  return client.from("quoteMakeMethod").delete().eq("id", quoteMakeMethodId);
 }
 
 export async function deleteQuoteLine(
@@ -390,21 +389,10 @@ export async function getFilesByRfqId(
       .from("private")
       .list(`${companyId}/sales-rfq/${rfqId}/${lineId}`)
   );
-  const [modelUploads, ...files] = await Promise.all([
-    client
-      .from("modelUpload")
-      .select("*")
-      .in("salesRfqLineId", lineIds ?? []),
-    ...fileQueries,
-  ]);
-
-  if (modelUploads.error) {
-    return modelUploads;
-  }
+  const files = await Promise.all([...fileQueries]);
 
   return {
     data: {
-      modelUploads: modelUploads.data,
       files: files.reduce<(FileObject & { salesRfqLineId: string | null })[]>(
         (acc, file, index) => {
           if (file.data) {
@@ -456,14 +444,14 @@ export async function getQuotes(
   return query;
 }
 
-export async function getQuoteAssembly(
+export async function getQuoteMakeMethod(
   client: SupabaseClient<Database>,
-  quoteAssemblyId: string
+  quoteMakeMethodId: string
 ) {
   return client
-    .from("quoteAssembly")
+    .from("quoteMakeMethod")
     .select("*")
-    .eq("id", quoteAssemblyId)
+    .eq("id", quoteMakeMethodId)
     .single();
 }
 
@@ -472,7 +460,7 @@ export async function getQuoteAssembliesByLine(
   quoteLineId: string
 ) {
   return client
-    .from("quoteAssembly")
+    .from("quoteMakeMethod")
     .select("*")
     .eq("quoteLineId", quoteLineId);
 }
@@ -481,7 +469,7 @@ export async function getQuoteAssemblies(
   client: SupabaseClient<Database>,
   quoteId: string
 ) {
-  return client.from("quoteAssembly").select("*").eq("quoteId", quoteId);
+  return client.from("quoteMakeMethod").select("*").eq("quoteId", quoteId);
 }
 
 export async function getQuoteExternalDocuments(
@@ -761,7 +749,7 @@ export async function getSalesRFQLines(
   salesRfqId: string
 ) {
   return client
-    .from("salesRfqLine")
+    .from("salesRfqLines")
     .select("*")
     .eq("salesRfqId", salesRfqId)
     .order("order", { ascending: true });
@@ -913,8 +901,7 @@ export async function releaseQuote(
   const quoteUpdate = await client
     .from("quote")
     .update({
-      status: "Open",
-      quoteDate: today(getLocalTimeZone()).toString(),
+      status: "Sent",
       updatedAt: today(getLocalTimeZone()).toString(),
       updatedBy: userId,
     })
@@ -1192,7 +1179,7 @@ export async function upsertQuote(
   }
 }
 
-export async function upsertQuoteAssembly(
+export async function upsertQuoteMakeMethod(
   client: SupabaseClient<Database>,
   quotationAssembly:
     | (Omit<z.infer<typeof quotationAssemblyValidator>, "id"> & {
@@ -1212,14 +1199,14 @@ export async function upsertQuoteAssembly(
 ) {
   if ("id" in quotationAssembly) {
     return client
-      .from("quoteAssembly")
+      .from("quoteMakeMethod")
       .update(sanitize(quotationAssembly))
       .eq("id", quotationAssembly.id)
       .select("id")
       .single();
   }
   return client
-    .from("quoteAssembly")
+    .from("quoteMakeMethod")
     .insert([quotationAssembly])
     .select("id")
     .single();

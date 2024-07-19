@@ -16,6 +16,7 @@ import {
   Customer,
   CustomerContact,
   DatePicker,
+  Employee,
   Hidden,
   Input,
   Location,
@@ -23,15 +24,15 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { salesRFQStatusType, salesRfqValidator } from "~/modules/sales";
+import { quoteStatusType, quoteValidator } from "~/modules/sales";
 
-type SalesRFQFormValues = z.infer<typeof salesRfqValidator>;
+type QuoteFormValues = z.infer<typeof quoteValidator>;
 
-type SalesRFQFormProps = {
-  initialValues: SalesRFQFormValues;
+type QuoteFormProps = {
+  initialValues: QuoteFormValues;
 };
 
-const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
+const QuoteForm = ({ initialValues }: QuoteFormProps) => {
   const permissions = usePermissions();
   const [customer, setCustomer] = useState<string | undefined>(
     initialValues.customerId
@@ -39,7 +40,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
 
-  const statusOptions = salesRFQStatusType.map((status) => ({
+  const statusOptions = quoteStatusType.map((status) => ({
     label: status,
     value: status,
   }));
@@ -48,20 +49,19 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
     <Card>
       <ValidatedForm
         method="post"
-        validator={salesRfqValidator}
+        validator={quoteValidator}
         defaultValues={initialValues}
       >
         <CardHeader>
-          <CardTitle>{isEditing ? "RFQ" : "New RFQ"}</CardTitle>
+          <CardTitle>{isEditing ? "Quote" : "New Quote"}</CardTitle>
           {!isEditing && (
             <CardDescription>
-              A sales request for quote (RFQ) is a customer inquiry for pricing
-              on a set of parts and quantities. It may result in a quote.
+              A quote is a set of prices for specific parts and quantities.
             </CardDescription>
           )}
         </CardHeader>
         <CardContent>
-          <Hidden name="rfqId" />
+          <Hidden name="quoteId" />
           <VStack>
             <div
               className={cn(
@@ -77,7 +77,26 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                   setCustomer(newValue?.value as string | undefined)
                 }
               />
+              <CustomerContact
+                name="customerContactId"
+                label="Customer Contact"
+                customer={customer}
+              />
               <Input name="customerReference" label="Customer Ref. Number" />
+              <Employee name="salesPersonId" label="Sales Person" />
+              <Employee name="estimatorId" label="Estimator" />
+              <Location name="locationId" label="Location" />
+
+              <DatePicker
+                name="dueDate"
+                label="Due Date"
+                isDisabled={isCustomer}
+              />
+              <DatePicker
+                name="expirationDate"
+                label="Expiration Date"
+                isDisabled={isCustomer}
+              />
               {isEditing && permissions.can("delete", "sales") && (
                 <Select
                   name="status"
@@ -87,25 +106,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                   isReadOnly={isCustomer}
                 />
               )}
-
-              <CustomerContact
-                name="customerContactId"
-                label="Customer Contact"
-                customer={customer}
-              />
-
-              <DatePicker
-                name="rfqDate"
-                label="RFQ Date"
-                isDisabled={isCustomer}
-              />
-              <DatePicker
-                name="expirationDate"
-                label="Expiration Date"
-                isDisabled={isCustomer}
-              />
-              <Location name="locationId" label="Location" />
-              <CustomFormFields table="salesRfq" />
+              <CustomFormFields table="quote" />
             </div>
           </VStack>
         </CardContent>
@@ -125,4 +126,4 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
   );
 };
 
-export default SalesRFQForm;
+export default QuoteForm;

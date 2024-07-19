@@ -878,19 +878,6 @@ export async function getUnitOfMeasuresList(
     .order("name");
 }
 
-export async function getModelUploadByItemId(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("modelUpload")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-}
-
 export async function getModelUploadByUrn(
   client: SupabaseClient<Database>,
   urn: string,
@@ -898,7 +885,7 @@ export async function getModelUploadByUrn(
 ) {
   return client
     .from("modelUpload")
-    .select("id")
+    .select("*")
     .eq("companyId", companyId)
     .eq("autodeskUrn", urn)
     .single();

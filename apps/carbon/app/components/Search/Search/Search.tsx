@@ -162,7 +162,7 @@ const SearchModal = ({
         if (!open) onClose();
       }}
     >
-      <ModalContent className="rounded-lg translate-y-0 p-0">
+      <ModalContent className="rounded-lg translate-y-0 p-0 h-[343px]">
         <Command className="rounded-lg border shadow-md">
           <CommandInput
             placeholder="Type a command or search..."

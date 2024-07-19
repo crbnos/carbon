@@ -40,14 +40,20 @@ export async function updateNote(
   return client.from("note").update({ note }).eq("id", id);
 }
 
+export async function updateModelThumbnail(
+  client: SupabaseClient<Database>,
+  modelId: string,
+  thumbnailPath: string
+) {
+  return client.from("modelUpload").update({ thumbnailPath }).eq("id", modelId);
+}
+
 export async function upsertModelUpload(
   client: SupabaseClient<Database>,
   upload:
     | {
         id: string;
         modelPath: string;
-        itemId?: string;
-        salesRfqLineId?: string;
         companyId: string;
         createdBy: string;
       }
@@ -56,6 +62,7 @@ export async function upsertModelUpload(
         name: string;
         size: number;
         autodeskUrn: string;
+        thumbnailPath: string;
       }
 ) {
   if ("createdBy" in upload) {

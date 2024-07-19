@@ -40,6 +40,7 @@ const job = triggerClient.defineJob({
       .eq("id", "resend")
       .maybeSingle();
 
+    // TODO: integration should include from email
     const integrationMetadata = resendFormValidator.safeParse(
       integration?.data?.metadata
     );

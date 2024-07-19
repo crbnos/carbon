@@ -7,6 +7,8 @@ import {
   AUTODESK_CLIENT_ID,
   AUTODESK_CLIENT_SECRET,
 } from "~/config/env";
+import logger from "../logger";
+import { getSupabaseServiceRole } from "../supabase";
 import type { AutodeskTokenResponse } from "./types";
 
 const SIGNED_URL_EXPIRATION = 15;
@@ -25,6 +27,11 @@ const autodeskAPI = {
   getSignedUrl: {
     url: (bucketName: string, filename: string) =>
       `https://developer.api.autodesk.com/oss/v2/buckets/${bucketName}/objects/${filename}/signeds3upload?minutesExpiration=${SIGNED_URL_EXPIRATION}`,
+    method: "GET",
+  },
+  getThumbnail: {
+    url: (urn: string) =>
+      `https://developer.api.autodesk.com/modelderivative/v2/designdata/${urn}/thumbnail?width=400&height=400`,
     method: "GET",
   },
   getToken: {
@@ -224,12 +231,17 @@ export async function getAutodeskToken(refresh = false, scope?: string) {
   }
 }
 
-export async function getManifest(urn: string, token: string) {
+export async function getManifest(
+  urn: string,
+  token: string,
+  companyId: string
+) {
   // poll the manifest endpoint for 30s until we get a response with progress === "complete"
 
   let response;
   let progress = "inprogress";
   let tries = 0;
+  let thumbnailPath = "";
 
   while (progress !== "complete" && tries < 100) {
     try {
@@ -242,8 +254,17 @@ export async function getManifest(urn: string, token: string) {
       });
 
       const data = await response.json();
-      // TODO: there are thumbnails here that we want to return
+
       progress = data.progress;
+      if (progress === "complete") {
+        const thumbnail = await getThumbnail(urn, token, companyId);
+
+        if (thumbnail.data) {
+          thumbnailPath = thumbnail.data;
+        } else {
+          logger.error("Failed to get thumbnail for model", { urn });
+        }
+      }
     } catch (err) {
       const message = (err as Error).message || "Something went wrong";
       console.error(message, err);
@@ -269,9 +290,69 @@ export async function getManifest(urn: string, token: string) {
   }
 
   return {
-    data: { urn },
+    data: { urn, thumbnailPath },
     error: null,
   };
+}
+
+export async function getThumbnail(
+  urn: string,
+  token: string,
+  companyId: string
+) {
+  const supabase = getSupabaseServiceRole();
+  const url = autodeskAPI.getThumbnail.url(urn);
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: autodeskAPI.getThumbnail.method,
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok && response.status === 200) {
+      // the response is a binary stream of the thumbnail
+      // of type image/png
+      // we convert it to an ArrayBuffer and then upload it
+      // to supabase storage
+      const data = await response.arrayBuffer();
+      const fileName = `${companyId}/models/${urn}.png`;
+
+      const fileUpload = await supabase.storage
+        .from("private")
+        .upload(fileName, data, {
+          cacheControl: `${365 * 24 * 60 * 60}`,
+        });
+
+      if (fileUpload.error) {
+        return {
+          data: null,
+          error: {
+            message: "Failed to upload thumbnail",
+          },
+        };
+      }
+
+      return {
+        data: fileName,
+        error: null,
+      };
+    }
+
+    return { data: null, error: { message: "Failed to fetch thumbnail" } };
+  } catch (err) {
+    const message = (err as Error).message || "Something went wrong.";
+
+    return {
+      data: null,
+      error: {
+        message,
+      },
+    };
+  }
 }
 
 export async function getTranslationStatus(urn: string, token: string) {
@@ -312,6 +393,13 @@ export async function translateFile(urn: string, token: string) {
         {
           type: "svf2",
           views: ["3d"],
+        },
+        {
+          type: "thumbnail",
+          advanced: {
+            height: 400,
+            width: 400,
+          },
         },
       ],
     },

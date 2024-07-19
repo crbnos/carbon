@@ -71,13 +71,13 @@ export default function QuotationBasicRoute() {
   const initialValues = {
     id: quoteData?.quotation?.id ?? "",
     quoteId: quoteData?.quotation?.quoteId ?? "",
-    name: quoteData?.quotation?.name ?? "",
+
     customerId: quoteData?.quotation?.customerId ?? "",
     customerContactId: quoteData?.quotation?.customerContactId ?? "",
     customerLocationId: quoteData?.quotation?.customerLocationId ?? "",
     customerReference: quoteData?.quotation?.customerReference ?? "",
     locationId: quoteData?.quotation?.locationId ?? "",
-    quoteDate: quoteData?.quotation?.quoteDate ?? "",
+    quoteDate: quoteData?.quotation?.dueDate ?? "",
     expirationDate: quoteData?.quotation.expirationDate ?? undefined,
     status: quoteData?.quotation?.status ?? ("Draft" as "Draft"),
     notes: quoteData?.quotation?.notes ?? "",

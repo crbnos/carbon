@@ -19,10 +19,11 @@ const job = triggerClient.defineJob({
       name: z.string(),
       size: z.number(),
       autodeskUrn: z.string(),
+      companyId: z.string(),
     }),
   }),
   run: async (payload, io, ctx) => {
-    const { id, name, size, autodeskUrn } = payload;
+    const { companyId, id, name, size, autodeskUrn } = payload;
 
     await io.runTask(
       "autodesk-manifest-poll",
@@ -34,7 +35,11 @@ const job = triggerClient.defineJob({
           );
         }
 
-        const manifest = await getManifest(autodeskUrn, token.data.token);
+        const manifest = await getManifest(
+          autodeskUrn,
+          token.data.token,
+          companyId
+        );
         if (manifest.error) {
           throw new Error("Failed to get manifest: " + manifest.error.message);
         }
@@ -43,6 +48,7 @@ const job = triggerClient.defineJob({
           id,
           name,
           size,
+          thumbnailPath: manifest.data.thumbnailPath,
           autodeskUrn,
         });
 

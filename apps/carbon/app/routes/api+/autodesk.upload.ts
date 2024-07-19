@@ -14,16 +14,24 @@ export async function action({ request }: ActionFunctionArgs) {
   const fileId = formData.get("fileId") as string;
   const name = formData.get("name") as string;
   const modelPath = formData.get("modelPath") as string;
-  const itemId = (formData.get("itemId") ?? undefined) as string | undefined;
-  const salesRfqLineId = (formData.get("salesRfqLineId") ?? undefined) as
-    | string
-    | undefined;
+
+  const itemId = formData.get("itemId") as string | null;
+  const salesRfqLineId = formData.get("salesRfqLineId") as string | null;
+  const quoteLineId = formData.get("quoteLineId") as string | null;
+
+  if (!fileId) {
+    throw new Error("File ID is required");
+  }
+  if (!name) {
+    throw new Error("Name is required");
+  }
+  if (!modelPath) {
+    throw new Error("Model path is required");
+  }
 
   const modelRecord = await upsertModelUpload(client, {
     id: fileId,
     modelPath,
-    itemId,
-    salesRfqLineId,
     companyId,
     createdBy: userId,
   });
@@ -40,8 +48,10 @@ export async function action({ request }: ActionFunctionArgs) {
         modelPath,
         companyId,
         fileId,
-        itemId,
         userId,
+        itemId,
+        salesRfqLineId,
+        quoteLineId,
       },
     });
   } catch (err) {

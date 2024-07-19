@@ -1,6 +1,16 @@
-import { Badge, HStack, Heading, VStack } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  HStack,
+  Heading,
+} from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
+import { LuCheckCheck, LuChevronDown, LuEye } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
 
 import { useRouteData } from "~/hooks";
@@ -15,7 +25,7 @@ const QuoteHeader = () => {
 
   return (
     <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
-      <VStack spacing={0} className="flex-grow">
+      <HStack className="w-full justify-between">
         <HStack>
           <Heading size="h2">{routeData?.quote?.quoteId}</Heading>
           <Badge variant="secondary">
@@ -24,7 +34,25 @@ const QuoteHeader = () => {
             </Badge>
           </Badge>
         </HStack>
-      </VStack>
+        <HStack>
+          <Button leftIcon={<LuEye />} variant="secondary">
+            Preview
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Button rightIcon={<LuChevronDown />} variant="secondary">
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Download</DropdownMenuItem>
+              <DropdownMenuItem>Print</DropdownMenuItem>
+              <DropdownMenuItem>Export</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button leftIcon={<LuCheckCheck />}>Send</Button>
+        </HStack>
+      </HStack>
     </div>
   );
 };

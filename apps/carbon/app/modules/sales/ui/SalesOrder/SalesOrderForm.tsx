@@ -78,7 +78,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                   setCustomer(newValue?.value as string | undefined)
                 }
               />
-              <Input name="customerReference" label="Customer Order Number" />
+              <Input name="customerReference" label="Customer PO Number" />
               {isEditing && permissions.can("delete", "sales") && (
                 <Select
                   name="status"

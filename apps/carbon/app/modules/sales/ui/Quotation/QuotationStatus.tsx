@@ -9,9 +9,7 @@ const QuotationStatus = ({ status }: QuotationStatusProps) => {
   switch (status) {
     case "Draft":
       return <Status color="gray">{status}</Status>;
-    case "Open":
-    case "Replied":
-      return <Status color="blue">{status}</Status>;
+    case "Sent":
     case "Ordered":
     case "Partial":
       return <Status color="green">{status}</Status>;

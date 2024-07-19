@@ -19,13 +19,7 @@ import {
 import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import type {
-  BuyMethod,
-  Fixture,
-  ItemFile,
-  ModelUpload,
-  PickMethod,
-} from "../../types";
+import type { BuyMethod, Fixture, ItemFile, PickMethod } from "../../types";
 import { FileBadge, MethodIcon, TrackingTypeIcon } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 
@@ -39,7 +33,6 @@ const FixtureProperties = () => {
   const routeData = useRouteData<{
     fixtureSummary: Fixture;
     files: ItemFile[];
-    modelUpload?: ModelUpload;
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
   }>(path.to.fixture(itemId));
@@ -109,6 +102,13 @@ const FixtureProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.fixtureSummary?.name}</span>
+        {routeData?.fixtureSummary?.thumbnailPath && (
+          <img
+            alt="thumbnail"
+            src={`/file/preview/private/${routeData.fixtureSummary.thumbnailPath}`}
+            className="w-full h-auto bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-border"
+          />
+        )}
       </VStack>
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
@@ -200,7 +200,7 @@ const FixtureProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Files</h3>
         </HStack>
-        {routeData?.modelUpload?.autodeskUrn && (
+        {routeData?.fixtureSummary?.autodeskUrn && (
           <HStack className="group" spacing={1}>
             <Badge variant="secondary">
               <LuMove3D className="w-3 h-3 mr-1 text-green-500" />
@@ -208,7 +208,7 @@ const FixtureProperties = () => {
             </Badge>
             <Link
               className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-              to={path.to.file.cadModel(routeData?.modelUpload.autodeskUrn!)}
+              to={path.to.file.cadModel(routeData?.fixtureSummary.autodeskUrn!)}
               target="_blank"
             >
               <LuExternalLink />

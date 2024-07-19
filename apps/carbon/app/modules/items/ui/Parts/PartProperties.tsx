@@ -16,13 +16,7 @@ import Assignee from "~/components/Assignee";
 import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import type {
-  BuyMethod,
-  ItemFile,
-  ModelUpload,
-  PartSummary,
-  PickMethod,
-} from "../../types";
+import type { BuyMethod, ItemFile, PartSummary, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 import { MethodBadge } from "../Item/MethodBadge";
 import { MethodIcon, TrackingTypeIcon } from "../Item/MethodIcon";
@@ -37,7 +31,6 @@ const PartProperties = () => {
   const routeData = useRouteData<{
     partSummary: PartSummary;
     files: ItemFile[];
-    modelUpload?: ModelUpload;
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
   }>(path.to.part(itemId));
@@ -107,6 +100,13 @@ const PartProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.partSummary?.name}</span>
+        {routeData?.partSummary?.thumbnailPath && (
+          <img
+            alt="thumbnail"
+            src={`/file/preview/private/${routeData.partSummary.thumbnailPath}`}
+            className="w-full h-auto bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-border"
+          />
+        )}
       </VStack>
 
       <VStack spacing={2}>
@@ -195,7 +195,7 @@ const PartProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Files</h3>
         </HStack>
-        {routeData?.modelUpload?.autodeskUrn && (
+        {routeData?.partSummary?.autodeskUrn && (
           <HStack className="group" spacing={1}>
             <Badge variant="secondary">
               <LuMove3D className="w-3 h-3 mr-1 text-green-500" />
@@ -203,7 +203,7 @@ const PartProperties = () => {
             </Badge>
             <Link
               className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-              to={path.to.file.cadModel(routeData?.modelUpload.autodeskUrn!)}
+              to={path.to.file.cadModel(routeData?.partSummary.autodeskUrn!)}
               target="_blank"
             >
               <LuExternalLink />

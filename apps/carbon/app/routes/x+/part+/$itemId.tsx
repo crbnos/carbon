@@ -6,7 +6,6 @@ import {
   PartProperties,
   getBuyMethods,
   getItemFiles,
-  getModelUploadByItemId,
   getPart,
   getPickMethods,
 } from "~/modules/items";
@@ -30,14 +29,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partSummary, files, modelUpload, buyMethods, pickMethods] =
-    await Promise.all([
-      getPart(client, itemId, companyId),
-      getItemFiles(client, itemId, companyId),
-      getModelUploadByItemId(client, itemId, companyId),
-      getBuyMethods(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-    ]);
+  const [partSummary, files, buyMethods, pickMethods] = await Promise.all([
+    getPart(client, itemId, companyId),
+    getItemFiles(client, itemId, companyId),
+    getBuyMethods(client, itemId, companyId),
+    getPickMethods(client, itemId, companyId),
+  ]);
 
   if (partSummary.error) {
     throw redirect(
@@ -52,7 +49,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     partSummary: partSummary.data,
     files: files.data ?? [],
-    modelUpload: modelUpload.data,
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
   });

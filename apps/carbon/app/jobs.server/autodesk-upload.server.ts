@@ -23,10 +23,22 @@ const job = triggerClient.defineJob({
       name: z.string(),
       modelPath: z.string(),
       fileId: z.string(),
+      companyId: z.string(),
+      itemId: z.union([z.string(), z.null()]),
+      salesRfqLineId: z.union([z.string(), z.null()]),
+      quoteLineId: z.union([z.string(), z.null()]),
     }),
   }),
   run: async (payload, io, ctx) => {
-    const { modelPath, fileId, name } = payload;
+    const {
+      companyId,
+      modelPath,
+      fileId,
+      name,
+      itemId,
+      salesRfqLineId,
+      quoteLineId,
+    } = payload;
 
     const autodeskToken = await getAutodeskToken();
     if (autodeskToken.error) {
@@ -73,6 +85,26 @@ const job = triggerClient.defineJob({
       throw new Error("Failed to translate file: " + translation.error.message);
     }
 
+    const client = getSupabaseServiceRole();
+    if (itemId) {
+      await client
+        .from("item")
+        .update({ modelUploadId: fileId })
+        .eq("id", itemId);
+    }
+    if (salesRfqLineId) {
+      await client
+        .from("salesRfqLine")
+        .update({ modelUploadId: fileId })
+        .eq("id", salesRfqLineId);
+    }
+    if (quoteLineId) {
+      await client
+        .from("quoteLine")
+        .update({ modelUploadId: fileId })
+        .eq("id", quoteLineId);
+    }
+
     const event = await triggerClient.sendEvent({
       name: "autodesk.poll",
       payload: {
@@ -80,6 +112,7 @@ const job = triggerClient.defineJob({
         size: file.size,
         name,
         autodeskUrn,
+        companyId,
       },
     });
 

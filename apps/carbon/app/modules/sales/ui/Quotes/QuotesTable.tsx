@@ -212,8 +212,8 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         },
       },
       {
-        accessorKey: "quoteDate",
-        header: "Quote Date",
+        accessorKey: "dueDate",
+        header: "Due Date",
         cell: (item) => item.getValue(),
       },
       {

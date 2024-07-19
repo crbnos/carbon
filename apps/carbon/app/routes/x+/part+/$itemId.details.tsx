@@ -4,7 +4,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemFile, ModelUpload, PartSummary } from "~/modules/items";
+import type { ItemFile, PartSummary } from "~/modules/items";
 import {
   CadModel,
   ItemDocuments,
@@ -60,7 +60,6 @@ export default function PartDetailsRoute() {
 
   const partData = useRouteData<{
     partSummary: PartSummary;
-    modelUpload?: ModelUpload;
     files: ItemFile[];
   }>(path.to.part(itemId));
 
@@ -86,15 +85,15 @@ export default function PartDetailsRoute() {
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
-            autodeskUrn={partData?.modelUpload?.autodeskUrn ?? null}
+            autodeskUrn={partData?.partSummary?.autodeskUrn ?? null}
             metadata={{ itemId }}
-            modelPath={partData?.modelUpload?.modelPath ?? null}
+            modelPath={partData?.partSummary?.modelPath ?? null}
             title="CAD Model"
           />
           <ItemDocuments
             files={partData?.files ?? []}
             itemId={itemId}
-            modelUpload={partData.modelUpload}
+            modelUpload={partData.partSummary ?? undefined}
             type="Part"
           />
         </div>
