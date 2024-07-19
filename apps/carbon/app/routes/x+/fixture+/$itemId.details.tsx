@@ -4,7 +4,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Fixture, ItemFile, ModelUpload } from "~/modules/items";
+import type { Fixture, ItemFile } from "~/modules/items";
 import {
   CadModel,
   FixtureForm,
@@ -65,7 +65,6 @@ export default function FixtureDetailsRoute() {
 
   const fixtureData = useRouteData<{
     fixtureSummary: Fixture;
-    modelUpload?: ModelUpload;
     files: ItemFile[];
   }>(path.to.fixture(itemId));
   if (!fixtureData) throw new Error("Could not find fixture data");
@@ -95,17 +94,17 @@ export default function FixtureDetailsRoute() {
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
-            autodeskUrn={fixtureData?.modelUpload?.autodeskUrn ?? null}
+            autodeskUrn={fixtureData?.fixtureSummary?.autodeskUrn ?? null}
             metadata={{
               itemId,
             }}
-            modelPath={fixtureData?.modelUpload?.modelPath ?? null}
+            modelPath={fixtureData?.fixtureSummary?.modelPath ?? null}
             title="CAD Model"
           />
           <ItemDocuments
             files={fixtureData?.files ?? []}
             itemId={itemId}
-            modelUpload={fixtureData.modelUpload}
+            modelUpload={fixtureData.fixtureSummary}
             type="Fixture"
           />
         </div>

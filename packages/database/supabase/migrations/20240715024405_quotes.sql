@@ -2,8 +2,7 @@
 
 CREATE TYPE "quoteStatus" AS ENUM (
   'Draft', 
-  'Open', 
-  'Replied', 
+  'Sent', 
   'Ordered',
   'Partial',
   'Lost', 
@@ -16,7 +15,7 @@ CREATE TABLE "quote" (
   "quoteId" TEXT NOT NULL,
   "revisionId" INTEGER NOT NULL DEFAULT 0,
   "salesRfqId" TEXT,
-  "quoteDate" DATE,
+  "dueDate" DATE,
   "expirationDate" DATE,
   "status" "quoteStatus" NOT NULL DEFAULT 'Draft',
   "notes" JSON DEFAULT '{}'::json,

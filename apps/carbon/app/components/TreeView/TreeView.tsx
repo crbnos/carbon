@@ -16,7 +16,7 @@ export type TreeViewProps<TData> = {
     state: NodeState;
     index: number;
     virtualizer: Virtualizer<HTMLElement, Element>;
-    virtualItem: VirtualItem;
+    virtualItem: VirtualItem<HTMLElement>;
   }) => React.ReactNode;
   nodes: UseTreeStateOutput["nodes"];
   autoFocus?: boolean;

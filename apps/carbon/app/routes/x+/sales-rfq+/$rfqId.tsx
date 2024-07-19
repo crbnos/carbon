@@ -44,7 +44,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     rfqSummary: rfqSummary.data,
     files: files.data?.files ?? [],
-    modelUploads: files.data?.modelUploads ?? [],
   });
 }
 

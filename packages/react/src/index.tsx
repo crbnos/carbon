@@ -1,4 +1,10 @@
 import type { JSONContent } from "novel";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./Accordion";
 import { ActionMenu } from "./ActionMenu";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
 import { AutodeskViewer } from "./AutodeskViewer";
@@ -238,6 +244,10 @@ import { cn } from "./utils/cn";
 import { getValidChildren, reactNodeToString } from "./utils/react";
 export * from "./hooks";
 export {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
   ActionMenu,
   Alert,
   AlertDescription,

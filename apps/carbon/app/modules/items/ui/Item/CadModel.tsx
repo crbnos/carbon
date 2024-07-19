@@ -14,6 +14,7 @@ type CadModelProps = {
   metadata?: {
     itemId?: string;
     salesRfqLineId?: string;
+    quoteLineId?: string;
   };
   title?: string;
   uploadClassName?: string;
@@ -28,6 +29,7 @@ const CadModel = ({
   uploadClassName,
   viewerClassName,
 }: CadModelProps) => {
+  console.log({ modelPath });
   useRealtime("modelUpload", `modelPath=eq.${modelPath ?? "unknown"}`);
 
   const {
@@ -68,9 +70,15 @@ const CadModel = ({
       formData.append("fileId", fileId);
       formData.append("modelPath", modelUpload.data!.path);
       if (metadata) {
-        if (metadata.itemId) formData.append("itemId", metadata.itemId);
-        if (metadata.salesRfqLineId)
+        if (metadata.itemId) {
+          formData.append("itemId", metadata.itemId);
+        }
+        if (metadata.salesRfqLineId) {
           formData.append("salesRfqLineId", metadata.salesRfqLineId);
+        }
+        if (metadata.quoteLineId) {
+          formData.append("quoteLineId", metadata.quoteLineId);
+        }
       }
 
       fetcher.submit(formData, {

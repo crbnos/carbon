@@ -6029,11 +6029,10 @@ export type Database = {
           description: string | null
           id: string
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          modelUploadId: string | null
           name: string
           readableId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          thumbnailPath: string | null
-          thumbnailUrl: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -6049,11 +6048,10 @@ export type Database = {
           description?: string | null
           id?: string
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          modelUploadId?: string | null
           name: string
           readableId: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          thumbnailPath?: string | null
-          thumbnailUrl?: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -6069,11 +6067,10 @@ export type Database = {
           description?: string | null
           id?: string
           itemTrackingType?: Database["public"]["Enums"]["itemTrackingType"]
+          modelUploadId?: string | null
           name?: string
           readableId?: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
-          thumbnailPath?: string | null
-          thumbnailUrl?: string | null
           type?: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -8670,11 +8667,10 @@ export type Database = {
           createdAt: string | null
           createdBy: string
           id: string
-          itemId: string | null
           modelPath: string
           name: string | null
-          salesRfqLineId: string | null
           size: number | null
+          thumbnailPath: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8684,11 +8680,10 @@ export type Database = {
           createdAt?: string | null
           createdBy: string
           id?: string
-          itemId?: string | null
           modelPath: string
           name?: string | null
-          salesRfqLineId?: string | null
           size?: number | null
+          thumbnailPath?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8698,11 +8693,10 @@ export type Database = {
           createdAt?: string | null
           createdBy?: string
           id?: string
-          itemId?: string | null
           modelPath?: string
           name?: string | null
-          salesRfqLineId?: string | null
           size?: number | null
+          thumbnailPath?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8769,27 +8763,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "modelUpload_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "modelUpload_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "itemQuantities"
-            referencedColumns: ["itemId"]
-          },
-          {
-            foreignKeyName: "modelUpload_salesRfqLineId_fkey"
-            columns: ["salesRfqLineId"]
-            isOneToOne: false
-            referencedRelation: "salesRfqLine"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "modelUpload_updatedBy_fkey"
@@ -12424,12 +12397,12 @@ export type Database = {
           customerLocationId: string | null
           customerReference: string | null
           customFields: Json | null
+          dueDate: string | null
           estimatorId: string | null
           expirationDate: string | null
           id: string
           locationId: string | null
           notes: Json | null
-          quoteDate: string | null
           quoteId: string
           revisionId: number
           salesPersonId: string | null
@@ -12448,12 +12421,12 @@ export type Database = {
           customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
+          dueDate?: string | null
           estimatorId?: string | null
           expirationDate?: string | null
           id?: string
           locationId?: string | null
           notes?: Json | null
-          quoteDate?: string | null
           quoteId: string
           revisionId?: number
           salesPersonId?: string | null
@@ -12472,12 +12445,12 @@ export type Database = {
           customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
+          dueDate?: string | null
           estimatorId?: string | null
           expirationDate?: string | null
           id?: string
           locationId?: string | null
           notes?: Json | null
-          quoteDate?: string | null
           quoteId?: string
           revisionId?: number
           salesPersonId?: string | null
@@ -12853,6 +12826,7 @@ export type Database = {
           id: string
           itemId: string
           itemReadableId: string | null
+          modelUploadId: string | null
           quoteId: string
           quoteRevisionId: number
           replenishmentSystem: string | null
@@ -12872,6 +12846,7 @@ export type Database = {
           id?: string
           itemId: string
           itemReadableId?: string | null
+          modelUploadId?: string | null
           quoteId: string
           quoteRevisionId?: number
           replenishmentSystem?: string | null
@@ -12891,6 +12866,7 @@ export type Database = {
           id?: string
           itemId?: string
           itemReadableId?: string | null
+          modelUploadId?: string | null
           quoteId?: string
           quoteRevisionId?: number
           replenishmentSystem?: string | null
@@ -15831,6 +15807,7 @@ export type Database = {
           id: string
           internalNotes: Json | null
           itemId: string | null
+          modelUploadId: string | null
           order: number
           quantity: number[] | null
           salesRfqId: string
@@ -15850,6 +15827,7 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           itemId?: string | null
+          modelUploadId?: string | null
           order?: number
           quantity?: number[] | null
           salesRfqId: string
@@ -15869,6 +15847,7 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           itemId?: string | null
+          modelUploadId?: string | null
           order?: number
           quantity?: number[] | null
           salesRfqId?: string
@@ -21017,6 +20996,7 @@ export type Database = {
           approved: boolean | null
           approvedBy: string | null
           assignee: string | null
+          autodeskUrn: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -21030,11 +21010,16 @@ export type Database = {
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
+          modelId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
           name: string | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string[] | null
+          thumbnailPath: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -21849,6 +21834,7 @@ export type Database = {
           approved: boolean | null
           approvedBy: string | null
           assignee: string | null
+          autodeskUrn: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -21861,11 +21847,16 @@ export type Database = {
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
+          modelId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
           name: string | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string[] | null
+          thumbnailPath: string | null
           toDate: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -23090,6 +23081,7 @@ export type Database = {
           customerLocationId: string | null
           customerReference: string | null
           customFields: Json | null
+          dueDate: string | null
           estimatorId: string | null
           expirationDate: string | null
           favorite: boolean | null
@@ -23098,7 +23090,6 @@ export type Database = {
           locationId: string | null
           locationName: string | null
           notes: Json | null
-          quoteDate: string | null
           quoteId: string | null
           revisionId: number | null
           salesPersonId: string | null
@@ -24080,6 +24071,170 @@ export type Database = {
           },
           {
             foreignKeyName: "salesOrder_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      salesRfqLines: {
+        Row: {
+          autodeskUrn: string | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customerPartNumber: string | null
+          customerRevisionId: string | null
+          customFields: Json | null
+          description: string | null
+          externalNotes: Json | null
+          id: string | null
+          internalNotes: Json | null
+          itemId: string | null
+          itemName: string | null
+          modelId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
+          modelUploadId: string | null
+          order: number | null
+          quantity: number[] | null
+          salesRfqId: string | null
+          thumbnailPath: string | null
+          unitOfMeasureCode: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salesRfqLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfq"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -25567,8 +25722,7 @@ export type Database = {
       quoteLineStatus: "Draft" | "In Progress" | "Complete"
       quoteStatus:
         | "Draft"
-        | "Open"
-        | "Replied"
+        | "Sent"
         | "Ordered"
         | "Partial"
         | "Lost"

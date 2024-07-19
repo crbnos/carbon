@@ -7,7 +7,6 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import { useRouteData } from "~/hooks";
-import type { ModelUpload } from "~/modules/items";
 import type { SalesRFQ, SalesRFQStatus } from "~/modules/sales";
 import {
   SalesRFQForm,
@@ -42,6 +41,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     lines: lines.data.map((line) => ({
       ...line,
+      id: line.id ?? "",
+      order: line.order ?? 0,
+      unitOfMeasureCode: line.unitOfMeasureCode ?? "",
       customerRevisionId: line.customerRevisionId ?? "",
       description: line.description ?? "",
       externalNotes: (line.externalNotes ?? {}) as JSONContent,
@@ -100,7 +102,6 @@ export default function SalesRFQDetailsRoute() {
   const rfqData = useRouteData<{
     rfqSummary: SalesRFQ;
     files: (FileObject & { salesRfqLineId: string | null })[];
-    modelUploads?: ModelUpload[];
   }>(path.to.salesRfq(rfqId));
 
   if (!rfqData) throw new Error("Could not find rfq data");
@@ -126,9 +127,9 @@ export default function SalesRFQDetailsRoute() {
     <VStack spacing={2} className="p-2">
       <SalesRFQForm key={initialValues.id} initialValues={initialValues} />
       <SalesRFQLines
+        // @ts-ignore
         lines={lines}
         files={rfqData?.files ?? []}
-        modelUploads={rfqData?.modelUploads ?? []}
       />
     </VStack>
   );

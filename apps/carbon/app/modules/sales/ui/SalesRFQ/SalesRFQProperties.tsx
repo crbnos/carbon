@@ -16,7 +16,6 @@ import {
   useOptimisticAssignment,
 } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { ModelUpload } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { SalesRFQ } from "../../types";
@@ -36,7 +35,6 @@ const SalesRFQProperties = () => {
   );
   const routeData = useRouteData<{
     rfqSummary: SalesRFQ;
-    modelUploads?: ModelUpload[];
   }>(path.to.salesRfq(rfqId));
 
   const locations = sharedData?.locations ?? [];

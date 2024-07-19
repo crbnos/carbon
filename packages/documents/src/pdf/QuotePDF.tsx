@@ -58,8 +58,8 @@ const QuotePDF = ({
           company={company}
           items={[
             {
-              label: "Date",
-              value: quote?.quoteDate ?? today(getLocalTimeZone()).toString(),
+              label: "Quote Date",
+              value: today(getLocalTimeZone()).toString(),
             },
             {
               label: "Expires",

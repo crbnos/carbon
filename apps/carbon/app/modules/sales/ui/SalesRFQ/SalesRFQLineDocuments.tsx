@@ -69,32 +69,18 @@ const useSalesRFQLineDocuments = ({
   );
 
   const deleteModel = useCallback(
-    async (model: ModelUpload) => {
-      if (!model || !supabase) return;
+    async (salesRfqLineId: string) => {
+      if (!salesRfqLineId || !supabase) return;
 
-      // TODO: delete from Autodesk server
-
-      if (model.modelPath) {
-        const fileDelete = await supabase?.storage
-          .from("private")
-          .remove([model?.modelPath]);
-
-        if (!fileDelete || fileDelete.error) {
-          toast.error(fileDelete?.error?.message || "Error deleting file");
-          return;
-        }
-      }
-
-      const modelDelete = await supabase
-        ?.from("modelUpload")
-        .delete()
-        .eq("id", model.id);
-      if (modelDelete.error) {
-        toast.error(modelDelete.error.message);
+      const { error } = await supabase
+        .from("salesRfqLine")
+        .update({ modelUploadId: null })
+        .eq("id", salesRfqLineId);
+      if (error) {
+        toast.error("Error removing model from line");
         return;
       }
-
-      toast.success("File deleted successfully");
+      toast.success("Model removed from line");
       revalidator.revalidate();
     },
     [supabase, revalidator]
@@ -183,7 +169,7 @@ const SalesRFQLineDocuments = ({
           </Tr>
         </Thead>
         <Tbody>
-          {modelUpload && (
+          {modelUpload?.autodeskUrn && (
             <Tr>
               <Td>
                 <HStack>
@@ -193,15 +179,15 @@ const SalesRFQLineDocuments = ({
                     onClick={() => viewModel(modelUpload)}
                   >
                     {modelUpload?.autodeskUrn
-                      ? modelUpload.name
+                      ? modelUpload.modelName
                       : "Uploading..."}
                   </Hyperlink>
                 </HStack>
               </Td>
               <Td>
-                {modelUpload.size
+                {modelUpload.modelSize
                   ? convertKbToString(
-                      Math.floor((modelUpload.size ?? 0) / 1024)
+                      Math.floor((modelUpload.modelSize ?? 0) / 1024)
                     )
                   : "--"}
               </Td>
@@ -221,7 +207,7 @@ const SalesRFQLineDocuments = ({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         disabled={!canDelete}
-                        onClick={() => deleteModel(modelUpload)}
+                        onClick={() => deleteModel(salesRfqLineId)}
                       >
                         Delete
                       </DropdownMenuItem>

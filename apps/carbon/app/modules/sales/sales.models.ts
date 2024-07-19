@@ -66,14 +66,29 @@ export const quoteLineStatusType = [
 
 export const quoteStatusType = [
   "Draft",
-  "Open",
-  "Replied",
+  "Sent",
   "Ordered",
   "Partial",
   "Lost",
   "Cancelled",
   "Expired",
 ] as const;
+
+export const quoteValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  quoteId: zfd.text(z.string().optional()),
+  salesPersonId: zfd.text(z.string().optional()),
+  estimatorId: zfd.text(z.string().optional()),
+  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerLocationId: zfd.text(z.string().optional()),
+  customerContactId: zfd.text(z.string().optional()),
+  customerReference: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  status: z.enum(quoteStatusType).optional(),
+  notes: z.any().optional(),
+  dueDate: zfd.text(z.string().optional()),
+  expirationDate: zfd.text(z.string().optional()),
+});
 
 export const quotationValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -331,4 +346,5 @@ export const salesRfqLineValidator = z.object({
     .string()
     .min(1, { message: "Unit of measure is required" }),
   order: zfd.numeric(z.number().min(0)),
+  modelUploadId: zfd.text(z.string().optional()),
 });
