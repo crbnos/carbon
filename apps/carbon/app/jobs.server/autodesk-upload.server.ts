@@ -40,83 +40,90 @@ const job = triggerClient.defineJob({
       quoteLineId,
     } = payload;
 
-    const autodeskToken = await getAutodeskToken();
-    if (autodeskToken.error) {
-      throw new Error(
-        "Failed to get Autodesk token: " + autodeskToken.error.message
+    try {
+      const autodeskToken = await getAutodeskToken();
+      if (autodeskToken.error) {
+        throw new Error(
+          "Failed to get Autodesk token: " + autodeskToken.error.message
+        );
+      }
+      const token = autodeskToken.data?.token;
+      const encodedFilename = modelPath.split("/").pop() as string;
+
+      const [signedUrl, blob] = await Promise.all([
+        getAutodeskSignedUrl(encodedFilename, token),
+        supabaseClient.storage.from("private").download(modelPath),
+      ]);
+      if (signedUrl.error) {
+        throw new Error("Failed to get signed URL: " + signedUrl.error.message);
+      }
+      if (blob.error) {
+        throw new Error("Failed to download blob: " + blob.error.message);
+      }
+
+      const file = new File([blob.data], encodedFilename);
+      const { uploadKey, url } = signedUrl.data;
+
+      const initialUpload = await uploadToAutodesk(url, file, uploadKey);
+      if (initialUpload.error) {
+        throw new Error(
+          "Failed to upload file: " + initialUpload.error.message
+        );
+      }
+
+      const upload = await finalizeAutodeskUpload(
+        encodedFilename,
+        token,
+        uploadKey
       );
-    }
-    const token = autodeskToken.data?.token;
-    const encodedFilename = modelPath.split("/").pop() as string;
+      if (upload.error) {
+        throw new Error("Failed to finalize upload: " + upload.error.message);
+      }
 
-    const [signedUrl, blob] = await Promise.all([
-      getAutodeskSignedUrl(encodedFilename, token),
-      supabaseClient.storage.from("private").download(modelPath),
-    ]);
-    if (signedUrl.error) {
-      throw new Error("Failed to get signed URL: " + signedUrl.error.message);
-    }
-    if (blob.error) {
-      throw new Error("Failed to download blob: " + blob.error.message);
-    }
+      const { urn } = upload.data;
+      const autodeskUrn = Buffer.from(urn).toString("base64");
 
-    const file = new File([blob.data], encodedFilename);
-    const { uploadKey, url } = signedUrl.data;
+      const translation = await translateFile(autodeskUrn, token);
+      if (translation.error) {
+        throw new Error(
+          "Failed to translate file: " + translation.error.message
+        );
+      }
 
-    const initialUpload = await uploadToAutodesk(url, file, uploadKey);
-    if (initialUpload.error) {
-      throw new Error("Failed to upload file: " + initialUpload.error.message);
+      const event = await triggerClient.sendEvent({
+        name: "autodesk.poll",
+        payload: {
+          id: fileId,
+          size: file.size,
+          name,
+          autodeskUrn,
+          companyId,
+        },
+      });
+
+      io.logger.info("Event sent", event);
+    } catch (err) {
+      const client = getSupabaseServiceRole();
+      if (itemId) {
+        await client
+          .from("item")
+          .update({ modelUploadId: null })
+          .eq("id", itemId);
+      }
+      if (salesRfqLineId) {
+        await client
+          .from("salesRfqLine")
+          .update({ modelUploadId: null })
+          .eq("id", salesRfqLineId);
+      }
+      if (quoteLineId) {
+        await client
+          .from("quoteLine")
+          .update({ modelUploadId: null })
+          .eq("id", quoteLineId);
+      }
+      io.logger.error("Error uploading to Autodesk");
     }
-
-    const upload = await finalizeAutodeskUpload(
-      encodedFilename,
-      token,
-      uploadKey
-    );
-    if (upload.error) {
-      throw new Error("Failed to finalize upload: " + upload.error.message);
-    }
-
-    const { urn } = upload.data;
-    const autodeskUrn = Buffer.from(urn).toString("base64");
-
-    const translation = await translateFile(autodeskUrn, token);
-    if (translation.error) {
-      throw new Error("Failed to translate file: " + translation.error.message);
-    }
-
-    const client = getSupabaseServiceRole();
-    if (itemId) {
-      await client
-        .from("item")
-        .update({ modelUploadId: fileId })
-        .eq("id", itemId);
-    }
-    if (salesRfqLineId) {
-      await client
-        .from("salesRfqLine")
-        .update({ modelUploadId: fileId })
-        .eq("id", salesRfqLineId);
-    }
-    if (quoteLineId) {
-      await client
-        .from("quoteLine")
-        .update({ modelUploadId: fileId })
-        .eq("id", quoteLineId);
-    }
-
-    const event = await triggerClient.sendEvent({
-      name: "autodesk.poll",
-      payload: {
-        id: fileId,
-        size: file.size,
-        name,
-        autodeskUrn,
-        companyId,
-      },
-    });
-
-    io.logger.info("Event sent", event);
   },
 });
 

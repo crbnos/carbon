@@ -29,6 +29,25 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Model path is required");
   }
 
+  if (itemId) {
+    await client
+      .from("item")
+      .update({ modelUploadId: fileId })
+      .eq("id", itemId);
+  }
+  if (salesRfqLineId) {
+    await client
+      .from("salesRfqLine")
+      .update({ modelUploadId: fileId })
+      .eq("id", salesRfqLineId);
+  }
+  if (quoteLineId) {
+    await client
+      .from("quoteLine")
+      .update({ modelUploadId: fileId })
+      .eq("id", quoteLineId);
+  }
+
   const modelRecord = await upsertModelUpload(client, {
     id: fileId,
     modelPath,
