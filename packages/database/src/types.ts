@@ -12828,6 +12828,7 @@ export type Database = {
           itemReadableId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
+          notes: Json | null
           quoteId: string
           quoteRevisionId: number
           status: Database["public"]["Enums"]["quoteLineStatus"]
@@ -12848,6 +12849,7 @@ export type Database = {
           itemReadableId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          notes?: Json | null
           quoteId: string
           quoteRevisionId?: number
           status?: Database["public"]["Enums"]["quoteLineStatus"]
@@ -12868,6 +12870,7 @@ export type Database = {
           itemReadableId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          notes?: Json | null
           quoteId?: string
           quoteRevisionId?: number
           status?: Database["public"]["Enums"]["quoteLineStatus"]
@@ -22885,6 +22888,7 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           modelUploadId: string | null
+          notes: Json | null
           pricingDiscountPercent: number | null
           pricingExtendedPrice: number | null
           pricingLeadTime: number | null
@@ -23081,6 +23085,7 @@ export type Database = {
         Row: {
           assignee: string | null
           companyId: string | null
+          completedLines: number | null
           createdAt: string | null
           createdBy: string | null
           customerContactId: string | null
@@ -23093,7 +23098,7 @@ export type Database = {
           expirationDate: string | null
           favorite: boolean | null
           id: string | null
-          itemIds: string[] | null
+          lines: number | null
           locationId: string | null
           locationName: string | null
           notes: Json | null

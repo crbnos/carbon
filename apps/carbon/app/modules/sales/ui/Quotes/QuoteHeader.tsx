@@ -12,6 +12,7 @@ import {
 import { useParams } from "@remix-run/react";
 import { LuCheckCheck, LuChevronDown, LuEye } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
+import { Assignee, useOptimisticAssignment } from "~/components";
 
 import { useRouteData } from "~/hooks";
 import type { Quotation } from "~/modules/sales";
@@ -22,6 +23,15 @@ const QuoteHeader = () => {
   if (!quoteId) throw new Error("quoteId not found");
 
   const routeData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
+
+  const optimisticAssignment = useOptimisticAssignment({
+    id: quoteId,
+    table: "quote",
+  });
+  const assignee =
+    optimisticAssignment !== undefined
+      ? optimisticAssignment
+      : routeData?.quote?.assignee;
 
   return (
     <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
@@ -35,6 +45,12 @@ const QuoteHeader = () => {
           </Badge>
         </HStack>
         <HStack>
+          <Assignee
+            id={quoteId}
+            table="quote"
+            value={assignee ?? ""}
+            className="h-8"
+          />
           <Button leftIcon={<LuEye />} variant="secondary">
             Preview
           </Button>

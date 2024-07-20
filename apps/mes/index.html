@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CarbonOS - MES</title>
+    <style>
+      p.is-editor-empty:first-child:before {
+        color: var(--muted-foreground);
+        content: attr(data-placeholder);
+        float: left;
+        height: 0;
+        pointer-events: none;
+      }
+    </style>
   </head>
   <body class="bg-background dark">
     <div id="root"></div>

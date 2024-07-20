@@ -3,6 +3,7 @@ import {
   HStack,
   MenuIcon,
   MenuItem,
+  Progress,
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -129,29 +130,17 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         },
       },
       {
-        accessorKey: "name",
-        header: "Name",
-        cell: (item) => {
-          if (item.getValue<string>()) {
-            return item.getValue<string>().substring(0, 50);
-          }
-          return null;
-        },
-      },
-      {
-        id: "itemIds",
-        header: "Parts",
-        cell: ({ row }) => row.original.itemIds?.length ?? 0,
-        meta: {
-          filter: {
-            type: "static",
-            options: items.map((item) => ({
-              value: item.id,
-              label: item.id,
-              helperText: item.name,
-            })),
-            isArray: true,
-          },
+        header: "Progress",
+        cell: ({ row }) => {
+          const lines = row.original.lines ?? 0;
+          const completedLines = row.original.completedLines ?? 0;
+          return (
+            <Progress
+              leftLabel={completedLines.toString()}
+              rightLabel={lines.toString()}
+              value={lines === 0 ? 0 : (completedLines / lines) * 100}
+            />
+          );
         },
       },
       {
@@ -287,7 +276,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, items, people, customColumns, fetcher]);
+  }, [customers, people, customColumns, fetcher]);
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name

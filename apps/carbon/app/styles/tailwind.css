@@ -122,3 +122,11 @@
 .forgeViewer > div {
   border-radius: var(--radius);
 }
+
+p.is-editor-empty:first-child:before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

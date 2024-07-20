@@ -360,118 +360,113 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
           </div>
         ),
       },
+      {
+        id: 1,
+        label: "Model",
+        disabled: item.isTemporary,
+        content: (
+          <div className="flex flex-col py-4">
+            <motion.div
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                type: "spring",
+                bounce: 0.2,
+                duration: 0.75,
+                delay: 0.15,
+              }}
+            >
+              <CadModel
+                autodeskUrn={item.data.autodeskUrn ?? null}
+                metadata={{
+                  salesRfqLineId: item.id,
+                }}
+                modelPath={item.data.modelPath ?? null}
+                uploadClassName="min-h-[300px]"
+              />
+            </motion.div>
+          </div>
+        ),
+      },
+      {
+        id: 2,
+        label: "Files",
+        disabled: item.isTemporary,
+        content: (
+          <div className="flex flex-col">
+            <motion.div
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                type: "spring",
+                bounce: 0.2,
+                duration: 0.75,
+                delay: 0.15,
+              }}
+            >
+              <SalesRFQLineDocuments
+                files={item.files ?? []}
+                modelUpload={item.data}
+                rfqId={rfqId}
+                salesRfqLineId={item.id}
+              />
+            </motion.div>
+          </div>
+        ),
+      },
+      {
+        id: 3,
+        label: "Internal Notes",
+        disabled: item.isTemporary,
+        content: (
+          <div className="flex flex-col">
+            <motion.div
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                type: "spring",
+                bounce: 0.2,
+                duration: 0.75,
+                delay: 0.15,
+              }}
+            >
+              <Editor
+                className="min-h-[300px]"
+                initialValue={item.data.internalNotes}
+                onUpload={onUploadImage}
+                onChange={onUpdateInternalNotes}
+              />
+            </motion.div>
+          </div>
+        ),
+      },
+      {
+        id: 4,
+        label: "External Notes",
+        disabled: item.isTemporary,
+        content: (
+          <div className="flex flex-col">
+            <motion.div
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                type: "spring",
+                bounce: 0.2,
+                duration: 0.75,
+                delay: 0.15,
+              }}
+            >
+              <Editor
+                className="min-h-[300px]"
+                initialValue={item.data.externalNotes ?? ({} as JSONContent)}
+                onUpload={onUploadImage}
+                onChange={onUpdateExternalNotes}
+              />
+            </motion.div>
+          </div>
+        ),
+      },
     ];
-
-    if (!item.isTemporary) {
-      tabs.push(
-        {
-          id: 1,
-          label: "Model",
-
-          content: (
-            <div className="flex flex-col py-4">
-              <motion.div
-                initial={{ opacity: 0, filter: "blur(4px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{
-                  type: "spring",
-                  bounce: 0.2,
-                  duration: 0.75,
-                  delay: 0.15,
-                }}
-              >
-                <CadModel
-                  autodeskUrn={item.data.autodeskUrn ?? null}
-                  metadata={{
-                    salesRfqLineId: item.id,
-                  }}
-                  modelPath={item.data.modelPath ?? null}
-                  uploadClassName="min-h-[300px]"
-                />
-              </motion.div>
-            </div>
-          ),
-        },
-        {
-          id: 2,
-          label: "Files",
-
-          content: (
-            <div className="flex flex-col">
-              <motion.div
-                initial={{ opacity: 0, filter: "blur(4px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{
-                  type: "spring",
-                  bounce: 0.2,
-                  duration: 0.75,
-                  delay: 0.15,
-                }}
-              >
-                <SalesRFQLineDocuments
-                  files={item.files ?? []}
-                  modelUpload={item.data}
-                  rfqId={rfqId}
-                  salesRfqLineId={item.id}
-                />
-              </motion.div>
-            </div>
-          ),
-        },
-        {
-          id: 3,
-          label: "Internal Notes",
-
-          content: (
-            <div className="flex flex-col">
-              <motion.div
-                initial={{ opacity: 0, filter: "blur(4px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{
-                  type: "spring",
-                  bounce: 0.2,
-                  duration: 0.75,
-                  delay: 0.15,
-                }}
-              >
-                <Editor
-                  className="min-h-[300px]"
-                  initialValue={item.data.internalNotes}
-                  onUpload={onUploadImage}
-                  onChange={onUpdateInternalNotes}
-                />
-              </motion.div>
-            </div>
-          ),
-        },
-        {
-          id: 4,
-          label: "External Notes",
-
-          content: (
-            <div className="flex flex-col">
-              <motion.div
-                initial={{ opacity: 0, filter: "blur(4px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{
-                  type: "spring",
-                  bounce: 0.2,
-                  duration: 0.75,
-                  delay: 0.15,
-                }}
-              >
-                <Editor
-                  className="min-h-[300px]"
-                  initialValue={item.data.externalNotes ?? ({} as JSONContent)}
-                  onUpload={onUploadImage}
-                  onChange={onUpdateExternalNotes}
-                />
-              </motion.div>
-            </div>
-          ),
-        }
-      );
-    }
 
     return (
       <SortableListItem<Line>

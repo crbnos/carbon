@@ -18,16 +18,19 @@ import {
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
+import { useState } from "react";
 import { LuGhost, LuImage, LuPlus } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import type { FlatTree } from "~/components/TreeView/TreeView";
 import { useRouteData, useUser } from "~/hooks";
 import type { QuotationLine } from "~/modules/sales";
 import {
+  DeleteQuoteLine,
   getQuote,
-  getQuoteInternalDocuments,
+  getQuoteDocuments,
   getQuoteLines,
   QuoteBoMExplorer,
+  QuoteBreadcrumbs,
   QuoteHeader,
   QuoteLineForm,
 } from "~/modules/sales";
@@ -38,7 +41,7 @@ import { path } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export const handle: Handle = {
-  breadcrumb: "Quote",
+  breadcrumb: "Quotes",
   to: path.to.quotes,
   module: "sales",
 };
@@ -54,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [quote, lines, files] = await Promise.all([
     getQuote(client, quoteId),
     getQuoteLines(client, quoteId),
-    getQuoteInternalDocuments(client, companyId, quoteId),
+    getQuoteDocuments(client, companyId, quoteId),
   ]);
 
   if (quote.error) {
@@ -98,9 +101,12 @@ export default function QuoteRoute() {
                     </ScrollArea>
                   </ResizablePanel>
                   <ResizableHandle withHandle />
-                  <ResizablePanel order={2} className="border-t border-border">
+                  <ResizablePanel order={2}>
                     <ScrollArea className="h-[calc(100vh-99px)]">
-                      <Outlet key={JSON.stringify(params)} />
+                      <VStack spacing={2} className="p-2">
+                        <QuoteBreadcrumbs />
+                        <Outlet />
+                      </VStack>
                     </ScrollArea>
                   </ResizablePanel>
                 </ResizablePanelGroup>
@@ -133,6 +139,18 @@ function QuoteExplorer() {
   };
 
   const newQuoteLineDisclosure = useDisclosure();
+  const deleteLineDisclosure = useDisclosure();
+  const [deleteLine, setDeleteLine] = useState<QuotationLine | null>(null);
+
+  const onDeleteLine = (line: QuotationLine) => {
+    setDeleteLine(line);
+    deleteLineDisclosure.onOpen();
+  };
+
+  const onDeleteCancel = () => {
+    setDeleteLine(null);
+    deleteLineDisclosure.onClose();
+  };
 
   return (
     <>
@@ -140,7 +158,11 @@ function QuoteExplorer() {
         <VStack className="flex-1 overflow-y-auto" spacing={0}>
           {quoteData?.lines && quoteData?.lines?.length > 0 ? (
             quoteData?.lines.map((line) => (
-              <QuoteLineItem key={line.id} line={line} />
+              <QuoteLineItem
+                key={line.id}
+                line={line}
+                onDelete={onDeleteLine}
+              />
             ))
           ) : (
             <EmptyQuote onAdd={newQuoteLineDisclosure.onOpen} />
@@ -159,6 +181,9 @@ function QuoteExplorer() {
           onClose={newQuoteLineDisclosure.onClose}
         />
       )}
+      {deleteLineDisclosure.isOpen && (
+        <DeleteQuoteLine line={deleteLine!} onCancel={onDeleteCancel} />
+      )}
     </>
   );
 }
@@ -167,7 +192,7 @@ function EmptyQuote({ onAdd }: { onAdd: () => void }) {
   return (
     <VStack className="w-full h-full justify-center items-center">
       <LuGhost className="w-12 h-12" />
-      <h3 className="font-semibold text-lg">Pretty empty around here</h3>
+      <h3 className="text-base">Pretty empty around here</h3>
       <Button leftIcon={<LuPlus />} onClick={onAdd}>
         Add Line Item
       </Button>
@@ -270,7 +295,12 @@ const methods: FlatTree<{
   },
 ];
 
-function QuoteLineItem({ line }: { line: QuotationLine }) {
+type QuoteLineItemProps = {
+  line: QuotationLine;
+  onDelete: (line: QuotationLine) => void;
+};
+
+function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
   const { quoteId, lineId } = useParams();
   const navigate = useNavigate();
   const disclosure = useDisclosure();
@@ -293,9 +323,9 @@ function QuoteLineItem({ line }: { line: QuotationLine }) {
     <VStack spacing={0}>
       <HStack
         className={cn(
-          "w-full p-2 items-center justify-between hover:bg-accent/60 cursor-pointer",
+          "w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer",
           !disclosure.isOpen && "border-b border-border",
-          isSelected && "bg-accent/60"
+          isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
         onClick={() => onLineClick(line)}
       >
@@ -304,7 +334,7 @@ function QuoteLineItem({ line }: { line: QuotationLine }) {
             <img
               alt="P2392303"
               className={cn(
-                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-border",
+                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-transparent",
                 line.status === "Complete" && "border-green-500",
                 line.status === "In Progress" && "border-yellow-500"
               )}
@@ -313,7 +343,7 @@ function QuoteLineItem({ line }: { line: QuotationLine }) {
           ) : (
             <div
               className={cn(
-                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-border p-2",
+                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-transparent p-2",
                 line.status === "Complete" && "border-green-500",
                 line.status === "In Progress" && "border-yellow-500"
               )}
@@ -343,7 +373,14 @@ function QuoteLineItem({ line }: { line: QuotationLine }) {
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem>Delete Line</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(line);
+              }}
+            >
+              Delete Line
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </HStack>

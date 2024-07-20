@@ -8,10 +8,9 @@ import { path } from "~/utils/path";
 
 type QuoteDocumentFormProps = {
   id: string;
-  isExternal: boolean;
 };
 
-const QuoteDocumentForm = ({ id, isExternal }: QuoteDocumentFormProps) => {
+const QuoteDocumentForm = ({ id }: QuoteDocumentFormProps) => {
   const submit = useSubmit();
   const { company } = useUser();
   const { supabase } = useSupabase();
@@ -19,9 +18,7 @@ const QuoteDocumentForm = ({ id, isExternal }: QuoteDocumentFormProps) => {
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && supabase && company) {
       const file = e.target.files[0];
-      const fileName = `${company.id}/quote/${
-        isExternal ? "external" : "internal"
-      }/${id}/${file.name}`;
+      const fileName = `${company.id}/quote/${id}/${file.name}`;
 
       const fileUpload = await supabase.storage
         .from("private")

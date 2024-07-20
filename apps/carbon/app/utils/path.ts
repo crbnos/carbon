@@ -240,7 +240,7 @@ export const path = {
         `${x}/quote/${quoteId}/lines/${lineId}/assembly/${assemblyId}/delete`
       ),
     deleteQuoteLine: (id: string, lineId: string) =>
-      generatePath(`${x}/quote/${id}/lines/${lineId}/details/delete`),
+      generatePath(`${x}/quote/${id}/${lineId}/delete`),
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/delete/${id}`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/delete/${id}`),

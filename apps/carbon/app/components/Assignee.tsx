@@ -33,7 +33,17 @@ export type ComboboxProps = Omit<
 
 const Assign = forwardRef<HTMLButtonElement, ComboboxProps>(
   (
-    { id, table, size, value, isReadOnly, placeholder, onChange, ...props },
+    {
+      id,
+      table,
+      size,
+      value,
+      isReadOnly,
+      placeholder,
+      onChange,
+      className,
+      ...props
+    },
     ref
   ) => {
     const [open, setOpen] = useState(false);
@@ -73,7 +83,10 @@ const Assign = forwardRef<HTMLButtonElement, ComboboxProps>(
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
-            className="rounded-md px-2.5 py-0.5 text-sm hover:bg-muted/50 transition-colors cursor-pointer border border-border"
+            className={cn(
+              "rounded-md px-2.5 py-0.5 text-sm hover:bg-muted/50 transition-colors cursor-pointer border border-border",
+              className
+            )}
             role="combobox"
             aria-expanded={open}
             ref={ref}

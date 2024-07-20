@@ -412,6 +412,16 @@ export async function getFilesByRfqId(
   };
 }
 
+export async function getFilesByQuoteLineId(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  quoteLineId: string
+) {
+  return client.storage
+    .from("private")
+    .list(`${companyId}/quote-line/${quoteLineId}`);
+}
+
 export async function getQuote(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -472,24 +482,12 @@ export async function getQuoteAssemblies(
   return client.from("quoteMakeMethod").select("*").eq("quoteId", quoteId);
 }
 
-export async function getQuoteExternalDocuments(
+export async function getQuoteDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
   quoteId: string
 ) {
-  return client.storage
-    .from("private")
-    .list(`${companyId}/quote/external/${quoteId}`);
-}
-
-export async function getQuoteInternalDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  quoteId: string
-) {
-  return client.storage
-    .from("private")
-    .list(`${companyId}/quote/internal/${quoteId}`);
+  return client.storage.from("private").list(`${companyId}/quote/${quoteId}`);
 }
 
 export async function getQuoteLine(
@@ -856,8 +854,11 @@ export async function insertQuoteLinePrice(
 
   let unitCost = 0;
 
-  if (quoteLine.data?.replenishmentSystem === "Buy") {
+  if (quoteLine.data?.methodType !== "Make") {
     const itemId = quoteLine.data?.itemId;
+    if (!itemId) {
+      throw new Error("itemId not found");
+    }
     const [itemCost] = await Promise.all([
       client.from("itemCost").select("unitCost").eq("itemId", itemId).single(),
     ]);

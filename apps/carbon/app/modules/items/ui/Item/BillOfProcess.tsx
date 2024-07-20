@@ -228,7 +228,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
         updatedBy: userId,
       })
       .eq("methodOperationId", selectedItemId!);
-  }, 1000);
+  }, 3000);
 
   const onUploadImage = async (file: File) => {
     const fileName = `${companyId}/parts/${selectedItemId}/${Math.random()
