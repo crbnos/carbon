@@ -235,7 +235,7 @@ function QuoteLineItem() {
           <img
             alt="P2392303"
             className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-border"
-            src="/file/preview/private/cqbjc69r80lg2msrdjkg/models/dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6Y2FyYm9uLW9zLWRldi93U1dpb3lHMndybGdhekdHNVNwSDkuc3RlcA==.png"
+            src="/file/preview/private/<thumbnailPath>"
           />
           {/* <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-border p-2">
             <LuImage className="w-6 h-6 text-muted-foreground" />

@@ -29,7 +29,6 @@ const CadModel = ({
   uploadClassName,
   viewerClassName,
 }: CadModelProps) => {
-  console.log({ modelPath });
   useRealtime("modelUpload", `modelPath=eq.${modelPath ?? "unknown"}`);
 
   const {
