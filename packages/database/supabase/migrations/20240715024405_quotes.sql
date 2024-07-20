@@ -71,7 +71,7 @@ CREATE TABLE "quoteLine" (
   "description" TEXT NOT NULL,
   "customerPartId" TEXT,
   "customerPartRevision" TEXT,
-  "replenishmentSystem" TEXT,
+  "methodType" "methodType" NOT NULL DEFAULT 'Make',
   "unitOfMeasureCode" TEXT,
   "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,

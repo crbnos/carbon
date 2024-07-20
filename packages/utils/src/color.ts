@@ -18,7 +18,7 @@ const colors = [
   { background: "#4f46e5", color: "#ffffff" },
   { background: "#caffbf", color: "#000000" },
   { background: "#e2eeff", color: "#3671c7" },
-  { background: "#ffc6ff", color: "#7f47b3" },
+  { color: "#c6c9ff", background: "#474ab3" },
   { background: "#cdbef5", color: "#5b3baf" },
   { background: "#5d4037", color: "#ffffff" },
 ];

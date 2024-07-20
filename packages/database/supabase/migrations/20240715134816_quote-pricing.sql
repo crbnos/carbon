@@ -22,18 +22,6 @@ CREATE TABLE "quoteLinePrice" (
 
 CREATE INDEX "quoteLinePrice_quoteId_idx" ON "quoteLinePrice" ("quoteId");
 
-CREATE OR REPLACE VIEW "quoteLines" WITH(SECURITY_INVOKER=true) AS (
-  SELECT
-    ql.*,
-    qlp."quantity" AS "pricingQuantity",
-    qlp."unitCost" AS "pricingUnitCost",
-    qlp."leadTime" AS "pricingLeadTime",
-    qlp."discountPercent" AS "pricingDiscountPercent",
-    qlp."markupPercent" AS "pricingMarkupPercent",
-    qlp."extendedPrice" AS "pricingExtendedPrice"
-  FROM "quoteLine" ql
-  LEFT JOIN "quoteLinePrice" qlp ON ql."id" = qlp."quoteLineId"
-);
 
 ALTER TABLE "quoteLinePrice" ENABLE ROW LEVEL SECURITY;
 
