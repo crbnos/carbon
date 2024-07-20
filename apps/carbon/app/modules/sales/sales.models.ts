@@ -2,6 +2,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting";
+import { methodType } from "../items";
 import { standardFactorType } from "../shared/types";
 
 export const salesRFQStatusType = [
@@ -88,6 +89,27 @@ export const quoteValidator = z.object({
   notes: z.any().optional(),
   dueDate: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
+});
+
+export const quoteLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  quoteId: z.string(),
+  itemId: z.string().min(1, { message: "Part is required" }),
+  itemReadableId: zfd.text(z.string().optional()),
+  status: z.enum(quoteLineStatusType, {
+    errorMap: () => ({ message: "Status is required" }),
+  }),
+  estimatorId: zfd.text(z.string().optional()),
+  description: z.string().min(1, { message: "Description is required" }),
+  methodType: z.enum(methodType, {
+    errorMap: () => ({ message: "Method is required" }),
+  }),
+  customerPartId: zfd.text(z.string().optional()),
+  customerPartRevision: zfd.text(z.string().optional()),
+  unitOfMeasureCode: zfd.text(
+    z.string().min(1, { message: "Unit of measure is required" })
+  ),
+  modelUploadId: zfd.text(z.string().optional()),
 });
 
 export const quotationValidator = z.object({

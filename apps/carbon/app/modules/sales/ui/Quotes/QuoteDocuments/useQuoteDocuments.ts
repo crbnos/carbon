@@ -1,5 +1,5 @@
 import { toast } from "@carbon/react";
-import { useFetcher } from "@remix-run/react";
+import { useRevalidator } from "@remix-run/react";
 import { useCallback } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
@@ -11,17 +11,12 @@ type Props = {
 };
 
 export const useQuoteDocuments = ({ isExternal, id }: Props) => {
-  const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
   const { company } = useUser();
   const { supabase } = useSupabase();
+  const revalidator = useRevalidator();
 
   const canDelete = permissions.can("delete", "sales"); // TODO: or is document owner
-
-  const refresh = useCallback(
-    () => fetcher.submit(null, { method: "post" }),
-    [fetcher]
-  );
 
   const getPath = useCallback(
     (attachment: QuotationAttachment) => {
@@ -44,9 +39,9 @@ export const useQuoteDocuments = ({ isExternal, id }: Props) => {
       }
 
       toast.success("File deleted successfully");
-      refresh();
+      revalidator.revalidate();
     },
-    [supabase?.storage, getPath, refresh]
+    [supabase?.storage, getPath, revalidator]
   );
 
   const download = useCallback(

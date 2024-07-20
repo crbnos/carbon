@@ -573,7 +573,7 @@ export const path = {
     quoteInternalDocuments: (id: string) =>
       generatePath(`${x}/quote/${id}/internal`),
     quoteLine: (quoteId: string, id: string) =>
-      generatePath(`${x}/quote/${quoteId}/lines/${id}/details`),
+      generatePath(`${x}/quote/${quoteId}/${id}/details`),
     quoteMaterial: (
       quoteId: string,
       lineId: string,

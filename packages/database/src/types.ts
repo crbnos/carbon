@@ -12826,10 +12826,10 @@ export type Database = {
           id: string
           itemId: string
           itemReadableId: string | null
+          methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
           quoteId: string
           quoteRevisionId: number
-          replenishmentSystem: string | null
           status: Database["public"]["Enums"]["quoteLineStatus"]
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -12846,10 +12846,10 @@ export type Database = {
           id?: string
           itemId: string
           itemReadableId?: string | null
+          methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           quoteId: string
           quoteRevisionId?: number
-          replenishmentSystem?: string | null
           status?: Database["public"]["Enums"]["quoteLineStatus"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -12866,10 +12866,10 @@ export type Database = {
           id?: string
           itemId?: string
           itemReadableId?: string | null
+          methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           quoteId?: string
           quoteRevisionId?: number
-          replenishmentSystem?: string | null
           status?: Database["public"]["Enums"]["quoteLineStatus"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -22868,6 +22868,7 @@ export type Database = {
       }
       quoteLines: {
         Row: {
+          autodeskUrn: string | null
           companyId: string | null
           createdBy: string | null
           customerPartId: string | null
@@ -22878,6 +22879,12 @@ export type Database = {
           id: string | null
           itemId: string | null
           itemReadableId: string | null
+          methodType: Database["public"]["Enums"]["methodType"] | null
+          modelId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
+          modelUploadId: string | null
           pricingDiscountPercent: number | null
           pricingExtendedPrice: number | null
           pricingLeadTime: number | null
@@ -22886,8 +22893,8 @@ export type Database = {
           pricingUnitCost: number | null
           quoteId: string | null
           quoteRevisionId: number | null
-          replenishmentSystem: string | null
           status: Database["public"]["Enums"]["quoteLineStatus"] | null
+          thumbnailPath: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null

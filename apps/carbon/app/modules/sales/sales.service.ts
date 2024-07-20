@@ -15,11 +15,11 @@ import type {
   customerTypeValidator,
   customerValidator,
   quotationAssemblyValidator,
-  quotationLineValidator,
   quotationMaterialValidator,
   quotationOperationValidator,
   quotationPricingValidator,
-  quotationValidator,
+  quoteLineValidator,
+  quoteValidator,
   salesOrderLineValidator,
   salesOrderPaymentValidator,
   salesOrderShipmentValidator,
@@ -496,7 +496,7 @@ export async function getQuoteLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
 ) {
-  return client.from("quoteLine").select("*").eq("id", quoteLineId).single();
+  return client.from("quoteLines").select("*").eq("id", quoteLineId).single();
 }
 
 export async function getQuoteLines(
@@ -1153,13 +1153,13 @@ export async function updateQuoteFavorite(
 export async function upsertQuote(
   client: SupabaseClient<Database>,
   quote:
-    | (Omit<z.infer<typeof quotationValidator>, "id" | "quoteId"> & {
+    | (Omit<z.infer<typeof quoteValidator>, "id" | "quoteId"> & {
         quoteId: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof quotationValidator>, "id" | "quoteId"> & {
+    | (Omit<z.infer<typeof quoteValidator>, "id" | "quoteId"> & {
         id: string;
         quoteId: string;
         updatedBy: string;
@@ -1215,12 +1215,12 @@ export async function upsertQuoteMakeMethod(
 export async function upsertQuoteLine(
   client: SupabaseClient<Database>,
   quotationLine:
-    | (Omit<z.infer<typeof quotationLineValidator>, "id"> & {
+    | (Omit<z.infer<typeof quoteLineValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof quotationLineValidator>, "id"> & {
+    | (Omit<z.infer<typeof quoteLineValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;

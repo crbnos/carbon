@@ -91,3 +91,27 @@ CREATE OR REPLACE VIEW "salesRfqLines" WITH(SECURITY_INVOKER=true) AS
   FROM "salesRfqLine" srl
   LEFT JOIN "item" i ON i.id = srl."itemId"
   LEFT JOIN "modelUpload" mu ON mu.id = srl."modelUploadId";
+
+
+DROP VIEW "quoteLines";
+CREATE OR REPLACE VIEW "quoteLines" WITH(SECURITY_INVOKER=true) AS (
+  SELECT
+    ql.*,
+    qlp."quantity" AS "pricingQuantity",
+    qlp."unitCost" AS "pricingUnitCost",
+    qlp."leadTime" AS "pricingLeadTime",
+    qlp."discountPercent" AS "pricingDiscountPercent",
+    qlp."markupPercent" AS "pricingMarkupPercent",
+    qlp."extendedPrice" AS "pricingExtendedPrice",
+    COALESCE(mu.id, imu.id) as "modelId",
+    COALESCE(mu."autodeskUrn", imu."autodeskUrn") as "autodeskUrn",
+    COALESCE(mu."modelPath", imu."modelPath") as "modelPath",
+    COALESCE(mu."thumbnailPath", imu."thumbnailPath") as "thumbnailPath",
+    COALESCE(mu."name", imu."name") as "modelName",
+    COALESCE(mu."size", imu."size") as "modelSize"
+  FROM "quoteLine" ql
+  LEFT JOIN "quoteLinePrice" qlp ON ql."id" = qlp."quoteLineId"
+  LEFT JOIN "modelUpload" mu ON ql."modelUploadId" = mu."id"
+  INNER JOIN "item" i ON i.id = ql."itemId"
+  LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
+);
