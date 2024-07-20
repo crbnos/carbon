@@ -6,11 +6,10 @@ import { useSupabase } from "~/lib/supabase";
 import type { QuotationAttachment } from "~/modules/sales/types";
 
 type Props = {
-  isExternal: boolean;
   id: string;
 };
 
-export const useQuoteDocuments = ({ isExternal, id }: Props) => {
+export const useQuoteDocuments = ({ id }: Props) => {
   const permissions = usePermissions();
   const { company } = useUser();
   const { supabase } = useSupabase();
@@ -20,11 +19,9 @@ export const useQuoteDocuments = ({ isExternal, id }: Props) => {
 
   const getPath = useCallback(
     (attachment: QuotationAttachment) => {
-      return `${company.id}/quote/${
-        isExternal ? "external" : "internal"
-      }/${id}/${attachment.name}`;
+      return `${company.id}/quote/${id}/${attachment.name}`;
     },
-    [company.id, isExternal, id]
+    [company.id, id]
   );
 
   const deleteAttachment = useCallback(

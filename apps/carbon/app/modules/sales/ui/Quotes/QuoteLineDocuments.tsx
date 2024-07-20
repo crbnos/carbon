@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  File,
   HStack,
   IconButton,
   Table,
@@ -16,32 +17,144 @@ import {
   Th,
   Thead,
   Tr,
+  toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
-import { LuAxis3D } from "react-icons/lu";
+import type { FileObject } from "@supabase/storage-js";
+import { LuAxis3D, LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import type { ItemFile, MethodItemType, ModelUpload } from "~/modules/items";
-import ItemDocumentForm from "./ItemDocumentForm";
-import { useItemDocuments } from "./useItemDocuments";
+import type { ItemFile, ModelUpload } from "~/modules/items";
 
-type ItemDocumentsProps = {
-  files: ItemFile[];
-  itemId: string;
-  modelUpload?: ModelUpload;
-  type: MethodItemType;
+import { useNavigate, useRevalidator, useSubmit } from "@remix-run/react";
+import type { ChangeEvent } from "react";
+import { usePermissions, useUser } from "~/hooks";
+import { useSupabase } from "~/lib/supabase";
+import { path } from "~/utils/path";
+
+import { useCallback } from "react";
+
+const useQuoteLineDocuments = ({
+  quoteId,
+  quoteLineId,
+}: {
+  quoteId: string;
+  quoteLineId: string;
+}) => {
+  const navigate = useNavigate();
+  const permissions = usePermissions();
+  const revalidator = useRevalidator();
+  const { supabase } = useSupabase();
+  const { company } = useUser();
+
+  const canDelete = permissions.can("delete", "sales");
+  const getPath = useCallback(
+    (file: ItemFile) => {
+      return `${company.id}/quote-line/${quoteLineId}/${file.name}`;
+    },
+    [company.id, quoteLineId]
+  );
+
+  const deleteFile = useCallback(
+    async (file: ItemFile) => {
+      const fileDelete = await supabase?.storage
+        .from("private")
+        .remove([getPath(file)]);
+
+      if (!fileDelete || fileDelete.error) {
+        toast.error(fileDelete?.error?.message || "Error deleting file");
+        return;
+      }
+
+      toast.success("File deleted successfully");
+      revalidator.revalidate();
+    },
+    [getPath, supabase?.storage, revalidator]
+  );
+
+  const deleteModel = useCallback(
+    async (quoteLineId: string) => {
+      if (!quoteLineId || !supabase) return;
+
+      const { error } = await supabase
+        .from("quoteLine")
+        .update({ modelUploadId: null })
+        .eq("id", quoteLineId);
+      if (error) {
+        toast.error("Error removing model from line");
+        return;
+      }
+      toast.success("Model removed from line");
+      revalidator.revalidate();
+    },
+    [supabase, revalidator]
+  );
+
+  const download = useCallback(
+    async (file: ItemFile) => {
+      const result = await supabase?.storage
+        .from("private")
+        .download(getPath(file));
+
+      if (!result || result.error) {
+        toast.error(result?.error?.message || "Error downloading file");
+        return;
+      }
+
+      const a = document.createElement("a");
+      document.body.appendChild(a);
+      const url = window.URL.createObjectURL(result.data);
+      a.href = url;
+      a.download = file.name;
+      a.click();
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 0);
+    },
+    [supabase?.storage, getPath]
+  );
+
+  const viewModel = useCallback(
+    (model: ModelUpload) => {
+      if (!model?.autodeskUrn) {
+        toast.error("Autodesk URN not found");
+        return;
+      }
+      navigate(path.to.file.cadModel(model?.autodeskUrn));
+    },
+    [navigate]
+  );
+
+  return {
+    canDelete,
+    deleteFile,
+    deleteModel,
+    download,
+    getPath,
+    viewModel,
+  };
 };
 
-const ItemDocuments = ({
+type QuoteLineDocumentsProps = {
+  files: FileObject[];
+  quoteId: string;
+  quoteLineId: string;
+  modelUpload?: ModelUpload;
+};
+
+const QuoteLineDocuments = ({
   files,
-  itemId,
+  quoteId,
+  quoteLineId,
   modelUpload,
-  type,
-}: ItemDocumentsProps) => {
+}: QuoteLineDocumentsProps) => {
   const { canDelete, download, deleteFile, deleteModel, getPath, viewModel } =
-    useItemDocuments({
-      itemId,
+    useQuoteLineDocuments({
+      quoteId,
+      quoteLineId,
     });
 
   return (
@@ -51,7 +164,7 @@ const ItemDocuments = ({
           <CardTitle>Files</CardTitle>
         </CardHeader>
         <CardAction>
-          <ItemDocumentForm type={type} itemId={itemId} />
+          <QuoteLineDocumentForm quoteId={quoteId} quoteLineId={quoteLineId} />
         </CardAction>
       </HStack>
       <CardContent>
@@ -60,8 +173,7 @@ const ItemDocuments = ({
             <Tr>
               <Th>Name</Th>
               <Th>Size</Th>
-
-              <Th></Th>
+              <Th />
             </Tr>
           </Thead>
           <Tbody>
@@ -105,7 +217,7 @@ const ItemDocuments = ({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!canDelete}
-                          onClick={() => deleteModel()}
+                          onClick={() => deleteModel(quoteLineId)}
                         >
                           Delete
                         </DropdownMenuItem>
@@ -138,7 +250,7 @@ const ItemDocuments = ({
                       </Hyperlink>
                     </HStack>
                   </Td>
-                  <Td className="text-xs font-mono">
+                  <Td>
                     {convertKbToString(
                       Math.floor((file.metadata?.size ?? 0) / 1024)
                     )}
@@ -187,4 +299,72 @@ const ItemDocuments = ({
   );
 };
 
-export default ItemDocuments;
+export default QuoteLineDocuments;
+
+type QuoteLineDocumentFormProps = {
+  quoteId: string;
+  quoteLineId: string;
+};
+
+const QuoteLineDocumentForm = ({
+  quoteId,
+  quoteLineId,
+}: QuoteLineDocumentFormProps) => {
+  const submit = useSubmit();
+  const { company } = useUser();
+  const { supabase } = useSupabase();
+
+  const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && supabase && company) {
+      const file = e.target.files[0];
+      const fileName = `${company.id}/quote-line/${quoteLineId}/${file.name}`;
+
+      const fileUpload = await supabase.storage
+        .from("private")
+        .upload(fileName, file, {
+          cacheControl: `${12 * 60 * 60}`,
+        });
+
+      if (fileUpload.error) {
+        toast.error("Failed to upload file");
+      }
+
+      if (fileUpload.data?.path) {
+        toast.success("File uploaded");
+        submitFileData({
+          path: fileUpload.data.path,
+          name: file.name,
+          size: file.size,
+        });
+      }
+    }
+  };
+
+  const submitFileData = ({
+    path: filePath,
+    name,
+    size,
+  }: {
+    path: string;
+    name: string;
+    size: number;
+  }) => {
+    const formData = new FormData();
+    formData.append("path", filePath);
+    formData.append("name", name);
+    formData.append("size", Math.round(size / 1024).toString());
+    formData.append("sourceDocument", "Quote");
+    formData.append("sourceDocumentId", quoteId);
+
+    submit(formData, {
+      method: "post",
+      action: path.to.newDocument,
+    });
+  };
+
+  return (
+    <File leftIcon={<LuUpload />} onChange={uploadFile}>
+      New
+    </File>
+  );
+};

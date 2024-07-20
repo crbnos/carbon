@@ -73,6 +73,7 @@ CREATE TABLE "quoteLine" (
   "customerPartRevision" TEXT,
   "methodType" "methodType" NOT NULL DEFAULT 'Make',
   "unitOfMeasureCode" TEXT,
+  "notes" JSON DEFAULT '{}'::json,
   "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
@@ -230,13 +231,15 @@ CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
   SELECT 
   q.*,
   l."name" AS "locationName",
-  ql."itemIds",
+  ql."lines",
+  ql."completedLines",
   EXISTS(SELECT 1 FROM "quoteFavorite" pf WHERE pf."quoteId" = q.id AND pf."userId" = auth.uid()::text) AS favorite
   FROM "quote" q
   LEFT JOIN (
     SELECT 
       "quoteId",
-      array_agg("itemId") AS "itemIds"
+      COUNT("id") AS "lines",
+      COUNT("id") FILTER (WHERE "status" = 'Complete') AS "completedLines"
     FROM "quoteLine"
     GROUP BY "quoteId"
   ) ql ON ql."quoteId" = q.id

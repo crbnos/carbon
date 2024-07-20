@@ -1,10 +1,21 @@
-import { VStack } from "@carbon/react";
+import type { JSONContent } from "@carbon/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Editor,
+  toast,
+  useDebounce,
+} from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
-import { useRouteData } from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
+import { useSupabase } from "~/lib/supabase";
 import type { Quotation } from "~/modules/sales";
 import {
   QuoteDocuments,
@@ -83,13 +94,64 @@ export default function QuoteDetailsRoute() {
   };
 
   return (
-    <VStack spacing={2} className="p-2">
+    <>
       <QuoteForm key={initialValues.id} initialValues={initialValues} />
-      <QuoteDocuments
-        id={quoteId}
-        attachments={quoteData?.files ?? []}
-        isExternal={false}
-      />
-    </VStack>
+      <QuoteDocuments id={quoteId} attachments={quoteData?.files ?? []} />
+      <QuoteNotes quote={quoteData?.quote} />
+    </>
   );
 }
+
+const QuoteNotes = ({ quote }: { quote: Quotation }) => {
+  const {
+    id: userId,
+    company: { id: companyId },
+  } = useUser();
+  const { supabase } = useSupabase();
+
+  const onUploadImage = async (file: File) => {
+    const fileName = `${companyId}/quote/${quote.id}/${encodeURIComponent(
+      file.name
+    )}`;
+    const result = await supabase?.storage
+      .from("private")
+      .upload(fileName, file);
+
+    if (result?.error) {
+      toast.error("Failed to upload image");
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return `/file/preview/private/${result.data.path}`;
+  };
+
+  const onUpdateInternalNotes = useDebounce(async (content: JSONContent) => {
+    await supabase
+      ?.from("quoteLine")
+      .update({
+        notes: content,
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId,
+      })
+      .eq("id", quote.id!);
+  }, 3000);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>External Notes</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Editor
+          initialValue={(quote.notes ?? {}) as JSONContent}
+          onUpload={onUploadImage}
+          onChange={onUpdateInternalNotes}
+        />
+      </CardContent>
+    </Card>
+  );
+};

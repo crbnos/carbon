@@ -72,7 +72,7 @@ const Th = forwardRef<
   <th
     ref={ref}
     className={cn(
-      "group-hover:bg-muted h-11 px-6 text-left align-middle uppercase bg-card font-semibold tracking-tight text-muted-foreground [&:has([role=checkbox])]:pr-0 border-b border-border",
+      "group-hover:bg-muted/30 h-11 px-6 text-left align-middle uppercase bg-card font-semibold tracking-tight text-muted-foreground [&:has([role=checkbox])]:pr-0 border-b border-border",
       className
     )}
     {...props}
@@ -87,7 +87,7 @@ const Td = forwardRef<
   <td
     ref={ref}
     className={cn(
-      "group-hover:bg-muted text-foreground px-6 bg-card align-middle [&:has([role=checkbox])]:pr-0 h-11",
+      "group-hover:bg-muted/30 text-foreground px-6 bg-card align-middle [&:has([role=checkbox])]:pr-0 h-11",
       className
     )}
     {...props}

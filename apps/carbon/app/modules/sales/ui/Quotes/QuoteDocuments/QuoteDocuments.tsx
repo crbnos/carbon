@@ -28,17 +28,11 @@ import { useQuoteDocuments } from "./useQuoteDocuments";
 
 type QuoteDocumentsProps = {
   attachments: QuotationAttachment[];
-  isExternal: boolean;
   id: string;
 };
 
-const QuoteDocuments = ({
-  attachments,
-  isExternal,
-  id,
-}: QuoteDocumentsProps) => {
+const QuoteDocuments = ({ attachments, id }: QuoteDocumentsProps) => {
   const { canDelete, download, deleteAttachment, getPath } = useQuoteDocuments({
-    isExternal,
     id,
   });
 
@@ -50,7 +44,7 @@ const QuoteDocuments = ({
             <CardTitle>Documents</CardTitle>
           </CardHeader>
           <CardAction>
-            <QuoteDocumentForm isExternal={false} id={id} />
+            <QuoteDocumentForm id={id} />
           </CardAction>
         </HStack>
         <CardContent>
@@ -88,7 +82,7 @@ const QuoteDocuments = ({
                           </Hyperlink>
                         </HStack>
                       </Td>
-                      <Td>
+                      <Td className="text-xs font-mono">
                         {convertKbToString(
                           Math.floor((attachment.metadata?.size ?? 0) / 1024)
                         )}
@@ -128,7 +122,7 @@ const QuoteDocuments = ({
                     colSpan={24}
                     className="py-8 text-muted-foreground text-center"
                   >
-                    No {isExternal ? "external" : "internal"} attachments
+                    No files uploaded
                   </Td>
                 </Tr>
               )}

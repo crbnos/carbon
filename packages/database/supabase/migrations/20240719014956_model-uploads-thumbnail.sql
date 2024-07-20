@@ -93,7 +93,7 @@ CREATE OR REPLACE VIEW "salesRfqLines" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "modelUpload" mu ON mu.id = srl."modelUploadId";
 
 
-DROP VIEW "quoteLines";
+
 CREATE OR REPLACE VIEW "quoteLines" WITH(SECURITY_INVOKER=true) AS (
   SELECT
     ql.*,
