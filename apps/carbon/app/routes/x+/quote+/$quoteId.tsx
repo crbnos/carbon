@@ -325,7 +325,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
         className={cn(
           "w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer",
           !disclosure.isOpen && "border-b border-border",
-          isSelected && "bg-accent/60 hover:bg-accent/50"
+          isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
         )}
         onClick={() => onLineClick(line)}
       >
