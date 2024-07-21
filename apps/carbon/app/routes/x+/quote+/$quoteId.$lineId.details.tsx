@@ -154,7 +154,7 @@ export default function QuoteLine() {
 
   return (
     <>
-      <QuoteLineForm initialValues={initialValues} />
+      <QuoteLineForm key={initialValues.id} initialValues={initialValues} />
       {permissions.is("employee") && (
         <>
           <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">

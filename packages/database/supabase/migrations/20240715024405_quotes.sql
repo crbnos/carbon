@@ -68,6 +68,7 @@ CREATE TABLE "quoteLine" (
   "estimatorId" TEXT,
   "itemId" TEXT NOT NULL,
   "itemReadableId" TEXT,
+  "itemType" TEXT NOT NULL DEFAULT 'Part',
   "description" TEXT NOT NULL,
   "customerPartId" TEXT,
   "customerPartRevision" TEXT,
@@ -97,6 +98,8 @@ CREATE TABLE "quoteMaterial" (
   "quoteId" TEXT NOT NULL,
   "quoteLineId" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
+  "itemType" TEXT NOT NULL DEFAULT 'Part',
+  "methodType" "methodType" NOT NULL DEFAULT 'Make',
   "description" TEXT NOT NULL,
   "quantity" NUMERIC(10, 2) NOT NULL DEFAULT 0,
   "unitOfMeasureCode" TEXT,
@@ -122,16 +125,13 @@ CREATE INDEX "quoteMaterial_quoteId_idx" ON "quoteMaterial" ("quoteId");
 CREATE INDEX "quoteMaterial_quoteLineId_idx" ON "quoteMaterial" ("quoteLineId");
 
 
-
 CREATE TABLE "quoteMakeMethod" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "quoteId" TEXT NOT NULL,
   "quoteLineId" TEXT NOT NULL,
   "parentMaterialId" TEXT,
   "itemId" TEXT NOT NULL,
-  "description" TEXT,
-  "unitOfMeasureCode" TEXT,
-  "quantityPerParent" NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  "quantityPerParent" NUMERIC(10, 2) NOT NULL DEFAULT 1,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL,
@@ -144,11 +144,53 @@ CREATE TABLE "quoteMakeMethod" (
   CONSTRAINT "quoteMakeMethod_quoteLineId_fkey" FOREIGN KEY ("quoteLineId") REFERENCES "quoteLine" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "quoteMakeMethod_parentMaterialId_fkey" FOREIGN KEY ("parentMaterialId") REFERENCES "quoteMaterial" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "quoteMakeMethod_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT "quoteMakeMethod_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure" ("code", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "quoteMakeMethod_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "quoteMakeMethod_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "quoteMakeMethod_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
+
+CREATE OR REPLACE FUNCTION insert_quote_line_make_method()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO "quoteMakeMethod" ("quoteId", "quoteLineId", "itemId",  "companyId", "createdAt", "createdBy")
+  VALUES (new."quoteId", new."id", new."itemId",  new."companyId", NOW(), new."createdBy");
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER insert_quote_line_make_method_trigger
+AFTER INSERT ON "quoteLine"
+FOR EACH ROW
+WHEN (new."methodType" = 'Make')
+EXECUTE FUNCTION insert_quote_line_make_method();
+
+CREATE OR REPLACE FUNCTION update_quote_line_make_method_item_id()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM "quoteMakeMethod"
+      WHERE "quoteLineId" = new."id" AND "parentMaterialId" IS NULL
+    ) THEN
+      INSERT INTO "quoteMakeMethod" ("quoteId", "quoteLineId", "itemId", "companyId", "createdAt", "createdBy")
+      VALUES (new."quoteId", new."id", new."itemId", new."companyId", NOW(), new."createdBy");
+    ELSE
+      UPDATE "quoteMakeMethod"
+      SET "itemId" = new."itemId"
+      WHERE "quoteLineId" = new."id" AND "parentMaterialId" IS NULL;
+    END IF;
+    RETURN new;
+  END;
+  $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_quote_line_make_method_item_id_trigger
+  AFTER UPDATE OF "itemId", "methodType" ON "quoteLine"
+  FOR EACH ROW
+  WHEN (
+    (old."methodType" = 'Make' AND old."itemId" IS DISTINCT FROM new."itemId") OR 
+    (new."methodType" = 'Make' AND old."methodType" <> 'Make')
+  )
+  EXECUTE FUNCTION update_quote_line_make_method_item_id();
+
 
 CREATE INDEX "quoteMakeMethod_quoteId_idx" ON "quoteMakeMethod" ("quoteId");
 CREATE INDEX "quoteMakeMethod_quoteLineId_idx" ON "quoteMakeMethod" ("quoteLineId");
@@ -156,6 +198,51 @@ CREATE INDEX "quoteMakeMethod_parentMaterialId_idx" ON "quoteMakeMethod" ("paren
 
 ALTER TABLE "quoteMaterial" ADD COLUMN "quoteMakeMethodId" TEXT,
   ADD CONSTRAINT "quoteMaterial_quoteMakeMethodId_fkey" FOREIGN KEY ("quoteMakeMethodId") REFERENCES "quoteMakeMethod" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+  CREATE OR REPLACE FUNCTION insert_quote_material_make_method()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    INSERT INTO "quoteMakeMethod" ("quoteId", "quoteLineId", "parentMaterialId", "itemId", "companyId", "createdAt", "createdBy")
+    VALUES (new."quoteId", new."quoteLineId", new."id", new."itemId", new."companyId", NOW(), new."createdBy");
+    RETURN new;
+  END;
+  $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER insert_quote_material_make_method_trigger
+  AFTER INSERT ON "quoteMaterial"
+  FOR EACH ROW
+  WHEN (new."methodType" = 'Make')
+  EXECUTE FUNCTION insert_quote_material_make_method();
+
+CREATE OR REPLACE FUNCTION update_quote_material_make_method_item_id()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM "quoteMakeMethod"
+      WHERE "quoteLineId" = new."quoteLineId" AND "parentMaterialId" = new."id"
+    ) THEN
+      INSERT INTO "quoteMakeMethod" ("quoteId", "quoteLineId", "parentMaterialId", "itemId", "companyId", "createdAt", "createdBy")
+      VALUES (new."quoteId", new."quoteLineId", new."id", new."itemId", new."companyId", NOW(), new."createdBy");
+    ELSE
+      UPDATE "quoteMakeMethod"
+      SET "itemId" = new."itemId"
+      WHERE "quoteLineId" = new."quoteLineId" AND "parentMaterialId" = new."id";
+    END IF;
+    RETURN new;
+  END;
+  $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_quote_material_make_method_item_id_trigger
+  AFTER UPDATE OF "itemId", "methodType" ON "quoteMaterial"
+  FOR EACH ROW
+  WHEN (
+    (old."methodType" = 'Make' AND old."itemId" IS DISTINCT FROM new."itemId") OR 
+    (new."methodType" = 'Make' AND old."methodType" <> 'Make')
+  )
+  EXECUTE FUNCTION update_quote_material_make_method_item_id();
+
+
+
 
 CREATE TABLE "quoteOperation" (
   "id" TEXT NOT NULL DEFAULT xid(),
@@ -196,7 +283,9 @@ CREATE INDEX "quoteOperation_quoteMakeMethodId_idx" ON "quoteOperation" ("quoteM
 ALTER TABLE "quoteMaterial" ADD COLUMN "quoteOperationId" TEXT,
   ADD CONSTRAINT "quoteMaterial_quoteOperationId_fkey" FOREIGN KEY ("quoteOperationId") REFERENCES "quoteOperation" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+COMMIT;
 CREATE INDEX "quoteMaterial_quoteOperationId_idx" ON "quoteMaterial" ("quoteOperationId");
+
 
 CREATE TABLE "quoteFavorite" (
   "quoteId" TEXT NOT NULL,

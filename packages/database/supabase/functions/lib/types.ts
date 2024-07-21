@@ -12826,6 +12826,7 @@ export type Database = {
           id: string
           itemId: string
           itemReadableId: string | null
+          itemType: string
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
           notes: Json | null
@@ -12847,6 +12848,7 @@ export type Database = {
           id?: string
           itemId: string
           itemReadableId?: string | null
+          itemType?: string
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           notes?: Json | null
@@ -12868,6 +12870,7 @@ export type Database = {
           id?: string
           itemId?: string
           itemReadableId?: string | null
+          itemType?: string
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           notes?: Json | null
@@ -13216,14 +13219,12 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          description: string | null
           id: string
           itemId: string
           parentMaterialId: string | null
           quantityPerParent: number
           quoteId: string
           quoteLineId: string
-          unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -13232,14 +13233,12 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          description?: string | null
           id?: string
           itemId: string
           parentMaterialId?: string | null
           quantityPerParent?: number
           quoteId: string
           quoteLineId: string
-          unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13248,14 +13247,12 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          description?: string | null
           id?: string
           itemId?: string
           parentMaterialId?: string | null
           quantityPerParent?: number
           quoteId?: string
           quoteLineId?: string
-          unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13380,13 +13377,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "quoteMakeMethod_unitOfMeasureCode_fkey"
-            columns: ["unitOfMeasureCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "unitOfMeasure"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
             foreignKeyName: "quoteMakeMethod_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -13432,6 +13422,8 @@ export type Database = {
           description: string
           id: string
           itemId: string
+          itemType: string
+          methodType: Database["public"]["Enums"]["methodType"]
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -13450,6 +13442,8 @@ export type Database = {
           description: string
           id?: string
           itemId: string
+          itemType?: string
+          methodType?: Database["public"]["Enums"]["methodType"]
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -13468,6 +13462,8 @@ export type Database = {
           description?: string
           id?: string
           itemId?: string
+          itemType?: string
+          methodType?: Database["public"]["Enums"]["methodType"]
           quantity?: number
           quoteId?: string
           quoteLineId?: string
@@ -22882,6 +22878,7 @@ export type Database = {
           id: string | null
           itemId: string | null
           itemReadableId: string | null
+          itemType: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           modelId: string | null
           modelName: string | null
