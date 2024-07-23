@@ -4,10 +4,7 @@ import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import type { FlatTreeItem } from "~/components/TreeView/TreeView";
 import { TreeView, useTree } from "~/components/TreeView/TreeView";
 import type { Method } from "~/modules/items/types";
-import {
-  MethodIcon,
-  MethodItemTypeIcon,
-} from "~/modules/items/ui/Item/MethodIcon";
+import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
 
 type QuoteBoMExplorerProps = {
   methods: FlatTreeItem<Method>[];

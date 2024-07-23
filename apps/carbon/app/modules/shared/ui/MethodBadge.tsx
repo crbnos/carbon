@@ -1,7 +1,7 @@
 import { Badge, HStack, cn } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { LuExternalLink } from "react-icons/lu";
-import type { MethodType } from "../../types";
+import type { MethodType } from "../types";
 import { MethodIcon } from "./MethodIcon";
 
 type MethodBadgeProps = {

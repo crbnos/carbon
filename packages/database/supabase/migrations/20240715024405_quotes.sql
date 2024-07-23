@@ -100,10 +100,11 @@ CREATE TABLE "quoteMaterial" (
   "itemId" TEXT NOT NULL,
   "itemType" TEXT NOT NULL DEFAULT 'Part',
   "methodType" "methodType" NOT NULL DEFAULT 'Make',
+  "order" DOUBLE PRECISION NOT NULL DEFAULT 1,
   "description" TEXT NOT NULL,
-  "quantity" NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  "quantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
   "unitOfMeasureCode" TEXT,
-  "unitCost" NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  "unitCost" NUMERIC(10, 4) NOT NULL DEFAULT 0,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL,
@@ -131,7 +132,7 @@ CREATE TABLE "quoteMakeMethod" (
   "quoteLineId" TEXT NOT NULL,
   "parentMaterialId" TEXT,
   "itemId" TEXT NOT NULL,
-  "quantityPerParent" NUMERIC(10, 2) NOT NULL DEFAULT 1,
+  "quantityPerParent" NUMERIC(10, 4) NOT NULL DEFAULT 1,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL,
@@ -249,12 +250,14 @@ CREATE TABLE "quoteOperation" (
   "quoteId" TEXT NOT NULL,
   "quoteLineId" TEXT NOT NULL,
   "quoteMakeMethodId" TEXT,
+  "order" DOUBLE PRECISION NOT NULL DEFAULT 1,
   "workCellTypeId" TEXT NOT NULL,
   "equipmentTypeId" TEXT,
   "description" TEXT,
   "setupHours" NUMERIC(10,2) NOT NULL DEFAULT 0,
   "standardFactor" factor NOT NULL DEFAULT 'Hours/Piece',
   "productionStandard" NUMERIC(10,4) NOT NULL DEFAULT 0,
+  "operationOrder" "methodOperationOrder" NOT NULL DEFAULT 'After Previous',
   "quotingRate" NUMERIC(10,4) NOT NULL DEFAULT 0,
   "laborRate" NUMERIC(10,4) NOT NULL DEFAULT 0,
   "overheadRate" NUMERIC(10,4) NOT NULL DEFAULT 0,
@@ -334,3 +337,42 @@ CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
   ) ql ON ql."quoteId" = q.id
   LEFT JOIN "location" l
     ON l.id = q."locationId";
+
+CREATE OR REPLACE FUNCTION get_quote_methods(qid TEXT)
+RETURNS TABLE (
+  "quoteId" TEXT,
+  "quoteLineId" TEXT,
+  "parentMaterialId" TEXT,
+  "parentItemId" TEXT,
+  "quantityPerParent" NUMERIC(10, 4),
+  "quoteMaterialId" TEXT,
+  "itemId" TEXT,
+  "itemType" TEXT,
+  "methodType" TEXT,
+  "order" DOUBLE PRECISION,
+  "quantity" NUMERIC(10, 4),
+  "unitOfMeasureCode" TEXT,
+  "unitCost" NUMERIC(10,4)
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    make."quoteId",
+    make."quoteLineId",
+    make."parentMaterialId",
+    make."itemId" AS "parentItemId",
+    make."quantityPerParent",
+    mat."id" AS "quoteMaterialId",
+    mat."itemId",
+    mat."itemType",
+    mat."methodType",
+    mat."order",
+    mat."quantity",
+    mat."unitOfMeasureCode",
+    mat."unitCost"
+  FROM "quoteMakeMethod" make
+  LEFT OUTER JOIN "quoteMaterial" mat
+    ON make."id" = mat."quoteMakeMethodId"
+  WHERE make."quoteId" = qid;
+END;
+$$ LANGUAGE plpgsql;

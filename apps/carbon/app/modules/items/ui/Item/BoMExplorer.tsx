@@ -13,9 +13,10 @@ import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuSearch } from "react-icons/lu";
 import type { FlatTreeItem } from "~/components/TreeView/TreeView";
 import { TreeView, useTree } from "~/components/TreeView/TreeView";
+import type { Method } from "~/modules/items";
+import type { MethodItemType } from "~/modules/shared";
+import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
-import type { Method, MethodItemType } from "../../types";
-import { MethodIcon, MethodItemTypeIcon } from "./MethodIcon";
 
 type BoMExplorerProps = {
   itemType: MethodItemType;

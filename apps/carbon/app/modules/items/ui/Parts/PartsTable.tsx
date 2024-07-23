@@ -16,13 +16,8 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Part } from "~/modules/items";
-import {
-  MethodIcon,
-  TrackingTypeIcon,
-  itemReplenishmentSystems,
-  itemTrackingTypes,
-  methodType,
-} from "~/modules/items";
+import { itemReplenishmentSystems, itemTrackingTypes } from "~/modules/items";
+import { MethodIcon, TrackingTypeIcon, methodType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

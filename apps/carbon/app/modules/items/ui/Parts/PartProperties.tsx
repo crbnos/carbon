@@ -14,12 +14,11 @@ import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import { useOptimisticAssignment } from "~/components";
 import Assignee from "~/components/Assignee";
 import { useRouteData } from "~/hooks";
+import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { BuyMethod, ItemFile, PartSummary, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
-import { MethodBadge } from "../Item/MethodBadge";
-import { MethodIcon, TrackingTypeIcon } from "../Item/MethodIcon";
 
 const PartProperties = () => {
   const { itemId } = useParams();

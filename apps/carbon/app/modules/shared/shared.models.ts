@@ -1,6 +1,22 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+export const methodItemType = [
+  "Part",
+  "Material",
+  "Tool",
+  "Fixture",
+  "Consumable",
+  "Service",
+] as const;
+
+export const methodOperationOrders = [
+  "After Previous",
+  "With Previous",
+] as const;
+
+export const methodType = ["Buy", "Make", "Pick"] as const;
+
 export const noteValidator = z.object({
   id: zfd.text(z.string().optional()),
   documentId: z.string().min(1),

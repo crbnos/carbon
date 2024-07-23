@@ -13,11 +13,11 @@ import { useParams } from "@remix-run/react";
 import { LuCopy, LuLink } from "react-icons/lu";
 import { Assignee, useOptimisticAssignment } from "~/components";
 import { useRouteData } from "~/hooks";
+import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { BuyMethod, Consumable, ItemFile, PickMethod } from "../../types";
-import { FileBadge, MethodIcon, TrackingTypeIcon } from "../Item";
-import { MethodBadge } from "../Item/MethodBadge";
+import { FileBadge } from "../Item";
 
 const ConsumableProperties = () => {
   const { itemId } = useParams();
