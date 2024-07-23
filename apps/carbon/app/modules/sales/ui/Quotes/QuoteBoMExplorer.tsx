@@ -1,8 +1,8 @@
 import { Badge, HStack, VStack, cn } from "@carbon/react";
 import { useRef } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
-import type { FlatTreeItem } from "~/components/TreeView/TreeView";
-import { TreeView, useTree } from "~/components/TreeView/TreeView";
+import type { FlatTreeItem } from "~/components/TreeView";
+import { TreeView, useTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items/types";
 import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
 

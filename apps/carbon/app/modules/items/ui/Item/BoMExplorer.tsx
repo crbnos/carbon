@@ -11,8 +11,8 @@ import {
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuSearch } from "react-icons/lu";
-import type { FlatTreeItem } from "~/components/TreeView/TreeView";
-import { TreeView, useTree } from "~/components/TreeView/TreeView";
+import type { FlatTreeItem } from "~/components/TreeView";
+import { TreeView, useTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import type { MethodItemType } from "~/modules/shared";
 import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
