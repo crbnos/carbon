@@ -15,8 +15,8 @@ import {
   useParams,
 } from "@remix-run/react";
 
-import type { FlatTreeItem } from "~/components/TreeView/TreeView";
-import { flattenTree } from "~/components/TreeView/TreeView";
+import type { FlatTreeItem } from "~/components/TreeView";
+import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import {
   BoMExplorer,
