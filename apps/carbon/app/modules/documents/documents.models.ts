@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { methodItemType } from "../items";
+import { methodItemType } from "~/modules/shared";
 
 export const documentTypes = [
   "Archive",

@@ -17,13 +17,7 @@ import {
 
 import type { FlatTreeItem } from "~/components/TreeView/TreeView";
 import { flattenTree } from "~/components/TreeView/TreeView";
-import { useRouteData } from "~/hooks";
-import type {
-  Fixture,
-  Method,
-  MethodItemType,
-  MethodType,
-} from "~/modules/items";
+import type { Method } from "~/modules/items";
 import {
   BoMExplorer,
   getMakeMethod,
@@ -31,6 +25,7 @@ import {
   getMethodOperations,
   getMethodTree,
 } from "~/modules/items";
+import type { MethodItemType, MethodType } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -120,10 +115,6 @@ export default function FixtureManufacturing() {
   const params = useParams();
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
-
-  const routeData = useRouteData<{
-    fixtureSummary: Fixture;
-  }>(path.to.fixture(itemId));
 
   return (
     <div className="flex flex-grow overflow-hidden">

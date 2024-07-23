@@ -2,7 +2,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting";
-import { methodType } from "../items";
+import { methodItemType, methodOperationOrders, methodType } from "../shared";
 import { standardFactorType } from "../shared/types";
 
 export const salesRFQStatusType = [
@@ -150,9 +150,131 @@ export const quotationMaterialValidator = z.object({
   unitOfMeasureCode: zfd.text(z.string().optional()),
 });
 
+export const quoteMaterialValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    makeMethodId: z.string().min(20, { message: "Make method is required" }),
+    order: zfd.numeric(z.number().min(0)),
+    itemType: z.enum(methodItemType, {
+      errorMap: (issue, ctx) => ({
+        message: "Item type is required",
+      }),
+    }),
+    methodType: z.enum(methodType, {
+      errorMap: (issue, ctx) => ({
+        message: "Method type is required",
+      }),
+    }),
+    itemId: z.string().optional(),
+    itemReadableId: z.string().optional(),
+    description: zfd.text(z.string().optional()),
+    methodOperationId: zfd.text(z.string().optional()),
+    // description: z.string().min(1, { message: "Description is required" }),
+    quantity: zfd.numeric(z.number().min(0)),
+    unitOfMeasureCode: z
+      .string()
+      .min(1, { message: "Unit of Measure is required" }),
+  })
+  .refine(
+    (data) => {
+      if (data.itemType === "Part") {
+        return !!data.itemReadableId;
+      }
+      return true;
+    },
+    {
+      message: "Part ID is required",
+      path: ["itemId"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.itemType === "Material") {
+        return !!data.itemReadableId;
+      }
+      return true;
+    },
+    {
+      message: "Material ID is required",
+      path: ["itemId"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.itemType === "Fixture") {
+        return !!data.itemReadableId;
+      }
+      return true;
+    },
+    {
+      message: "Fixture ID is required",
+      path: ["itemId"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.itemType === "Tool") {
+        return !!data.itemReadableId;
+      }
+      return true;
+    },
+    {
+      message: "Tool ID is required",
+      path: ["itemId"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.itemType === "Consumable") {
+        return !!data.itemReadableId;
+      }
+      return true;
+    },
+    {
+      message: "Consumable ID is required",
+      path: ["itemId"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.itemType === "Service") {
+        return !!data.itemReadableId;
+      }
+      return true;
+    },
+    {
+      message: "Service ID is required",
+      path: ["itemId"],
+    }
+  );
+
 export const quotationOperationValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteAssemblyId: zfd.text(z.string().optional()),
+  workCellTypeId: z.string().min(20, { message: "Work cell is required" }),
+  equipmentTypeId: zfd.text(z.string().optional()),
+  description: zfd.text(
+    z.string().min(0, { message: "Description is required" })
+  ),
+  setupHours: zfd.numeric(z.number().min(0)),
+  standardFactor: z.enum(standardFactorType, {
+    errorMap: () => ({ message: "Standard factor is required" }),
+  }),
+  productionStandard: zfd.numeric(z.number().min(0)),
+  quotingRate: zfd.numeric(z.number().min(0)),
+  laborRate: zfd.numeric(z.number().min(0)),
+  overheadRate: zfd.numeric(z.number().min(0)),
+});
+
+export const quoteOperationValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  quoteMakeMethodId: z
+    .string()
+    .min(1, { message: "Quote Make Method is required" }),
+  operationOrder: z.enum(methodOperationOrders, {
+    errorMap: () => ({ message: "Operation Order is required" }),
+  }),
+  order: zfd.numeric(z.number().min(0)),
   workCellTypeId: z.string().min(20, { message: "Work cell is required" }),
   equipmentTypeId: zfd.text(z.string().optional()),
   description: zfd.text(

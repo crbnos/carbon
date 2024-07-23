@@ -3,7 +3,6 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
 
-import type { MethodItemType, MethodType } from "~/modules/items";
 import {
   BillOfMaterial,
   BillOfProcess,
@@ -13,6 +12,7 @@ import {
   getMethodMaterials,
   getMethodOperations,
 } from "~/modules/items";
+import type { MethodItemType, MethodType } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";

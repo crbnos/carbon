@@ -13424,6 +13424,7 @@ export type Database = {
           itemId: string
           itemType: string
           methodType: Database["public"]["Enums"]["methodType"]
+          order: number
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -13444,6 +13445,7 @@ export type Database = {
           itemId: string
           itemType?: string
           methodType?: Database["public"]["Enums"]["methodType"]
+          order?: number
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -13464,6 +13466,7 @@ export type Database = {
           itemId?: string
           itemType?: string
           methodType?: Database["public"]["Enums"]["methodType"]
+          order?: number
           quantity?: number
           quoteId?: string
           quoteLineId?: string
@@ -13655,6 +13658,8 @@ export type Database = {
           equipmentTypeId: string | null
           id: string
           laborRate: number
+          operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
+          order: number
           overheadRate: number
           productionStandard: number
           quoteId: string
@@ -13676,6 +13681,8 @@ export type Database = {
           equipmentTypeId?: string | null
           id?: string
           laborRate?: number
+          operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
+          order?: number
           overheadRate?: number
           productionStandard?: number
           quoteId: string
@@ -13697,6 +13704,8 @@ export type Database = {
           equipmentTypeId?: string | null
           id?: string
           laborRate?: number
+          operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
+          order?: number
           overheadRate?: number
           productionStandard?: number
           quoteId?: string
@@ -25403,6 +25412,26 @@ export type Database = {
           claim: string
         }
         Returns: string[]
+      }
+      get_quote_methods: {
+        Args: {
+          qid: string
+        }
+        Returns: {
+          quoteId: string
+          quoteLineId: string
+          parentMaterialId: string
+          parentItemId: string
+          quantityPerParent: number
+          quoteMaterialId: string
+          itemId: string
+          itemType: string
+          methodType: string
+          order: number
+          quantity: number
+          unitOfMeasureCode: string
+          unitCost: number
+        }[]
       }
       groups_for_user: {
         Args: {

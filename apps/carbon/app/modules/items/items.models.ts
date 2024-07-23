@@ -1,18 +1,11 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { standardFactorType } from "../shared";
-
-export const defaultWorkInstruction = {
-  type: "doc",
-  content: [
-    {
-      type: "heading",
-      attrs: { level: 2 },
-      content: [{ type: "text", text: "Work Instructions" }],
-    },
-    { type: "paragraph" },
-  ],
-};
+import {
+  methodItemType,
+  methodOperationOrders,
+  methodType,
+  standardFactorType,
+} from "../shared";
 
 export const itemTrackingTypes = ["Inventory", "Non-Inventory"] as const;
 
@@ -28,22 +21,6 @@ export const itemReorderingPolicies = [
   "Demand-Based Reorder",
   "Fixed Reorder Quantity",
   "Maximum Quantity",
-] as const;
-
-export const methodItemType = [
-  "Part",
-  "Material",
-  "Tool",
-  "Fixture",
-  "Consumable",
-  "Service",
-] as const;
-
-export const methodType = ["Buy", "Make", "Pick"] as const;
-
-export const methodOperationOrders = [
-  "After Previous",
-  "With Previous",
 ] as const;
 
 export const itemReplenishmentSystems = [

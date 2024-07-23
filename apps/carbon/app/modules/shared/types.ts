@@ -1,3 +1,4 @@
+import type { methodItemType, methodType } from "./shared.models";
 import type { getNotes } from "./shared.service";
 
 export type BillOfMaterialNodeType =
@@ -27,6 +28,9 @@ export enum DataType {
   Text = 5,
   User = 6,
 }
+
+export type MethodItemType = (typeof methodItemType)[number];
+export type MethodType = (typeof methodType)[number];
 
 export type Note = NonNullable<
   Awaited<ReturnType<typeof getNotes>>["data"]

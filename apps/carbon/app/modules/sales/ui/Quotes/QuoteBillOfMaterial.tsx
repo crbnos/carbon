@@ -45,14 +45,12 @@ import {
   MethodItemTypeIcon,
 } from "~/modules/shared";
 import { path } from "~/utils/path";
-import type { methodOperationValidator } from "../../items.models";
-import { methodMaterialValidator } from "../../items.models";
+import type { quoteOperationValidator } from "../../sales.models";
+import { quoteMaterialValidator } from "../../sales.models";
 
-type Material = z.infer<typeof methodMaterialValidator> & {
-  description: string;
-};
+type Material = z.infer<typeof quoteMaterialValidator>;
 
-type Operation = z.infer<typeof methodOperationValidator>;
+type Operation = z.infer<typeof quoteOperationValidator>;
 
 type ItemWithData = SortableItem & {
   data: Material;
@@ -482,7 +480,7 @@ function MaterialForm({
       }
       method="post"
       defaultValues={item.data}
-      validator={methodMaterialValidator}
+      validator={quoteMaterialValidator}
       className="w-full"
       fetcher={methodMaterialFetcher}
       onSubmit={(values) => {
@@ -537,7 +535,6 @@ function MaterialForm({
         <InputControlled
           name="description"
           label="Description"
-          isReadOnly
           value={itemData.description}
           onChange={(newValue) => {
             setItemData((d) => ({ ...d, description: newValue }));

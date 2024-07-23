@@ -13,10 +13,10 @@ import { useParams } from "@remix-run/react";
 import { LuCopy, LuLink } from "react-icons/lu";
 import { Assignee, useOptimisticAssignment } from "~/components";
 import { useRouteData } from "~/hooks";
+import { MethodBadge, MethodIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { BuyMethod, ItemFile, PickMethod, Service } from "../../types";
-import { FileBadge, MethodIcon } from "../Item";
-import { MethodBadge } from "../Item/MethodBadge";
+import { FileBadge } from "../Item";
 
 const ServiceProperties = () => {
   const { itemId } = useParams();

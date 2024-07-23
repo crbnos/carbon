@@ -1,5 +1,4 @@
 "use client";
-import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   Button,
@@ -8,13 +7,11 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Editor,
   HStack,
   cn,
   useDebounce,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
@@ -22,7 +19,6 @@ import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
-import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
   EquipmentType,
   Hidden,
@@ -36,24 +32,19 @@ import {
 } from "~/components/Form";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { methodOperationOrders } from "~/modules/shared";
 import { path } from "~/utils/path";
-import { methodOperationValidator } from "../../items.models";
+import { quoteOperationValidator } from "../../sales.models";
 
-type Operation = z.infer<typeof methodOperationValidator> & {
-  methodOperationWorkInstruction: {
-    content: JSONContent | null;
-  };
-};
+type Operation = z.infer<typeof quoteOperationValidator>;
 
 type ItemWithData = Item & {
   data: Operation;
 };
 
 type BillOfProcessProps = {
-  makeMethodId: string;
+  quoteMakeMethodId: string;
   operations: Operation[];
 };
 
@@ -79,7 +70,7 @@ function makeItem(operation: Operation): ItemWithData {
   };
 }
 
-const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
+const initialMethodOperation: Omit<Operation, "quoteMakeMethodId" | "order"> = {
   description: "",
   workCellTypeId: "",
   equipmentTypeId: "",
@@ -87,18 +78,17 @@ const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
   productionStandard: 0,
   standardFactor: "Hours/Piece",
   operationOrder: "After Previous",
-  methodOperationWorkInstruction: {
-    content: {},
-  },
+  quotingRate: 0,
+  laborRate: 0,
+  overheadRate: 0,
 };
 
-const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
+const BillOfProcess = ({
+  quoteMakeMethodId,
+  operations,
+}: BillOfProcessProps) => {
   const { supabase } = useSupabase();
   const sortOrderFetcher = useFetcher<{}>();
-  const {
-    id: userId,
-    company: { id: companyId },
-  } = useUser();
 
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(operations ?? [])
@@ -132,7 +122,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
           data: {
             ...initialMethodOperation,
             order: newOrder,
-            makeMethodId,
+            quoteMakeMethodId,
           },
         },
       ];
@@ -184,7 +174,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     formData.append("updates", JSON.stringify(updates));
     sortOrderFetcher.submit(formData, {
       method: "post",
-      action: path.to.methodOperationsOrder(makeMethodId),
+      action: path.to.methodOperationsOrder(quoteMakeMethodId),
     });
   }, 1000);
 
@@ -201,52 +191,6 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     });
   }, []);
 
-  const onUpdateWorkInstruction = useDebounce(async (content: JSONContent) => {
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === selectedItemId
-          ? {
-              ...item,
-              data: {
-                ...item.data,
-                methodOperationWorkInstruction: {
-                  content,
-                },
-              },
-            }
-          : item
-      )
-    );
-    await supabase
-      ?.from("methodOperationWorkInstruction")
-      .update({
-        content,
-        updatedAt: today(getLocalTimeZone()).toString(),
-        updatedBy: userId,
-      })
-      .eq("methodOperationId", selectedItemId!);
-  }, 3000);
-
-  const onUploadImage = async (file: File) => {
-    const fileName = `${companyId}/parts/${selectedItemId}/${Math.random()
-      .toString(16)
-      .slice(2)}-${file.name}`;
-    const result = await supabase?.storage
-      .from("private")
-      .upload(fileName, file);
-
-    if (result?.error) {
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return `/file/preview/private/${result.data.path}`;
-  };
-
-  const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,
     items,
@@ -255,61 +199,6 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
     const isOpen = item.id === selectedItemId;
-
-    const tabs = [
-      {
-        id: 0,
-        label: "Details",
-        content: (
-          <div className="flex w-full flex-col pr-2 py-2">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15,
-              }}
-            >
-              <OperationForm
-                item={item}
-                setItems={setItems}
-                setSelectedItemId={setSelectedItemId}
-              />
-            </motion.div>
-          </div>
-        ),
-      },
-      {
-        id: 1,
-        label: "Work Instructions",
-        disabled: isTemporaryId(item.id),
-        content: (
-          <div className="flex flex-col">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15,
-              }}
-            >
-              <Editor
-                initialValue={
-                  item.data.methodOperationWorkInstruction?.content ??
-                  ({} as JSONContent)
-                }
-                onUpload={onUploadImage}
-                onChange={onUpdateWorkInstruction}
-              />
-            </motion.div>
-          </div>
-        ),
-      },
-    ];
 
     return (
       <SortableListItem<Operation>
@@ -403,13 +292,24 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
                         layout
                         className="w-full "
                       >
-                        <DirectionAwareTabs
-                          className="mr-auto"
-                          tabs={tabs}
-                          onChange={() =>
-                            setTabChangeRerender(tabChangeRerender + 1)
-                          }
-                        />
+                        <div className="flex w-full flex-col pr-2 py-2">
+                          <motion.div
+                            initial={{ opacity: 0, filter: "blur(4px)" }}
+                            animate={{ opacity: 1, filter: "blur(0px)" }}
+                            transition={{
+                              type: "spring",
+                              bounce: 0.2,
+                              duration: 0.75,
+                              delay: 0.15,
+                            }}
+                          >
+                            <OperationForm
+                              item={item}
+                              setItems={setItems}
+                              setSelectedItemId={setSelectedItemId}
+                            />
+                          </motion.div>
+                        </div>
                       </motion.div>
                     </div>
                   </motion.div>
@@ -497,10 +397,16 @@ function OperationForm({
     workCellTypeId: string;
     description: string;
     standardFactor: string;
+    quotingRate: number;
+    laborRate: number;
+    overheadRate: number;
   }>({
     workCellTypeId: item.data.workCellTypeId ?? "",
     description: item.data.description ?? "",
     standardFactor: item.data.standardFactor ?? "Hours/Piece",
+    quotingRate: item.data.quotingRate ?? 0,
+    laborRate: item.data.laborRate ?? 0,
+    overheadRate: item.data.overheadRate ?? 0,
   });
 
   const onWorkCellChange = async (workCellTypeId: string) => {
@@ -517,6 +423,9 @@ function OperationForm({
       workCellTypeId,
       description: data?.name ?? "",
       standardFactor: data?.defaultStandardFactor ?? "Hours/Piece",
+      quotingRate: data?.quotingRate ?? 0,
+      laborRate: data?.laborRate ?? 0,
+      overheadRate: data?.overheadRate ?? 0,
     });
   };
 
@@ -548,12 +457,12 @@ function OperationForm({
     <ValidatedForm
       action={
         isTemporaryId(item.id)
-          ? path.to.newMethodOperation(item.data.makeMethodId!)
-          : path.to.methodOperation(item.data.makeMethodId, item.id!)
+          ? path.to.newMethodOperation(item.data.quoteMakeMethodId!)
+          : path.to.methodOperation(item.data.quoteMakeMethodId, item.id!)
       }
       method="post"
       defaultValues={item.data}
-      validator={methodOperationValidator}
+      validator={quoteOperationValidator}
       className="w-full flex flex-col gap-y-4"
       fetcher={methodOperationFetcher}
       onSubmit={(values) => {
@@ -561,12 +470,7 @@ function OperationForm({
           prevItems.map((i) =>
             i.id === item.id
               ? {
-                  ...makeItem({
-                    ...values,
-                    methodOperationWorkInstruction: {
-                      content: i.data.methodOperationWorkInstruction?.content,
-                    },
-                  }),
+                  ...makeItem(values),
                   id: item.id,
                 }
               : i
@@ -574,7 +478,7 @@ function OperationForm({
         );
       }}
     >
-      <Hidden name="makeMethodId" />
+      <Hidden name="quoteMakeMethodId" />
       <Hidden name="order" />
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
         <WorkCellType
@@ -632,6 +536,42 @@ function OperationForm({
               standardFactor: newValue?.value ?? "Hours/Piece",
             }));
           }}
+        />
+        <NumberControlled
+          name="quotingRate"
+          label="Quoting Rate"
+          minValue={0}
+          value={workCellData.quotingRate}
+          onChange={(newValue) =>
+            setWorkCellData((d) => ({
+              ...d,
+              quotingRate: newValue,
+            }))
+          }
+        />
+        <NumberControlled
+          name="laborRate"
+          label="Labor Rate"
+          minValue={0}
+          value={workCellData.laborRate}
+          onChange={(newValue) =>
+            setWorkCellData((d) => ({
+              ...d,
+              laborRate: newValue,
+            }))
+          }
+        />
+        <NumberControlled
+          name="overheadRate"
+          label="Overhead Rate"
+          minValue={0}
+          value={workCellData.overheadRate}
+          onChange={(newValue) =>
+            setWorkCellData((d) => ({
+              ...d,
+              overheadRate: newValue,
+            }))
+          }
         />
       </div>
       <motion.div

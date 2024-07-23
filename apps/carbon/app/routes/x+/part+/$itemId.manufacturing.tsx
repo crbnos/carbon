@@ -17,7 +17,7 @@ import {
 
 import type { FlatTreeItem } from "~/components/TreeView/TreeView";
 import { flattenTree } from "~/components/TreeView/TreeView";
-import type { Method, MethodItemType, MethodType } from "~/modules/items";
+import type { Method } from "~/modules/items";
 import {
   BoMExplorer,
   getMakeMethod,
@@ -25,6 +25,7 @@ import {
   getMethodOperations,
   getMethodTree,
 } from "~/modules/items";
+import type { MethodItemType, MethodType } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";

@@ -37,13 +37,13 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import { methodType } from "~/modules/items";
 import type { Quotation, QuotationLine } from "~/modules/sales";
 import {
   DeleteQuoteLine,
   quoteLineStatusType,
   quoteLineValidator,
 } from "~/modules/sales";
+import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type QuoteLineFormProps = {
