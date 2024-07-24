@@ -56,8 +56,8 @@ type ItemWithData = SortableItem & {
   data: Material;
 };
 
-type BillOfMaterialProps = {
-  makeMethodId: string;
+type QuoteBillOfMaterialProps = {
+  quoteMakeMethodId: string;
   materials: Material[];
   operations: Operation[];
 };
@@ -96,7 +96,7 @@ function makeItem(material: Material): ItemWithData {
   };
 }
 
-const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
+const initialMethodMaterial: Omit<Material, "quoteMakeMethodId" | "order"> & {
   description: string;
 } = {
   itemId: "",
@@ -108,11 +108,11 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
   unitOfMeasureCode: "EA",
 };
 
-const BillOfMaterial = ({
-  makeMethodId,
+const QuoteBillOfMaterial = ({
+  quoteMakeMethodId,
   materials,
   operations,
-}: BillOfMaterialProps) => {
+}: QuoteBillOfMaterialProps) => {
   const fetcher = useFetcher<{}>();
 
   const [items, setItems] = useState<ItemWithData[]>(
@@ -147,7 +147,7 @@ const BillOfMaterial = ({
           data: {
             ...initialMethodMaterial,
             order: newOrder,
-            makeMethodId,
+            quoteMakeMethodId,
           },
         },
       ];
@@ -163,7 +163,7 @@ const BillOfMaterial = ({
 
     fetcher.submit(new FormData(), {
       method: "post",
-      action: path.to.deleteMethodMaterial(makeMethodId, item.id),
+      action: path.to.deleteMethodMaterial(quoteMakeMethodId, item.id),
     });
   };
 
@@ -191,7 +191,7 @@ const BillOfMaterial = ({
     formData.append("updates", JSON.stringify(updates));
     fetcher.submit(formData, {
       method: "post",
-      action: path.to.methodMaterialsOrder(makeMethodId),
+      action: path.to.methodMaterialsOrder(quoteMakeMethodId),
     });
   }, 1000);
 
@@ -368,7 +368,7 @@ const BillOfMaterial = ({
   );
 };
 
-export default BillOfMaterial;
+export default QuoteBillOfMaterial;
 
 function isTemporaryId(id: string) {
   return id.length < 20;
@@ -475,8 +475,8 @@ function MaterialForm({
     <ValidatedForm
       action={
         isTemporaryId(item.id)
-          ? path.to.newMethodMaterial(item.data.makeMethodId!)
-          : path.to.methodMaterial(item.data.makeMethodId, item.id!)
+          ? path.to.newMethodMaterial(item.data.quoteMakeMethodId!)
+          : path.to.methodMaterial(item.data.quoteMakeMethodId, item.id!)
       }
       method="post"
       defaultValues={item.data}
@@ -496,7 +496,7 @@ function MaterialForm({
         );
       }}
     >
-      <Hidden name="makeMethodId" />
+      <Hidden name="quoteMakeMethodId" />
       <Hidden name="itemReadableId" value={itemData.itemReadableId} />
       <Hidden name="order" />
       <VStack className="pt-4">

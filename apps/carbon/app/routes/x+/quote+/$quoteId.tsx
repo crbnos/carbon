@@ -29,6 +29,7 @@ import {
   getQuote,
   getQuoteDocuments,
   getQuoteLines,
+  getQuoteMethodTrees,
   QuoteBoMExplorer,
   QuoteBreadcrumbs,
   QuoteHeader,
@@ -54,10 +55,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const [quote, lines, files] = await Promise.all([
+  const [quote, lines, files, methods] = await Promise.all([
     getQuote(client, quoteId),
     getQuoteLines(client, quoteId),
     getQuoteDocuments(client, companyId, quoteId),
+    getQuoteMethodTrees(client, quoteId),
   ]);
 
   if (quote.error) {
@@ -70,6 +72,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     quote: quote.data,
     lines: lines.data ?? [],
+    methods: methods.data ?? [],
     files: files.data ?? [],
   });
 }

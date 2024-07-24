@@ -153,7 +153,9 @@ export const quotationMaterialValidator = z.object({
 export const quoteMaterialValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    makeMethodId: z.string().min(20, { message: "Make method is required" }),
+    quoteMakeMethodId: z
+      .string()
+      .min(20, { message: "Make method is required" }),
     order: zfd.numeric(z.number().min(0)),
     itemType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
@@ -165,9 +167,9 @@ export const quoteMaterialValidator = z
         message: "Method type is required",
       }),
     }),
-    itemId: z.string().optional(),
+    itemId: z.string().min(1, { message: "Item is required" }),
     itemReadableId: z.string().optional(),
-    description: zfd.text(z.string().optional()),
+    description: z.string().min(1, { message: "Description is required" }),
     methodOperationId: zfd.text(z.string().optional()),
     // description: z.string().min(1, { message: "Description is required" }),
     quantity: zfd.numeric(z.number().min(0)),

@@ -1,4 +1,6 @@
 import DeleteQuoteLine from "./DeleteQuoteLine";
+import QuoteBillOfMaterial from "./QuoteBillOfMaterial";
+import QuoteBillOfProcess from "./QuoteBillOfProcess";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
 import QuoteBreadcrumbs from "./QuoteBreadcrumbs";
 import QuoteDocuments from "./QuoteDocuments";
@@ -10,6 +12,8 @@ import QuotesTable from "./QuotesTable";
 
 export {
   DeleteQuoteLine,
+  QuoteBillOfMaterial,
+  QuoteBillOfProcess,
   QuoteBoMExplorer,
   QuoteBreadcrumbs,
   QuoteDocuments,

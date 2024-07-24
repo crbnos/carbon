@@ -43,7 +43,7 @@ type ItemWithData = Item & {
   data: Operation;
 };
 
-type BillOfProcessProps = {
+type QuoteBillOfProcessProps = {
   quoteMakeMethodId: string;
   operations: Operation[];
 };
@@ -83,10 +83,10 @@ const initialMethodOperation: Omit<Operation, "quoteMakeMethodId" | "order"> = {
   overheadRate: 0,
 };
 
-const BillOfProcess = ({
+const QuoteBillOfProcess = ({
   quoteMakeMethodId,
   operations,
-}: BillOfProcessProps) => {
+}: QuoteBillOfProcessProps) => {
   const { supabase } = useSupabase();
   const sortOrderFetcher = useFetcher<{}>();
 
@@ -352,7 +352,7 @@ const BillOfProcess = ({
   );
 };
 
-export default BillOfProcess;
+export default QuoteBillOfProcess;
 
 function isTemporaryId(id: string) {
   return id.length < 20;
