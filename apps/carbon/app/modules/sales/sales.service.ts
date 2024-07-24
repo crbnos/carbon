@@ -15,10 +15,10 @@ import type {
   customerTypeValidator,
   customerValidator,
   quotationAssemblyValidator,
-  quotationMaterialValidator,
   quotationOperationValidator,
   quotationPricingValidator,
   quoteLineValidator,
+  quoteMaterialValidator,
   quoteValidator,
   salesOrderLineValidator,
   salesOrderPaymentValidator,
@@ -482,6 +482,17 @@ export async function getQuoteAssemblies(
   return client.from("quoteMakeMethod").select("*").eq("quoteId", quoteId);
 }
 
+export async function getQuoteCustomerDetails(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client
+    .from("quoteCustomerDetails")
+    .select("*")
+    .eq("quoteId", quoteId)
+    .single();
+}
+
 export async function getQuoteDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -497,22 +508,85 @@ export async function getQuoteLine(
   return client.from("quoteLines").select("*").eq("id", quoteLineId).single();
 }
 
+type QuoteMethod = NonNullable<
+  Awaited<ReturnType<typeof getQuoteMethodTreeArray>>["data"]
+>[number];
+type QuoteMethodTreeItem = {
+  id: string;
+  data: QuoteMethod;
+  children: QuoteMethodTreeItem[];
+};
+
+export async function getQuoteMethodTrees(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  const items = await getQuoteMethodTreeArray(client, quoteId);
+  if (items.error) return items;
+
+  const tree = getQuoteMethodTreeArrayToTree(items.data);
+
+  return {
+    data: tree,
+    error: null,
+  };
+}
+
+export async function getQuoteMethodTreeArray(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client.rpc("get_quote_methods", {
+    qid: quoteId,
+  });
+}
+
+function getQuoteMethodTreeArrayToTree(
+  items: QuoteMethod[]
+): QuoteMethodTreeItem[] {
+  // function traverseAndRenameIds(node: QuoteMethodTreeItem) {
+  //   const clone = structuredClone(node);
+  //   clone.id = `node-${Math.random().toString(16).slice(2)}`;
+  //   clone.children = clone.children.map((n) => traverseAndRenameIds(n));
+  //   return clone;
+  // }
+
+  const rootItems: QuoteMethodTreeItem[] = [];
+  const lookup: { [id: string]: QuoteMethodTreeItem } = {};
+
+  for (const item of items) {
+    const itemId = item.methodMaterialId;
+    const parentId = item.parentMaterialId;
+
+    if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
+      // @ts-ignore
+      lookup[itemId] = { id: itemId, children: [] };
+    }
+
+    lookup[itemId]["data"] = item;
+
+    const treeItem = lookup[itemId];
+
+    if (parentId === null || parentId === undefined) {
+      rootItems.push(treeItem);
+    } else {
+      if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
+        // @ts-ignore
+        lookup[parentId] = { id: parentId, children: [] };
+      }
+
+      lookup[parentId]["children"].push(treeItem);
+    }
+  }
+  return rootItems;
+  // return rootItems.map((item) => traverseAndRenameIds(item));
+}
+
 export async function getQuoteLines(
   client: SupabaseClient<Database>,
   quoteId: string
 ) {
   return client.from("quoteLines").select("*").eq("quoteId", quoteId);
-}
-
-export async function getQuoteCustomerDetails(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client
-    .from("quoteCustomerDetails")
-    .select("*")
-    .eq("quoteId", quoteId)
-    .single();
 }
 
 export async function getSalesOrderExternalDocuments(
@@ -1254,8 +1328,8 @@ export async function updateQuoteLinePrice(
 
 export async function upsertQuoteMaterial(
   client: SupabaseClient<Database>,
-  quotationMaterial:
-    | (Omit<z.infer<typeof quotationMaterialValidator>, "id"> & {
+  quoteMaterial:
+    | (Omit<z.infer<typeof quoteMaterialValidator>, "id"> & {
         quoteId: string;
         quoteLineId: string;
         quoteOperationId: string;
@@ -1263,7 +1337,7 @@ export async function upsertQuoteMaterial(
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof quotationMaterialValidator>, "id"> & {
+    | (Omit<z.infer<typeof quoteMaterialValidator>, "id"> & {
         id: string;
         quoteId: string;
         quoteLineId: string;
@@ -1272,17 +1346,17 @@ export async function upsertQuoteMaterial(
         customFields?: Json;
       })
 ) {
-  if ("id" in quotationMaterial) {
+  if ("id" in quoteMaterial) {
     return client
       .from("quoteMaterial")
-      .update(sanitize(quotationMaterial))
-      .eq("id", quotationMaterial.id)
+      .update(sanitize(quoteMaterial))
+      .eq("id", quoteMaterial.id)
       .select("id")
       .single();
   }
   return client
     .from("quoteMaterial")
-    .insert([quotationMaterial])
+    .insert([quoteMaterial])
     .select("id")
     .single();
 }

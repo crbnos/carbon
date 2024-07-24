@@ -197,7 +197,7 @@ CREATE INDEX "quoteMakeMethod_quoteId_idx" ON "quoteMakeMethod" ("quoteId");
 CREATE INDEX "quoteMakeMethod_quoteLineId_idx" ON "quoteMakeMethod" ("quoteLineId");
 CREATE INDEX "quoteMakeMethod_parentMaterialId_idx" ON "quoteMakeMethod" ("parentMaterialId");
 
-ALTER TABLE "quoteMaterial" ADD COLUMN "quoteMakeMethodId" TEXT,
+ALTER TABLE "quoteMaterial" ADD COLUMN "quoteMakeMethodId" TEXT NOT NULL,
   ADD CONSTRAINT "quoteMaterial_quoteMakeMethodId_fkey" FOREIGN KEY ("quoteMakeMethodId") REFERENCES "quoteMakeMethod" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
   CREATE OR REPLACE FUNCTION insert_quote_material_make_method()
@@ -338,41 +338,96 @@ CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "location" l
     ON l.id = q."locationId";
 
+CREATE OR REPLACE VIEW "quoteMaterialWithMakeMethodId" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+    qm.*, 
+    qmm."id" AS "quoteMaterialMakeMethodId" 
+  FROM "quoteMaterial" qm 
+  LEFT JOIN "quoteMakeMethod" qmm 
+    ON qmm."parentMaterialId" = qm."id";
+
 CREATE OR REPLACE FUNCTION get_quote_methods(qid TEXT)
 RETURNS TABLE (
-  "quoteId" TEXT,
-  "quoteLineId" TEXT,
-  "parentMaterialId" TEXT,
-  "parentItemId" TEXT,
-  "quantityPerParent" NUMERIC(10, 4),
-  "quoteMaterialId" TEXT,
-  "itemId" TEXT,
-  "itemType" TEXT,
-  "methodType" TEXT,
-  "order" DOUBLE PRECISION,
-  "quantity" NUMERIC(10, 4),
-  "unitOfMeasureCode" TEXT,
-  "unitCost" NUMERIC(10,4)
+    "quoteId" TEXT,
+    "quoteLineId" TEXT,
+    "methodMaterialId" TEXT,
+    "quoteMakeMethodId" TEXT,
+    "quoteMaterialMakeMethodId" TEXT,  
+    "itemId" TEXT,
+    "itemReadableId" TEXT,
+    "itemType" TEXT,
+    "quantity" NUMERIC,
+    "methodType" "methodType",
+    "parentMaterialId" TEXT,
+    "order" DOUBLE PRECISION,
+    "isRoot" BOOLEAN
 ) AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    make."quoteId",
-    make."quoteLineId",
-    make."parentMaterialId",
-    make."itemId" AS "parentItemId",
-    make."quantityPerParent",
-    mat."id" AS "quoteMaterialId",
-    mat."itemId",
-    mat."itemType",
-    mat."methodType",
-    mat."order",
-    mat."quantity",
-    mat."unitOfMeasureCode",
-    mat."unitCost"
-  FROM "quoteMakeMethod" make
-  LEFT OUTER JOIN "quoteMaterial" mat
-    ON make."id" = mat."quoteMakeMethodId"
-  WHERE make."quoteId" = qid;
-END;
-$$ LANGUAGE plpgsql;
+WITH RECURSIVE material AS (
+    SELECT 
+        "quoteId",
+        "quoteLineId",
+        "id", 
+        "quoteMakeMethodId",
+        "methodType",
+        "quoteMaterialMakeMethodId",
+        "itemId", 
+        "itemType",
+        "quantity",
+        "quoteMakeMethodId" AS "parentMaterialId",
+        CAST(1 AS DOUBLE PRECISION) AS "order"
+    FROM 
+        "quoteMaterialWithMakeMethodId" 
+    WHERE 
+        "quoteId" = qid
+    UNION 
+    SELECT 
+        child."quoteId",
+        child."quoteLineId",
+        child."id", 
+        child."quoteMakeMethodId",
+        child."methodType",
+        child."quoteMaterialMakeMethodId",
+        child."itemId", 
+        child."itemType",
+        child."quantity",
+        parent."id" AS "parentMaterialId",
+        child."order"
+    FROM 
+        "quoteMaterialWithMakeMethodId" child 
+        INNER JOIN material parent ON parent."quoteMaterialMakeMethodId" = child."quoteMakeMethodId"
+) 
+SELECT 
+  material."quoteId",
+  material."quoteLineId",
+  material.id as "methodMaterialId", 
+  material."quoteMakeMethodId",
+  material."quoteMaterialMakeMethodId",
+  material."itemId",
+  item."readableId" AS "itemReadableId",
+  material."itemType",
+  material."quantity",
+  material."methodType",
+  material."parentMaterialId",
+  material."order",
+  false AS "isRoot"
+FROM material INNER JOIN item ON material."itemId" = item.id
+UNION
+SELECT
+  mm."quoteId",
+  mm."quoteLineId",
+  mm."id" AS "methodMaterialId",
+  NULL AS "makeMethodId",
+  mm.id AS "quoteMakeMethodId",
+  mm."itemId",
+  i."readableId" AS "itemReadableId",
+  i."type"::text,
+  1 AS "quantity",
+  'Make' AS "methodType",
+  NULL AS "parentMaterialId",
+  CAST(1 AS DOUBLE PRECISION) AS "order",
+  true AS "isRoot"
+
+FROM "quoteMakeMethod" mm INNER JOIN item i ON mm."itemId" = i.id
+WHERE mm."quoteId" = qid
+ORDER BY "order"
+$$ LANGUAGE sql STABLE;

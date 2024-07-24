@@ -13342,6 +13342,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quoteMakeMethod_parentMaterialId_fkey"
+            columns: ["parentMaterialId"]
+            isOneToOne: false
+            referencedRelation: "quoteMaterialWithMakeMethodId"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quoteMakeMethod_quoteId_fkey"
             columns: ["quoteId"]
             isOneToOne: false
@@ -13428,7 +13435,7 @@ export type Database = {
           quantity: number
           quoteId: string
           quoteLineId: string
-          quoteMakeMethodId: string | null
+          quoteMakeMethodId: string
           quoteOperationId: string | null
           unitCost: number
           unitOfMeasureCode: string | null
@@ -13449,7 +13456,7 @@ export type Database = {
           quantity?: number
           quoteId: string
           quoteLineId: string
-          quoteMakeMethodId?: string | null
+          quoteMakeMethodId: string
           quoteOperationId?: string | null
           unitCost?: number
           unitOfMeasureCode?: string | null
@@ -13470,7 +13477,7 @@ export type Database = {
           quantity?: number
           quoteId?: string
           quoteLineId?: string
-          quoteMakeMethodId?: string | null
+          quoteMakeMethodId?: string
           quoteOperationId?: string | null
           unitCost?: number
           unitOfMeasureCode?: string | null
@@ -13596,6 +13603,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "quoteMakeMethod"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteMakeMethodId_fkey"
+            columns: ["quoteMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "quoteMaterialWithMakeMethodId"
+            referencedColumns: ["quoteMaterialMakeMethodId"]
           },
           {
             foreignKeyName: "quoteMaterial_quoteOperationId_fkey"
@@ -13830,6 +13844,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "quoteMakeMethod"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_quoteMakeMethodId_fkey"
+            columns: ["quoteMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "quoteMaterialWithMakeMethodId"
+            referencedColumns: ["quoteMaterialMakeMethodId"]
           },
           {
             foreignKeyName: "quoteOperation_updatedBy_fkey"
@@ -23087,6 +23108,207 @@ export type Database = {
           },
         ]
       }
+      quoteMaterialWithMakeMethodId: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          description: string | null
+          id: string | null
+          itemId: string | null
+          itemType: string | null
+          methodType: Database["public"]["Enums"]["methodType"] | null
+          order: number | null
+          quantity: number | null
+          quoteId: string | null
+          quoteLineId: string | null
+          quoteMakeMethodId: string | null
+          quoteMaterialMakeMethodId: string | null
+          quoteOperationId: string | null
+          unitCost: number | null
+          unitOfMeasureCode: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quoteMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteMakeMethodId_fkey"
+            columns: ["quoteMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "quoteMakeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteMakeMethodId_fkey"
+            columns: ["quoteMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "quoteMaterialWithMakeMethodId"
+            referencedColumns: ["quoteMaterialMakeMethodId"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteOperationId_fkey"
+            columns: ["quoteOperationId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           assignee: string | null
@@ -25420,17 +25642,17 @@ export type Database = {
         Returns: {
           quoteId: string
           quoteLineId: string
-          parentMaterialId: string
-          parentItemId: string
-          quantityPerParent: number
-          quoteMaterialId: string
+          methodMaterialId: string
+          quoteMakeMethodId: string
+          quoteMaterialMakeMethodId: string
           itemId: string
+          itemReadableId: string
           itemType: string
-          methodType: string
-          order: number
           quantity: number
-          unitOfMeasureCode: string
-          unitCost: number
+          methodType: Database["public"]["Enums"]["methodType"]
+          parentMaterialId: string
+          order: number
+          isRoot: boolean
         }[]
       }
       groups_for_user: {

@@ -549,7 +549,7 @@ export async function getMethodTree(
 ) {
   const items = await getMethodTreeArray(client, makeMethodId);
   if (items.error) return items;
-  console.log({ items: items.data });
+
   const tree = getMethodTreeArrayToTree(items.data);
 
   return {
