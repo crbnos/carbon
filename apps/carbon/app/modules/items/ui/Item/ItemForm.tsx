@@ -25,13 +25,13 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { MethodItemType } from "~/modules/items";
 import {
-  MethodItemTypeIcon,
   itemReplenishmentSystems,
   itemTrackingTypes,
   itemValidator,
 } from "~/modules/items";
+import type { MethodItemType } from "~/modules/shared";
+import { MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 
