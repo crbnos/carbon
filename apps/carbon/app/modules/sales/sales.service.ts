@@ -679,6 +679,17 @@ export async function getQuoteOperationsByLine(
     .eq("quoteLineId", quoteLineId);
 }
 
+export async function getQuoteOperationsByMethodId(
+  client: SupabaseClient<Database>,
+  quoteMakeMethodId: string
+) {
+  return client
+    .from("quoteOperation")
+    .select("*")
+    .eq("quoteMakeMethodId", quoteMakeMethodId)
+    .order("order", { ascending: true });
+}
+
 export async function getQuoteOperations(
   client: SupabaseClient<Database>,
   quoteId: string

@@ -1,9 +1,6 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { json, type ActionFunctionArgs } from "@remix-run/node";
-import {
-  methodOperationValidator,
-  upsertMethodOperation,
-} from "~/modules/items";
+import { quoteOperationValidator, upsertQuoteOperation } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
@@ -16,16 +13,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "parts",
   });
 
-  const { makeMethodId, id } = params;
-  if (!makeMethodId) {
-    throw new Error("makeMethodId not found");
+  const { quoteId, lineId, id } = params;
+  if (!quoteId) {
+    throw new Error("quoteId not found");
+  }
+  if (!lineId) {
+    throw new Error("lineId not found");
   }
   if (!id) {
     throw new Error("id not found");
   }
 
   const formData = await request.formData();
-  const validation = await validator(methodOperationValidator).validate(
+  const validation = await validator(quoteOperationValidator).validate(
     formData
   );
 
@@ -33,37 +33,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMethodOperation = await upsertMethodOperation(client, {
+  const updateQuoteOperation = await upsertQuoteOperation(client, {
+    quoteId,
+    quoteLineId: lineId,
     ...validation.data,
     id: id,
     companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updateMethodOperation.error) {
+  if (updateQuoteOperation.error) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(updateMethodOperation.error, "Failed to update method operation")
+        error(updateQuoteOperation.error, "Failed to update quote operation")
       )
     );
   }
 
-  const methodOperationId = updateMethodOperation.data?.id;
-  if (!methodOperationId) {
+  const quoteOperationId = updateQuoteOperation.data?.id;
+  if (!quoteOperationId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(updateMethodOperation, "Failed to update method operation")
+        error(updateQuoteOperation, "Failed to update quote operation")
       )
     );
   }
 
-  return json({ id: methodOperationId });
+  return json({ id: quoteOperationId });
 }
