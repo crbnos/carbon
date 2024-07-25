@@ -1225,6 +1225,20 @@ export async function updateQuoteFavorite(
   }
 }
 
+export async function updateQuoteOperationOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    order: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, order, updatedBy }) =>
+    client.from("quoteOperation").update({ order, updatedBy }).eq("id", id)
+  );
+  return Promise.all(updatePromises);
+}
+
 export async function upsertQuote(
   client: SupabaseClient<Database>,
   quote:
@@ -1332,7 +1346,7 @@ export async function upsertQuoteMaterial(
     | (Omit<z.infer<typeof quoteMaterialValidator>, "id"> & {
         quoteId: string;
         quoteLineId: string;
-        quoteOperationId: string;
+        quoteOperationId?: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -1341,7 +1355,7 @@ export async function upsertQuoteMaterial(
         id: string;
         quoteId: string;
         quoteLineId: string;
-        quoteOperationId: string;
+        quoteOperationId?: string;
         updatedBy: string;
         customFields?: Json;
       })

@@ -163,7 +163,7 @@ const QuoteBillOfMaterial = ({
 
     fetcher.submit(new FormData(), {
       method: "post",
-      action: path.to.deleteMethodMaterial(quoteMakeMethodId, item.id),
+      action: path.to.deleteQuoteMaterial(item.id),
     });
   };
 
@@ -191,7 +191,7 @@ const QuoteBillOfMaterial = ({
     formData.append("updates", JSON.stringify(updates));
     fetcher.submit(formData, {
       method: "post",
-      action: path.to.methodMaterialsOrder(quoteMakeMethodId),
+      action: path.to.quoteMaterialsOrder(quoteMakeMethodId),
     });
   }, 1000);
 
@@ -475,8 +475,8 @@ function MaterialForm({
     <ValidatedForm
       action={
         isTemporaryId(item.id)
-          ? path.to.newMethodMaterial(item.data.quoteMakeMethodId!)
-          : path.to.methodMaterial(item.data.quoteMakeMethodId, item.id!)
+          ? path.to.newQuoteMaterial(item.data.quoteMakeMethodId!)
+          : path.to.quoteMaterial(item.data.quoteMakeMethodId, item.id!)
       }
       method="post"
       defaultValues={item.data}

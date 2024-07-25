@@ -12,7 +12,7 @@ import {
   useDebounce,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -174,7 +174,7 @@ const QuoteBillOfProcess = ({
     formData.append("updates", JSON.stringify(updates));
     sortOrderFetcher.submit(formData, {
       method: "post",
-      action: path.to.methodOperationsOrder(quoteMakeMethodId),
+      action: path.to.quoteOperationsOrder,
     });
   }, 1000);
 
@@ -367,6 +367,10 @@ function OperationForm({
   setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
 }) {
+  const { quoteId, lineId } = useParams();
+  if (!quoteId) throw new Error("quoteId not found");
+  if (!lineId) throw new Error("lineId not found");
+
   const methodOperationFetcher = useFetcher<{ id: string }>();
   const { supabase } = useSupabase();
 
@@ -457,8 +461,8 @@ function OperationForm({
     <ValidatedForm
       action={
         isTemporaryId(item.id)
-          ? path.to.newMethodOperation(item.data.quoteMakeMethodId!)
-          : path.to.methodOperation(item.data.quoteMakeMethodId, item.id!)
+          ? path.to.newQuoteOperation(quoteId, lineId)
+          : path.to.quoteOperation(quoteId, lineId, item.id!)
       }
       method="post"
       defaultValues={item.data}

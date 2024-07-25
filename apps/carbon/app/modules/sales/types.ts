@@ -10,6 +10,7 @@ import type {
   getQuoteLines,
   getQuoteMakeMethod,
   getQuoteMaterials,
+  getQuoteMethodTrees,
   getQuoteOperation,
   getQuotes,
   getSalesOrderExternalDocuments,
@@ -46,6 +47,10 @@ export type CustomerStatus = NonNullable<
 export type CustomerType = NonNullable<
   Awaited<ReturnType<typeof getCustomerTypes>>["data"]
 >[number];
+
+export type QuoteMethod = NonNullable<
+  Awaited<ReturnType<typeof getQuoteMethodTrees>>["data"]
+>[number]["data"];
 
 export type QuotationMakeMethod = NonNullable<
   Awaited<ReturnType<typeof getQuoteMakeMethod>>["data"]

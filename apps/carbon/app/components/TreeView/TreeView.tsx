@@ -618,3 +618,21 @@ export function createTreeFromFlatItems<TData>(
 
   return indexedItems[rootId];
 }
+
+export function LevelLine({
+  isError = false,
+  isSelected,
+}: {
+  isError?: boolean;
+  isSelected: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "h-8 w-2 border-r border-border",
+        isError && "border-destructive",
+        isSelected && "border-foreground"
+      )}
+    />
+  );
+}

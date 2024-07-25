@@ -1,17 +1,22 @@
 import { Badge, HStack, VStack, cn } from "@carbon/react";
+import { useNavigate } from "@remix-run/react";
 import { useRef } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
-import type { FlatTreeItem } from "~/components/TreeView";
-import { TreeView, useTree } from "~/components/TreeView";
-import type { Method } from "~/modules/items/types";
+import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
+import { LevelLine, TreeView, useTree } from "~/components/TreeView";
+import { useOptimisticLocation } from "~/hooks";
 import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
+import { path } from "~/utils/path";
+import type { QuoteMethod } from "../../types";
 
 type QuoteBoMExplorerProps = {
-  methods: FlatTreeItem<Method>[];
+  methods: FlatTree<QuoteMethod>;
 };
 
 const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useOptimisticLocation();
 
   const {
     nodes,
@@ -22,7 +27,6 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
     expandAllBelowDepth,
     // toggleExpandLevel,
     collapseAllBelowDepth,
-    selectNode,
     scrollToNode,
     virtualizer,
   } = useTree({
@@ -50,18 +54,20 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
             key={node.id}
             className={cn(
               "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2",
-              state.selected
+              getNodePath(node) === location.pathname
                 ? "bg-muted hover:bg-muted/90"
                 : "bg-transparent hover:bg-muted/90"
             )}
             onClick={() => {
-              selectNode(node.id);
-              alert("navigating to " + node.id);
+              navigate(getNodePath(node));
             }}
           >
             <div className="flex h-8 items-center">
               {Array.from({ length: node.level }).map((_, index) => (
-                <TaskLine key={index} isSelected={state.selected} />
+                <LevelLine
+                  key={index}
+                  isSelected={getNodePath(node) === location.pathname}
+                />
               ))}
               <div
                 className={cn(
@@ -129,7 +135,7 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
 
 export default QuoteBoMExplorer;
 
-function NodeText({ node }: { node: FlatTreeItem<Method> }) {
+function NodeText({ node }: { node: FlatTreeItem<QuoteMethod> }) {
   return (
     <div className="flex items-center gap-1">
       <span className="text-sm font-mono">{node.data.itemReadableId}</span>
@@ -137,7 +143,7 @@ function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   );
 }
 
-function NodeData({ node }: { node: FlatTreeItem<Method> }) {
+function NodeData({ node }: { node: FlatTreeItem<QuoteMethod> }) {
   return (
     <HStack spacing={1}>
       <Badge className="text-xs" variant="outline">
@@ -150,13 +156,14 @@ function NodeData({ node }: { node: FlatTreeItem<Method> }) {
   );
 }
 
-function TaskLine({ isSelected }: { isSelected: boolean }) {
-  return (
-    <div
-      className={cn(
-        "h-8 w-2 border-r border-border",
-        isSelected && "border-foreground/30"
-      )}
-    />
-  );
+function getNodePath(node: FlatTreeItem<QuoteMethod>) {
+  return node.data.isRoot
+    ? path.to.quoteLineMethod(node.data.quoteId, node.data.quoteLineId)
+    : path.to.quoteLineMaterial(
+        node.data.quoteId,
+        node.data.quoteLineId,
+        node.data.quoteMaterialMakeMethodId ??
+          node.data.methodType.toLowerCase(),
+        node.data.methodMaterialId
+      );
 }

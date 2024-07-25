@@ -13,17 +13,19 @@ import {
   ResizablePanelGroup,
   ScrollArea,
   useDisclosure,
+  useMount,
   VStack,
 } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
-import { LuGhost, LuImage, LuPlus } from "react-icons/lu";
+import { LuChevronsUpDown, LuGhost, LuImage, LuPlus } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
-import type { FlatTree } from "~/components/TreeView";
+import { flattenTree } from "~/components/TreeView";
+import type { Tree } from "~/components/TreeView/TreeView";
 import { useRouteData, useUser } from "~/hooks";
-import type { QuotationLine } from "~/modules/sales";
+import type { QuotationLine, QuoteMethod } from "~/modules/sales";
 import {
   DeleteQuoteLine,
   getQuote,
@@ -172,7 +174,11 @@ function QuoteExplorer() {
           )}
         </VStack>
         <div className="w-full flex flex-0 sm:flex-row border-t border-border p-4 sm:justify-start sm:space-x-2">
-          <Button leftIcon={<LuPlus />} onClick={newQuoteLineDisclosure.onOpen}>
+          <Button
+            className="w-full"
+            leftIcon={<LuPlus />}
+            onClick={newQuoteLineDisclosure.onOpen}
+          >
             Add Line Item
           </Button>
         </div>
@@ -203,101 +209,6 @@ function EmptyQuote({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-const methods: FlatTree<{
-  itemId: string;
-  makeMethodId: string | null;
-  methodType: string;
-  materialMakeMethodId: string | null;
-  itemType: string;
-  quantity: number;
-  itemReadableId: string;
-  order: number;
-  methodMaterialId: string;
-  parentMaterialId: string | null;
-  isRoot: boolean;
-}> = [
-  {
-    id: "node-d9210a4deb583",
-    children: ["node-b1633fd85ebf", "node-889f33c1ba64b"],
-    hasChildren: true,
-    level: 0,
-    parentId: undefined,
-    data: {
-      itemId: "cqc7ms9r80lmbqsrdnbg",
-      makeMethodId: null,
-      methodType: "Make",
-      materialMakeMethodId: "cqc7ms9r80lmbqkrdnc0",
-      itemType: "Part",
-      quantity: 1,
-      itemReadableId: "P2392303",
-      order: 1,
-      methodMaterialId: "cqc7ms9r80lmbqkrdnc0",
-      parentMaterialId: null,
-      isRoot: true,
-    },
-  },
-  {
-    id: "node-b1633fd85ebf",
-    children: [],
-    hasChildren: false,
-    level: 1,
-    data: {
-      itemId: "cqc7nq1r80lmchkrdnf0",
-      makeMethodId: "cqc7ms9r80lmbqkrdnc0",
-      methodType: "Pick",
-      materialMakeMethodId: null,
-      itemType: "Tool",
-      quantity: 1,
-      itemReadableId: "T932023",
-      order: 1,
-      methodMaterialId: "cqc7nrpr80lmbusrdnfg",
-      parentMaterialId: "cqc7ms9r80lmbqkrdnc0",
-      isRoot: false,
-    },
-    parentId: "node-d9210a4deb583",
-  },
-  {
-    id: "node-889f33c1ba64b",
-    children: ["node-324eaa176575a"],
-    hasChildren: true,
-    level: 1,
-    data: {
-      itemId: "cqc7n1pr80lmbv4rdncg",
-      makeMethodId: "cqc7ms9r80lmbqkrdnc0",
-      methodType: "Make",
-      materialMakeMethodId: "cqc7n1pr80lmbqkrdnd0",
-      itemType: "Part",
-      quantity: 2,
-      itemReadableId: "P2392304",
-      order: 1,
-      methodMaterialId: "cqc7n3pr80lmbukrdndg",
-      parentMaterialId: "cqc7ms9r80lmbqkrdnc0",
-      isRoot: false,
-    },
-    parentId: "node-d9210a4deb583",
-  },
-  {
-    id: "node-324eaa176575a",
-    children: [],
-    hasChildren: false,
-    level: 2,
-    data: {
-      itemId: "cqc7njpr80lmbv4rdne0",
-      makeMethodId: "cqc7n1pr80lmbqkrdnd0",
-      methodType: "Buy",
-      materialMakeMethodId: null,
-      itemType: "Material",
-      quantity: 3.8,
-      itemReadableId: "RAW3290393",
-      order: 1,
-      methodMaterialId: "cqc7nlhr80lmbv4rdneg",
-      parentMaterialId: "cqc7n3pr80lmbukrdndg",
-      isRoot: false,
-    },
-    parentId: "node-889f33c1ba64b",
-  },
-];
-
 type QuoteLineItemProps = {
   line: QuotationLine;
   onDelete: (line: QuotationLine) => void;
@@ -305,15 +216,30 @@ type QuoteLineItemProps = {
 
 function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
   const { quoteId, lineId } = useParams();
+  if (!quoteId) throw new Error("Could not find quoteId");
+
   const navigate = useNavigate();
   const disclosure = useDisclosure();
 
-  if (!quoteId) throw new Error("Could not find quoteId");
+  useMount(() => {
+    if (lineId === line.id) {
+      disclosure.onOpen();
+    }
+  });
+
+  const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
+    path.to.quote(quoteId)
+  );
+
+  const methodTree = quoteData?.methods?.find(
+    (m) => m.data.quoteLineId === line.id
+  );
+  const methods = methodTree ? flattenTree(methodTree) : [];
 
   const isSelected = lineId === line.id;
   const onLineClick = (line: QuotationLine) => {
     if (line.methodType === "Make") {
-      disclosure.onToggle();
+      disclosure.onOpen();
     }
 
     if (!isSelected) {
@@ -365,27 +291,39 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
             </span>
           </VStack>
         </HStack>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <HStack spacing={0}>
+          {line.methodType === "Make" && (
             <IconButton
-              aria-label="More"
-              icon={<MdMoreVert />}
+              aria-label={disclosure.isOpen ? "Hide" : "Show"}
+              icon={<LuChevronsUpDown />}
               variant="ghost"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(line);
+                disclosure.onToggle();
               }}
-            >
-              Delete Line
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            />
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label="More"
+                icon={<MdMoreVert />}
+                variant="ghost"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                Delete Line
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </HStack>
       </HStack>
       {disclosure.isOpen && (
         <VStack className="border-b border-border">

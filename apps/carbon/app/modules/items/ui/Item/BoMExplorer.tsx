@@ -12,7 +12,7 @@ import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuSearch } from "react-icons/lu";
 import type { FlatTreeItem } from "~/components/TreeView";
-import { TreeView, useTree } from "~/components/TreeView";
+import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import type { MethodItemType } from "~/modules/shared";
 import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
@@ -127,7 +127,7 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
           >
             <div className="flex h-8 items-center">
               {Array.from({ length: node.level }).map((_, index) => (
-                <TaskLine key={index} isSelected={state.selected} />
+                <LevelLine key={index} isSelected={state.selected} />
               ))}
               <div
                 className={cn(
@@ -213,17 +213,6 @@ function NodeData({ node }: { node: FlatTreeItem<Method> }) {
         <MethodItemTypeIcon type={node.data.itemType} />
       </Badge>
     </HStack>
-  );
-}
-
-function TaskLine({ isSelected }: { isSelected: boolean }) {
-  return (
-    <div
-      className={cn(
-        "h-8 w-2 border-r border-border",
-        isSelected && "border-foreground/30"
-      )}
-    />
   );
 }
 
