@@ -47,23 +47,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(insertQuoteOperation.error, "Failed to insert method operation")
+        error(insertQuoteOperation.error, "Failed to insert quote operation")
       )
     );
   }
 
-  const methodOperationId = insertQuoteOperation.data?.id;
-  if (!methodOperationId) {
+  const quoteOperationId = insertQuoteOperation.data?.id;
+  if (!quoteOperationId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(insertQuoteOperation, "Failed to insert method operation")
+        error(insertQuoteOperation, "Failed to insert quote operation")
       )
     );
   }
 
-  return json({ id: methodOperationId });
+  return json({ id: quoteOperationId });
 }
