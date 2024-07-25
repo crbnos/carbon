@@ -1,8 +1,8 @@
 import type { NodesState, NodeState } from "./reducer";
 import type { FlatTree, FlatTreeItem, UseTreeStateOutput } from "./TreeView";
-import { flattenTree, TreeView, useTree } from "./TreeView";
+import { flattenTree, LevelLine, TreeView, useTree } from "./TreeView";
 
-export { flattenTree, TreeView, useTree };
+export { flattenTree, LevelLine, TreeView, useTree };
 export type {
   FlatTree,
   FlatTreeItem,

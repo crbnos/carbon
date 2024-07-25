@@ -41,7 +41,7 @@ import type { GanttEvent } from "~/components/Gantt/types";
 import { ShortcutKey, variants } from "~/components/ShortcutKey";
 import * as Timeline from "~/components/Timeline";
 import type { NodesState, UseTreeStateOutput } from "~/components/TreeView";
-import { TreeView, useTree } from "~/components/TreeView";
+import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useShortcutKeys } from "~/hooks";
 import type { Shortcut } from "~/hooks/useShortcutKeys";
 import { setResizableGanttSettings } from "~/utils/resizablePanel";
@@ -181,7 +181,7 @@ const Gantt = ({
                   >
                     <div className="flex h-8 items-center">
                       {Array.from({ length: node.level }).map((_, index) => (
-                        <TaskLine
+                        <LevelLine
                           key={index}
                           isError={node.data.isError}
                           isSelected={state.selected}
@@ -604,24 +604,6 @@ function NodeStatusIcon({ node }: { node: GanttEvent }) {
     <GanttTaskStatusIcon
       status="COMPLETED_SUCCESSFULLY"
       className={cn("w-4 h-4")}
-    />
-  );
-}
-
-function TaskLine({
-  isError,
-  isSelected,
-}: {
-  isError: boolean;
-  isSelected: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "h-8 w-2 border-r border-border",
-        isError && "border-destructive",
-        isSelected && "border-foreground"
-      )}
     />
   );
 }
