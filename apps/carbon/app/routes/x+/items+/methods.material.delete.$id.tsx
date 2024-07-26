@@ -11,10 +11,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "parts",
   });
 
-  const { makeMethodId, id } = params;
-  if (!makeMethodId) {
-    throw new Error("makeMethodId not found");
-  }
+  const { id } = params;
   if (!id) {
     throw new Error("id not found");
   }

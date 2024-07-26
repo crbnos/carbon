@@ -184,7 +184,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     formData.append("updates", JSON.stringify(updates));
     sortOrderFetcher.submit(formData, {
       method: "post",
-      action: path.to.methodOperationsOrder(makeMethodId),
+      action: path.to.methodOperationsOrder,
     });
   }, 1000);
 
@@ -548,8 +548,8 @@ function OperationForm({
     <ValidatedForm
       action={
         isTemporaryId(item.id)
-          ? path.to.newMethodOperation(item.data.makeMethodId!)
-          : path.to.methodOperation(item.data.makeMethodId, item.id!)
+          ? path.to.newMethodOperation
+          : path.to.methodOperation(item.id!)
       }
       method="post"
       defaultValues={item.data}

@@ -165,7 +165,7 @@ const BillOfMaterial = ({
 
     fetcher.submit(new FormData(), {
       method: "post",
-      action: path.to.deleteMethodMaterial(makeMethodId, item.id),
+      action: path.to.deleteMethodMaterial(item.id),
     });
   };
 
@@ -193,7 +193,7 @@ const BillOfMaterial = ({
     formData.append("updates", JSON.stringify(updates));
     fetcher.submit(formData, {
       method: "post",
-      action: path.to.methodMaterialsOrder(makeMethodId),
+      action: path.to.methodMaterialsOrder,
     });
   }, 1000);
 
@@ -477,8 +477,8 @@ function MaterialForm({
     <ValidatedForm
       action={
         isTemporaryId(item.id)
-          ? path.to.newMethodMaterial(item.data.makeMethodId!)
-          : path.to.methodMaterial(item.data.makeMethodId, item.id!)
+          ? path.to.newMethodMaterial
+          : path.to.methodMaterial(item.id!)
       }
       method="post"
       defaultValues={item.data}

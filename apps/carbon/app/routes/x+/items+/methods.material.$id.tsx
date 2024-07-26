@@ -1,9 +1,6 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { json, type ActionFunctionArgs } from "@remix-run/node";
-import {
-  methodOperationValidator,
-  upsertMethodOperation,
-} from "~/modules/items";
+import { methodMaterialValidator, upsertMethodMaterial } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
@@ -16,16 +13,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "parts",
   });
 
-  const { makeMethodId, id } = params;
-  if (!makeMethodId) {
-    throw new Error("makeMethodId not found");
-  }
+  const { id } = params;
   if (!id) {
     throw new Error("id not found");
   }
 
   const formData = await request.formData();
-  const validation = await validator(methodOperationValidator).validate(
+  const validation = await validator(methodMaterialValidator).validate(
     formData
   );
 
@@ -33,37 +27,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMethodOperation = await upsertMethodOperation(client, {
+  const updateMethodMaterial = await upsertMethodMaterial(client, {
     ...validation.data,
     id: id,
     companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updateMethodOperation.error) {
+  if (updateMethodMaterial.error) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(updateMethodOperation.error, "Failed to update method operation")
+        error(updateMethodMaterial.error, "Failed to update method material")
       )
     );
   }
 
-  const methodOperationId = updateMethodOperation.data?.id;
-  if (!methodOperationId) {
+  const methodMaterialId = updateMethodMaterial.data?.id;
+  if (!methodMaterialId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(updateMethodOperation, "Failed to update method operation")
+        error(updateMethodMaterial, "Failed to update method material")
       )
     );
   }
 
-  return json({ id: methodOperationId });
+  return json({ id: methodMaterialId });
 }
