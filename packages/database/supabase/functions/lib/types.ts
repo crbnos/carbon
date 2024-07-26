@@ -13429,6 +13429,7 @@ export type Database = {
           description: string
           id: string
           itemId: string
+          itemReadableId: string
           itemType: string
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
@@ -13450,6 +13451,7 @@ export type Database = {
           description: string
           id?: string
           itemId: string
+          itemReadableId: string
           itemType?: string
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
@@ -13471,6 +13473,7 @@ export type Database = {
           description?: string
           id?: string
           itemId?: string
+          itemReadableId?: string
           itemType?: string
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
@@ -23117,6 +23120,7 @@ export type Database = {
           description: string | null
           id: string | null
           itemId: string | null
+          itemReadableId: string | null
           itemType: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           order: number | null

@@ -2,6 +2,7 @@ import { VStack } from "@carbon/react";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
 
 import {
+  getQuoteMaterialsByMethodId,
   getQuoteOperationsByMethodId,
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
@@ -23,21 +24,39 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
   if (!methodId) throw new Error("Could not find methodId");
 
-  const [operations] = await Promise.all([
+  const [materials, operations] = await Promise.all([
+    getQuoteMaterialsByMethodId(client, methodId),
     getQuoteOperationsByMethodId(client, methodId),
   ]);
+
+  if (materials.error) {
+    throw redirect(
+      path.to.quoteLine(quoteId, lineId),
+      await flash(
+        request,
+        error(materials.error, "Failed to load quote materials")
+      )
+    );
+  }
 
   if (operations.error) {
     throw redirect(
       path.to.quoteLine(quoteId, lineId),
       await flash(
         request,
-        error(operations.error, "Failed to load quote method")
+        error(operations.error, "Failed to load quote operations")
       )
     );
   }
 
   return json({
+    materials:
+      materials?.data.map((m) => ({
+        ...m,
+        itemType: m.itemType as "Part",
+        unitOfMeasureCode: m.unitOfMeasureCode ?? "",
+        quoteOperationId: m.quoteOperationId ?? undefined,
+      })) ?? [],
     operations:
       operations.data?.map((o) => ({
         ...o,
@@ -52,7 +71,7 @@ export default function QuoteMakeMethodRoute() {
   const { methodId } = useParams();
   if (!methodId) throw new Error("Could not find methodId");
 
-  const { operations } = useLoaderData<typeof loader>();
+  const { materials, operations } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={2} className="p-2">
@@ -64,7 +83,7 @@ export default function QuoteMakeMethodRoute() {
       <QuoteBillOfMaterial
         key={`bom:${methodId}`}
         quoteMakeMethodId={methodId}
-        materials={[]}
+        materials={materials}
         operations={operations}
       />
     </VStack>

@@ -157,7 +157,7 @@ function NodeData({ node }: { node: FlatTreeItem<QuoteMethod> }) {
 }
 
 function getNodePath(node: FlatTreeItem<QuoteMethod>) {
-  return node.data.isRoot
+  return node.data.methodType === "Make"
     ? path.to.quoteLineMethod(
         node.data.quoteId,
         node.data.quoteLineId,
@@ -166,8 +166,7 @@ function getNodePath(node: FlatTreeItem<QuoteMethod>) {
     : path.to.quoteLineMaterial(
         node.data.quoteId,
         node.data.quoteLineId,
-        node.data.quoteMaterialMakeMethodId ??
-          node.data.methodType.toLowerCase(),
+        node.data.methodType.toLowerCase(),
         node.data.methodMaterialId
       );
 }

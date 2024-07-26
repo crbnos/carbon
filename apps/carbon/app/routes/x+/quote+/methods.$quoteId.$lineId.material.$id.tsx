@@ -1,6 +1,6 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { json, type ActionFunctionArgs } from "@remix-run/node";
-import { methodMaterialValidator, upsertMethodMaterial } from "~/modules/items";
+import { quoteMaterialValidator, upsertQuoteMaterial } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
@@ -10,57 +10,60 @@ import { error } from "~/utils/result";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
+    create: "sales",
   });
 
-  const { makeMethodId, id } = params;
-  if (!makeMethodId) {
-    throw new Error("makeMethodId not found");
+  const { quoteId, lineId, id } = params;
+  if (!quoteId) {
+    throw new Error("quoteId not found");
+  }
+  if (!lineId) {
+    throw new Error("lineId not found");
   }
   if (!id) {
     throw new Error("id not found");
   }
 
   const formData = await request.formData();
-  const validation = await validator(methodMaterialValidator).validate(
-    formData
-  );
+  const validation = await validator(quoteMaterialValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const updateMethodMaterial = await upsertMethodMaterial(client, {
+  const updateQuoteMaterial = await upsertQuoteMaterial(client, {
+    quoteId,
+    quoteLineId: lineId,
     ...validation.data,
     id: id,
     companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updateMethodMaterial.error) {
+  if (updateQuoteMaterial.error) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(updateMethodMaterial.error, "Failed to update method material")
+        error(updateQuoteMaterial.error, "Failed to update quote material")
       )
     );
   }
 
-  const methodMaterialId = updateMethodMaterial.data?.id;
-  if (!methodMaterialId) {
+  const quoteMaterialId = updateQuoteMaterial.data?.id;
+  if (!quoteMaterialId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(updateMethodMaterial, "Failed to update method material")
+        error(updateQuoteMaterial, "Failed to update quote material")
       )
     );
   }
 
-  return json({ id: methodMaterialId });
+  return json({ id: quoteMaterialId });
 }

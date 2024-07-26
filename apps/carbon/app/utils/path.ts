@@ -231,7 +231,7 @@ export const path = {
     deletePurchaseOrderLine: (orderId: string, lineId: string) =>
       generatePath(`${x}/purchase-order/${orderId}/lines/delete/${lineId}`),
     deleteQuote: (id: string) => generatePath(`${x}/quote/delete/${id}`),
-    deleteQuoteAssembly: (
+    deleteQuoteAssemblyDeprecated: (
       quoteId: string,
       lineId: string,
       assemblyId: string
@@ -241,6 +241,10 @@ export const path = {
       ),
     deleteQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
+    deleteQuoteMaterial: (quoteId: string, lineId: string, id: string) =>
+      generatePath(
+        `${x}/quote/methods/${quoteId}/${lineId}/material/delete/${id}`
+      ),
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/delete/${id}`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/delete/${id}`),
@@ -450,10 +454,16 @@ export const path = {
       generatePath(`${x}/quote/${id}/lines/${lineId}/new`),
     newQuoteOperation: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/new`),
-    newQuoteMaterial: (quoteId: string, lineId: string, operationId: string) =>
+    newQuoteMaterialDeprecated: (
+      quoteId: string,
+      lineId: string,
+      operationId: string
+    ) =>
       generatePath(
         `${x}/quote/${quoteId}/lines/${lineId}/operation/${operationId}/material/new`
       ),
+    newQuoteMaterial: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/new`),
     newReceipt: `${x}/receipt/new`,
     newSalesOrder: `${x}/sales-order/new`,
     newSalesOrderLine: (id: string) =>
@@ -566,7 +576,7 @@ export const path = {
       generatePath(`${x}/quote/${id}/internal`),
     quoteLine: (quoteId: string, id: string) =>
       generatePath(`${x}/quote/${quoteId}/${id}/details`),
-    quoteMaterial: (
+    quoteMaterialDeprecated: (
       quoteId: string,
       lineId: string,
       operationId: string,
@@ -575,7 +585,7 @@ export const path = {
       generatePath(
         `${x}/quote/${quoteId}/lines/${lineId}/operation/${operationId}/material/${materialId}`
       ),
-    quoteLineMaterial: (
+    quoteLineMaterialDeprecated: (
       quoteId: string,
       lineId: string,
       makeMethodId: string,
@@ -584,8 +594,17 @@ export const path = {
       generatePath(
         `${x}/quote/${quoteId}/${lineId}/${makeMethodId}/${methodMaterialId}`
       ),
+    quoteLineMaterial: (
+      quoteId: string,
+      lineId: string,
+      methodType: string,
+      id: string
+    ) => generatePath(`${x}/quote/${quoteId}/${lineId}/${methodType}/${id}`),
     quoteLineMethod: (quoteId: string, quoteLineId: string, methodId: string) =>
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
+    quoteMaterial: (quoteId: string, lineId: string, id: string) =>
+      generatePath(`${x}/quote/methods/${quoteId}/${lineId}/${id}`),
+    quoteMaterialsOrder: `${x}/quote/methods/material/order`,
     quoteOperation: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,

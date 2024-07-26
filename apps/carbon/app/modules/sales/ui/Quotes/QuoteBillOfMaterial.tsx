@@ -113,6 +113,10 @@ const QuoteBillOfMaterial = ({
   materials,
   operations,
 }: QuoteBillOfMaterialProps) => {
+  const { quoteId, lineId } = useParams();
+  if (!quoteId) throw new Error("quoteId not found");
+  if (!lineId) throw new Error("lineId not found");
+
   const fetcher = useFetcher<{}>();
 
   const [items, setItems] = useState<ItemWithData[]>(
@@ -163,7 +167,7 @@ const QuoteBillOfMaterial = ({
 
     fetcher.submit(new FormData(), {
       method: "post",
-      action: path.to.deleteQuoteMaterial(item.id),
+      action: path.to.deleteQuoteMaterial(quoteId, lineId, item.id),
     });
   };
 
@@ -191,7 +195,7 @@ const QuoteBillOfMaterial = ({
     formData.append("updates", JSON.stringify(updates));
     fetcher.submit(formData, {
       method: "post",
-      action: path.to.quoteMaterialsOrder(quoteMakeMethodId),
+      action: path.to.quoteMaterialsOrder,
     });
   }, 1000);
 
@@ -323,7 +327,7 @@ const QuoteBillOfMaterial = ({
                             item={item}
                             setItems={setItems}
                             setSelectedItemId={setSelectedItemId}
-                            methodOperations={operations}
+                            quoteOperations={operations}
                           />
                         </motion.div>
                       </motion.div>
@@ -378,13 +382,17 @@ function MaterialForm({
   item,
   setItems,
   setSelectedItemId,
-  methodOperations,
+  quoteOperations,
 }: {
   item: ItemWithData;
   setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
-  methodOperations: Operation[];
+  quoteOperations: Operation[];
 }) {
+  const { quoteId, lineId } = useParams();
+  if (!quoteId) throw new Error("quoteId not found");
+  if (!lineId) throw new Error("lineId not found");
+
   const { supabase } = useSupabase();
   const methodMaterialFetcher = useFetcher<{ id: string }>();
   const params = useParams();
@@ -475,8 +483,8 @@ function MaterialForm({
     <ValidatedForm
       action={
         isTemporaryId(item.id)
-          ? path.to.newQuoteMaterial(item.data.quoteMakeMethodId!)
-          : path.to.quoteMaterial(item.data.quoteMakeMethodId, item.id!)
+          ? path.to.newQuoteMaterial(quoteId, lineId)
+          : path.to.quoteMaterial(quoteId, lineId, item.id!)
       }
       method="post"
       defaultValues={item.data}
@@ -523,10 +531,10 @@ function MaterialForm({
             }}
           />
           <Select
-            name="methodOperationId"
+            name="quoteOperationId"
             label="Operation"
             isClearable
-            options={methodOperations.map((o) => ({
+            options={quoteOperations.map((o) => ({
               value: o.id!,
               label: o.description,
             }))}

@@ -648,6 +648,17 @@ export async function getQuoteMaterialsByLine(
     .eq("quoteLineId", quoteLineId);
 }
 
+export async function getQuoteMaterialsByMethodId(
+  client: SupabaseClient<Database>,
+  quoteMakeMethodId: string
+) {
+  return client
+    .from("quoteMaterial")
+    .select("*")
+    .eq("quoteMakeMethodId", quoteMakeMethodId)
+    .order("order", { ascending: true });
+}
+
 export async function getQuoteMaterialsByOperation(
   client: SupabaseClient<Database>,
   quoteOperationId: string
@@ -1234,6 +1245,20 @@ export async function updateQuoteFavorite(
   } else {
     return client.from("quoteFavorite").insert({ quoteId: id, userId: userId });
   }
+}
+
+export async function updateQuoteMaterialOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    order: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, order, updatedBy }) =>
+    client.from("quoteMaterial").update({ order, updatedBy }).eq("id", id)
+  );
+  return Promise.all(updatePromises);
 }
 
 export async function updateQuoteOperationOrder(

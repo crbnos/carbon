@@ -1,6 +1,6 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 
-import { updateMaterialOrder } from "~/modules/items";
+import { updateQuoteMaterialOrder } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
@@ -9,7 +9,7 @@ import { error } from "~/utils/result";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await requirePermissions(request, {
-    update: "parts",
+    update: "sales",
   });
 
   const updateMap = (await request.formData()).get("updates") as string;
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateMaterialOrder(client, updates);
+  const updateSortOrders = await updateQuoteMaterialOrder(client, updates);
   if (updateSortOrders.some((update) => update.error))
     return json(
       {},

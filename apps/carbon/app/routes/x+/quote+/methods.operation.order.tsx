@@ -9,7 +9,7 @@ import { error } from "~/utils/result";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await requirePermissions(request, {
-    update: "parts",
+    update: "sales",
   });
 
   const updateMap = (await request.formData()).get("updates") as string;

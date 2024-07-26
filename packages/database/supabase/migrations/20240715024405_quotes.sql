@@ -98,6 +98,7 @@ CREATE TABLE "quoteMaterial" (
   "quoteId" TEXT NOT NULL,
   "quoteLineId" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
+  "itemReadableId" TEXT NOT NULL,
   "itemType" TEXT NOT NULL DEFAULT 'Part',
   "methodType" "methodType" NOT NULL DEFAULT 'Make',
   "order" DOUBLE PRECISION NOT NULL DEFAULT 1,
