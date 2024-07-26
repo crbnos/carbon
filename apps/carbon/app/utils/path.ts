@@ -215,8 +215,8 @@ export const path = {
       generatePath(`${x}/items/forms/delete/${id}`),
     deleteMaterialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/delete/${id}`),
-    deleteMethodMaterial: (makeMethodId: string, id: string) =>
-      generatePath(`${x}/items/methods/${makeMethodId}/material/delete/${id}`),
+    deleteMethodMaterial: (id: string) =>
+      generatePath(`${x}/items/methods/material/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
@@ -371,14 +371,12 @@ export const path = {
     materialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/${id}`),
     materialSubstances: `${x}/items/substances`,
-    methodMaterial: (makeMethodId: string, id: string) =>
-      generatePath(`${x}/items/methods/${makeMethodId}/material/${id}`),
-    methodMaterialsOrder: (makeMethodId: string) =>
-      generatePath(`${x}/items/methods/${makeMethodId}/material/order`),
-    methodOperation: (makeMethodId: string, id: string) =>
-      generatePath(`${x}/items/methods/${makeMethodId}/operation/${id}`),
-    methodOperationsOrder: (makeMethodId: string) =>
-      generatePath(`${x}/items/methods/${makeMethodId}/operation/order`),
+    methodMaterial: (id: string) =>
+      generatePath(`${x}/items/methods/material/${id}`),
+    methodMaterialsOrder: `${x}/items/methods/material/order`,
+    methodOperation: (id: string) =>
+      generatePath(`${x}/items/methods/operation/${id}`),
+    methodOperationsOrder: `${x}/items/methods/operation/order`,
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
     newAccountingSubcategory: (id: string) =>
@@ -421,10 +419,8 @@ export const path = {
     newHoliday: `${x}/resources/holidays/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaterial: `${x}/material/new`,
-    newMethodMaterial: (id: string) =>
-      generatePath(`${x}/items/methods/${id}/material/new`),
-    newMethodOperation: (id: string) =>
-      generatePath(`${x}/items/methods/${id}/operation/new`),
+    newMethodMaterial: `${x}/items/methods/material/new`,
+    newMethodOperation: `${x}/items/methods/operation/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newItemPostingGroup: `${x}/items/groups/new`,

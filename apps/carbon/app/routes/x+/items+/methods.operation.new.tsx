@@ -16,11 +16,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "parts",
   });
 
-  const { makeMethodId } = params;
-  if (!makeMethodId) {
-    throw new Error("makeMethodId not found");
-  }
-
   const formData = await request.formData();
   const validation = await validator(methodOperationValidator).validate(
     formData

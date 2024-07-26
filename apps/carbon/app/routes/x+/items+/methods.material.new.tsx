@@ -13,14 +13,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "parts",
   });
 
-  const { makeMethodId, id } = params;
-  if (!makeMethodId) {
-    throw new Error("makeMethodId not found");
-  }
-  if (!id) {
-    throw new Error("id not found");
-  }
-
   const formData = await request.formData();
   const validation = await validator(methodMaterialValidator).validate(
     formData
@@ -30,26 +22,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMethodMaterial = await upsertMethodMaterial(client, {
-    ...validation.data,
-    id: id,
+  const { id, ...data } = validation.data;
+
+  const insertMethodMaterial = await upsertMethodMaterial(client, {
+    ...data,
     companyId,
-    updatedBy: userId,
+    createdBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updateMethodMaterial.error) {
+  if (insertMethodMaterial.error) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(updateMethodMaterial.error, "Failed to update method material")
+        error(insertMethodMaterial.error, "Failed to insert method material")
       )
     );
   }
 
-  const methodMaterialId = updateMethodMaterial.data?.id;
+  const methodMaterialId = insertMethodMaterial.data?.id;
   if (!methodMaterialId) {
     return json(
       {
@@ -57,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(updateMethodMaterial, "Failed to update method material")
+        error(insertMethodMaterial, "Failed to insert method material")
       )
     );
   }
