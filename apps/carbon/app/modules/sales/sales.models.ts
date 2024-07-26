@@ -168,10 +168,9 @@ export const quoteMaterialValidator = z
       }),
     }),
     itemId: z.string().min(1, { message: "Item is required" }),
-    itemReadableId: z.string().optional(),
+    itemReadableId: z.string().min(1, { message: "Item ID is required" }),
     description: z.string().min(1, { message: "Description is required" }),
-    methodOperationId: zfd.text(z.string().optional()),
-    // description: z.string().min(1, { message: "Description is required" }),
+    quoteOperationId: zfd.text(z.string().optional()),
     quantity: zfd.numeric(z.number().min(0)),
     unitOfMeasureCode: z
       .string()

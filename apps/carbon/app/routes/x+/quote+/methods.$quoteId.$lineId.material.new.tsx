@@ -10,7 +10,7 @@ import { error } from "~/utils/result";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
+    create: "sales",
   });
 
   const { quoteId, lineId } = params;
@@ -45,23 +45,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(insertQuoteMaterial.error, "Failed to insert method material")
+        error(insertQuoteMaterial.error, "Failed to insert quote material")
       )
     );
   }
 
-  const methodMaterialId = insertQuoteMaterial.data?.id;
-  if (!methodMaterialId) {
+  const quoteMaterialId = insertQuoteMaterial.data?.id;
+  if (!quoteMaterialId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(insertQuoteMaterial, "Failed to insert method material")
+        error(insertQuoteMaterial, "Failed to insert quote material")
       )
     );
   }
 
-  return json({ id: methodMaterialId });
+  return json({ id: quoteMaterialId });
 }

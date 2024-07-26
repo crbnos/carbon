@@ -64,7 +64,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await requirePermissions(request, {
-    create: "purchasing",
+    create: "sales",
   });
 
   const { quoteId, lineId } = params;
