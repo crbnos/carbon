@@ -101,12 +101,7 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
             </div>
 
             <div className="flex w-full items-center justify-between gap-2">
-              <div
-                className={cn(
-                  "flex items-center gap-2 overflow-x-hidden",
-                  node.level > 1 && "opacity-50"
-                )}
-              >
+              <div className="flex items-center gap-2 overflow-x-hidden">
                 <MethodIcon
                   type={
                     // node.data.isRoot ? "Method" :
@@ -157,11 +152,18 @@ function NodeData({ node }: { node: FlatTreeItem<QuoteMethod> }) {
 }
 
 function getNodePath(node: FlatTreeItem<QuoteMethod>) {
-  return node.data.methodType === "Make"
+  return node.data.isRoot
     ? path.to.quoteLineMethod(
         node.data.quoteId,
         node.data.quoteLineId,
         node.data.quoteMaterialMakeMethodId
+      )
+    : node.data.methodType === "Make"
+    ? path.to.quoteLineMaterialMake(
+        node.data.quoteId,
+        node.data.quoteLineId,
+        node.data.quoteMaterialMakeMethodId,
+        node.data.methodMaterialId
       )
     : path.to.quoteLineMaterial(
         node.data.quoteId,

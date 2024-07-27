@@ -24,7 +24,7 @@ import { LuChevronsUpDown, LuGhost, LuImage, LuPlus } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { flattenTree } from "~/components/TreeView";
 import type { Tree } from "~/components/TreeView/TreeView";
-import { useRouteData, useUser } from "~/hooks";
+import { useOptimisticLocation, useRouteData, useUser } from "~/hooks";
 import type { QuotationLine, QuoteMethod } from "~/modules/sales";
 import {
   DeleteQuoteLine,
@@ -220,6 +220,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
 
   const navigate = useNavigate();
   const disclosure = useDisclosure();
+  const location = useOptimisticLocation();
 
   useMount(() => {
     if (lineId === line.id) {
@@ -242,7 +243,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
       disclosure.onOpen();
     }
 
-    if (!isSelected) {
+    if (location.pathname !== path.to.quoteLine(quoteId, line.id!)) {
       // navigate to line
       navigate(path.to.quoteLine(quoteId, line.id!));
     }
@@ -282,9 +283,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
           )}
 
           <VStack spacing={0}>
-            <span className="font-mono font-semibold">
-              {line.itemReadableId}
-            </span>
+            <span className="font-semibold">{line.itemReadableId}</span>
             <span className="font-mono text-muted-foreground text-xs">
               {line.customerPartId}
               {line.customerPartRevision && ` (${line.customerPartRevision})`}

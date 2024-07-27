@@ -368,18 +368,20 @@ WITH RECURSIVE material AS (
         "quoteId",
         "quoteLineId",
         "id", 
-        "quoteMakeMethodId",
-        "methodType",
-        "quoteMaterialMakeMethodId",
+        "id" AS "quoteMakeMethodId",
+        'Make'::"methodType" AS "methodType",
+        "id" AS "quoteMaterialMakeMethodId",
         "itemId", 
-        "itemType",
-        "quantity",
-        "quoteMakeMethodId" AS "parentMaterialId",
-        CAST(1 AS DOUBLE PRECISION) AS "order"
+        'Part' AS "itemType",
+        1::NUMERIC(10,4) AS "quantity",
+        "parentMaterialId",
+        CAST(1 AS DOUBLE PRECISION) AS "order",
+        TRUE AS "isRoot"
     FROM 
-        "quoteMaterialWithMakeMethodId" 
+        "quoteMakeMethod" 
     WHERE 
         "quoteId" = qid
+        AND "parentMaterialId" IS NULL
     UNION 
     SELECT 
         child."quoteId",
@@ -392,7 +394,8 @@ WITH RECURSIVE material AS (
         child."itemType",
         child."quantity",
         parent."id" AS "parentMaterialId",
-        child."order"
+        child."order",
+        FALSE AS "isRoot"
     FROM 
         "quoteMaterialWithMakeMethodId" child 
         INNER JOIN material parent ON parent."quoteMaterialMakeMethodId" = child."quoteMakeMethodId"
@@ -410,25 +413,8 @@ SELECT
   material."methodType",
   material."parentMaterialId",
   material."order",
-  false AS "isRoot"
+  material."isRoot"
 FROM material INNER JOIN item ON material."itemId" = item.id
-UNION
-SELECT
-  mm."quoteId",
-  mm."quoteLineId",
-  mm."id" AS "methodMaterialId",
-  NULL AS "makeMethodId",
-  mm.id AS "quoteMakeMethodId",
-  mm."itemId",
-  i."readableId" AS "itemReadableId",
-  i."type"::text,
-  1 AS "quantity",
-  'Make' AS "methodType",
-  NULL AS "parentMaterialId",
-  CAST(1 AS DOUBLE PRECISION) AS "order",
-  true AS "isRoot"
-
-FROM "quoteMakeMethod" mm INNER JOIN item i ON mm."itemId" = i.id
-WHERE mm."quoteId" = qid
+WHERE material."quoteId" = qid
 ORDER BY "order"
 $$ LANGUAGE sql STABLE;

@@ -638,6 +638,17 @@ export async function getQuoteMaterials(
   return client.from("quoteMaterial").select("*").eq("quoteId", quoteId);
 }
 
+export async function getQuoteMaterial(
+  client: SupabaseClient<Database>,
+  materialId: string
+) {
+  return client
+    .from("quoteMaterialWithMakeMethodId")
+    .select("*")
+    .eq("id", materialId)
+    .single();
+}
+
 export async function getQuoteMaterialsByLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -1401,13 +1412,13 @@ export async function upsertQuoteMaterial(
       .from("quoteMaterial")
       .update(sanitize(quoteMaterial))
       .eq("id", quoteMaterial.id)
-      .select("id")
+      .select("id, methodType")
       .single();
   }
   return client
     .from("quoteMaterial")
     .insert([quoteMaterial])
-    .select("id")
+    .select("id, methodType")
     .single();
 }
 

@@ -631,7 +631,7 @@ export function LevelLine({
       className={cn(
         "h-8 w-2 border-r border-border",
         isError && "border-destructive",
-        isSelected && "border-foreground"
+        isSelected && "border-foreground/60"
       )}
     />
   );

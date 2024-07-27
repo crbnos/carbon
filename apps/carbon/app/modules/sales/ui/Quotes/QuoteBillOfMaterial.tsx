@@ -555,7 +555,7 @@ function MaterialForm({
             value={itemData.methodType}
             replenishmentSystem="Buy and Make"
           />
-          <Number name="quantity" label="Quantity" />
+          <Number name="quantity" label="Quantity per Parent" />
           <UnitOfMeasure
             name="unitOfMeasureCode"
             value={itemData.unitOfMeasureCode}
