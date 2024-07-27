@@ -600,11 +600,21 @@ export const path = {
       methodType: string,
       id: string
     ) => generatePath(`${x}/quote/${quoteId}/${lineId}/${methodType}/${id}`),
+    quoteLineMaterialMake: (
+      quoteId: string,
+      lineId: string,
+      makeMethodId: string,
+      materialId: string
+    ) =>
+      generatePath(
+        `${x}/quote/${quoteId}/${lineId}/make/${makeMethodId}/${materialId}`
+      ),
     quoteLineMethod: (quoteId: string, quoteLineId: string, methodId: string) =>
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
     quoteMaterial: (quoteId: string, lineId: string, id: string) =>
-      generatePath(`${x}/quote/methods/${quoteId}/${lineId}/${id}`),
+      generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/${id}`),
     quoteMaterialsOrder: `${x}/quote/methods/material/order`,
+
     quoteOperation: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,

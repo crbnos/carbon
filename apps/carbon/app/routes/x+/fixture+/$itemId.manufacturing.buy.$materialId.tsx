@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
-export default function MethodMaterialPickPage() {
+export default function MethodMaterialBuyPage() {
   const { item } = useLoaderData<typeof loader>();
   const { itemId, materialId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");

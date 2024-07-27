@@ -8,6 +8,7 @@ import QuoteForm from "./QuoteForm";
 import QuoteHeader from "./QuoteHeader";
 import QuoteLineDocuments from "./QuoteLineDocuments";
 import QuoteLineForm from "./QuoteLineForm";
+import QuoteMaterialForm from "./QuoteMaterialForm";
 import QuotesTable from "./QuotesTable";
 
 export {
@@ -21,5 +22,6 @@ export {
   QuoteHeader,
   QuoteLineDocuments,
   QuoteLineForm,
+  QuoteMaterialForm,
   QuotesTable,
 };

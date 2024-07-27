@@ -36,7 +36,7 @@ const EmployeeAvatar = ({
     <HStack className="truncate">
       <Avatar
         size={size ?? "xs"}
-        src={person.avatarUrl ?? undefined}
+        path={person.avatarUrl ?? undefined}
         name={person?.name ?? ""}
       />
       <span className={className}>{person.name}</span>
