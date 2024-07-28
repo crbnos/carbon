@@ -112,44 +112,6 @@ export const quoteLineValidator = z.object({
   modelUploadId: zfd.text(z.string().optional()),
 });
 
-export const quotationValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  quoteId: zfd.text(z.string().optional()),
-  name: z.string(),
-  customerId: z.string().min(36, { message: "Customer is required" }),
-  customerLocationId: zfd.text(z.string().optional()),
-  customerContactId: zfd.text(z.string().optional()),
-  customerReference: zfd.text(z.string().optional()),
-  locationId: zfd.text(z.string().optional()),
-  status: z.enum(quoteStatusType).optional(),
-  notes: zfd.text(z.string().optional()),
-  expirationDate: zfd.text(z.string().optional()),
-});
-
-export const quotationAssemblyValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  parentAssemblyId: zfd.text(z.string().optional()),
-  itemId: z.string().min(1, { message: "Part is required" }),
-  itemReadableId: zfd.text(z.string().optional()),
-  description: z.string().min(1, { message: "Description is required" }),
-  unitOfMeasureCode: zfd.text(z.string().optional()),
-  quantityPerParent: zfd.numeric(
-    z.number().min(1, { message: "Quantity is required" })
-  ),
-});
-
-export const quotationMaterialValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  itemId: z.string().min(1, { message: "Part is required" }),
-  itemReadableId: zfd.text(z.string().optional()),
-  quantity: zfd.numeric(
-    z.number().min(0.00001, { message: "Quantity is required" })
-  ),
-  description: z.string().min(1, { message: "Description is required" }),
-  unitCost: zfd.numeric(z.number().min(0)),
-  unitOfMeasureCode: zfd.text(z.string().optional()),
-});
-
 export const quoteMaterialValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -249,24 +211,6 @@ export const quoteMaterialValidator = z
     }
   );
 
-export const quotationOperationValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  quoteAssemblyId: zfd.text(z.string().optional()),
-  workCellTypeId: z.string().min(20, { message: "Work cell is required" }),
-  equipmentTypeId: zfd.text(z.string().optional()),
-  description: zfd.text(
-    z.string().min(0, { message: "Description is required" })
-  ),
-  setupHours: zfd.numeric(z.number().min(0)),
-  standardFactor: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Standard factor is required" }),
-  }),
-  productionStandard: zfd.numeric(z.number().min(0)),
-  quotingRate: zfd.numeric(z.number().min(0)),
-  laborRate: zfd.numeric(z.number().min(0)),
-  overheadRate: zfd.numeric(z.number().min(0)),
-});
-
 export const quoteOperationValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteMakeMethodId: z
@@ -298,23 +242,6 @@ export const quotationPricingValidator = z.object({
   discountPercent: zfd.numeric(z.number().nonnegative()),
   markupPercent: zfd.numeric(z.number().nonnegative()),
   extendedPrice: zfd.numeric(z.number()),
-});
-
-export const quotationLineValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  quoteId: z.string(),
-  itemId: z.string().min(1, { message: "Part is required" }),
-  itemReadableId: zfd.text(z.string().optional()),
-  status: z.enum(quoteLineStatusType, {
-    errorMap: () => ({ message: "Status is required" }),
-  }),
-  description: z.string().min(1, { message: "Description is required" }),
-  replenishmentSystem: z.enum(["Buy", "Make"]),
-  customerPartId: zfd.text(z.string().optional()),
-  customerPartRevision: zfd.text(z.string().optional()),
-  unitOfMeasureCode: zfd.text(
-    z.string().min(1, { message: "Unit of measure is required" })
-  ),
 });
 
 export const quotationReleaseValidator = z

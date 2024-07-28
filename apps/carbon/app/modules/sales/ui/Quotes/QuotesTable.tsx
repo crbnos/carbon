@@ -23,10 +23,10 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Quotation } from "~/modules/sales";
 import { quoteStatusType } from "~/modules/sales";
-import { useCustomers, useItems, usePeople } from "~/stores";
+import { useCustomers, usePeople } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
-import { QuotationStatus } from "../Quotation";
+import QuoteStatus from "./QuoteStatus";
 
 type QuotesTableProps = {
   data: Quotation[];
@@ -43,7 +43,6 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   const deleteQuotationModal = useDisclosure();
 
   const [customers] = useCustomers();
-  const [items] = useItems();
   const [people] = usePeople();
 
   const fetcher = useFetcher<{}>();
@@ -148,14 +147,14 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         header: "Status",
         cell: (item) => {
           const status = item.getValue<(typeof quoteStatusType)[number]>();
-          return <QuotationStatus status={status} />;
+          return <QuoteStatus status={status} />;
         },
         meta: {
           filter: {
             type: "static",
             options: quoteStatusType.map((status) => ({
               value: status,
-              label: <QuotationStatus status={status} />,
+              label: <QuoteStatus status={status} />,
             })),
           },
           pluralHeader: "Statuses",

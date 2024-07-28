@@ -14,11 +14,10 @@ import type {
   customerStatusValidator,
   customerTypeValidator,
   customerValidator,
-  quotationAssemblyValidator,
-  quotationOperationValidator,
   quotationPricingValidator,
   quoteLineValidator,
   quoteMaterialValidator,
+  quoteOperationValidator,
   quoteValidator,
   salesOrderLineValidator,
   salesOrderPaymentValidator,
@@ -1315,39 +1314,6 @@ export async function upsertQuote(
   }
 }
 
-export async function upsertQuoteMakeMethod(
-  client: SupabaseClient<Database>,
-  quotationAssembly:
-    | (Omit<z.infer<typeof quotationAssemblyValidator>, "id"> & {
-        quoteId: string;
-        quoteLineId: string;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof quotationAssemblyValidator>, "id"> & {
-        id: string;
-        quoteId: string;
-        quoteLineId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in quotationAssembly) {
-    return client
-      .from("quoteMakeMethod")
-      .update(sanitize(quotationAssembly))
-      .eq("id", quotationAssembly.id)
-      .select("id")
-      .single();
-  }
-  return client
-    .from("quoteMakeMethod")
-    .insert([quotationAssembly])
-    .select("id")
-    .single();
-}
-
 export async function upsertQuoteLine(
   client: SupabaseClient<Database>,
   quotationLine:
@@ -1424,15 +1390,15 @@ export async function upsertQuoteMaterial(
 
 export async function upsertQuoteOperation(
   client: SupabaseClient<Database>,
-  quotationOperation:
-    | (Omit<z.infer<typeof quotationOperationValidator>, "id"> & {
+  operation:
+    | (Omit<z.infer<typeof quoteOperationValidator>, "id"> & {
         quoteId: string;
         quoteLineId: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof quotationOperationValidator>, "id"> & {
+    | (Omit<z.infer<typeof quoteOperationValidator>, "id"> & {
         id: string;
         quoteId: string;
         quoteLineId: string;
@@ -1440,17 +1406,17 @@ export async function upsertQuoteOperation(
         customFields?: Json;
       })
 ) {
-  if ("id" in quotationOperation) {
+  if ("id" in operation) {
     return client
       .from("quoteOperation")
-      .update(sanitize(quotationOperation))
-      .eq("id", quotationOperation.id)
+      .update(sanitize(operation))
+      .eq("id", operation.id)
       .select("id")
       .single();
   }
   return client
     .from("quoteOperation")
-    .insert([quotationOperation])
+    .insert([operation])
     .select("id")
     .single();
 }

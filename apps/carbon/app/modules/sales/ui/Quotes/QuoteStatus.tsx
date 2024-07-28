@@ -1,11 +1,11 @@
 import { Status } from "@carbon/react";
 import type { quoteStatusType } from "~/modules/sales";
 
-type QuotationStatusProps = {
+type QuoteStatusProps = {
   status?: (typeof quoteStatusType)[number] | null;
 };
 
-const QuotationStatus = ({ status }: QuotationStatusProps) => {
+const QuoteStatus = ({ status }: QuoteStatusProps) => {
   switch (status) {
     case "Draft":
       return <Status color="gray">{status}</Status>;
@@ -22,4 +22,4 @@ const QuotationStatus = ({ status }: QuotationStatusProps) => {
   }
 };
 
-export default QuotationStatus;
+export default QuoteStatus;
