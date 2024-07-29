@@ -1,7 +1,9 @@
 import { VStack } from "@carbon/react";
 import type { MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import { LuKey } from "react-icons/lu";
 import { GroupedContentSidebar } from "~/components/Layout";
+import { usePermissions } from "~/hooks";
 import { useSettingsSubmodules } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -17,7 +19,17 @@ export const handle: Handle = {
 };
 
 export default function SettingsRoute() {
+  const permissions = usePermissions();
   const { groups } = useSettingsSubmodules();
+
+  if (permissions.can("update", "users") && permissions.is("employee")) {
+    groups?.[1]?.routes.unshift({
+      name: "API Keys",
+      to: path.to.apiKeys,
+      role: "employee",
+      icon: <LuKey />,
+    });
+  }
 
   return (
     <div className="grid grid-cols-[auto_1fr] w-full h-full">
