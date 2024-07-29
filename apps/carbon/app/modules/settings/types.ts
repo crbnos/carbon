@@ -1,10 +1,15 @@
 import type {
+  getApiKeys,
   getCompanies,
   getCustomField,
   getCustomFieldsTables,
   getIntegrations,
   getSequences,
 } from "./settings.service";
+
+export type ApiKey = NonNullable<
+  Awaited<ReturnType<typeof getApiKeys>>["data"]
+>[number];
 
 export type Company = NonNullable<
   Awaited<ReturnType<typeof getCompanies>>["data"]

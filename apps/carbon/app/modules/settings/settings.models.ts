@@ -18,6 +18,11 @@ export const modulesType = [
   "Users",
 ] as const;
 
+export const apiKeyValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+});
+
 const company = {
   name: z.string().min(1, { message: "Name is required" }),
   taxId: zfd.text(z.string().optional()),

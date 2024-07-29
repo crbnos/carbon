@@ -99,6 +99,8 @@ export const path = {
       generatePath(`${x}/accounting/subcategory/${id}`),
     attribute: (id: string) => generatePath(`${x}/people/attribute/${id}`),
     attributes: `${x}/people/attributes`,
+    apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
+    apiKeys: `${x}/settings/api-keys`,
     attributeCategory: (id: string) =>
       generatePath(`${x}/people/attributes/${id}`),
     attributeCategoryList: (id: string) =>
@@ -182,6 +184,8 @@ export const path = {
       generatePath(`${x}/accounting/subcategory/delete/${id}`),
     deleteAccountingCharts: (id: string) =>
       generatePath(`${x}/accounting/charts/delete/${id}`),
+    deleteApiKey: (id: string) =>
+      generatePath(`${x}/settings/api-keys/delete/${id}`),
     deleteAttribute: (id: string) =>
       generatePath(`${x}/people/attribute/delete/${id}`),
     deleteAttributeCategory: (id: string) =>
@@ -384,6 +388,7 @@ export const path = {
     newAccountingCategory: `${x}/accounting/categories/new`,
     newAccountingSubcategory: (id: string) =>
       generatePath(`${x}/accounting/categories/list/${id}/new`),
+    newApiKey: `${x}/settings/api-keys/new`,
     newAttribute: `${x}/people/attribute/new`,
     newAttributeCategory: `${x}/people/attributes/new`,
     newAttributeForCategory: (id: string) =>

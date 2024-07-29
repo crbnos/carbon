@@ -1,12 +1,49 @@
 import type { Database, Json } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { SUPABASE_API_URL } from "~/config/env";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import type { companyValidator, sequenceValidator } from "./settings.models";
+import type {
+  apiKeyValidator,
+  companyValidator,
+  sequenceValidator,
+} from "./settings.models";
+
+export async function deleteApiKey(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("apiKey").delete().eq("id", id);
+}
+
+export async function getApiKeys(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("apiKey")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: true },
+    ]);
+  }
+
+  return query;
+}
 
 export async function getCompanies(
   client: SupabaseClient<Database>,
@@ -288,6 +325,28 @@ export async function updateCompany(
   }
 ) {
   return client.from("company").update(sanitize(company)).eq("id", companyId);
+}
+
+export async function upsertApiKey(
+  client: SupabaseClient<Database>,
+  apiKey:
+    | (Omit<z.infer<typeof apiKeyValidator>, "id"> & {
+        createdBy: string;
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof apiKeyValidator>, "id"> & {
+        id: string;
+      })
+) {
+  if ("createdBy" in apiKey) {
+    const key = `crbn_${nanoid()}`;
+    return client
+      .from("apiKey")
+      .insert({ ...apiKey, key })
+      .select("key")
+      .single();
+  }
+  return client.from("apiKey").update(sanitize(apiKey)).eq("id", apiKey.id);
 }
 
 export async function upsertIntegration(
