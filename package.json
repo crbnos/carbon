@@ -52,9 +52,11 @@
     "dev:mes": "turbo run dev --filter=./apps/mes",
     "dev:packages": "turbo run dev --filter=./packages/*",
     "dev:website": "turbo run dev --filter=./apps/website",
+    "generate:types": "tsx scripts/generate-db-types.ts",
+    "generate:swagger": "tsx scripts/generate-swagger-docs.ts && npx prettier --write ./apps/carbon/app/lib/swagger-docs-schema.ts ",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo run lint",
-    "postdb:build": "tsx scripts/generate-db-types.ts",
+    "postdb:build": "run-s generate:types generate:swagger",
     "prepare": "npx husky install",
     "setup": "turbo run setup",
     "test": "turbo run test"
