@@ -1,0 +1,73 @@
+import type { MetaFunction } from "@remix-run/node";
+import { Outlet } from "@remix-run/react";
+import { GroupedContentSidebar } from "~/components/Layout";
+import swaggerDocsSchema from "~/lib/swagger-docs-schema";
+import { useSelectedLang } from "~/modules/api";
+import DocsStyle from "~/styles/docs.css?url";
+import type { RouteGroup } from "~/types";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+
+export const meta: MetaFunction = () => {
+  return [{ title: "Carbon | API Docs" }];
+};
+
+export const handle: Handle = {
+  breadcrumb: "API Docs",
+  to: path.to.apiIntroduction,
+  module: "api",
+};
+
+export function links() {
+  return [{ rel: "stylesheet", href: DocsStyle }];
+}
+
+export default function ApiDocsRoute() {
+  const groups = useApiDocsMenu();
+
+  return (
+    <div className="grid grid-cols-[auto_1fr] w-full h-full">
+      <GroupedContentSidebar groups={groups} width={270} />
+      <div className="Docs Docs--api-page w-full h-full overflow-y-auto">
+        <div className="Docs--inner-wrapper pt-4">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const tableBlacklist = new Set(["apiKey"]);
+
+function useApiDocsMenu(): RouteGroup[] {
+  const selectedLang = useSelectedLang();
+  const result: RouteGroup[] = [
+    {
+      name: "Getting Started",
+      routes: [
+        {
+          name: "Introduction",
+          to: path.to.apiIntro(selectedLang),
+        },
+        {
+          name: "Authentication",
+          to: path.to.apiAuthentication(selectedLang),
+        },
+      ],
+    },
+  ];
+
+  const tables = Object.keys(swaggerDocsSchema.definitions).sort();
+
+  result.push({
+    name: "Tables and Views",
+    routes: tables
+      .filter((table) => !tableBlacklist.has(table))
+      .map((table) => ({
+        name: table,
+        to: path.to.apiTable(selectedLang, table),
+      })),
+  });
+
+  return result;
+}

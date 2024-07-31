@@ -15,6 +15,7 @@ import { Assignee, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import { MethodBadge, MethodIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
 import type { BuyMethod, ItemFile, PickMethod, Service } from "../../types";
 import { FileBadge } from "../Item";
 
@@ -58,7 +59,7 @@ const ServiceProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    navigator.clipboard.writeText(
+                    copyToClipboard(
                       window.location.origin + path.to.service(itemId)
                     )
                   }
@@ -77,9 +78,7 @@ const ServiceProperties = () => {
                   aria-label="Copy"
                   size="sm"
                   className="p-1"
-                  onClick={() =>
-                    navigator.clipboard.writeText(routeData?.service?.id ?? "")
-                  }
+                  onClick={() => copyToClipboard(routeData?.service?.id ?? "")}
                 >
                   <LuCopy className="w-3 h-3" />
                 </Button>

@@ -104,6 +104,11 @@ export function useModules() {
       icon: LuShield,
     },
     {
+      name: "API Docs",
+      to: path.to.apiIntroduction,
+      icon: LuFiles,
+    },
+    {
       permission: "settings",
       name: "Settings",
       to: path.to.company,

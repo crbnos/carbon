@@ -24,6 +24,7 @@ import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { apiKeyValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
 
 type ApiKeyFormProps = {
   initialValues: z.infer<typeof apiKeyValidator>;
@@ -98,6 +99,12 @@ type ApiKeyViewProps = {
 
 function ApiKeyView({ apiKey, onClose }: ApiKeyViewProps) {
   const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
   return (
     <Modal
       open
@@ -125,8 +132,9 @@ function ApiKeyView({ apiKey, onClose }: ApiKeyViewProps) {
                   icon={copied ? <LuCheck /> : <LuClipboard />}
                   variant="ghost"
                   onClick={() => {
-                    navigator.clipboard.writeText(apiKey);
-                    setCopied(true);
+                    copyToClipboard(apiKey, () => {
+                      setCopied(true);
+                    });
                   }}
                 />
               </InputRightElement>
