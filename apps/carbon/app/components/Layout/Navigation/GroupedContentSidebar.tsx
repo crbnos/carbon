@@ -4,11 +4,17 @@ import { useOptimisticLocation } from "~/hooks";
 import type { RouteGroup } from "~/types";
 import { CollapsibleSidebar } from "./CollapsibleSidebar";
 
-const GroupedContentSidebar = ({ groups }: { groups: RouteGroup[] }) => {
+const GroupedContentSidebar = ({
+  groups,
+  width,
+}: {
+  groups: RouteGroup[];
+  width?: number;
+}) => {
   const location = useOptimisticLocation();
 
   return (
-    <CollapsibleSidebar>
+    <CollapsibleSidebar width={width}>
       <div className="overflow-y-auto h-full w-full pb-8">
         <VStack>
           {groups.map((group) => (
@@ -21,7 +27,7 @@ const GroupedContentSidebar = ({ groups }: { groups: RouteGroup[] }) => {
                 {group.name}
               </h4>
               {group.routes.map((route) => {
-                const isActive = location.pathname.includes(route.to);
+                const isActive = location.pathname === route.to;
                 return (
                   <Button
                     key={route.name}

@@ -20,6 +20,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
 import type { BuyMethod, Fixture, ItemFile, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 
@@ -68,7 +69,7 @@ const FixtureProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    navigator.clipboard.writeText(
+                    copyToClipboard(
                       window.location.origin + path.to.fixture(itemId)
                     )
                   }
@@ -88,9 +89,7 @@ const FixtureProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    navigator.clipboard.writeText(
-                      routeData?.fixtureSummary?.id ?? ""
-                    )
+                    copyToClipboard(routeData?.fixtureSummary?.id ?? "")
                   }
                 >
                   <LuCopy className="w-3 h-3" />

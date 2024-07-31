@@ -16,6 +16,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
 import type { BuyMethod, ItemFile, Material, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 
@@ -64,7 +65,7 @@ const MaterialProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    navigator.clipboard.writeText(
+                    copyToClipboard(
                       window.location.origin + path.to.material(itemId)
                     )
                   }
@@ -84,9 +85,7 @@ const MaterialProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    navigator.clipboard.writeText(
-                      routeData?.materialSummary?.id ?? ""
-                    )
+                    copyToClipboard(routeData?.materialSummary?.id ?? "")
                   }
                 >
                   <LuCopy className="w-3 h-3" />

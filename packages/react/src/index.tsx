@@ -33,6 +33,7 @@ import {
 } from "./Card";
 import { Checkbox } from "./Checkbox";
 import { ClientOnly } from "./ClientOnly";
+import { CodeBlock } from "./CodeBlock";
 import {
   Command,
   CommandDialog,
@@ -285,6 +286,7 @@ export {
   CardTitle,
   Checkbox,
   ClientOnly,
+  CodeBlock,
   Command,
   CommandDialog,
   CommandEmpty,

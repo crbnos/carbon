@@ -3,6 +3,11 @@ export const capitalize = (words: string) => {
   return [first.toLocaleUpperCase(), ...otherLetters].join("");
 };
 
+export const snakeToCamel = (str: string) =>
+  str.replace(/([-_][a-z])/g, (group: string) =>
+    group.toUpperCase().replace("-", "").replace("_", "")
+  );
+
 /**
  * Copy text content (string or Promise<string>) into Clipboard.
  * Safari doesn't support write text into clipboard async, so if you need to load

@@ -99,6 +99,11 @@ export const path = {
       generatePath(`${x}/accounting/subcategory/${id}`),
     attribute: (id: string) => generatePath(`${x}/people/attribute/${id}`),
     attributes: `${x}/people/attributes`,
+    apiAuthentication: (lang: string) => `${x}/api/${lang}/authentication`,
+    apiIntroduction: `${x}/api/js/intro`,
+    apiIntro: (lang: string) => generatePath(`${x}/api/${lang}/intro/`),
+    apiTable: (lang: string, table: string) =>
+      generatePath(`${x}/api/${lang}/table/${table}`),
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
     apiKeys: `${x}/settings/api-keys`,
     attributeCategory: (id: string) =>
