@@ -122,10 +122,11 @@ const QuoteMaterialForm = ({
             initialValues.methodType.toLowerCase(),
             initialValues.id!
           );
-    if (location.pathname !== newPath) {
+    if (fetcher.data && location.pathname !== newPath) {
       navigate(newPath);
     }
   }, [
+    fetcher.data,
     initialValues.id,
     initialValues.methodType,
     initialValues.quoteMaterialMakeMethodId,

@@ -14,7 +14,7 @@ const ABORT_DELAY = 30000;
 
 // This code has the effect of registering jobs with trigger.dev
 // in a way that doesn't interfere with the vite compiler.
-export * from "~/jobs.server";
+export * from "~/jobs";
 
 // Workaround for vite single fetch mode
 installAndLockGlobals();

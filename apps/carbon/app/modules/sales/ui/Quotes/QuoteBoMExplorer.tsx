@@ -58,7 +58,8 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
                 ? "bg-muted hover:bg-muted/90"
                 : "bg-transparent hover:bg-muted/90"
             )}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               navigate(getNodePath(node));
             }}
           >
