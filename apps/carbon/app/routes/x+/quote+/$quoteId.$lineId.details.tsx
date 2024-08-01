@@ -13,13 +13,19 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
-import { usePermissions, useUser } from "~/hooks";
+import type { Tree } from "~/components/TreeView";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { CadModel } from "~/modules/items";
-import type { QuotationLine } from "~/modules/sales";
+import type {
+  QuotationLine,
+  QuotationOperation,
+  QuoteMethod,
+} from "~/modules/sales";
 import {
   getFilesByQuoteLineId,
   getQuoteLine,
+  getQuoteOperationsByLine,
   quotationPricingValidator,
   QuoteLineDocuments,
   QuoteLineForm,
@@ -43,8 +49,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const [line, files] = await Promise.all([
+  const [line, operations, files] = await Promise.all([
     getQuoteLine(client, lineId),
+    getQuoteOperationsByLine(client, lineId),
     getFilesByQuoteLineId(client, companyId, lineId),
   ]);
 
@@ -57,6 +64,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return json({
     line: line.data,
+    operations: operations?.data ?? [],
     files: files?.data ?? [],
   });
 };
@@ -130,11 +138,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function QuoteLine() {
-  const { line, files } = useLoaderData<typeof loader>();
+  const { line, operations, files } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
+
+  const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
+    path.to.quote(quoteId)
+  );
+
+  const methodTree = quoteData?.methods?.find(
+    (m) => m.data.quoteLineId === line.id
+  );
 
   const initialValues = {
     ...line,
@@ -173,6 +189,7 @@ export default function QuoteLine() {
               modelUpload={line ?? undefined}
             />
           </div>
+          <QuoteLineCosting methodTree={methodTree} operations={operations} />
           <QuoteLineNotes line={line} />
           <Outlet />
         </>
@@ -180,6 +197,27 @@ export default function QuoteLine() {
     </>
   );
 }
+
+const QuoteLineCosting = ({
+  methodTree,
+  operations,
+}: {
+  methodTree?: Tree<QuoteMethod>;
+  operations: QuotationOperation[];
+}) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Costing</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-2">
+          <pre>{JSON.stringify({ methodTree, operations }, null, 2)}</pre>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const QuoteLineNotes = ({ line }: { line: QuotationLine }) => {
   const {

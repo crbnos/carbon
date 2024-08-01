@@ -22,8 +22,8 @@ import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { LuChevronsUpDown, LuGhost, LuImage, LuPlus } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
+import type { Tree } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import type { Tree } from "~/components/TreeView/TreeView";
 import { useOptimisticLocation, useRouteData, useUser } from "~/hooks";
 import type { QuotationLine, QuoteMethod } from "~/modules/sales";
 import {
