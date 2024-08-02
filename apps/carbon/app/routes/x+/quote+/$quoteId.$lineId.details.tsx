@@ -4,7 +4,7 @@ import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { useMemo } from "react";
 import type { Tree } from "~/components/TreeView";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import { CadModel } from "~/modules/items";
 import type { QuoteMethod } from "~/modules/sales";
 import {
@@ -130,6 +130,10 @@ export default function QuoteLine() {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
+
+  useRealtime("quoteLine", `id=eq.${lineId}`);
+  useRealtime("quoteMaterial", `quoteLineId=eq.${lineId}`);
+  useRealtime("quoteOperation", `quoteLineId=eq.${lineId}`);
 
   const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
     path.to.quote(quoteId)
