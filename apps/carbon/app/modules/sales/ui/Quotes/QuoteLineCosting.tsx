@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -398,14 +397,14 @@ const QuoteLineCosting = ({
             </Tr>
           </Tbody>
           <Tfoot>
-            <Tr className="font-bold">
+            {/* <Tr className="font-bold">
               <Td className="border-r border-border" />
               {quantityCosts.map(({ quantity }) => (
                 <Td key={quantity} className="font-mono">
                   <Button variant="secondary">Add</Button>
                 </Td>
               ))}
-            </Tr>
+            </Tr> */}
           </Tfoot>
         </Table>
       </CardContent>
