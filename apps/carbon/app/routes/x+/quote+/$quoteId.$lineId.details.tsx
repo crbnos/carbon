@@ -1,34 +1,21 @@
-import type { JSONContent } from "@carbon/react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Editor,
-  toast,
-  useDebounce,
-} from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import { useMemo } from "react";
 import type { Tree } from "~/components/TreeView";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
+import { usePermissions, useRouteData } from "~/hooks";
 import { CadModel } from "~/modules/items";
-import type {
-  QuotationLine,
-  QuotationOperation,
-  QuoteMethod,
-} from "~/modules/sales";
+import type { QuoteMethod } from "~/modules/sales";
 import {
   getFilesByQuoteLineId,
   getQuoteLine,
   getQuoteOperationsByLine,
   quotationPricingValidator,
+  QuoteLineCosting,
   QuoteLineDocuments,
   QuoteLineForm,
+  QuoteLineNotes,
   quoteLineValidator,
   updateQuoteLinePrice,
   upsertQuoteLine,
@@ -148,8 +135,9 @@ export default function QuoteLine() {
     path.to.quote(quoteId)
   );
 
-  const methodTree = quoteData?.methods?.find(
-    (m) => m.data.quoteLineId === line.id
+  const methodTree = useMemo(
+    () => quoteData?.methods?.find((m) => m.data.quoteLineId === line.id),
+    [quoteData, line.id]
   );
 
   const initialValues = {
@@ -173,6 +161,9 @@ export default function QuoteLine() {
       <QuoteLineForm key={initialValues.id} initialValues={initialValues} />
       {permissions.is("employee") && (
         <>
+          {line.methodType === "Make" && (
+            <QuoteLineCosting methodTree={methodTree} operations={operations} />
+          )}
           <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
             <CadModel
               autodeskUrn={line?.autodeskUrn ?? null}
@@ -189,7 +180,6 @@ export default function QuoteLine() {
               modelUpload={line ?? undefined}
             />
           </div>
-          <QuoteLineCosting methodTree={methodTree} operations={operations} />
           <QuoteLineNotes line={line} />
           <Outlet />
         </>
@@ -197,78 +187,3 @@ export default function QuoteLine() {
     </>
   );
 }
-
-const QuoteLineCosting = ({
-  methodTree,
-  operations,
-}: {
-  methodTree?: Tree<QuoteMethod>;
-  operations: QuotationOperation[];
-}) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Costing</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 gap-2">
-          <pre>{JSON.stringify({ methodTree, operations }, null, 2)}</pre>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const QuoteLineNotes = ({ line }: { line: QuotationLine }) => {
-  const {
-    id: userId,
-    company: { id: companyId },
-  } = useUser();
-  const { supabase } = useSupabase();
-
-  const onUploadImage = async (file: File) => {
-    const fileName = `${companyId}/quote-line/${line.id}/${encodeURIComponent(
-      file.name
-    )}`;
-    const result = await supabase?.storage
-      .from("private")
-      .upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return `/file/preview/private/${result.data.path}`;
-  };
-
-  const onUpdateInternalNotes = useDebounce(async (content: JSONContent) => {
-    await supabase
-      ?.from("quoteLine")
-      .update({
-        notes: content,
-        updatedAt: today(getLocalTimeZone()).toString(),
-        updatedBy: userId,
-      })
-      .eq("id", line.id!);
-  }, 3000);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Internal Notes</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Editor
-          initialValue={(line.notes ?? {}) as JSONContent}
-          onUpload={onUploadImage}
-          onChange={onUpdateInternalNotes}
-        />
-      </CardContent>
-    </Card>
-  );
-};

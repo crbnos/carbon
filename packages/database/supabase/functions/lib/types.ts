@@ -25653,6 +25653,7 @@ export type Database = {
           itemReadableId: string
           itemType: string
           quantity: number
+          unitCost: number
           methodType: Database["public"]["Enums"]["methodType"]
           parentMaterialId: string
           order: number

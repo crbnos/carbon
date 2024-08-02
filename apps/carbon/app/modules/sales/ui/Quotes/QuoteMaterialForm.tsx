@@ -18,6 +18,7 @@ import {
   InputControlled,
   Item,
   Number,
+  NumberControlled,
   Select,
   Submit,
   UnitOfMeasure,
@@ -60,6 +61,7 @@ const QuoteMaterialForm = ({
     itemReadableId: string;
     methodType: MethodType;
     description: string;
+    unitCost: number;
     unitOfMeasureCode: string;
     quantity: number;
   }>({
@@ -67,6 +69,7 @@ const QuoteMaterialForm = ({
     itemReadableId: initialValues.itemReadableId ?? "",
     methodType: initialValues.methodType ?? "Buy",
     description: initialValues.description ?? "",
+    unitCost: initialValues.unitCost ?? 0,
     unitOfMeasureCode: initialValues.unitOfMeasureCode ?? "EA",
     quantity: initialValues.quantity ?? 1,
   });
@@ -79,6 +82,7 @@ const QuoteMaterialForm = ({
       methodType: "" as "Buy",
       quantity: 1,
       description: "",
+      unitCost: 0,
       unitOfMeasureCode: "EA",
     });
   };
@@ -86,11 +90,18 @@ const QuoteMaterialForm = ({
   const onItemChange = async (itemId: string) => {
     if (!supabase) return;
 
-    const item = await supabase
-      .from("item")
-      .select("name, readableId, unitOfMeasureCode, defaultMethodType")
-      .eq("id", itemId)
-      .single();
+    const [item, itemCost] = await await Promise.all([
+      supabase
+        .from("item")
+        .select("name, readableId, unitOfMeasureCode, defaultMethodType")
+        .eq("id", itemId)
+        .single(),
+      supabase
+        .from("itemCost")
+        .select("unitCost")
+        .eq("itemId", itemId)
+        .single(),
+    ]);
 
     if (item.error) {
       toast.error("Failed to load item details");
@@ -100,10 +111,11 @@ const QuoteMaterialForm = ({
     setItemData((d) => ({
       ...d,
       itemId,
-      itemReadableId: initialValues?.itemReadableId ?? "",
-      description: initialValues?.description ?? "",
-      unitOfMeasureCode: initialValues?.unitOfMeasureCode ?? "EA",
-      methodType: initialValues?.methodType ?? "Buy",
+      itemReadableId: item.data?.readableId ?? "",
+      description: item.data?.name ?? "",
+      unitCost: itemCost.data?.unitCost ?? 0,
+      unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
+      methodType: item.data?.defaultMethodType ?? "Buy",
     }));
   };
 
@@ -122,11 +134,29 @@ const QuoteMaterialForm = ({
             initialValues.methodType.toLowerCase(),
             initialValues.id!
           );
-    if (fetcher.data && location.pathname !== newPath) {
+    if (
+      fetcher.data?.methodType === "Make" &&
+      !location.pathname.includes("make")
+    ) {
+      navigate(newPath);
+    }
+
+    if (
+      fetcher.data?.methodType === "Buy" &&
+      !location.pathname.includes("buy")
+    ) {
+      navigate(newPath);
+    }
+
+    if (
+      fetcher.data?.methodType === "Pick" &&
+      !location.pathname.includes("pick")
+    ) {
       navigate(newPath);
     }
   }, [
     fetcher.data,
+    initialValues,
     initialValues.id,
     initialValues.methodType,
     initialValues.quoteMaterialMakeMethodId,
@@ -151,6 +181,9 @@ const QuoteMaterialForm = ({
         <CardContent>
           <Hidden name="quoteMakeMethodId" />
           <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+          {itemData.methodType === "Make" && (
+            <Hidden name="unitCost" value={itemData.unitCost} />
+          )}
           <Hidden name="order" />
           <VStack className="pt-4">
             <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
@@ -209,6 +242,14 @@ const QuoteMaterialForm = ({
                   }))
                 }
               />
+              {itemData.methodType !== "Make" && (
+                <NumberControlled
+                  name="unitCost"
+                  label="Unit Cost"
+                  value={itemData.unitCost}
+                  minValue={0}
+                />
+              )}
             </div>
           </VStack>
         </CardContent>
