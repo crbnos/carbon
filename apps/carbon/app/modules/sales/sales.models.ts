@@ -134,6 +134,7 @@ export const quoteMaterialValidator = z
     description: z.string().min(1, { message: "Description is required" }),
     quoteOperationId: zfd.text(z.string().optional()),
     quantity: zfd.numeric(z.number().min(0)),
+    unitCost: zfd.numeric(z.number().min(0)),
     unitOfMeasureCode: z
       .string()
       .min(1, { message: "Unit of Measure is required" }),

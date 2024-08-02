@@ -15,9 +15,15 @@ import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { ListItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
+import type { Handle } from "~/utils/handle";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
+
+export const handle: Handle = {
+  breadcrumb: "Purchasing",
+  to: path.to.purchaseInvoices,
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed

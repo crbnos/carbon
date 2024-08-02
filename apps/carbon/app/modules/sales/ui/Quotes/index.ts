@@ -6,8 +6,10 @@ import QuoteBreadcrumbs from "./QuoteBreadcrumbs";
 import QuoteDocuments from "./QuoteDocuments";
 import QuoteForm from "./QuoteForm";
 import QuoteHeader from "./QuoteHeader";
+import QuoteLineCosting from "./QuoteLineCosting";
 import QuoteLineDocuments from "./QuoteLineDocuments";
 import QuoteLineForm from "./QuoteLineForm";
+import QuoteLineNotes from "./QuoteLineNotes";
 import QuoteMaterialForm from "./QuoteMaterialForm";
 import QuotesTable from "./QuotesTable";
 
@@ -20,8 +22,10 @@ export {
   QuoteDocuments,
   QuoteForm,
   QuoteHeader,
+  QuoteLineCosting,
   QuoteLineDocuments,
   QuoteLineForm,
+  QuoteLineNotes,
   QuoteMaterialForm,
   QuotesTable,
 };

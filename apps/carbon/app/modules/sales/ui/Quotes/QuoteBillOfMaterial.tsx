@@ -27,6 +27,7 @@ import {
   InputControlled,
   Item,
   Number,
+  NumberControlled,
   Select,
   Submit,
   UnitOfMeasure,
@@ -105,6 +106,7 @@ const initialMethodMaterial: Omit<Material, "quoteMakeMethodId" | "order"> & {
   methodType: "Buy" as const,
   description: "",
   quantity: 1,
+  unitCost: 0,
   unitOfMeasureCode: "EA",
 };
 
@@ -427,6 +429,7 @@ function MaterialForm({
     itemReadableId: string;
     methodType: MethodType;
     description: string;
+    unitCost: number;
     unitOfMeasureCode: string;
     quantity: number;
   }>({
@@ -434,6 +437,7 @@ function MaterialForm({
     itemReadableId: item.data.itemReadableId ?? "",
     methodType: item.data.methodType ?? "Buy",
     description: item.data.description ?? "",
+    unitCost: item.data.unitCost ?? 0,
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
   });
@@ -445,6 +449,7 @@ function MaterialForm({
       itemReadableId: "",
       methodType: "" as "Buy",
       quantity: 1,
+      unitCost: 0,
       description: "",
       unitOfMeasureCode: "EA",
     });
@@ -457,12 +462,19 @@ function MaterialForm({
       return;
     }
 
-    const item = await supabase
-      .from("item")
-      .select("name, readableId, unitOfMeasureCode, defaultMethodType")
-      .eq("id", itemId)
-      .eq("companyId", company.id)
-      .single();
+    const [item, itemCost] = await await Promise.all([
+      supabase
+        .from("item")
+        .select("name, readableId, unitOfMeasureCode, defaultMethodType")
+        .eq("id", itemId)
+        .eq("companyId", company.id)
+        .single(),
+      supabase
+        .from("itemCost")
+        .select("unitCost")
+        .eq("itemId", itemId)
+        .single(),
+    ]);
 
     if (item.error) {
       toast.error("Failed to load item details");
@@ -474,6 +486,7 @@ function MaterialForm({
       itemId,
       itemReadableId: item.data?.readableId ?? "",
       description: item.data?.name ?? "",
+      unitCost: itemCost.data?.unitCost ?? 0,
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",
     }));
@@ -507,6 +520,9 @@ function MaterialForm({
       <Hidden name="quoteMakeMethodId" />
       <Hidden name="itemReadableId" value={itemData.itemReadableId} />
       <Hidden name="order" />
+      {itemData.methodType === "Make" && (
+        <Hidden name="unitCost" value={itemData.unitCost} />
+      )}
       <VStack className="pt-4">
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
           <Select
@@ -566,6 +582,14 @@ function MaterialForm({
               }))
             }
           />
+          {itemData.methodType !== "Make" && (
+            <NumberControlled
+              name="unitCost"
+              label="Unit Cost"
+              value={itemData.unitCost}
+              minValue={0}
+            />
+          )}
         </div>
 
         <motion.div

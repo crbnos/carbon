@@ -76,6 +76,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       quoteMakeMethodId: material.data.quoteMakeMethodId ?? "",
       quoteMaterialMakeMethodId: material.data.quoteMaterialMakeMethodId,
       quoteOperationId: material.data.quoteOperationId ?? undefined,
+      unitCost: material.data.unitCost ?? 0,
       unitOfMeasureCode: material.data.unitOfMeasureCode ?? "",
     },
     materials:

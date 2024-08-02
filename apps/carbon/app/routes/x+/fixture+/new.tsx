@@ -5,9 +5,15 @@ import { FixtureForm, fixtureValidator, upsertFixture } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
+import type { Handle } from "~/utils/handle";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
+
+export const handle: Handle = {
+  breadcrumb: "Fixtures",
+  to: path.to.fixtures,
+};
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
