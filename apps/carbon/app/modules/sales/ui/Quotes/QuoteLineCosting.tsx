@@ -1,5 +1,6 @@
 import type { Json } from "@carbon/database";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -29,10 +30,16 @@ import {
   type QuotationOperation,
   type QuoteMethod,
 } from "~/modules/sales";
+import { MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type Costs = {
   materialCost: number;
+  partCost: number;
+  toolCost: number;
+  fixtureCost: number;
+  consumableCost: number;
+  serviceCost: number;
   laborCost: number;
   overheadCost: number;
   outsideCost: number;
@@ -43,6 +50,11 @@ type Costs = {
 type Effect = (quantity: number) => number;
 type CostEffects = {
   materialCost: Effect[];
+  partCost: Effect[];
+  toolCost: Effect[];
+  fixtureCost: Effect[];
+  consumableCost: Effect[];
+  serviceCost: Effect[];
   laborCost: Effect[];
   overheadCost: Effect[];
   setupHours: Effect[];
@@ -51,6 +63,11 @@ type CostEffects = {
 
 const defaultEffects: CostEffects = {
   materialCost: [],
+  partCost: [],
+  toolCost: [],
+  fixtureCost: [],
+  consumableCost: [],
+  serviceCost: [],
   laborCost: [],
   overheadCost: [],
   setupHours: [],
@@ -105,9 +122,40 @@ function useLineCosts({
       const { data } = tree;
 
       if (["Buy", "Pick"].includes(data.methodType)) {
-        effects.materialCost.push(
-          (quantity) => data.unitCost * data.quantity * quantity
-        );
+        switch (data.itemType) {
+          case "Material":
+            effects.materialCost.push(
+              (quantity) => data.unitCost * data.quantity * quantity
+            );
+            break;
+          case "Part":
+            effects.partCost.push(
+              (quantity) => data.unitCost * data.quantity * quantity
+            );
+            break;
+          case "Tool":
+            effects.toolCost.push(
+              (quantity) => data.unitCost * data.quantity * quantity
+            );
+            break;
+          case "Fixture":
+            effects.fixtureCost.push(
+              (quantity) => data.unitCost * data.quantity * quantity
+            );
+            break;
+          case "Consumable":
+            effects.consumableCost.push(
+              (quantity) => data.unitCost * data.quantity * quantity
+            );
+            break;
+          case "Service":
+            effects.serviceCost.push(
+              (quantity) => data.unitCost * data.quantity * quantity
+            );
+            break;
+          default:
+            break;
+        }
       }
 
       data.operations?.forEach((operation) => {
@@ -222,6 +270,31 @@ function useLineCosts({
         0
       );
 
+      const partCost = costEffects.partCost.reduce(
+        (acc, effect) => acc + effect(quantity),
+        0
+      );
+
+      const toolCost = costEffects.toolCost.reduce(
+        (acc, effect) => acc + effect(quantity),
+        0
+      );
+
+      const fixtureCost = costEffects.fixtureCost.reduce(
+        (acc, effect) => acc + effect(quantity),
+        0
+      );
+
+      const consumableCost = costEffects.consumableCost.reduce(
+        (acc, effect) => acc + effect(quantity),
+        0
+      );
+
+      const serviceCost = costEffects.serviceCost.reduce(
+        (acc, effect) => acc + effect(quantity),
+        0
+      );
+
       const laborCost = costEffects.laborCost.reduce(
         (acc, effect) => acc + effect(quantity),
         0
@@ -244,6 +317,11 @@ function useLineCosts({
 
       return {
         materialCost,
+        partCost,
+        toolCost,
+        fixtureCost,
+        consumableCost,
+        serviceCost,
         laborCost,
         overheadCost,
         outsideCost: 0,
@@ -374,11 +452,75 @@ const QuoteLineCosting = ({
             </Tr>
           </Thead>
           <Tbody>
-            <Tr>
+            <Tr className="font-bold">
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
-                  <span className="whitespace-nowrap">Total Raw Material</span>
+                  <span>Total Material Cost</span>
                   <Enumerable value="Material" />
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }, index) => {
+                const totalMaterialCost =
+                  costs.materialCost +
+                  costs.partCost +
+                  costs.toolCost +
+                  costs.fixtureCost +
+                  costs.consumableCost +
+                  costs.serviceCost;
+
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {totalMaterialCost
+                          ? formatter.format(totalMaterialCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {totalMaterialCost && quantity > 0
+                          ? formatter.format(totalMaterialCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap">Part Cost</span>
+                  <Badge variant="secondary">
+                    <MethodItemTypeIcon type="Part" />
+                  </Badge>
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }) => {
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {costs.partCost
+                          ? formatter.format(costs.partCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {costs.partCost && quantity > 0
+                          ? formatter.format(costs.partCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap">Material Cost</span>
+                  <Badge variant="secondary">
+                    <MethodItemTypeIcon type="Material" />
+                  </Badge>
                 </HStack>
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
@@ -393,6 +535,118 @@ const QuoteLineCosting = ({
                       <span className="text-muted-foreground text-xs">
                         {costs.materialCost && quantity > 0
                           ? formatter.format(costs.materialCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap">Tooling Cost</span>
+                  <Badge variant="secondary">
+                    <MethodItemTypeIcon type="Tool" />
+                  </Badge>
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }) => {
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {costs.toolCost
+                          ? formatter.format(costs.toolCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {costs.toolCost && quantity > 0
+                          ? formatter.format(costs.toolCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap">Fixture Cost</span>
+                  <Badge variant="secondary">
+                    <MethodItemTypeIcon type="Fixture" />
+                  </Badge>
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }) => {
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {costs.fixtureCost
+                          ? formatter.format(costs.fixtureCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {costs.fixtureCost && quantity > 0
+                          ? formatter.format(costs.fixtureCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap">Consumable Cost</span>
+                  <Badge variant="secondary">
+                    <MethodItemTypeIcon type="Consumable" />
+                  </Badge>
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }) => {
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {costs.consumableCost
+                          ? formatter.format(costs.consumableCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {costs.consumableCost && quantity > 0
+                          ? formatter.format(costs.consumableCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap">Service Cost</span>
+                  <Badge variant="secondary">
+                    <MethodItemTypeIcon type="Service" />
+                  </Badge>
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }) => {
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {costs.serviceCost
+                          ? formatter.format(costs.serviceCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {costs.serviceCost && quantity > 0
+                          ? formatter.format(costs.serviceCost / quantity)
                           : formatter.format(0)}
                       </span>
                     </VStack>
@@ -581,6 +835,11 @@ const QuoteLineCosting = ({
               {quantityCosts.map(({ quantity, costs }, index) => {
                 const totalCost =
                   costs.materialCost +
+                  costs.partCost +
+                  costs.toolCost +
+                  costs.fixtureCost +
+                  costs.consumableCost +
+                  costs.serviceCost +
                   costs.laborCost +
                   costs.overheadCost +
                   costs.outsideCost +
