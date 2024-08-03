@@ -8,6 +8,8 @@ import {
   Enumerable,
   HStack,
   Input,
+  NumberField,
+  NumberInput,
   Table,
   Tbody,
   Td,
@@ -284,12 +286,11 @@ const QuoteLineCosting = ({
     []
   );
 
-  const parsedAdditionalCharges = quoteLineAdditionalChargesValidator.safeParse(
-    additionalChargesJson
-  );
-  const additionalCharges = parsedAdditionalCharges.success
-    ? parsedAdditionalCharges.data
-    : {};
+  const additionalCharges = useMemo(() => {
+    const parsedAdditionalCharges =
+      quoteLineAdditionalChargesValidator.safeParse(additionalChargesJson);
+    return parsedAdditionalCharges.success ? parsedAdditionalCharges.data : {};
+  }, [additionalChargesJson]);
 
   const additionalChargesByQuantity = quantities.map((quantity) => {
     const charges = Object.values(additionalCharges).reduce((acc, charge) => {
@@ -298,6 +299,50 @@ const QuoteLineCosting = ({
     }, 0);
     return charges;
   });
+
+  const onUpdateChargeDescription = useCallback(
+    (chargeId: string, description: string) => {
+      const updatedCharges = {
+        ...additionalCharges,
+        [chargeId]: {
+          ...additionalCharges[chargeId],
+          description,
+        },
+      };
+
+      const formData = new FormData();
+
+      formData.set("additionalCharges", JSON.stringify(updatedCharges));
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteLineCost(quoteId, lineId),
+      });
+    },
+    [additionalCharges, fetcher, lineId, quoteId]
+  );
+
+  const onUpdateChargeAmount = useCallback(
+    (chargeId: string, quantity: number, amount: number) => {
+      const updatedCharges = {
+        ...additionalCharges,
+        [chargeId]: {
+          ...additionalCharges[chargeId],
+          amounts: {
+            ...additionalCharges[chargeId].amounts,
+            [quantity]: amount,
+          },
+        },
+      };
+
+      const formData = new FormData();
+      formData.set("additionalCharges", JSON.stringify(updatedCharges));
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteLineCost(quoteId, lineId),
+      });
+    },
+    [additionalCharges, fetcher, lineId, quoteId]
+  );
 
   return (
     <Card>
@@ -318,7 +363,7 @@ const QuoteLineCosting = ({
             <Tr>
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
-                  <span>Total Raw Material</span>
+                  <span className="whitespace-nowrap">Total Raw Material</span>
                   <Enumerable value="Material" />
                 </HStack>
               </Td>
@@ -344,7 +389,9 @@ const QuoteLineCosting = ({
             <Tr>
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
-                  <span>Total Labor &amp; Overhead</span>
+                  <span className="whitespace-nowrap">
+                    Total Labor &amp; Overhead
+                  </span>
                   <Enumerable value="Labor" />
                 </HStack>
               </Td>
@@ -411,6 +458,11 @@ const QuoteLineCosting = ({
                         defaultValue={charge.description}
                         size="sm"
                         className="border-0 -ml-3 shadow-none"
+                        onBlur={(e) => {
+                          if (e.target.value !== charge.description) {
+                            onUpdateChargeDescription(chargeId, e.target.value);
+                          }
+                        }}
                       />
                       <HStack spacing={1}>
                         <fetcher.Form
@@ -443,16 +495,24 @@ const QuoteLineCosting = ({
                     return (
                       <Td key={quantity.toString()}>
                         <VStack spacing={0}>
-                          <span>
-                            {amount
-                              ? formatter.format(amount)
-                              : formatter.format(0)}
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {amount && quantity > 0
-                              ? formatter.format(amount / quantity)
-                              : formatter.format(0)}
-                          </span>
+                          <NumberField
+                            defaultValue={amount}
+                            formatOptions={{
+                              style: "currency",
+                              currency: "USD",
+                            }}
+                            onChange={(value) => {
+                              if (value !== amount) {
+                                onUpdateChargeAmount(chargeId, quantity, value);
+                              }
+                            }}
+                          >
+                            <NumberInput
+                              className="border-0 -ml-3 shadow-none"
+                              size="sm"
+                              min={0}
+                            />
+                          </NumberField>
                         </VStack>
                       </Td>
                     );
