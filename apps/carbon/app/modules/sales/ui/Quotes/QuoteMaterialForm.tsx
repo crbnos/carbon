@@ -7,7 +7,12 @@ import {
   toast,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useNavigate, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "@remix-run/react";
 
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useEffect, useState } from "react";
@@ -23,7 +28,7 @@ import {
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
-import { useOptimisticLocation, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { quoteOperationValidator } from "~/modules/sales";
 import { quoteMaterialValidator } from "~/modules/sales";
@@ -46,7 +51,7 @@ const QuoteMaterialForm = ({
   const { supabase } = useSupabase();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const location = useOptimisticLocation();
+  const location = useLocation();
 
   const { quoteId, lineId, materialId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");

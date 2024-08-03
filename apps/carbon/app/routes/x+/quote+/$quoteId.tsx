@@ -134,12 +134,13 @@ function QuoteExplorer() {
   const { id: userId } = useUser();
   const quoteLineInitialValues = {
     quoteId,
+    description: "",
+    estimatorId: userId,
     itemId: "",
     itemReadableId: "",
-    status: "Draft" as const,
-    estimatorId: userId,
-    description: "",
     methodType: "Make" as const,
+    status: "Draft" as const,
+    quantity: [1],
     unitOfMeasureCode: "",
   };
 
@@ -264,7 +265,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
             <img
               alt="P2392303"
               className={cn(
-                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-transparent",
+                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent",
                 line.status === "Complete" && "border-green-500",
                 line.status === "In Progress" && "border-yellow-500"
               )}
@@ -273,7 +274,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
           ) : (
             <div
               className={cn(
-                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-transparent p-2",
+                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2",
                 line.status === "Complete" && "border-green-500",
                 line.status === "In Progress" && "border-yellow-500"
               )}

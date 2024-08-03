@@ -717,38 +717,40 @@ function SalesRFQLineForm({
       />
       <VStack className="pt-4">
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-          <Input
-            name="customerPartNumber"
-            label="Customer Part Number"
-            autoFocus
-          />
-          <Input name="customerRevisionId" label="Customer Revision" />
-          <Item
-            name="itemId"
-            label="Part"
-            type="Part"
-            onChange={(value) => {
-              onItemChange(value?.value as string);
-            }}
-          />
-          <InputControlled
-            name="description"
-            label="Description"
-            value={itemData.description}
-            onChange={(newValue) => {
-              setItemData((d) => ({ ...d, description: newValue }));
-            }}
-          />
-          <UnitOfMeasure
-            name="unitOfMeasureCode"
-            value={itemData.unitOfMeasureCode}
-            onChange={(newValue) =>
-              setItemData((d) => ({
-                ...d,
-                unitOfMeasureCode: newValue?.value ?? "EA",
-              }))
-            }
-          />
+          <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
+            <Input
+              name="customerPartNumber"
+              label="Customer Part Number"
+              autoFocus
+            />
+            <Input name="customerRevisionId" label="Customer Revision" />
+            <Item
+              name="itemId"
+              label="Part"
+              type="Part"
+              onChange={(value) => {
+                onItemChange(value?.value as string);
+              }}
+            />
+            <InputControlled
+              name="description"
+              label="Description"
+              value={itemData.description}
+              onChange={(newValue) => {
+                setItemData((d) => ({ ...d, description: newValue }));
+              }}
+            />
+            <UnitOfMeasure
+              name="unitOfMeasureCode"
+              value={itemData.unitOfMeasureCode}
+              onChange={(newValue) =>
+                setItemData((d) => ({
+                  ...d,
+                  unitOfMeasureCode: newValue?.value ?? "EA",
+                }))
+              }
+            />
+          </div>
           <ArrayNumeric
             name="quantity"
             label="Quantity"

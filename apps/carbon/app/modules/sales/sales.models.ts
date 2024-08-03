@@ -91,6 +91,13 @@ export const quoteValidator = z.object({
   expirationDate: zfd.text(z.string().optional()),
 });
 
+export const quoteLineAdditionalChargesValidator = z.record(
+  z.object({
+    description: z.string(),
+    amounts: z.record(z.number()),
+  })
+);
+
 export const quoteLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: z.string(),
@@ -108,6 +115,9 @@ export const quoteLineValidator = z.object({
   customerPartRevision: zfd.text(z.string().optional()),
   unitOfMeasureCode: zfd.text(
     z.string().min(1, { message: "Unit of measure is required" })
+  ),
+  quantity: z.array(
+    zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
   ),
   modelUploadId: zfd.text(z.string().optional()),
 });

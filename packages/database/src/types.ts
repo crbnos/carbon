@@ -12816,6 +12816,7 @@ export type Database = {
       }
       quoteLine: {
         Row: {
+          additionalCharges: Json | null
           companyId: string
           createdBy: string
           customerPartId: string | null
@@ -12830,6 +12831,7 @@ export type Database = {
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
           notes: Json | null
+          quantity: number[] | null
           quoteId: string
           quoteRevisionId: number
           status: Database["public"]["Enums"]["quoteLineStatus"]
@@ -12838,6 +12840,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          additionalCharges?: Json | null
           companyId: string
           createdBy: string
           customerPartId?: string | null
@@ -12852,6 +12855,7 @@ export type Database = {
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           notes?: Json | null
+          quantity?: number[] | null
           quoteId: string
           quoteRevisionId?: number
           status?: Database["public"]["Enums"]["quoteLineStatus"]
@@ -12860,6 +12864,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          additionalCharges?: Json | null
           companyId?: string
           createdBy?: string
           customerPartId?: string | null
@@ -12874,6 +12879,7 @@ export type Database = {
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           notes?: Json | null
+          quantity?: number[] | null
           quoteId?: string
           quoteRevisionId?: number
           status?: Database["public"]["Enums"]["quoteLineStatus"]
@@ -13061,47 +13067,50 @@ export type Database = {
       }
       quoteLinePrice: {
         Row: {
+          additionalCharges: Json | null
           createdAt: string
           createdBy: string
           discountPercent: number
           extendedPrice: number
-          id: string
           leadTime: number
           markupPercent: number
           quantity: number
           quoteId: string
           quoteLineId: string
           unitCost: number
+          unitPrice: number
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
+          additionalCharges?: Json | null
           createdAt?: string
           createdBy: string
           discountPercent?: number
           extendedPrice?: number
-          id?: string
           leadTime?: number
           markupPercent?: number
           quantity?: number
           quoteId: string
           quoteLineId: string
           unitCost?: number
+          unitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
+          additionalCharges?: Json | null
           createdAt?: string
           createdBy?: string
           discountPercent?: number
           extendedPrice?: number
-          id?: string
           leadTime?: number
           markupPercent?: number
           quantity?: number
           quoteId?: string
           quoteLineId?: string
           unitCost?: number
+          unitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -22900,6 +22909,7 @@ export type Database = {
       }
       quoteLines: {
         Row: {
+          additionalCharges: Json | null
           autodeskUrn: string | null
           companyId: string | null
           createdBy: string | null
@@ -22919,12 +22929,7 @@ export type Database = {
           modelSize: number | null
           modelUploadId: string | null
           notes: Json | null
-          pricingDiscountPercent: number | null
-          pricingExtendedPrice: number | null
-          pricingLeadTime: number | null
-          pricingMarkupPercent: number | null
-          pricingQuantity: number | null
-          pricingUnitCost: number | null
+          quantity: number[] | null
           quoteId: string | null
           quoteRevisionId: number | null
           status: Database["public"]["Enums"]["quoteLineStatus"] | null

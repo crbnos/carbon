@@ -1,10 +1,13 @@
+import type { Json } from "@carbon/database";
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Enumerable,
   HStack,
+  Input,
   Table,
   Tbody,
   Td,
@@ -14,10 +17,16 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
-import { useParams } from "@remix-run/react";
-import { useCallback, useMemo, useState } from "react";
+import { useFetcher, useParams } from "@remix-run/react";
+import { useCallback, useMemo } from "react";
+import { LuPlus, LuTrash } from "react-icons/lu";
 import type { Tree } from "~/components/TreeView";
-import type { QuotationOperation, QuoteMethod } from "~/modules/sales";
+import {
+  quoteLineAdditionalChargesValidator,
+  type QuotationOperation,
+  type QuoteMethod,
+} from "~/modules/sales";
+import { path } from "~/utils/path";
 
 type Costs = {
   materialCost: number;
@@ -248,12 +257,20 @@ function useLineCosts({
 const QuoteLineCosting = ({
   methodTree,
   operations,
+  quantities,
+  additionalCharges: additionalChargesJson,
 }: {
   methodTree?: Tree<QuoteMethod>;
   operations: QuotationOperation[];
+  quantities: number[];
+  additionalCharges?: Json;
 }) => {
+  const { quoteId, lineId } = useParams();
+  if (!quoteId) throw new Error("Could not find quoteId");
+  if (!lineId) throw new Error("Could not find lineId");
+
+  const fetcher = useFetcher<{ id: string }>();
   const getLineCosts = useLineCosts({ methodTree, operations });
-  const [quantities] = useState([1, 25, 50, 100]);
 
   const quantityCosts = quantities.map((quantity) => ({
     quantity,
@@ -267,6 +284,21 @@ const QuoteLineCosting = ({
     []
   );
 
+  const parsedAdditionalCharges = quoteLineAdditionalChargesValidator.safeParse(
+    additionalChargesJson
+  );
+  const additionalCharges = parsedAdditionalCharges.success
+    ? parsedAdditionalCharges.data
+    : {};
+
+  const additionalChargesByQuantity = quantities.map((quantity) => {
+    const charges = Object.values(additionalCharges).reduce((acc, charge) => {
+      const amount = charge.amounts?.[quantity] ?? 0;
+      return acc + amount;
+    }, 0);
+    return charges;
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -278,9 +310,7 @@ const QuoteLineCosting = ({
             <Tr>
               <Th />
               {quantities.map((quantity) => (
-                <Th key={quantity.toString()} className="font-mono">
-                  {quantity}
-                </Th>
+                <Th key={quantity.toString()}>{quantity}</Th>
               ))}
             </Tr>
           </Thead>
@@ -294,7 +324,7 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()} className="font-mono">
+                  <Td key={quantity.toString()}>
                     <VStack spacing={0}>
                       <span>
                         {costs.materialCost
@@ -320,7 +350,7 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()} className="font-mono">
+                  <Td key={quantity.toString()}>
                     <VStack spacing={0}>
                       <span>
                         {costs.overheadCost
@@ -350,7 +380,7 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()} className="font-mono">
+                  <Td key={quantity.toString()} >
                     <VStack spacing={0}>
                       <span>
                         {costs.outsideCost
@@ -367,18 +397,122 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr> */}
+            {Object.entries(additionalCharges).map(([chargeId, charge]) => {
+              const isDeleting =
+                fetcher.state === "loading" &&
+                fetcher.formAction ===
+                  path.to.deleteQuoteLineCost(quoteId, lineId) &&
+                fetcher.formData?.get("id") === chargeId;
+              return (
+                <Tr key={chargeId}>
+                  <Td className="border-r border-border">
+                    <HStack className="w-full justify-between ">
+                      <Input
+                        defaultValue={charge.description}
+                        size="sm"
+                        className="border-0 -ml-3 shadow-none"
+                      />
+                      <HStack spacing={1}>
+                        <fetcher.Form
+                          method="post"
+                          action={path.to.deleteQuoteLineCost(quoteId, lineId)}
+                        >
+                          <input type="hidden" name="id" value={chargeId} />
+                          <input
+                            type="hidden"
+                            name="additionalCharges"
+                            value={JSON.stringify(additionalCharges ?? {})}
+                          />
+                          <Button
+                            type="submit"
+                            aria-label="Delete"
+                            size="sm"
+                            variant="secondary"
+                            isDisabled={isDeleting}
+                            isLoading={isDeleting}
+                          >
+                            <LuTrash className="w-3 h-3" />
+                          </Button>
+                        </fetcher.Form>
+                        <Enumerable value="Extra" />
+                      </HStack>
+                    </HStack>
+                  </Td>
+                  {quantityCosts.map(({ quantity }) => {
+                    const amount = charge.amounts?.[quantity] ?? 0;
+                    return (
+                      <Td key={quantity.toString()}>
+                        <VStack spacing={0}>
+                          <span>
+                            {amount
+                              ? formatter.format(amount)
+                              : formatter.format(0)}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {amount && quantity > 0
+                              ? formatter.format(amount / quantity)
+                              : formatter.format(0)}
+                          </span>
+                        </VStack>
+                      </Td>
+                    );
+                  })}
+                </Tr>
+              );
+            })}
+            <Tr>
+              <Td className="border-r border-border">
+                <HStack className="w-full justify-between ">
+                  <fetcher.Form
+                    method="post"
+                    action={path.to.newQuoteLineCost(quoteId, lineId)}
+                  >
+                    <input
+                      type="hidden"
+                      name="additionalCharges"
+                      value={JSON.stringify(additionalCharges ?? {})}
+                    />
+                    <Button
+                      className="-ml-3"
+                      type="submit"
+                      rightIcon={<LuPlus />}
+                      variant="ghost"
+                      isLoading={
+                        fetcher.formAction ===
+                          path.to.newQuoteLineCost(quoteId, lineId) &&
+                        fetcher.state === "loading"
+                      }
+                      isDisabled={
+                        fetcher.formAction ===
+                          path.to.newQuoteLineCost(quoteId, lineId) &&
+                        fetcher.state === "loading"
+                      }
+                    >
+                      Add
+                    </Button>
+                  </fetcher.Form>
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity }) => {
+                return <Td key={quantity.toString()}></Td>;
+              })}
+            </Tr>
             <Tr className="font-bold">
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
                   <span>Total Cost</span>
+                  <Enumerable value="Total" />
                 </HStack>
               </Td>
-              {quantityCosts.map(({ quantity, costs }) => {
+              {quantityCosts.map(({ quantity, costs }, index) => {
                 const totalCost =
-                  // costs.materialCost +
-                  costs.laborCost + costs.overheadCost + costs.outsideCost;
+                  costs.materialCost +
+                  costs.laborCost +
+                  costs.overheadCost +
+                  costs.outsideCost +
+                  additionalChargesByQuantity[index];
                 return (
-                  <Td key={quantity.toString()} className="font-mono">
+                  <Td key={quantity.toString()}>
                     <VStack spacing={0}>
                       <span>
                         {totalCost
@@ -400,7 +534,7 @@ const QuoteLineCosting = ({
             {/* <Tr className="font-bold">
               <Td className="border-r border-border" />
               {quantityCosts.map(({ quantity }) => (
-                <Td key={quantity} className="font-mono">
+                <Td key={quantity} >
                   <Button variant="secondary">Add</Button>
                 </Td>
               ))}
