@@ -200,6 +200,7 @@ const QuoteLineForm = ({
                         name="itemId"
                         type="Part"
                         label="Part"
+                        includeInactive
                         onChange={(value) => {
                           onItemChange(value?.value as string);
                         }}

@@ -207,6 +207,7 @@ const QuoteMaterialForm = ({
                 name="itemId"
                 label={itemType}
                 type={itemType}
+                includeInactive
                 onChange={(value) => {
                   onItemChange(value?.value as string);
                 }}

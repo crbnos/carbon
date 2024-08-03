@@ -44,9 +44,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     const [items, suppliers, customers, people] = await Promise.all([
       supabase
         .from("item")
-        .select("id, readableId, name, type, replenishmentSystem")
+        .select("id, readableId, name, type, replenishmentSystem, active")
         .eq("companyId", companyId)
-        .eq("active", true)
         .order("name"),
       supabase
         .from("supplier")
@@ -109,24 +108,24 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           switch (payload.eventType) {
             case "INSERT":
               const { new: inserted } = payload;
-              if (inserted.active) {
-                setItems((items) =>
-                  [
-                    ...items,
-                    {
-                      id: inserted.id,
-                      name: inserted.name,
-                      readableId: inserted.readableId,
-                      replenishmentSystem: inserted.replenishmentSystem,
-                      type: inserted.type,
-                    },
-                  ].sort((a, b) => a.name.localeCompare(b.name))
-                );
-              }
+
+              setItems((items) =>
+                [
+                  ...items,
+                  {
+                    id: inserted.id,
+                    name: inserted.name,
+                    readableId: inserted.readableId,
+                    replenishmentSystem: inserted.replenishmentSystem,
+                    type: inserted.type,
+                  },
+                ].sort((a, b) => a.name.localeCompare(b.name))
+              );
+
               break;
             case "UPDATE":
               const { new: updated } = payload;
-              // TODO: handle active status changes
+
               setItems((items) =>
                 items
                   .map((i) => {

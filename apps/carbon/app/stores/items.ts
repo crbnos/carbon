@@ -8,6 +8,7 @@ export type Item = ListItem & {
   readableId: string;
   type: Database["public"]["Enums"]["itemType"];
   replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
+  active: boolean;
 };
 
 const $itemsStore = atom<Item[]>([]);

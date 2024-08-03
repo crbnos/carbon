@@ -15,6 +15,7 @@ import CreatableCombobox from "./CreatableCombobox";
 type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
   type: Database["public"]["Enums"]["itemType"];
   disabledItems?: string[];
+  includeInactive?: boolean;
   replenishmentSystem?: string;
 };
 
@@ -26,11 +27,12 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
 
   const options = useMemo(() => {
     const results =
-      (props?.replenishmentSystem
+      (props?.replenishmentSystem || props?.includeInactive !== true
         ? items.filter(
             (item) =>
               item.type === type &&
-              item.replenishmentSystem === props.replenishmentSystem
+              item.replenishmentSystem === props.replenishmentSystem &&
+              (item.active === true || props?.includeInactive === true)
           )
         : items
       )
@@ -47,7 +49,13 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
     }
 
     return results;
-  }, [items, props.disabledItems, props.replenishmentSystem, type]);
+  }, [
+    items,
+    props?.includeInactive,
+    props.disabledItems,
+    props.replenishmentSystem,
+    type,
+  ]);
 
   return (
     <>
@@ -77,7 +85,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             replenishmentSystem: "Make",
             unitOfMeasureCode: "EA",
             defaultMethodType: "Make",
-            active: true,
+            active: props?.includeInactive === undefined,
           }}
         />
       )}
@@ -97,7 +105,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             unitOfMeasureCode: "EA",
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
-            active: true,
+            active: props?.includeInactive === undefined,
           }}
         />
       )}
@@ -117,7 +125,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             unitOfMeasureCode: "EA",
             replenishmentSystem: "Make",
             defaultMethodType: "Buy",
-            active: true,
+            active: props?.includeInactive === undefined,
           }}
         />
       )}
@@ -139,7 +147,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             unitOfMeasureCode: "EA",
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
-            active: true,
+            active: props?.includeInactive === undefined,
           }}
         />
       )}
@@ -160,7 +168,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             unitOfMeasureCode: "EA",
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
-            active: true,
+            active: props?.includeInactive === undefined,
           }}
         />
       )}
