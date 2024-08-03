@@ -728,6 +728,7 @@ function SalesRFQLineForm({
               name="itemId"
               label="Part"
               type="Part"
+              includeInactive
               onChange={(value) => {
                 onItemChange(value?.value as string);
               }}

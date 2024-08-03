@@ -22,6 +22,7 @@ import {
 import { useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useMemo } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
+import type { z } from "zod";
 import type { Tree } from "~/components/TreeView";
 import {
   quoteLineAdditionalChargesValidator,
@@ -287,10 +288,23 @@ const QuoteLineCosting = ({
   );
 
   const additionalCharges = useMemo(() => {
+    if (fetcher.formAction === path.to.quoteLineCost(quoteId, lineId)) {
+      // get the optimistic update
+      return JSON.parse(
+        (fetcher.formData?.get("additionalCharges") as string) ?? "{}"
+      ) as z.infer<typeof quoteLineAdditionalChargesValidator>;
+    }
     const parsedAdditionalCharges =
       quoteLineAdditionalChargesValidator.safeParse(additionalChargesJson);
+
     return parsedAdditionalCharges.success ? parsedAdditionalCharges.data : {};
-  }, [additionalChargesJson]);
+  }, [
+    additionalChargesJson,
+    fetcher.formAction,
+    fetcher.formData,
+    lineId,
+    quoteId,
+  ]);
 
   const additionalChargesByQuantity = quantities.map((quantity) => {
     const charges = Object.values(additionalCharges).reduce((acc, charge) => {
@@ -353,7 +367,7 @@ const QuoteLineCosting = ({
         <Table>
           <Thead>
             <Tr>
-              <Th />
+              <Th className="w-[300px]" />
               {quantities.map((quantity) => (
                 <Th key={quantity.toString()}>{quantity}</Th>
               ))}
@@ -560,7 +574,7 @@ const QuoteLineCosting = ({
             <Tr className="font-bold">
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
-                  <span>Total Cost</span>
+                  <span>Total Estimated Cost</span>
                   <Enumerable value="Total" />
                 </HStack>
               </Td>
