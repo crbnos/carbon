@@ -102,7 +102,7 @@ const QuotePDF = ({
                   {getLineDescriptionDetails(line)}
                 </Text>
               </View>
-              <Text style={styles.tableCol2}>{line.pricingQuantity}</Text>
+              {/* <Text style={styles.tableCol2}>{line.pricingQuantity}</Text>
               <Text style={styles.tableCol3}>
                 <Text>
                   {line.pricingQuantity
@@ -117,7 +117,7 @@ const QuotePDF = ({
               </Text>
               <Text style={styles.tableCol4}>
                 <Text>{formatter.format(line.pricingExtendedPrice ?? 0)}</Text>
-              </Text>
+              </Text> */}
             </View>
           ))}
           <View style={styles.tfoot}>

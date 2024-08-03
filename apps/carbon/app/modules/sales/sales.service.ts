@@ -15,6 +15,7 @@ import type {
   customerTypeValidator,
   customerValidator,
   quotationPricingValidator,
+  quoteLineAdditionalChargesValidator,
   quoteLineValidator,
   quoteMaterialValidator,
   quoteOperationValidator,
@@ -1337,6 +1338,17 @@ export async function upsertQuoteLine(
       .single();
   }
   return client.from("quoteLine").insert([quotationLine]).select("*").single();
+}
+
+export async function upsertQuoteLineAdditionalCharges(
+  client: SupabaseClient<Database>,
+  lineId: string,
+  update: {
+    additionalCharges: z.infer<typeof quoteLineAdditionalChargesValidator>;
+    updatedBy: string;
+  }
+) {
+  return client.from("quoteLine").update(update).eq("id", lineId);
 }
 
 export async function updateQuoteLinePrice(

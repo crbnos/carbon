@@ -26,6 +26,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuDownload, LuTrash, LuUpload } from "react-icons/lu";
 import type { z } from "zod";
 import {
+  ArrayNumeric,
   CustomFormFields,
   Hidden,
   Input,
@@ -194,59 +195,68 @@ const QuoteLineForm = ({
                 />
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                    <Item
-                      name="itemId"
-                      type="Part"
-                      label="Part"
-                      onChange={(value) => {
-                        onItemChange(value?.value as string);
-                      }}
-                    />
+                    <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
+                      <Item
+                        name="itemId"
+                        type="Part"
+                        label="Part"
+                        onChange={(value) => {
+                          onItemChange(value?.value as string);
+                        }}
+                      />
 
-                    <InputControlled
-                      name="description"
-                      label="Description"
-                      value={itemData.description}
-                      onChange={(newValue) =>
-                        setItemData((d) => ({ ...d, description: newValue }))
-                      }
-                    />
+                      <InputControlled
+                        name="description"
+                        label="Description"
+                        value={itemData.description}
+                        onChange={(newValue) =>
+                          setItemData((d) => ({ ...d, description: newValue }))
+                        }
+                      />
 
-                    <SelectControlled
-                      name="methodType"
-                      label="Method"
-                      options={
-                        methodType.map((m) => ({
-                          label: m,
-                          value: m,
-                        })) ?? []
-                      }
-                      value={itemData.methodType}
-                      onChange={(newValue) => {
-                        if (newValue)
-                          setItemData((d) => ({
-                            ...d,
-                            methodType: newValue?.value,
-                          }));
-                      }}
-                    />
+                      <SelectControlled
+                        name="methodType"
+                        label="Method"
+                        options={
+                          methodType.map((m) => ({
+                            label: m,
+                            value: m,
+                          })) ?? []
+                        }
+                        value={itemData.methodType}
+                        onChange={(newValue) => {
+                          if (newValue)
+                            setItemData((d) => ({
+                              ...d,
+                              methodType: newValue?.value,
+                            }));
+                        }}
+                      />
 
-                    <Input name="customerPartId" label="Customer Part ID" />
-                    <Input
-                      name="customerPartRevision"
-                      label="Customer Part Revision"
-                    />
+                      <Input name="customerPartId" label="Customer Part ID" />
+                      <Input
+                        name="customerPartRevision"
+                        label="Customer Part Revision"
+                      />
 
-                    <Select
-                      name="status"
-                      label="Line Status"
-                      options={quoteLineStatusType.map((s) => ({
-                        label: s,
-                        value: s,
-                      }))}
-                    />
+                      <Select
+                        name="status"
+                        label="Line Status"
+                        options={quoteLineStatusType.map((s) => ({
+                          label: s,
+                          value: s,
+                        }))}
+                      />
 
-                    <CustomFormFields table="quoteLine" />
+                      <CustomFormFields table="quoteLine" />
+                    </div>
+                    <div className="flex gap-y-4">
+                      <ArrayNumeric
+                        name="quantity"
+                        label="Quantity"
+                        defaults={[1, 25, 50, 100]}
+                      />
+                    </div>
                   </div>
                 </VStack>
               </ModalCardBody>

@@ -2,7 +2,7 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import { CadModel } from "~/modules/items";
@@ -148,26 +148,24 @@ export default function QuoteLine() {
     ...line,
     id: line.id ?? undefined,
     quoteId: line.quoteId ?? "",
-    estimatorId: line.estimatorId ?? "",
     customerPartId: line.customerPartId ?? "",
     customerPartRevision: line.customerPartRevision ?? "",
-    status: line.status ?? "Draft",
+    description: line.description ?? "",
+    estimatorId: line.estimatorId ?? "",
     itemId: line.itemId ?? "",
     itemReadableId: line.itemReadableId ?? "",
-    description: line.description ?? "",
     methodType: line.methodType ?? "Make",
-    unitOfMeasureCode: line.unitOfMeasureCode ?? "",
     modelUploadId: line.modelUploadId ?? undefined,
+    status: line.status ?? "Draft",
+    quantity: line.quantity ?? [1],
+    unitOfMeasureCode: line.unitOfMeasureCode ?? "",
   };
 
   return (
-    <>
-      <QuoteLineForm key={initialValues.id} initialValues={initialValues} />
+    <Fragment key={lineId}>
+      <QuoteLineForm key={lineId} initialValues={initialValues} />
       {permissions.is("employee") && (
-        <>
-          {line.methodType === "Make" && (
-            <QuoteLineCosting methodTree={methodTree} operations={operations} />
-          )}
+        <Fragment key={lineId}>
           <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
             <CadModel
               autodeskUrn={line?.autodeskUrn ?? null}
@@ -184,10 +182,18 @@ export default function QuoteLine() {
               modelUpload={line ?? undefined}
             />
           </div>
+          {line.methodType === "Make" && (
+            <QuoteLineCosting
+              methodTree={methodTree}
+              operations={operations}
+              quantities={line.quantity ?? [1]}
+              additionalCharges={line.additionalCharges ?? {}}
+            />
+          )}
           <QuoteLineNotes line={line} />
           <Outlet />
-        </>
+        </Fragment>
       )}
-    </>
+    </Fragment>
   );
 }

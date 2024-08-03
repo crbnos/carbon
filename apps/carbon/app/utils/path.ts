@@ -233,6 +233,8 @@ export const path = {
     deleteQuote: (id: string) => generatePath(`${x}/quote/delete/${id}`),
     deleteQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
+    deleteQuoteLineCost: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/cost/delete`),
     deleteQuoteMaterial: (quoteId: string, lineId: string, id: string) =>
       generatePath(
         `${x}/quote/methods/${quoteId}/${lineId}/material/delete/${id}`
@@ -436,8 +438,8 @@ export const path = {
       generatePath(`${x}/purchase-order/${id}/lines/new`),
     newQuote: `${x}/quote/new`,
     newQuoteLine: (id: string) => generatePath(`${x}/quote/${id}/new`),
-    newQuoteLineQuantity: (id: string, lineId: string) =>
-      generatePath(`${x}/quote/${id}/lines/${lineId}/new`),
+    newQuoteLineCost: (id: string, lineId: string) =>
+      generatePath(`${x}/quote/${id}/${lineId}/cost/new`),
     newQuoteOperation: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/new`),
     newQuoteMaterial: (quoteId: string, lineId: string) =>
