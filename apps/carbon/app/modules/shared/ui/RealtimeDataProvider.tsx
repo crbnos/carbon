@@ -116,8 +116,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                     id: inserted.id,
                     name: inserted.name,
                     readableId: inserted.readableId,
+                    description: inserted.description,
                     replenishmentSystem: inserted.replenishmentSystem,
                     type: inserted.type,
+                    active: inserted.active,
                   },
                 ].sort((a, b) => a.name.localeCompare(b.name))
               );
@@ -134,7 +136,9 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                         ...i,
                         readableId: updated.readableId,
                         name: updated.name,
-                        description: updated.description,
+                        replenishmentSystem: inserted.replenishmentSystem,
+                        type: inserted.type,
+                        active: inserted.active,
                       };
                     }
                     return i;
