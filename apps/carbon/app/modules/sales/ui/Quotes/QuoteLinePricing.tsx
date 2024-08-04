@@ -6,7 +6,13 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
+  NumberField,
+  NumberInput,
   Table,
   Tbody,
   Td,
@@ -19,9 +25,10 @@ import {
   VStack,
 } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
-import { useMemo } from "react";
-import { LuInfo, LuRefreshCcw } from "react-icons/lu";
+import { useEffect, useMemo, useState } from "react";
+import { LuChevronDown, LuInfo, LuRefreshCcw } from "react-icons/lu";
 import type { z } from "zod";
+import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import { quoteLineAdditionalChargesValidator } from "../../sales.models";
 import type { Costs, QuotationPrice } from "../../types";
@@ -40,7 +47,13 @@ const QuoteLinePricing = ({
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
+  const [prices, setPrices] =
+    useState<Record<number, QuotationPrice>>(pricesByQuantity);
+  useEffect(() => {
+    setPrices(pricesByQuantity);
+  }, [pricesByQuantity]);
 
+  const { supabase } = useSupabase();
   const fetcher = useFetcher<{ id: string }>();
 
   // TODO: factor in default currency or quote currency
@@ -95,20 +108,50 @@ const QuoteLinePricing = ({
   });
 
   const netPricesByQuantity = quantities.map((quantity, index) => {
-    const price = pricesByQuantity[quantity]?.unitPrice ?? 0;
-    const discount = (pricesByQuantity[quantity]?.discountPercent ?? 0) / 100;
+    const price = prices[quantity]?.unitPrice ?? 0;
+    const discount = prices[quantity]?.discountPercent ?? 0;
     const netPrice = price * (1 - discount / 100);
     return netPrice;
   });
 
-  const onRecalculate = () => {
+  const onRecalculate = (markup: number) => {
     const formData = new FormData();
+    formData.append("markup", markup.toString());
     formData.append("unitCostsByQuantity", JSON.stringify(unitCostsByQuantity));
     formData.append("quantities", JSON.stringify(quantities));
     fetcher.submit(formData, {
       method: "post",
-      action: path.to.quoteLineRecaluclatePrice(quoteId, lineId),
+      action: path.to.quoteLineRecalculatePrice(quoteId, lineId),
     });
+  };
+
+  const onUpdate = async (
+    key: "leadTime" | "unitPrice" | "discountPercent",
+    quantity: number,
+    value: number
+  ) => {
+    if (!supabase) return;
+
+    const oldPrices = { ...prices };
+    const newPrices = { ...oldPrices };
+    if (!newPrices[quantity]) {
+      newPrices[quantity] = {
+        leadTime: 0,
+        unitPrice: 0,
+        discountPercent: 0,
+      } as QuotationPrice;
+    }
+    newPrices[quantity] = { ...newPrices[quantity], [key]: value };
+    setPrices(newPrices);
+
+    const { error } = await supabase
+      .from("quoteLinePrice")
+      .update({ [key]: value })
+      .eq("quoteLineId", lineId)
+      .eq("quantity", quantity);
+    if (error) {
+      setPrices(oldPrices);
+    }
   };
 
   return (
@@ -118,23 +161,44 @@ const QuoteLinePricing = ({
           <CardTitle>Pricing</CardTitle>
         </CardHeader>
         <CardAction>
-          <Button
-            variant="secondary"
-            leftIcon={<LuRefreshCcw />}
-            onClick={onRecalculate}
-            isLoading={
-              fetcher.state === "loading" &&
-              fetcher.formAction ===
-                path.to.quoteLineRecaluclatePrice(quoteId, lineId)
-            }
-            isDisabled={
-              fetcher.state === "loading" &&
-              fetcher.formAction ===
-                path.to.quoteLineRecaluclatePrice(quoteId, lineId)
-            }
-          >
-            Recalculate
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="secondary"
+                leftIcon={<LuRefreshCcw />}
+                rightIcon={<LuChevronDown />}
+                isLoading={
+                  fetcher.state === "loading" &&
+                  fetcher.formAction ===
+                    path.to.quoteLineRecalculatePrice(quoteId, lineId)
+                }
+                isDisabled={
+                  fetcher.state === "loading" &&
+                  fetcher.formAction ===
+                    path.to.quoteLineRecalculatePrice(quoteId, lineId)
+                }
+              >
+                Recalculate
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onRecalculate(0)}>
+                0% Markup
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onRecalculate(10)}>
+                10% Markup
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onRecalculate(15)}>
+                15% Markup
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onRecalculate(20)}>
+                20% Markup
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onRecalculate(30)}>
+                30% Markup
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </CardAction>
       </HStack>
       <CardContent>
@@ -148,15 +212,53 @@ const QuoteLinePricing = ({
             </Tr>
           </Thead>
           <Tbody>
-            <Tr className="[&>td]:bg-muted/80 [&>td]:group-hover:bg-muted/70">
-              <Td className="border-r border-border">
+            <Tr>
+              <Td className="border-r border-border group-hover:bg-muted/50">
+                <HStack className="w-full justify-between ">
+                  <span>Lead Time</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity) => {
+                const leadTime = prices[quantity]?.leadTime ?? 0;
+                return (
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
+                    <NumberField
+                      value={leadTime}
+                      formatOptions={{
+                        style: "unit",
+                        unit: "day",
+                        unitDisplay: "long",
+                      }}
+                      minValue={0}
+                      isDisabled
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== leadTime) {
+                          onUpdate("leadTime", quantity, value);
+                        }
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none"
+                        size="sm"
+                        min={0}
+                      />
+                    </NumberField>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Unit Cost</span>
                 </HStack>
               </Td>
               {unitCostsByQuantity.map((cost, index) => {
                 return (
-                  <Td key={index}>
+                  <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
                       <span>{formatter.format(cost ?? 0)}</span>
                     </VStack>
@@ -171,33 +273,33 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
-                const price = pricesByQuantity[quantity]?.unitPrice;
+                const price = prices[quantity]?.unitPrice;
                 return (
                   <Td key={quantity.toString()}>
-                    <VStack spacing={0}>
-                      <span>{formatter.format(price ?? 0)}</span>
-                    </VStack>
+                    <NumberField
+                      value={price}
+                      formatOptions={{
+                        style: "currency",
+                        currency: "USD",
+                      }}
+                      minValue={0}
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== price) {
+                          onUpdate("unitPrice", quantity, value);
+                        }
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none"
+                        size="sm"
+                        min={0}
+                      />
+                    </NumberField>
                   </Td>
                 );
               })}
             </Tr>
-            <Tr>
-              <Td className="border-r border-border">
-                <HStack className="w-full justify-between ">
-                  <span>Lead Time</span>
-                </HStack>
-              </Td>
-              {quantities.map((quantity) => {
-                const leadTime = pricesByQuantity[quantity]?.leadTime ?? 0;
-                return (
-                  <Td key={quantity.toString()}>
-                    <VStack spacing={0}>
-                      <span>{leadTime} days</span>
-                    </VStack>
-                  </Td>
-                );
-              })}
-            </Tr>
+
             <Tr>
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
@@ -205,26 +307,42 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const discount = pricesByQuantity[quantity]?.discountPercent;
+                const discount = prices[quantity]?.discountPercent;
 
                 return (
                   <Td key={index}>
-                    <VStack spacing={0}>
-                      <span>{(discount ?? 0).toFixed(2)}%</span>
-                    </VStack>
+                    <NumberField
+                      value={discount}
+                      formatOptions={{
+                        style: "percent",
+                        currency: "USD",
+                      }}
+                      minValue={0}
+                      maxValue={1}
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== discount) {
+                          onUpdate("discountPercent", quantity, value);
+                        }
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none"
+                        size="sm"
+                      />
+                    </NumberField>
                   </Td>
                 );
               })}
             </Tr>
-            <Tr className="[&>td]:bg-muted/80 [&>td]:group-hover:bg-muted/70">
-              <Td className="border-r border-border">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Net Price</span>
                 </HStack>
               </Td>
               {netPricesByQuantity.map((price, index) => {
                 return (
-                  <Td key={index}>
+                  <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
                       <span>{formatter.format(price)}</span>
                     </VStack>
@@ -232,8 +350,8 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
-            <Tr className="[&>td]:bg-muted/80 [&>td]:group-hover:bg-muted/70">
-              <Td className="border-r border-border">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="flex items-center justify-start gap-2">
                     Markup Percent
@@ -250,7 +368,7 @@ const QuoteLinePricing = ({
                 const cost = unitCostsByQuantity[index];
                 const markup = ((price - cost) / cost) * 100;
                 return (
-                  <Td key={index}>
+                  <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
                       {Number.isFinite(markup) ? (
                         <span>{(markup ?? 0).toFixed(2)}%</span>
@@ -262,8 +380,8 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
-            <Tr className="[&>td]:bg-muted/80 [&>td]:group-hover:bg-muted/70">
-              <Td className="border-r border-border">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="flex items-center justify-start gap-2">
                     Profit Percent
@@ -280,7 +398,7 @@ const QuoteLinePricing = ({
                 const cost = unitCostsByQuantity[index];
                 const profit = ((price - cost) / price) * 100;
                 return (
-                  <Td key={index}>
+                  <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
                       {Number.isFinite(profit) ? (
                         <span>{profit.toFixed(2)}%</span>
@@ -293,8 +411,8 @@ const QuoteLinePricing = ({
               })}
             </Tr>
 
-            <Tr className="[&>td]:bg-muted/80 [&>td]:group-hover:bg-muted/70">
-              <Td className="border-r border-border">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Total Profit</span>
                 </HStack>
@@ -304,7 +422,7 @@ const QuoteLinePricing = ({
                 const cost = unitCostsByQuantity[index];
                 const profit = (price - cost) * quantity;
                 return (
-                  <Td key={index}>
+                  <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
                       <span>{formatter.format(profit)}</span>
                     </VStack>
@@ -312,8 +430,8 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
-            <Tr className="font-bold">
-              <Td className="border-r border-border">
+            <Tr className="font-bold [&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Total Price</span>
                 </HStack>
@@ -321,7 +439,7 @@ const QuoteLinePricing = ({
               {quantities.map((quantity, index) => {
                 const price = netPricesByQuantity[index];
                 return (
-                  <Td key={index}>
+                  <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
                       <span>{formatter.format(price * quantity)}</span>
                     </VStack>
