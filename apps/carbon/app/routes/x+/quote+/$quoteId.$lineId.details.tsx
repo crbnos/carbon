@@ -112,7 +112,7 @@ export default function QuoteLine() {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  useRealtime("quoteLine", `id=eq.${lineId}`);
+  // useRealtime("quoteLine", `id=eq.${lineId}`);
   useRealtime("quoteMaterial", `quoteLineId=eq.${lineId}`);
   useRealtime("quoteOperation", `quoteLineId=eq.${lineId}`);
 
@@ -168,6 +168,7 @@ export default function QuoteLine() {
               modelUpload={line ?? undefined}
             />
           </div>
+          <QuoteLineNotes line={line} />
           {line.methodType === "Make" && (
             <QuoteLineCosting
               quantities={line.quantity ?? [1]}
@@ -181,7 +182,6 @@ export default function QuoteLine() {
             pricesByQuantity={pricesByQuantity}
             getLineCosts={getLineCosts}
           />
-          <QuoteLineNotes line={line} />
           <Outlet />
         </Fragment>
       )}

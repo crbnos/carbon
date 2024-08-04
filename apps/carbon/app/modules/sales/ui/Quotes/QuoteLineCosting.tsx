@@ -146,8 +146,8 @@ const QuoteLineCosting = ({
             </Tr>
           </Thead>
           <Tbody>
-            <Tr>
-              <Td className="border-r border-border">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Total Material Cost</span>
                   <Enumerable value="Material" />
@@ -163,7 +163,10 @@ const QuoteLineCosting = ({
                   costs.serviceCost;
 
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {totalMaterialCost
@@ -180,8 +183,8 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
-            <Tr>
-              <Td className="border-r border-border pl-10">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border pl-10 group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="whitespace-nowrap flex items-center justify-start gap-2">
                     Part Cost{" "}
@@ -201,7 +204,10 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {costs.partCost
@@ -218,8 +224,8 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
-            <Tr>
-              <Td className="border-r border-border pl-10">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border pl-10 group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="whitespace-nowrap">Material Cost</span>
                   <Badge variant="secondary">
@@ -229,7 +235,10 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {costs.materialCost
@@ -246,8 +255,8 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
-            <Tr>
-              <Td className="border-r border-border pl-10">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border pl-10 group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="whitespace-nowrap">Tooling Cost</span>
                   <Badge variant="secondary">
@@ -257,7 +266,10 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {costs.toolCost
@@ -274,8 +286,8 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
-            <Tr>
-              <Td className="border-r border-border pl-10">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border pl-10 group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="whitespace-nowrap">Fixture Cost</span>
                   <Badge variant="secondary">
@@ -285,7 +297,10 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {costs.fixtureCost
@@ -302,8 +317,8 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
-            <Tr>
-              <Td className="border-r border-border pl-10">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border pl-10 group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="whitespace-nowrap">Consumable Cost</span>
                   <Badge variant="secondary">
@@ -313,7 +328,10 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {costs.consumableCost
@@ -330,8 +348,8 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
-            <Tr>
-              <Td className="border-r border-border pl-10">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border pl-10 group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="whitespace-nowrap">Service Cost</span>
                   <Badge variant="secondary">
@@ -341,7 +359,10 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {costs.serviceCost
@@ -358,8 +379,8 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
-            <Tr>
-              <Td className="border-r border-border">
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span className="whitespace-nowrap">
                     Total Labor &amp; Overhead
@@ -369,7 +390,10 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {costs.overheadCost
@@ -391,7 +415,7 @@ const QuoteLineCosting = ({
               })}
             </Tr>
             {/* <Tr>
-              <Td className="border-r border-border">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Total Outside Processing</span>
                   <Enumerable value="Subcontract" />
@@ -399,7 +423,7 @@ const QuoteLineCosting = ({
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
-                  <Td key={quantity.toString()} >
+                  <Td key={quantity.toString()} className="group-hover:bg-muted/50" >
                     <VStack spacing={0}>
                       <span>
                         {costs.outsideCost
@@ -431,7 +455,10 @@ const QuoteLineCosting = ({
                         size="sm"
                         className="border-0 -ml-3 shadow-none"
                         onBlur={(e) => {
-                          if (e.target.value !== charge.description) {
+                          if (
+                            e.target.value &&
+                            e.target.value !== charge.description
+                          ) {
                             onUpdateChargeDescription(chargeId, e.target.value);
                           }
                         }}
@@ -474,7 +501,7 @@ const QuoteLineCosting = ({
                               currency: "USD",
                             }}
                             onChange={(value) => {
-                              if (value !== amount) {
+                              if (value && value !== amount) {
                                 onUpdateChargeAmount(chargeId, quantity, value);
                               }
                             }}
@@ -529,8 +556,8 @@ const QuoteLineCosting = ({
                 return <Td key={quantity.toString()}></Td>;
               })}
             </Tr>
-            <Tr className="font-bold">
-              <Td className="border-r border-border">
+            <Tr className="font-bold [&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Total Estimated Cost</span>
                   <Enumerable value="Total" />
@@ -549,7 +576,10 @@ const QuoteLineCosting = ({
                   costs.outsideCost +
                   additionalChargesByQuantity[index];
                 return (
-                  <Td key={quantity.toString()}>
+                  <Td
+                    key={quantity.toString()}
+                    className="group-hover:bg-muted/50"
+                  >
                     <VStack spacing={0}>
                       <span>
                         {totalCost

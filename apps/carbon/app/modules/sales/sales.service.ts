@@ -1348,10 +1348,19 @@ export async function upsertQuoteLinePrices(
     quoteLineId: string;
     unitPrice: number;
     leadTime: number;
+    discountPercent: number;
     quantity: number;
     createdBy: string;
   }[]
 ) {
+  const existingPrices = await client
+    .from("quoteLinePrice")
+    .select("*")
+    .eq("quoteLineId", lineId);
+  if (existingPrices.error) {
+    return existingPrices;
+  }
+
   const deletePrices = await client
     .from("quoteLinePrice")
     .delete()
@@ -1360,7 +1369,27 @@ export async function upsertQuoteLinePrices(
     return deletePrices;
   }
 
-  return client.from("quoteLinePrice").insert(quoteLinePrices);
+  const pricesByQuantity = existingPrices.data.reduce<
+    Record<number, { discountPercent: number; leadTime: number }>
+  >((acc, price) => {
+    acc[price.quantity] = price;
+    return acc;
+  }, {});
+
+  const pricesWithExistingDiscountsAndLeadTimes = quoteLinePrices.map((p) => {
+    if (p.quantity in pricesByQuantity) {
+      return {
+        ...p,
+        discountPercent: pricesByQuantity[p.quantity].discountPercent,
+        leadTime: pricesByQuantity[p.quantity].leadTime,
+      };
+    }
+    return p;
+  });
+
+  return client
+    .from("quoteLinePrice")
+    .insert(pricesWithExistingDiscountsAndLeadTimes);
 }
 
 export async function updateQuoteLinePrice(

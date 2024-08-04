@@ -19,6 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
 
+  const markup = Number.parseInt((formData.get("markup") as string) ?? "15");
   const unitCostsByQuantity = numberArrayValidator.safeParse(
     JSON.parse((formData.get("unitCostsByQuantity") ?? "[]") as string)
   );
@@ -45,7 +46,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     quoteId,
     quoteLineId: lineId,
     quantity: quantities.data[index],
-    unitPrice: unitCost * 1.15,
+    unitPrice: unitCost * (1 + markup / 100),
+    discountPercent: 0,
     leadTime: 0,
     createdBy: userId,
   }));
