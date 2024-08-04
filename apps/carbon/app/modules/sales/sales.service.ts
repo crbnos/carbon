@@ -599,25 +599,14 @@ export async function getSalesOrderExternalDocuments(
     .list(`${companyId}/sales/external/${salesOrderId}`);
 }
 
-/*export async function getSalesOrderInternalDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  salesOrderId: string
-) {
-  return client.storage
-    .from("private")
-    .list(`${companyId}/sales/internal/${salesOrderId}`);
-}*/
-
-export async function getQuoteLinePrice(
+export async function getQuoteLinePrices(
   client: SupabaseClient<Database>,
   quoteLineId: string
 ) {
   return client
     .from("quoteLinePrice")
     .select("*")
-    .eq("quoteLineId", quoteLineId)
-    .single();
+    .eq("quoteLineId", quoteLineId);
 }
 
 export async function getQuoteLinePricesByQuoteId(
@@ -1349,6 +1338,29 @@ export async function upsertQuoteLineAdditionalCharges(
   }
 ) {
   return client.from("quoteLine").update(update).eq("id", lineId);
+}
+
+export async function upsertQuoteLinePrices(
+  client: SupabaseClient<Database>,
+  lineId: string,
+  quoteLinePrices: {
+    quoteId: string;
+    quoteLineId: string;
+    unitPrice: number;
+    leadTime: number;
+    quantity: number;
+    createdBy: string;
+  }[]
+) {
+  const deletePrices = await client
+    .from("quoteLinePrice")
+    .delete()
+    .eq("quoteLineId", lineId);
+  if (deletePrices.error) {
+    return deletePrices;
+  }
+
+  return client.from("quoteLinePrice").insert(quoteLinePrices);
 }
 
 export async function updateQuoteLinePrice(

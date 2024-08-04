@@ -181,7 +181,6 @@ const QuoteLineForm = ({
                 )}
               </HStack>
               <ModalCardBody>
-                <Hidden name="intent" value="line" />
                 <Hidden name="id" />
                 <Hidden name="quoteId" />
                 <Hidden

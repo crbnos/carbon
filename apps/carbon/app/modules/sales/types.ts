@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import type { QuantityEffect } from "../shared";
 import type {
   getCustomer,
   getCustomerContacts,
@@ -7,6 +8,7 @@ import type {
   getCustomerStatuses,
   getCustomerTypes,
   getQuoteDocuments,
+  getQuoteLinePrices,
   getQuoteLines,
   getQuoteMakeMethod,
   getQuoteMaterials,
@@ -18,6 +20,33 @@ import type {
   getSalesOrders,
   getSalesRFQs,
 } from "./sales.service";
+
+export type Costs = {
+  materialCost: number;
+  partCost: number;
+  toolCost: number;
+  fixtureCost: number;
+  consumableCost: number;
+  serviceCost: number;
+  laborCost: number;
+  overheadCost: number;
+  outsideCost: number;
+  setupHours: number;
+  productionHours: number;
+};
+
+export type CostEffects = {
+  materialCost: QuantityEffect[];
+  partCost: QuantityEffect[];
+  toolCost: QuantityEffect[];
+  fixtureCost: QuantityEffect[];
+  consumableCost: QuantityEffect[];
+  serviceCost: QuantityEffect[];
+  laborCost: QuantityEffect[];
+  overheadCost: QuantityEffect[];
+  setupHours: QuantityEffect[];
+  productionHours: QuantityEffect[];
+};
 
 export type Customer = NonNullable<
   Awaited<ReturnType<typeof getCustomers>>["data"]
@@ -70,6 +99,10 @@ export type QuotationMaterial = NonNullable<
 export type QuotationOperation = NonNullable<
   Awaited<ReturnType<typeof getQuoteOperation>>["data"]
 >;
+
+export type QuotationPrice = NonNullable<
+  Awaited<ReturnType<typeof getQuoteLinePrices>>["data"]
+>[number];
 
 export type QuotationStatusType = Database["public"]["Enums"]["quoteStatus"];
 

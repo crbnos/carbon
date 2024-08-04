@@ -51,3 +51,5 @@ export const standardFactorType = [
 ] as const;
 
 export type StandardFactor = (typeof standardFactorType)[number];
+
+export type QuantityEffect = (quantity: number) => number;
