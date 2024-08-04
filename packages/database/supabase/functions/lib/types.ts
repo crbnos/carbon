@@ -13067,13 +13067,10 @@ export type Database = {
       }
       quoteLinePrice: {
         Row: {
-          additionalCharges: Json | null
           createdAt: string
           createdBy: string
           discountPercent: number
-          extendedPrice: number
           leadTime: number
-          markupPercent: number
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -13083,13 +13080,10 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
-          additionalCharges?: Json | null
           createdAt?: string
           createdBy: string
           discountPercent?: number
-          extendedPrice?: number
           leadTime?: number
-          markupPercent?: number
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -13099,13 +13093,10 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
-          additionalCharges?: Json | null
           createdAt?: string
           createdBy?: string
           discountPercent?: number
-          extendedPrice?: number
           leadTime?: number
-          markupPercent?: number
           quantity?: number
           quoteId?: string
           quoteLineId?: string

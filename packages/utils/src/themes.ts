@@ -421,8 +421,8 @@ export const themes = [
     name: "violet",
     label: "Violet",
     activeColor: {
-      light: "262.1 83.3% 57.8%",
-      dark: "263.4 70% 50.4%",
+      light: "252.1 83.3% 47.8%",
+      dark: "253.4 70% 40.4%",
     },
     cssVars: {
       light: {
@@ -432,7 +432,7 @@ export const themes = [
         "card-foreground": "224 71.4% 4.1%",
         popover: "0 0% 100%",
         "popover-foreground": "224 71.4% 4.1%",
-        primary: "262.1 83.3% 57.8%",
+        primary: "252.1 83.3% 47.8%",
         "primary-foreground": "210 20% 98%",
         secondary: "220 14.3% 95.9%",
         "secondary-foreground": "220.9 39.3% 11%",
@@ -453,7 +453,7 @@ export const themes = [
         "card-foreground": "210 20% 98%",
         popover: "224 41.4 8.9%",
         "popover-foreground": "210 20% 98%",
-        primary: "263.4 70% 50.4%",
+        primary: "253.4 70% 40.4%",
         "primary-foreground": "210 20% 98%",
         secondary: "215 27.9% 16.9%",
         "secondary-foreground": "210 20% 98%",

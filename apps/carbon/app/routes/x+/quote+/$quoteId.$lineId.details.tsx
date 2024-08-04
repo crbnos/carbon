@@ -6,19 +6,20 @@ import { Fragment, useMemo } from "react";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import { CadModel } from "~/modules/items";
-import type { QuoteMethod } from "~/modules/sales";
+import type { QuotationPrice, QuoteMethod } from "~/modules/sales";
 import {
   getFilesByQuoteLineId,
   getQuoteLine,
+  getQuoteLinePrices,
   getQuoteOperationsByLine,
-  quotationPricingValidator,
   QuoteLineCosting,
   QuoteLineDocuments,
   QuoteLineForm,
   QuoteLineNotes,
+  QuoteLinePricing,
   quoteLineValidator,
-  updateQuoteLinePrice,
   upsertQuoteLine,
+  useLineCosts,
 } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -36,10 +37,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const [line, operations, files] = await Promise.all([
+  const [line, operations, files, prices] = await Promise.all([
     getQuoteLine(client, lineId),
     getQuoteOperationsByLine(client, lineId),
     getFilesByQuoteLineId(client, companyId, lineId),
+    getQuoteLinePrices(client, lineId),
   ]);
 
   if (line.error) {
@@ -53,6 +55,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     line: line.data,
     operations: operations?.data ?? [],
     files: files?.data ?? [],
+    pricesByQuantity: (prices?.data ?? []).reduce<
+      Record<number, QuotationPrice>
+    >((acc, price) => {
+      acc[price.quantity] = price;
+      return acc;
+    }, {}),
   });
 };
 
@@ -67,65 +75,38 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   const formData = await request.formData();
-  const intent = formData.get("intent");
 
-  if (intent === "line") {
-    const validation = await validator(quoteLineValidator).validate(formData);
+  const validation = await validator(quoteLineValidator).validate(formData);
 
-    if (validation.error) {
-      return validationError(validation.error);
-    }
+  if (validation.error) {
+    return validationError(validation.error);
+  }
 
-    const { id, ...data } = validation.data;
+  const { id, ...data } = validation.data;
 
-    const updateQuotationLine = await upsertQuoteLine(client, {
-      id: lineId,
-      ...data,
-      updatedBy: userId,
-      customFields: setCustomFields(formData),
-    });
+  const updateQuotationLine = await upsertQuoteLine(client, {
+    id: lineId,
+    ...data,
+    updatedBy: userId,
+    customFields: setCustomFields(formData),
+  });
 
-    if (updateQuotationLine.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, lineId),
-        await flash(
-          request,
-          error(updateQuotationLine.error, "Failed to update quote line")
-        )
-      );
-    }
-  } else if (intent === "pricing") {
-    const validation = await validator(quotationPricingValidator).validate(
-      formData
+  if (updateQuotationLine.error) {
+    throw redirect(
+      path.to.quoteLine(quoteId, lineId),
+      await flash(
+        request,
+        error(updateQuotationLine.error, "Failed to update quote line")
+      )
     );
-
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const updateLinePrice = await updateQuoteLinePrice(client, {
-      quoteId,
-      quoteLineId: lineId,
-      ...validation.data,
-      updatedBy: userId,
-    });
-
-    if (updateLinePrice.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, lineId),
-        await flash(
-          request,
-          error(updateLinePrice.error, "Failed to update quote line price")
-        )
-      );
-    }
   }
 
   throw redirect(path.to.quoteLine(quoteId, lineId));
 }
 
 export default function QuoteLine() {
-  const { line, operations, files } = useLoaderData<typeof loader>();
+  const { line, operations, files, pricesByQuantity } =
+    useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -143,6 +124,11 @@ export default function QuoteLine() {
     () => quoteData?.methods?.find((m) => m.data.quoteLineId === line.id),
     [quoteData, line.id]
   );
+
+  const getLineCosts = useLineCosts({
+    methodTree,
+    operations,
+  });
 
   const initialValues = {
     ...line,
@@ -184,12 +170,17 @@ export default function QuoteLine() {
           </div>
           {line.methodType === "Make" && (
             <QuoteLineCosting
-              methodTree={methodTree}
-              operations={operations}
               quantities={line.quantity ?? [1]}
               additionalCharges={line.additionalCharges ?? {}}
+              getLineCosts={getLineCosts}
             />
           )}
+          <QuoteLinePricing
+            quantities={line.quantity ?? [1]}
+            additionalCharges={line.additionalCharges ?? {}}
+            pricesByQuantity={pricesByQuantity}
+            getLineCosts={getLineCosts}
+          />
           <QuoteLineNotes line={line} />
           <Outlet />
         </Fragment>

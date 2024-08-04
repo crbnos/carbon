@@ -10,8 +10,10 @@ import QuoteLineCosting from "./QuoteLineCosting";
 import QuoteLineDocuments from "./QuoteLineDocuments";
 import QuoteLineForm from "./QuoteLineForm";
 import QuoteLineNotes from "./QuoteLineNotes";
+import QuoteLinePricing from "./QuoteLinePricing";
 import QuoteMaterialForm from "./QuoteMaterialForm";
 import QuotesTable from "./QuotesTable";
+import { useLineCosts } from "./useLineCosts";
 
 export {
   DeleteQuoteLine,
@@ -26,6 +28,8 @@ export {
   QuoteLineDocuments,
   QuoteLineForm,
   QuoteLineNotes,
+  QuoteLinePricing,
   QuoteMaterialForm,
   QuotesTable,
+  useLineCosts,
 };

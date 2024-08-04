@@ -22,6 +22,8 @@ COMMIT;
 
 ALTER TABLE "quoteLinePrice" 
   DROP COLUMN "id",
+  DROP COLUMN "markupPercent",
+  DROP COLUMN "extendedPrice",
+  DROP COLUMN "unitCost",
   ADD COLUMN "unitPrice" NUMERIC(10,5) NOT NULL DEFAULT 0,
-  ADD COLUMN "additionalCharges" JSONB DEFAULT '{}',
   ADD CONSTRAINT "quoteLinePrice_pkey" PRIMARY KEY ("quoteLineId", "quantity");
