@@ -1,21 +1,26 @@
 import { Heading, cn } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
+import { useLocale } from "@react-aria/i18n";
 import { Link } from "@remix-run/react";
-import type { ComponentProps } from "react";
+import { useMemo, type ComponentProps } from "react";
 import { useModules } from "~/components/Layout/Navigation/useModules";
 import { useUser } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 
-const formatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "full",
-  timeZone: getLocalTimeZone(),
-});
-
 export default function AppIndexRoute() {
   const user = useUser();
   const modules = useModules();
-
+  const { locale } = useLocale();
   const date = new Date();
+
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        dateStyle: "full",
+        timeZone: getLocalTimeZone(),
+      }),
+    [locale]
+  );
 
   return (
     <div className="p-8 w-full h-full bg-muted">

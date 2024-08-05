@@ -33,7 +33,7 @@ const DatePicker = (props: DatePickerProps<CalendarDate>) => {
             <MdOutlineDoNotDisturb className="text-destructive-foreground aboslute right-[12px]" />
           )}
         </div>
-        <InputRightElement>
+        <InputRightElement className="pr-1">
           <FieldButton {...buttonProps} isPressed={state.isOpen}>
             <MdOutlineCalendarToday />
           </FieldButton>

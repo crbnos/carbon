@@ -1,4 +1,3 @@
-// root.tsx
 import { Button, Heading, toast } from "@carbon/react";
 import { validator } from "@carbon/remix-validated-form";
 import type {

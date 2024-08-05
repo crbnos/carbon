@@ -1,6 +1,7 @@
 import { Button, HStack, Switch, VStack, useDisclosure } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { parseDate } from "@internationalized/date";
+import { useLocale } from "@react-aria/i18n";
 import { useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { ZodSchema } from "zod";
@@ -361,6 +362,7 @@ function TypedDisplay(
     onOpen: () => void;
   }
 ) {
+  const { locale } = useLocale();
   const {
     attribute,
     displayValue,
@@ -416,7 +418,7 @@ function TypedDisplay(
       return (
         <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
-          <p className="self-center">{displayValue.toLocaleString("en-US")}</p>
+          <p className="self-center">{displayValue.toLocaleString(locale)}</p>
           <UpdateRemoveButtons
             canRemove={
               !isAuthorized || (attribute.canSelfManage === true && !!value)

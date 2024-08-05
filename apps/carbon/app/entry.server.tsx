@@ -1,7 +1,8 @@
+import { I18nProvider } from "@react-aria/i18n";
 import type { EntryContext, LoaderFunctionArgs } from "@remix-run/node";
 import { createReadableStreamFromReadable } from "@remix-run/node"; // or cloudflare/deno
 import { RemixServer } from "@remix-run/react";
-// import { parseAcceptLanguage } from "intl-parse-accept-language";
+import { parseAcceptLanguage } from "intl-parse-accept-language";
 import isbot from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 import { PassThrough } from "stream";
@@ -25,10 +26,10 @@ export default function handleRequest(
   responseHeaders: Headers,
   remixContext: EntryContext
 ) {
-  // const acceptLanguage = request.headers.get("accept-language");
-  // const locales = parseAcceptLanguage(acceptLanguage, {
-  //   validate: Intl.DateTimeFormat.supportedLocalesOf,
-  // });
+  const acceptLanguage = request.headers.get("accept-language");
+  const locales = parseAcceptLanguage(acceptLanguage, {
+    validate: Intl.DateTimeFormat.supportedLocalesOf,
+  });
 
   // get whether it's a mac or pc from the headers
   const platform: OperatingSystemPlatform = request.headers
@@ -46,7 +47,7 @@ export default function handleRequest(
       responseStatusCode,
       responseHeaders,
       remixContext,
-      // locales,
+      locales,
       platform
     );
   }
@@ -56,7 +57,7 @@ export default function handleRequest(
     responseStatusCode,
     responseHeaders,
     remixContext,
-    // locales,
+    locales,
     platform
   );
 }
@@ -66,18 +67,20 @@ function handleBotRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext,
-  // locales: string[],
+  locales: string[],
   platform: OperatingSystemPlatform
 ) {
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     const { pipe, abort } = renderToPipeableStream(
       <OperatingSystemContextProvider platform={platform}>
-        <RemixServer
-          context={remixContext}
-          url={request.url}
-          abortDelay={ABORT_DELAY}
-        />
+        <I18nProvider locale={locales?.[0] ?? "en-US"}>
+          <RemixServer
+            context={remixContext}
+            url={request.url}
+            abortDelay={ABORT_DELAY}
+          />
+        </I18nProvider>
       </OperatingSystemContextProvider>,
       {
         onAllReady() {
@@ -120,18 +123,20 @@ function handleBrowserRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext,
-  // locales: string[],
+  locales: string[],
   platform: OperatingSystemPlatform
 ) {
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     const { pipe, abort } = renderToPipeableStream(
       <OperatingSystemContextProvider platform={platform}>
-        <RemixServer
-          context={remixContext}
-          url={request.url}
-          abortDelay={ABORT_DELAY}
-        />
+        <I18nProvider locale={locales?.[0] ?? "en-US"}>
+          <RemixServer
+            context={remixContext}
+            url={request.url}
+            abortDelay={ABORT_DELAY}
+          />
+        </I18nProvider>
       </OperatingSystemContextProvider>,
       {
         onShellReady() {

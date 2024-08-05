@@ -6,6 +6,7 @@ import {
   CardTitle,
   HStack,
 } from "@carbon/react";
+import { useLocale } from "@react-aria/i18n";
 import { Outlet, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -26,18 +27,22 @@ type BuyMethodsProps = {
   buyMethods: BuyMethod[];
 };
 
-// TODO: make dynamic
-const formatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
 const BuyMethods = ({ buyMethods }: BuyMethodsProps) => {
   const navigate = useNavigate();
   const { canEdit, onCellEdit } = useBuyMethods();
   const sharedPartData = useRouteData<{
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.partRoot);
+
+  const { locale } = useLocale();
+  const formatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: "USD",
+      }),
+    [locale]
+  );
 
   const unitOfMeasureOptions = useMemo(() => {
     return (
@@ -105,7 +110,7 @@ const BuyMethods = ({ buyMethods }: BuyMethodsProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns]);
+  }, [customColumns, formatter]);
 
   const editableComponents = useMemo(
     () => ({

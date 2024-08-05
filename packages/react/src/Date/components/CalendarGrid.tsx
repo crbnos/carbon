@@ -1,14 +1,13 @@
 import type { DateDuration } from "@internationalized/date";
 import { endOfMonth, getWeeksInMonth } from "@internationalized/date";
 import { useCalendarGrid } from "@react-aria/calendar";
+import { useLocale } from "@react-aria/i18n";
 import type {
   CalendarState,
   RangeCalendarState,
 } from "@react-stately/calendar";
 import { Table, Tbody, Td, Th, Thead, Tr } from "../../Table";
 import { CalendarCell } from "./CalendarCell";
-
-const locale = "en-US"; // TODO use user's locale
 
 export const CalendarGrid = ({
   state,
@@ -17,6 +16,7 @@ export const CalendarGrid = ({
   state: CalendarState | RangeCalendarState;
   offset?: DateDuration;
 }) => {
+  const { locale } = useLocale();
   const startDate = state.visibleRange.start.add(offset);
   const endDate = endOfMonth(startDate);
   const { gridProps, headerProps, weekDays } = useCalendarGrid(

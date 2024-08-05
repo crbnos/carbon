@@ -27,7 +27,13 @@ export const FieldButton = (props: FieldButtonProps) => {
   const ref = useRef<HTMLButtonElement>(null);
   const { buttonProps } = useButton(props, ref);
   return (
-    <Button {...buttonProps} ref={ref} isIcon variant="solid">
+    <Button
+      className="rounded-sm"
+      {...buttonProps}
+      ref={ref}
+      isIcon
+      variant="solid"
+    >
       {props.children}
     </Button>
   );

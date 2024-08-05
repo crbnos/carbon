@@ -14,6 +14,7 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
 import { useMemo, useState } from "react";
 import { Assignee, useOptimisticAssignment } from "~/components";
@@ -32,6 +33,7 @@ const PurchaseInvoiceHeader = () => {
   const permissions = usePermissions();
   const { invoiceId } = useParams();
   const postingModal = useDisclosure();
+  const { locale } = useLocale();
 
   const { supabase } = useSupabase();
   const [linesNotAssociatedWithPO, setLinesNotAssociatedWithPO] = useState<
@@ -53,9 +55,8 @@ const PurchaseInvoiceHeader = () => {
 
   // TODO: factor in default currency, po currency and exchange rate
   const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }),
-    []
+    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
+    [locale]
   );
 
   const showPostModal = async () => {

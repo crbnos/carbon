@@ -1,3 +1,4 @@
+import { I18nProvider } from "@react-aria/i18n";
 import { RemixBrowser } from "@remix-run/react";
 import posthog from "posthog-js";
 import { startTransition, useEffect } from "react";
@@ -22,7 +23,11 @@ startTransition(() => {
     <OperatingSystemContextProvider
       platform={window.navigator.userAgent.includes("Mac") ? "mac" : "windows"}
     >
-      <RemixBrowser />
+      <I18nProvider
+        locale={navigator.language ?? navigator.languages?.[0] ?? "en-US"}
+      >
+        <RemixBrowser />
+      </I18nProvider>
       <PosthogInit />
     </OperatingSystemContextProvider>
   );

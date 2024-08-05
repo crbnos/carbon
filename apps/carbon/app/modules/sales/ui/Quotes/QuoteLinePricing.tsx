@@ -24,6 +24,7 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
+import { useLocale } from "@react-aria/i18n";
 import { useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 import { LuChevronDown, LuInfo, LuRefreshCcw } from "react-icons/lu";
@@ -58,11 +59,11 @@ const QuoteLinePricing = ({
   const fetcher = useFetcher<{ id: string }>();
   const { id: userId } = useUser();
 
+  const { locale } = useLocale();
   // TODO: factor in default currency or quote currency
   const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }),
-    []
+    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
+    [locale]
   );
 
   const additionalCharges = useMemo(() => {
