@@ -5,6 +5,7 @@ import logger from "~/lib/logger";
 import {
   getQuote,
   getQuoteCustomerDetails,
+  getQuoteLinePricesByQuoteId,
   getQuoteLines,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
@@ -18,12 +19,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [company, quote, quoteLines, quoteLocations] = await Promise.all([
-    getCompany(client, companyId),
-    getQuote(client, id),
-    getQuoteLines(client, id),
-    getQuoteCustomerDetails(client, id),
-  ]);
+  const [company, quote, quoteLines, quoteLinePrices, quoteLocations] =
+    await Promise.all([
+      getCompany(client, companyId),
+      getQuote(client, id),
+      getQuoteLines(client, id),
+      getQuoteLinePricesByQuoteId(client, id),
+      getQuoteCustomerDetails(client, id),
+    ]);
 
   if (company.error) {
     logger.error(company.error);
@@ -35,6 +38,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (quoteLines.error) {
     logger.error(quoteLines.error);
+  }
+
+  if (quoteLinePrices.error) {
+    logger.error(quoteLinePrices.error);
   }
 
   if (quoteLocations.error) {
@@ -50,6 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       company={company.data}
       quote={quote.data}
       quoteLines={quoteLines.data ?? []}
+      quoteLinePrices={quoteLinePrices.data ?? []}
       quoteCustomerDetails={quoteLocations.data}
     />
   );

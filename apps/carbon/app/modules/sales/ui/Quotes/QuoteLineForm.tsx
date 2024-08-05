@@ -233,12 +233,6 @@ const QuoteLineForm = ({
                         }}
                       />
 
-                      <Input name="customerPartId" label="Customer Part ID" />
-                      <Input
-                        name="customerPartRevision"
-                        label="Customer Part Revision"
-                      />
-
                       <Select
                         name="status"
                         label="Line Status"
@@ -246,6 +240,12 @@ const QuoteLineForm = ({
                           label: s,
                           value: s,
                         }))}
+                      />
+
+                      <Input name="customerPartId" label="Customer Part ID" />
+                      <Input
+                        name="customerPartRevision"
+                        label="Customer Part Revision"
                       />
 
                       <CustomFormFields table="quoteLine" />
