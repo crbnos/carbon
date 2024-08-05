@@ -28,6 +28,7 @@ import { useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 import { LuChevronDown, LuInfo, LuRefreshCcw } from "react-icons/lu";
 import type { z } from "zod";
+import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import { quoteLineAdditionalChargesValidator } from "../../sales.models";
@@ -55,6 +56,7 @@ const QuoteLinePricing = ({
 
   const { supabase } = useSupabase();
   const fetcher = useFetcher<{ id: string }>();
+  const { id: userId } = useUser();
 
   // TODO: factor in default currency or quote currency
   const formatter = useMemo(
@@ -131,26 +133,42 @@ const QuoteLinePricing = ({
     value: number
   ) => {
     if (!supabase) return;
-
+    const hasPrice = prices[quantity];
     const oldPrices = { ...prices };
     const newPrices = { ...oldPrices };
-    if (!newPrices[quantity]) {
+    if (!hasPrice) {
       newPrices[quantity] = {
+        quoteId,
+        quoteLineId: lineId,
+        quantity,
         leadTime: 0,
         unitPrice: 0,
         discountPercent: 0,
-      } as QuotationPrice;
+        createdBy: userId,
+      } as unknown as QuotationPrice;
     }
     newPrices[quantity] = { ...newPrices[quantity], [key]: value };
+
     setPrices(newPrices);
 
-    const { error } = await supabase
-      .from("quoteLinePrice")
-      .update({ [key]: value })
-      .eq("quoteLineId", lineId)
-      .eq("quantity", quantity);
-    if (error) {
-      setPrices(oldPrices);
+    if (hasPrice) {
+      const { error } = await supabase
+        .from("quoteLinePrice")
+        .update({ [key]: value })
+        .eq("quoteLineId", lineId)
+        .eq("quantity", quantity);
+      if (error) {
+        setPrices(oldPrices);
+      }
+    } else {
+      const { error } = await supabase.from("quoteLinePrice").insert([
+        {
+          ...newPrices[quantity],
+        },
+      ]);
+      if (error) {
+        setPrices(oldPrices);
+      }
     }
   };
 
