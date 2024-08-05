@@ -111,9 +111,9 @@ const QuotePDF = ({
             </View>
             <View style={styles.rowTwoThirds}>
               <Text style={styles.tableCol2}>Qty</Text>
-              <Text style={styles.tableCol3}>Price</Text>
+              <Text style={styles.tableCol3}>Unit Price</Text>
               <Text style={styles.tableCol3}>Lead Time</Text>
-              <Text style={styles.tableCol4}>Total</Text>
+              <Text style={styles.tableCol4}>Extended Price</Text>
             </View>
           </View>
           {quoteLines.map((line) => (
