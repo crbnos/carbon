@@ -617,7 +617,7 @@ export async function getQuoteLinePricesByQuoteId(
     .from("quoteLinePrice")
     .select("*")
     .eq("quoteId", quoteId)
-    .order("createdAt");
+    .order("quoteLineId", { ascending: true });
 }
 
 export async function getQuoteMaterials(

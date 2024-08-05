@@ -1,16 +1,7 @@
-import {
-  Badge,
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  HStack,
-  Heading,
-} from "@carbon/react";
+import { Badge, Button, HStack, Heading } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
-import { LuCheckCheck, LuChevronDown, LuEye } from "react-icons/lu";
+import { LuCheckCheck, LuEye } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
 import { Assignee, useOptimisticAssignment } from "~/components";
 
@@ -51,10 +42,16 @@ const QuoteHeader = () => {
             value={assignee ?? ""}
             className="h-8"
           />
-          <Button leftIcon={<LuEye />} variant="secondary">
-            Preview
+          <Button leftIcon={<LuEye />} variant="secondary" asChild>
+            <a
+              target="_blank"
+              href={path.to.file.quote(quoteId)}
+              rel="noreferrer"
+            >
+              Preview
+            </a>
           </Button>
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger>
               <Button rightIcon={<LuChevronDown />} variant="secondary">
                 Actions
@@ -65,7 +62,7 @@ const QuoteHeader = () => {
               <DropdownMenuItem>Print</DropdownMenuItem>
               <DropdownMenuItem>Export</DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
           <Button leftIcon={<LuCheckCheck />}>Send</Button>
         </HStack>
       </HStack>
