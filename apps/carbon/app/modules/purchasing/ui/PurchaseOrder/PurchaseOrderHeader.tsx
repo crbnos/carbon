@@ -17,6 +17,7 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
 import { useMemo } from "react";
 import { Assignee, useOptimisticAssignment } from "~/components";
@@ -44,11 +45,11 @@ const PurchaseOrderHeader = () => {
 
   const [purchaseOrderTotals] = usePurchaseOrderTotals();
 
+  const { locale } = useLocale();
   // TODO: factor in default currency, po currency and exchange rate
   const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }),
-    []
+    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
+    [locale]
   );
 
   const { receive, invoice } = usePurchaseOrder();

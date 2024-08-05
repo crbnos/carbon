@@ -13074,7 +13074,6 @@ export type Database = {
           quantity: number
           quoteId: string
           quoteLineId: string
-          unitCost: number
           unitPrice: number
           updatedAt: string | null
           updatedBy: string | null
@@ -13087,7 +13086,6 @@ export type Database = {
           quantity?: number
           quoteId: string
           quoteLineId: string
-          unitCost?: number
           unitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -13100,7 +13098,6 @@ export type Database = {
           quantity?: number
           quoteId?: string
           quoteLineId?: string
-          unitCost?: number
           unitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null

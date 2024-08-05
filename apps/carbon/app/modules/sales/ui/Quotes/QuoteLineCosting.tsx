@@ -23,6 +23,7 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
+import { useLocale } from "@react-aria/i18n";
 import { useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useMemo } from "react";
 import { LuInfo, LuPlus, LuTrash } from "react-icons/lu";
@@ -53,10 +54,10 @@ const QuoteLineCosting = ({
   }));
 
   // TODO: factor in default currency or quote currency
+  const { locale } = useLocale();
   const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }),
-    []
+    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
+    [locale]
   );
 
   const additionalCharges = useMemo(() => {

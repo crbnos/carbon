@@ -8,7 +8,9 @@ import {
   VStack,
 } from "@carbon/react";
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
+import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
+import { useMemo } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
 import {
   Assignee,
@@ -20,11 +22,6 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { SalesRFQ } from "../../types";
 import SalesRFQStatus from "./SalesRFQStatus";
-
-const formatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "full",
-  timeZone: getLocalTimeZone(),
-});
 
 const SalesRFQProperties = () => {
   const { rfqId } = useParams();
@@ -47,6 +44,17 @@ const SalesRFQProperties = () => {
     optimisticAssignment !== undefined
       ? optimisticAssignment
       : routeData?.rfqSummary?.assignee;
+
+  const { locale } = useLocale();
+  // TODO: factor in default currency, sales order currency and exchange rate
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        dateStyle: "full",
+        timeZone: getLocalTimeZone(),
+      }),
+    [locale]
+  );
 
   return (
     <VStack

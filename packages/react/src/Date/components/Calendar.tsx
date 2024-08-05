@@ -2,6 +2,7 @@ import type { CalendarDate, DateValue } from "@internationalized/date";
 import { createCalendar } from "@internationalized/date";
 import type { CalendarProps } from "@react-aria/calendar";
 import { useCalendar } from "@react-aria/calendar";
+import { useLocale } from "@react-aria/i18n";
 import { useCalendarState } from "@react-stately/calendar";
 import { useMemo, useRef } from "react";
 import { BiChevronLeft, BiChevronRight } from "react-icons/bi";
@@ -9,9 +10,8 @@ import { Heading } from "../../Heading";
 import { CalendarButton } from "./Button";
 import { CalendarGrid } from "./CalendarGrid";
 
-const locale = "en-US"; // TODO use user's locale
-
 export const Calendar = (props: CalendarProps<DateValue>) => {
+  const { locale } = useLocale();
   const state = useCalendarState({
     ...props,
     locale,
@@ -28,7 +28,7 @@ export const Calendar = (props: CalendarProps<DateValue>) => {
     state.visibleRange.start,
     state.visibleRange.end,
     state.timeZone,
-    "en-US"
+    locale
   );
 
   return (
