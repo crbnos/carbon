@@ -5,11 +5,12 @@ import {
   CardHeader,
   CardTitle,
   Editor,
+  generateHTML,
   toast,
   useDebounce,
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { QuotationLine } from "~/modules/sales";
 
@@ -18,6 +19,7 @@ const QuoteLineNotes = ({ line }: { line: QuotationLine }) => {
     id: userId,
     company: { id: companyId },
   } = useUser();
+  const permissions = usePermissions();
   const { supabase } = useSupabase();
 
   const onUploadImage = async (file: File) => {
@@ -57,11 +59,20 @@ const QuoteLineNotes = ({ line }: { line: QuotationLine }) => {
         <CardTitle>Internal Notes</CardTitle>
       </CardHeader>
       <CardContent>
-        <Editor
-          initialValue={(line.notes ?? {}) as JSONContent}
-          onUpload={onUploadImage}
-          onChange={onUpdateInternalNotes}
-        />
+        {permissions.can("update", "sales") ? (
+          <Editor
+            initialValue={(line.notes ?? {}) as JSONContent}
+            onUpload={onUploadImage}
+            onChange={onUpdateInternalNotes}
+          />
+        ) : (
+          <div
+            className="prose dark:prose-invert"
+            dangerouslySetInnerHTML={{
+              __html: generateHTML(line.notes as JSONContent),
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   );

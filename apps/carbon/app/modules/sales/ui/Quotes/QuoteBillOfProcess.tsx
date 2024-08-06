@@ -32,6 +32,7 @@ import {
 } from "~/components/Form";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
+import { usePermissions } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { methodOperationOrders } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -89,6 +90,7 @@ const QuoteBillOfProcess = ({
 }: QuoteBillOfProcessProps) => {
   const { supabase } = useSupabase();
   const sortOrderFetcher = useFetcher<{}>();
+  const permissions = usePermissions();
 
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(operations ?? [])
@@ -96,6 +98,7 @@ const QuoteBillOfProcess = ({
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const onToggleItem = (id: string) => {
+    if (!permissions.can("update", "sales")) return;
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, checked: !item.checked } : item
@@ -105,6 +108,7 @@ const QuoteBillOfProcess = ({
 
   // we create a temporary item and append it to the list
   const onAddItem = () => {
+    if (!permissions.can("update", "sales")) return;
     const temporaryId = Math.random().toString(16).slice(2);
     setSelectedItemId(temporaryId);
     setItems((prevItems) => {
@@ -130,6 +134,7 @@ const QuoteBillOfProcess = ({
   };
 
   const onRemoveItem = async (id: string) => {
+    if (!permissions.can("update", "sales")) return;
     // get the item and it's order in the list
     const itemIndex = items.findIndex((i) => i.id === id);
     const item = items[itemIndex];
@@ -151,6 +156,7 @@ const QuoteBillOfProcess = ({
   };
 
   const onReorder = (items: ItemWithData[]) => {
+    if (!permissions.can("update", "sales")) return;
     const newItems = items.map((item, index) => ({
       ...item,
       data: {
@@ -332,7 +338,9 @@ const QuoteBillOfProcess = ({
         <CardAction>
           <Button
             variant="secondary"
-            isDisabled={selectedItemId !== null}
+            isDisabled={
+              !permissions.can("update", "sales") || selectedItemId !== null
+            }
             onClick={onAddItem}
           >
             Add Operation

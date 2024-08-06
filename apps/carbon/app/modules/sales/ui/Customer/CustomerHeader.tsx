@@ -95,6 +95,7 @@ const CustomerHeader = () => {
                     id={customerId}
                     table="customer"
                     value={assignee ?? ""}
+                    isReadOnly={!permissions.can("update", "sales")}
                   />
                 </CardAttributeValue>
               </CardAttribute>

@@ -36,7 +36,7 @@ import type {
   SortableItemRenderProps,
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import {
@@ -116,6 +116,7 @@ const BillOfMaterial = ({
   operations,
 }: BillOfMaterialProps) => {
   const fetcher = useFetcher<{}>();
+  const permissions = usePermissions();
 
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(materials ?? [])
@@ -123,6 +124,7 @@ const BillOfMaterial = ({
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const onToggleItem = (id: string) => {
+    if (!permissions.can("update", "parts")) return;
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, checked: !item.checked } : item
@@ -132,6 +134,7 @@ const BillOfMaterial = ({
 
   // we create a temporary item and append it to the list
   const onAddItem = () => {
+    if (!permissions.can("update", "parts")) return;
     const temporaryId = Math.random().toString(16).slice(2);
     setSelectedItemId(temporaryId);
     setItems((prevItems) => {
@@ -157,6 +160,7 @@ const BillOfMaterial = ({
   };
 
   const onRemoveItem = async (id: string) => {
+    if (!permissions.can("update", "parts")) return;
     // get the item and it's order in the list
     const itemIndex = items.findIndex((i) => i.id === id);
     const item = items[itemIndex];
@@ -170,6 +174,7 @@ const BillOfMaterial = ({
   };
 
   const onReorder = (reorderedItems: ItemWithData[]) => {
+    if (!permissions.can("update", "parts")) return;
     const newItems = reorderedItems.map((item, index) => ({
       ...item,
       data: {
@@ -350,7 +355,9 @@ const BillOfMaterial = ({
         <CardAction>
           <Button
             variant="secondary"
-            isDisabled={selectedItemId !== null}
+            isDisabled={
+              !permissions.can("update", "parts") || selectedItemId !== null
+            }
             onClick={onAddItem}
           >
             Add Material
@@ -391,6 +398,7 @@ function MaterialForm({
   const methodMaterialFetcher = useFetcher<{ id: string }>();
   const params = useParams();
   const { company } = useUser();
+  const permissions = usePermissions();
 
   useEffect(() => {
     // replace the temporary id with the actual id
@@ -574,7 +582,9 @@ function MaterialForm({
           }}
         >
           <motion.div layout className="ml-auto mr-1 pt-2">
-            <Submit>Save</Submit>
+            <Submit isDisabled={!permissions.can("update", "parts")}>
+              Save
+            </Submit>
           </motion.div>
         </motion.div>
       </VStack>

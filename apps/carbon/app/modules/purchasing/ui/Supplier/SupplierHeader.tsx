@@ -96,6 +96,7 @@ const SupplierHeader = () => {
                     id={supplierId}
                     table="supplier"
                     value={assignee ?? ""}
+                    isReadOnly={!permissions.can("update", "purchasing")}
                   />
                 </CardAttributeValue>
               </CardAttribute>

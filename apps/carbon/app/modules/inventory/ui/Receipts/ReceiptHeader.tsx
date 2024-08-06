@@ -94,6 +94,7 @@ const ReceiptHeader = () => {
                     id={receiptId}
                     table="receipt"
                     value={assignee ?? ""}
+                    isReadOnly={!permissions.can("update", "inventory")}
                   />
                 </CardAttributeValue>
               </CardAttribute>

@@ -115,9 +115,9 @@ const SalesRFQProperties = () => {
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
         <Assignee
           id={rfqId}
-          isReadOnly={!permissions.can("update", "sales")}
           table="salesRfq"
           value={assignee ?? ""}
+          isReadOnly={!permissions.can("update", "sales")}
         />
       </VStack>
 

@@ -131,6 +131,7 @@ const PurchaseInvoiceHeader = () => {
                     id={invoiceId}
                     table="purchaseInvoice"
                     value={assignee ?? undefined}
+                    isReadOnly={!permissions.can("update", "invoicing")}
                   />
                 </CardAttributeValue>
               </CardAttribute>

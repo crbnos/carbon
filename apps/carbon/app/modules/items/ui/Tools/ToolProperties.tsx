@@ -12,7 +12,7 @@ import {
 import { useParams } from "@remix-run/react";
 import { LuCopy, LuLink } from "react-icons/lu";
 import { Assignee, useOptimisticAssignment } from "~/components";
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -20,6 +20,7 @@ import type { BuyMethod, ItemFile, PickMethod, Tool } from "../../types";
 import { FileBadge } from "../Item";
 
 const ToolProperties = () => {
+  const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
@@ -101,7 +102,12 @@ const ToolProperties = () => {
       </VStack>
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
-        <Assignee id={itemId} table="item" value={assignee ?? ""} />
+        <Assignee
+          id={itemId}
+          table="item"
+          value={assignee ?? ""}
+          isReadOnly={!permissions.can("update", "parts")}
+        />
       </VStack>
 
       <VStack spacing={2}>

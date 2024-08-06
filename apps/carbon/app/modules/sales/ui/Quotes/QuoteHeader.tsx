@@ -39,10 +39,10 @@ const QuoteHeader = () => {
         <HStack>
           <Assignee
             id={quoteId}
-            isReadOnly={!permissions.can("update", "sales")}
             table="quote"
             value={assignee ?? ""}
             className="h-8"
+            isReadOnly={!permissions.can("update", "sales")}
           />
           <Button leftIcon={<LuEye />} variant="secondary" asChild>
             <a
