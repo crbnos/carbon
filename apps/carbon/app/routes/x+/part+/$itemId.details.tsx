@@ -86,6 +86,7 @@ export default function PartDetailsRoute() {
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
             autodeskUrn={partData?.partSummary?.autodeskUrn ?? null}
+            isReadOnly={!permissions.can("update", "items")}
             metadata={{ itemId }}
             modelPath={partData?.partSummary?.modelPath ?? null}
             title="CAD Model"

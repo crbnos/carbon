@@ -8,23 +8,34 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Kbd,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
+  useKeyboardShortcuts,
   useMount,
   VStack,
 } from "@carbon/react";
+import { prettifyKeyboardShortcut } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { LuChevronsUpDown, LuGhost, LuImage, LuPlus } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import type { Tree } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import { useOptimisticLocation, useRouteData, useUser } from "~/hooks";
+import {
+  useOptimisticLocation,
+  usePermissions,
+  useRouteData,
+  useUser,
+} from "~/hooks";
 import type { QuotationLine, QuoteMethod } from "~/modules/sales";
 import {
   DeleteQuoteLine,
@@ -130,7 +141,7 @@ function QuoteExplorer() {
   const quoteData = useRouteData<{ lines: QuotationLine[] }>(
     path.to.quote(quoteId)
   );
-
+  const permissions = usePermissions();
   const { id: userId } = useUser();
   const quoteLineInitialValues = {
     quoteId,
@@ -158,6 +169,14 @@ function QuoteExplorer() {
     deleteLineDisclosure.onClose();
   };
 
+  const newButtonRef = useRef<HTMLButtonElement>(null);
+  useKeyboardShortcuts({
+    "Command+Shift+l": (event: KeyboardEvent) => {
+      event.stopPropagation();
+      newButtonRef.current?.click();
+    },
+  });
+
   return (
     <>
       <VStack className="w-full h-[calc(100vh-99px)] justify-between">
@@ -175,13 +194,25 @@ function QuoteExplorer() {
           )}
         </VStack>
         <div className="w-full flex flex-0 sm:flex-row border-t border-border p-4 sm:justify-start sm:space-x-2">
-          <Button
-            className="w-full"
-            leftIcon={<LuPlus />}
-            onClick={newQuoteLineDisclosure.onOpen}
-          >
-            Add Line Item
-          </Button>
+          <Tooltip>
+            <TooltipTrigger className="w-full">
+              <Button
+                ref={newButtonRef}
+                className="w-full"
+                isDisabled={!permissions.can("update", "sales")}
+                leftIcon={<LuPlus />}
+                onClick={newQuoteLineDisclosure.onOpen}
+              >
+                Add Line Item
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <HStack>
+                <span>New Line Item</span>
+                <Kbd>{prettifyKeyboardShortcut("Command+Shift+l")}</Kbd>
+              </HStack>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </VStack>
       {newQuoteLineDisclosure.isOpen && (
@@ -199,13 +230,16 @@ function QuoteExplorer() {
 }
 
 function EmptyQuote({ onAdd }: { onAdd: () => void }) {
+  const permissions = usePermissions();
   return (
     <VStack className="w-full h-full justify-center items-center">
       <LuGhost className="w-12 h-12" />
       <h3 className="text-base">Pretty empty around here</h3>
-      <Button leftIcon={<LuPlus />} onClick={onAdd}>
-        Add Line Item
-      </Button>
+      {permissions.can("update", "sales") && (
+        <Button leftIcon={<LuPlus />} onClick={onAdd}>
+          Add Line Item
+        </Button>
+      )}
     </VStack>
   );
 }
@@ -218,7 +252,7 @@ type QuoteLineItemProps = {
 function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
-
+  const permissions = usePermissions();
   const navigate = useNavigate();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
@@ -292,7 +326,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
           </VStack>
         </HStack>
         <HStack spacing={0}>
-          {line.methodType === "Make" && (
+          {line.methodType === "Make" && permissions.can("update", "sales") && (
             <IconButton
               aria-label={disclosure.isOpen ? "Hide" : "Show"}
               icon={<LuChevronsUpDown />}
@@ -314,6 +348,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                disabled={!permissions.can("update", "sales")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(line);
@@ -325,7 +360,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
           </DropdownMenu>
         </HStack>
       </HStack>
-      {disclosure.isOpen && (
+      {disclosure.isOpen && permissions.can("update", "sales") && (
         <VStack className="border-b border-border">
           <QuoteBoMExplorer methods={methods} />
         </VStack>

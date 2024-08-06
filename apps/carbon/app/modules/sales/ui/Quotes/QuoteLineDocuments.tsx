@@ -49,6 +49,7 @@ const useQuoteLineDocuments = ({
   const { company } = useUser();
 
   const canDelete = permissions.can("delete", "sales");
+  const canUpdate = permissions.can("update", "sales");
   const getPath = useCallback(
     (file: ItemFile) => {
       return `${company.id}/quote-line/${quoteLineId}/${file.name}`;
@@ -130,6 +131,7 @@ const useQuoteLineDocuments = ({
 
   return {
     canDelete,
+    canUpdate,
     deleteFile,
     deleteModel,
     download,
@@ -313,6 +315,7 @@ const QuoteLineDocumentForm = ({
   const submit = useSubmit();
   const { company } = useUser();
   const { supabase } = useSupabase();
+  const permissions = usePermissions();
 
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && supabase && company) {
@@ -363,7 +366,11 @@ const QuoteLineDocumentForm = ({
   };
 
   return (
-    <File leftIcon={<LuUpload />} onChange={uploadFile}>
+    <File
+      isDisabled={!permissions.can("update", "sales")}
+      leftIcon={<LuUpload />}
+      onChange={uploadFile}
+    >
       New
     </File>
   );

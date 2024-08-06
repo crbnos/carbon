@@ -19,10 +19,12 @@ type CadModelProps = {
   title?: string;
   uploadClassName?: string;
   viewerClassName?: string;
+  isReadOnly?: boolean;
 };
 
 const CadModel = ({
   autodeskUrn,
+  isReadOnly,
   metadata,
   modelPath,
   title,
@@ -103,7 +105,7 @@ const CadModel = ({
             showDefaultToolbar
             urn={autodeskUrn}
           />
-        ) : (
+        ) : isReadOnly ? null : (
           <CadModelUpload
             className={uploadClassName}
             file={file}

@@ -8,6 +8,25 @@ export async function deleteNote(
   return client.from("note").update({ active: false }).eq("id", noteId);
 }
 
+export async function getBase64ImageFromSupabase(
+  client: SupabaseClient<Database>,
+  path: string
+) {
+  function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const binary = String.fromCharCode(...new Uint8Array(buffer));
+    return btoa(binary);
+  }
+
+  const { data, error } = await client.storage.from("private").download(path);
+  if (error) {
+    return null;
+  }
+
+  const arrayBuffer = await data.arrayBuffer();
+  const base64String = arrayBufferToBase64(arrayBuffer);
+  return `data:image/png;base64,${base64String}`;
+}
+
 export async function getNotes(
   client: SupabaseClient<Database>,
   documentId: string

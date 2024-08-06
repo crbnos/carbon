@@ -5,11 +5,12 @@ import { LuCheckCheck, LuEye } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
 import { Assignee, useOptimisticAssignment } from "~/components";
 
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Quotation } from "~/modules/sales";
 import { path } from "~/utils/path";
 
 const QuoteHeader = () => {
+  const permissions = usePermissions();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
@@ -38,6 +39,7 @@ const QuoteHeader = () => {
         <HStack>
           <Assignee
             id={quoteId}
+            isReadOnly={!permissions.can("update", "sales")}
             table="quote"
             value={assignee ?? ""}
             className="h-8"
@@ -63,7 +65,12 @@ const QuoteHeader = () => {
               <DropdownMenuItem>Export</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu> */}
-          <Button leftIcon={<LuCheckCheck />}>Send</Button>
+          <Button
+            isDisabled={!permissions.can("update", "sales")}
+            leftIcon={<LuCheckCheck />}
+          >
+            Send
+          </Button>
         </HStack>
       </HStack>
     </div>

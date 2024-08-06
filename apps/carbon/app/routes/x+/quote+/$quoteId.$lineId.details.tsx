@@ -155,6 +155,7 @@ export default function QuoteLine() {
           <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
             <CadModel
               autodeskUrn={line?.autodeskUrn ?? null}
+              isReadOnly={!permissions.can("update", "sales")}
               metadata={{ quoteLineId: line.id ?? undefined }}
               modelPath={line?.modelPath ?? null}
               title="CAD Model"
@@ -172,7 +173,6 @@ export default function QuoteLine() {
           {line.methodType === "Make" && (
             <QuoteLineCosting
               quantities={line.quantity ?? [1]}
-              additionalCharges={line.additionalCharges ?? {}}
               getLineCosts={getLineCosts}
             />
           )}

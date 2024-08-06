@@ -12,6 +12,7 @@ import {
   HStack,
   VStack,
   cn,
+  generateHTML,
   toast,
   useDebounce,
   useMount,
@@ -41,7 +42,7 @@ import type {
   SortableItemRenderProps,
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { ModelUpload } from "~/modules/items";
 import { CadModel } from "~/modules/items";
@@ -147,6 +148,7 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
 
   const fetcher = useFetcher<{}>();
   const { supabase } = useSupabase();
+  const permissions = usePermissions();
   const {
     company: { id: companyId },
     id: userId,
@@ -163,11 +165,13 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
   }, [files]);
 
   const onToggleItem = (id: string) => {
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
-    );
+    if (permissions.can("delete", "sales")) {
+      setItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === id ? { ...item, checked: !item.checked } : item
+        )
+      );
+    }
   };
 
   useMount(() => {
@@ -378,6 +382,7 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
             >
               <CadModel
                 autodeskUrn={item.data.autodeskUrn ?? null}
+                isReadOnly={!permissions.can("update", "sales")}
                 metadata={{
                   salesRfqLineId: item.id,
                 }}
@@ -430,12 +435,23 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
                 delay: 0.15,
               }}
             >
-              <Editor
-                className="min-h-[300px]"
-                initialValue={item.data.internalNotes}
-                onUpload={onUploadImage}
-                onChange={onUpdateInternalNotes}
-              />
+              {permissions.can("update", "sales") ? (
+                <Editor
+                  className="min-h-[300px]"
+                  initialValue={item.data.internalNotes}
+                  onUpload={onUploadImage}
+                  onChange={onUpdateInternalNotes}
+                />
+              ) : (
+                <div
+                  className="prose dark:prose-invert py-4"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(
+                      item.data.internalNotes as JSONContent
+                    ),
+                  }}
+                />
+              )}
             </motion.div>
           </div>
         ),
@@ -456,12 +472,23 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
                 delay: 0.15,
               }}
             >
-              <Editor
-                className="min-h-[300px]"
-                initialValue={item.data.externalNotes ?? ({} as JSONContent)}
-                onUpload={onUploadImage}
-                onChange={onUpdateExternalNotes}
-              />
+              {permissions.can("update", "sales") ? (
+                <Editor
+                  className="min-h-[300px]"
+                  initialValue={item.data.externalNotes}
+                  onUpload={onUploadImage}
+                  onChange={onUpdateExternalNotes}
+                />
+              ) : (
+                <div
+                  className="prose dark:prose-invert py-4"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(
+                      item.data.externalNotes as JSONContent
+                    ),
+                  }}
+                />
+              )}
             </motion.div>
           </div>
         ),
@@ -589,7 +616,9 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
         <CardAction>
           <Button
             variant="secondary"
-            isDisabled={selectedLineId !== null}
+            isDisabled={
+              !permissions.can("update", "sales") || selectedLineId !== null
+            }
             onClick={onAddItem}
           >
             Add Line
@@ -622,6 +651,7 @@ function SalesRFQLineForm({
 }) {
   const { supabase } = useSupabase();
   const salesRfqLineFetcher = useFetcher<{ id: string }>();
+  const permissions = usePermissions();
 
   const { company } = useUser();
 
@@ -770,7 +800,7 @@ function SalesRFQLineForm({
           }}
         >
           <motion.div layout className="ml-auto mr-1 pt-2">
-            <Submit>Save</Submit>
+            <Submit disabled={!permissions.can("update", "sales")}>Save</Submit>
           </motion.div>
         </motion.div>
       </VStack>
