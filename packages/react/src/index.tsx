@@ -248,6 +248,9 @@ const generateHTML = (content: JSONContent) => {
   if (typeof window === "undefined") {
     return "";
   }
+  if (!content || !("type" in content)) {
+    return "";
+  }
   return DefaultGenerateHTML(content, defaultExtensions);
 };
 
