@@ -654,6 +654,10 @@ export function makeCompanyPermissionsFromClaims(
     role = claims["role"] as string;
   }
 
+  if ("items" in permissions) {
+    delete permissions["items"];
+  }
+
   return { permissions, role };
 }
 
@@ -695,6 +699,10 @@ export function makePermissionsFromClaims(claims: Json[] | null) {
     role = claims["role"] as string;
   }
 
+  if ("items" in permissions) {
+    delete permissions["items"];
+  }
+
   return { permissions, role };
 }
 
@@ -732,6 +740,10 @@ export function makeCompanyPermissionsFromEmployeeType(
       };
     }
   });
+
+  if ("items" in result) {
+    delete result["items"];
+  }
 
   return result;
 }

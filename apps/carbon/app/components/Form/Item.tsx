@@ -21,6 +21,7 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
 
 const Item = ({ type, ...props }: ItemSelectProps) => {
   const [items] = useItems();
+
   const newItemsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -31,17 +32,17 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
         ? items.filter(
             (item) =>
               item.type === type &&
-              item.replenishmentSystem === props.replenishmentSystem &&
+              (props.replenishmentSystem === undefined ||
+                item.replenishmentSystem === props.replenishmentSystem) &&
               (item.active === true || props?.includeInactive === true)
           )
         : items
-      )
-        .filter((item) => item.type === type)
-        .map((item) => ({
-          value: item.id,
-          label: item.readableId,
-          helper: item.name,
-        })) ?? [];
+      ).map((item) => ({
+        value: item.id,
+        label: item.readableId,
+        helper: item.name,
+      })) ?? [];
+
     if (props.disabledItems) {
       return results.filter(
         (item) => !props.disabledItems?.includes(item.value)

@@ -17,7 +17,7 @@ import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
 import { useMemo } from "react";
 import { Assignee, useOptimisticAssignment } from "~/components";
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesOrder } from "~/modules/sales";
 import { SalesStatus, useSalesOrderTotals } from "~/modules/sales";
 import { useCustomers } from "~/stores";
@@ -25,6 +25,7 @@ import { path } from "~/utils/path";
 // import { useSalesOrder } from "../SalesOrders/useSalesOrder";
 
 const SalesOrderHeader = () => {
+  const permissions = usePermissions();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -90,6 +91,7 @@ const SalesOrderHeader = () => {
                     id={orderId}
                     table="salesOrder"
                     value={assignee ?? undefined}
+                    isReadOnly={!permissions.can("update", "sales")}
                   />
                 </CardAttributeValue>
               </CardAttribute>

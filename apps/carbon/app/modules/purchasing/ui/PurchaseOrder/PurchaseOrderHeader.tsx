@@ -142,6 +142,7 @@ const PurchaseOrderHeader = () => {
                     id={orderId}
                     table="purchaseOrder"
                     value={assignee ?? undefined}
+                    isReadOnly={!permissions.can("update", "purchasing")}
                   />
                 </CardAttributeValue>
               </CardAttribute>

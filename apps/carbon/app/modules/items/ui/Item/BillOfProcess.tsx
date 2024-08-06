@@ -11,6 +11,7 @@ import {
   Editor,
   HStack,
   cn,
+  generateHTML,
   useDebounce,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
@@ -36,7 +37,7 @@ import {
 } from "~/components/Form";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { methodOperationOrders } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -93,6 +94,7 @@ const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
 };
 
 const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
+  const permissions = usePermissions();
   const { supabase } = useSupabase();
   const sortOrderFetcher = useFetcher<{}>();
   const {
@@ -106,6 +108,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const onToggleItem = (id: string) => {
+    if (!permissions.can("update", "parts")) return;
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, checked: !item.checked } : item
@@ -140,6 +143,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   };
 
   const onRemoveItem = async (id: string) => {
+    if (!permissions.can("update", "parts")) return;
     // get the item and it's order in the list
     const itemIndex = items.findIndex((i) => i.id === id);
     const item = items[itemIndex];
@@ -161,6 +165,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   };
 
   const onReorder = (items: ItemWithData[]) => {
+    if (!permissions.can("update", "parts")) return;
     const newItems = items.map((item, index) => ({
       ...item,
       data: {
@@ -202,6 +207,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   }, []);
 
   const onUpdateWorkInstruction = useDebounce(async (content: JSONContent) => {
+    if (!permissions.can("update", "parts")) return;
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === selectedItemId
@@ -297,14 +303,26 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
                 delay: 0.15,
               }}
             >
-              <Editor
-                initialValue={
-                  item.data.methodOperationWorkInstruction?.content ??
-                  ({} as JSONContent)
-                }
-                onUpload={onUploadImage}
-                onChange={onUpdateWorkInstruction}
-              />
+              {permissions.can("update", "parts") ? (
+                <Editor
+                  initialValue={
+                    item.data.methodOperationWorkInstruction?.content ??
+                    ({} as JSONContent)
+                  }
+                  onUpload={onUploadImage}
+                  onChange={onUpdateWorkInstruction}
+                />
+              ) : (
+                <div
+                  className="prose dark:prose-invert"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(
+                      item.data.methodOperationWorkInstruction?.content ??
+                        ({} as JSONContent)
+                    ),
+                  }}
+                />
+              )}
             </motion.div>
           </div>
         ),
@@ -432,7 +450,9 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
         <CardAction>
           <Button
             variant="secondary"
-            isDisabled={selectedItemId !== null}
+            isDisabled={
+              !permissions.can("update", "parts") || selectedItemId !== null
+            }
             onClick={onAddItem}
           >
             Add Operation
@@ -469,6 +489,7 @@ function OperationForm({
 }) {
   const methodOperationFetcher = useFetcher<{ id: string }>();
   const { supabase } = useSupabase();
+  const permissions = usePermissions();
 
   useEffect(() => {
     // replace the temporary id with the actual id
@@ -645,7 +666,7 @@ function OperationForm({
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
-          <Submit>Save</Submit>
+          <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
         </motion.div>
       </motion.div>
     </ValidatedForm>

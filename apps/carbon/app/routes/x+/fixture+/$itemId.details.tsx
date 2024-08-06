@@ -95,7 +95,7 @@ export default function FixtureDetailsRoute() {
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
             autodeskUrn={fixtureData?.fixtureSummary?.autodeskUrn ?? null}
-            isReadOnly={!permissions.can("update", "items")}
+            isReadOnly={!permissions.can("update", "parts")}
             metadata={{
               itemId,
             }}

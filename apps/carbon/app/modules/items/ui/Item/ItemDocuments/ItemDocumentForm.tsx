@@ -2,9 +2,9 @@ import { File, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { LuUpload } from "react-icons/lu";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { MethodItemType } from "~/modules/items/types";
+import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type ItemDocumentFormProps = {
@@ -16,6 +16,7 @@ const ItemDocumentForm = ({ itemId, type }: ItemDocumentFormProps) => {
   const submit = useSubmit();
   const { company } = useUser();
   const { supabase } = useSupabase();
+  const permissions = usePermissions();
 
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && supabase && company) {
@@ -66,7 +67,11 @@ const ItemDocumentForm = ({ itemId, type }: ItemDocumentFormProps) => {
   };
 
   return (
-    <File leftIcon={<LuUpload />} onChange={uploadFile}>
+    <File
+      isDisabled={!permissions.can("update", "parts")}
+      leftIcon={<LuUpload />}
+      onChange={uploadFile}
+    >
       New
     </File>
   );
