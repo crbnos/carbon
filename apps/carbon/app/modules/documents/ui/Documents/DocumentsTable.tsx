@@ -28,6 +28,7 @@ import {
   LuPencil,
   LuPin,
   LuTrash,
+  LuXCircle,
 } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
@@ -58,6 +59,7 @@ const DocumentsTable = memo(
     const revalidator = useRevalidator();
     const [params] = useUrlParams();
     const filter = params.get("q");
+    const search = params.get("search");
     // put rows in state for use with optimistic ui updates
     const [rows, setRows] = useState<Document[]>(data);
     // we have to do this useEffect silliness since we're putitng rows
@@ -79,7 +81,9 @@ const DocumentsTable = memo(
     } = useDocument();
 
     const { hasFilters } = useFilters();
+
     const [people] = usePeople();
+    const moveDocumentModal = useDisclosure();
     const deleteDocumentModal = useDisclosure();
 
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(
@@ -440,27 +444,38 @@ const DocumentsTable = memo(
             disabled={canDelete(row)}
             onClick={() => {
               setSelectedDocument(row);
-              deleteDocumentModal.onOpen();
+              moveDocumentModal.onOpen();
             }}
           >
             <MenuIcon icon={<LuTrash />} />
             {filter !== "trash" ? "Move to Trash" : "Restore from Trash"}
           </MenuItem>
+          <MenuItem
+            disabled={canDelete(row)}
+            onClick={() => {
+              setSelectedDocument(row);
+              deleteDocumentModal.onOpen();
+            }}
+          >
+            <MenuIcon icon={<LuXCircle />} />
+            Permanently Delete
+          </MenuItem>
         </>
       );
     }, [
-      canDelete,
       canUpdate,
-      deleteDocumentModal,
-      download,
-      edit,
+      canDelete,
       filter,
+      edit,
+      download,
       onFavorite,
+      moveDocumentModal,
+      deleteDocumentModal,
     ]);
 
     return (
       <>
-        {count === 0 && !hasFilters ? (
+        {count === 0 && !hasFilters && !search ? (
           <HStack className="w-full h-screen flex items-start justify-center">
             <VStack className="border rounded-md shadow-md w-96 mt-20">
               <div className="w-full flex flex-col gap-4 items-center justify-center py-8 bg-gradient-to-bl from-card to-background rounded-lg text-center group ring-4 ring-transparent hover:ring-white/10">
@@ -486,39 +501,60 @@ const DocumentsTable = memo(
           />
         )}
 
-        {selectedDocument &&
-          selectedDocument.id &&
-          (filter !== "trash" ? (
-            <ConfirmDelete
-              action={path.to.deleteDocument(selectedDocument.id)}
-              isOpen={deleteDocumentModal.isOpen}
-              name={selectedDocument.name ?? ""}
-              text={`Are you sure you want to move ${selectedDocument.name} to the trash?`}
-              onCancel={() => {
-                deleteDocumentModal.onClose();
-                setSelectedDocument(null);
-              }}
-              onSubmit={() => {
-                deleteDocumentModal.onClose();
-                setSelectedDocument(null);
-              }}
-            />
-          ) : (
-            <Confirm
-              action={path.to.documentRestore(selectedDocument.id)}
-              isOpen={deleteDocumentModal.isOpen}
-              name={`Restore ${selectedDocument.name}`}
-              text={`Are you sure you want to restore ${selectedDocument.name} from the trash?`}
-              onCancel={() => {
-                deleteDocumentModal.onClose();
-                setSelectedDocument(null);
-              }}
-              onSubmit={() => {
-                deleteDocumentModal.onClose();
-                setSelectedDocument(null);
-              }}
-            />
-          ))}
+        {selectedDocument && selectedDocument.id && (
+          <>
+            {moveDocumentModal.isOpen && filter !== "trash" && (
+              <ConfirmDelete
+                action={path.to.deleteDocument(selectedDocument.id)}
+                isOpen
+                name={selectedDocument.name ?? ""}
+                text={`Are you sure you want to move ${selectedDocument.name} to the trash?`}
+                onCancel={() => {
+                  moveDocumentModal.onClose();
+                  setSelectedDocument(null);
+                }}
+                onSubmit={() => {
+                  moveDocumentModal.onClose();
+                  setSelectedDocument(null);
+                }}
+              />
+            )}
+
+            {moveDocumentModal.isOpen && filter === "trash" && (
+              <Confirm
+                action={path.to.documentRestore(selectedDocument.id)}
+                isOpen
+                name={`Restore ${selectedDocument.name}`}
+                text={`Are you sure you want to restore ${selectedDocument.name} from the trash?`}
+                onCancel={() => {
+                  moveDocumentModal.onClose();
+                  setSelectedDocument(null);
+                }}
+                onSubmit={() => {
+                  moveDocumentModal.onClose();
+                  setSelectedDocument(null);
+                }}
+              />
+            )}
+
+            {deleteDocumentModal.isOpen && (
+              <ConfirmDelete
+                action={path.to.deleteDocumentPermanently(selectedDocument.id)}
+                isOpen
+                name={selectedDocument.name ?? ""}
+                text={`Are you sure you want to delete ${selectedDocument.name} permanently? This cannot be undone.`}
+                onCancel={() => {
+                  deleteDocumentModal.onClose();
+                  setSelectedDocument(null);
+                }}
+                onSubmit={() => {
+                  deleteDocumentModal.onClose();
+                  setSelectedDocument(null);
+                }}
+              />
+            )}
+          </>
+        )}
       </>
     );
   }

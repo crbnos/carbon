@@ -13,17 +13,9 @@ import type {
 
 export async function deleteDocument(
   client: SupabaseClient<Database>,
-  id: string,
-  userId: string
+  id: string
 ) {
-  return client
-    .from("document")
-    .update({
-      active: false,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString(),
-    })
-    .eq("id", id);
+  return client.from("document").delete().eq("id", id);
 }
 
 export async function deleteDocumentFavorite(
@@ -166,6 +158,21 @@ export async function insertDocumentLabel(
   userId: string
 ) {
   return client.from("documentLabel").insert({ documentId: id, label, userId });
+}
+
+export async function moveDocumentToTrash(
+  client: SupabaseClient<Database>,
+  id: string,
+  userId: string
+) {
+  return client
+    .from("document")
+    .update({
+      active: false,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", id);
 }
 
 export async function restoreDocument(

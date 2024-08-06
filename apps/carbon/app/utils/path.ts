@@ -194,7 +194,9 @@ export const path = {
       generatePath(`${x}/settings/custom-fields/${tableId}/delete/${id}`),
     deleteDepartment: (id: string) =>
       generatePath(`${x}/resources/departments/delete/${id}`),
-    deleteDocument: (id: string) => generatePath(`${x}/documents/${id}/delete`),
+    deleteDocument: (id: string) => generatePath(`${x}/documents/${id}/trash`),
+    deleteDocumentPermanently: (id: string) =>
+      generatePath(`${x}/documents/${id}/delete`),
     deleteEmployeeAbility: (abilityId: string, id: string) =>
       generatePath(`${x}/resources/ability/${abilityId}/employee/delete/${id}`),
     deleteEmployeeType: (id: string) =>
