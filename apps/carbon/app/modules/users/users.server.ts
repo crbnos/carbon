@@ -853,6 +853,7 @@ export async function updatePermissions(
         ? {}
         : claims.data
     ) as Record<string, string[]>;
+    delete updatedPermissions["role"];
 
     // add any missing claims to the current claims
     Object.keys(permissions).forEach((name) => {

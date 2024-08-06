@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
   Editor,
+  generateHTML,
   toast,
   useDebounce,
 } from "@carbon/react";
@@ -14,7 +15,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
-import { useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { Quotation } from "~/modules/sales";
 import {
@@ -108,6 +109,7 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
     company: { id: companyId },
   } = useUser();
   const { supabase } = useSupabase();
+  const permissions = usePermissions();
 
   const onUploadImage = async (file: File) => {
     const fileName = `${companyId}/quote/${quote.id}/${encodeURIComponent(
@@ -129,9 +131,9 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
     return `/file/preview/private/${result.data.path}`;
   };
 
-  const onUpdateInternalNotes = useDebounce(async (content: JSONContent) => {
+  const onUpdateExternalNotes = useDebounce(async (content: JSONContent) => {
     await supabase
-      ?.from("quoteLine")
+      ?.from("quote")
       .update({
         notes: content,
         updatedAt: today(getLocalTimeZone()).toString(),
@@ -146,11 +148,20 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
         <CardTitle>External Notes</CardTitle>
       </CardHeader>
       <CardContent>
-        <Editor
-          initialValue={(quote.notes ?? {}) as JSONContent}
-          onUpload={onUploadImage}
-          onChange={onUpdateInternalNotes}
-        />
+        {permissions.can("update", "sales") ? (
+          <Editor
+            initialValue={(quote.notes ?? {}) as JSONContent}
+            onUpload={onUploadImage}
+            onChange={onUpdateExternalNotes}
+          />
+        ) : (
+          <div
+            className="prose dark:prose-invert"
+            dangerouslySetInnerHTML={{
+              __html: generateHTML(quote.notes as JSONContent),
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   );

@@ -89,8 +89,10 @@ const Assign = forwardRef<HTMLButtonElement, ComboboxProps>(
             )}
             role="combobox"
             aria-expanded={open}
+            aria-controls="assignee-options"
             ref={ref}
             onClick={() => setOpen(true)}
+            disabled={isReadOnly}
             {...props}
           >
             {value ? (
@@ -101,7 +103,7 @@ const Assign = forwardRef<HTMLButtonElement, ComboboxProps>(
           </button>
         </PopoverTrigger>
         <PopoverContent className="min-w-[200px] w-[--radix-popover-trigger-width] p-0">
-          <Command>
+          <Command id="assignee-options">
             <CommandInput placeholder="Search..." className="h-9" />
             <CommandEmpty>No option found.</CommandEmpty>
             <CommandGroup>

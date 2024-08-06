@@ -9,6 +9,7 @@ import {
   getQuoteLines,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
+import { getBase64ImageFromSupabase } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -52,6 +53,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load quote");
   }
 
+  const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
+    (acc, line) => {
+      if (line.thumbnailPath) {
+        acc[line.id!] = line.thumbnailPath;
+      }
+      return acc;
+    },
+    {}
+  );
+
+  const thumbnails: Record<string, string | null> =
+    (thumbnailPaths
+      ? await Promise.all(
+          Object.entries(thumbnailPaths).map(([id, path]) => {
+            if (!path) {
+              return null;
+            }
+            return getBase64ImageFromSupabase(client, path).then((data) => ({
+              id,
+              data,
+            }));
+          })
+        )
+      : []
+    )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+      if (thumbnail) {
+        acc[thumbnail.id] = thumbnail.data;
+      }
+      return acc;
+    }, {}) ?? {};
+
   const stream = await renderToStream(
     <QuotePDF
       company={company.data}
@@ -59,6 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       quoteLines={quoteLines.data ?? []}
       quoteLinePrices={quoteLinePrices.data ?? []}
       quoteCustomerDetails={quoteLocations.data}
+      thumbnails={thumbnails}
     />
   );
 

@@ -148,7 +148,7 @@ const QuoteLineForm = ({
                       : "A quote line contains pricing and lead times for a particular part"}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                {isEditing && (
+                {isEditing && permissions.can("update", "sales") && (
                   <CardAction>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

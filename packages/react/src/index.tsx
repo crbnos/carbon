@@ -115,7 +115,8 @@ import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { RichText, useRichText } from "./RichText";
 
-import { generateHTML } from "@tiptap/react";
+import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
+import { defaultExtensions } from "./Editor/extensions";
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
 import {
@@ -242,6 +243,14 @@ import {
 import { VStack } from "./VStack";
 import { cn } from "./utils/cn";
 import { getValidChildren, reactNodeToString } from "./utils/react";
+
+const generateHTML = (content: JSONContent) => {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  return DefaultGenerateHTML(content, defaultExtensions);
+};
+
 export * from "./hooks";
 export {
   Accordion,

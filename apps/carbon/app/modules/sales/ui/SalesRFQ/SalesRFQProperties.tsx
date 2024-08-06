@@ -17,7 +17,7 @@ import {
   CustomerAvatar,
   useOptimisticAssignment,
 } from "~/components";
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { SalesRFQ } from "../../types";
@@ -27,6 +27,7 @@ const SalesRFQProperties = () => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
 
+  const permissions = usePermissions();
   const sharedData = useRouteData<{ locations: ListItem[] }>(
     path.to.salesRfqRoot
   );
@@ -112,7 +113,12 @@ const SalesRFQProperties = () => {
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
-        <Assignee id={rfqId} table="salesRfq" value={assignee ?? ""} />
+        <Assignee
+          id={rfqId}
+          isReadOnly={!permissions.can("update", "sales")}
+          table="salesRfq"
+          value={assignee ?? ""}
+        />
       </VStack>
 
       <VStack spacing={2}>
