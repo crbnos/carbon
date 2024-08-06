@@ -344,40 +344,6 @@ const QuoteLinePricing = ({
             <Tr>
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
-                  <span>Unit Price</span>
-                </HStack>
-              </Td>
-              {quantities.map((quantity) => {
-                const price = prices[quantity]?.unitPrice;
-                return (
-                  <Td key={quantity.toString()}>
-                    <NumberField
-                      value={price}
-                      formatOptions={{
-                        style: "currency",
-                        currency: "USD",
-                      }}
-                      minValue={0}
-                      onChange={(value) => {
-                        if (Number.isFinite(value) && value !== price) {
-                          onUpdatePrice("unitPrice", quantity, value);
-                        }
-                      }}
-                    >
-                      <NumberInput
-                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!canEdit}
-                        size="sm"
-                        min={0}
-                      />
-                    </NumberField>
-                  </Td>
-                );
-              })}
-            </Tr>
-            <Tr>
-              <Td className="border-r border-border">
-                <HStack className="w-full justify-between ">
                   <span className="flex items-center justify-start gap-2">
                     Markup Percent
                     <Tooltip>
@@ -423,6 +389,41 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
+            <Tr>
+              <Td className="border-r border-border">
+                <HStack className="w-full justify-between ">
+                  <span>Unit Price</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity) => {
+                const price = prices[quantity]?.unitPrice;
+                return (
+                  <Td key={quantity.toString()}>
+                    <NumberField
+                      value={price}
+                      formatOptions={{
+                        style: "currency",
+                        currency: "USD",
+                      }}
+                      minValue={0}
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== price) {
+                          onUpdatePrice("unitPrice", quantity, value);
+                        }
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                        isDisabled={!canEdit}
+                        size="sm"
+                        min={0}
+                      />
+                    </NumberField>
+                  </Td>
+                );
+              })}
+            </Tr>
+
             <Tr>
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
