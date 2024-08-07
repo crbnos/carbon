@@ -580,7 +580,7 @@ export const path = {
     quoteMaterial: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/${id}`),
     quoteMaterialsOrder: `${x}/quote/methods/material/order`,
-
+    quoteMethodGet: `${x}/quote/methods/get`,
     quoteOperation: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,

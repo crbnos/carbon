@@ -89,7 +89,8 @@ export default function EditAttributeCategoryRoute() {
     quotingRate: workCellType?.quotingRate ?? 0,
     laborRate: workCellType?.laborRate ?? 0,
     overheadRate: workCellType?.overheadRate ?? 0,
-    defaultStandardFactor: workCellType?.defaultStandardFactor ?? "Total Hours",
+    defaultStandardFactor:
+      workCellType?.defaultStandardFactor ?? "Minutes/Piece",
     ...getCustomFields(workCellType?.customFields),
   };
 

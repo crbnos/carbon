@@ -1,0 +1,315 @@
+import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+
+import type {
+  PostgrestError,
+  SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2.33.1";
+
+import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import type { Database } from "../lib/types.ts";
+
+import { corsHeaders } from "../lib/headers.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
+
+const pool = getConnectionPool(1);
+const db = getDatabaseClient<DB>(pool);
+
+const payloadValidator = z.object({
+  type: z.string(),
+  sourceId: z.string(),
+  targetId: z.string(),
+  companyId: z.string(),
+  userId: z.string(),
+});
+
+serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+  const payload = await req.json();
+
+  try {
+    const { type, sourceId, targetId, companyId, userId } =
+      payloadValidator.parse(payload);
+
+    const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+
+    switch (type) {
+      case "quote": {
+        const [quoteId, quoteLineId] = (targetId as string).split(":");
+        if (!quoteId || !quoteLineId) {
+          throw new Error("Invalid targetId");
+        }
+        const itemId = sourceId;
+
+        const [makeMethod, quoteMakeMethod] = await Promise.all([
+          client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .eq("quoteLineId", quoteLineId)
+            .is("parentMaterialId", null)
+            .single(),
+        ]);
+
+        if (makeMethod.error) {
+          throw new Error("Failed to get make method");
+        }
+
+        if (quoteMakeMethod.error) {
+          throw new Error("Failed to get quote make method");
+        }
+
+        const [methodTrees] = await Promise.all([
+          getMethodTree(client, makeMethod.data.id),
+        ]);
+
+        if (methodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const methodTree = methodTrees.data?.[0] as MethodTreeItem;
+        if (!methodTree) throw new Error("Method tree not found");
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
+          await Promise.all([
+            trx
+              .deleteFrom("quoteMakeMethod")
+              .where((eb) =>
+                eb.and([
+                  eb("quoteLineId", "=", quoteLineId),
+                  eb("parentMaterialId", "is not", null),
+                ])
+              )
+              .execute(),
+            trx
+              .deleteFrom("quoteMaterial")
+              .where("quoteLineId", "=", quoteLineId)
+              .execute(),
+            trx
+              .deleteFrom("quoteOperation")
+              .where("quoteLineId", "=", quoteLineId)
+              .execute(),
+          ]);
+
+          // traverse method tree and create:
+          // - quoteMakeMethod
+          // - quoteMakeMethodOperation
+          // - quoteMakeMethodMaterial
+          async function traverseMethodToQuote(
+            node: MethodTreeItem,
+            parentQuoteMakeMethodId: string | null
+          ) {
+            const madeChildren = node.children.filter(
+              (child) => child.data.methodType === "Make"
+            );
+            const unmadeChildren = node.children.filter(
+              (child) => child.data.methodType !== "Make"
+            );
+
+            // const relatedOperations = await client
+            //   .from("methodOperation")
+            //   .select("*")
+            //   .eq("makeMethodId", node.data.makeMethodId);
+
+            // const quoteOperations =
+            //   relatedOperations?.data?.map((op) => ({
+            //     quoteId,
+            //     quoteLineId,
+            //     quoteMakeMethodId: parentQuoteMakeMethodId!,
+            //     workCellTypeId: op.workCellTypeId,
+            //     equipmentTypeId: op.equipmentTypeId,
+            //     description: op.description,
+            //     setupHours: op.setupHours,
+            //     standardFactor: op.standardFactor,
+            //     productionStandard: op.productionStandard,
+            //     quotingRate: 0, // TODO
+            //     laborRate: 0, // TODO
+            //     overheadRate: 0, // TODO
+            //     order: op.order,
+            //     operationOrder: op.operationOrder,
+            //     companyId,
+            //     createdBy: userId,
+            //     customFields: {},
+            //   })) ?? [];
+
+            // let methodOperationsToQuoteOperations: Record<string, string> = {};
+            // if (quoteOperations?.length > 0) {
+            //   const operationIds = await trx
+            //     .insertInto("quoteOperation")
+            //     .values(quoteOperations)
+            //     .returning(["id"])
+            //     .execute();
+
+            //   methodOperationsToQuoteOperations =
+            //     relatedOperations.data?.reduce<Record<string, string>>(
+            //       (acc, op, index) => {
+            //         if (operationIds[index].id) {
+            //           acc[op.id!] = operationIds[index].id!;
+            //         }
+            //         return acc;
+            //       },
+            //       {}
+            //     ) ?? {};
+            // }
+
+            const mapMethodMaterialToQuoteMaterial = (
+              child: MethodTreeItem
+            ) => ({
+              quoteId,
+              quoteLineId,
+              quoteMakeMethodId: parentQuoteMakeMethodId!,
+              itemId: child.data.itemId,
+              itemReadableId: child.data.itemReadableId,
+              itemType: child.data.itemType,
+              methodType: child.data.methodType,
+              // operation: methodOperationsToQuoteOperations[child.data.operationId], // TODO
+              order: child.data.order,
+              description: "", // TODO
+              quantity: child.data.quantity,
+              unitOfMeasureCode: "EA", // TODO
+              unitCost: 0, // TODO
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+
+            const madeMaterials = madeChildren.map(
+              mapMethodMaterialToQuoteMaterial
+            );
+            const pickedOrBoughtMaterials = unmadeChildren.map(
+              mapMethodMaterialToQuoteMaterial
+            );
+            if (madeMaterials.length > 0) {
+              const madeMaterialIds = await trx
+                .insertInto("quoteMaterial")
+                .values(madeMaterials)
+                .returning(["id"])
+                .execute();
+
+              const quoteMakeMethods = await trx
+                .selectFrom("quoteMakeMethod")
+                .select(["id"])
+                .where(
+                  "parentMaterialId",
+                  "in",
+                  madeMaterialIds.map((m) => m.id)
+                )
+                .execute();
+
+              for (const [index, child] of madeChildren.entries()) {
+                // insert quoteMakeMethod for child
+                const makeMethodId = quoteMakeMethods[index].id ?? null;
+                await traverseMethodToQuote(child, makeMethodId);
+              }
+            }
+
+            if (pickedOrBoughtMaterials.length > 0) {
+              await trx
+                .insertInto("quoteMaterial")
+                .values(pickedOrBoughtMaterials)
+                .execute();
+            }
+          }
+
+          await traverseMethodToQuote(methodTree, quoteMakeMethod.data.id);
+        });
+
+        break;
+      }
+      default:
+        throw new Error(`Invalid type  ${type}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify(err), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});
+
+type Method = NonNullable<
+  Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
+>[number];
+type MethodTreeItem = {
+  id: string;
+  data: Method;
+  children: MethodTreeItem[];
+};
+
+export async function getMethodTree(
+  client: SupabaseClient<Database>,
+  makeMethodId: string
+): Promise<{ data: MethodTreeItem[] | null; error: PostgrestError | null }> {
+  const items = await getMethodTreeArray(client, makeMethodId);
+  if (items.error) return items;
+
+  const tree = getMethodTreeArrayToTree(items.data);
+
+  return {
+    data: tree,
+    error: null,
+  };
+}
+
+export function getMethodTreeArray(
+  client: SupabaseClient<Database>,
+  makeMethodId: string
+) {
+  return client.rpc("get_method_tree", {
+    uid: makeMethodId,
+  });
+}
+
+function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
+  function traverseAndRenameIds(node: MethodTreeItem) {
+    const clone = structuredClone(node);
+    clone.id = nanoid(20);
+    clone.children = clone.children.map((n) => traverseAndRenameIds(n));
+    return clone;
+  }
+
+  const rootItems: MethodTreeItem[] = [];
+  const lookup: { [id: string]: MethodTreeItem } = {};
+
+  for (const item of items) {
+    const itemId = item.methodMaterialId;
+    const parentId = item.parentMaterialId;
+
+    if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
+      // @ts-ignore - we add data on the next line
+      lookup[itemId] = { id: itemId, children: [] };
+    }
+
+    lookup[itemId]["data"] = item;
+
+    const treeItem = lookup[itemId];
+
+    if (parentId === null || parentId === undefined) {
+      rootItems.push(treeItem);
+    } else {
+      if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
+        // @ts-ignore - we don't add data here
+        lookup[parentId] = { id: parentId, children: [] };
+      }
+
+      lookup[parentId]["children"].push(treeItem);
+    }
+  }
+
+  return rootItems.map((item) => traverseAndRenameIds(item));
+}
