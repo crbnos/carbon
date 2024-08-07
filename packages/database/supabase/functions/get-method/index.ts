@@ -110,51 +110,51 @@ serve(async (req: Request) => {
               (child) => child.data.methodType !== "Make"
             );
 
-            // const relatedOperations = await client
-            //   .from("methodOperation")
-            //   .select("*")
-            //   .eq("makeMethodId", node.data.makeMethodId);
+            const relatedOperations = await client
+              .from("methodOperation")
+              .select("*, workCellType(quotingRate, laborRate, overheadRate)")
+              .eq("makeMethodId", node.data.materialMakeMethodId);
 
-            // const quoteOperations =
-            //   relatedOperations?.data?.map((op) => ({
-            //     quoteId,
-            //     quoteLineId,
-            //     quoteMakeMethodId: parentQuoteMakeMethodId!,
-            //     workCellTypeId: op.workCellTypeId,
-            //     equipmentTypeId: op.equipmentTypeId,
-            //     description: op.description,
-            //     setupHours: op.setupHours,
-            //     standardFactor: op.standardFactor,
-            //     productionStandard: op.productionStandard,
-            //     quotingRate: 0, // TODO
-            //     laborRate: 0, // TODO
-            //     overheadRate: 0, // TODO
-            //     order: op.order,
-            //     operationOrder: op.operationOrder,
-            //     companyId,
-            //     createdBy: userId,
-            //     customFields: {},
-            //   })) ?? [];
+            const quoteOperations =
+              relatedOperations?.data?.map((op) => ({
+                quoteId,
+                quoteLineId,
+                quoteMakeMethodId: parentQuoteMakeMethodId!,
+                workCellTypeId: op.workCellTypeId,
+                equipmentTypeId: op.equipmentTypeId,
+                description: op.description,
+                setupHours: op.setupHours,
+                standardFactor: op.standardFactor,
+                productionStandard: op.productionStandard,
+                quotingRate: op.workCellType?.quotingRate ?? 0,
+                laborRate: op.workCellType?.laborRate ?? 0,
+                overheadRate: op.workCellType?.overheadRate ?? 0,
+                order: op.order,
+                operationOrder: op.operationOrder,
+                companyId,
+                createdBy: userId,
+                customFields: {},
+              })) ?? [];
 
-            // let methodOperationsToQuoteOperations: Record<string, string> = {};
-            // if (quoteOperations?.length > 0) {
-            //   const operationIds = await trx
-            //     .insertInto("quoteOperation")
-            //     .values(quoteOperations)
-            //     .returning(["id"])
-            //     .execute();
+            let methodOperationsToQuoteOperations: Record<string, string> = {};
+            if (quoteOperations?.length > 0) {
+              const operationIds = await trx
+                .insertInto("quoteOperation")
+                .values(quoteOperations)
+                .returning(["id"])
+                .execute();
 
-            //   methodOperationsToQuoteOperations =
-            //     relatedOperations.data?.reduce<Record<string, string>>(
-            //       (acc, op, index) => {
-            //         if (operationIds[index].id) {
-            //           acc[op.id!] = operationIds[index].id!;
-            //         }
-            //         return acc;
-            //       },
-            //       {}
-            //     ) ?? {};
-            // }
+              methodOperationsToQuoteOperations =
+                relatedOperations.data?.reduce<Record<string, string>>(
+                  (acc, op, index) => {
+                    if (operationIds[index].id) {
+                      acc[op.id!] = operationIds[index].id!;
+                    }
+                    return acc;
+                  },
+                  {}
+                ) ?? {};
+            }
 
             const mapMethodMaterialToQuoteMaterial = (
               child: MethodTreeItem
@@ -168,10 +168,10 @@ serve(async (req: Request) => {
               methodType: child.data.methodType,
               // operation: methodOperationsToQuoteOperations[child.data.operationId], // TODO
               order: child.data.order,
-              description: "", // TODO
+              description: child.data.description,
               quantity: child.data.quantity,
-              unitOfMeasureCode: "EA", // TODO
-              unitCost: 0, // TODO
+              unitOfMeasureCode: child.data.unitOfMeasureCode,
+              unitCost: child.data.unitCost,
               companyId,
               createdBy: userId,
               customFields: {},
@@ -201,7 +201,6 @@ serve(async (req: Request) => {
                 .execute();
 
               for (const [index, child] of madeChildren.entries()) {
-                // insert quoteMakeMethod for child
                 const makeMethodId = quoteMakeMethods[index].id ?? null;
                 await traverseMethodToQuote(child, makeMethodId);
               }

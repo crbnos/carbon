@@ -46,7 +46,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         .from("item")
         .select("id, readableId, name, type, replenishmentSystem, active")
         .eq("companyId", companyId)
-        .order("name"),
+        .order("readableId"),
       supabase
         .from("supplier")
         .select("id, name")
@@ -121,7 +121,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                     type: inserted.type,
                     active: inserted.active,
                   },
-                ].sort((a, b) => a.name.localeCompare(b.name))
+                ].sort((a, b) => a.readableId.localeCompare(b.readableId))
               );
 
               break;
@@ -143,7 +143,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                     }
                     return i;
                   })
-                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .sort((a, b) => a.readableId.localeCompare(b.readableId))
               );
               break;
             case "DELETE":

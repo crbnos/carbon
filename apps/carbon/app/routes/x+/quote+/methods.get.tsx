@@ -17,20 +17,17 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const supabaseServiceRole = getSupabaseServiceRole();
-  const { data, error } = await supabaseServiceRole.functions.invoke(
-    "get-method",
-    {
-      body: {
-        type: "quote",
-        sourceId: itemId,
-        targetId: `${quoteId}:${quoteLineId}`,
-        companyId,
-        userId,
-      },
-    }
-  );
+  const { error } = await supabaseServiceRole.functions.invoke("get-method", {
+    body: {
+      type: "quote",
+      sourceId: itemId,
+      targetId: `${quoteId}:${quoteLineId}`,
+      companyId,
+      userId,
+    },
+  });
 
-  console.log({ data, error });
-
-  return null;
+  return {
+    error: error ? "Failed to get method" : null,
+  };
 }
