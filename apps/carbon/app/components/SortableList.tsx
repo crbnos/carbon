@@ -117,9 +117,7 @@ function SortableListItem<T>({
                         <h4
                           className={cn(
                             "flex tracking-tighter text-base md:text-lg truncate",
-                            item.checked
-                              ? "text-red-400"
-                              : "text-foreground dark:text-foreground/70"
+                            item.checked ? "text-red-400" : "text-foreground"
                           )}
                         >
                           {item.title}

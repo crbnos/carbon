@@ -103,7 +103,7 @@ export default function QuoteMakeMethodRoute() {
   const { material, materials, operations } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={2}>
       <QuoteMaterialForm
         key={material.id}
         initialValues={material}

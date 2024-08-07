@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import { type z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
@@ -570,7 +571,7 @@ export async function getMethodTreeArray(
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   function traverseAndRenameIds(node: MethodTreeItem) {
     const clone = structuredClone(node);
-    clone.id = `node-${Math.random().toString(16).slice(2)}`;
+    clone.id = nanoid();
     clone.children = clone.children.map((n) => traverseAndRenameIds(n));
     return clone;
   }

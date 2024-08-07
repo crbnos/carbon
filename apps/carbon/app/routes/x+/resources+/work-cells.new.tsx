@@ -62,7 +62,7 @@ export default function NewWorkCellTypeRoute() {
     quotingRate: 0,
     laborRate: 0,
     overheadRate: 0,
-    defaultStandardFactor: "Total Hours" as "Total Hours",
+    defaultStandardFactor: "Minutes/Piece" as "Minutes/Piece",
   };
 
   return <WorkCellTypeForm onClose={onClose} initialValues={initialValues} />;

@@ -68,13 +68,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function QuoteMakeMethodRoute() {
-  const { methodId } = useParams();
+  const { quoteId, lineId, methodId } = useParams();
+  if (!quoteId) throw new Error("Could not find quoteId");
+  if (!lineId) throw new Error("Could not find lineId");
   if (!methodId) throw new Error("Could not find methodId");
 
   const { materials, operations } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={2}>
       <QuoteBillOfProcess
         key={`bop:${methodId}`}
         quoteMakeMethodId={methodId}

@@ -56,7 +56,7 @@ export default function QuoteMaterialPickPage() {
   if (!materialId) throw new Error("Could not find materialId");
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={2}>
       <QuoteMaterialForm
         key={materialId}
         initialValues={material}

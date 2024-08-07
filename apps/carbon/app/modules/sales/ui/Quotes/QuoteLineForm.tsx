@@ -23,7 +23,7 @@ import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { LuDownload, LuTrash, LuUpload } from "react-icons/lu";
+import { LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import {
   ArrayNumeric,
@@ -162,18 +162,6 @@ const QuoteLineForm = ({
                         <DropdownMenuItem onClick={deleteDisclosure.onOpen}>
                           <DropdownMenuIcon icon={<LuTrash />} />
                           Delete Line
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={itemData.methodType !== "Make"}
-                        >
-                          <DropdownMenuIcon icon={<LuDownload />} />
-                          Get Method
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={itemData.methodType !== "Make"}
-                        >
-                          <DropdownMenuIcon icon={<LuUpload />} />
-                          Save Method
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
