@@ -25607,6 +25607,9 @@ export type Database = {
           itemId: string
           itemReadableId: string
           itemType: string
+          description: string
+          unitOfMeasureCode: string
+          unitCost: number
           quantity: number
           methodType: Database["public"]["Enums"]["methodType"]
           parentMaterialId: string

@@ -347,7 +347,7 @@ const QuoteLinePricing = ({
                   <span className="flex items-center justify-start gap-2">
                     Markup Percent
                     <Tooltip>
-                      <TooltipTrigger>
+                      <TooltipTrigger tabIndex={-1}>
                         <LuInfo className="w-4 h-4" />
                       </TooltipTrigger>
                       <TooltipContent>(Price - Cost) / Cost</TooltipContent>
@@ -481,7 +481,7 @@ const QuoteLinePricing = ({
                   <span className="flex items-center justify-start gap-2">
                     Profit Percent
                     <Tooltip>
-                      <TooltipTrigger>
+                      <TooltipTrigger tabIndex={-1}>
                         <LuInfo className="w-4 h-4" />
                       </TooltipTrigger>
                       <TooltipContent>(Price - Cost) / Price</TooltipContent>
