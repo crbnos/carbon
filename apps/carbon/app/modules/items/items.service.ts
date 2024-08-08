@@ -115,8 +115,14 @@ export async function getConsumables(
     .select("*", {
       count: "exact",
     })
-    .eq("active", true)
     .eq("companyId", companyId);
+
+  const includeInactive = args?.filters?.some(
+    (filter) => filter.column === "active" && filter.value === "false"
+  );
+  if (!includeInactive) {
+    query = query.eq("active", true);
+  }
 
   if (args.search) {
     query = query.or(
@@ -174,8 +180,15 @@ export async function getFixtures(
     .select("*", {
       count: "exact",
     })
-    .eq("active", true)
     .eq("companyId", companyId);
+
+  const includeInactive = args?.filters?.some(
+    (filter) => filter.column === "active" && filter.value === "false"
+  );
+
+  if (!includeInactive) {
+    query = query.eq("active", true);
+  }
 
   if (args.search) {
     query = query.or(
@@ -383,8 +396,14 @@ export async function getMaterials(
     .select("*", {
       count: "exact",
     })
-    .eq("active", true)
     .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  const includeInactive = args?.filters?.some(
+    (filter) => filter.column === "active" && filter.value === "false"
+  );
+  if (!includeInactive) {
+    query = query.eq("active", true);
+  }
 
   if (args.search) {
     query = query.or(
@@ -633,8 +652,14 @@ export async function getParts(
     .select("*", {
       count: "exact",
     })
-    .eq("active", true)
     .eq("companyId", companyId);
+
+  const includeInactive = args?.filters?.some(
+    (filter) => filter.column === "active" && filter.value === "false"
+  );
+  if (!includeInactive) {
+    query = query.eq("active", true);
+  }
 
   if (args.search) {
     query = query.or(
@@ -708,9 +733,15 @@ export async function getServices(
     .select("*", {
       count: "exact",
     })
-    .eq("active", true)
     .eq("companyId", companyId);
 
+  const includeInactive = args?.filters?.some(
+    (filter) => filter.column === "active" && filter.value === "false"
+  );
+
+  if (!includeInactive) {
+    query = query.eq("active", true);
+  }
   if (args.search) {
     query = query.or(
       `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
@@ -801,8 +832,14 @@ export async function getTools(
     .select("*", {
       count: "exact",
     })
-    .eq("active", true)
     .eq("companyId", companyId);
+
+  const includeInactive = args?.filters?.some(
+    (filter) => filter.column === "active" && filter.value === "false"
+  );
+  if (!includeInactive) {
+    query = query.eq("active", true);
+  }
 
   if (args.search) {
     query = query.or(

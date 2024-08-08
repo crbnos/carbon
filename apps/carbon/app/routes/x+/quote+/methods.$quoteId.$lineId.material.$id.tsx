@@ -1,5 +1,6 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { getSupabaseServiceRole } from "~/lib/supabase";
 import { quoteMaterialValidator, upsertQuoteMaterial } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -9,7 +10,7 @@ import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales",
   });
 
@@ -31,7 +32,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateQuoteMaterial = await upsertQuoteMaterial(client, {
+  const serviceRole = getSupabaseServiceRole();
+  const updateQuoteMaterial = await upsertQuoteMaterial(serviceRole, {
     quoteId,
     quoteLineId: lineId,
     ...validation.data,

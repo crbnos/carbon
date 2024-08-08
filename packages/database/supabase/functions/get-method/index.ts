@@ -17,7 +17,7 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.object({
-  type: z.enum(["itemToQuoteLine"]),
+  type: z.enum(["itemToQuoteLine", "itemToQuoteMakeMethod"]),
   sourceId: z.string(),
   targetId: z.string(),
   companyId: z.string(),
@@ -33,6 +33,8 @@ serve(async (req: Request) => {
   try {
     const { type, sourceId, targetId, companyId, userId } =
       payloadValidator.parse(payload);
+
+    console.log({ type, sourceId, targetId, companyId, userId });
 
     const client = getSupabaseServiceRole(req.headers.get("Authorization"));
 
@@ -99,7 +101,7 @@ serve(async (req: Request) => {
           // - quoteMakeMethod
           // - quoteMakeMethodOperation
           // - quoteMakeMethodMaterial
-          async function traverseMethodToQuote(
+          async function traverseMethod(
             node: MethodTreeItem,
             parentQuoteMakeMethodId: string | null
           ) {
@@ -147,14 +149,6 @@ serve(async (req: Request) => {
                   },
                   {}
                 ) ?? {};
-
-              console.log({
-                node: node.data.itemReadableId,
-                operationId: node.data.operationId,
-                quoteOperations,
-                operationIds,
-                methodOperationsToQuoteOperations,
-              });
             }
 
             const mapMethodMaterialToQuoteMaterial = (
@@ -211,7 +205,10 @@ serve(async (req: Request) => {
 
               for (const [index, child] of madeChildren.entries()) {
                 const makeMethodId = quoteMakeMethods[index].id ?? null;
-                await traverseMethodToQuote(child, makeMethodId);
+                // prevent an infinite loop
+                if (child.data.itemId !== itemId) {
+                  await traverseMethod(child, makeMethodId);
+                }
               }
             }
 
@@ -223,10 +220,185 @@ serve(async (req: Request) => {
             }
           }
 
-          console.log(methodTree);
-          await traverseMethodToQuote(methodTree, quoteMakeMethod.data.id);
+          await traverseMethod(methodTree, quoteMakeMethod.data.id);
         });
 
+        break;
+      }
+      case "itemToQuoteMakeMethod": {
+        const quoteMakeMethodId = targetId;
+
+        if (!quoteMakeMethodId) {
+          throw new Error("Invalid targetId");
+        }
+        const itemId = sourceId;
+
+        const [makeMethod, quoteMakeMethod] = await Promise.all([
+          client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .eq("id", quoteMakeMethodId)
+            .single(),
+        ]);
+
+        if (makeMethod.error) {
+          throw new Error("Failed to get make method");
+        }
+
+        if (quoteMakeMethod.error || !quoteMakeMethod.data) {
+          throw new Error("Failed to get quote make method");
+        }
+
+        const [methodTrees] = await Promise.all([
+          getMethodTree(client, makeMethod.data.id),
+        ]);
+
+        if (methodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const methodTree = methodTrees.data?.[0] as MethodTreeItem;
+        if (!methodTree) throw new Error("Method tree not found");
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing quoteMakeMethodOperation, quoteMakeMethodMaterial
+          await Promise.all([
+            trx
+              .deleteFrom("quoteMaterial")
+              .where("quoteMakeMethodId", "=", quoteMakeMethodId)
+              .execute(),
+            trx
+              .deleteFrom("quoteOperation")
+              .where("quoteMakeMethodId", "=", quoteMakeMethodId)
+              .execute(),
+          ]);
+
+          // traverse method tree and create:
+          // - quoteMakeMethod
+          // - quoteMakeMethodOperation
+          // - quoteMakeMethodMaterial
+          async function traverseMethod(
+            node: MethodTreeItem,
+            parentQuoteMakeMethodId: string | null
+          ) {
+            const relatedOperations = await client
+              .from("methodOperation")
+              .select("*, workCellType(quotingRate, laborRate, overheadRate)")
+              .eq("makeMethodId", node.data.materialMakeMethodId);
+
+            const quoteOperations =
+              relatedOperations?.data?.map((op) => ({
+                quoteId: quoteMakeMethod.data?.quoteId!,
+                quoteLineId: quoteMakeMethod.data?.quoteLineId!,
+                quoteMakeMethodId: parentQuoteMakeMethodId!,
+                workCellTypeId: op.workCellTypeId,
+                equipmentTypeId: op.equipmentTypeId,
+                description: op.description,
+                setupHours: op.setupHours,
+                standardFactor: op.standardFactor,
+                productionStandard: op.productionStandard,
+                quotingRate: op.workCellType?.quotingRate ?? 0,
+                laborRate: op.workCellType?.laborRate ?? 0,
+                overheadRate: op.workCellType?.overheadRate ?? 0,
+                order: op.order,
+                operationOrder: op.operationOrder,
+                companyId,
+                createdBy: userId,
+                customFields: {},
+              })) ?? [];
+
+            let methodOperationsToQuoteOperations: Record<string, string> = {};
+            if (quoteOperations?.length > 0) {
+              const operationIds = await trx
+                .insertInto("quoteOperation")
+                .values(quoteOperations)
+                .returning(["id"])
+                .execute();
+
+              methodOperationsToQuoteOperations =
+                relatedOperations.data?.reduce<Record<string, string>>(
+                  (acc, op, index) => {
+                    if (operationIds[index].id) {
+                      acc[op.id!] = operationIds[index].id!;
+                    }
+                    return acc;
+                  },
+                  {}
+                ) ?? {};
+            }
+
+            const mapMethodMaterialToQuoteMaterial = (
+              child: MethodTreeItem
+            ) => ({
+              quoteId: quoteMakeMethod.data?.quoteId!,
+              quoteLineId: quoteMakeMethod.data?.quoteLineId!,
+              quoteMakeMethodId: parentQuoteMakeMethodId!,
+              quoteOperationId:
+                methodOperationsToQuoteOperations[child.data.operationId],
+              itemId: child.data.itemId,
+              itemReadableId: child.data.itemReadableId,
+              itemType: child.data.itemType,
+              methodType: child.data.methodType,
+              order: child.data.order,
+              description: child.data.description,
+              quantity: child.data.quantity,
+              unitOfMeasureCode: child.data.unitOfMeasureCode,
+              unitCost: child.data.unitCost,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+
+            const madeChildren = node.children.filter(
+              (child) => child.data.methodType === "Make"
+            );
+            const unmadeChildren = node.children.filter(
+              (child) => child.data.methodType !== "Make"
+            );
+
+            const madeMaterials = madeChildren.map(
+              mapMethodMaterialToQuoteMaterial
+            );
+            const pickedOrBoughtMaterials = unmadeChildren.map(
+              mapMethodMaterialToQuoteMaterial
+            );
+            if (madeMaterials.length > 0) {
+              const madeMaterialIds = await trx
+                .insertInto("quoteMaterial")
+                .values(madeMaterials)
+                .returning(["id"])
+                .execute();
+
+              const quoteMakeMethods = await trx
+                .selectFrom("quoteMakeMethod")
+                .select(["id"])
+                .where(
+                  "parentMaterialId",
+                  "in",
+                  madeMaterialIds.map((m) => m.id)
+                )
+                .execute();
+
+              for (const [index, child] of madeChildren.entries()) {
+                const makeMethodId = quoteMakeMethods[index].id ?? null;
+                // prevent an infinite loop
+                if (child.data.itemId !== itemId) {
+                  await traverseMethod(child, makeMethodId);
+                }
+              }
+            }
+
+            if (pickedOrBoughtMaterials.length > 0) {
+              await trx
+                .insertInto("quoteMaterial")
+                .values(pickedOrBoughtMaterials)
+                .execute();
+            }
+          }
+
+          await traverseMethod(methodTree, quoteMakeMethod.data.id);
+        });
         break;
       }
       default:

@@ -1,10 +1,11 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
+import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
-  insertQuoteLinePrice,
   quoteLineValidator,
   upsertQuoteLine,
+  upsertQuoteLineMethod,
 } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -15,7 +16,7 @@ import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales",
   });
 
@@ -31,7 +32,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createQuotationLine = await upsertQuoteLine(client, {
+  const serviceRole = getSupabaseServiceRole();
+  const createQuotationLine = await upsertQuoteLine(serviceRole, {
     ...data,
     companyId,
     createdBy: userId,
@@ -49,14 +51,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const quoteLineId = createQuotationLine.data.id;
-
-  await insertQuoteLinePrice(client, {
+  const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
     quoteId,
     quoteLineId,
-    quantity: 1,
-    markupPercent: 15,
-    createdBy: userId,
+    itemId: data.itemId,
+    companyId,
+    userId,
   });
+
+  if (upsertMethod.error) {
+    throw redirect(
+      path.to.quoteLine(quoteId, quoteLineId),
+      await flash(
+        request,
+        error(upsertMethod.error, "Failed to create quote line method.")
+      )
+    );
+  }
 
   throw redirect(path.to.quoteLine(quoteId, quoteLineId));
 }
