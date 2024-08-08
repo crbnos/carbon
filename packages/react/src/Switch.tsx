@@ -37,7 +37,7 @@ const Switch = forwardRef<
 
   return (
     <SwitchPrimitives.Root
-      className={cn("group", container, className)}
+      className={cn("group focus-visible:outline-none", container, className)}
       {...props}
       ref={ref}
     >
