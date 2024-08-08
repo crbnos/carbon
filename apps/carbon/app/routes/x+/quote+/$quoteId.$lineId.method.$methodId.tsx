@@ -78,12 +78,12 @@ export default function QuoteMakeMethodRoute() {
   return (
     <VStack spacing={2}>
       <QuoteBillOfProcess
-        key={`bop:${methodId}`}
+        key={JSON.stringify(operations)}
         quoteMakeMethodId={methodId}
         operations={operations}
       />
       <QuoteBillOfMaterial
-        key={`bom:${methodId}`}
+        key={JSON.stringify(materials)}
         quoteMakeMethodId={methodId}
         materials={materials}
         operations={operations}

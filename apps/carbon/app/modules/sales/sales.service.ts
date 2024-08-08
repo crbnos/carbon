@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { FileObject } from "@supabase/storage-js";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/resources";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -14,6 +14,7 @@ import type {
   customerStatusValidator,
   customerTypeValidator,
   customerValidator,
+  getMethodValidator,
   quotationPricingValidator,
   quoteLineAdditionalChargesValidator,
   quoteLineValidator,
@@ -1406,6 +1407,27 @@ export async function updateQuoteLinePrice(
     .eq("quoteLineId", quoteLinePrice.quoteLineId);
 }
 
+export async function upsertQuoteLineMethod(
+  client: SupabaseClient<Database>,
+  lineMethod: {
+    itemId: string;
+    quoteId: string;
+    quoteLineId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("get-method", {
+    body: {
+      type: "itemToQuoteLine",
+      sourceId: lineMethod.itemId,
+      targetId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
+      companyId: lineMethod.companyId,
+      userId: lineMethod.userId,
+    },
+  });
+}
+
 export async function upsertQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterial:
@@ -1439,6 +1461,44 @@ export async function upsertQuoteMaterial(
     .insert([quoteMaterial])
     .select("id, methodType")
     .single();
+}
+
+export async function upsertQuoteMaterialMakeMethod(
+  client: SupabaseClient<Database>,
+  quoteMaterial: z.infer<typeof getMethodValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const makeMethod = await client
+    .from("quoteMakeMethod")
+    .select("id")
+    .eq("parentMaterialId", quoteMaterial.quoteMaterialId)
+    .single();
+  if (makeMethod.error) {
+    return makeMethod;
+  }
+
+  console.log({ makeMethod });
+
+  const { error } = await client.functions.invoke("get-method", {
+    body: {
+      type: "itemToQuoteMakeMethod",
+      sourceId: quoteMaterial.itemId,
+      targetId: makeMethod.data.id,
+      companyId: quoteMaterial.companyId,
+      userId: quoteMaterial.createdBy,
+    },
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: { message: "Failed to pull method" } as PostgrestError,
+    };
+  }
+
+  return { data: null, error: null };
 }
 
 export async function upsertQuoteOperation(

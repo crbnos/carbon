@@ -1,6 +1,7 @@
 import {
   Alert,
   Button,
+  Checkbox,
   HStack,
   Menubar,
   MenubarItem,
@@ -17,26 +18,20 @@ import {
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { Link, useFetcher, useLocation, useParams } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LuDownload, LuUpload } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { z } from "zod";
 import { BreadcrumbItem, Breadcrumbs } from "~/components";
 import { Hidden, Item, Submit } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import { getLineMethodValidator, getMethodValidator } from "../../sales.models";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
-
-const getMethodValidator = z.object({
-  itemId: z.string().min(1, { message: "Please select a source method" }),
-  quoteId: z.string(),
-  quoteLineId: z.string(),
-});
 
 const QuoteBreadcrumbs = () => {
   const permissions = usePermissions();
-  const { quoteId, lineId } = useParams();
+  const { quoteId, lineId, methodId, materialId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
   const fetcher = useFetcher<{ error: string | null }>();
@@ -62,7 +57,18 @@ const QuoteBreadcrumbs = () => {
     }
   }, [fetcher.data?.error]);
 
+  const [includeInactive, setIncludeInactive] = useState<
+    boolean | "indeterminate"
+  >(false);
+
   const getMethodModal = useDisclosure();
+  const isQuoteLineMethod =
+    pathname === path.to.quoteLineMethod(quoteId, lineId!, methodId!);
+  const isQuoteMakeMethod =
+    methodId &&
+    materialId &&
+    pathname ===
+      path.to.quoteLineMaterialMake(quoteId, lineId!, methodId, materialId);
 
   return (
     <>
@@ -88,7 +94,7 @@ const QuoteBreadcrumbs = () => {
           </Breadcrumbs>
           {line &&
             permissions.can("update", "sales") &&
-            pathname === path.to.quoteLine(quoteId, lineId!) && (
+            (isQuoteLineMethod || isQuoteMakeMethod) && (
               <HStack spacing={0}>
                 <MenubarItem
                   leftIcon={<LuDownload />}
@@ -117,13 +123,10 @@ const QuoteBreadcrumbs = () => {
               method="post"
               fetcher={fetcher}
               action={path.to.quoteMethodGet}
-              validator={getMethodValidator}
+              validator={
+                isQuoteLineMethod ? getLineMethodValidator : getMethodValidator
+              }
               onSubmit={getMethodModal.onClose}
-              defaultValues={{
-                quoteId,
-                quoteLineId: lineId,
-                itemId: line?.itemId,
-              }}
             >
               <ModalHeader>
                 <ModalTitle>Get Method</ModalTitle>
@@ -132,15 +135,40 @@ const QuoteBreadcrumbs = () => {
                 </ModalDescription>
               </ModalHeader>
               <ModalBody>
-                <Hidden name="quoteId" value={quoteId} />
-                <Hidden name="quoteLineId" value={lineId} />
+                {isQuoteLineMethod ? (
+                  <>
+                    <Hidden name="type" value="line" />
+                    <Hidden name="quoteId" value={quoteId} />
+                    <Hidden name="quoteLineId" value={lineId} />
+                  </>
+                ) : (
+                  <>
+                    <Hidden name="type" value="method" />
+                    <Hidden name="quoteMaterialId" value={materialId!} />
+                  </>
+                )}
+
                 <VStack spacing={4}>
                   <Item
                     name="itemId"
                     label="Source Method"
                     type={(line?.itemType ?? "Part") as "Part"}
+                    includeInactive={includeInactive === true}
                     replenishmentSystem="Make"
                   />
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="include-inactive"
+                      checked={includeInactive}
+                      onCheckedChange={setIncludeInactive}
+                    />
+                    <label
+                      htmlFor="include-inactive"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Include Inactive
+                    </label>
+                  </div>
                   {hasMethods && (
                     <Alert variant="destructive">
                       This will overwrite the existing quote method

@@ -1,6 +1,11 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { json, type ActionFunctionArgs } from "@remix-run/node";
-import { quoteMaterialValidator, upsertQuoteMaterial } from "~/modules/sales";
+import { getSupabaseServiceRole } from "~/lib/supabase";
+import {
+  quoteMaterialValidator,
+  upsertQuoteMaterial,
+  upsertQuoteMaterialMakeMethod,
+} from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
@@ -9,7 +14,7 @@ import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales",
   });
 
@@ -30,7 +35,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const insertQuoteMaterial = await upsertQuoteMaterial(client, {
+  const serviceRole = getSupabaseServiceRole();
+  const insertQuoteMaterial = await upsertQuoteMaterial(serviceRole, {
     ...data,
     quoteId,
     quoteLineId: lineId,
@@ -61,6 +67,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(insertQuoteMaterial, "Failed to insert quote material")
       )
     );
+  }
+
+  if (data.methodType === "Make") {
+    const makeMethod = await upsertQuoteMaterialMakeMethod(serviceRole, {
+      ...data,
+      quoteMaterialId,
+      companyId,
+      createdBy: userId,
+    });
+
+    if (makeMethod.error) {
+      return json(
+        {
+          id: quoteMaterialId,
+        },
+        await flash(
+          request,
+          error(makeMethod.error, "Failed to insert quote material make method")
+        )
+      );
+    }
   }
 
   return json({ id: quoteMaterialId });

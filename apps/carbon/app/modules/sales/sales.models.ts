@@ -59,6 +59,18 @@ export const customerTypeValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
 });
 
+export const getLineMethodValidator = z.object({
+  type: z.enum(["line"]),
+  itemId: z.string().min(1, { message: "Please select a source method" }),
+  quoteId: z.string(),
+  quoteLineId: z.string(),
+});
+
+export const getMethodValidator = z.object({
+  quoteMaterialId: z.string().min(1, { message: "Quote Material is required" }),
+  itemId: z.string().min(1, { message: "Please select a source method" }),
+});
+
 export const quoteLineStatusType = [
   "Draft",
   "In Progress",
