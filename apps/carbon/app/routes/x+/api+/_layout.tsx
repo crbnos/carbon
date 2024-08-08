@@ -1,7 +1,9 @@
+import { Button } from "@carbon/react";
 import type { MetaFunction } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
+import { Outlet, useLocation, useNavigate } from "@remix-run/react";
 import { GroupedContentSidebar } from "~/components/Layout";
 import swaggerDocsSchema from "~/lib/swagger-docs-schema";
+import type { ValidLang } from "~/modules/api";
 import { useSelectedLang } from "~/modules/api";
 import DocsStyle from "~/styles/docs.css?url";
 import type { RouteGroup } from "~/types";
@@ -24,9 +26,47 @@ export function links() {
 
 export default function ApiDocsRoute() {
   const groups = useApiDocsMenu();
+  const selectedLang = useSelectedLang();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  const onChangeLanguage = (newLang: ValidLang) => {
+    if (newLang === selectedLang) return;
+    let newPath = "";
+    switch (selectedLang) {
+      case "bash":
+        newPath = pathname.replace("/bash/", `/${newLang}/`);
+        navigate(newPath);
+        break;
+      case "js":
+        newPath = pathname.replace("/js/", `/${newLang}/`);
+        navigate(newPath);
+        break;
+      default:
+        throw new Error(`Invalid language: ${selectedLang}`);
+    }
+  };
 
   return (
-    <div className="grid grid-cols-[auto_1fr] w-full h-full">
+    <div className="relative grid grid-cols-[auto_1fr] w-full h-full">
+      <div className="flex absolute top-4 right-4 z-50 gap-2">
+        <Button
+          variant={selectedLang === "js" ? "primary" : "secondary"}
+          onClick={() => {
+            onChangeLanguage("js");
+          }}
+        >
+          JS
+        </Button>
+        <Button
+          variant={selectedLang === "bash" ? "primary" : "secondary"}
+          onClick={() => {
+            onChangeLanguage("bash");
+          }}
+        >
+          Bash
+        </Button>
+      </div>
       <GroupedContentSidebar groups={groups} width={270} />
       <div className="Docs Docs--api-page w-full h-full overflow-y-auto">
         <div className="Docs--inner-wrapper pt-4">
