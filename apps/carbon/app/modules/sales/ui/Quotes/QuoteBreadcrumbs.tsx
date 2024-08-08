@@ -119,6 +119,11 @@ const QuoteBreadcrumbs = () => {
               action={path.to.quoteMethodGet}
               validator={getMethodValidator}
               onSubmit={getMethodModal.onClose}
+              defaultValues={{
+                quoteId,
+                quoteLineId: lineId,
+                itemId: line?.itemId,
+              }}
             >
               <ModalHeader>
                 <ModalTitle>Get Method</ModalTitle>
@@ -133,7 +138,7 @@ const QuoteBreadcrumbs = () => {
                   <Item
                     name="itemId"
                     label="Source Method"
-                    type="Part"
+                    type={(line?.itemType ?? "Part") as "Part"}
                     replenishmentSystem="Make"
                   />
                   {hasMethods && (

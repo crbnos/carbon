@@ -14,6 +14,7 @@ RETURNS TABLE (
     "methodType" "methodType",
     "parentMaterialId" TEXT,
     "order" DOUBLE PRECISION,
+    "operationId" TEXT,
     "isRoot" BOOLEAN
 ) AS $$
 WITH RECURSIVE material AS (
@@ -26,6 +27,7 @@ WITH RECURSIVE material AS (
         "itemType",
         "quantity",
         "makeMethodId" AS "parentMaterialId",
+        NULL AS "operationId",
         CAST(1 AS DOUBLE PRECISION) AS "order"
     FROM 
         "methodMaterial" 
@@ -41,6 +43,7 @@ WITH RECURSIVE material AS (
         child."itemType",
         child."quantity",
         parent."id" AS "parentMaterialId",
+        child."methodOperationId" AS "operationId",
         child."order"
     FROM 
         "methodMaterial" child 
@@ -60,6 +63,7 @@ SELECT
   material."methodType",
   material."parentMaterialId",
   material."order",
+  material."operationId",
   false AS "isRoot"
 FROM material 
 INNER JOIN item 
@@ -81,6 +85,7 @@ SELECT
   'Make' AS "methodType",
   NULL AS "parentMaterialId",
   CAST(1 AS DOUBLE PRECISION) AS "order",
+  NULL AS "operationId",
   true AS "isRoot"
 
 FROM "makeMethod" mm 

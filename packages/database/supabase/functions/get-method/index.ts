@@ -17,7 +17,7 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.object({
-  type: z.string(),
+  type: z.enum(["itemToQuoteLine"]),
   sourceId: z.string(),
   targetId: z.string(),
   companyId: z.string(),
@@ -37,7 +37,7 @@ serve(async (req: Request) => {
     const client = getSupabaseServiceRole(req.headers.get("Authorization"));
 
     switch (type) {
-      case "quote": {
+      case "itemToQuoteLine": {
         const [quoteId, quoteLineId] = (targetId as string).split(":");
         if (!quoteId || !quoteLineId) {
           throw new Error("Invalid targetId");
@@ -103,13 +103,6 @@ serve(async (req: Request) => {
             node: MethodTreeItem,
             parentQuoteMakeMethodId: string | null
           ) {
-            const madeChildren = node.children.filter(
-              (child) => child.data.methodType === "Make"
-            );
-            const unmadeChildren = node.children.filter(
-              (child) => child.data.methodType !== "Make"
-            );
-
             const relatedOperations = await client
               .from("methodOperation")
               .select("*, workCellType(quotingRate, laborRate, overheadRate)")
@@ -154,6 +147,14 @@ serve(async (req: Request) => {
                   },
                   {}
                 ) ?? {};
+
+              console.log({
+                node: node.data.itemReadableId,
+                operationId: node.data.operationId,
+                quoteOperations,
+                operationIds,
+                methodOperationsToQuoteOperations,
+              });
             }
 
             const mapMethodMaterialToQuoteMaterial = (
@@ -162,11 +163,12 @@ serve(async (req: Request) => {
               quoteId,
               quoteLineId,
               quoteMakeMethodId: parentQuoteMakeMethodId!,
+              quoteOperationId:
+                methodOperationsToQuoteOperations[child.data.operationId],
               itemId: child.data.itemId,
               itemReadableId: child.data.itemReadableId,
               itemType: child.data.itemType,
               methodType: child.data.methodType,
-              // operation: methodOperationsToQuoteOperations[child.data.operationId], // TODO
               order: child.data.order,
               description: child.data.description,
               quantity: child.data.quantity,
@@ -176,6 +178,13 @@ serve(async (req: Request) => {
               createdBy: userId,
               customFields: {},
             });
+
+            const madeChildren = node.children.filter(
+              (child) => child.data.methodType === "Make"
+            );
+            const unmadeChildren = node.children.filter(
+              (child) => child.data.methodType !== "Make"
+            );
 
             const madeMaterials = madeChildren.map(
               mapMethodMaterialToQuoteMaterial
@@ -214,6 +223,7 @@ serve(async (req: Request) => {
             }
           }
 
+          console.log(methodTree);
           await traverseMethodToQuote(methodTree, quoteMakeMethod.data.id);
         });
 
