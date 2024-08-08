@@ -25614,6 +25614,7 @@ export type Database = {
           methodType: Database["public"]["Enums"]["methodType"]
           parentMaterialId: string
           order: number
+          operationId: string
           isRoot: boolean
         }[]
       }

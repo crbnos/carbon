@@ -16,6 +16,8 @@ export const themes = [
         "card-foreground": "220 10% 3.9%",
         popover: "0 0% 100%",
         "popover-foreground": "220 10% 3.9%",
+        active: "220 5.9% 10%",
+        "active-foreground": "0 0% 98%",
         primary: "220 5.9% 10%",
         "primary-foreground": "0 0% 98%",
         secondary: "220 4.8% 95.9%",
@@ -39,6 +41,8 @@ export const themes = [
         "popover-foreground": "0 0% 98%",
         primary: "0 0% 98%",
         "primary-foreground": "220 5.9% 10%",
+        active: "220 5.2% 33.9%",
+        "active-foreground": "0 0% 98%",
         secondary: "220 3.7% 15.9%",
         "secondary-foreground": "0 0% 98%",
         muted: "220 3.7% 15.9%",
@@ -70,6 +74,8 @@ export const themes = [
         "popover-foreground": "0 0% 3.9%",
         primary: "0 0% 9%",
         "primary-foreground": "0 0% 98%",
+        active: "0 0% 45.1%",
+        "active-foreground": "0 0% 98%",
         secondary: "0 0% 96.1%",
         "secondary-foreground": "0 0% 9%",
         muted: "0 0% 96.1%",
@@ -91,6 +97,8 @@ export const themes = [
         "popover-foreground": "0 0% 98%",
         primary: "30 24% 81%",
         "primary-foreground": "0 0% 9%",
+        active: "0 0% 32.2%",
+        "active-foreground": "0 0% 98%",
         secondary: "0 0% 14.9%",
         "secondary-foreground": "0 0% 98%",
         muted: "0 0% 14.9%",
@@ -122,6 +130,8 @@ export const themes = [
         "popover-foreground": "0 0% 3.9%",
         primary: "0 72.2% 50.6%",
         "primary-foreground": "0 85.7% 97.3%",
+        active: "0 0% 32.2%",
+        "active-foreground": "0 0% 98%",
         secondary: "0 0% 96.1%",
         "secondary-foreground": "0 0% 9%",
         muted: "0 0% 96.1%",
@@ -143,6 +153,8 @@ export const themes = [
         "popover-foreground": "0 0% 98%",
         primary: "0 72.2% 50.6%",
         "primary-foreground": "0 85.7% 97.3%",
+        active: "0 0% 32.2%",
+        "active-foreground": "0 0% 98%",
         secondary: "0 0% 14.9%",
         "secondary-foreground": "0 0% 98%",
         muted: "0 0% 14.9%",
@@ -174,6 +186,8 @@ export const themes = [
         "popover-foreground": "240 10% 3.9%",
         primary: "346.8 77.2% 49.8%",
         "primary-foreground": "355.7 100% 97.3%",
+        active: "0 0% 32.2%",
+        "active-foreground": "0 0% 98%",
         secondary: "240 4.8% 95.9%",
         "secondary-foreground": "240 5.9% 10%",
         muted: "240 4.8% 95.9%",
@@ -195,6 +209,8 @@ export const themes = [
         "card-foreground": "0 0% 95%",
         primary: "346.8 77.2% 49.8%",
         "primary-foreground": "355.7 100% 97.3%",
+        active: "0 0% 32.2%",
+        "active-foreground": "0 0% 98%",
         secondary: "240 3.7% 15.9%",
         "secondary-foreground": "0 0% 98%",
         muted: "0 0% 15%",
@@ -226,6 +242,8 @@ export const themes = [
         "popover-foreground": "20 14.3% 4.1%",
         primary: "24.6 95% 53.1%",
         "primary-foreground": "60 9.1% 97.8%",
+        active: "20 84.3% 84.1%",
+        "active-foreground": "20 84.3% 34.1%",
         secondary: "60 4.8% 95.9%",
         "secondary-foreground": "24 9.8% 10%",
         muted: "60 4.8% 95.9%",
@@ -247,6 +265,8 @@ export const themes = [
         "popover-foreground": "60 9.1% 97.8%",
         primary: "20.5 90.2% 48.2%",
         "primary-foreground": "60 9.1% 97.8%",
+        active: "20 24.3% 14.1%",
+        "active-foreground": "0 0% 98%",
         secondary: "12 6.5% 15.1%",
         "secondary-foreground": "60 9.1% 97.8%",
         muted: "12 6.5% 15.1%",
@@ -278,6 +298,8 @@ export const themes = [
         "popover-foreground": "240 10% 3.9%",
         primary: "151 47% 40%",
         "primary-foreground": "355.7 100% 97.3%",
+        active: "0 0% 32.2%",
+        "active-foreground": "0 0% 98%",
         secondary: "240 4.8% 95.9%",
         "secondary-foreground": "240 5.9% 10%",
         muted: "240 4.8% 95.9%",
@@ -299,6 +321,8 @@ export const themes = [
         "card-foreground": "2400 0% 95%",
         primary: "142.1 87.6% 63.3%",
         "primary-foreground": "144.9 80.4% 10%",
+        active: "137 18% 15%",
+        "active-foreground": "142.1 87.6% 63.3%",
         secondary: "240 3.7% 15.9%",
         "secondary-foreground": "0 0% 98%",
         muted: "240 0% 15%",
@@ -330,6 +354,8 @@ export const themes = [
         "popover-foreground": "222.2 84% 4.9%",
         primary: "221.2 83.2% 53.3%",
         "primary-foreground": "210 40% 98%",
+        active: "222.2 84% 78.9%",
+        "active-foreground": "222.2 84% 2.9%",
         secondary: "210 40% 96.1%",
         "secondary-foreground": "222.2 47.4% 11.2%",
         muted: "210 40% 96.1%",
@@ -351,6 +377,8 @@ export const themes = [
         "popover-foreground": "210 40% 98%",
         primary: "217.2 91.2% 59.8%",
         "primary-foreground": "222.2 47.4% 11.2%",
+        active: "217.2 91.2% 81.8%",
+        "active-foreground": "217.2 91.2% 52.8%",
         secondary: "217.2 32.6% 17.5%",
         "secondary-foreground": "210 40% 98%",
         muted: "217.2 32.6% 17.5%",
@@ -382,6 +410,8 @@ export const themes = [
         "popover-foreground": "20 14.3% 4.1%",
         primary: "47.9 95.8% 53.1%",
         "primary-foreground": "26 83.3% 14.1%",
+        active: "0 0% 32.2%",
+        "active-foreground": "0 0% 98%",
         secondary: "60 4.8% 95.9%",
         "secondary-foreground": "24 9.8% 10%",
         muted: "60 4.8% 95.9%",
@@ -403,6 +433,8 @@ export const themes = [
         "popover-foreground": "60 9.1% 97.8%",
         primary: "47.9 95.8% 53.1%",
         "primary-foreground": "26 83.3% 14.1%",
+        active: "47.9 95.8% 13.1%",
+        "active-foreground": "47.9 95.8% 53.1%",
         secondary: "12 6.5% 15.1%",
         "secondary-foreground": "60 9.1% 97.8%",
         muted: "12 6.5% 15.1%",
@@ -434,6 +466,8 @@ export const themes = [
         "popover-foreground": "224 71.4% 4.1%",
         primary: "252.1 83.3% 47.8%",
         "primary-foreground": "210 20% 98%",
+        active: "224 71.4% 4.1%",
+        "active-foreground": "0 0% 98%",
         secondary: "220 14.3% 95.9%",
         "secondary-foreground": "220.9 39.3% 11%",
         muted: "220 14.3% 95.9%",
@@ -455,6 +489,8 @@ export const themes = [
         "popover-foreground": "210 20% 98%",
         primary: "253.4 70% 40.4%",
         "primary-foreground": "210 20% 98%",
+        active: "224 71.4% 4.1%",
+        "active-foreground": "0 0% 98%",
         secondary: "215 27.9% 16.9%",
         "secondary-foreground": "210 20% 98%",
         muted: "215 27.9% 16.9%",
@@ -483,6 +519,8 @@ export const BASE_THEME_WITH_VARIABLES = `
   --popover-foreground: <%- colors.light["popover-foreground"] %>;
   --primary: <%- colors.light["primary"] %>;
   --primary-foreground: <%- colors.light["primary-foreground"] %>;
+  --active: <%- colors.light["active"] %>;
+  --active-foreground: <%- colors.light["active-foreground"] %>;
   --secondary: <%- colors.light["secondary"] %>;
   --secondary-foreground: <%- colors.light["secondary-foreground"] %>;
   --muted: <%- colors.light["muted"] %>;
@@ -506,6 +544,8 @@ export const BASE_THEME_WITH_VARIABLES = `
   --popover-foreground: <%- colors.dark["popover-foreground"] %>;
   --primary: <%- colors.dark["primary"] %>;
   --primary-foreground: <%- colors.dark["primary-foreground"] %>;
+  --active: <%- colors.dark["active"] %>;
+  --active-foreground: <%- colors.dark["active-foreground"] %>;
   --secondary: <%- colors.dark["secondary"] %>;
   --secondary-foreground: <%- colors.dark["secondary-foreground"] %>;
   --muted: <%- colors.dark["muted"] %>;

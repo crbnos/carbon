@@ -19,7 +19,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const supabaseServiceRole = getSupabaseServiceRole();
   const { error } = await supabaseServiceRole.functions.invoke("get-method", {
     body: {
-      type: "quote",
+      type: "itemToQuoteLine",
       sourceId: itemId,
       targetId: `${quoteId}:${quoteLineId}`,
       companyId,

@@ -125,11 +125,11 @@ const NavigationIconLink = forwardRef<
       "flex items-center rounded-md",
       "group-data-[state=collapsed]:justify-center",
       "group-data-[state=expanded]:-space-x-2",
-      "hover:bg-secondary active:",
+      "hover:bg-active/80 hover:text-active-foreground",
       `${
         isActive
-          ? "bg-primary/10 text-primary shadow-sm hover:text-primary hover:bg-primary/20 dark:shadow-inner"
-          : "hover:text-foreground"
+          ? "bg-active text-active-foreground shadow-sm hover:text-active-foreground hover:bg-active/90"
+          : "hover:text-active-foreground"
       }`,
       "group/item",
     ];
