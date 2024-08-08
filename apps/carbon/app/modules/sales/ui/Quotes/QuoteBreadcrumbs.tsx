@@ -104,7 +104,12 @@ const QuoteBreadcrumbs = () => {
                 >
                   Get Method
                 </MenubarItem>
-                <MenubarItem leftIcon={<LuUpload />}>Save Method</MenubarItem>
+                <MenubarItem
+                  isDisabled={!permissions.can("update", "parts")}
+                  leftIcon={<LuUpload />}
+                >
+                  Save Method
+                </MenubarItem>
               </HStack>
             )}
         </HStack>
