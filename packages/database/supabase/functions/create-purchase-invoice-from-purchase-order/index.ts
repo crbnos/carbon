@@ -15,7 +15,15 @@ serve(async (req: Request) => {
   }
   const { id: purchaseOrderId, companyId, userId } = await req.json();
 
+  console.log({
+    function: "create-purchase-invoice-from-purchase-order",
+    purchaseOrderId,
+    companyId,
+    userId,
+  });
+
   try {
+    // TODO: zod validation
     if (!purchaseOrderId) throw new Error("Payload is missing id");
     if (!companyId) throw new Error("Payload is missing companyId");
     if (!userId) throw new Error("Payload is missing userId");

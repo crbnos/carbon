@@ -16,6 +16,11 @@ serve(async (req: Request) => {
 
   const { invoiceId } = await req.json();
 
+  console.log({
+    function: "update-purchased-prices",
+    invoiceId,
+  });
+
   try {
     if (!invoiceId) throw new Error("Payload is missing invoiceId");
 
