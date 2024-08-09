@@ -117,6 +117,7 @@ export async function getConsumables(
     })
     .eq("companyId", companyId);
 
+  // TODO: this does not handle the case where active is true and false
   const includeInactive = args?.filters?.some(
     (filter) => filter.column === "active" && filter.value === "false"
   );

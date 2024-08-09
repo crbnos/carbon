@@ -96,7 +96,8 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                     <CommandItem
                       value={
                         typeof option.label === "string"
-                          ? option.label + option.helper
+                          ? option.label.replace(/"/g, '\\"') +
+                            option.helper?.replace(/"/g, '\\"')
                           : undefined
                       }
                       key={option.value}
@@ -131,7 +132,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                     onSelect={() => {
                       props.onCreateOption?.(search);
                     }}
-                    value={search.trim() || ""}
+                    value={search?.replace(/"/g, '\\"').trim() || ""}
                     className="cursor-pointer"
                   >
                     <span>Create</span>

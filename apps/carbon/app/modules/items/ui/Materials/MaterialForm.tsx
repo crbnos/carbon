@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
+  Combobox,
   CustomFormFields,
   DefaultMethodType,
   Hidden,
@@ -131,7 +132,7 @@ const MaterialForm = ({
                 )}
 
                 <Input name="name" label="Name" />
-                <Select
+                <Combobox
                   name="materialSubstanceId"
                   label="Substance"
                   options={substances}
@@ -139,7 +140,7 @@ const MaterialForm = ({
                 {isEditing && (
                   <TextArea name="description" label="Description" />
                 )}
-                <Select name="materialFormId" label="Form" options={forms} />
+                <Combobox name="materialFormId" label="Form" options={forms} />
                 <Input name="finish" label="Finish" />
                 <Input name="grade" label="Grade" />
                 <Input name="dimensions" label="Dimensions" />

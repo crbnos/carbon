@@ -581,6 +581,7 @@ export const path = {
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/${id}`),
     quoteMaterialsOrder: `${x}/quote/methods/material/order`,
     quoteMethodGet: `${x}/quote/methods/get`,
+    quoteMethodSave: `${x}/quote/methods/save`,
     quoteOperation: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,
