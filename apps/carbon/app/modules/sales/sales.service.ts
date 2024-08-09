@@ -1276,6 +1276,63 @@ export async function updateQuoteOperationOrder(
   return Promise.all(updatePromises);
 }
 
+export async function upsertMakeMethodFromQuoteLine(
+  client: SupabaseClient<Database>,
+  lineMethod: {
+    itemId: string;
+    quoteId: string;
+    quoteLineId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("get-method", {
+    body: {
+      type: "quoteLineToItem",
+      sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
+      targetId: lineMethod.itemId,
+      companyId: lineMethod.companyId,
+      userId: lineMethod.userId,
+    },
+  });
+}
+
+export async function upsertMakeMethodFromQuoteMethod(
+  client: SupabaseClient<Database>,
+  quoteMaterial: z.infer<typeof getMethodValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const makeMethod = await client
+    .from("quoteMakeMethod")
+    .select("id")
+    .eq("parentMaterialId", quoteMaterial.quoteMaterialId)
+    .single();
+  if (makeMethod.error) {
+    return makeMethod;
+  }
+
+  const { error } = await client.functions.invoke("get-method", {
+    body: {
+      type: "quoteMakeMethodToItem",
+      sourceId: makeMethod.data.id,
+      targetId: quoteMaterial.itemId,
+      companyId: quoteMaterial.companyId,
+      userId: quoteMaterial.createdBy,
+    },
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: { message: "Failed to save method" } as PostgrestError,
+    };
+  }
+
+  return { data: null, error: null };
+}
+
 export async function upsertQuote(
   client: SupabaseClient<Database>,
   quote:
@@ -1478,8 +1535,6 @@ export async function upsertQuoteMaterialMakeMethod(
   if (makeMethod.error) {
     return makeMethod;
   }
-
-  console.log({ makeMethod });
 
   const { error } = await client.functions.invoke("get-method", {
     body: {

@@ -37,11 +37,13 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
               (item.active === true || props?.includeInactive === true)
           )
         : items
-      ).map((item) => ({
-        value: item.id,
-        label: item.readableId,
-        helper: item.name,
-      })) ?? [];
+      )
+        .filter((item) => item.type === type)
+        .map((item) => ({
+          value: item.id,
+          label: item.readableId,
+          helper: item.name,
+        })) ?? [];
 
     if (props.disabledItems) {
       return results.filter(

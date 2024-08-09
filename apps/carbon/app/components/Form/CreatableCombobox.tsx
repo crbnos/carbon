@@ -52,10 +52,10 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         <CreatableComboboxBase
           ref={ref}
           {...props}
-          value={value}
+          value={value?.replace(/"/g, '\\"')}
           onChange={(newValue) => {
-            setValue(newValue ?? "");
-            onChange(newValue ?? "");
+            setValue(newValue?.replace(/"/g, '\\"') ?? "");
+            onChange(newValue?.replace(/"/g, '\\"') ?? "");
           }}
           label={label}
           className="w-full"

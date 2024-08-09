@@ -1,5 +1,6 @@
 import {
   Alert,
+  AlertTitle,
   Button,
   Checkbox,
   HStack,
@@ -19,7 +20,7 @@ import {
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { Link, useFetcher, useLocation, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { LuDownload, LuUpload } from "react-icons/lu";
+import { LuAlertTriangle, LuDownload, LuUpload } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
 import { BreadcrumbItem, Breadcrumbs } from "~/components";
 import { Hidden, Item, Submit } from "~/components/Form";
@@ -50,6 +51,8 @@ const QuoteBreadcrumbs = () => {
 
   const isGetMethodLoading =
     fetcher.state !== "idle" && fetcher.formAction === path.to.quoteMethodGet;
+  const isSaveMethodLoading =
+    fetcher.state !== "idle" && fetcher.formAction === path.to.quoteMethodSave;
 
   useEffect(() => {
     if (fetcher.data?.error) {
@@ -59,9 +62,11 @@ const QuoteBreadcrumbs = () => {
 
   const [includeInactive, setIncludeInactive] = useState<
     boolean | "indeterminate"
-  >(false);
+  >(true);
 
   const getMethodModal = useDisclosure();
+  const saveMethodModal = useDisclosure();
+
   const isQuoteLineMethod =
     pathname === path.to.quoteLineMethod(quoteId, lineId!, methodId!);
   const isQuoteMakeMethod =
@@ -97,16 +102,22 @@ const QuoteBreadcrumbs = () => {
             (isQuoteLineMethod || isQuoteMakeMethod) && (
               <HStack spacing={0}>
                 <MenubarItem
-                  leftIcon={<LuDownload />}
                   isLoading={isGetMethodLoading}
                   isDisabled={isGetMethodLoading}
+                  leftIcon={<LuDownload />}
                   onClick={getMethodModal.onOpen}
                 >
                   Get Method
                 </MenubarItem>
                 <MenubarItem
-                  isDisabled={!permissions.can("update", "parts")}
+                  isDisabled={
+                    !hasMethods ||
+                    !permissions.can("update", "parts") ||
+                    isSaveMethodLoading
+                  }
+                  isLoading={isSaveMethodLoading}
                   leftIcon={<LuUpload />}
+                  onClick={saveMethodModal.onOpen}
                 >
                   Save Method
                 </MenubarItem>
@@ -176,13 +187,105 @@ const QuoteBreadcrumbs = () => {
                   </div>
                   {hasMethods && (
                     <Alert variant="destructive">
-                      This will overwrite the existing quote method
+                      <LuAlertTriangle className="h-4 w-4" />
+                      <AlertTitle>
+                        This will overwrite the existing quote method
+                      </AlertTitle>
                     </Alert>
                   )}
                 </VStack>
               </ModalBody>
               <ModalFooter>
                 <Button onClick={getMethodModal.onClose} variant="secondary">
+                  Cancel
+                </Button>
+                <Submit variant={hasMethods ? "destructive" : "primary"}>
+                  Confirm
+                </Submit>
+              </ModalFooter>
+            </ValidatedForm>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {saveMethodModal.isOpen && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              saveMethodModal.onClose();
+            }
+          }}
+        >
+          <ModalContent>
+            <ValidatedForm
+              method="post"
+              fetcher={fetcher}
+              action={path.to.quoteMethodSave}
+              validator={
+                isQuoteLineMethod ? getLineMethodValidator : getMethodValidator
+              }
+              defaultValues={{
+                itemId: isQuoteLineMethod
+                  ? line?.itemId ?? undefined
+                  : undefined,
+              }}
+              onSubmit={saveMethodModal.onClose}
+            >
+              <ModalHeader>
+                <ModalTitle>Save Method</ModalTitle>
+                <ModalDescription>
+                  Overwrite the target manufacturing method with the quote
+                  method
+                </ModalDescription>
+              </ModalHeader>
+              <ModalBody>
+                {isQuoteLineMethod ? (
+                  <>
+                    <Hidden name="type" value="line" />
+                    <Hidden name="quoteId" value={quoteId} />
+                    <Hidden name="quoteLineId" value={lineId} />
+                  </>
+                ) : (
+                  <>
+                    <Hidden name="type" value="method" />
+                    <Hidden name="quoteMaterialId" value={materialId!} />
+                  </>
+                )}
+
+                <VStack spacing={4}>
+                  <Item
+                    name="itemId"
+                    label="Target Method"
+                    type={(line?.itemType ?? "Part") as "Part"}
+                    includeInactive={includeInactive === true}
+                    replenishmentSystem="Make"
+                  />
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="include-inactive"
+                      checked={includeInactive}
+                      onCheckedChange={setIncludeInactive}
+                    />
+                    <label
+                      htmlFor="include-inactive"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Include Inactive
+                    </label>
+                  </div>
+                  {hasMethods && (
+                    <Alert variant="destructive">
+                      <LuAlertTriangle className="h-4 w-4" />
+                      <AlertTitle>
+                        This will overwrite the existing manufacturing method
+                      </AlertTitle>
+                    </Alert>
+                  )}
+                </VStack>
+              </ModalBody>
+              <ModalFooter>
+                <Button onClick={saveMethodModal.onClose} variant="secondary">
                   Cancel
                 </Button>
                 <Submit variant={hasMethods ? "destructive" : "primary"}>
