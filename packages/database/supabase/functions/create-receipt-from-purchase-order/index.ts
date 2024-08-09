@@ -26,6 +26,15 @@ serve(async (req: Request) => {
     userId,
   } = await req.json();
 
+  console.log({
+    function: "create-receipt-from-purchase-order",
+    companyId,
+    locationId,
+    purchaseOrderId,
+    existingReceiptId,
+    userId,
+  });
+
   try {
     if (!purchaseOrderId) throw new Error("Payload is missing purchaseOrderId");
     if (!userId) throw new Error("Payload is missing userId");

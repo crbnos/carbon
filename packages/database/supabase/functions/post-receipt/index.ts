@@ -23,6 +23,11 @@ serve(async (req: Request) => {
   const { receiptId } = await req.json();
   const today = format(new Date(), "yyyy-MM-dd");
 
+  console.log({
+    function: "post-receipt",
+    receiptId,
+  });
+
   try {
     if (!receiptId) throw new Error("Payload is missing receiptId");
 

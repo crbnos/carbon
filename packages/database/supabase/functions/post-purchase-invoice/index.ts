@@ -25,6 +25,11 @@ serve(async (req: Request) => {
   const { invoiceId } = await req.json();
   const today = format(new Date(), "yyyy-MM-dd");
 
+  console.log({
+    function: "post-purchase-invoice",
+    invoiceId,
+  });
+
   try {
     if (!invoiceId) throw new Error("Payload is missing invoiceId");
 

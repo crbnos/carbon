@@ -19,6 +19,13 @@ serve(async (req: Request) => {
   }
   const { companyId, locationId, userId } = await req.json();
 
+  console.log({
+    function: "create-receipt-default",
+    companyId,
+    locationId,
+    userId,
+  });
+
   let receiptId;
   try {
     if (!userId) throw new Error("Payload is missing userId");

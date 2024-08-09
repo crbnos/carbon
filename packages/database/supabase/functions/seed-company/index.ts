@@ -31,6 +31,12 @@ serve(async (req: Request) => {
   }
   const { companyId: id, userId } = await req.json();
 
+  console.log({
+    function: "seed-company",
+    id,
+    userId,
+  });
+
   try {
     if (!id) throw new Error("Payload is missing id");
     if (!userId) throw new Error("Payload is missing userId");
