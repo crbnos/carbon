@@ -557,7 +557,7 @@ const Table = <T extends object>({
         <div className="flex max-w-full h-full">
           <TableBase
             ref={tableRef}
-            className="relative table-fixed border-separate border-spacing-0"
+            className="relative table-fixed border-collapse border-spacing-0"
           >
             <Thead className="sticky top-0 z-10">
               {table.getHeaderGroups().map((headerGroup) => (
