@@ -107,7 +107,7 @@ export default function QuoteMakeMethodRoute() {
       <QuoteMaterialForm
         key={material.id}
         initialValues={material}
-        operations={[]}
+        operations={operations}
       />
       <QuoteBillOfProcess
         key={JSON.stringify(operations)}

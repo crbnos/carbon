@@ -186,6 +186,7 @@ function getNodePath(node: FlatTreeItem<QuoteMethod>) {
         node.data.quoteId,
         node.data.quoteLineId,
         node.data.methodType.toLowerCase(),
+        node.data.quoteMakeMethodId,
         node.data.methodMaterialId
       );
 }

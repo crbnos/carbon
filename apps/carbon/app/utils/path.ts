@@ -564,8 +564,12 @@ export const path = {
       quoteId: string,
       lineId: string,
       methodType: string,
+      methodId: string,
       id: string
-    ) => generatePath(`${x}/quote/${quoteId}/${lineId}/${methodType}/${id}`),
+    ) =>
+      generatePath(
+        `${x}/quote/${quoteId}/${lineId}/${methodType}/${methodId}/${id}`
+      ),
     quoteLineMaterialMake: (
       quoteId: string,
       lineId: string,

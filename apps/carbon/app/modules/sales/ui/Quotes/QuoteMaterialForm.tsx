@@ -137,6 +137,7 @@ const QuoteMaterialForm = ({
             quoteId,
             lineId,
             initialValues.methodType.toLowerCase(),
+            initialValues.quoteMakeMethodId,
             initialValues.id!
           );
     if (
