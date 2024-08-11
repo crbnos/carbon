@@ -558,7 +558,171 @@ serve(async (req: Request) => {
         break;
       }
       case "quoteMakeMethodToItem": {
-        throw new Error("Not implemented: quoteMakeMethodToItem");
+        const quoteMakeMethodId = sourceId;
+        const itemId = targetId;
+
+        const [makeMethod, quoteMakeMethod] = await Promise.all([
+          client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .eq("id", quoteMakeMethodId)
+            .single(),
+        ]);
+
+        if (makeMethod.error) {
+          throw new Error("Failed to get make method");
+        }
+
+        if (quoteMakeMethod.error) {
+          throw new Error("Failed to get quote make method");
+        }
+
+        const [quoteOperations, quoteParentMakeMethod] = await Promise.all([
+          client
+            .from("quoteOperationsWithMakeMethods")
+            .select("*")
+            .eq("quoteLineId", quoteMakeMethod.data.quoteLineId),
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .eq("quoteLineId", quoteMakeMethod.data.quoteLineId)
+            .is("parentMaterialId", null)
+            .single(),
+        ]);
+
+        if (quoteOperations.error) {
+          throw new Error("Failed to get quote operations");
+        }
+
+        if (quoteParentMakeMethod.error) {
+          throw new Error("Failed to get parent make method");
+        }
+
+        const [quoteMethodTrees] = await Promise.all([
+          getQuoteMethodTree(client, quoteParentMakeMethod.data.id),
+        ]);
+
+        if (quoteMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const fullQuoteMethodTree = quoteMethodTrees
+          .data?.[0] as QuoteMethodTreeItem;
+        if (!fullQuoteMethodTree) throw new Error("Method tree not found");
+
+        let quoteMethodTree: QuoteMethodTreeItem | null = null;
+
+        console.log({ quoteMakeMethodId, fullQuoteMethodTree });
+
+        traverseQuoteMethod(
+          fullQuoteMethodTree,
+          (node: QuoteMethodTreeItem) => {
+            if (node.data.quoteMaterialMakeMethodId === quoteMakeMethodId) {
+              quoteMethodTree = node;
+              return;
+            }
+          }
+        );
+        if (!quoteMethodTree) throw new Error("Quote method tree not found");
+
+        const madeItemIds: string[] = [];
+
+        traverseQuoteMethod(quoteMethodTree, (node: QuoteMethodTreeItem) => {
+          if (node.data.itemId && node.data.methodType === "Make") {
+            madeItemIds.push(node.data.itemId);
+          }
+        });
+
+        const makeMethods = await client
+          .from("makeMethod")
+          .select("*")
+          .in("itemId", madeItemIds);
+        if (makeMethods.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        const makeMethodByItemId: Record<string, string> = {};
+        makeMethods.data?.forEach((m) => {
+          makeMethodByItemId[m.itemId] = m.id;
+        });
+
+        await db.transaction().execute(async (trx) => {
+          const makeMethodsToDelete: string[] = [];
+          const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
+            [];
+          const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
+            [];
+
+          traverseQuoteMethod(quoteMethodTree!, (node: QuoteMethodTreeItem) => {
+            if (node.data.itemId && node.data.methodType === "Make") {
+              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+            }
+
+            node.children.forEach((child) => {
+              materialInserts.push({
+                makeMethodId: makeMethodByItemId[node.data.itemId],
+                materialMakeMethodId: makeMethodByItemId[child.data.itemId],
+                itemId: child.data.itemId,
+                itemReadableId: child.data.itemReadableId,
+                itemType: child.data.itemType,
+                methodType: child.data.methodType,
+                order: child.data.order,
+                quantity: child.data.quantity,
+                unitOfMeasureCode: child.data.unitOfMeasureCode,
+                companyId,
+                createdBy: userId,
+                customFields: {},
+              });
+            });
+          });
+
+          if (makeMethodsToDelete.length > 0) {
+            await Promise.all([
+              trx
+                .deleteFrom("methodMaterial")
+                .where("makeMethodId", "in", makeMethodsToDelete)
+                .execute(),
+              trx
+                .deleteFrom("methodOperation")
+                .where("makeMethodId", "in", makeMethodsToDelete)
+                .execute(),
+            ]);
+          }
+
+          if (materialInserts.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(materialInserts)
+              .execute();
+          }
+
+          quoteOperations.data?.forEach((op) => {
+            operationInserts.push({
+              makeMethodId: op.makeMethodId,
+              description: op.description ?? "",
+              workCellTypeId: op.workCellTypeId,
+              equipmentTypeId: op.equipmentTypeId,
+              setupHours: op.setupHours,
+              standardFactor: op.standardFactor,
+              productionStandard: op.productionStandard,
+              order: op.order,
+              operationOrder: op.operationOrder,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+          });
+
+          if (operationInserts.length > 0) {
+            await trx
+              .insertInto("methodOperation")
+              .values(operationInserts)
+              .execute();
+          }
+        });
+
+        break;
       }
       default:
         throw new Error(`Invalid type  ${type}`);
