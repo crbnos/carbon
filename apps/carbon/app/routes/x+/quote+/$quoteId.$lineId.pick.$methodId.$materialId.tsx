@@ -2,7 +2,11 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
 
-import { getQuoteMaterial, QuoteMaterialForm } from "~/modules/sales";
+import {
+  getQuoteMaterial,
+  getQuoteOperationsByMethodId,
+  QuoteMaterialForm,
+} from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -12,12 +16,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { quoteId, lineId, materialId } = params;
+  const { quoteId, lineId, methodId, materialId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
+  if (!methodId) throw new Error("Could not find methodId");
   if (!materialId) throw new Error("Could not find materialId");
 
-  const [material] = await Promise.all([getQuoteMaterial(client, materialId)]);
+  const [material, operations] = await Promise.all([
+    getQuoteMaterial(client, materialId),
+    getQuoteOperationsByMethodId(client, methodId),
+  ]);
 
   if (material.error) {
     throw redirect(
@@ -46,11 +54,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       unitCost: material.data.unitCost ?? 0,
       unitOfMeasureCode: material.data.unitOfMeasureCode ?? "",
     },
+    operations:
+      operations.data?.map((o) => ({
+        ...o,
+        description: o.description ?? "",
+        equipmentTypeId: o.equipmentTypeId ?? undefined,
+        quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
+      })) ?? [],
   });
 }
 
-export default function QuoteMaterialBuyPage() {
-  const { material } = useLoaderData<typeof loader>();
+export default function QuoteMaterialPickPage() {
+  const { material, operations } = useLoaderData<typeof loader>();
 
   const { materialId } = useParams();
   if (!materialId) throw new Error("Could not find materialId");
@@ -60,7 +75,7 @@ export default function QuoteMaterialBuyPage() {
       <QuoteMaterialForm
         key={materialId}
         initialValues={material}
-        operations={[]}
+        operations={operations}
       />
     </VStack>
   );
