@@ -42,7 +42,7 @@ const WorkCellType = (props: WorkCellTypeSelectProps) => {
             quotingRate: 0,
             laborRate: 0,
             overheadRate: 0,
-            defaultStandardFactor: "Total Hours" as "Total Hours",
+            defaultStandardFactor: "Minutes/Piece" as "Total Hours",
           }}
         />
       )}
