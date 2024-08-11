@@ -102,14 +102,6 @@ const QuoteBreadcrumbs = () => {
             (isQuoteLineMethod || isQuoteMakeMethod) && (
               <HStack spacing={0}>
                 <MenubarItem
-                  isLoading={isGetMethodLoading}
-                  isDisabled={isGetMethodLoading}
-                  leftIcon={<LuDownload />}
-                  onClick={getMethodModal.onOpen}
-                >
-                  Get Method
-                </MenubarItem>
-                <MenubarItem
                   isDisabled={
                     !hasMethods ||
                     !permissions.can("update", "parts") ||
@@ -120,6 +112,14 @@ const QuoteBreadcrumbs = () => {
                   onClick={saveMethodModal.onOpen}
                 >
                   Save Method
+                </MenubarItem>
+                <MenubarItem
+                  isLoading={isGetMethodLoading}
+                  isDisabled={isGetMethodLoading}
+                  leftIcon={<LuDownload />}
+                  onClick={getMethodModal.onOpen}
+                >
+                  Get Method
                 </MenubarItem>
               </HStack>
             )}
