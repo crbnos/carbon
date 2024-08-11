@@ -430,7 +430,7 @@ serve(async (req: Request) => {
               .is("parentMaterialId", null)
               .single(),
             client
-              .from("quoteOperation")
+              .from("quoteOperationsWithMakeMethods")
               .select("*")
               .eq("quoteLineId", quoteLineId),
           ]);
@@ -480,20 +480,7 @@ serve(async (req: Request) => {
           makeMethodByItemId[m.itemId] = m.id;
         });
 
-        const operationsByQuoteMethodId: Record<
-          string,
-          typeof quoteOperations.data
-        > = {};
-        quoteOperations.data?.forEach((op) => {
-          if (!operationsByQuoteMethodId[op.quoteMakeMethodId!]) {
-            operationsByQuoteMethodId[op.quoteMakeMethodId!] = [];
-          }
-          operationsByQuoteMethodId[op.quoteMakeMethodId!].push(op);
-        });
-
         await db.transaction().execute(async (trx) => {
-          // delete existing makeMaterials and makeOperations for any made quote method
-
           const makeMethodsToDelete: string[] = [];
           const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
             [];
@@ -504,10 +491,6 @@ serve(async (req: Request) => {
             if (node.data.itemId && node.data.methodType === "Make") {
               makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
             }
-
-            const relatedOperations =
-              operationsByQuoteMethodId[node.data.quoteMakeMethodId];
-            console.log({ node, relatedOperations });
 
             node.children.forEach((child) => {
               materialInserts.push({
@@ -540,10 +523,36 @@ serve(async (req: Request) => {
             ]);
           }
 
-          await trx
-            .insertInto("methodMaterial")
-            .values(materialInserts)
-            .execute();
+          if (materialInserts.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(materialInserts)
+              .execute();
+          }
+
+          quoteOperations.data?.forEach((op) => {
+            operationInserts.push({
+              makeMethodId: op.makeMethodId,
+              description: op.description ?? "",
+              workCellTypeId: op.workCellTypeId,
+              equipmentTypeId: op.equipmentTypeId,
+              setupHours: op.setupHours,
+              standardFactor: op.standardFactor,
+              productionStandard: op.productionStandard,
+              order: op.order,
+              operationOrder: op.operationOrder,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+          });
+
+          if (operationInserts.length > 0) {
+            await trx
+              .insertInto("methodOperation")
+              .values(operationInserts)
+              .execute();
+          }
         });
 
         break;
