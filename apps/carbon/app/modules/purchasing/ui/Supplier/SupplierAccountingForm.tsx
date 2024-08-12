@@ -8,7 +8,7 @@ import {
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import type { z } from "zod";
-import { Input, Submit, SupplierType } from "~/components/Form";
+import { Hidden, Input, Submit, SupplierType } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { supplierAccountingValidator } from "~/modules/purchasing";
 
@@ -34,6 +34,7 @@ const SupplierAccountingForm = ({
           <CardTitle>Supplier Accounting</CardTitle>
         </CardHeader>
         <CardContent>
+          <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Input name="taxId" label="Tax ID" />
             <SupplierType

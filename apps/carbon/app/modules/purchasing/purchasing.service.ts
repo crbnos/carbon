@@ -11,6 +11,7 @@ import type {
   purchaseOrderLineValidator,
   purchaseOrderPaymentValidator,
   purchaseOrderValidator,
+  supplierAccountingValidator,
   supplierContactValidator,
   supplierPaymentValidator,
   supplierShippingValidator,
@@ -592,6 +593,18 @@ export async function upsertSupplier(
     .eq("id", supplier.id)
     .select("id")
     .single();
+}
+
+export async function updateSupplierAccounting(
+  client: SupabaseClient<Database>,
+  supplierAccounting: z.infer<typeof supplierAccountingValidator> & {
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("supplier")
+    .update(sanitize(supplierAccounting))
+    .eq("id", supplierAccounting.id);
 }
 
 export async function updateSupplierContact(
