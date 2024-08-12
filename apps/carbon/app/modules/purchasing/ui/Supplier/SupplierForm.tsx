@@ -23,7 +23,6 @@ import {
   Input,
   Submit,
   SupplierStatus,
-  SupplierType,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { Supplier } from "~/modules/purchasing";
@@ -93,13 +92,7 @@ const SupplierForm = ({
                 )}
               >
                 <Input autoFocus={!isEditing} name="name" label="Name" />
-                <Input name="taxId" label="Tax ID" />
 
-                <SupplierType
-                  name="supplierTypeId"
-                  label="Posting Group"
-                  placeholder="Select Posting Group"
-                />
                 <SupplierStatus
                   name="supplierStatusId"
                   label="Supplier Status"
