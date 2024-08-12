@@ -673,6 +673,8 @@ export const path = {
       generatePath(`${x}/supplier/${id}/payments`),
     supplierShipping: (id: string) =>
       generatePath(`${x}/supplier/${id}/shipping`),
+    supplierAccounting: (id: string) =>
+      generatePath(`${x}/supplier/${id}/accounting`),
     supplierRoot: `${x}/supplier`,
     supplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/${id}`),

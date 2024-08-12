@@ -206,6 +206,12 @@ export const supplierShippingValidator = z.object({
   shippingMethodId: zfd.text(z.string().optional()),
 });
 
+export const supplierAccountingValidator = z.object({
+  id: zfd.text(z.string()),
+  supplierTypeId: zfd.text(z.string().optional()),
+  taxId: zfd.text(z.string().optional()),
+});
+
 export const supplierTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),

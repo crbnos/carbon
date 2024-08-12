@@ -3,6 +3,7 @@ import {
   LuBuilding,
   LuContact,
   LuCreditCard,
+  LuLandmark,
   LuMapPin,
   LuTruck,
 } from "react-icons/lu";
@@ -56,6 +57,13 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: LuTruck,
       shortcut: "Command+Shift+s",
+    },
+    {
+      name: "Accounting",
+      to: path.to.supplierAccounting(supplierId),
+      role: ["employee"],
+      icon: LuLandmark,
+      shortcut: "Command+Shift+a",
     },
   ].filter(
     (item) =>
