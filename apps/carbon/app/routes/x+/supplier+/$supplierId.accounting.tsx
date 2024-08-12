@@ -4,7 +4,10 @@ import { json, redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import type { SupplierDetail } from "~/modules/purchasing";
-import { supplierValidator, upsertSupplier } from "~/modules/purchasing";
+import {
+  supplierAccountingValidator,
+  updateSupplierAccounting,
+} from "~/modules/purchasing";
 import SupplierAccountingForm from "~/modules/purchasing/ui/Supplier/SupplierAccountingForm";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -14,13 +17,14 @@ import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
 
 export async function action({ request }: ActionFunctionArgs) {
-  console.log("got here!!!");
   assertIsPost(request);
   const { client, userId } = await requirePermissions(request, {
     create: "purchasing",
   });
   const formData = await request.formData();
-  const validation = await validator(supplierValidator).validate(formData);
+  const validation = await validator(supplierAccountingValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
@@ -28,14 +32,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
+  console.log({ data });
+
   if (!id) {
     throw redirect(
-      path.to.suppliers,
+      path.to.supplierAccounting(id),
       await flash(request, error(null, "Failed to update supplier"))
     );
   }
 
-  const update = await upsertSupplier(client, {
+  const update = await updateSupplierAccounting(client, {
     id,
     ...data,
     updatedBy: userId,
@@ -43,7 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (update.error) {
     throw redirect(
-      path.to.suppliers,
+      path.to.supplierAccounting(id),
       await flash(request, error(update.error, "Failed to update supplier"))
     );
   }
