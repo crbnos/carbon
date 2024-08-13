@@ -15,6 +15,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
+import { nanoid } from "nanoid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { Quotation } from "~/modules/sales";
@@ -112,9 +113,8 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
   const permissions = usePermissions();
 
   const onUploadImage = async (file: File) => {
-    const fileName = `${companyId}/quote/${quote.id}/${encodeURIComponent(
-      file.name
-    )}`;
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/quote/${quote.id}/${nanoid()}.${fileType}`;
     const result = await supabase?.storage
       .from("private")
       .upload(fileName, file);

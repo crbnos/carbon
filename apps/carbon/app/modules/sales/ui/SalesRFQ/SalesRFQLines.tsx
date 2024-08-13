@@ -104,7 +104,7 @@ function makeItem(
     checked: false,
     details: (
       <HStack spacing={2}>
-        {line.quantity.map((q, i) => (
+        {line.quantity?.map((q, i) => (
           <Badge key={i} variant="secondary">
             {q}
           </Badge>
@@ -273,9 +273,8 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
   }, []);
 
   const onUploadImage = async (file: File) => {
-    const fileName = `${companyId}/sales-rfqs/${selectedLineId}:${Math.random()
-      .toString(16)
-      .slice(2)}-${file.name}`;
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/sales-rfqs/${selectedLineId}:${nanoid()}.${fileType}`;
     const result = await supabase?.storage
       .from("private")
       .upload(fileName, file);

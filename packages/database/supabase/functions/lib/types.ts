@@ -15593,10 +15593,10 @@ export type Database = {
           customFields: Json | null
           employeeId: string | null
           expirationDate: string | null
-          externalNotes: string | null
           id: string
           internalNotes: string | null
           locationId: string | null
+          notes: Json | null
           revisionId: number
           rfqDate: string
           rfqId: string
@@ -15616,10 +15616,10 @@ export type Database = {
           customFields?: Json | null
           employeeId?: string | null
           expirationDate?: string | null
-          externalNotes?: string | null
           id?: string
           internalNotes?: string | null
           locationId?: string | null
+          notes?: Json | null
           revisionId?: number
           rfqDate: string
           rfqId: string
@@ -15639,10 +15639,10 @@ export type Database = {
           customFields?: Json | null
           employeeId?: string | null
           expirationDate?: string | null
-          externalNotes?: string | null
           id?: string
           internalNotes?: string | null
           locationId?: string | null
+          notes?: Json | null
           revisionId?: number
           rfqDate?: string
           rfqId?: string
@@ -24901,12 +24901,12 @@ export type Database = {
           customFields: Json | null
           employeeId: string | null
           expirationDate: string | null
-          externalNotes: string | null
           favorite: boolean | null
           id: string | null
           internalNotes: string | null
           locationId: string | null
           locationName: string | null
+          notes: Json | null
           quoteId: string | null
           revisionId: number | null
           rfqDate: string | null

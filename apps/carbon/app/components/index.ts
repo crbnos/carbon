@@ -9,6 +9,7 @@ import CustomerAvatar from "./CustomerAvatar";
 import DocumentPreview from "./DocumentPreview";
 import EmployeeAvatar from "./EmployeeAvatar";
 import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
+import Empty from "./Empty";
 import Hyperlink from "./Hyperlink";
 import MultiSelect from "./MultiSelect";
 import New from "./New";
@@ -31,6 +32,7 @@ export {
   DocumentPreview,
   EmployeeAvatar,
   EmployeeAvatarGroup,
+  Empty,
   Hyperlink,
   MultiSelect,
   New,

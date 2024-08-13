@@ -1,6 +1,5 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/resources";
@@ -390,45 +389,23 @@ export async function getCustomerTypesList(
     .order("name");
 }
 
-export async function getFilesByRfqId(
+export async function getSalesRFQDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  rfqId: string
+) {
+  return client.storage.from("private").list(`${companyId}/sales-rfq/${rfqId}`);
+}
+
+export async function getSalesRfqLineDocuments(
   client: SupabaseClient<Database>,
   rfqId: string,
+  lineId: string,
   companyId: string
 ) {
-  const lines = await client
-    .from("salesRfqLine")
-    .select("id")
-    .eq("salesRfqId", rfqId);
-  if (lines.error) {
-    return lines;
-  }
-  const lineIds = lines.data?.map((line) => line.id);
-  const fileQueries = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
-      .list(`${companyId}/sales-rfq/${rfqId}/${lineId}`)
-  );
-  const files = await Promise.all([...fileQueries]);
-
-  return {
-    data: {
-      files: files.reduce<(FileObject & { salesRfqLineId: string | null })[]>(
-        (acc, file, index) => {
-          if (file.data) {
-            return [
-              ...acc,
-              ...file.data?.map((f) => ({
-                ...f,
-                salesRfqLineId: lineIds[index],
-              })),
-            ];
-          }
-          return acc;
-        },
-        []
-      ),
-    },
-  };
+  return client.storage
+    .from("private")
+    .list(`${companyId}/sales-rfq/${rfqId}/${lineId}`);
 }
 
 export async function getFilesByQuoteLineId(

@@ -4,6 +4,7 @@ import QuoteBillOfProcess from "./QuoteBillOfProcess";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
 import QuoteBreadcrumbs from "./QuoteBreadcrumbs";
 import QuoteDocuments from "./QuoteDocuments";
+import QuoteExplorer from "./QuoteExplorer";
 import QuoteForm from "./QuoteForm";
 import QuoteHeader from "./QuoteHeader";
 import QuoteLineCosting from "./QuoteLineCosting";
@@ -22,6 +23,7 @@ export {
   QuoteBoMExplorer,
   QuoteBreadcrumbs,
   QuoteDocuments,
+  QuoteExplorer,
   QuoteForm,
   QuoteHeader,
   QuoteLineCosting,

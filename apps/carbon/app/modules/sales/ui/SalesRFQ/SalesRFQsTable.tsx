@@ -25,7 +25,7 @@ import { salesRFQStatusType } from "~/modules/sales";
 import { useCustomers, usePeople } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
-import { SalesRFQStatus } from "../SalesRFQ";
+import { SalesRFQStatus } from ".";
 
 type SalesRFQsTableProps = {
   data: SalesRFQ[];
