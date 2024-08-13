@@ -79,12 +79,17 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                   setCustomer(newValue?.value as string | undefined)
                 }
               />
+              <Input name="customerReference" label="Customer Ref. Number" />
               <CustomerLocation
                 name="customerLocationId"
                 label="Customer Location"
                 customer={customer}
               />
-              <Input name="customerReference" label="Customer Ref. Number" />
+              <CustomerContact
+                name="customerContactId"
+                label="Customer Contact"
+                customer={customer}
+              />
               {isEditing && permissions.can("delete", "sales") && (
                 <Select
                   name="status"
@@ -94,12 +99,6 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                   isReadOnly={isCustomer}
                 />
               )}
-
-              <CustomerContact
-                name="customerContactId"
-                label="Customer Contact"
-                customer={customer}
-              />
 
               <DatePicker
                 name="rfqDate"

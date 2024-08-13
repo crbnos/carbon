@@ -3406,21 +3406,21 @@ export type Database = {
           companyId: string
           customerId: string
           customerPartId: string
-          customerPartRevision: string
+          customerPartRevision: string | null
           itemId: string
         }
         Insert: {
           companyId: string
           customerId: string
           customerPartId: string
-          customerPartRevision: string
+          customerPartRevision?: string | null
           itemId: string
         }
         Update: {
           companyId?: string
           customerId?: string
           customerPartId?: string
-          customerPartRevision?: string
+          customerPartRevision?: string | null
           itemId?: string
         }
         Relationships: [
