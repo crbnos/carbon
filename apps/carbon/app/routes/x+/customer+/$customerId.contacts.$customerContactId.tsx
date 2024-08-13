@@ -61,8 +61,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, contactId, customerLocationId, ...contact } = validation.data;
 
-  console.log({ customerLocationId });
-
   if (id !== customerContactId)
     throw badRequest("customerContactId does not match id from form data");
 

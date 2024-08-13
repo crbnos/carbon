@@ -11,7 +11,6 @@ import {
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
-import { useState } from "react";
 import type { z } from "zod";
 import {
   CustomerLocation,
@@ -48,8 +47,6 @@ const CustomerContactForm = ({
   const isDisabled = isEditing
     ? !permissions.can("update", "sales")
     : !permissions.can("create", "sales");
-
-  const [customer, setCustomer] = useState<string | undefined>(customerId);
 
   return (
     <Drawer
@@ -95,7 +92,7 @@ const CustomerContactForm = ({
               <CustomerLocation
                 name="customerLocationId"
                 label="Location"
-                customer={customer}
+                customer={customerId}
               />
               <TextArea name="notes" label="Notes" />
               <CustomFormFields table="customerContact" />

@@ -21,6 +21,7 @@ import {
   Input,
   PhoneInput,
   Submit,
+  SupplierLocation,
   TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -99,6 +100,11 @@ const SupplierContactForm = ({
               <PhoneInput name="homePhone" label="Home Phone" />
               <PhoneInput name="workPhone" label="Work Phone" />
               <PhoneInput name="fax" label="Fax" />
+              <SupplierLocation
+                name="supplierLocationId"
+                label="Location"
+                supplier={supplierId}
+              />
               <TextArea name="notes" label="Notes" />
               <CustomFormFields table="supplierContact" />
             </VStack>
