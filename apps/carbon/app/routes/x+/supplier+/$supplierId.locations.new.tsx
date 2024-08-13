@@ -34,11 +34,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id, addressId, ...address } = validation.data;
+  const { id, addressId, name, ...address } = validation.data;
 
   const createSupplierLocation = await insertSupplierLocation(client, {
     supplierId,
     companyId,
+    name,
     address,
     customFields: setCustomFields(formData),
   });
@@ -71,7 +72,9 @@ export default function SupplierLocationsNewRoute() {
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
 
-  const initialValues = {};
+  const initialValues = {
+    name: "", // Ask Brad how to avoid this janky solution
+  };
 
   return (
     <SupplierLocationForm

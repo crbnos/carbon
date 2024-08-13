@@ -32,6 +32,7 @@ export const customerContactValidator = z.object({
 
 export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
+  name: zfd.text(z.string()),
   ...address,
 });
 

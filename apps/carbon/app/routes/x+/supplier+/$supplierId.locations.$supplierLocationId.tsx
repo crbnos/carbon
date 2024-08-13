@@ -59,13 +59,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id, addressId, ...address } = validation.data;
+  const { id, addressId, name, ...address } = validation.data;
 
   if (addressId === undefined)
     throw badRequest("addressId is undefined in form data");
 
   const update = await updateSupplierLocation(client, {
     addressId,
+    name,
     address,
     customFields: setCustomFields(formData),
   });
@@ -95,6 +96,7 @@ export default function EditSupplierLocationRoute() {
   const initialValues = {
     id: location?.id ?? undefined,
     addressId: location?.address?.id ?? undefined,
+    name: location?.name ?? undefined,
 
     addressLine1: location?.address?.addressLine1 ?? "",
     addressLine2: location?.address?.addressLine2 ?? "",
