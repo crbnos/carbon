@@ -11,7 +11,6 @@ import {
 import CustomerAccountingForm from "~/modules/sales/ui/Customer/CustomerAccountingForm";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import { getCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
@@ -32,12 +31,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  console.log({ data });
-
   if (!id) {
     throw redirect(
       path.to.customerAccounting(id),
-      await flash(request, error(null, "Failed to update customer"))
+      await flash(request, error(null, "Failed to update customer accounting"))
     );
   }
 
@@ -50,11 +47,17 @@ export async function action({ request }: ActionFunctionArgs) {
   if (update.error) {
     throw redirect(
       path.to.customerAccounting(id),
-      await flash(request, error(update.error, "Failed to update customer"))
+      await flash(
+        request,
+        error(update.error, "Failed to update customer accounting")
+      )
     );
   }
 
-  return json(null, await flash(request, success("Updated customer")));
+  return json(
+    null,
+    await flash(request, success("Updated customer accounting"))
+  );
 }
 
 export default function CustomerAccountingRoute() {
@@ -70,7 +73,6 @@ export default function CustomerAccountingRoute() {
     id: routeData?.customer?.id ?? undefined,
     customerTypeId: routeData?.customer?.customerTypeId ?? undefined,
     taxId: routeData?.customer?.taxId ?? "",
-    ...getCustomFields(routeData?.customer?.customFields),
   };
 
   return (
