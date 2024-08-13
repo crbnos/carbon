@@ -492,6 +492,7 @@ export async function insertSupplierLocation(
   supplierLocation: {
     supplierId: string;
     companyId: string;
+    name: string;
     address: {
       addressLine1?: string;
       addressLine2?: string;
@@ -525,6 +526,7 @@ export async function insertSupplierLocation(
       {
         supplierId: supplierLocation.supplierId,
         addressId,
+        name: supplierLocation.name,
         customFields: supplierLocation.customFields,
       },
     ])
@@ -643,6 +645,7 @@ export async function updateSupplierLocation(
   client: SupabaseClient<Database>,
   supplierLocation: {
     addressId: string;
+    name: string;
     address: {
       addressLine1?: string;
       addressLine2?: string;
@@ -657,7 +660,10 @@ export async function updateSupplierLocation(
   if (supplierLocation.customFields) {
     const customFieldUpdate = await client
       .from("supplierLocation")
-      .update({ customFields: supplierLocation.customFields })
+      .update({
+        name: supplierLocation.name,
+        customFields: supplierLocation.customFields,
+      })
       .eq("addressId", supplierLocation.addressId);
 
     if (customFieldUpdate.error) {

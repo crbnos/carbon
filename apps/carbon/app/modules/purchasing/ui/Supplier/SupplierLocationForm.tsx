@@ -85,6 +85,7 @@ const SupplierLocationForm = ({
             <Hidden name="type" value={type} />
             <Hidden name="addressId" />
             <VStack spacing={4}>
+              <Input name="name" label="Name" />
               <Input name="addressLine1" label="Address Line 1" />
               <Input name="addressLine2" label="Address Line 2" />
               <Input name="city" label="City" />

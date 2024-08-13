@@ -183,6 +183,7 @@ export const supplierContactValidator = z.object({
 
 export const supplierLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
+  name: zfd.text(z.string()),
   ...address,
 });
 

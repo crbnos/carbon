@@ -906,6 +906,7 @@ export async function insertCustomerLocation(
   customerLocation: {
     customerId: string;
     companyId: string;
+    name: string;
     address: {
       addressLine1?: string;
       addressLine2?: string;
@@ -939,6 +940,7 @@ export async function insertCustomerLocation(
       {
         customerId: customerLocation.customerId,
         addressId,
+        name: customerLocation.name,
         customFields: customerLocation.customFields,
       },
     ])
@@ -1121,6 +1123,7 @@ export async function updateCustomerLocation(
   client: SupabaseClient<Database>,
   customerLocation: {
     addressId: string;
+    name: string;
     address: {
       addressLine1?: string;
       addressLine2?: string;
@@ -1135,7 +1138,10 @@ export async function updateCustomerLocation(
   if (customerLocation.customFields) {
     const customFieldUpdate = await client
       .from("customerLocation")
-      .update({ customFields: customerLocation.customFields })
+      .update({
+        name: customerLocation.name,
+        customFields: customerLocation.customFields,
+      })
       .eq("addressId", customerLocation.addressId);
 
     if (customFieldUpdate.error) {

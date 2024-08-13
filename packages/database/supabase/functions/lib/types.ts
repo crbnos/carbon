@@ -3329,18 +3329,21 @@ export type Database = {
           customerId: string
           customFields: Json | null
           id: string
+          name: string
         }
         Insert: {
           addressId: string
           customerId: string
           customFields?: Json | null
           id?: string
+          name: string
         }
         Update: {
           addressId?: string
           customerId?: string
           customFields?: Json | null
           id?: string
+          name?: string
         }
         Relationships: [
           {
@@ -17797,18 +17800,21 @@ export type Database = {
           addressId: string
           customFields: Json | null
           id: string
+          name: string
           supplierId: string
         }
         Insert: {
           addressId: string
           customFields?: Json | null
           id?: string
+          name: string
           supplierId: string
         }
         Update: {
           addressId?: string
           customFields?: Json | null
           id?: string
+          name?: string
           supplierId?: string
         }
         Relationships: [
