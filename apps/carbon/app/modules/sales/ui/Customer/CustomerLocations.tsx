@@ -10,7 +10,7 @@ import {
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import { useCallback, useState } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
-import { Address, New } from "~/components";
+import { Location, New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type { CustomerLocation } from "~/modules/sales";
@@ -80,8 +80,8 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
               {locations?.map((location) => (
                 <li key={location.id}>
                   {location.address && !Array.isArray(location.address) ? (
-                    <Address
-                      address={location.address}
+                    <Location
+                      location={location}
                       actions={getActions(location)}
                     />
                   ) : null}
