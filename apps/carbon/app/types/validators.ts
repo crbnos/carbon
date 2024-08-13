@@ -34,8 +34,6 @@ export const contact = {
   mobilePhone: zfd.text(z.string().optional()),
   homePhone: zfd.text(z.string().optional()),
   workPhone: zfd.text(z.string().optional()),
-  birthday: zfd.text(z.string().optional()),
-  ...address,
 };
 
 export const favoriteSchema = z.object({

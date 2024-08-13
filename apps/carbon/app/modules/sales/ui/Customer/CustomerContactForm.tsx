@@ -14,7 +14,6 @@ import { useFetcher } from "@remix-run/react";
 import type { z } from "zod";
 import {
   CustomFormFields,
-  DatePicker,
   Hidden,
   Input,
   PhoneInput,
@@ -89,13 +88,6 @@ const CustomerContactForm = ({
               <PhoneInput name="homePhone" label="Home Phone" />
               <PhoneInput name="workPhone" label="Work Phone" />
               <PhoneInput name="fax" label="Fax" />
-              <Input name="addressLine1" label="Address Line 1" />
-              <Input name="addressLine2" label="Address Line 2" />
-              <Input name="city" label="City" />
-              <Input name="state" label="State" />
-              <Input name="postalCode" label="Zip Code" />
-              {/* Country dropdown */}
-              <DatePicker name="birthday" label="Birthday" />
               <TextArea name="notes" label="Notes" />
               <CustomFormFields table="customerContact" />
             </VStack>
