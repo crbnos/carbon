@@ -10,6 +10,7 @@ import DocumentPreview from "./DocumentPreview";
 import EmployeeAvatar from "./EmployeeAvatar";
 import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
 import Hyperlink from "./Hyperlink";
+import Location from "./Location";
 import MultiSelect from "./MultiSelect";
 import New from "./New";
 import Select from "./Select";
@@ -32,6 +33,7 @@ export {
   EmployeeAvatar,
   EmployeeAvatarGroup,
   Hyperlink,
+  Location,
   MultiSelect,
   New,
   Select,
