@@ -51,7 +51,7 @@ export async function loader({ request }: ActionFunctionArgs) {
     });
   }
 
-  return { company: company.data };
+  return json({ company: company.data });
 }
 
 export async function action({ request }: ActionFunctionArgs) {

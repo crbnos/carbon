@@ -105,7 +105,7 @@ export function useLineCosts({
         }
       }
 
-      data.operations?.forEach((operation) => {
+      data.operations?.forEach((operation: QuotationOperation) => {
         if (operation.setupHours) {
           // setupHours don't depend on quantity
           effects.setupHours.push((quantity) => {

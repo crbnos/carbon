@@ -15,6 +15,7 @@ import {
   CustomFormFields,
   Customer,
   CustomerContact,
+  CustomerLocation,
   DatePicker,
   Employee,
   Hidden,
@@ -76,6 +77,11 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 onChange={(newValue) =>
                   setCustomer(newValue?.value as string | undefined)
                 }
+              />
+              <CustomerLocation
+                name="customerLocationId"
+                label="Customer Location"
+                customer={customer}
               />
               <CustomerContact
                 name="customerContactId"

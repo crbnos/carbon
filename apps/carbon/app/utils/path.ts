@@ -629,8 +629,9 @@ export const path = {
     salesOrderRelease: (id: string) =>
       generatePath(`${x}/sales-order/${id}/release`),
     salesOrders: `${x}/sales/orders`,
-    salesRfqRoot: `${x}/sales-rfq`,
     salesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}`),
+    salesRfqConvert: (id: string) =>
+      generatePath(`${x}/sales-rfq/${id}/convert`),
     salesRfqDetails: (id: string) =>
       generatePath(`${x}/sales-rfq/${id}/details`),
     salesRfqFavorite: `${x}/sales/rfqs/favorite`,
@@ -638,6 +639,8 @@ export const path = {
       generatePath(`${x}/sales-rfq/${id}/lines/${lineId}`),
     salesRfqLinesOrder: (id: string) =>
       generatePath(`${x}/sales-rfq/${id}/lines/order`),
+    salesRfqRoot: `${x}/sales-rfq`,
+    salesRfqStatus: (id: string) => generatePath(`${x}/sales-rfq/${id}/status`),
     salesRfqs: `${x}/sales/rfqs`,
     scheduling: `${x}/scheduling`,
     service: (id: string) => generatePath(`${x}/service/${id}`),

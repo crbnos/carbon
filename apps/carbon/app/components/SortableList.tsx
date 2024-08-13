@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGroup, Reorder, useDragControls } from "framer-motion";
+import { LayoutGroup, Reorder, motion, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
@@ -91,7 +91,10 @@ function SortableListItem<T>({
           whileDrag={{ zIndex: 9999 }}
         >
           <div className={cn(isExpanded ? "w-full" : "", "z-20 ")}>
-            <div className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2 py-1">
+            <motion.div
+              className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2 py-1"
+              layout="position"
+            >
               {!isExpanded ? (
                 <div className="flex w-full items-center gap-x-2 truncate">
                   {/* List Remove Actions */}
@@ -138,7 +141,7 @@ function SortableListItem<T>({
 
               {/* List Item Children */}
               {renderExtra && renderExtra(item)}
-            </div>
+            </motion.div>
           </div>
           <div
             onPointerDown={isDraggable ? handleDragStart : undefined}

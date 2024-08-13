@@ -27,6 +27,7 @@ import type {
   salesOrderShipmentValidator,
   salesOrderValidator,
   salesRfqLineValidator,
+  salesRFQStatusType,
   salesRfqValidator,
 } from "./sales.models";
 
@@ -45,6 +46,22 @@ export async function closeSalesOrder(
     .eq("id", salesOrderId)
     .select("id")
     .single();
+}
+
+export async function convertSalesRfqToQuote(
+  client: SupabaseClient<Database>,
+  payload: {
+    id: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("convert", {
+    body: {
+      type: "salesRfqToQuote",
+      ...payload,
+    },
+  });
 }
 
 export async function convertQuoteToOrder(
@@ -1259,6 +1276,18 @@ export async function updateQuoteFavorite(
   } else {
     return client.from("quoteFavorite").insert({ quoteId: id, userId: userId });
   }
+}
+
+export async function updateSalesRFQStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof salesRFQStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  return client.from("salesRfq").update(update).eq("id", update.id);
 }
 
 export async function updateQuoteMaterialOrder(

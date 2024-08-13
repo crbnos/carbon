@@ -10,23 +10,28 @@ import {
   CardTitle,
   Editor,
   HStack,
+  Kbd,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack,
   cn,
   generateHTML,
   toast,
   useDebounce,
+  useKeyboardShortcuts,
   useMount,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
+import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LuMove3D, LuPaperclip, LuSettings2, LuX } from "react-icons/lu";
-import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
   ArrayNumeric,
@@ -42,31 +47,26 @@ import type {
   SortableItemRenderProps,
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { usePermissions, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { ModelUpload } from "~/modules/items";
 import { CadModel } from "~/modules/items";
 import { path } from "~/utils/path";
 import { salesRfqLineValidator } from "../../sales.models";
+import type { SalesRFQ, SalesRFQLine } from "../../types";
 import SalesRFQLineDocuments from "./SalesRFQLineDocuments";
 
-type Line = z.infer<typeof salesRfqLineValidator> & {
-  internalNotes: JSONContent;
-  externalNotes: JSONContent;
-} & ModelUpload;
-
 type ItemWithData = SortableItem & {
-  data: Line;
+  data: SalesRFQLine;
   files?: (FileObject & { salesRfqLineId: string | null })[];
 };
 
 type SalesRFQLinesProps = {
-  lines: Line[];
+  lines: SalesRFQLine[];
   files: (FileObject & { salesRfqLineId: string | null })[];
 };
 
 function makeItems(
-  lines: Line[],
+  lines: SalesRFQLine[],
   files: (FileObject & { salesRfqLineId: string | null })[]
 ): ItemWithData[] {
   return lines.map((line) =>
@@ -80,7 +80,7 @@ function makeItems(
 }
 
 function makeItem(
-  line: Line,
+  line: SalesRFQLine,
   files?: (FileObject & { salesRfqLineId: string | null })[]
 ): ItemWithData {
   return {
@@ -88,8 +88,10 @@ function makeItem(
     title: (
       <VStack spacing={0}>
         <h4 className="font-mono">
-          {line.customerPartNumber}{" "}
-          {line.customerRevisionId && `(${line.customerRevisionId})`}
+          {line.customerPartId}{" "}
+          {line.customerPartRevision && (
+            <span className="text-muted-foreground">{`Rev. ${line.customerPartRevision}`}</span>
+          )}
         </h4>
         {line?.description && (
           <span className="text-xs text-muted-foreground">
@@ -124,9 +126,9 @@ function makeItem(
   };
 }
 
-const initialLine: Omit<Line, "id" | "salesRfqId" | "order"> = {
-  customerPartNumber: "",
-  customerRevisionId: "",
+const initialLine: Omit<SalesRFQLine, "id" | "salesRfqId" | "order"> = {
+  customerPartId: "",
+  customerPartRevision: "",
   itemId: "",
   description: "",
   quantity: [1],
@@ -154,18 +156,25 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
     id: userId,
   } = useUser();
 
+  const routeData = useRouteData<{ rfqSummary: SalesRFQ }>(
+    path.to.salesRfq(rfqId)
+  );
+  const isDraft = routeData?.rfqSummary.status === "Draft";
+
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(lines ?? [], files)
   );
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
 
   useEffect(() => {
-    setItems(makeItems(lines, files));
+    const temporaryItem = items.find((item) => item.isTemporary);
+    const existingItems = makeItems(lines, files);
+    setItems([...existingItems, ...(temporaryItem ? [temporaryItem] : [])]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [files]);
+  }, [files, selectedLineId]);
 
   const onToggleItem = (id: string) => {
-    if (permissions.can("delete", "sales")) {
+    if (permissions.can("delete", "sales") && isDraft) {
       setItems((prevItems) =>
         prevItems.map((item) =>
           item.id === id ? { ...item, checked: !item.checked } : item
@@ -209,6 +218,7 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
   };
 
   const onRemoveItem = async (id: string) => {
+    if (!permissions.can("delete", "sales") || !isDraft) return;
     // get the item and it's order in the list
     const itemIndex = items.findIndex((i) => i.id === id);
     const item = items[itemIndex];
@@ -359,6 +369,7 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
                 item={item}
                 setItems={setItems}
                 setSelectedLineId={setSelectedLineId}
+                isDraft={isDraft}
               />
             </motion.div>
           </div>
@@ -387,6 +398,7 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
                   salesRfqLineId: item.id,
                 }}
                 modelPath={item.data.modelPath ?? null}
+                viewerClassName="min-h-[520px]"
                 uploadClassName="min-h-[300px]"
               />
             </motion.div>
@@ -496,7 +508,7 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
     ];
 
     return (
-      <SortableListItem<Line>
+      <SortableListItem<SalesRFQLine>
         item={item}
         items={items}
         order={order}
@@ -606,6 +618,14 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
     );
   };
 
+  const newLineRef = useRef<HTMLButtonElement>(null);
+  useKeyboardShortcuts({
+    "Command+Shift+l": (event: KeyboardEvent) => {
+      event.stopPropagation();
+      newLineRef.current?.click();
+    },
+  });
+
   return (
     <Card>
       <HStack className="justify-between">
@@ -614,15 +634,25 @@ const SalesRFQLines = ({ lines, files }: SalesRFQLinesProps) => {
         </CardHeader>
 
         <CardAction>
-          <Button
-            variant="secondary"
-            isDisabled={
-              !permissions.can("update", "sales") || selectedLineId !== null
-            }
-            onClick={onAddItem}
-          >
-            Add Line
-          </Button>
+          <Tooltip>
+            <TooltipTrigger className="w-full">
+              <Button
+                ref={newLineRef}
+                variant="secondary"
+                isDisabled={
+                  !isDraft ||
+                  !permissions.can("update", "sales") ||
+                  selectedLineId !== null
+                }
+                onClick={onAddItem}
+              >
+                Add Line
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <Kbd>{prettifyKeyboardShortcut("Command+Shift+l")}</Kbd>
+            </TooltipContent>
+          </Tooltip>
         </CardAction>
       </HStack>
       <CardContent>
@@ -644,10 +674,12 @@ function SalesRFQLineForm({
   item,
   setItems,
   setSelectedLineId,
+  isDraft,
 }: {
   item: ItemWithData;
   setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedLineId: Dispatch<SetStateAction<string | null>>;
+  isDraft: boolean;
 }) {
   const { supabase } = useSupabase();
   const salesRfqLineFetcher = useFetcher<{ id: string }>();
@@ -722,6 +754,7 @@ function SalesRFQLineForm({
       className="w-full"
       fetcher={salesRfqLineFetcher}
       onSubmit={(values) => {
+        setSelectedLineId(null);
         setItems((prevItems) =>
           prevItems.map((i) =>
             i.id === item.id
@@ -749,11 +782,11 @@ function SalesRFQLineForm({
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
           <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
             <Input
-              name="customerPartNumber"
+              name="customerPartId"
               label="Customer Part Number"
               autoFocus
             />
-            <Input name="customerRevisionId" label="Customer Revision" />
+            <Input name="customerPartRevision" label="Customer Revision" />
             <Item
               name="itemId"
               label="Part"
@@ -800,7 +833,9 @@ function SalesRFQLineForm({
           }}
         >
           <motion.div layout className="ml-auto mr-1 pt-2">
-            <Submit disabled={!permissions.can("update", "sales")}>Save</Submit>
+            <Submit disabled={!isDraft || !permissions.can("update", "sales")}>
+              Save
+            </Submit>
           </motion.div>
         </motion.div>
       </VStack>

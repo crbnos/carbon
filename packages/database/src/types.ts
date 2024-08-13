@@ -3401,6 +3401,94 @@ export type Database = {
           },
         ]
       }
+      customerPartToItem: {
+        Row: {
+          companyId: string
+          customerId: string
+          customerPartId: string
+          customerPartRevision: string
+          itemId: string
+        }
+        Insert: {
+          companyId: string
+          customerId: string
+          customerPartId: string
+          customerPartRevision: string
+          itemId: string
+        }
+        Update: {
+          companyId?: string
+          customerId?: string
+          customerPartId?: string
+          customerPartRevision?: string
+          itemId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerPartToItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+        ]
+      }
       customerPayment: {
         Row: {
           companyId: string
@@ -15500,6 +15588,7 @@ export type Database = {
           createdBy: string | null
           customerContactId: string | null
           customerId: string
+          customerLocationId: string | null
           customerReference: string | null
           customFields: Json | null
           employeeId: string | null
@@ -15522,6 +15611,7 @@ export type Database = {
           createdBy?: string | null
           customerContactId?: string | null
           customerId: string
+          customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
           employeeId?: string | null
@@ -15544,6 +15634,7 @@ export type Database = {
           createdBy?: string | null
           customerContactId?: string | null
           customerId?: string
+          customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
           employeeId?: string | null
@@ -15684,6 +15775,13 @@ export type Database = {
             columns: ["customerId"]
             isOneToOne: false
             referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_customerLocationId_fkey"
+            columns: ["customerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
             referencedColumns: ["id"]
           },
           {
@@ -15856,8 +15954,8 @@ export type Database = {
           companyId: string
           createdAt: string | null
           createdBy: string
-          customerPartNumber: string
-          customerRevisionId: string | null
+          customerPartId: string
+          customerPartRevision: string | null
           customFields: Json | null
           description: string | null
           externalNotes: Json | null
@@ -15876,8 +15974,8 @@ export type Database = {
           companyId: string
           createdAt?: string | null
           createdBy: string
-          customerPartNumber: string
-          customerRevisionId?: string | null
+          customerPartId: string
+          customerPartRevision?: string | null
           customFields?: Json | null
           description?: string | null
           externalNotes?: Json | null
@@ -15896,8 +15994,8 @@ export type Database = {
           companyId?: string
           createdAt?: string | null
           createdBy?: string
-          customerPartNumber?: string
-          customerRevisionId?: string | null
+          customerPartId?: string
+          customerPartRevision?: string | null
           customFields?: Json | null
           description?: string | null
           externalNotes?: Json | null
@@ -16045,6 +16143,88 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      salesRfqToQuote: {
+        Row: {
+          companyId: string
+          quoteId: string
+          salesRfqId: string
+        }
+        Insert: {
+          companyId: string
+          quoteId: string
+          salesRfqId: string
+        }
+        Update: {
+          companyId?: string
+          quoteId?: string
+          salesRfqId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salesRfqToQuote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfq"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqs"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -24547,8 +24727,8 @@ export type Database = {
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
-          customerPartNumber: string | null
-          customerRevisionId: string | null
+          customerPartId: string | null
+          customerPartRevision: string | null
           customFields: Json | null
           description: string | null
           externalNotes: Json | null
@@ -24556,6 +24736,9 @@ export type Database = {
           internalNotes: Json | null
           itemId: string | null
           itemName: string | null
+          itemReadableId: string | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
+          methodType: Database["public"]["Enums"]["methodType"] | null
           modelId: string | null
           modelName: string | null
           modelPath: string | null
@@ -24713,6 +24896,7 @@ export type Database = {
           createdBy: string | null
           customerContactId: string | null
           customerId: string | null
+          customerLocationId: string | null
           customerReference: string | null
           customFields: Json | null
           employeeId: string | null
@@ -24723,6 +24907,7 @@ export type Database = {
           internalNotes: string | null
           locationId: string | null
           locationName: string | null
+          quoteId: string | null
           revisionId: number | null
           rfqDate: string | null
           rfqId: string | null
@@ -24858,6 +25043,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "salesRfq_customerLocationId_fkey"
+            columns: ["customerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "salesRfq_employeeId_fkey"
             columns: ["employeeId"]
             isOneToOne: false
@@ -24954,6 +25146,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
           },
         ]
       }

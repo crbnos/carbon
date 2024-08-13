@@ -1,3 +1,4 @@
+import type { JSONContent } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
@@ -6,6 +7,7 @@ import {
   SalesRFQProperties,
   getFilesByRfqId,
   getSalesRFQ,
+  getSalesRFQLines,
 } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -26,14 +28,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const [rfqSummary, files] = await Promise.all([
+  const [rfqSummary, lines, files] = await Promise.all([
     getSalesRFQ(client, rfqId),
+    getSalesRFQLines(client, rfqId),
     getFilesByRfqId(client, rfqId, companyId),
   ]);
 
   if (rfqSummary.error) {
     throw redirect(
-      path.to.sales,
+      path.to.salesRfqs,
       await flash(
         request,
         error(rfqSummary.error, "Failed to load part summary")
@@ -41,8 +44,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (lines.error) {
+    throw redirect(
+      path.to.salesRfqs,
+      await flash(request, error(lines.error, "Failed to load RFQ lines"))
+    );
+  }
+
   return json({
     rfqSummary: rfqSummary.data,
+    lines:
+      lines.data.map((line) => ({
+        ...line,
+        id: line.id ?? "",
+        order: line.order ?? 0,
+        unitOfMeasureCode: line.unitOfMeasureCode ?? "",
+        customerPartId: line.customerPartId ?? "",
+        customerPartRevision: line.customerPartRevision ?? "",
+        description: line.description ?? "",
+        externalNotes: (line.externalNotes ?? {}) as JSONContent,
+        internalNotes: (line.internalNotes ?? {}) as JSONContent,
+        itemId: line.itemId ?? "",
+        quantity: line.quantity ?? [1],
+      })) ?? [],
     files: files.data?.files ?? [],
   });
 }
