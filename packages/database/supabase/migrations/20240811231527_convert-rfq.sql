@@ -26,18 +26,19 @@ CREATE POLICY "Employees with sales_create can insert salesRfqToQuote" ON "sales
 CREATE TABLE "customerPartToItem" (
   "customerId" TEXT NOT NULL,
   "customerPartId" TEXT NOT NULL,
-  "customerPartRevision" TEXT,
+  "customerPartRevision" TEXT DEFAULT '',
   "itemId" TEXT NOT NULL,
   "companyId" TEXT NOT NULL,
 
-  PRIMARY KEY ("customerId", "customerPartId", "customerPartRevision"),
-  FOREIGN KEY ("customerId") REFERENCES "customer" ("id") ON DELETE CASCADE,
-  FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON DELETE CASCADE,
-  FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE
+  CONSTRAINT "customerPartToItem_pkey" PRIMARY KEY ("customerId", "itemId"),
+  CONSTRAINT "customerPartToItem_customerId_itemId_key" UNIQUE ("customerId", "itemId"),
+  CONSTRAINT "customerPartToItem_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer" ("id") ON DELETE CASCADE,
+  CONSTRAINT "customerPartToItem_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON DELETE CASCADE,
+  CONSTRAINT "customerPartToItem_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE
 );
 
-CREATE INDEX "customerPartToItem_companyId_idx" ON "customerPartToItem" ("companyId");
-CREATE INDEX "customerPartToItem_customerPartId_idx" ON "customerPartToItem" ("customerPartId", "customerPartRevision");
+CREATE INDEX "customerPartToItem_companyId_idx" ON "customerPartToItem" ("itemId");
+CREATE INDEX "customerPartToItem_customerPartId_idx" ON "customerPartToItem" ("customerPartId", "customerPartRevision", "companyId");
 
 ALTER TABLE "customerPartToItem" ENABLE ROW LEVEL SECURITY;
 

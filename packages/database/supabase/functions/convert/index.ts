@@ -143,15 +143,20 @@ serve(async (req: Request) => {
               companyId,
               customerId: salesRfq.data?.customerId!,
               customerPartId: line.customerPartId!,
-              customerPartRevision: line.customerPartRevision,
+              customerPartRevision: line.customerPartRevision ?? "",
               itemId: line.itemId!,
             }))
             .filter((line) => !!line.itemId && !!line.customerPartId);
           if (customerPartToItemInserts.length > 0) {
             await trx
               .insertInto("customerPartToItem")
-              // @ts-ignore ..
               .values(customerPartToItemInserts)
+              .onConflict((oc) =>
+                oc.columns(["customerId", "itemId"]).doUpdateSet((eb) => ({
+                  customerPartId: eb.ref("excluded.customerPartId"),
+                  customerPartRevision: eb.ref("excluded.customerPartRevision"),
+                }))
+              )
               .execute();
           }
 
