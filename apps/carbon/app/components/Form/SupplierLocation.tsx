@@ -39,7 +39,7 @@ const SupplierLocation = (props: SupplierLocationSelectProps) => {
     () =>
       supplierLocationsFetcher.data?.data?.map((c) => ({
         value: c.id,
-        label: `${c.address?.addressLine1} ${c.address?.city}, ${c.address?.state}`,
+        label: `${c.address?.addressLine1} ${c.address?.city}, ${c.address?.state} (${c.name})`,
       })) ?? [],
 
     [supplierLocationsFetcher.data]
@@ -76,7 +76,7 @@ const SupplierLocation = (props: SupplierLocationSelectProps) => {
             newLocationModal.onClose();
             triggerRef.current?.click();
           }}
-          initialValues={{}}
+          initialValues={{ name: "" }} // Ask Brad how to avoid this janky solution
         />
       )}
     </>
