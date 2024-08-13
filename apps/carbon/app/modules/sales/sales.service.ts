@@ -456,17 +456,6 @@ export async function getQuotes(
   return query;
 }
 
-export async function getQuoteMakeMethod(
-  client: SupabaseClient<Database>,
-  quoteMakeMethodId: string
-) {
-  return client
-    .from("quoteMakeMethod")
-    .select("*")
-    .eq("id", quoteMakeMethodId)
-    .single();
-}
-
 export async function getQuoteAssembliesByLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -518,6 +507,17 @@ type QuoteMethodTreeItem = {
   data: QuoteMethod;
   children: QuoteMethodTreeItem[];
 };
+
+export async function getQuoteMakeMethod(
+  client: SupabaseClient<Database>,
+  quoteMakeMethodId: string
+) {
+  return client
+    .from("quoteMakeMethod")
+    .select("*")
+    .eq("id", quoteMakeMethodId)
+    .single();
+}
 
 export async function getQuoteMethodTrees(
   client: SupabaseClient<Database>,
