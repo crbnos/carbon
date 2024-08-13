@@ -19,7 +19,6 @@ import type { z } from "zod";
 import {
   CustomFormFields,
   CustomerStatus,
-  CustomerType,
   Employee,
   Hidden,
   Input,
@@ -93,13 +92,7 @@ const CustomerForm = ({
                 )}
               >
                 <Input name="name" label="Name" autoFocus={!isEditing} />
-                <Input name="taxId" label="Tax ID" />
 
-                <CustomerType
-                  name="customerTypeId"
-                  label="Posting Group"
-                  placeholder="Select Posting Group"
-                />
                 <CustomerStatus
                   name="customerStatusId"
                   label="Customer Status"

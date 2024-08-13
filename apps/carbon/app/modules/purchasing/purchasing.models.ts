@@ -171,9 +171,7 @@ export const purchaseOrderReleaseValidator = z
 export const supplierValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
-  supplierTypeId: zfd.text(z.string().optional()),
   supplierStatusId: zfd.text(z.string().optional()),
-  taxId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
 });
 

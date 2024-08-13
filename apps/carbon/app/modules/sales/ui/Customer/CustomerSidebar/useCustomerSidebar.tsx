@@ -1,11 +1,12 @@
 import { useParams } from "@remix-run/react";
 import {
-  BsBank,
-  BsCreditCard,
-  BsFillPersonLinesFill,
-  BsFillPinMapFill,
-  BsTruck,
-} from "react-icons/bs";
+  LuBuilding,
+  LuContact,
+  LuCreditCard,
+  LuLandmark,
+  LuMapPin,
+  LuTruck,
+} from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -23,7 +24,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     {
       name: "Details",
       to: path.to.customerDetails(customerId),
-      icon: BsBank,
+      icon: LuBuilding,
       shortcut: "Command+Shift+d",
     },
     {
@@ -31,7 +32,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       to: path.to.customerContacts(customerId),
       role: ["employee"],
       count: contacts,
-      icon: BsFillPersonLinesFill,
+      icon: LuContact,
       shortcut: "Command+Shift+c",
     },
     {
@@ -39,22 +40,29 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       to: path.to.customerLocations(customerId),
       role: ["employee", "customer"],
       count: locations,
-      icon: BsFillPinMapFill,
+      icon: LuMapPin,
       shortcut: "Command+Shift+l",
     },
     {
       name: "Payments",
       to: path.to.customerPayment(customerId),
       role: ["employee"],
-      icon: BsCreditCard,
+      icon: LuCreditCard,
       shortcut: "Command+Shift+p",
     },
     {
       name: "Shipping",
       to: path.to.customerShipping(customerId),
       role: ["employee"],
-      icon: BsTruck,
+      icon: LuTruck,
       shortcut: "Command+Shift+s",
+    },
+    {
+      name: "Accounting",
+      to: path.to.customerAccounting(customerId),
+      role: ["employee"],
+      icon: LuLandmark,
+      shortcut: "Command+Shift+a",
     },
   ].filter(
     (item) =>
