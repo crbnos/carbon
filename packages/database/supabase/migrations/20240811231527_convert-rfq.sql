@@ -57,8 +57,15 @@ CREATE POLICY "Employees with sales_delete can delete customer part to item" ON 
   has_role('employee', "companyId")
 );
 
+
+DROP VIEW "salesRfqs";
+DROP VIEW "salesRfqLines";
+COMMIT;
+
 ALTER TABLE "salesRfq" 
   ADD COLUMN "customerLocationId" TEXT,
+  DROP COLUMN "externalNotes",
+  ADD COLUMN "notes" JSON DEFAULT '{}',
   ADD CONSTRAINT "salesRfq_customerLocationId_fkey" FOREIGN KEY ("customerLocationId") REFERENCES "customerLocation" ("id") ON DELETE SET NULL;
 
 ALTER TABLE "salesRfqLine" ENABLE ROW LEVEL SECURITY;
@@ -83,14 +90,9 @@ CREATE POLICY "Employees with sales_delete can delete salesRfqLine" ON "salesRfq
   has_role('employee', "companyId")
 );
 
-DROP VIEW "salesRfqs";
-DROP VIEW "salesRfqLines";
-
 ALTER TABLE "salesRfqLine"
   DROP COLUMN "customerPartNumber",
   DROP COLUMN "customerPartRevision";
-
-COMMIT;
 
 ALTER TABLE "salesRfqLine"
   ADD COLUMN "customerPartId" TEXT NOT NULL,

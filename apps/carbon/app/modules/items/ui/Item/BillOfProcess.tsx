@@ -18,6 +18,7 @@ import { ValidatedForm } from "@carbon/remix-validated-form";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -234,9 +235,8 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   }, 3000);
 
   const onUploadImage = async (file: File) => {
-    const fileName = `${companyId}/parts/${selectedItemId}/${Math.random()
-      .toString(16)
-      .slice(2)}-${file.name}`;
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
     const result = await supabase?.storage
       .from("private")
       .upload(fileName, file);

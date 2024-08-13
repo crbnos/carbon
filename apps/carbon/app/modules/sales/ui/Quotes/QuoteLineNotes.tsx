@@ -10,6 +10,7 @@ import {
   useDebounce,
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
+import { nanoid } from "nanoid";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { QuotationLine } from "~/modules/sales";
@@ -23,9 +24,10 @@ const QuoteLineNotes = ({ line }: { line: QuotationLine }) => {
   const { supabase } = useSupabase();
 
   const onUploadImage = async (file: File) => {
-    const fileName = `${companyId}/quote-line/${line.id}/${encodeURIComponent(
-      file.name
-    )}`;
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/quote-line/${
+      line.id
+    }/${nanoid()}.${fileType}`;
     const result = await supabase?.storage
       .from("private")
       .upload(fileName, file);

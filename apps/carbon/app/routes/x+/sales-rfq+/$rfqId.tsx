@@ -1,12 +1,22 @@
-import type { JSONContent } from "@carbon/react";
+import {
+  ClientOnly,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+  ScrollArea,
+  VStack,
+  type JSONContent,
+} from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import type { SalesRFQLine } from "~/modules/sales";
 import {
+  SalesRFQBreadcrumbs,
+  SalesRFQExplorer,
   SalesRFQHeader,
-  SalesRFQProperties,
-  getFilesByRfqId,
   getSalesRFQ,
+  getSalesRFQDocuments,
   getSalesRFQLines,
 } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -31,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [rfqSummary, lines, files] = await Promise.all([
     getSalesRFQ(client, rfqId),
     getSalesRFQLines(client, rfqId),
-    getFilesByRfqId(client, rfqId, companyId),
+    getSalesRFQDocuments(client, rfqId, companyId),
   ]);
 
   if (rfqSummary.error) {
@@ -54,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     rfqSummary: rfqSummary.data,
     lines:
-      lines.data.map((line) => ({
+      lines.data.map((line: SalesRFQLine) => ({
         ...line,
         id: line.id ?? "",
         order: line.order ?? 0,
@@ -67,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         itemId: line.itemId ?? "",
         quantity: line.quantity ?? [1],
       })) ?? [],
-    files: files.data?.files ?? [],
+    documents: files.data ?? [],
   });
 }
 
@@ -77,9 +87,36 @@ export default function SalesRFQRoute() {
       <SalesRFQHeader />
       <div className="flex h-[calc(100vh-99px)] w-full">
         <div className="flex h-full w-full overflow-y-auto">
-          <Outlet />
+          <div className="flex flex-grow overflow-hidden">
+            <ClientOnly fallback={null}>
+              {() => (
+                <ResizablePanelGroup direction="horizontal">
+                  <ResizablePanel
+                    order={1}
+                    minSize={10}
+                    defaultSize={20}
+                    className="bg-card h-full"
+                  >
+                    <ScrollArea className="h-[calc(100vh-99px)]">
+                      <div className="grid w-full h-full overflow-hidden">
+                        <SalesRFQExplorer />
+                      </div>
+                    </ScrollArea>
+                  </ResizablePanel>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel order={2}>
+                    <ScrollArea className="h-[calc(100vh-99px)]">
+                      <VStack spacing={2} className="p-2">
+                        <SalesRFQBreadcrumbs />
+                        <Outlet />
+                      </VStack>
+                    </ScrollArea>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              )}
+            </ClientOnly>
+          </div>
         </div>
-        <SalesRFQProperties />
       </div>
     </div>
   );

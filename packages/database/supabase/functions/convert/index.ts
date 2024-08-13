@@ -82,6 +82,7 @@ serve(async (req: Request) => {
                 locationId: salesRfq.data?.locationId,
                 expirationDate: salesRfq.data?.expirationDate,
                 status: "Draft",
+                notes: salesRfq.data?.notes,
                 companyId,
                 createdBy: userId,
               },
