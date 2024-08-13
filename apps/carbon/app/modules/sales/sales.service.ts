@@ -8,6 +8,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  customerAccountingValidator,
   customerContactValidator,
   customerPaymentValidator,
   customerShippingValidator,
@@ -1060,6 +1061,18 @@ export async function upsertCustomer(
     .eq("id", customer.id)
     .select("id")
     .single();
+}
+
+export async function updateCustomerAccounting(
+  client: SupabaseClient<Database>,
+  customerAccounting: z.infer<typeof customerAccountingValidator> & {
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("customer")
+    .update(sanitize(customerAccounting))
+    .eq("id", customerAccounting.id);
 }
 
 export async function updateCustomerContact(

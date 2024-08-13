@@ -14,10 +14,14 @@ export const salesRFQStatusType = [
 export const customerValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
-  customerTypeId: zfd.text(z.string().optional()),
   customerStatusId: zfd.text(z.string().optional()),
-  taxId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
+});
+
+export const customerAccountingValidator = z.object({
+  id: zfd.text(z.string()),
+  customerTypeId: zfd.text(z.string().optional()),
+  taxId: zfd.text(z.string().optional()),
 });
 
 export const customerContactValidator = z.object({

@@ -142,6 +142,8 @@ export const path = {
     customerRoot: `${x}/customer`,
     customers: `${x}/sales/customers`,
     customerAccounts: `${x}/users/customers`,
+    customerAccounting: (id: string) =>
+      generatePath(`${x}/customer/${id}/accounting`),
     customerContact: (customerId: string, id: string) =>
       generatePath(`${x}/customer/${customerId}/contacts/${id}`),
     customerContacts: (id: string) =>
@@ -659,6 +661,8 @@ export const path = {
     supplier: (id: string) => generatePath(`${x}/supplier/${id}`),
     suppliers: `${x}/purchasing/suppliers`,
     supplierAccounts: `${x}/users/suppliers`,
+    supplierAccounting: (id: string) =>
+      generatePath(`${x}/supplier/${id}/accounting`),
     supplierContact: (supplierId: string, id: string) =>
       generatePath(`${x}/supplier/${supplierId}/contacts/${id}`),
     supplierDetails: (id: string) =>
@@ -673,8 +677,6 @@ export const path = {
       generatePath(`${x}/supplier/${id}/payments`),
     supplierShipping: (id: string) =>
       generatePath(`${x}/supplier/${id}/shipping`),
-    supplierAccounting: (id: string) =>
-      generatePath(`${x}/supplier/${id}/accounting`),
     supplierRoot: `${x}/supplier`,
     supplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/${id}`),
