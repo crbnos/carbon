@@ -11,7 +11,6 @@ import {
 import SupplierAccountingForm from "~/modules/purchasing/ui/Supplier/SupplierAccountingForm";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import { getCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
@@ -32,12 +31,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  console.log({ data });
-
   if (!id) {
     throw redirect(
       path.to.supplierAccounting(id),
-      await flash(request, error(null, "Failed to update supplier"))
+      await flash(request, error(null, "Failed to update supplier accounting"))
     );
   }
 
@@ -50,11 +47,17 @@ export async function action({ request }: ActionFunctionArgs) {
   if (update.error) {
     throw redirect(
       path.to.supplierAccounting(id),
-      await flash(request, error(update.error, "Failed to update supplier"))
+      await flash(
+        request,
+        error(update.error, "Failed to update supplier accounting")
+      )
     );
   }
 
-  return json(null, await flash(request, success("Updated supplier")));
+  return json(
+    null,
+    await flash(request, success("Updated supplier accounting"))
+  );
 }
 
 export default function SupplierAccountingRoute() {
@@ -70,7 +73,6 @@ export default function SupplierAccountingRoute() {
     id: routeData?.supplier?.id ?? undefined,
     supplierTypeId: routeData?.supplier?.supplierTypeId ?? undefined,
     taxId: routeData?.supplier?.taxId ?? "",
-    ...getCustomFields(routeData?.supplier?.customFields),
   };
 
   return (
