@@ -864,13 +864,17 @@ export async function insertCustomerContact(
     customerId: string;
     companyId: string;
     contact: z.infer<typeof customerContactValidator>;
+    customerLocationId?: string;
     customFields?: Json;
   }
 ) {
   const insertContact = await client
     .from("contact")
     .insert([
-      { ...customerContact.contact, companyId: customerContact.companyId },
+      {
+        ...customerContact.contact,
+        companyId: customerContact.companyId,
+      },
     ])
     .select("id")
     .single();
@@ -889,6 +893,7 @@ export async function insertCustomerContact(
       {
         customerId: customerContact.customerId,
         contactId,
+        customerLocationId: customerContact.customerLocationId,
         customFields: customerContact.customFields,
       },
     ])
@@ -1087,13 +1092,17 @@ export async function updateCustomerContact(
   customerContact: {
     contactId: string;
     contact: z.infer<typeof customerContactValidator>;
+    customerLocationId?: string;
     customFields?: Json;
   }
 ) {
   if (customerContact.customFields) {
     const customFieldUpdate = await client
       .from("customerContact")
-      .update({ customFields: customerContact.customFields })
+      .update({
+        customFields: customerContact.customFields,
+        customerLocationId: customerContact.customerLocationId,
+      })
       .eq("contactId", customerContact.contactId);
 
     if (customFieldUpdate.error) {
