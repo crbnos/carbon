@@ -235,7 +235,7 @@ export async function getSupplierContact(
   return client
     .from("supplierContact")
     .select(
-      "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, addressLine1, addressLine2, city, state, postalCode, country(id, name), birthday, notes)"
+      "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
     )
     .eq("id", supplierContactId)
     .single();
@@ -248,7 +248,7 @@ export async function getSupplierContacts(
   return client
     .from("supplierContact")
     .select(
-      "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, addressLine1, addressLine2, city, state, postalCode, country(id, name), birthday, notes), user(id, active)"
+      "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
     )
     .eq("supplierId", supplierId);
 }

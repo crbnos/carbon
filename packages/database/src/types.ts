@@ -2173,12 +2173,7 @@ export type Database = {
       }
       contact: {
         Row: {
-          addressLine1: string | null
-          addressLine2: string | null
-          birthday: string | null
-          city: string | null
           companyId: string
-          countryCode: number | null
           email: string
           fax: string | null
           firstName: string
@@ -2188,18 +2183,11 @@ export type Database = {
           lastName: string
           mobilePhone: string | null
           notes: string | null
-          postalCode: string | null
-          state: string | null
           title: string | null
           workPhone: string | null
         }
         Insert: {
-          addressLine1?: string | null
-          addressLine2?: string | null
-          birthday?: string | null
-          city?: string | null
           companyId: string
-          countryCode?: number | null
           email: string
           fax?: string | null
           firstName: string
@@ -2209,18 +2197,11 @@ export type Database = {
           lastName: string
           mobilePhone?: string | null
           notes?: string | null
-          postalCode?: string | null
-          state?: string | null
           title?: string | null
           workPhone?: string | null
         }
         Update: {
-          addressLine1?: string | null
-          addressLine2?: string | null
-          birthday?: string | null
-          city?: string | null
           companyId?: string
-          countryCode?: number | null
           email?: string
           fax?: string | null
           firstName?: string
@@ -2230,8 +2211,6 @@ export type Database = {
           lastName?: string
           mobilePhone?: string | null
           notes?: string | null
-          postalCode?: string | null
-          state?: string | null
           title?: string | null
           workPhone?: string | null
         }
@@ -2263,13 +2242,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "contact_countryCode_fkey"
-            columns: ["countryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["id"]
           },
         ]
       }
