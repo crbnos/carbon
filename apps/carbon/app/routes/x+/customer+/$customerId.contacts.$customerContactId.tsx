@@ -59,7 +59,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id, contactId, ...contact } = validation.data;
+  const { id, contactId, customerLocationId, ...contact } = validation.data;
+
+  console.log({ customerLocationId });
 
   if (id !== customerContactId)
     throw badRequest("customerContactId does not match id from form data");
@@ -70,6 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await updateCustomerContact(client, {
     contactId,
     contact,
+    customerLocationId,
     customFields: setCustomFields(formData),
   });
 
@@ -107,12 +110,7 @@ export default function EditCustomerContactRoute() {
     homePhone: contact?.contact?.homePhone ?? "",
     workPhone: contact?.contact?.workPhone ?? "",
     fax: contact?.contact?.fax ?? "",
-    addressLine1: contact?.contact?.addressLine1 ?? "",
-    addressLine2: contact?.contact?.addressLine2 ?? "",
-    city: contact?.contact?.city ?? "",
-    state: contact?.contact?.state ?? "",
-    postalCode: contact?.contact?.postalCode ?? "",
-    birthday: contact?.contact?.birthday ?? undefined,
+    customerLocationId: contact?.customerLocationId ?? "",
     ...getCustomFields(contact?.customFields),
   };
 
