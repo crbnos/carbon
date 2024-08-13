@@ -175,7 +175,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         id: "createdBy",
         header: "Created By",
         cell: ({ row }) => (
-          <EmployeeAvatar employeeId={row.original.employeeId} />
+          <EmployeeAvatar employeeId={row.original.createdBy} />
         ),
         meta: {
           filter: {

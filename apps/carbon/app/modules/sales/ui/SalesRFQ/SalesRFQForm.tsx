@@ -15,6 +15,7 @@ import {
   CustomFormFields,
   Customer,
   CustomerContact,
+  CustomerLocation,
   DatePicker,
   Hidden,
   Input,
@@ -38,6 +39,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
   );
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
+  const isDraft = initialValues.status === "Draft";
 
   const statusOptions = salesRFQStatusType.map((status) => ({
     label: status,
@@ -77,6 +79,11 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                   setCustomer(newValue?.value as string | undefined)
                 }
               />
+              <CustomerLocation
+                name="customerLocationId"
+                label="Customer Location"
+                customer={customer}
+              />
               <Input name="customerReference" label="Customer Ref. Number" />
               {isEditing && permissions.can("delete", "sales") && (
                 <Select
@@ -104,7 +111,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 label="Expiration Date"
                 isDisabled={isCustomer}
               />
-              <Location name="locationId" label="Location" />
+              <Location name="locationId" label="RFQ Location" />
               <CustomFormFields table="salesRfq" />
             </div>
           </VStack>
@@ -112,9 +119,10 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
         <CardFooter>
           <Submit
             isDisabled={
-              isEditing
+              !isDraft ||
+              (isEditing
                 ? !permissions.can("update", "sales")
-                : !permissions.can("create", "sales")
+                : !permissions.can("create", "sales"))
             }
           >
             Save

@@ -4,7 +4,13 @@ import { Link, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { LuPencil } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  EmployeeAvatar,
+  Hyperlink,
+  New,
+  SupplierAvatar,
+  Table,
+} from "~/components";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type {
@@ -36,7 +42,7 @@ const SuppliersTable = memo(
           header: "Name",
           cell: ({ row }) => (
             <Hyperlink to={path.to.supplierDetails(row.original.id!)}>
-              {row.original.name}
+              <SupplierAvatar supplierId={row.original.id!} />
             </Hyperlink>
           ),
         },

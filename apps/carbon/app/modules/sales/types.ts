@@ -1,5 +1,9 @@
 import type { Database } from "@carbon/database";
+import type { JSONContent } from "@carbon/react";
+import type { z } from "zod";
+import type { ModelUpload } from "../items/types";
 import type { QuantityEffect } from "../shared";
+import type { salesRfqLineValidator } from "./sales.models";
 import type {
   getCustomer,
   getCustomerContacts,
@@ -130,5 +134,10 @@ export type SalesOrderTransactionType =
 export type SalesRFQ = NonNullable<
   Awaited<ReturnType<typeof getSalesRFQs>>["data"]
 >[number];
+
+export type SalesRFQLine = z.infer<typeof salesRfqLineValidator> & {
+  internalNotes: JSONContent;
+  externalNotes: JSONContent;
+} & ModelUpload;
 
 export type SalesRFQStatus = Database["public"]["Enums"]["salesRfqStatus"];

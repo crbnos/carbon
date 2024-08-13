@@ -1,16 +1,14 @@
-import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { parseDate } from "@internationalized/date";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { useLoaderData, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+import { useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import { useRouteData } from "~/hooks";
-import type { SalesRFQ, SalesRFQStatus } from "~/modules/sales";
+import type { SalesRFQ, SalesRFQLine, SalesRFQStatus } from "~/modules/sales";
 import {
   SalesRFQForm,
-  getSalesRFQLines,
   salesRfqValidator,
   upsertSalesRFQ,
 } from "~/modules/sales";
@@ -21,38 +19,6 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
-
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales",
-  });
-
-  const { rfqId } = params;
-  if (!rfqId) throw new Error("Could not find rfqId");
-
-  const lines = await getSalesRFQLines(client, rfqId);
-  if (lines.error) {
-    throw redirect(
-      path.to.salesRfqs,
-      await flash(request, error(lines.error, "Failed to load RFQ lines"))
-    );
-  }
-
-  return json({
-    lines: lines.data.map((line) => ({
-      ...line,
-      id: line.id ?? "",
-      order: line.order ?? 0,
-      unitOfMeasureCode: line.unitOfMeasureCode ?? "",
-      customerRevisionId: line.customerRevisionId ?? "",
-      description: line.description ?? "",
-      externalNotes: (line.externalNotes ?? {}) as JSONContent,
-      internalNotes: (line.internalNotes ?? {}) as JSONContent,
-      itemId: line.itemId ?? "",
-      quantity: line.quantity ?? [1],
-    })) ?? [1],
-  });
-}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -97,10 +63,9 @@ export default function SalesRFQDetailsRoute() {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const { lines } = useLoaderData<typeof loader>();
-
   const rfqData = useRouteData<{
     rfqSummary: SalesRFQ;
+    lines: SalesRFQLine[];
     files: (FileObject & { salesRfqLineId: string | null })[];
   }>(path.to.salesRfq(rfqId));
 
@@ -125,10 +90,13 @@ export default function SalesRFQDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <SalesRFQForm key={initialValues.id} initialValues={initialValues} />
+      <SalesRFQForm
+        key={`${initialValues.id}:${initialValues.status}`}
+        initialValues={initialValues}
+      />
       <SalesRFQLines
-        // @ts-ignore
-        lines={lines}
+        key={initialValues.id}
+        lines={rfqData?.lines ?? []}
         files={rfqData?.files ?? []}
       />
     </VStack>

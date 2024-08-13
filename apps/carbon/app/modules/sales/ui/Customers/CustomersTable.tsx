@@ -4,7 +4,13 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { LuPencil } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  CustomerAvatar,
+  EmployeeAvatar,
+  Hyperlink,
+  New,
+  Table,
+} from "~/components";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Customer, CustomerStatus, CustomerType } from "~/modules/sales";
@@ -32,7 +38,7 @@ const CustomersTable = memo(
           header: "Name",
           cell: ({ row }) => (
             <Hyperlink to={path.to.customerDetails(row.original.id!)}>
-              {row.original.name}
+              <CustomerAvatar customerId={row.original.id!} />
             </Hyperlink>
           ),
         },
