@@ -38,12 +38,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id, contactId, ...contact } = validation.data;
+  const { id, contactId, supplierLocationId, ...contact } = validation.data;
 
   const createSupplierContact = await insertSupplierContact(client, {
     supplierId,
     companyId,
     contact,
+    supplierLocationId,
     customFields: setCustomFields(formData),
   });
   if (createSupplierContact.error) {

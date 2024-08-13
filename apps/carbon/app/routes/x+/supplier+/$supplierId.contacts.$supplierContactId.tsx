@@ -59,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id, contactId, ...contact } = validation.data;
+  const { id, contactId, supplierLocationId, ...contact } = validation.data;
 
   if (id !== supplierContactId)
     throw badRequest("supplierContactId does not match id from form data");
@@ -70,6 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await updateSupplierContact(client, {
     contactId,
     contact,
+    supplierLocationId,
     customFields: setCustomFields(formData),
   });
 
@@ -107,12 +108,7 @@ export default function EditSupplierContactRoute() {
     homePhone: contact?.contact?.homePhone ?? "",
     workPhone: contact?.contact?.workPhone ?? "",
     fax: contact?.contact?.fax ?? "",
-    addressLine1: contact?.contact?.addressLine1 ?? "",
-    addressLine2: contact?.contact?.addressLine2 ?? "",
-    city: contact?.contact?.city ?? "",
-    state: contact?.contact?.state ?? "",
-    postalCode: contact?.contact?.postalCode ?? "",
-    birthday: contact?.contact?.birthday ?? undefined,
+    supplierLocationId: contact?.supplierLocationId ?? "",
     ...getCustomFields(contact?.customFields),
   };
 

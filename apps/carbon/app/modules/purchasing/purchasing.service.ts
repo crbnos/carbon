@@ -452,6 +452,7 @@ export async function insertSupplierContact(
     supplierId: string;
     companyId: string;
     contact: z.infer<typeof supplierContactValidator>;
+    supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
@@ -478,6 +479,7 @@ export async function insertSupplierContact(
       {
         supplierId: supplierContact.supplierId,
         contactId,
+        supplierLocationId: supplierContact.supplierLocationId,
         customFields: supplierContact.customFields,
       },
     ])
@@ -612,13 +614,17 @@ export async function updateSupplierContact(
   supplierContact: {
     contactId: string;
     contact: z.infer<typeof supplierContactValidator>;
+    supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
   if (supplierContact.customFields) {
     const customFieldUpdate = await client
       .from("supplierContact")
-      .update({ customFields: supplierContact.customFields })
+      .update({
+        customFields: supplierContact.customFields,
+        supplierLocationId: supplierContact.supplierLocationId,
+      })
       .eq("contactId", supplierContact.contactId);
 
     if (customFieldUpdate.error) {
