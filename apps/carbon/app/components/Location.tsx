@@ -15,12 +15,16 @@ type LocationProps = {
       state: string | null;
       addressLine1: string | null;
       postalCode: string | null;
-    };
+    } | null;
   };
   actions: Action[];
 };
 
 const Location = ({ location, actions }: LocationProps) => {
+  if (!location.address) {
+    return null;
+  }
+
   const locationName = location.name;
   const addressLine1 = location.address.addressLine1;
   const cityStateZip = `${location.address.city ?? ""}, ${
