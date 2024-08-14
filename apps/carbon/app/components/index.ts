@@ -1,4 +1,3 @@
-import Address from "./Address";
 import Assignee, { useOptimisticAssignment } from "./Assignee";
 import Avatar from "./Avatar";
 import { BreadcrumbItem, BreadcrumbLink, Breadcrumbs } from "./Breadcrumb";
@@ -20,7 +19,6 @@ import SupplierAvatar from "./SupplierAvatar";
 import Table from "./Table";
 
 export {
-  Address,
   Assignee,
   Avatar,
   BreadcrumbItem,
