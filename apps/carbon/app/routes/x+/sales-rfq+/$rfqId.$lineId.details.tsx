@@ -42,8 +42,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     );
   }
 
-  console.log({ files });
-
   return json({
     line: line.data,
     files: files?.data ?? [],

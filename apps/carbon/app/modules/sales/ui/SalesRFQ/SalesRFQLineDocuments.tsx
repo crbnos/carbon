@@ -156,8 +156,6 @@ const SalesRFQLineDocuments = ({
       salesRfqLineId,
     });
 
-  console.log({ files });
-
   return (
     <Card className="flex-grow">
       <HStack className="justify-between items-start">
