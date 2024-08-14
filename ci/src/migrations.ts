@@ -58,11 +58,11 @@ async function migrate(): Promise<void> {
       await $$`supabase link`;
 
       console.log(`✅ 🐣 Starting migrations for ${customer.name}`);
-      await $$`supabase db push`;
+      await $$`supabase db reset --linked`;
       console.log(`✅ 🐣 Starting deployments for ${customer.name}`);
       await $$`supabase functions deploy`;
 
-      if (!customer.seeded) {
+      if (true || !customer.seeded) {
         try {
           console.log(`✅ 🌱 Seeding ${customer.name}`);
           await $$`tsx ../../packages/database/src/seed.ts`;
