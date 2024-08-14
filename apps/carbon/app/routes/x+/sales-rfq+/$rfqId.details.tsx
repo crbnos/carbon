@@ -21,6 +21,7 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { SalesRFQ, SalesRFQLine, SalesRFQStatus } from "~/modules/sales";
 import {
+  SalesRFQDocuments,
   SalesRFQForm,
   salesRfqValidator,
   upsertSalesRFQ,
@@ -78,7 +79,7 @@ export default function SalesRFQDetailsRoute() {
   const rfqData = useRouteData<{
     rfqSummary: SalesRFQ;
     lines: SalesRFQLine[];
-    files: (FileObject & { salesRfqLineId: string | null })[];
+    files: FileObject[];
   }>(path.to.salesRfq(rfqId));
 
   if (!rfqData) throw new Error("Could not find rfq data");
@@ -106,6 +107,7 @@ export default function SalesRFQDetailsRoute() {
         key={`${initialValues.id}:${initialValues.status}`}
         initialValues={initialValues}
       />
+      <SalesRFQDocuments id={rfqId} attachments={rfqData?.files ?? []} />
       <SalesRFQNotes salesRfq={rfqData.rfqSummary} />
     </VStack>
   );

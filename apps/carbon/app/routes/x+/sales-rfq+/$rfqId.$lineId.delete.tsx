@@ -1,8 +1,9 @@
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { redirect, type ActionFunctionArgs } from "@remix-run/node";
 import { deleteSalesRFQLine } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
+import { path } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -11,23 +12,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "sales",
   });
 
-  const { rfqId, id } = params;
+  const { rfqId, lineId } = params;
   if (!rfqId) {
     throw new Error("rfqId not found");
   }
-  if (!id) {
-    throw new Error("id not found");
+  if (!lineId) {
+    throw new Error("lineId not found");
   }
 
-  const deleteLine = await deleteSalesRFQLine(client, id);
+  const deleteLine = await deleteSalesRFQLine(client, lineId);
   if (deleteLine.error) {
-    return json(
-      {
-        id: null,
-      },
-      await flash(request, error(deleteLine.error, "Failed to delete RFQ line"))
+    throw redirect(
+      path.to.quoteLine(rfqId, lineId),
+      await flash(
+        request,
+        error(deleteLine.error, "Failed to update quote line")
+      )
     );
   }
 
-  return json({});
+  throw redirect(path.to.salesRfq(rfqId));
 }

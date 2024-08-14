@@ -2,23 +2,17 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
-import { Fragment, useMemo } from "react";
-import type { Tree } from "~/components/TreeView";
-import { usePermissions, useRouteData } from "~/hooks";
+import { Fragment } from "react";
+import { usePermissions } from "~/hooks";
 import { CadModel } from "~/modules/items";
-import type { QuotationPrice, QuoteMethod } from "~/modules/sales";
 import {
-  getFilesByQuoteLineId,
-  getQuoteLine,
-  getQuoteLinePrices,
-  getQuoteOperationsByLine,
-  QuoteLineCosting,
-  QuoteLineDocuments,
-  QuoteLineForm,
-  QuoteLineNotes,
-  quoteLineValidator,
-  upsertQuoteLine,
-  useLineCosts,
+  getSalesRFQLine,
+  getSalesRfqLineDocuments,
+  SalesRFQLineDocuments,
+  SalesRFQLineForm,
+  SalesRFQLineNotes,
+  salesRfqLineValidator,
+  upsertSalesRFQLine,
 } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -32,34 +26,27 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     view: "sales",
   });
 
-  const { quoteId, lineId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
+  const { rfqId, lineId } = params;
+  if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const [line, operations, files, prices] = await Promise.all([
-    getQuoteLine(client, lineId),
-    getQuoteOperationsByLine(client, lineId),
-    getFilesByQuoteLineId(client, companyId, lineId),
-    getQuoteLinePrices(client, lineId),
+  const [line, files] = await Promise.all([
+    getSalesRFQLine(client, lineId),
+    getSalesRfqLineDocuments(client, companyId, lineId),
   ]);
 
   if (line.error) {
     throw redirect(
-      path.to.quote(quoteId),
+      path.to.quote(rfqId),
       await flash(request, error(line.error, "Failed to load line"))
     );
   }
 
+  console.log({ files });
+
   return json({
     line: line.data,
-    operations: operations?.data ?? [],
     files: files?.data ?? [],
-    pricesByQuantity: (prices?.data ?? []).reduce<
-      Record<number, QuotationPrice>
-    >((acc, price) => {
-      acc[price.quantity] = price;
-      return acc;
-    }, {}),
   });
 };
 
@@ -69,13 +56,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "sales",
   });
 
-  const { quoteId, lineId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
+  const { rfqId, lineId } = params;
+  if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
   const formData = await request.formData();
 
-  const validation = await validator(quoteLineValidator).validate(formData);
+  const validation = await validator(salesRfqLineValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -83,93 +70,70 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const updateQuotationLine = await upsertQuoteLine(client, {
+  const updateLine = await upsertSalesRFQLine(client, {
     id: lineId,
     ...data,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (updateQuotationLine.error) {
+  if (updateLine.error) {
     throw redirect(
-      path.to.quoteLine(quoteId, lineId),
+      path.to.salesRfqLine(rfqId, lineId),
       await flash(
         request,
-        error(updateQuotationLine.error, "Failed to update quote line")
+        error(updateLine.error, "Failed to update quote line")
       )
     );
   }
 
-  throw redirect(path.to.quoteLine(quoteId, lineId));
+  throw redirect(path.to.salesRfqLine(rfqId, lineId));
 }
 
-export default function QuoteLine() {
-  const { line, operations, files } = useLoaderData<typeof loader>();
+export default function SalesRFQLine() {
+  const { line, files } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const { quoteId, lineId } = useParams();
-  if (!quoteId) throw new Error("Could not find quoteId");
+  const { rfqId, lineId } = useParams();
+  if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
-
-  const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
-    path.to.quote(quoteId)
-  );
-
-  const methodTree = useMemo(
-    () => quoteData?.methods?.find((m) => m.data.quoteLineId === line.id),
-    [quoteData, line.id]
-  );
-
-  const getLineCosts = useLineCosts({
-    methodTree,
-    operations,
-  });
 
   const initialValues = {
     ...line,
     id: line.id ?? undefined,
-    quoteId: line.quoteId ?? "",
+    salesRfqId: line.salesRfqId ?? "",
     customerPartId: line.customerPartId ?? "",
     customerPartRevision: line.customerPartRevision ?? "",
     description: line.description ?? "",
-    estimatorId: line.estimatorId ?? "",
     itemId: line.itemId ?? "",
-    itemReadableId: line.itemReadableId ?? "",
-    methodType: line.methodType ?? "Make",
-    modelUploadId: line.modelUploadId ?? undefined,
-    status: line.status ?? "Draft",
     quantity: line.quantity ?? [1],
+    order: line.order ?? 1,
     unitOfMeasureCode: line.unitOfMeasureCode ?? "",
+    modelUploadId: line.modelUploadId ?? undefined,
   };
 
   return (
     <Fragment key={lineId}>
-      <QuoteLineForm key={lineId} initialValues={initialValues} />
+      <SalesRFQLineForm key={lineId} initialValues={initialValues} />
       {permissions.is("employee") && (
         <Fragment key={lineId}>
           <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
             <CadModel
               autodeskUrn={line?.autodeskUrn ?? null}
               isReadOnly={!permissions.can("update", "sales")}
-              metadata={{ quoteLineId: line.id ?? undefined }}
+              metadata={{ salesRfqLineId: line.id ?? undefined }}
               modelPath={line?.modelPath ?? null}
               title="CAD Model"
               uploadClassName="min-h-[360px]"
               viewerClassName="min-h-[360px]"
             />
-            <QuoteLineDocuments
+            <SalesRFQLineDocuments
               files={files ?? []}
-              quoteId={quoteId}
-              quoteLineId={lineId}
+              rfqId={rfqId}
+              salesRfqLineId={lineId}
               modelUpload={line ?? undefined}
             />
           </div>
-          <QuoteLineNotes line={line} />
-          {line.methodType === "Make" && (
-            <QuoteLineCosting
-              quantities={line.quantity ?? [1]}
-              getLineCosts={getLineCosts}
-            />
-          )}
+          <SalesRFQLineNotes line={line} />
 
           <Outlet />
         </Fragment>

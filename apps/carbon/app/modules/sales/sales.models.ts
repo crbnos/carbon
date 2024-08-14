@@ -432,7 +432,7 @@ export const salesRfqValidator = z.object({
 });
 
 export const salesRfqLineValidator = z.object({
-  id: z.string().min(1, { message: "ID is required" }),
+  id: zfd.text(z.string().optional()),
   salesRfqId: z.string().min(20, { message: "RFQ is required" }),
   customerPartId: z.string().min(1, { message: "Part Number is required" }),
   customerPartRevision: zfd.text(z.string().optional()),

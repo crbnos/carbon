@@ -35,13 +35,7 @@ import { path } from "~/utils/path";
 
 import { useCallback } from "react";
 
-const useQuoteLineDocuments = ({
-  quoteId,
-  quoteLineId,
-}: {
-  quoteId: string;
-  quoteLineId: string;
-}) => {
+const useQuoteLineDocuments = ({ quoteLineId }: { quoteLineId: string }) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
@@ -155,7 +149,6 @@ const QuoteLineDocuments = ({
 }: QuoteLineDocumentsProps) => {
   const { canDelete, download, deleteFile, deleteModel, getPath, viewModel } =
     useQuoteLineDocuments({
-      quoteId,
       quoteLineId,
     });
 

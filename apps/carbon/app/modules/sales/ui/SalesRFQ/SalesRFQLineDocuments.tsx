@@ -1,4 +1,9 @@
 import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -31,10 +36,8 @@ import { path } from "~/utils/path";
 import { useCallback } from "react";
 
 const useSalesRFQLineDocuments = ({
-  rfqId,
   salesRfqLineId,
 }: {
-  rfqId: string;
   salesRfqLineId: string;
 }) => {
   const navigate = useNavigate();
@@ -47,9 +50,9 @@ const useSalesRFQLineDocuments = ({
   const canUpdate = permissions.can("update", "sales");
   const getPath = useCallback(
     (file: ItemFile) => {
-      return `${company.id}/sales-rfq/${rfqId}/${salesRfqLineId}/${file.name}`;
+      return `${company.id}/sales-rfq-line/${salesRfqLineId}/${file.name}`;
     },
-    [company.id, rfqId, salesRfqLineId]
+    [company.id, salesRfqLineId]
   );
 
   const deleteFile = useCallback(
@@ -136,7 +139,7 @@ const useSalesRFQLineDocuments = ({
 };
 
 type SalesRFQLineDocumentsProps = {
-  files: (FileObject & { salesRfqLineId: string | null })[];
+  files: FileObject[];
   rfqId: string;
   salesRfqLineId: string;
   modelUpload?: ModelUpload;
@@ -150,102 +153,55 @@ const SalesRFQLineDocuments = ({
 }: SalesRFQLineDocumentsProps) => {
   const { canDelete, download, deleteFile, deleteModel, getPath, viewModel } =
     useSalesRFQLineDocuments({
-      rfqId,
       salesRfqLineId,
     });
 
-  return (
-    <div className="min-h-[300px]">
-      <Table>
-        <Thead>
-          <Tr>
-            <Th>Name</Th>
-            <Th>Size</Th>
+  console.log({ files });
 
-            <Th className="flex items-center justify-end">
-              <SalesRFQLineDocumentForm
-                rfqId={rfqId}
-                salesRfqLineId={salesRfqLineId}
-              />
-            </Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {modelUpload?.autodeskUrn && (
+  return (
+    <Card className="flex-grow">
+      <HStack className="justify-between items-start">
+        <CardHeader>
+          <CardTitle>Files</CardTitle>
+        </CardHeader>
+        <CardAction>
+          <SalesRFQLineDocumentForm
+            rfqId={rfqId}
+            salesRfqLineId={salesRfqLineId}
+          />
+        </CardAction>
+      </HStack>
+      <CardContent>
+        <Table>
+          <Thead>
             <Tr>
-              <Td>
-                <HStack>
-                  <LuAxis3D className="text-green-500 w-6 h-6" />
-                  <Hyperlink
-                    target="_blank"
-                    onClick={() => viewModel(modelUpload)}
-                  >
-                    {modelUpload?.autodeskUrn
-                      ? modelUpload.modelName
-                      : "Uploading..."}
-                  </Hyperlink>
-                </HStack>
-              </Td>
-              <Td>
-                {modelUpload.modelSize
-                  ? convertKbToString(
-                      Math.floor((modelUpload.modelSize ?? 0) / 1024)
-                    )
-                  : "--"}
-              </Td>
-              <Td>
-                <div className="flex justify-end w-full">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <IconButton
-                        aria-label="More"
-                        icon={<MdMoreVert />}
-                        variant="secondary"
-                      />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => viewModel(modelUpload)}>
-                        View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled={!canDelete}
-                        onClick={() => deleteModel(salesRfqLineId)}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </Td>
+              <Th>Name</Th>
+              <Th>Size</Th>
+              <Th />
             </Tr>
-          )}
-          {files.map((file) => {
-            const type = getDocumentType(file.name);
-            return (
-              <Tr key={file.id}>
+          </Thead>
+          <Tbody>
+            {modelUpload?.autodeskUrn && (
+              <Tr>
                 <Td>
                   <HStack>
-                    <DocumentIcon type={type} />
-                    <Hyperlink onClick={() => download(file)}>
-                      {["PDF", "Image"].includes(type) ? (
-                        <DocumentPreview
-                          bucket="private"
-                          pathToFile={getPath(file)}
-                          // @ts-ignore
-                          type={type}
-                        >
-                          {file.name}
-                        </DocumentPreview>
-                      ) : (
-                        file.name
-                      )}
+                    <LuAxis3D className="text-green-500 w-6 h-6" />
+                    <Hyperlink
+                      target="_blank"
+                      onClick={() => viewModel(modelUpload)}
+                    >
+                      {modelUpload?.autodeskUrn
+                        ? modelUpload.modelName
+                        : "Uploading..."}
                     </Hyperlink>
                   </HStack>
                 </Td>
                 <Td>
-                  {convertKbToString(
-                    Math.floor((file.metadata?.size ?? 0) / 1024)
-                  )}
+                  {modelUpload.modelSize
+                    ? convertKbToString(
+                        Math.floor((modelUpload.modelSize ?? 0) / 1024)
+                      )
+                    : "--"}
                 </Td>
                 <Td>
                   <div className="flex justify-end w-full">
@@ -258,12 +214,14 @@ const SalesRFQLineDocuments = ({
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => download(file)}>
-                          Download
+                        <DropdownMenuItem
+                          onClick={() => viewModel(modelUpload)}
+                        >
+                          View
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!canDelete}
-                          onClick={() => deleteFile(file)}
+                          onClick={() => deleteModel(salesRfqLineId)}
                         >
                           Delete
                         </DropdownMenuItem>
@@ -272,21 +230,76 @@ const SalesRFQLineDocuments = ({
                   </div>
                 </Td>
               </Tr>
-            );
-          })}
-          {files.length === 0 && !modelUpload && (
-            <Tr>
-              <Td
-                colSpan={24}
-                className="py-8 text-muted-foreground text-center"
-              >
-                No files
-              </Td>
-            </Tr>
-          )}
-        </Tbody>
-      </Table>
-    </div>
+            )}
+            {files.map((file) => {
+              const type = getDocumentType(file.name);
+              return (
+                <Tr key={file.id}>
+                  <Td>
+                    <HStack>
+                      <DocumentIcon type={type} />
+                      <Hyperlink onClick={() => download(file)}>
+                        {["PDF", "Image"].includes(type) ? (
+                          <DocumentPreview
+                            bucket="private"
+                            pathToFile={getPath(file)}
+                            // @ts-ignore
+                            type={type}
+                          >
+                            {file.name}
+                          </DocumentPreview>
+                        ) : (
+                          file.name
+                        )}
+                      </Hyperlink>
+                    </HStack>
+                  </Td>
+                  <Td>
+                    {convertKbToString(
+                      Math.floor((file.metadata?.size ?? 0) / 1024)
+                    )}
+                  </Td>
+                  <Td>
+                    <div className="flex justify-end w-full">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton
+                            aria-label="More"
+                            icon={<MdMoreVert />}
+                            variant="secondary"
+                          />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => download(file)}>
+                            Download
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={!canDelete}
+                            onClick={() => deleteFile(file)}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </Td>
+                </Tr>
+              );
+            })}
+            {files.length === 0 && !modelUpload && (
+              <Tr>
+                <Td
+                  colSpan={24}
+                  className="py-8 text-muted-foreground text-center"
+                >
+                  No files
+                </Td>
+              </Tr>
+            )}
+          </Tbody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -309,7 +322,7 @@ const SalesRFQLineDocumentForm = ({
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && supabase && company) {
       const file = e.target.files[0];
-      const fileName = `${company.id}/sales-rfq/${rfqId}/${salesRfqLineId}/${file.name}`;
+      const fileName = `${company.id}/sales-rfq-line/${salesRfqLineId}/${file.name}`;
 
       const fileUpload = await supabase.storage
         .from("private")
