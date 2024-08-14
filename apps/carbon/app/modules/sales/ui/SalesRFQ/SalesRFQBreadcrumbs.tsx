@@ -33,7 +33,7 @@ const SalesRFQBreadcrumbs = () => {
               <BreadcrumbItem>
                 <Button variant="ghost" asChild>
                   <Link to={path.to.salesRfqLine(rfqId, line.id!)}>
-                    {line.itemReadableId}
+                    {line.customerPartId}
                   </Link>
                 </Button>
               </BreadcrumbItem>

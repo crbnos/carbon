@@ -172,16 +172,19 @@ const DocumentsTable = memo(
             <HStack>
               {row.original.favorite ? (
                 <LuPin
-                  className="cursor-pointer w-4 h-4 outline-primary/50 fill-yellow-400"
+                  className="cursor-pointer w-4 h-4 outline-primary/50 fill-yellow-400 flex-shrink-0"
                   onClick={() => onFavorite(row.original)}
                 />
               ) : (
                 <LuPin
-                  className="cursor-pointer w-4 h-4 text-muted-foreground"
+                  className="cursor-pointer w-4 h-4 text-muted-foreground flex-shrink-0"
                   onClick={() => onFavorite(row.original)}
                 />
               )}
-              <DocumentIcon type={row.original.type!} />
+              <DocumentIcon
+                className="flex-shrink-0"
+                type={row.original.type!}
+              />
               <Hyperlink
                 onClick={() => view(row.original)}
                 className="max-w-[260px] truncate"

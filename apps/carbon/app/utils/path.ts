@@ -248,7 +248,7 @@ export const path = {
       generatePath(`${x}/sales-order/${orderId}/lines/delete/${lineId}`),
     deleteSalesRfq: (id: string) => generatePath(`${x}/sales-rfq/delete/${id}`),
     deleteSalesRfqLine: (id: string, lineId: string) =>
-      generatePath(`${x}/sales-rfq/${id}/lines/delete/${lineId}`),
+      generatePath(`${x}/sales-rfq/${id}/${lineId}/delete`),
     deleteShift: (id: string) =>
       generatePath(`${x}/resources/shifts/delete/${id}`),
     deleteShippingMethod: (id: string) =>
@@ -451,8 +451,7 @@ export const path = {
     newSalesOrderLine: (id: string) =>
       generatePath(`${x}/sales-order/${id}/lines/new`),
     newSalesRFQ: `${x}/sales-rfq/new`,
-    newSalesRFQLine: (id: string) =>
-      generatePath(`${x}/sales-rfq/${id}/lines/new`),
+    newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
     newShift: `${x}/resources/shifts/new`,
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
     newService: `${x}/service/new`,
@@ -634,7 +633,7 @@ export const path = {
       generatePath(`${x}/sales-rfq/${id}/details`),
     salesRfqFavorite: `${x}/sales/rfqs/favorite`,
     salesRfqLine: (id: string, lineId: string) =>
-      generatePath(`${x}/sales-rfq/${id}/lines/${lineId}`),
+      generatePath(`${x}/sales-rfq/${id}/${lineId}/details`),
     salesRfqLinesOrder: (id: string) =>
       generatePath(`${x}/sales-rfq/${id}/lines/order`),
     salesRfqRoot: `${x}/sales-rfq`,

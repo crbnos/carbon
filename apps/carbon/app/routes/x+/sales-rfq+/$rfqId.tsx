@@ -41,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [rfqSummary, lines, files] = await Promise.all([
     getSalesRFQ(client, rfqId),
     getSalesRFQLines(client, rfqId),
-    getSalesRFQDocuments(client, rfqId, companyId),
+    getSalesRFQDocuments(client, companyId, rfqId),
   ]);
 
   if (rfqSummary.error) {
@@ -77,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         itemId: line.itemId ?? "",
         quantity: line.quantity ?? [1],
       })) ?? [],
-    documents: files.data ?? [],
+    files: files.data ?? [],
   });
 }
 

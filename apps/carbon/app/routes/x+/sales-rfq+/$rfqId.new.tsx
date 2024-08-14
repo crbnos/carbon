@@ -1,10 +1,11 @@
 import { validationError, validator } from "@carbon/remix-validated-form";
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { redirect, type ActionFunctionArgs } from "@remix-run/node";
 import { salesRfqLineValidator, upsertSalesRFQLine } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
+import { path } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -13,12 +14,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "parts",
   });
 
-  const { rfqId, id } = params;
+  const { rfqId } = params;
   if (!rfqId) {
     throw new Error("rfqId not found");
-  }
-  if (!id) {
-    throw new Error("id not found");
   }
 
   const formData = await request.formData();
@@ -28,37 +26,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateSalesRfqLine = await upsertSalesRFQLine(client, {
-    ...validation.data,
-    id: id,
+  const { id, ...data } = validation.data;
+
+  const insertLine = await upsertSalesRFQLine(client, {
+    ...data,
     companyId,
-    updatedBy: userId,
+    createdBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updateSalesRfqLine.error) {
-    return json(
-      {
-        id: null,
-      },
-      await flash(
-        request,
-        error(updateSalesRfqLine.error, "Failed to update RFQ line")
-      )
+  if (insertLine.error) {
+    throw redirect(
+      path.to.salesRfq(rfqId),
+      await flash(request, error(insertLine.error, "Failed to insert RFQ line"))
     );
   }
 
-  const salesRfqLineId = updateSalesRfqLine.data?.id;
-  if (!salesRfqLineId) {
-    return json(
-      {
-        id: null,
-      },
-      await flash(
-        request,
-        error(updateSalesRfqLine, "Failed to update RFQ line")
-      )
+  const lineId = insertLine.data?.id;
+  if (!lineId) {
+    throw redirect(
+      path.to.salesRfq(rfqId),
+      await flash(request, error(insertLine, "Failed to insert RFQ line"))
     );
   }
 
-  return json({ id: salesRfqLineId });
+  throw redirect(path.to.salesRfqLine(rfqId, lineId));
 }

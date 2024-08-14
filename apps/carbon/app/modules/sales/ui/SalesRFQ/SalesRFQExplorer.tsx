@@ -23,16 +23,17 @@ import { MdMoreVert } from "react-icons/md";
 import { Empty } from "~/components";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
-import type { SalesRFQLine } from "../../types";
+import type { SalesRFQ, SalesRFQLine } from "../../types";
 import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
-// import NewSalesRFQLinesForm from "./NewSalesRFQLinesForm";
+import SalesRFQLineForm from "./SalesRFQLineForm";
 
 export default function SalesRFQExplorer() {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
-  const salesRfqData = useRouteData<{ lines: SalesRFQLine[] }>(
-    path.to.salesRfq(rfqId)
-  );
+  const salesRfqData = useRouteData<{
+    rfqSummary: SalesRFQ;
+    lines: SalesRFQLine[];
+  }>(path.to.salesRfq(rfqId));
   const permissions = usePermissions();
 
   const newSalesRFQLineDisclosure = useDisclosure();
@@ -57,6 +58,20 @@ export default function SalesRFQExplorer() {
     },
   });
 
+  const salesRfqLineInitialValues = {
+    salesRfqId: rfqId,
+    customerPartId: "",
+    customerPartRevision: "",
+    description: "",
+    itemId: "",
+    itemReadableId: "",
+    quantity: [1],
+    order: 1,
+    unitOfMeasureCode: "EA",
+  };
+
+  const isDisabled = salesRfqData?.rfqSummary.status !== "Draft";
+
   return (
     <>
       <VStack className="w-full h-[calc(100vh-99px)] justify-between">
@@ -66,6 +81,7 @@ export default function SalesRFQExplorer() {
               <SalesRFQLineItem
                 key={line.id}
                 line={line}
+                isDisabled={isDisabled}
                 onDelete={onDeleteLine}
               />
             ))
@@ -74,6 +90,7 @@ export default function SalesRFQExplorer() {
               {permissions.can("update", "sales") && (
                 <Button
                   leftIcon={<LuPlus />}
+                  isDisabled={isDisabled}
                   onClick={newSalesRFQLineDisclosure.onOpen}
                 >
                   Add Line Item
@@ -88,7 +105,7 @@ export default function SalesRFQExplorer() {
               <Button
                 ref={newButtonRef}
                 className="w-full"
-                isDisabled={!permissions.can("update", "sales")}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
                 leftIcon={<LuPlus />}
                 onClick={newSalesRFQLineDisclosure.onOpen}
               >
@@ -104,12 +121,13 @@ export default function SalesRFQExplorer() {
           </Tooltip>
         </div>
       </VStack>
-      {/* {newSalesRFQLineDisclosure.isOpen && (
-        <NewSalesRFQLinesForm
-          rfqId={rfqId}
+      {newSalesRFQLineDisclosure.isOpen && (
+        <SalesRFQLineForm
+          initialValues={salesRfqLineInitialValues}
+          type="modal"
           onClose={newSalesRFQLineDisclosure.onClose}
         />
-      )} */}
+      )}
       {deleteLineDisclosure.isOpen && (
         <DeleteSalesRFQLine line={deleteLine!} onCancel={onDeleteCancel} />
       )}
@@ -119,10 +137,15 @@ export default function SalesRFQExplorer() {
 
 type SalesRFQLineItemProps = {
   line: SalesRFQLine;
+  isDisabled: boolean;
   onDelete: (line: SalesRFQLine) => void;
 };
 
-function SalesRFQLineItem({ line, onDelete }: SalesRFQLineItemProps) {
+function SalesRFQLineItem({
+  line,
+  isDisabled,
+  onDelete,
+}: SalesRFQLineItemProps) {
   const { rfqId, lineId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const permissions = usePermissions();
@@ -183,7 +206,7 @@ function SalesRFQLineItem({ line, onDelete }: SalesRFQLineItemProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
-                disabled={!permissions.can("update", "sales")}
+                disabled={isDisabled || !permissions.can("update", "sales")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(line);

@@ -520,6 +520,7 @@ const Table = <T extends object>({
       right: isPinned === "right" ? column.getAfter("right") : undefined,
       position: isPinned ? "sticky" : "relative",
       zIndex: isPinned ? 1 : 0,
+      backgroundColor: isPinned ? "hsl(var(--card))" : undefined,
       borderColor: "hsl(var(--border))",
       borderRightWidth:
         lastLeftPinnedColumn?.id === column.id

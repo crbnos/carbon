@@ -177,6 +177,13 @@ export async function deleteSalesOrderLine(
   return client.from("salesOrderLine").delete().eq("id", salesOrderLineId);
 }
 
+export async function deleteSalesRFQ(
+  client: SupabaseClient<Database>,
+  salesRfqId: string
+) {
+  return client.from("salesRfq").delete().eq("id", salesRfqId);
+}
+
 export async function deleteSalesRFQLine(
   client: SupabaseClient<Database>,
   salesRFQLineId: string
@@ -398,13 +405,12 @@ export async function getSalesRFQDocuments(
 
 export async function getSalesRfqLineDocuments(
   client: SupabaseClient<Database>,
-  rfqId: string,
-  lineId: string,
-  companyId: string
+  companyId: string,
+  lineId: string
 ) {
   return client.storage
     .from("private")
-    .list(`${companyId}/sales-rfq/${rfqId}/${lineId}`);
+    .list(`${companyId}/sales-rfq-line/${lineId}`);
 }
 
 export async function getFilesByQuoteLineId(
@@ -831,6 +837,13 @@ export async function getSalesRFQs(
     { column: "id", ascending: false },
   ]);
   return query;
+}
+
+export async function getSalesRFQLine(
+  client: SupabaseClient<Database>,
+  lineId: string
+) {
+  return client.from("salesRfqLines").select("*").eq("id", lineId).single();
 }
 
 export async function getSalesRFQLines(
@@ -1824,12 +1837,13 @@ export async function upsertSalesRFQLine(
   client: SupabaseClient<Database>,
 
   salesRfqLine:
-    | (z.infer<typeof salesRfqLineValidator> & {
+    | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (z.infer<typeof salesRfqLineValidator> & {
+    | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
+        id: string;
         updatedBy: string;
         customFields?: Json;
       })

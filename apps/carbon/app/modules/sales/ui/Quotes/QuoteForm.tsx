@@ -78,6 +78,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                   setCustomer(newValue?.value as string | undefined)
                 }
               />
+              <Input name="customerReference" label="Customer Ref. Number" />
               <CustomerLocation
                 name="customerLocationId"
                 label="Customer Location"
@@ -88,7 +89,6 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 label="Customer Contact"
                 customer={customer}
               />
-              <Input name="customerReference" label="Customer Ref. Number" />
               <Employee name="salesPersonId" label="Sales Person" />
               <Employee name="estimatorId" label="Estimator" />
               <Location name="locationId" label="Location" />
