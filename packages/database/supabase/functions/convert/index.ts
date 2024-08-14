@@ -161,6 +161,23 @@ serve(async (req: Request) => {
               .execute();
           }
 
+          const updatedItemModels = validLines
+            .filter((line) => !!line.modelUploadId && !!line.itemId)
+            .map((line) => ({
+              id: line.itemId!,
+              modelUploadId: line.modelUploadId!,
+            }));
+
+          if (updatedItemModels.length > 0) {
+            for await (const update of updatedItemModels) {
+              await trx
+                .updateTable("item")
+                .set(update)
+                .where("id", "=", update.id)
+                .execute();
+            }
+          }
+
           insertedQuoteId = quote.id!;
         });
 
