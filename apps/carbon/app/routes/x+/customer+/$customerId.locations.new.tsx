@@ -73,7 +73,7 @@ export default function CustomerLocationsNewRoute() {
   if (!customerId) throw new Error("customerId not found");
 
   const initialValues = {
-    name: "", // Ask Brad how to avoid this janky solution
+    name: "",
   };
 
   return (

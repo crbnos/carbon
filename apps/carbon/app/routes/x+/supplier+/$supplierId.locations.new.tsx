@@ -73,7 +73,7 @@ export default function SupplierLocationsNewRoute() {
   if (!supplierId) throw new Error("supplierId not found");
 
   const initialValues = {
-    name: "", // Ask Brad how to avoid this janky solution
+    name: "",
   };
 
   return (
