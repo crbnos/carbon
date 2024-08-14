@@ -76,7 +76,7 @@ const SupplierLocation = (props: SupplierLocationSelectProps) => {
             newLocationModal.onClose();
             triggerRef.current?.click();
           }}
-          initialValues={{ name: "" }} // Ask Brad how to avoid this janky solution
+          initialValues={{ name: "" }}
         />
       )}
     </>
