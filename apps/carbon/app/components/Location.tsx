@@ -21,20 +21,21 @@ type LocationProps = {
 };
 
 const Location = ({ location, actions }: LocationProps) => {
-  const cityStateJoined = `${location.address.city ?? ""}, ${
+  const locationName = location.name;
+  const addressLine1 = location.address.addressLine1;
+  const cityStateZip = `${location.address.city ?? ""}, ${
     location.address.state ?? ""
-  }`;
-  const addressZip = `${location.address.addressLine1 ?? ""} ${
-    location.address.postalCode ?? ""
-  }`;
+  } ${location.address.postalCode ?? ""}`;
   return (
     <div className="grid w-full gap-4 grid-cols-[auto_1fr_auto]">
       <LuMapPin className="w-8 h-8" />
-      <p className="font-bold line-clamp-1">{location.name}</p>
       <VStack spacing={0}>
-        <p className="font-bold line-clamp-1">{cityStateJoined}</p>
+        <p className="font-bold line-clamp-1">{locationName}</p>
         <p className="text-sm text-muted-foreground line-clamp-1">
-          {addressZip}
+          {addressLine1}
+        </p>
+        <p className="text-sm text-muted-foreground line-clamp-1">
+          {cityStateZip}
         </p>
       </VStack>
       {actions.length > 0 && (
