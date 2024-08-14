@@ -58,7 +58,7 @@ async function migrate(): Promise<void> {
       await $$`supabase link`;
 
       console.log(`✅ 🐣 Starting migrations for ${customer.name}`);
-      await $$`supabase db reset --linked`;
+      await $$`supabase db reset --linked --yes`;
       console.log(`✅ 🐣 Starting deployments for ${customer.name}`);
       await $$`supabase functions deploy`;
 
