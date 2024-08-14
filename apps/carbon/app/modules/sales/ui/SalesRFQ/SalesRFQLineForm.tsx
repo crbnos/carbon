@@ -85,9 +85,7 @@ const SalesRFQLineForm = ({
   });
 
   const onCustomerPartChange = async (customerPartId: string) => {
-    console.log({ customerPartId, summary: routeData?.rfqSummary });
     if (!supabase || !routeData?.rfqSummary?.customerId) return;
-    console.log("hello");
 
     const customerPart = await supabase
       .from("customerPartToItem")
