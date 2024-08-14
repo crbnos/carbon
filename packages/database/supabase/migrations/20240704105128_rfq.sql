@@ -47,7 +47,7 @@ CREATE TABLE "salesRfqLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "salesRfqId" TEXT NOT NULL,
   "customerPartNumber" TEXT NOT NULL,
-  "customerPartRevision" TEXT,
+  "customerRevisionId" TEXT,
   "itemId" TEXT,
   "description" TEXT,
   "quantity" NUMERIC(20, 2)[] DEFAULT ARRAY[]::NUMERIC(20, 2)[],

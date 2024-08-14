@@ -92,7 +92,7 @@ CREATE POLICY "Employees with sales_delete can delete salesRfqLine" ON "salesRfq
 
 ALTER TABLE "salesRfqLine"
   DROP COLUMN "customerPartNumber",
-  DROP COLUMN "customerPartRevision";
+  DROP COLUMN "customerRevisionId";
 
 ALTER TABLE "salesRfqLine"
   ADD COLUMN "customerPartId" TEXT NOT NULL,
