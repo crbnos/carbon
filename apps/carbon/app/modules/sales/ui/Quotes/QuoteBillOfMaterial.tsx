@@ -37,7 +37,7 @@ import type {
   SortableItemRenderProps,
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { usePermissions, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import {
@@ -48,6 +48,7 @@ import {
 import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
 import { quoteMaterialValidator } from "../../sales.models";
+import type { Quotation } from "../../types";
 
 type Material = z.infer<typeof quoteMaterialValidator>;
 
@@ -127,8 +128,11 @@ const QuoteBillOfMaterial = ({
   );
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
+  const quoteData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
+  const isDisabled = quoteData?.quote?.status !== "Draft";
+
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "sales")) return;
+    if (!permissions.can("update", "sales") || isDisabled) return;
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, checked: !item.checked } : item
@@ -138,7 +142,7 @@ const QuoteBillOfMaterial = ({
 
   // we create a temporary item and append it to the list
   const onAddItem = () => {
-    if (!permissions.can("update", "sales")) return;
+    if (!permissions.can("update", "sales") || isDisabled) return;
     const temporaryId = Math.random().toString(16).slice(2);
     setSelectedItemId(temporaryId);
     setItems((prevItems) => {
@@ -164,7 +168,7 @@ const QuoteBillOfMaterial = ({
   };
 
   const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "sales")) return;
+    if (!permissions.can("update", "sales") || isDisabled) return;
     // get the item and it's order in the list
     const itemIndex = items.findIndex((i) => i.id === id);
     const item = items[itemIndex];
@@ -178,6 +182,7 @@ const QuoteBillOfMaterial = ({
   };
 
   const onReorder = (reorderedItems: ItemWithData[]) => {
+    if (!permissions.can("update", "sales") || isDisabled) return;
     const newItems = reorderedItems.map((item, index) => ({
       ...item,
       data: {
@@ -331,6 +336,7 @@ const QuoteBillOfMaterial = ({
                         >
                           <MaterialForm
                             item={item}
+                            isDisabled={isDisabled}
                             setItems={setItems}
                             setSelectedItemId={setSelectedItemId}
                             quoteOperations={operations}
@@ -359,7 +365,9 @@ const QuoteBillOfMaterial = ({
           <Button
             variant="secondary"
             isDisabled={
-              !permissions.can("update", "sales") || selectedItemId !== null
+              isDisabled ||
+              !permissions.can("update", "sales") ||
+              selectedItemId !== null
             }
             onClick={onAddItem}
           >
@@ -388,11 +396,13 @@ function isTemporaryId(id: string) {
 
 function MaterialForm({
   item,
+  isDisabled,
   setItems,
   setSelectedItemId,
   quoteOperations,
 }: {
   item: ItemWithData;
+  isDisabled: boolean;
   setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   quoteOperations: Operation[];
@@ -544,6 +554,7 @@ function MaterialForm({
           />
           <Item
             disabledItems={[params.itemId!]}
+            isReadOnly={isDisabled}
             name="itemId"
             label={itemType}
             includeInactive
@@ -609,7 +620,7 @@ function MaterialForm({
           }}
         >
           <motion.div layout className="ml-auto mr-1 pt-2">
-            <Submit>Save</Submit>
+            <Submit isDisabled={isDisabled}>Save</Submit>
           </motion.div>
         </motion.div>
       </VStack>

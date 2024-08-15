@@ -37,8 +37,9 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
   const [customer, setCustomer] = useState<string | undefined>(
     initialValues.customerId
   );
-  const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
+  const isDisabled = initialValues?.status !== "Draft";
+  const isEditing = initialValues.id !== undefined;
 
   return (
     <Card>
@@ -105,9 +106,10 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
         <CardFooter>
           <Submit
             isDisabled={
-              isEditing
+              isDisabled ||
+              (isEditing
                 ? !permissions.can("update", "sales")
-                : !permissions.can("create", "sales")
+                : !permissions.can("create", "sales"))
             }
           >
             Save

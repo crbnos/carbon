@@ -32,11 +32,12 @@ import {
 } from "~/components/Form";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { methodOperationOrders } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { quoteOperationValidator } from "../../sales.models";
+import type { Quotation } from "../../types";
 
 type Operation = z.infer<typeof quoteOperationValidator>;
 
@@ -97,8 +98,14 @@ const QuoteBillOfProcess = ({
   );
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
+  const { quoteId } = useParams();
+  if (!quoteId) throw new Error("quoteId not found");
+  const quoteData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
+
+  const isDisabled = quoteData?.quote?.status !== "Draft";
+
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "sales")) return;
+    if (!permissions.can("update", "sales") || isDisabled) return;
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, checked: !item.checked } : item
@@ -108,7 +115,7 @@ const QuoteBillOfProcess = ({
 
   // we create a temporary item and append it to the list
   const onAddItem = () => {
-    if (!permissions.can("update", "sales")) return;
+    if (!permissions.can("update", "sales") || isDisabled) return;
     const temporaryId = Math.random().toString(16).slice(2);
     setSelectedItemId(temporaryId);
     setItems((prevItems) => {
@@ -134,7 +141,7 @@ const QuoteBillOfProcess = ({
   };
 
   const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "sales")) return;
+    if (!permissions.can("update", "sales") || isDisabled) return;
     // get the item and it's order in the list
     const itemIndex = items.findIndex((i) => i.id === id);
     const item = items[itemIndex];
@@ -156,7 +163,7 @@ const QuoteBillOfProcess = ({
   };
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "sales")) return;
+    if (!permissions.can("update", "sales") || isDisabled) return;
     const newItems = items.map((item, index) => ({
       ...item,
       data: {
@@ -311,6 +318,7 @@ const QuoteBillOfProcess = ({
                           >
                             <OperationForm
                               item={item}
+                              isDisabled={isDisabled}
                               setItems={setItems}
                               setSelectedItemId={setSelectedItemId}
                             />
@@ -339,7 +347,9 @@ const QuoteBillOfProcess = ({
           <Button
             variant="secondary"
             isDisabled={
-              !permissions.can("update", "sales") || selectedItemId !== null
+              !permissions.can("update", "sales") ||
+              selectedItemId !== null ||
+              isDisabled
             }
             onClick={onAddItem}
           >
@@ -368,10 +378,12 @@ function isTemporaryId(id: string) {
 
 function OperationForm({
   item,
+  isDisabled,
   setItems,
   setSelectedItemId,
 }: {
   item: ItemWithData;
+  isDisabled: boolean;
   setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
 }) {
@@ -496,6 +508,7 @@ function OperationForm({
         <WorkCellType
           name="workCellTypeId"
           label="Work Cell"
+          isReadOnly={isDisabled}
           onChange={(value) => {
             onWorkCellChange(value?.value as string);
           }}
@@ -503,6 +516,7 @@ function OperationForm({
         <EquipmentType
           name="equipmentTypeId"
           label="Equipment"
+          isReadOnly={isDisabled}
           onChange={(value) => onEquipmentChange(value?.value as string)}
         />
         <Select
@@ -597,7 +611,7 @@ function OperationForm({
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
-          <Submit>Save</Submit>
+          <Submit isDisabled={isDisabled}>Save</Submit>
         </motion.div>
       </motion.div>
     </ValidatedForm>

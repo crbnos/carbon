@@ -343,9 +343,10 @@ const QuoteLineForm = ({
               <ModalCardFooter>
                 <Submit
                   isDisabled={
-                    !isEditable || isEditing
+                    !isEditable ||
+                    (isEditing
                       ? !permissions.can("update", "sales")
-                      : !permissions.can("create", "sales")
+                      : !permissions.can("create", "sales"))
                   }
                 >
                   Save
