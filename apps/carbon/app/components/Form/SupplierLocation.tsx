@@ -8,6 +8,7 @@ import {
 import { path } from "~/utils/path";
 
 import { useDisclosure } from "@carbon/react";
+import { formatAddress } from "@carbon/utils";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
@@ -39,7 +40,12 @@ const SupplierLocation = (props: SupplierLocationSelectProps) => {
     () =>
       supplierLocationsFetcher.data?.data?.map((c) => ({
         value: c.id,
-        label: `${c.address?.addressLine1} ${c.address?.city}, ${c.address?.state} (${c.name})`,
+        label: `${formatAddress(
+          c.address?.addressLine1,
+          c.address?.addressLine2,
+          c.address?.city,
+          c.address?.state
+        )} (${c.name})`,
       })) ?? [],
 
     [supplierLocationsFetcher.data]

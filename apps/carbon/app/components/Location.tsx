@@ -4,6 +4,7 @@ import {
   DropdownMenuItem,
   VStack,
 } from "@carbon/react";
+import { formatAddressLines, formatCityStateZipCountry } from "@carbon/utils";
 import { LuMapPin } from "react-icons/lu";
 import type { Action } from "~/types";
 
@@ -11,9 +12,10 @@ type LocationProps = {
   location: {
     name: string;
     address: {
+      addressLine1: string | null;
+      addressLine2: string | null;
       city: string | null;
       state: string | null;
-      addressLine1: string | null;
       postalCode: string | null;
     } | null;
   };
@@ -26,20 +28,25 @@ const Location = ({ location, actions }: LocationProps) => {
   }
 
   const locationName = location.name;
-  const addressLine1 = location.address.addressLine1;
-  const cityStateZip = `${location.address.city ?? ""}, ${
-    location.address.state ?? ""
-  } ${location.address.postalCode ?? ""}`;
+  const addressLines = formatAddressLines(
+    location.address.addressLine1,
+    location.address.addressLine2
+  );
+  const cityStateZipCountry = formatCityStateZipCountry(
+    location.address.city,
+    location.address.state,
+    location.address.postalCode
+  );
   return (
     <div className="grid w-full gap-4 grid-cols-[auto_1fr_auto]">
       <LuMapPin className="w-8 h-8" />
       <VStack spacing={0}>
         <p className="font-bold line-clamp-1">{locationName}</p>
         <p className="text-sm text-muted-foreground line-clamp-1">
-          {addressLine1}
+          {addressLines}
         </p>
         <p className="text-sm text-muted-foreground line-clamp-1">
-          {cityStateZip}
+          {cityStateZipCountry}
         </p>
       </VStack>
       {actions.length > 0 && (
