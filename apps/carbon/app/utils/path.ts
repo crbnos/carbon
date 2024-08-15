@@ -592,7 +592,8 @@ export const path = {
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,
     quoteLineRecalculatePrice: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/recalculate-price`),
-    quoteRelease: (id: string) => generatePath(`${x}/quote/${id}/release`),
+    quoteFinalize: (id: string) => generatePath(`${x}/quote/${id}/finalize`),
+    quoteStatus: (id: string) => generatePath(`${x}/quote/${id}/status`),
     quotes: `${x}/sales/quotes`,
     receipt: (id: string) => generatePath(`${x}/receipt/${id}`),
     receiptInvoice: (id: string) => generatePath(`${x}/receipt/${id}/invoice`),

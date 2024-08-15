@@ -4,7 +4,6 @@ import {
   Column,
   Container,
   Head,
-  Hr,
   Html,
   Img,
   Link,
@@ -17,16 +16,9 @@ import type { Email } from "../types";
 
 interface QuoteEmailProps extends Email {
   quote: Database["public"]["Tables"]["quote"]["Row"];
-  quoteLines: Database["public"]["Tables"]["quoteLine"]["Row"][];
 }
 
-const QuoteEmail = ({
-  company,
-  quote,
-  quoteLines,
-  recipient,
-  sender,
-}: QuoteEmailProps) => {
+const QuoteEmail = ({ company, quote, recipient, sender }: QuoteEmailProps) => {
   const reSubject = `Re: ${quote.quoteId} from ${company.name}`;
 
   return (
@@ -59,7 +51,6 @@ const QuoteEmail = ({
           <Section>
             <Text style={subtleText}>
               Hi {recipient.firstName}, please see the attached quote.
-              questions.
             </Text>
           </Section>
           <Section style={informationTable}>
@@ -68,7 +59,7 @@ const QuoteEmail = ({
                 <Section>
                   <Row>
                     <Column style={informationTableColumn}>
-                      <Text style={informationTableLabel}>Buyer</Text>
+                      <Text style={informationTableLabel}>Quoter</Text>
                       <Link
                         style={{
                           ...informationTableValue,
@@ -84,145 +75,32 @@ const QuoteEmail = ({
 
                   <Row>
                     <Column style={informationTableColumn}>
-                      <Text style={informationTableLabel}>Payment Terms</Text>
-                      {/* <Text style={informationTableValue}>
-                        {quote.paymentTermName ?? "-"}
-                      </Text> */}
+                      <Text style={informationTableLabel}>
+                        Reference Number
+                      </Text>
+                      <Text style={informationTableValue}>
+                        {quote.customerReference ?? "-"}
+                      </Text>
                     </Column>
                   </Row>
 
                   <Row>
                     <Column style={informationTableColumn}>
-                      <Text style={informationTableLabel}>Order ID</Text>
+                      <Text style={informationTableLabel}>Quote ID</Text>
                       <Text style={informationTableValue}>{quote.quoteId}</Text>
                     </Column>
                     <Column style={informationTableColumn}>
-                      <Text style={informationTableLabel}>Requested Date</Text>
-                      {/* <Text style={informationTableValue}>
-                        {quote.receiptRequestedDate ?? "-"}
-                      </Text> */}
+                      <Text style={informationTableLabel}>Expiration Date</Text>
+                      <Text style={informationTableValue}>
+                        {quote.expirationDate ?? "-"}
+                      </Text>
                     </Column>
                   </Row>
                 </Section>
               </Column>
-              {/* <Column style={informationTableColumn} colSpan={2}>
-                <Text style={informationTableLabel}>Ship To</Text>
-                {dropShipment ? (
-                  <>
-                    <Text style={informationTableValue}>{customerName}</Text>
-                    {customerAddressLine1 && (
-                      <Text style={informationTableValue}>
-                        {customerAddressLine1}
-                      </Text>
-                    )}
-                    {customerAddressLine2 && (
-                      <Text style={informationTableValue}>
-                        {customerAddressLine2}
-                      </Text>
-                    )}
-                    <Text style={informationTableValue}>
-                      {formatAddress(
-                        customerCity,
-                        customerState,
-                        customerPostalCode
-                      )}
-                    </Text>
-                    <Text style={informationTableValue}>
-                      {customerCountryCode}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Text style={informationTableValue}>{company.name}</Text>
-                    <Text style={informationTableValue}>{deliveryName}</Text>
-                    {deliveryAddressLine1 && (
-                      <Text style={informationTableValue}>
-                        {deliveryAddressLine1}
-                      </Text>
-                    )}
-                    {deliveryAddressLine2 && (
-                      <Text style={informationTableValue}>
-                        {deliveryAddressLine2}
-                      </Text>
-                    )}
-                    <Text style={informationTableValue}>
-                      {formatAddress(
-                        deliveryCity,
-                        deliveryState,
-                        deliveryPostalCode
-                      )}
-                    </Text>
-                    <Text>{deliveryCountryCode}</Text>
-                  </>
-                )}
-              </Column> */}
             </Row>
           </Section>
-          <Section style={linesHeader}>
-            <Text style={{ ...informationTableLabel, paddingLeft: "20px" }}>
-              Quote Lines
-            </Text>
-          </Section>
-          <Section>
-            {quoteLines.map((line) => (
-              <Row key={line.id}>
-                <Column>
-                  <Text>{line.description}</Text>
-                </Column>
-              </Row>
-            ))}
-          </Section>
-          {/* <Section>
-            {purchaseOrderLines.map((line) => (
-              <Row key={line.id} style={lineRow}>
-                <Column
-                  style={{
-                    paddingLeft: "5px",
-                  }}
-                >
-                  <Text style={lineTitle}>{getLineDescription(line)}</Text>
-                  {getLineDescriptionDetails(line)
-                    ?.split("\n")
-                    .map((l, i) => (
-                      <Text key={i} style={lineDescription}>
-                        {l}
-                      </Text>
-                    ))}
-                </Column>
-                <Column style={lineValueWrapper} align="right">
-                  <Text style={lineValue}>
-                    {line.purchaseOrderLineType === "Comment"
-                      ? ""
-                      : `(${line.purchaseQuantity})`}
-                  </Text>
-                </Column>
-                <Column style={lineValueWrapper} align="right">
-                  <Text style={lineValue}>
-                    {line.purchaseOrderLineType === "Comment"
-                      ? "-"
-                      : line.unitPrice
-                      ? `$${line.unitPrice.toFixed(2)}`
-                      : "-"}
-                  </Text>
-                </Column>
-              </Row>
-            ))}
-          </Section> */}
-          <Hr style={priceLine} />
-          <Section align="right">
-            <Row>
-              <Column style={tableCell} align="right">
-                <Text style={priceTotal}>TOTAL</Text>
-              </Column>
-              <Column style={priceVerticalLine}></Column>
-              <Column style={priceLargeWrapper}>
-                {/* <Text style={priceLarge}>
-                  {`$${getTotal(purchaseOrderLines)}`}
-                </Text> */}
-              </Column>
-            </Row>
-          </Section>
-          <Hr style={priceLineBottom} />
+
           <Section>
             <Row>
               <Column align="center" style={block}>
@@ -321,66 +199,5 @@ const informationTableValue = {
   padding: "0",
   lineHeight: 1.4,
 };
-
-const linesHeader = {
-  ...informationTable,
-  margin: "30px 0 15px 0",
-  height: "24px",
-};
-
-// const lineTitle = { fontSize: "12px", fontWeight: "600", ...resetText };
-
-// const lineDescription = {
-//   fontSize: "12px",
-//   color: "rgb(102,102,102)",
-//   ...resetText,
-// };
-
-// const lineRow = {
-//   marginBottom: "10px",
-//   paddingLeft: "20px",
-// };
-
-const priceTotal = {
-  margin: "0",
-  color: "rgb(102,102,102)",
-  fontSize: "10px",
-  fontWeight: "600",
-  padding: "0px 30px 0px 0px",
-  textAlign: "right" as const,
-};
-
-// const lineValue = {
-//   fontSize: "12px",
-//   fontWeight: "600",
-//   margin: "0",
-// };
-
-// const priceLarge = {
-//   margin: "0px 20px 0px 0px",
-//   fontSize: "16px",
-//   fontWeight: "600",
-//   whiteSpace: "nowrap" as const,
-//   textAlign: "right" as const,
-// };
-
-// const lineValueWrapper = {
-//   display: "table-cell",
-//   padding: "0px 20px 0px 0px",
-//   width: "100px",
-//   verticalAlign: "top",
-// };
-
-const priceLine = { margin: "30px 0 0 0" };
-
-const priceVerticalLine = {
-  height: "48px",
-  borderLeft: "1px solid",
-  borderColor: "rgb(238,238,238)",
-};
-
-const priceLargeWrapper = { display: "table-cell", width: "90px" };
-
-const priceLineBottom = { margin: "0 0 75px 0" };
 
 const block = { display: "block" };

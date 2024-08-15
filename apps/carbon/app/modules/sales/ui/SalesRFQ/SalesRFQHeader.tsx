@@ -29,6 +29,7 @@ import { Assignee, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
+import SalesRFQStatus from "./SalesRFQStatus";
 
 const SalesRFQHeader = () => {
   const { rfqId } = useParams();
@@ -61,6 +62,7 @@ const SalesRFQHeader = () => {
           <Badge variant="secondary">
             <RiProgress2Line />
           </Badge>
+          <SalesRFQStatus status={routeData?.rfqSummary?.status} />
         </HStack>
         <HStack>
           <Assignee

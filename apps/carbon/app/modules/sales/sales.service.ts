@@ -15,11 +15,11 @@ import type {
   customerTypeValidator,
   customerValidator,
   getMethodValidator,
-  quotationPricingValidator,
   quoteLineAdditionalChargesValidator,
   quoteLineValidator,
   quoteMaterialValidator,
   quoteOperationValidator,
+  quoteStatusType,
   quoteValidator,
   salesOrderLineValidator,
   salesOrderPaymentValidator,
@@ -1308,6 +1308,18 @@ export async function updateQuoteOperationOrder(
   return Promise.all(updatePromises);
 }
 
+export async function updateQuoteStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof quoteStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  return client.from("quote").update(update).eq("id", update.id);
+}
+
 export async function upsertMakeMethodFromQuoteLine(
   client: SupabaseClient<Database>,
   lineMethod: {
@@ -1382,7 +1394,20 @@ export async function upsertQuote(
       })
 ) {
   if ("createdBy" in quote) {
-    return client.from("quote").insert([quote]).select("id, quoteId");
+    const insert = await client
+      .from("quote")
+      .insert([quote])
+      .select("id, quoteId");
+    if (insert.error) {
+      return insert;
+    }
+    const opportunity = await client
+      .from("opportunity")
+      .insert([{ quoteId: insert.data[0].id, companyId: quote.companyId }]);
+    if (opportunity.error) {
+      return opportunity;
+    }
+    return insert;
   } else {
     return client
       .from("quote")
@@ -1480,20 +1505,6 @@ export async function upsertQuoteLinePrices(
   return client
     .from("quoteLinePrice")
     .insert(pricesWithExistingDiscountsAndLeadTimes);
-}
-
-export async function updateQuoteLinePrice(
-  client: SupabaseClient<Database>,
-  quoteLinePrice: z.infer<typeof quotationPricingValidator> & {
-    quoteId: string;
-    quoteLineId: string;
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("quoteLinePrice")
-    .update(sanitize(quoteLinePrice))
-    .eq("quoteLineId", quoteLinePrice.quoteLineId);
 }
 
 export async function upsertQuoteLineMethod(
@@ -1834,7 +1845,20 @@ export async function upsertSalesRFQ(
       })
 ) {
   if ("createdBy" in rfq) {
-    return client.from("salesRfq").insert([rfq]).select("id, rfqId");
+    const insert = await client
+      .from("salesRfq")
+      .insert([rfq])
+      .select("id, rfqId");
+    if (insert.error) {
+      return insert;
+    }
+    const opportunity = await client
+      .from("opportunity")
+      .insert([{ salesRfqId: insert.data[0].id, companyId: rfq.companyId }]);
+    if (opportunity.error) {
+      return opportunity;
+    }
+    return insert;
   } else {
     return client
       .from("salesRfq")
