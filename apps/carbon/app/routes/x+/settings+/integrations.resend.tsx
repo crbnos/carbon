@@ -4,7 +4,6 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import {
   ResendForm,
-  apiKey,
   getIntegration,
   resendFormValidator,
   upsertIntegration,
@@ -36,13 +35,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const validIntegration = apiKey.safeParse(integration.data?.metadata);
+  const validIntegration = resendFormValidator.safeParse(
+    integration.data?.metadata
+  );
 
   return json({
     integration: validIntegration.success
       ? {
           active: integration.data?.active ?? false,
-          ...validIntegration.data,
+          apiKey: validIntegration.data.apiKey,
+          fromEmail: validIntegration.data.fromEmail,
         }
       : defaultValue,
   });

@@ -122,7 +122,7 @@ const QuoteHeader = () => {
                 </Button>
               </>
             )}
-            {["Cancelled", "Expired"].includes(
+            {["Cancelled", "Expired", "Lost"].includes(
               routeData?.quote?.status ?? ""
             ) && (
               <>
