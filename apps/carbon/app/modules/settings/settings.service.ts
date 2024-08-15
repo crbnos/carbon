@@ -143,7 +143,7 @@ export async function getIntegration(
     .select("*")
     .eq("id", id)
     .eq("companyId", companyId)
-    .single();
+    .maybeSingle();
 }
 
 export async function getIntegrations(
