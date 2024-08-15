@@ -25,15 +25,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const integration = await getIntegration(client, "resend", companyId);
-  if (integration.error) {
-    throw redirect(
-      path.to.integrations,
-      await flash(
-        request,
-        error(integration.error, "Failed to load Resend integration")
-      )
-    );
-  }
 
   const validIntegration = resendFormValidator.safeParse(
     integration.data?.metadata

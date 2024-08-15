@@ -34,4 +34,24 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  resolve: {
+    alias: {
+      "@carbon/documents": path.resolve(
+        __dirname,
+        "../../packages/documents/src/index.tsx"
+      ),
+      "@carbon/utils": path.resolve(
+        __dirname,
+        "../../packages/utils/src/index.ts"
+      ),
+      "@carbon/remix-validated-form": path.resolve(
+        __dirname,
+        "../../packages/remix-validated-form/src/index.tsx"
+      ),
+      "@carbon/logger": path.resolve(
+        __dirname,
+        "../../packages/logger/src/index.ts"
+      ),
+    },
+  },
 });
