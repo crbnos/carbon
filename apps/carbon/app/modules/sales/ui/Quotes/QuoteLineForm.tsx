@@ -15,6 +15,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
+  toast,
   useDisclosure,
   VStack,
 } from "@carbon/react";
@@ -29,7 +30,6 @@ import {
   ArrayNumeric,
   CustomFormFields,
   Hidden,
-  Input,
   InputControlled,
   Item,
   Select,
@@ -67,23 +67,27 @@ const QuoteLineForm = ({
   if (!quoteId) throw new Error("quoteId not found");
 
   const routeData = useRouteData<{
-    quotation: Quotation;
+    quote: Quotation;
   }>(path.to.quote(quoteId));
 
   const isEditable = ["Draft", "To Review"].includes(
-    routeData?.quotation?.status ?? ""
+    routeData?.quote?.status ?? ""
   );
 
   const isEditing = initialValues.id !== undefined;
 
   const [itemData, setItemData] = useState<{
+    customerPartId: string;
+    customerPartRevision: string;
+    description: string;
     itemId: string;
     itemReadableId: string;
-    description: string;
     methodType: string;
-    uom: string;
     modelUploadId: string | null;
+    uom: string;
   }>({
+    customerPartId: initialValues.customerPartId ?? "",
+    customerPartRevision: initialValues.customerPartRevision ?? "",
     itemId: initialValues.itemId ?? "",
     itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
@@ -92,26 +96,90 @@ const QuoteLineForm = ({
     modelUploadId: initialValues.modelUploadId ?? null,
   });
 
+  const onCustomerPartChange = async (customerPartId: string) => {
+    if (!supabase || !routeData?.quote?.customerId) return;
+
+    const customerPart = await supabase
+      .from("customerPartToItem")
+      .select("itemId")
+      .eq("customerPartId", customerPartId)
+      .eq("customerPartRevision", itemData.customerPartRevision ?? "")
+      .eq("customerId", routeData?.quote?.customerId!)
+      .maybeSingle();
+
+    if (customerPart.error) {
+      toast.error("Failed to load customer part details");
+      return;
+    }
+
+    if (customerPart.data && customerPart.data.itemId && !itemData.itemId) {
+      onItemChange(customerPart.data.itemId);
+    }
+  };
+
+  const onCustomerPartRevisionChange = async (customerPartRevision: string) => {
+    if (!supabase || !routeData?.quote?.customerId || !itemData.customerPartId)
+      return;
+
+    const customerPart = await supabase
+      .from("customerPartToItem")
+      .select("itemId")
+      .eq("customerPartId", itemData.customerPartId)
+      .eq("customerPartRevision", customerPartRevision ?? "")
+      .eq("customerId", routeData?.quote?.customerId!)
+      .maybeSingle();
+
+    if (customerPart.error) {
+      toast.error("Failed to load customer part details");
+      return;
+    }
+
+    if (customerPart.data && customerPart.data.itemId && !itemData.itemId) {
+      onItemChange(customerPart.data.itemId);
+    }
+  };
+
   const onItemChange = async (itemId: string) => {
-    if (!supabase || !company.id) return;
-    const [item] = await Promise.all([
+    if (!supabase) return;
+
+    const [item, customerPart] = await Promise.all([
       supabase
         .from("item")
         .select(
           "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
+        .eq("companyId", company.id)
         .single(),
+      supabase
+        .from("customerPartToItem")
+        .select("customerPartId, customerPartRevision")
+        .eq("itemId", itemId)
+        .eq("customerId", routeData?.quote?.customerId!)
+        .maybeSingle(),
     ]);
 
-    setItemData({
+    if (item.error) {
+      toast.error("Failed to load item details");
+      return;
+    }
+
+    const newItemData = {
+      ...itemData,
       itemId,
       itemReadableId: item.data?.readableId ?? "",
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
       uom: item.data?.unitOfMeasureCode ?? "",
       modelUploadId: item.data?.modelUploadId ?? null,
-    });
+    };
+
+    if (customerPart.data && !itemData.customerPartId) {
+      newItemData.customerPartId = customerPart.data.customerPartId;
+      newItemData.customerPartRevision = customerPart.data.customerPartRevision;
+    }
+
+    setItemData(newItemData);
   };
 
   const deleteDisclosure = useDisclosure();
@@ -185,8 +253,9 @@ const QuoteLineForm = ({
                     <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
                       <Item
                         name="itemId"
-                        type="Part"
                         label="Part"
+                        type="Part"
+                        value={itemData.itemId}
                         includeInactive
                         onChange={(value) => {
                           onItemChange(value?.value as string);
@@ -230,10 +299,32 @@ const QuoteLineForm = ({
                         }))}
                       />
 
-                      <Input name="customerPartId" label="Customer Part ID" />
-                      <Input
+                      <InputControlled
+                        name="customerPartId"
+                        label="Customer Part Number"
+                        value={itemData.customerPartId}
+                        onChange={(newValue) => {
+                          setItemData((d) => ({
+                            ...d,
+                            customerPartId: newValue,
+                          }));
+                        }}
+                        onBlur={(e) => onCustomerPartChange(e.target.value)}
+                        autoFocus
+                      />
+                      <InputControlled
                         name="customerPartRevision"
                         label="Customer Part Revision"
+                        value={itemData.customerPartRevision}
+                        onChange={(newValue) => {
+                          setItemData((d) => ({
+                            ...d,
+                            customerPartRevision: newValue,
+                          }));
+                        }}
+                        onBlur={(e) =>
+                          onCustomerPartRevisionChange(e.target.value)
+                        }
                       />
 
                       <CustomFormFields table="quoteLine" />

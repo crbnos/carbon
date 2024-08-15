@@ -100,7 +100,7 @@ const SalesRFQLineForm = ({
       return;
     }
 
-    if (customerPart.data && customerPart.data.itemId) {
+    if (customerPart.data && customerPart.data.itemId && !itemData.itemId) {
       onItemChange(customerPart.data.itemId);
     }
   };
@@ -113,21 +113,20 @@ const SalesRFQLineForm = ({
     )
       return;
 
-    let query = supabase
+    const customerPart = await supabase
       .from("customerPartToItem")
       .select("itemId")
       .eq("customerPartId", itemData.customerPartId)
       .eq("customerPartRevision", customerPartRevision ?? "")
-      .eq("customerId", routeData?.rfqSummary?.customerId!);
-
-    const customerPart = await query.maybeSingle();
+      .eq("customerId", routeData?.rfqSummary?.customerId!)
+      .maybeSingle();
 
     if (customerPart.error) {
       toast.error("Failed to load customer part details");
       return;
     }
 
-    if (customerPart.data && customerPart.data.itemId) {
+    if (customerPart.data && customerPart.data.itemId && !itemData.itemId) {
       onItemChange(customerPart.data.itemId);
     }
   };
@@ -135,13 +134,19 @@ const SalesRFQLineForm = ({
   const onItemChange = async (itemId: string) => {
     if (!supabase) return;
 
-    const [item] = await Promise.all([
+    const [item, customerPart] = await Promise.all([
       supabase
         .from("item")
         .select("name, unitOfMeasureCode, modelUploadId")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
+      supabase
+        .from("customerPartToItem")
+        .select("customerPartId, customerPartRevision")
+        .eq("itemId", itemId)
+        .eq("customerId", routeData?.rfqSummary?.customerId!)
+        .maybeSingle(),
     ]);
 
     if (item.error) {
@@ -149,13 +154,20 @@ const SalesRFQLineForm = ({
       return;
     }
 
-    setItemData((d) => ({
-      ...d,
+    const newItemData = {
+      ...itemData,
       itemId,
       description: item.data?.name ?? "",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       modelUploadId: item.data?.modelUploadId ?? null,
-    }));
+    };
+
+    if (customerPart.data && !itemData.customerPartId) {
+      newItemData.customerPartId = customerPart.data.customerPartId;
+      newItemData.customerPartRevision = customerPart.data.customerPartRevision;
+    }
+
+    setItemData(newItemData);
   };
 
   const deleteDisclosure = useDisclosure();
@@ -241,7 +253,7 @@ const SalesRFQLineForm = ({
                       />
                       <InputControlled
                         name="customerPartRevision"
-                        label="Customer Revision"
+                        label="Customer Part Revision"
                         value={itemData.customerPartRevision}
                         onChange={(newValue) => {
                           setItemData((d) => ({
