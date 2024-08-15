@@ -31,7 +31,7 @@ import {
   useUser,
 } from "~/hooks";
 import { path } from "~/utils/path";
-import type { QuotationLine, QuoteMethod } from "../../types";
+import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
 import QuoteLineForm from "./QuoteLineForm";
@@ -39,7 +39,7 @@ import QuoteLineForm from "./QuoteLineForm";
 export default function QuoteExplorer() {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
-  const quoteData = useRouteData<{ lines: QuotationLine[] }>(
+  const quoteData = useRouteData<{ quote: Quotation; lines: QuotationLine[] }>(
     path.to.quote(quoteId)
   );
   const permissions = usePermissions();
@@ -59,6 +59,7 @@ export default function QuoteExplorer() {
   const newQuoteLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<QuotationLine | null>(null);
+  const isDisabled = quoteData?.quote?.status !== "Draft";
 
   const onDeleteLine = (line: QuotationLine) => {
     setDeleteLine(line);
@@ -86,6 +87,7 @@ export default function QuoteExplorer() {
             quoteData?.lines.map((line) => (
               <QuoteLineItem
                 key={line.id}
+                isDisabled={isDisabled}
                 line={line}
                 onDelete={onDeleteLine}
               />
@@ -94,6 +96,7 @@ export default function QuoteExplorer() {
             <Empty>
               {permissions.can("update", "sales") && (
                 <Button
+                  isDisabled={isDisabled}
                   leftIcon={<LuPlus />}
                   onClick={newQuoteLineDisclosure.onOpen}
                 >
@@ -109,7 +112,7 @@ export default function QuoteExplorer() {
               <Button
                 ref={newButtonRef}
                 className="w-full"
-                isDisabled={!permissions.can("update", "sales")}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
                 leftIcon={<LuPlus />}
                 onClick={newQuoteLineDisclosure.onOpen}
               >
@@ -141,10 +144,11 @@ export default function QuoteExplorer() {
 
 type QuoteLineItemProps = {
   line: QuotationLine;
+  isDisabled: boolean;
   onDelete: (line: QuotationLine) => void;
 };
 
-function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
+function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const permissions = usePermissions();
@@ -243,7 +247,7 @@ function QuoteLineItem({ line, onDelete }: QuoteLineItemProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
-                disabled={!permissions.can("update", "sales")}
+                disabled={isDisabled || !permissions.can("update", "sales")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(line);

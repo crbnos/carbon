@@ -37,11 +37,11 @@ import {
   LuTrash,
 } from "react-icons/lu";
 import type { z } from "zod";
-import { usePermissions, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import { quoteLineAdditionalChargesValidator } from "../../sales.models";
-import type { Costs, QuotationPrice } from "../../types";
+import type { Costs, Quotation, QuotationPrice } from "../../types";
 
 const QuoteLinePricing = ({
   quantities,
@@ -55,7 +55,6 @@ const QuoteLinePricing = ({
   getLineCosts: (quantity: number) => Costs;
 }) => {
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "sales");
 
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -65,6 +64,13 @@ const QuoteLinePricing = ({
   useEffect(() => {
     setPrices(pricesByQuantity);
   }, [pricesByQuantity]);
+
+  const routeData = useRouteData<{
+    quote: Quotation;
+  }>(path.to.quote(quoteId));
+  const isEditable =
+    permissions.can("update", "sales") &&
+    ["Draft"].includes(routeData?.quote?.status ?? "");
 
   const { supabase } = useSupabase();
   const fetcher = useFetcher<{ id: string }>();
@@ -247,9 +253,10 @@ const QuoteLinePricing = ({
                       path.to.quoteLineRecalculatePrice(quoteId, lineId)
                   }
                   isDisabled={
-                    fetcher.state === "loading" &&
-                    fetcher.formAction ===
-                      path.to.quoteLineRecalculatePrice(quoteId, lineId)
+                    !isEditable ||
+                    (fetcher.state === "loading" &&
+                      fetcher.formAction ===
+                        path.to.quoteLineRecalculatePrice(quoteId, lineId))
                   }
                 >
                   Recalculate
@@ -302,6 +309,7 @@ const QuoteLinePricing = ({
                   >
                     <NumberField
                       value={leadTime}
+                      isReadOnly={!isEditable}
                       formatOptions={{
                         style: "unit",
                         unit: "day",
@@ -316,7 +324,7 @@ const QuoteLinePricing = ({
                     >
                       <NumberInput
                         className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!canEdit}
+                        isReadOnly={!isEditable}
                         size="sm"
                         min={0}
                       />
@@ -380,7 +388,7 @@ const QuoteLinePricing = ({
                     >
                       <NumberInput
                         className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!canEdit}
+                        isDisabled={!isEditable}
                         size="sm"
                         min={0}
                       />
@@ -414,7 +422,7 @@ const QuoteLinePricing = ({
                     >
                       <NumberInput
                         className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!canEdit}
+                        isDisabled={!isEditable}
                         size="sm"
                         min={0}
                       />
@@ -450,7 +458,7 @@ const QuoteLinePricing = ({
                     >
                       <NumberInput
                         className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!canEdit}
+                        isDisabled={!isEditable}
                         size="sm"
                       />
                     </NumberField>
@@ -621,7 +629,7 @@ const QuoteLinePricing = ({
                               <NumberInput
                                 className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
                                 size="sm"
-                                isDisabled={!canEdit}
+                                isDisabled={!isEditable}
                                 min={0}
                               />
                             </NumberField>
@@ -655,7 +663,7 @@ const QuoteLinePricing = ({
                         fetcher.state === "loading"
                       }
                       isDisabled={
-                        !canEdit ||
+                        !isEditable ||
                         (fetcher.formAction ===
                           path.to.newQuoteLineCost(quoteId, lineId) &&
                           fetcher.state === "loading")
