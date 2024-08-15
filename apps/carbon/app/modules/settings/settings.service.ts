@@ -139,11 +139,10 @@ export async function getIntegration(
   companyId: string
 ) {
   return client
-    .from("integrations")
+    .from("companyIntegration")
     .select("*")
     .eq("id", id)
     .eq("companyId", companyId)
-    .eq("visible", true)
     .single();
 }
 
