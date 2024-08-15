@@ -81,6 +81,7 @@ serve(async (req: Request) => {
                 customerReference: salesRfq.data?.customerReference,
                 locationId: salesRfq.data?.locationId,
                 expirationDate: salesRfq.data?.expirationDate,
+                salesPersonId: salesRfq.data?.createdBy,
                 status: "Draft",
                 notes: salesRfq.data?.notes,
                 companyId,
