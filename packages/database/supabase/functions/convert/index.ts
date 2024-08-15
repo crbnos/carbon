@@ -129,14 +129,11 @@ serve(async (req: Request) => {
             .execute();
 
           await trx
-            .insertInto("salesRfqToQuote")
-            .values([
-              {
-                salesRfqId: id,
-                quoteId: quote.id!,
-                companyId,
-              },
-            ])
+            .updateTable("opportunity")
+            .set({
+              quoteId: quote.id!,
+            })
+            .where("salesRfqId", "=", id)
             .execute();
 
           const customerPartToItemInserts = validLines

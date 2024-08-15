@@ -68,6 +68,10 @@ const QuotePDF = ({
             quote.expirationDate
               ? [
                   {
+                    label: "Ref #",
+                    value: quote?.customerReference,
+                  },
+                  {
                     label: "Date",
                     value: today(getLocalTimeZone()).toString(),
                   },
@@ -81,6 +85,10 @@ const QuotePDF = ({
                   },
                 ]
               : [
+                  {
+                    label: "Ref #",
+                    value: quote?.customerReference,
+                  },
                   {
                     label: "Date",
                     value: today(getLocalTimeZone()).toString(),

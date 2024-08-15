@@ -20,11 +20,10 @@ import {
   Hidden,
   Input,
   Location,
-  Select,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { salesRFQStatusType, salesRfqValidator } from "~/modules/sales";
+import { salesRfqValidator } from "~/modules/sales";
 
 type SalesRFQFormValues = z.infer<typeof salesRfqValidator>;
 
@@ -40,11 +39,6 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
   const isDraft = initialValues.status === "Draft";
-
-  const statusOptions = salesRFQStatusType.map((status) => ({
-    label: status,
-    value: status,
-  }));
 
   return (
     <Card>
@@ -90,15 +84,6 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 label="Customer Contact"
                 customer={customer}
               />
-              {isEditing && permissions.can("delete", "sales") && (
-                <Select
-                  name="status"
-                  label="Status"
-                  value={initialValues.status}
-                  options={statusOptions}
-                  isReadOnly={isCustomer}
-                />
-              )}
 
               <DatePicker
                 name="rfqDate"

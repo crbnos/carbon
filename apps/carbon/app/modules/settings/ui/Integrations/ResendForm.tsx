@@ -51,6 +51,11 @@ const ResendForm = ({ initialValues, onClose }: ResendFormProps) => {
             <VStack spacing={4}>
               <Boolean name="active" label="Active" />
               <Input name="apiKey" label="API Key" />
+              <Input
+                name="fromEmail"
+                label="From Email"
+                placeholder="team@yourdomain.com"
+              />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

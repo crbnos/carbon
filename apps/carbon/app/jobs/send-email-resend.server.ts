@@ -33,17 +33,25 @@ const job = triggerClient.defineJob({
     }),
   }),
   run: async (payload, io, ctx) => {
-    const integration = await supabaseClient
-      .from("companyIntegration")
-      .select("active, metadata")
-      .eq("companyId", payload.companyId)
-      .eq("id", "resend")
-      .maybeSingle();
+    const [company, integration] = await Promise.all([
+      supabaseClient
+        .from("company")
+        .select("name")
+        .eq("id", payload.companyId)
+        .single(),
+      supabaseClient
+        .from("companyIntegration")
+        .select("active, metadata")
+        .eq("companyId", payload.companyId)
+        .eq("id", "resend")
+        .maybeSingle(),
+    ]);
 
-    // TODO: integration should include from email
     const integrationMetadata = resendFormValidator.safeParse(
       integration?.data?.metadata
     );
+
+    io.logger.info(integrationMetadata.data?.fromEmail ?? "no email found");
 
     if (!integrationMetadata.success || integration?.data?.active !== true)
       return;
@@ -51,7 +59,9 @@ const job = triggerClient.defineJob({
     const resend = new Resend(integrationMetadata.data.apiKey);
 
     const email = {
-      from: "onboarding@resend.dev",
+      from: `${company.data?.name} <${
+        integrationMetadata.data.fromEmail ?? "onboarding@resend.dev"
+      }>`,
       to: payload.to,
       reply_to: payload.from,
       subject: payload.subject,

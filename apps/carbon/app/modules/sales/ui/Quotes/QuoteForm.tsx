@@ -21,11 +21,10 @@ import {
   Hidden,
   Input,
   Location,
-  Select,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { quoteStatusType, quoteValidator } from "~/modules/sales";
+import { quoteValidator } from "~/modules/sales";
 
 type QuoteFormValues = z.infer<typeof quoteValidator>;
 
@@ -40,11 +39,6 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
   );
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
-
-  const statusOptions = quoteStatusType.map((status) => ({
-    label: status,
-    value: status,
-  }));
 
   return (
     <Card>
@@ -103,15 +97,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 label="Expiration Date"
                 isDisabled={isCustomer}
               />
-              {isEditing && permissions.can("delete", "sales") && (
-                <Select
-                  name="status"
-                  label="Status"
-                  value={initialValues.status}
-                  options={statusOptions}
-                  isReadOnly={isCustomer}
-                />
-              )}
+
               <CustomFormFields table="quote" />
             </div>
           </VStack>

@@ -164,7 +164,8 @@ const SalesRFQLineForm = ({
 
     if (customerPart.data && !itemData.customerPartId) {
       newItemData.customerPartId = customerPart.data.customerPartId;
-      newItemData.customerPartRevision = customerPart.data.customerPartRevision;
+      newItemData.customerPartRevision =
+        customerPart.data.customerPartRevision ?? "";
     }
 
     setItemData(newItemData);

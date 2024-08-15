@@ -8985,6 +8985,108 @@ export type Database = {
           },
         ]
       }
+      opportunity: {
+        Row: {
+          companyId: string
+          id: string
+          quoteId: string | null
+          salesOrderId: string | null
+          salesRfqId: string | null
+        }
+        Insert: {
+          companyId: string
+          id?: string
+          quoteId?: string | null
+          salesOrderId?: string | null
+          salesRfqId?: string | null
+        }
+        Update: {
+          companyId?: string
+          id?: string
+          quoteId?: string | null
+          salesOrderId?: string | null
+          salesRfqId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "opportunity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfq"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       part: {
         Row: {
           approved: boolean
@@ -12490,7 +12592,6 @@ export type Database = {
           quoteId: string
           revisionId: number
           salesPersonId: string | null
-          salesRfqId: string | null
           status: Database["public"]["Enums"]["quoteStatus"]
           updatedAt: string | null
           updatedBy: string | null
@@ -12514,7 +12615,6 @@ export type Database = {
           quoteId: string
           revisionId?: number
           salesPersonId?: string | null
-          salesRfqId?: string | null
           status?: Database["public"]["Enums"]["quoteStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -12538,7 +12638,6 @@ export type Database = {
           quoteId?: string
           revisionId?: number
           salesPersonId?: string | null
-          salesRfqId?: string | null
           status?: Database["public"]["Enums"]["quoteStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -12774,20 +12873,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "quote_salesRfqId_fkey"
-            columns: ["salesRfqId"]
-            isOneToOne: false
-            referencedRelation: "salesRfq"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_salesRfqId_fkey"
-            columns: ["salesRfqId"]
-            isOneToOne: false
-            referencedRelation: "salesRfqs"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quote_updatedBy_fkey"
@@ -16118,88 +16203,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-        ]
-      }
-      salesRfqToQuote: {
-        Row: {
-          companyId: string
-          quoteId: string
-          salesRfqId: string
-        }
-        Insert: {
-          companyId: string
-          quoteId: string
-          salesRfqId: string
-        }
-        Update: {
-          companyId?: string
-          quoteId?: string
-          salesRfqId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "salesRfqToQuote_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
-            columns: ["quoteId"]
-            isOneToOne: false
-            referencedRelation: "quote"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
-            columns: ["quoteId"]
-            isOneToOne: false
-            referencedRelation: "quoteCustomerDetails"
-            referencedColumns: ["quoteId"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
-            columns: ["quoteId"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_salesRfqId_fkey"
-            columns: ["salesRfqId"]
-            isOneToOne: false
-            referencedRelation: "salesRfq"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_salesRfqId_fkey"
-            columns: ["salesRfqId"]
-            isOneToOne: false
-            referencedRelation: "salesRfqs"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -23713,6 +23716,7 @@ export type Database = {
           notes: Json | null
           quoteId: string | null
           revisionId: number | null
+          salesOrderId: string | null
           salesPersonId: string | null
           salesRfqId: string | null
           status: Database["public"]["Enums"]["quoteStatus"] | null
@@ -23720,6 +23724,34 @@ export type Database = {
           updatedBy: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfq"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quote_assignee_fkey"
             columns: ["assignee"]
@@ -23950,20 +23982,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "quote_salesRfqId_fkey"
-            columns: ["salesRfqId"]
-            isOneToOne: false
-            referencedRelation: "salesRfq"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_salesRfqId_fkey"
-            columns: ["salesRfqId"]
-            isOneToOne: false
-            referencedRelation: "salesRfqs"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quote_updatedBy_fkey"
@@ -24889,11 +24907,47 @@ export type Database = {
           revisionId: number | null
           rfqDate: string | null
           rfqId: string | null
+          salesOrderId: string | null
           status: Database["public"]["Enums"]["salesRfqStatus"] | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "salesRfq_assigneeId_fkey"
             columns: ["assignee"]
@@ -25124,27 +25178,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
-            columns: ["quoteId"]
-            isOneToOne: false
-            referencedRelation: "quote"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
-            columns: ["quoteId"]
-            isOneToOne: false
-            referencedRelation: "quoteCustomerDetails"
-            referencedColumns: ["quoteId"]
-          },
-          {
-            foreignKeyName: "salesRfqToQuote_quoteId_fkey"
-            columns: ["quoteId"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
           },
         ]
       }

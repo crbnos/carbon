@@ -35,15 +35,22 @@ export const googlePlacesFormValidator = integration.merge(apiKey).refine(
   }
 );
 
-export const resendFormValidator = integration.merge(apiKey).refine(
-  (data) => {
-    if (data.active) {
-      return data.apiKey.length > 0;
+export const resendFormValidator = integration
+  .merge(apiKey)
+  .merge(
+    z.object({
+      fromEmail: zfd.text(z.string().email().optional()),
+    })
+  )
+  .refine(
+    (data) => {
+      if (data.active) {
+        return data.apiKey.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "API key is required when integration is active",
+      path: ["apiKey"],
     }
-    return true;
-  },
-  {
-    message: "API key is required when integration is active",
-    path: ["apiKey"],
-  }
-);
+  );
