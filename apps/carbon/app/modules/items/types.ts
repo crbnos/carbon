@@ -4,6 +4,7 @@ import type {
   getConsumables,
   getFixtures,
   getItemCost,
+  getItemCustomerParts,
   getItemFiles,
   getItemPostingGroups,
   getItemPostingGroupsList,
@@ -31,6 +32,10 @@ export type BuyMethod = NonNullable<
 
 export type Consumable = NonNullable<
   Awaited<ReturnType<typeof getConsumables>>["data"]
+>[number];
+
+export type CustomerPart = NonNullable<
+  Awaited<ReturnType<typeof getItemCustomerParts>>["data"]
 >[number];
 
 export type Form = NonNullable<

@@ -81,6 +81,14 @@ export const consumableValidator = itemValidator.merge(
   })
 );
 
+export const customerPartValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Item ID is required" }),
+  customerId: z.string().min(36, { message: "Supplier ID is required" }),
+  customerPartId: z.string(),
+  customerPartRevision: zfd.text(z.string().optional()),
+});
+
 export const fixtureValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Fixture ID is required" }).max(255),
