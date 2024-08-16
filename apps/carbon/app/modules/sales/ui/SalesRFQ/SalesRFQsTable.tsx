@@ -147,7 +147,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         accessorKey: "expirationDate",
-        header: "Expiration Date",
+        header: "Due Date",
         cell: (item) => item.getValue(),
       },
       {

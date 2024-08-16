@@ -26501,7 +26501,7 @@ export type Database = {
         | "Approved"
         | "Reject"
         | "Request Approval"
-      salesRfqStatus: "Draft" | "Ready for Quote" | "Closed"
+      salesRfqStatus: "Draft" | "Ready for Quote" | "Closed" | "Quoted"
       searchEntity:
         | "Resource"
         | "Person"

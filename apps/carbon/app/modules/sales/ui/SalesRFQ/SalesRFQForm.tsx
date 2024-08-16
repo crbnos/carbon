@@ -38,7 +38,9 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
   );
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
-  const isDraft = initialValues.status === "Draft";
+  const isDraft = ["Draft", "Ready to Quote"].includes(
+    initialValues.status ?? ""
+  );
 
   return (
     <Card>
@@ -92,7 +94,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
               />
               <DatePicker
                 name="expirationDate"
-                label="Expiration Date"
+                label="Due Date"
                 isDisabled={isCustomer}
               />
               <Location name="locationId" label="RFQ Location" />

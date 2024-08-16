@@ -56,7 +56,10 @@ export default function QuoteExplorer() {
     unitOfMeasureCode: "",
   };
 
-  const newQuoteLineDisclosure = useDisclosure();
+  const newQuoteLineDisclosure = useDisclosure({
+    defaultIsOpen:
+      permissions.can("update", "sales") && quoteData?.lines?.length === 0,
+  });
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<QuotationLine | null>(null);
   const isDisabled = quoteData?.quote?.status !== "Draft";

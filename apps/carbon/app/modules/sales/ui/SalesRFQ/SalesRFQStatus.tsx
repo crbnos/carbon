@@ -11,6 +11,8 @@ const SalesRFQStatus = ({ status }: SalesRFQStatusProps) => {
       return <Status color="gray">{status}</Status>;
     case "Ready for Quote":
       return <Status color="green">{status}</Status>;
+    case "Quoted":
+      return <Status color="blue">{status}</Status>;
     case "Closed":
       return <Status color="red">{status}</Status>;
     default:

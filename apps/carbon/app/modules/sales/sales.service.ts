@@ -55,7 +55,7 @@ export async function convertSalesRfqToQuote(
     userId: string;
   }
 ) {
-  return client.functions.invoke("convert", {
+  return client.functions.invoke<{ convertedId: string }>("convert", {
     body: {
       type: "salesRfqToQuote",
       ...payload,

@@ -73,19 +73,32 @@ const SalesRFQHeader = () => {
             isReadOnly={!permissions.can("update", "sales")}
           />
 
-          {status === "Draft" ? (
+          {status === "Draft" && (
+            <>
+              <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
+                <input type="hidden" name="status" value="Ready for Quote" />
+                <Button
+                  isDisabled={!permissions.can("update", "sales")}
+                  leftIcon={<LuRefreshCw />}
+                  type="submit"
+                >
+                  Ready for Quote
+                </Button>
+              </Form>
+            </>
+          )}
+
+          {status === "Ready for Quote" && (
             <>
               <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
                 <input type="hidden" name="status" value="Closed" />
                 <Button
-                  isDisabled={
-                    status !== "Draft" || !permissions.can("update", "sales")
-                  }
+                  isDisabled={!permissions.can("update", "sales")}
                   leftIcon={<LuXCircle />}
                   type="submit"
                   variant="destructive"
                 >
-                  Close
+                  No Quote
                 </Button>
               </Form>
               <Button
@@ -101,7 +114,9 @@ const SalesRFQHeader = () => {
                 Quote
               </Button>
             </>
-          ) : status === "Ready for Quote" ? (
+          )}
+
+          {status === "Quoted" && (
             <Button
               isDisabled={!routeData?.rfqSummary.quoteId}
               leftIcon={<LuSend />}
@@ -115,11 +130,10 @@ const SalesRFQHeader = () => {
                 View Quote
               </Link>
             </Button>
-          ) : status === "Closed" ? (
+          )}
+
+          {status === "Closed" && (
             <>
-              <Button isDisabled leftIcon={<LuXCircle />} variant="destructive">
-                Close
-              </Button>
               <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
                 <input type="hidden" name="status" value="Draft" />
                 <Button
@@ -132,7 +146,7 @@ const SalesRFQHeader = () => {
                 </Button>
               </Form>
             </>
-          ) : null}
+          )}
 
           {/* <IconButton
             aria-label="Previous"

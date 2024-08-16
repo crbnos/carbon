@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.salesRfq(id),
+    path.to.quoteDetails(convert.data?.convertedId!),
     await flash(request, success("Successfully converted RFQ to quote"))
   );
 }

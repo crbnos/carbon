@@ -64,7 +64,9 @@ const SalesRFQLineForm = ({
     rfqSummary: SalesRFQ;
   }>(path.to.salesRfq(rfqId));
 
-  const isEditable = ["Draft"].includes(routeData?.rfqSummary?.status ?? "");
+  const isEditable = ["Draft", "Ready for Quote"].includes(
+    routeData?.rfqSummary?.status ?? ""
+  );
 
   const isEditing = initialValues.id !== undefined;
 

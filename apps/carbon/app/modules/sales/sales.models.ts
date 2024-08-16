@@ -8,6 +8,7 @@ import { standardFactorType } from "../shared/types";
 export const salesRFQStatusType = [
   "Draft",
   "Ready for Quote",
+  "Quoted",
   "Closed",
 ] as const;
 

@@ -36,7 +36,10 @@ export default function SalesRFQExplorer() {
   }>(path.to.salesRfq(rfqId));
   const permissions = usePermissions();
 
-  const newSalesRFQLineDisclosure = useDisclosure();
+  const newSalesRFQLineDisclosure = useDisclosure({
+    defaultIsOpen:
+      permissions.can("update", "sales") && salesRfqData?.lines?.length === 0,
+  });
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<SalesRFQLine | null>(null);
 
@@ -70,7 +73,9 @@ export default function SalesRFQExplorer() {
     unitOfMeasureCode: "EA",
   };
 
-  const isDisabled = salesRfqData?.rfqSummary.status !== "Draft";
+  const isDisabled = ["Draft", "Ready for Quote"].includes(
+    salesRfqData?.rfqSummary.status ?? ""
+  );
 
   return (
     <>

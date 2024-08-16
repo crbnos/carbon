@@ -23,7 +23,7 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
   const payload = await req.json();
-
+  let convertedId = "";
   try {
     const { type, id, companyId, userId } = payloadValidator.parse(payload);
 
@@ -46,8 +46,10 @@ serve(async (req: Request) => {
 
         if (salesRfq.error)
           throw new Error(`Sales RFQ with id ${id} not found`);
-        if (salesRfq.data?.status !== "Draft")
-          throw new Error(`Sales RFQ with id ${id} is not in Draft status`);
+        if (salesRfq.data?.status !== "Ready for Quote")
+          throw new Error(
+            `Sales RFQ with id ${id} is not in Ready for Quote status`
+          );
 
         if (salesRfqLines.error) {
           throw new Error(`Sales RFQ Lines with id ${id} not found`);
@@ -178,6 +180,7 @@ serve(async (req: Request) => {
           }
 
           insertedQuoteId = quote.id!;
+          convertedId = insertedQuoteId;
         });
 
         // get method for each make line
@@ -205,7 +208,7 @@ serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({
-        success: true,
+        convertedId,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
