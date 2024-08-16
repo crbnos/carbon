@@ -22,10 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (quoteDelete.error) {
     return json(
       path.to.quotes,
-      await flash(
-        request,
-        error(quoteDelete.error, "Failed to delete quote line")
-      )
+      await flash(request, error(quoteDelete.error, "Failed to delete quote"))
     );
   }
 

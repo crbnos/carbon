@@ -68,6 +68,7 @@ serve(async (req: Request) => {
           itemId?: string;
           methodType?: "Buy" | "Make" | "Pick";
         }[] = [];
+
         await db.transaction().execute(async (trx) => {
           const quoteId = await getNextSequence(trx, "quote", companyId);
           const quote = await trx

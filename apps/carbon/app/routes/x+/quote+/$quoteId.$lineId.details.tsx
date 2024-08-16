@@ -128,6 +128,7 @@ export default function QuoteLine() {
   const getLineCosts = useLineCosts({
     methodTree,
     operations,
+    unitCost: line.unitCost ?? 0,
   });
 
   const initialValues = {
@@ -177,8 +178,7 @@ export default function QuoteLine() {
             />
           )}
           <QuoteLinePricing
-            quantities={line.quantity ?? [1]}
-            additionalCharges={line.additionalCharges ?? {}}
+            line={line}
             pricesByQuantity={pricesByQuantity}
             getLineCosts={getLineCosts}
           />

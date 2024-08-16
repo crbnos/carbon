@@ -1,4 +1,3 @@
-import type { Json } from "@carbon/database";
 import {
   Button,
   Card,
@@ -20,6 +19,7 @@ import {
   Td,
   Th,
   Thead,
+  toast,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -41,20 +41,26 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import { quoteLineAdditionalChargesValidator } from "../../sales.models";
-import type { Costs, Quotation, QuotationPrice } from "../../types";
+import type {
+  Costs,
+  Quotation,
+  QuotationLine,
+  QuotationPrice,
+} from "../../types";
 
 const QuoteLinePricing = ({
-  quantities,
-  additionalCharges: additionalChargesJson,
+  line,
   pricesByQuantity,
   getLineCosts,
 }: {
-  quantities: number[];
-  additionalCharges?: Json;
+  line: QuotationLine;
   pricesByQuantity: Record<number, QuotationPrice>;
   getLineCosts: (quantity: number) => Costs;
 }) => {
   const permissions = usePermissions();
+
+  const isMade = line.methodType === "Make";
+  const quantities = line.quantity ?? [1];
 
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -73,7 +79,24 @@ const QuoteLinePricing = ({
     ["Draft"].includes(routeData?.quote?.status ?? "");
 
   const { supabase } = useSupabase();
-  const fetcher = useFetcher<{ id: string }>();
+  const fetcher = useFetcher<{ id?: string; error: string | null }>();
+  useEffect(() => {
+    if (fetcher.data?.error) {
+      toast.error(fetcher.data.error);
+    }
+  }, [fetcher.data]);
+
+  const optimisticUnitCost = useMemo<number>(() => {
+    if (!line.itemId) return line.unitCost ?? 0;
+    if (fetcher.formAction === path.to.itemCostUpdate(line.itemId)) {
+      const submitted = fetcher.formData?.get("unitCost");
+      if (submitted) {
+        return Number(submitted);
+      }
+    }
+    return line.unitCost ?? 0;
+  }, [line.itemId, line.unitCost, fetcher.formAction, fetcher.formData]);
+
   const { id: userId } = useUser();
 
   const { locale } = useLocale();
@@ -91,16 +114,10 @@ const QuoteLinePricing = ({
       ) as z.infer<typeof quoteLineAdditionalChargesValidator>;
     }
     const parsedAdditionalCharges =
-      quoteLineAdditionalChargesValidator.safeParse(additionalChargesJson);
+      quoteLineAdditionalChargesValidator.safeParse(line.additionalCharges);
 
     return parsedAdditionalCharges.success ? parsedAdditionalCharges.data : {};
-  }, [
-    additionalChargesJson,
-    fetcher.formAction,
-    fetcher.formData,
-    lineId,
-    quoteId,
-  ]);
+  }, [line, fetcher.formAction, fetcher.formData, lineId, quoteId]);
 
   const additionalChargesByQuantity = quantities.map((quantity) => {
     const charges = Object.values(additionalCharges).reduce((acc, charge) => {
@@ -185,6 +202,16 @@ const QuoteLinePricing = ({
     fetcher.submit(formData, {
       method: "post",
       action: path.to.quoteLineRecalculatePrice(quoteId, lineId),
+    });
+  };
+
+  const onUpdateCost = async (value: number) => {
+    if (!line.itemId) return;
+    const formData = new FormData();
+    formData.append("unitCost", value.toString());
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.itemCostUpdate(line.itemId),
     });
   };
 
@@ -309,7 +336,6 @@ const QuoteLinePricing = ({
                   >
                     <NumberField
                       value={leadTime}
-                      isReadOnly={!isEditable}
                       formatOptions={{
                         style: "unit",
                         unit: "day",
@@ -324,7 +350,7 @@ const QuoteLinePricing = ({
                     >
                       <NumberInput
                         className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isReadOnly={!isEditable}
+                        isDisabled={!isEditable}
                         size="sm"
                         min={0}
                       />
@@ -333,18 +359,42 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
-            <Tr className="[&>td]:bg-muted/60">
+            <Tr className={cn(isMade && "[&>td]:bg-muted/60")}>
               <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Unit Cost</span>
                 </HStack>
               </Td>
+
               {unitCostsByQuantity.map((cost, index) => {
-                return (
+                return isMade ? (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
-                      <span>{formatter.format(cost ?? 0)}</span>
+                      <span>{formatter.format(optimisticUnitCost)}</span>
                     </VStack>
+                  </Td>
+                ) : (
+                  <Td key={index} className="group-hover:bg-muted/50">
+                    <NumberField
+                      value={cost}
+                      formatOptions={{
+                        style: "currency",
+                        currency: "USD",
+                      }}
+                      minValue={0}
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== cost) {
+                          onUpdateCost(value);
+                        }
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                        isDisabled={!isEditable}
+                        size="sm"
+                        min={0}
+                      />
+                    </NumberField>
                   </Td>
                 );
               })}

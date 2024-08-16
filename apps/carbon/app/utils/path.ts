@@ -248,7 +248,7 @@ export const path = {
       generatePath(`${x}/sales-order/delete/${id}`),
     deleteSalesOrderLine: (orderId: string, lineId: string) =>
       generatePath(`${x}/sales-order/${orderId}/lines/delete/${lineId}`),
-    deleteSalesRfq: (id: string) => generatePath(`${x}/sales-rfq/delete/${id}`),
+    deleteSalesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}/delete`),
     deleteSalesRfqLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-rfq/${id}/${lineId}/delete`),
     deleteShift: (id: string) =>
@@ -338,6 +338,7 @@ export const path = {
     inventory: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
     items: `${x}/items`,
+    itemCostUpdate: (id: string) => generatePath(`${x}/items/cost/${id}`),
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
     itemPostingGroups: `${x}/items/groups`,
     jobs: `${x}/jobs`,

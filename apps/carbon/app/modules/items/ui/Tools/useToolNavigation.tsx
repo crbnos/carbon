@@ -31,7 +31,7 @@ export function useToolNavigation() {
       shortcut: "Command+Shift+p",
     },
     {
-      name: "Accounting",
+      name: "Costing",
       to: path.to.toolCosting(itemId),
       role: ["employee"],
       icon: LuTags,

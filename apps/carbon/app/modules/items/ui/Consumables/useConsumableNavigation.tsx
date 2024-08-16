@@ -31,7 +31,7 @@ export function useConsumableNavigation() {
       shortcut: "Command+Shift+p",
     },
     {
-      name: "Accounting",
+      name: "Costing",
       to: path.to.consumableCosting(itemId),
       role: ["employee"],
       icon: LuTags,
