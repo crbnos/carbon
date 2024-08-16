@@ -404,6 +404,7 @@ export const path = {
     newCustomerType: `${x}/sales/customer-types/new`,
     newCustomField: (tableId: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/new`),
+    newCustomerPart: (id: string) => generatePath(`${x}/part/${id}/sales/new`),
     newDepartment: `${x}/people/departments/new`,
     newDocument: `${x}/documents/new`,
     newEmployee: `${x}/users/employees/new`,
@@ -499,7 +500,7 @@ export const path = {
     partPricing: (id: string) => generatePath(`${x}/part/${id}/pricing`),
     partPurchasing: (id: string) => generatePath(`${x}/part/${id}/purchasing`),
     partRoot: `${x}/part`,
-    partSalePrice: (id: string) => generatePath(`${x}/part/${id}/sale-price`),
+    partSales: (id: string) => generatePath(`${x}/part/${id}/sales`),
     partSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/suppliers/${id}`),
     parts: `${x}/items/parts`,

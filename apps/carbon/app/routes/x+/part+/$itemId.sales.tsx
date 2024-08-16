@@ -5,10 +5,12 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import {
   ItemSalePriceForm,
+  getItemCustomerParts,
   getItemUnitSalePrice,
   itemUnitSalePriceValidator,
   upsertItemUnitSalePrice,
 } from "~/modules/items";
+import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -24,8 +26,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partUnitSalePrice] = await Promise.all([
+  const [partUnitSalePrice, customerParts] = await Promise.all([
     getItemUnitSalePrice(client, itemId, companyId),
+    getItemCustomerParts(client, itemId, companyId),
   ]);
 
   if (partUnitSalePrice.error) {
@@ -40,6 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     partUnitSalePrice: partUnitSalePrice.data,
+    customerParts: customerParts.data,
   });
 }
 
@@ -78,13 +82,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.partSalePrice(itemId),
+    path.to.partSales(itemId),
     await flash(request, success("Updated part sale price"))
   );
 }
 
-export default function PartSalePriceRoute() {
-  const { partUnitSalePrice } = useLoaderData<typeof loader>();
+export default function PartSalesRoute() {
+  const { partUnitSalePrice, customerParts } = useLoaderData<typeof loader>();
 
   const initialValues = {
     ...partUnitSalePrice,
@@ -98,6 +102,7 @@ export default function PartSalePriceRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
       />
+      {customerParts ? <CustomerParts customerParts={customerParts} /> : null}
     </VStack>
   );
 }

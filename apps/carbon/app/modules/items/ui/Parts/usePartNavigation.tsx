@@ -73,7 +73,7 @@ export function usePartNavigation() {
     },
     {
       name: "Sales",
-      to: path.to.partSalePrice(itemId),
+      to: path.to.partSales(itemId),
       role: ["employee", "customer"],
       icon: LuReceipt,
       shortcut: "Command+Shift+x",

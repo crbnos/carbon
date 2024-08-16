@@ -3382,6 +3382,7 @@ export type Database = {
           customerId: string
           customerPartId: string
           customerPartRevision: string | null
+          id: string
           itemId: string
         }
         Insert: {
@@ -3389,6 +3390,7 @@ export type Database = {
           customerId: string
           customerPartId: string
           customerPartRevision?: string | null
+          id?: string
           itemId: string
         }
         Update: {
@@ -3396,6 +3398,7 @@ export type Database = {
           customerId?: string
           customerPartId?: string
           customerPartRevision?: string | null
+          id?: string
           itemId?: string
         }
         Relationships: [

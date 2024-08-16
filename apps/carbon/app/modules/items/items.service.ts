@@ -9,6 +9,7 @@ import { sanitize } from "~/utils/supabase";
 import type {
   buyMethodValidator,
   consumableValidator,
+  customerPartValidator,
   fixtureValidator,
   itemCostValidator,
   itemPlanningValidator,
@@ -236,6 +237,18 @@ export async function getItemCost(
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
+}
+
+export async function getItemCustomerParts(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("customerPartToItem")
+    .select("*, customer(id, name)")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId);
 }
 
 export async function getItemFiles(
@@ -1415,6 +1428,31 @@ export async function upsertBuyMethod(
     .from("buyMethod")
     .update(sanitize(buyMethod))
     .eq("id", buyMethod.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertItemCustomerPart(
+  client: SupabaseClient<Database>,
+  customerPart:
+    | (Omit<z.infer<typeof customerPartValidator>, "id"> & {
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof customerPartValidator>, "id"> & {
+        id: string;
+      })
+) {
+  if ("id" in customerPart) {
+    return client
+      .from("buyMethod")
+      .update(sanitize(customerPart))
+      .eq("id", customerPart.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("customerPartToItem")
+    .insert([customerPart])
     .select("id")
     .single();
 }
