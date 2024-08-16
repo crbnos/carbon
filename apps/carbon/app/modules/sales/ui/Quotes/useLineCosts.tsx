@@ -26,9 +26,11 @@ type EnhancedTree = Tree<QuoteMethod & { operations?: QuotationOperation[] }>;
 export function useLineCosts({
   methodTree: originalMethodTree,
   operations,
+  unitCost = 0,
 }: {
   methodTree?: Tree<QuoteMethod>;
   operations: QuotationOperation[];
+  unitCost?: number;
 }): (quantity: number) => Costs {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -37,12 +39,13 @@ export function useLineCosts({
   // TODO: instead of walking the tree twice (once for the quantities/operations and once for the effects)
   // we could do it all in one pass
 
-  const methodTree = useMemo<EnhancedTree>(() => {
+  const methodTree = useMemo<EnhancedTree | undefined>(() => {
     if (!originalMethodTree || !originalMethodTree.id) {
-      return {} as Tree<QuoteMethod>;
+      return undefined;
     }
 
     const tree = structuredClone(originalMethodTree);
+
     function walkTree(tree: EnhancedTree, parentQuantity: number) {
       // multiply quantity by parent quantity
       tree.data.quantity = tree.data.quantity * parentQuantity;
@@ -205,10 +208,14 @@ export function useLineCosts({
       }
     }
 
-    walkTree(methodTree);
+    if (methodTree) {
+      walkTree(methodTree);
+    } else {
+      effects.materialCost.push((quantity) => unitCost * quantity);
+    }
 
     return effects;
-  }, [methodTree]);
+  }, [methodTree, unitCost]);
 
   const getCosts = useCallback(
     (quantity: number) => {

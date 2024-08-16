@@ -17,17 +17,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const quoteDelete = await deleteSalesRFQ(client, rfqId);
+  const salesRfqDelete = await deleteSalesRFQ(client, rfqId);
 
-  if (quoteDelete.error) {
+  if (salesRfqDelete.error) {
     return json(
-      path.to.quotes,
-      await flash(
-        request,
-        error(quoteDelete.error, "Failed to delete quote line")
-      )
+      path.to.salesRfqs,
+      await flash(request, error(salesRfqDelete.error, "Failed to delete RFQ"))
     );
   }
 
-  throw redirect(path.to.quotes);
+  throw redirect(path.to.salesRfqs);
 }

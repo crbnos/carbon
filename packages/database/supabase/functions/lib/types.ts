@@ -23111,6 +23111,7 @@ export type Database = {
           quoteRevisionId: number | null
           status: Database["public"]["Enums"]["quoteLineStatus"] | null
           thumbnailPath: string | null
+          unitCost: number | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null

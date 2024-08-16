@@ -31,7 +31,7 @@ export function useMaterialNavigation() {
       shortcut: "Command+Shift+p",
     },
     {
-      name: "Accounting",
+      name: "Costing",
       to: path.to.materialCosting(itemId),
       role: ["employee"],
       icon: LuTags,

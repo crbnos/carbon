@@ -966,6 +966,25 @@ export async function insertShelf(
     .single();
 }
 
+export async function updateItemCost(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  cost: {
+    unitCost: number;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("itemCost")
+    .update({
+      ...cost,
+      costIsAdjusted: true,
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("itemId", itemId)
+    .single();
+}
+
 export async function updateMaterialOrder(
   client: SupabaseClient<Database>,
   updates: {
