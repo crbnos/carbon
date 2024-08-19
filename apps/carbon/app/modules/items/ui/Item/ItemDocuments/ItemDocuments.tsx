@@ -22,7 +22,8 @@ import { LuAxis3D } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import type { ItemFile, MethodItemType, ModelUpload } from "~/modules/items";
+import type { ItemFile, ModelUpload } from "~/modules/items";
+import type { MethodItemType } from "~/modules/shared";
 import ItemDocumentForm from "./ItemDocumentForm";
 import { useItemDocuments } from "./useItemDocuments";
 

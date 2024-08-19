@@ -9,7 +9,7 @@ import {
   attributeUserValidator,
   upsertUserAttributeValue,
 } from "~/modules/account";
-import { getAttribute } from "~/modules/resources";
+import { getAttribute } from "~/modules/people";
 import { getUserClaims } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

@@ -27,7 +27,7 @@ import { MdOutlineDragIndicator } from "react-icons/md";
 import { New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useUrlParams } from "~/hooks";
-import type { AttributeDataType } from "~/modules/resources";
+import type { AttributeDataType } from "~/modules/people";
 import type { CustomField, CustomFieldsTableType } from "~/modules/settings";
 import { path } from "~/utils/path";
 

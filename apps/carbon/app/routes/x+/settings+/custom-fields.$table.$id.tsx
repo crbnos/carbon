@@ -6,7 +6,7 @@ import {
   useParams,
 } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/resources";
+import type { AttributeDataType } from "~/modules/people";
 import {
   CustomFieldForm,
   customFieldValidator,

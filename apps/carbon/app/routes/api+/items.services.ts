@@ -1,6 +1,5 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import type { ServiceType } from "~/modules/items";
 import { getServicesList } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -11,11 +10,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const type = searchParams.get("type") as ServiceType | null;
-
-  const services = await getServicesList(client, companyId, type);
+  const services = await getServicesList(client, companyId);
   if (services.error) {
     return json(
       services,
