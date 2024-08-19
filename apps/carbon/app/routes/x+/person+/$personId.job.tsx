@@ -12,13 +12,13 @@ import {
   employeeJobValidator,
   getEmployeeJob,
   updateEmployeeJob,
-} from "~/modules/resources";
+} from "~/modules/people";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
+    view: "people",
   });
 
   const { personId } = params;
@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources",
+    update: "people",
   });
   const { personId } = params;
   if (!personId) throw new Error("No person ID provided");

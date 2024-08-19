@@ -2,7 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo } from "react";
 import { path } from "~/utils/path";
 
-import type { getShiftsList } from "~/modules/resources";
+import type { getShiftsList } from "~/modules/people";
 import type { SelectProps } from "./Select";
 import Select from "./Select";
 

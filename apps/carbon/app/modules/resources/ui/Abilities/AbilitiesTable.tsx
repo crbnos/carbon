@@ -12,8 +12,8 @@ import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Abilities, AbilityDatum } from "~/modules/resources";
 import { path } from "~/utils/path";
+import type { Abilities, AbilityDatum } from "../../types";
 import AbilityChart from "./AbilityChart";
 
 type AbilitiesTableProps = {

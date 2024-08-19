@@ -23,8 +23,8 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { abilityValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
+import { abilityValidator } from "../../resources.models";
 
 type AbilityFormProps = {
   initialValues: z.infer<typeof abilityValidator>;

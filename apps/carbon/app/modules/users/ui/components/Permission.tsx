@@ -25,6 +25,10 @@ const PermissionCheckboxes = ({
     updatePermissions(module, newPermissions);
   };
 
+  if (["messaging", "items", "timecards"].includes(module)) {
+    return null;
+  }
+
   return (
     <div>
       <HStack>

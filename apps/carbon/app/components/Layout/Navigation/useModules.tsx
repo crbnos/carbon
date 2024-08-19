@@ -3,6 +3,7 @@ import {
   LuComponent,
   LuCreditCard,
   LuCrown,
+  LuFactory,
   LuFiles,
   LuLandmark,
   LuSettings,
@@ -85,10 +86,16 @@ export function useModules() {
       icon: LuCreditCard,
     },
     {
-      permission: "resources",
-      name: "Resources",
+      permission: "people",
+      name: "People",
       to: path.to.people,
       icon: LuUsers,
+    },
+    {
+      permission: "resources",
+      name: "Resources",
+      to: path.to.resources,
+      icon: LuFactory,
     },
     {
       permission: "users",

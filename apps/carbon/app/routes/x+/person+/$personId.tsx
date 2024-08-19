@@ -10,7 +10,7 @@ import {
   PersonPreview,
   PersonSidebar,
   getEmployeeSummary,
-} from "~/modules/resources";
+} from "~/modules/people";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -25,7 +25,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
+    view: "people",
   });
 
   const { personId } = params;
@@ -53,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client } = await requirePermissions(request, {
-    update: "resources",
+    update: "people",
   });
   const { personId } = params;
   if (!personId) throw new Error("No person ID provided");

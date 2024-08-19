@@ -11,8 +11,8 @@ import { useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
-import type { AbilityEmployees } from "~/modules/resources";
-import { AbilityEmployeeStatus } from "~/modules/resources";
+import { AbilityEmployeeStatus, type AbilityEmployees } from "../../types";
+
 import { path } from "~/utils/path";
 
 type AbilityEmployeeTableProps = {

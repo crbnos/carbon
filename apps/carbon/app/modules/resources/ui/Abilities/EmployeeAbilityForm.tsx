@@ -23,12 +23,10 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { Ability } from "~/modules/resources";
-import {
-  AbilityEmployeeStatus,
-  employeeAbilityValidator,
-} from "~/modules/resources";
+import { AbilityEmployeeStatus, type Ability } from "../../types";
+
 import { path } from "~/utils/path";
+import { employeeAbilityValidator } from "../../resources.models";
 
 type EmployeeAbilityFormProps = {
   ability?: Ability;
@@ -47,7 +45,7 @@ const EmployeeAbilityForm = ({
 }: EmployeeAbilityFormProps) => {
   const { id } = useParams();
   const permissions = usePermissions();
-  const isEditing = initialValues.employeeId !== undefined;
+  const isEditing = !!initialValues.employeeId;
   const isDisabled = isEditing
     ? !permissions.can("update", "resources")
     : !permissions.can("create", "resources");
@@ -65,6 +63,8 @@ const EmployeeAbilityForm = ({
   );
 
   if (!ability) return null;
+
+  console.log({ isEditing });
 
   return (
     <Drawer

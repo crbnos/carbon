@@ -26388,6 +26388,7 @@ export type Database = {
         | "Parts"
         | "Purchasing"
         | "Resources"
+        | "People"
         | "Sales"
         | "Settings"
         | "Scheduling"

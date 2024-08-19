@@ -6,12 +6,12 @@ import { useRouteData } from "~/hooks";
 import type { Ability } from "~/modules/resources";
 import {
   AbilityEmployeeStatus,
+  EmployeeAbilityForm,
   employeeAbilityValidator,
   getEmployeeAbility,
   getTrainingStatus,
   upsertEmployeeAbility,
 } from "~/modules/resources";
-import { EmployeeAbilityForm } from "~/modules/resources/ui/Abilities";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
