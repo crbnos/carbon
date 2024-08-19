@@ -1,22 +1,13 @@
 import type {
   getAbilities,
   getAbility,
-  getAttribute,
-  getAttributeCategories,
-  getAttributeCategory,
   getContractors,
-  getDepartments,
   getEmployeeAbilities,
-  getEmployeeJob,
-  getEmployeeSummary,
   getEquipment,
   getEquipmentType,
   getEquipmentTypes,
-  getHolidays,
   getLocations,
   getPartners,
-  getPeople,
-  getShifts,
   getWorkCellType,
   getWorkCellTypes,
 } from "./resources.service";
@@ -57,48 +48,13 @@ export function getTrainingStatus(
   return AbilityEmployeeStatus.NotStarted;
 }
 
-export type Attribute = NonNullable<
-  Awaited<ReturnType<typeof getAttribute>>["data"]
->;
-
-export type AttributeCategory = NonNullable<
-  Awaited<ReturnType<typeof getAttributeCategories>>["data"]
->[number];
-
-export type AttributeCategoryDetailType = NonNullable<
-  Awaited<ReturnType<typeof getAttributeCategory>>["data"]
->;
-
-export type AttributeDataType = {
-  id: number;
-  label: string;
-  isBoolean: boolean;
-  isDate: boolean;
-  isList: boolean;
-  isNumeric: boolean;
-  isText: boolean;
-  isUser: boolean;
-};
-
 export type Contractor = NonNullable<
   Awaited<ReturnType<typeof getContractors>>["data"]
->[number];
-
-export type Department = NonNullable<
-  Awaited<ReturnType<typeof getDepartments>>["data"]
 >[number];
 
 export type EmployeeAbility = NonNullable<
   Awaited<ReturnType<typeof getEmployeeAbilities>>["data"]
 >[number];
-
-export type EmployeeJob = NonNullable<
-  Awaited<ReturnType<typeof getEmployeeJob>>["data"]
->;
-
-export type EmployeeSummary = NonNullable<
-  Awaited<ReturnType<typeof getEmployeeSummary>>["data"]
->;
 
 export type Equipment = NonNullable<
   Awaited<ReturnType<typeof getEquipment>>["data"]
@@ -112,24 +68,12 @@ export type EquipmentTypeDetailType = NonNullable<
   Awaited<ReturnType<typeof getEquipmentType>>["data"]
 >;
 
-export type Holiday = NonNullable<
-  Awaited<ReturnType<typeof getHolidays>>["data"]
->[number];
-
 export type Location = NonNullable<
   Awaited<ReturnType<typeof getLocations>>["data"]
 >[number];
 
 export type Partner = NonNullable<
   Awaited<ReturnType<typeof getPartners>>["data"]
->[number];
-
-export type Person = NonNullable<
-  Awaited<ReturnType<typeof getPeople>>["data"]
->[number];
-
-export type Shift = NonNullable<
-  Awaited<ReturnType<typeof getShifts>>["data"]
 >[number];
 
 export type ShiftLocation = NonNullable<

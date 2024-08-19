@@ -25,7 +25,7 @@ import { flash, requireAuthSession } from "~/services/session.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
-import { insertEmployeeJob } from "../resources";
+import { insertEmployeeJob } from "../people/people.service";
 
 export async function addUserToCompany(
   client: SupabaseClient<Database>,

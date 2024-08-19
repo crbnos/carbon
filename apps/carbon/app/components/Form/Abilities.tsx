@@ -1,7 +1,7 @@
 import { useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
-import type { getAbilitiesList } from "~/modules/resources";
+import type { getAbilitiesList } from "~/modules/people";
 import { path } from "~/utils/path";
 import type { MultiSelectProps } from "./MultiSelect";
 import MultiSelect from "./MultiSelect";

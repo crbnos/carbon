@@ -44,6 +44,7 @@ import { useDocumentsSubmodules } from "~/modules/documents";
 import { useInventorySubmodules } from "~/modules/inventory";
 import { useInvoicingSubmodules } from "~/modules/invoicing";
 import { useItemsSubmodules } from "~/modules/items";
+import { usePeopleSubmodules } from "~/modules/people";
 import { usePurchasingSubmodules } from "~/modules/purchasing";
 import { useResourcesSubmodules } from "~/modules/resources";
 import { useSalesSubmodules } from "~/modules/sales";
@@ -317,6 +318,7 @@ function useGroupedSubmodules() {
   const invoicing = useInvoicingSubmodules();
   const users = useUsersSubmodules();
   const settings = useSettingsSubmodules();
+  const people = usePeopleSubmodules();
   const resources = useResourcesSubmodules();
   const account = useAccountSubmodules();
 
@@ -336,6 +338,7 @@ function useGroupedSubmodules() {
     purchasing,
     accounting,
     invoicing,
+    people,
     resources,
     settings,
     users,

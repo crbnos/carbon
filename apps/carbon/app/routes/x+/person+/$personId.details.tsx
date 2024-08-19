@@ -11,7 +11,7 @@ import { ProfileForm, getAccount } from "~/modules/account";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
-    view: "resources",
+    view: "people",
   });
 
   const { personId } = params;

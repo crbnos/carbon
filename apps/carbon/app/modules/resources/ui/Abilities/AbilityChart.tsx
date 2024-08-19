@@ -8,7 +8,7 @@ import { PatternLines } from "@visx/pattern";
 import { scaleLinear } from "@visx/scale";
 import { AreaClosed, LinePath } from "@visx/shape";
 import { useRef } from "react";
-import type { AbilityDatum } from "~/modules/resources";
+import type { AbilityDatum } from "../../types";
 
 type AbilityChartProps = {
   data: AbilityDatum[];

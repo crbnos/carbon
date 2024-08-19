@@ -21,11 +21,8 @@ import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";
-import {
-  getLocationsList,
-  insertEmployeeJob,
-  upsertLocation,
-} from "~/modules/resources";
+import { insertEmployeeJob } from "~/modules/people";
+import { getLocationsList, upsertLocation } from "~/modules/resources";
 import {
   getCompanies,
   getCompany,

@@ -2,22 +2,14 @@ import { VStack } from "@carbon/react";
 import { type LoaderFunctionArgs, type MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import { requirePermissions } from "~/services/auth/auth.server";
-import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | People" }];
 };
 
-export const handle: Handle = {
-  breadcrumb: "Resources",
-  to: path.to.people,
-  module: "resources",
-};
-
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
-    view: "resources",
+    view: "people",
   });
 
   return null;

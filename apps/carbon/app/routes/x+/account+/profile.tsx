@@ -13,10 +13,8 @@ import { useLoaderData } from "@remix-run/react";
 import {
   ProfileForm,
   ProfilePhotoForm,
-  UserAttributesForm,
   accountProfileValidator,
   getAccount,
-  getPublicAttributes,
   updateAvatar,
   updatePublicAccount,
 } from "~/modules/account";
@@ -35,10 +33,7 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
-  const [user, publicAttributes] = await Promise.all([
-    getAccount(client, userId),
-    getPublicAttributes(client, userId, companyId),
-  ]);
+  const [user] = await Promise.all([getAccount(client, userId)]);
 
   if (user.error || !user.data) {
     throw redirect(
@@ -47,17 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  if (publicAttributes.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(
-        request,
-        error(publicAttributes.error, "Failed to get user attributes")
-      )
-    );
-  }
-
-  return json({ user: user.data, attributes: publicAttributes.data });
+  return json({ user: user.data });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -127,7 +112,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function AccountProfile() {
-  const { user, attributes } = useLoaderData<typeof loader>();
+  const { user } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={4}>
@@ -146,27 +131,6 @@ export default function AccountProfile() {
           </div>
         </CardContent>
       </Card>
-
-      {attributes.length ? (
-        <>
-          {attributes.map((category) => (
-            <Card key={category.id}>
-              <CardHeader>
-                <CardTitle>{category.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <UserAttributesForm attributeCategory={category} />
-              </CardContent>
-            </Card>
-          ))}
-        </>
-      ) : (
-        <Card>
-          <CardContent className="text-muted-foreground w-full text-center py-8">
-            No public attributes
-          </CardContent>
-        </Card>
-      )}
     </VStack>
   );
 }
