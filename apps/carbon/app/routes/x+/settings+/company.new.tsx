@@ -5,7 +5,8 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";
-import { insertEmployeeJob, upsertLocation } from "~/modules/resources";
+import { insertEmployeeJob } from "~/modules/people";
+import { upsertLocation } from "~/modules/resources";
 import {
   companyValidator,
   insertCompany,

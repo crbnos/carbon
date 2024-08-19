@@ -1,6 +1,6 @@
 import { json, redirect, useNavigate, useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/resources";
+import type { AttributeDataType } from "~/modules/people";
 import { CustomFieldForm, customFieldValidator } from "~/modules/settings";
 import { DataType } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";

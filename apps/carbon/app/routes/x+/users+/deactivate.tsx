@@ -2,7 +2,7 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import type { z } from "zod";
-import type { userAdminSchema } from "~/jobs.server/user-admin.server";
+import type { userAdminSchema } from "~/jobs/user-admin.server";
 import { triggerClient } from "~/lib/trigger.server";
 import { deactivateUsersValidator } from "~/modules/users";
 import { deactivateUser } from "~/modules/users/users.server";

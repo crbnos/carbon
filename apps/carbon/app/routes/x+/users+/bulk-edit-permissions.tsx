@@ -2,7 +2,7 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import type { z } from "zod";
-import type { permissionsUpdateSchema } from "~/jobs.server/update-permissions.server";
+import type { permissionsUpdateSchema } from "~/jobs/update-permissions.server";
 
 import { triggerClient } from "~/lib/trigger.server";
 import {

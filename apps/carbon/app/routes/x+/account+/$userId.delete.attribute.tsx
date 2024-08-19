@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { deleteUserAttributeValue } from "~/modules/account";
-import { getAttribute } from "~/modules/resources";
+import { getAttribute } from "~/modules/people";
 import { getUserClaims } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

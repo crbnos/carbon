@@ -2,7 +2,7 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { getAttributeDataTypes } from "~/modules/resources";
+import { getAttributeDataTypes } from "~/modules/people";
 import { CustomFieldsTable, getCustomFieldsTables } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

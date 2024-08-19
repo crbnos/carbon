@@ -16,7 +16,7 @@ import { useState } from "react";
 import type { z } from "zod";
 import { Array, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { AttributeDataType } from "~/modules/resources";
+import type { AttributeDataType } from "~/modules/people";
 import { customFieldValidator } from "~/modules/settings";
 import { DataType } from "~/modules/shared";
 import { path } from "~/utils/path";
