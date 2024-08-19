@@ -21,6 +21,7 @@ import { error, success } from "~/utils/result";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
+    role: "employee",
   });
 
   const { itemId } = params;
@@ -44,6 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     partUnitSalePrice: partUnitSalePrice.data,
     customerParts: customerParts.data,
+    itemId,
   });
 }
 
@@ -88,12 +90,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartSalesRoute() {
-  const { partUnitSalePrice, customerParts } = useLoaderData<typeof loader>();
+  const { partUnitSalePrice, customerParts, itemId } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     ...partUnitSalePrice,
     salesUnitOfMeasureCode: partUnitSalePrice?.salesUnitOfMeasureCode ?? "",
     ...getCustomFields(partUnitSalePrice.customFields),
+    itemId: itemId,
   };
 
   return (
@@ -102,7 +106,9 @@ export default function PartSalesRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
       />
-      {customerParts ? <CustomerParts customerParts={customerParts} /> : null}
+      {customerParts ? (
+        <CustomerParts customerParts={customerParts} itemId={itemId} />
+      ) : null}
     </VStack>
   );
 }

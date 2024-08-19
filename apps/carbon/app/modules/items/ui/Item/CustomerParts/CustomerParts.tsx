@@ -4,24 +4,34 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
+  IconButton,
 } from "@carbon/react";
 import { Outlet, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
+import { LuPencil, LuTrash } from "react-icons/lu";
+import { MdMoreHoriz } from "react-icons/md";
 import { CustomerAvatar, New } from "~/components";
 import { EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import type { CustomerPart } from "~/modules/items";
+import { path } from "~/utils/path";
 import useCustomerParts from "./useCustomerParts";
 
 type CustomerPartsProps = {
   customerParts: CustomerPart[];
+  itemId: string;
 };
 
-const CustomerParts = ({ customerParts }: CustomerPartsProps) => {
+const CustomerParts = ({ customerParts, itemId }: CustomerPartsProps) => {
   const navigate = useNavigate();
-  const { canEdit, onCellEdit } = useCustomerParts();
+  const { canEdit, onCellEdit, canDelete } = useCustomerParts();
 
   const columns = useMemo<ColumnDef<CustomerPart>[]>(() => {
     const defaultColumns: ColumnDef<CustomerPart>[] = [
@@ -29,8 +39,44 @@ const CustomerParts = ({ customerParts }: CustomerPartsProps) => {
         accessorKey: "customer.id",
         header: "Customer",
         cell: ({ row }) => (
-          <HStack className="justify-between">
+          <HStack className="justify-between min-w-[100px]">
             <CustomerAvatar customerId={row.original.customerId} />
+            <div className="relative w-6 h-5">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    aria-label="Edit purchase order line type"
+                    icon={<MdMoreHoriz />}
+                    size="md"
+                    className="absolute right-[-1px] top-[-6px]"
+                    variant="ghost"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(path.to.customerPart(itemId, row.original.id!))
+                    }
+                    disabled={!canEdit}
+                  >
+                    <DropdownMenuIcon icon={<LuPencil />} />
+                    Edit Customer Part
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(
+                        path.to.deleteCustomerPart(itemId, row.original.id!)
+                      )
+                    }
+                    disabled={!canDelete}
+                  >
+                    <DropdownMenuIcon icon={<LuTrash />} />
+                    Delete Customer Part
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </HStack>
         ),
       },
@@ -46,7 +92,7 @@ const CustomerParts = ({ customerParts }: CustomerPartsProps) => {
       },
     ];
     return [...defaultColumns];
-  }, []);
+  }, [canDelete, canEdit, itemId, navigate]);
 
   const editableComponents = useMemo(
     () => ({
@@ -63,7 +109,9 @@ const CustomerParts = ({ customerParts }: CustomerPartsProps) => {
           <CardHeader>
             <CardTitle>Customer Parts</CardTitle>
           </CardHeader>
-          <CardAction>{canEdit && <New to="new" />}</CardAction>
+          <CardAction>
+            {canEdit && <New to={path.to.newCustomerPart(itemId)} />}
+          </CardAction>
         </HStack>
         <CardContent>
           <Grid<CustomerPart>
@@ -71,7 +119,11 @@ const CustomerParts = ({ customerParts }: CustomerPartsProps) => {
             columns={columns}
             canEdit={canEdit}
             editableComponents={editableComponents}
-            onNewRow={canEdit ? () => navigate("new") : undefined}
+            onNewRow={
+              canEdit
+                ? () => navigate(path.to.newCustomerPart(itemId))
+                : undefined
+            }
           />
         </CardContent>
       </Card>

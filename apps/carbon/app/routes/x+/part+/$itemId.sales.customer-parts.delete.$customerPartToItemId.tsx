@@ -1,0 +1,91 @@
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import { ConfirmDelete } from "~/components/Modals";
+import { deleteItemCustomerPart, getItemCustomerPart } from "~/modules/items";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import { notFound } from "~/utils/http";
+import { path } from "~/utils/path";
+import { error, success } from "~/utils/result";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    delete: "parts",
+  });
+  const { itemId, customerPartToItemId } = params;
+  if (!itemId) throw notFound("itemId not found");
+  if (!customerPartToItemId) throw notFound("customerPartToItemId not found");
+
+  const customerPart = await getItemCustomerPart(
+    client,
+    customerPartToItemId,
+    companyId
+  );
+  if (customerPart.error) {
+    throw redirect(
+      path.to.partSales(itemId),
+      await flash(
+        request,
+        error(customerPart.error, "Failed to get customer part")
+      )
+    );
+  }
+
+  return json({ customerPart: customerPart.data });
+}
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    delete: "parts",
+  });
+
+  const { itemId, customerPartToItemId } = params;
+  if (!itemId) throw notFound("Could not find itemId");
+  if (!customerPartToItemId)
+    throw notFound("Could not find customerPartToItemId");
+
+  const { error: deleteTypeError } = await deleteItemCustomerPart(
+    client,
+    customerPartToItemId,
+    companyId
+  );
+  if (deleteTypeError) {
+    throw redirect(
+      path.to.partSales(itemId),
+      await flash(
+        request,
+        error(deleteTypeError, "Failed to delete customer part")
+      )
+    );
+  }
+
+  throw redirect(
+    path.to.partSales(itemId),
+    await flash(request, success("Successfully deleted customer part"))
+  );
+}
+
+export default function DeletePurchaseOrderLineRoute() {
+  const { itemId, customerPartToItemId } = useParams();
+  const { customerPart } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+
+  if (!customerPart) return null;
+  if (!itemId) throw notFound("Could not find itemId");
+  if (!customerPartToItemId)
+    throw notFound("Could not find customerPartToItemId");
+
+  const onCancel = () => navigate(path.to.partSales(itemId));
+
+  return (
+    <ConfirmDelete
+      action={path.to.deleteCustomerPart(itemId, customerPartToItemId)}
+      name="Customer Part"
+      text={`Are you sure you want to delete the customer part for ${
+        customerPart?.customer?.name ?? ""
+      }? This cannot be undone.`}
+      onCancel={onCancel}
+    />
+  );
+}

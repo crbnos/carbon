@@ -46,7 +46,7 @@ const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
           defaultValues={initialValues}
           validator={customerPartValidator}
           method="post"
-          action={path.to.newCustomerPart(itemId)}
+          action={isEditing ? undefined : path.to.newCustomerPart(itemId)}
           className="flex flex-col h-full"
         >
           <DrawerHeader>
