@@ -481,7 +481,7 @@ serve(async (req: Request) => {
         });
 
         await db.transaction().execute(async (trx) => {
-          const makeMethodsToDelete: string[] = [];
+          let makeMethodsToDelete: string[] = [];
           const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
             [];
           const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
@@ -511,6 +511,11 @@ serve(async (req: Request) => {
           });
 
           if (makeMethodsToDelete.length > 0) {
+            makeMethodsToDelete = makeMethodsToDelete.map((mm) =>
+              mm === makeMethodByItemId[quoteMakeMethod.data.itemId]
+                ? makeMethod.data.id
+                : mm
+            );
             await Promise.all([
               trx
                 .deleteFrom("methodMaterial")
@@ -526,7 +531,20 @@ serve(async (req: Request) => {
           if (materialInserts.length > 0) {
             await trx
               .insertInto("methodMaterial")
-              .values(materialInserts)
+              .values(
+                materialInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[quoteMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                  itemId:
+                    insert.itemId === quoteMakeMethod.data.itemId
+                      ? itemId
+                      : insert.itemId,
+                }))
+              )
               .execute();
           }
 
@@ -550,7 +568,16 @@ serve(async (req: Request) => {
           if (operationInserts.length > 0) {
             await trx
               .insertInto("methodOperation")
-              .values(operationInserts)
+              .values(
+                operationInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[quoteMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                }))
+              )
               .execute();
           }
         });
@@ -648,7 +675,7 @@ serve(async (req: Request) => {
         });
 
         await db.transaction().execute(async (trx) => {
-          const makeMethodsToDelete: string[] = [];
+          let makeMethodsToDelete: string[] = [];
           const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
             [];
           const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
@@ -678,6 +705,11 @@ serve(async (req: Request) => {
           });
 
           if (makeMethodsToDelete.length > 0) {
+            makeMethodsToDelete = makeMethodsToDelete.map((mm) =>
+              mm === makeMethodByItemId[quoteMakeMethod.data.itemId]
+                ? makeMethod.data.id
+                : mm
+            );
             await Promise.all([
               trx
                 .deleteFrom("methodMaterial")
@@ -693,7 +725,20 @@ serve(async (req: Request) => {
           if (materialInserts.length > 0) {
             await trx
               .insertInto("methodMaterial")
-              .values(materialInserts)
+              .values(
+                materialInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[quoteMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                  itemId:
+                    insert.itemId === quoteMakeMethod.data.itemId
+                      ? itemId
+                      : insert.itemId,
+                }))
+              )
               .execute();
           }
 
@@ -717,7 +762,16 @@ serve(async (req: Request) => {
           if (operationInserts.length > 0) {
             await trx
               .insertInto("methodOperation")
-              .values(operationInserts)
+              .values(
+                operationInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[quoteMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                }))
+              )
               .execute();
           }
         });
