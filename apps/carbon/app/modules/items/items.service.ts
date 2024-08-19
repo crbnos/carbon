@@ -30,6 +30,18 @@ import type {
   unitOfMeasureValidator,
 } from "./items.models";
 
+export async function deleteItemCustomerPart(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("customerPartToItem")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
 export async function deleteItem(client: SupabaseClient<Database>, id: string) {
   return client.from("item").update({ active: false }).eq("id", id);
 }
@@ -235,6 +247,19 @@ export async function getItemCost(
     .from("itemCost")
     .select("*")
     .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getItemCustomerPart(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("customerPartToItem")
+    .select("*, customer(id, name)")
+    .eq("id", id)
     .eq("companyId", companyId)
     .single();
 }
@@ -1444,7 +1469,7 @@ export async function upsertItemCustomerPart(
 ) {
   if ("id" in customerPart) {
     return client
-      .from("buyMethod")
+      .from("customerPartToItem")
       .update(sanitize(customerPart))
       .eq("id", customerPart.id)
       .select("id")

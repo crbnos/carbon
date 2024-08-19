@@ -152,6 +152,10 @@ export const path = {
       generatePath(`${x}/customer/${customerId}/locations/${id}`),
     customerLocations: (id: string) =>
       generatePath(`${x}/customer/${id}/locations`),
+    customerPart: (id: string, customerPartToItemId: string) =>
+      generatePath(
+        `${x}/part/${id}/sales/customer-parts/${customerPartToItemId}`
+      ),
     customerPayment: (id: string) =>
       generatePath(`${x}/customer/${id}/payments`),
     customerShipping: (id: string) =>
@@ -188,6 +192,10 @@ export const path = {
       generatePath(`${x}/customer/${customerId}/contacts/delete/${id}`),
     deleteCustomerLocation: (customerId: string, id: string) =>
       generatePath(`${x}/customer/${customerId}/locations/delete/${id}`),
+    deleteCustomerPart: (id: string, customerPartToItemId: string) =>
+      generatePath(
+        `${x}/part/${id}/sales/customer-parts/delete/${customerPartToItemId}`
+      ),
     deleteCustomerStatus: (id: string) =>
       generatePath(`${x}/sales/customer-statuses/delete/${id}`),
     deleteCustomerType: (id: string) =>
@@ -404,7 +412,8 @@ export const path = {
     newCustomerType: `${x}/sales/customer-types/new`,
     newCustomField: (tableId: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/new`),
-    newCustomerPart: (id: string) => generatePath(`${x}/part/${id}/sales/new`),
+    newCustomerPart: (id: string) =>
+      generatePath(`${x}/part/${id}/sales/customer-parts/new`),
     newDepartment: `${x}/people/departments/new`,
     newDocument: `${x}/documents/new`,
     newEmployee: `${x}/users/employees/new`,
