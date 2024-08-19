@@ -20,3 +20,14 @@ CREATE POLICY "Employees with sales_create can insert customer part to item" ON 
   has_company_permission('sales_create', "companyId") AND
   has_role('employee', "companyId")
 );
+
+DROP POLICY  "Employees with sales_delete can delete customer part to item" ON "customerPartToItem";
+CREATE POLICY "Employees with sales_delete can delete customer part to item" ON "customerPartToItem" FOR DELETE USING (
+  has_company_permission('sales_delete', "companyId")  AND 
+  has_role('employee', "companyId")
+);
+
+CREATE POLICY "Employees with sales_update can update customer part to item" ON "customerPartToItem" FOR UPDATE USING (
+  has_company_permission('sales_update', "companyId") AND
+  has_role('employee', "companyId")
+);
