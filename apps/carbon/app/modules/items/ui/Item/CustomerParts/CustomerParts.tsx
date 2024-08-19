@@ -9,7 +9,7 @@ import {
 import { Outlet, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import { New } from "~/components";
+import { CustomerAvatar, New } from "~/components";
 import { EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import type { CustomerPart } from "~/modules/items";
@@ -30,8 +30,7 @@ const CustomerParts = ({ customerParts }: CustomerPartsProps) => {
         header: "Customer",
         cell: ({ row }) => (
           <HStack className="justify-between">
-            {/* @ts-ignore */}
-            <span>{row.original.customer.name}</span>
+            <CustomerAvatar customerId={row.original.customerId} />
           </HStack>
         ),
       },
