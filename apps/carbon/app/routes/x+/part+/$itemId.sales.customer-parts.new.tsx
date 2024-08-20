@@ -34,12 +34,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (createCustomerPart.error) {
+    const flashMessage =
+      // 23505 means the unique constraint on ("customerId", "itemId") was violated
+      createCustomerPart.error.code == "23505"
+        ? "Customer Part record already defined for customer"
+        : "Failed to create customer part";
+
     throw redirect(
       path.to.partSales(itemId),
-      await flash(
-        request,
-        error(createCustomerPart.error, "Failed to create part supplier")
-      )
+      await flash(request, error(createCustomerPart.error, flashMessage))
     );
   }
 

@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export default function DeletePurchaseOrderLineRoute() {
+export default function DeleteCustomerPartRoute() {
   const { itemId, customerPartToItemId } = useParams();
   const { customerPart } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
