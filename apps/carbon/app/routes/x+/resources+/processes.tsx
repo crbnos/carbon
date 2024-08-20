@@ -2,7 +2,7 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { EquipmentTypesTable, getEquipmentTypes } from "~/modules/resources";
+import { ProcessesTable, getProcesses } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -11,8 +11,8 @@ import { getGenericQueryFilters } from "~/utils/query";
 import { error } from "~/utils/result";
 
 export const handle: Handle = {
-  breadcrumb: "Equipment",
-  to: path.to.equipment,
+  breadcrumb: "Processes",
+  to: path.to.processes,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const equipmentTypes = await getEquipmentTypes(client, companyId, {
+  const processes = await getProcesses(client, companyId, {
     search,
     limit,
     offset,
@@ -35,28 +35,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters,
   });
 
-  if (equipmentTypes.error) {
-    redirect(
+  if (processes.error) {
+    throw redirect(
       path.to.resources,
-      await flash(
-        request,
-        error(equipmentTypes.error, "Failed to fetch equipment types")
-      )
+      await flash(request, error(processes.error, "Failed to load processes"))
     );
   }
 
   return json({
-    count: equipmentTypes.count ?? 0,
-    equipmentTypes: equipmentTypes.data ?? [],
+    processes: processes.data ?? [],
+    count: processes.count ?? 0,
   });
 }
 
-export default function UserAttributesRoute() {
-  const { count, equipmentTypes } = useLoaderData<typeof loader>();
+export default function ProcessesRoute() {
+  const { processes, count } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <EquipmentTypesTable data={equipmentTypes} count={count} />
+      <ProcessesTable data={processes} count={count} />
       <Outlet />
     </VStack>
   );

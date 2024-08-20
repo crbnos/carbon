@@ -9,6 +9,7 @@ import type {
   equipmentValidator,
   locationValidator,
   partnerValidator,
+  processValidator,
   workCellTypeValidator,
   workCellValidator,
 } from "./resources.models";
@@ -72,6 +73,13 @@ export async function deletePartner(
   partnerId: string
 ) {
   return client.from("partner").delete().eq("id", partnerId);
+}
+
+export async function deleteProcess(
+  client: SupabaseClient<Database>,
+  processId: string
+) {
+  return client.from("process").delete().eq("id", processId);
 }
 
 export async function deleteShift(
@@ -371,6 +379,47 @@ export async function getPartners(
   return query;
 }
 
+export async function getProcess(
+  client: SupabaseClient<Database>,
+  processId: string
+) {
+  return client.from("process").select("*").eq("id", processId).single();
+}
+
+export async function getProcesses(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("process")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getProcessesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("process")
+    .select(`id, name`)
+    .eq("companyId", companyId)
+    .order("name");
+}
+
 export async function getWorkCell(
   client: SupabaseClient<Database>,
   workCellId: string
@@ -667,6 +716,29 @@ export async function upsertLocation(
       .eq("id", location.id);
   }
   return client.from("location").insert([location]).select("*").single();
+}
+
+export async function upsertProcess(
+  client: SupabaseClient<Database>,
+  process:
+    | (Omit<z.infer<typeof processValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof processValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in process) {
+    return client
+      .from("process")
+      .update(sanitize(process))
+      .eq("id", process.id);
+  }
+  return client.from("process").insert([process]).select("*").single();
 }
 
 export async function upsertPartner(

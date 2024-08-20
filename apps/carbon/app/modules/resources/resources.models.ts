@@ -121,6 +121,14 @@ export const partnerValidator = z.object({
   abilityId: z.string().min(20, { message: "Invalid ability" }),
 });
 
+export const processValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Process name is required" }),
+  defaultStandardFactor: z.enum(standardFactorType, {
+    errorMap: () => ({ message: "Standard factor is required" }),
+  }),
+});
+
 export const workCellValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),

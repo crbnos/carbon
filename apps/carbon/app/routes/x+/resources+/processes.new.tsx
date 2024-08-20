@@ -3,27 +3,27 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
 import {
-  EquipmentTypeForm,
-  equipmentTypeValidator,
-  upsertEquipmentType,
+  ProcessForm,
+  processValidator,
+  upsertProcess,
 } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
+import { error, success } from "~/utils/result";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources",
+    create: "resources",
   });
 
   const formData = await request.formData();
   const modal = formData.get("type") === "modal";
 
-  const validation = await validator(equipmentTypeValidator).validate(formData);
+  const validation = await validator(processValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -31,38 +31,41 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createEquipmentType = await upsertEquipmentType(client, {
+  const createProcess = await upsertProcess(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (createEquipmentType.error) {
+
+  if (createProcess.error) {
     return modal
-      ? json(createEquipmentType)
+      ? json(createProcess)
       : redirect(
-          path.to.equipment,
+          path.to.processes,
           await flash(
             request,
-            error(createEquipmentType.error, "Failed to create equipment type")
+            error(createProcess.error, "Failed to create process.")
           )
         );
   }
 
   return modal
-    ? json(createEquipmentType, { status: 201 })
-    : redirect(path.to.equipment);
+    ? json(createProcess)
+    : redirect(
+        path.to.processes,
+        await flash(request, success("Process created"))
+      );
 }
 
-export default function NewEquipmentTypeRoute() {
+export default function NewProcessRoute() {
   const navigate = useNavigate();
-  const onClose = () => navigate(path.to.equipment);
+  const onClose = () => navigate(path.to.processes);
 
   const initialValues = {
     name: "",
-    description: "",
-    setupHours: 0,
+    defaultStandardFactor: "Minutes/Piece" as const,
   };
 
-  return <EquipmentTypeForm onClose={onClose} initialValues={initialValues} />;
+  return <ProcessForm initialValues={initialValues} onClose={onClose} />;
 }
