@@ -8,6 +8,7 @@ import type {
   getEquipmentTypes,
   getLocations,
   getPartners,
+  getProcesses,
   getWorkCellType,
   getWorkCellTypes,
 } from "./resources.service";
@@ -74,6 +75,10 @@ export type Location = NonNullable<
 
 export type Partner = NonNullable<
   Awaited<ReturnType<typeof getPartners>>["data"]
+>[number];
+
+export type Process = NonNullable<
+  Awaited<ReturnType<typeof getProcesses>>["data"]
 >[number];
 
 export type ShiftLocation = NonNullable<

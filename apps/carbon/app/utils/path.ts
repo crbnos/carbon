@@ -234,6 +234,8 @@ export const path = {
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePaymentTerm: (id: string) =>
       generatePath(`${x}/accounting/payment-terms/delete/${id}`),
+    deleteProcess: (id: string) =>
+      generatePath(`${x}/resources/processes/delete/${id}`),
     deletePurchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/delete/${id}`),
     deletePurchaseInvoiceLine: (invoiceId: string, lineId: string) =>
@@ -444,6 +446,7 @@ export const path = {
       generatePath(`${x}/part/${id}/purchasing/new`),
     newPartner: `${x}/resources/partners/new`,
     newPaymentTerm: `${x}/accounting/payment-terms/new`,
+    newProcess: `${x}/resources/processes/new`,
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
     newPurchaseInvoiceLine: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/lines/new`),
@@ -523,6 +526,8 @@ export const path = {
     person: (id: string) => generatePath(`${x}/person/${id}`),
     personDetails: (id: string) => generatePath(`${x}/person/${id}/details`),
     personJob: (id: string) => generatePath(`${x}/person/${id}/job`),
+    process: (id: string) => generatePath(`${x}/resources/processes/${id}`),
+    processes: `${x}/resources/processes`,
     profile: `${x}/account/profile`,
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),

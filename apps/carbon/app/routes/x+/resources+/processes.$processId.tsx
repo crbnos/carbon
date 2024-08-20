@@ -1,0 +1,90 @@
+import { validationError, validator } from "@carbon/remix-validated-form";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  ProcessForm,
+  getProcess,
+  processValidator,
+  upsertProcess,
+} from "~/modules/resources";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import { getCustomFields, setCustomFields } from "~/utils/form";
+import { assertIsPost, notFound } from "~/utils/http";
+import { path } from "~/utils/path";
+import { error } from "~/utils/result";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "resources",
+  });
+
+  const { processId } = params;
+  if (!processId) throw notFound("processId was not found");
+
+  const process = await getProcess(client, processId);
+
+  if (process.error) {
+    throw redirect(
+      path.to.processes,
+      await flash(request, error(process.error, "Failed to get process"))
+    );
+  }
+
+  return json({
+    process: process.data,
+  });
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, userId } = await requirePermissions(request, {
+    create: "resources",
+  });
+
+  const formData = await request.formData();
+  const modal = formData.get("type") === "modal";
+  const validation = await validator(processValidator).validate(formData);
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  const { id, ...data } = validation.data;
+  if (!id) throw notFound("Process ID was not found");
+
+  const createProcess = await upsertProcess(client, {
+    id,
+    ...data,
+    updatedBy: userId,
+    customFields: setCustomFields(formData),
+  });
+
+  if (createProcess.error) {
+    throw redirect(
+      path.to.processes,
+      await flash(
+        request,
+        error(createProcess.error, "Failed to create process.")
+      )
+    );
+  }
+
+  return modal ? json(createProcess) : redirect(path.to.processes);
+}
+
+export default function ProcessRoute() {
+  const { process } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const onClose = () => navigate(-1);
+
+  const initialValues = {
+    id: process.id,
+    name: process.name,
+    defaultStandardFactor: process.defaultStandardFactor ?? "Minutes/Piece",
+    ...getCustomFields(process.customFields),
+  };
+
+  return <ProcessForm initialValues={initialValues} onClose={onClose} />;
+}
