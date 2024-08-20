@@ -14,20 +14,39 @@ ADD CONSTRAINT "customerPartToItem_pkey" PRIMARY KEY ("id");
 ALTER TABLE public."customerPartToItem"
 ADD CONSTRAINT "customerPartToItem_customerId_itemId_key" UNIQUE ("customerId", "itemId");
 
--- 5. Fix the policy that was created incorrectly the first time
+-- 5. Fix the RLS policies
+DROP POLICY IF EXISTS "Employees with sales_view can view customer part to item" ON public."customerPartToItem";
+CREATE POLICY "Employees with sales_view or parts_view can view customer part to item" ON public."customerPartToItem" FOR SELECT USING (
+  (
+    has_company_permission('sales_view', "companyId")  OR
+    has_company_permission('parts_view', "companyId")
+  ) AND 
+  has_role('employee', "companyId")
+);
+
+
 DROP POLICY IF EXISTS "Employees with sales_create can insert customer part to item" ON public."customerPartToItem";
-CREATE POLICY "Employees with sales_create can insert customer part to item" ON "customerPartToItem" FOR INSERT WITH CHECK (
-  has_company_permission('sales_create', "companyId") AND
+CREATE POLICY "Employees with sales_create or parts_create can insert customer part to item" ON "customerPartToItem" FOR INSERT WITH CHECK (
+  (
+    has_company_permission('sales_create', "companyId")  OR
+    has_company_permission('parts_create', "companyId")
+  ) AND 
   has_role('employee', "companyId")
 );
 
 DROP POLICY  "Employees with sales_delete can delete customer part to item" ON "customerPartToItem";
-CREATE POLICY "Employees with sales_delete can delete customer part to item" ON "customerPartToItem" FOR DELETE USING (
-  has_company_permission('sales_delete', "companyId")  AND 
+CREATE POLICY "Employees with sales_delete or parts_delete can delete customer part to item" ON "customerPartToItem" FOR DELETE USING (
+  (
+    has_company_permission('sales_delete', "companyId")  OR
+    has_company_permission('parts_delete', "companyId")
+  ) AND 
   has_role('employee', "companyId")
 );
 
-CREATE POLICY "Employees with sales_update can update customer part to item" ON "customerPartToItem" FOR UPDATE USING (
-  has_company_permission('sales_update', "companyId") AND
+CREATE POLICY "Employees with sales_update or parts_update can update customer part to item" ON "customerPartToItem" FOR UPDATE USING (
+  (
+    has_company_permission('sales_update', "companyId")  OR
+    has_company_permission('parts_update', "companyId")
+  ) AND 
   has_role('employee', "companyId")
 );
