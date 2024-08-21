@@ -284,7 +284,7 @@ export async function getProcess(
   client: SupabaseClient<Database>,
   processId: string
 ) {
-  return client.from("process").select("*").eq("id", processId).single();
+  return client.from("processes").select("*").eq("id", processId).single();
 }
 
 export async function getProcesses(
@@ -293,7 +293,7 @@ export async function getProcesses(
   args?: GenericQueryFilters & { search: string | null }
 ) {
   let query = client
-    .from("process")
+    .from("processes")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
@@ -364,8 +364,8 @@ export async function getWorkCentersList(
   companyId: string
 ) {
   return client
-    .from("workCenter")
-    .select("id, name")
+    .from("workCenters")
+    .select("*")
     .eq("companyId", companyId)
     .order("name");
 }

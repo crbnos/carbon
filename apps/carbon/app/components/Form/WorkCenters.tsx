@@ -5,28 +5,24 @@ import { useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources";
 import { WorkCenterForm } from "~/modules/resources";
 import { path } from "~/utils/path";
-import type { ComboboxProps } from "./Combobox";
-import CreatableCombobox from "./CreatableCombobox";
+import type { CreatableMultiSelectProps } from "./CreatableMultiSelect";
+import CreatableMultiSelect from "./CreatableMultiSelect";
 
-type WorkCenterSelectProps = Omit<ComboboxProps, "options"> & {
+type WorkCenterSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
   processId?: string;
-  locationId?: string;
 };
 
-const WorkCenter = (props: WorkCenterSelectProps) => {
+const WorkCenters = (props: WorkCenterSelectProps) => {
   const newWorkCenterModal = useDisclosure();
   const { defaults } = useUser();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useWorkCenters({
-    processId: props?.processId,
-    locationId: props?.locationId,
-  });
+  const options = useWorkCenters();
 
   return (
     <>
-      <CreatableCombobox
+      <CreatableMultiSelect
         ref={triggerRef}
         options={options}
         {...props}
@@ -49,7 +45,7 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
             description: "",
             quotingRate: 0,
             laborRate: 0,
-            locationId: props?.locationId ?? defaults?.locationId ?? "",
+            locationId: defaults?.locationId ?? "",
             processes: props?.processId ? [props.processId] : [],
             defaultStandardFactor: "Minutes/Piece" as "Total Hours",
           }}
@@ -59,15 +55,11 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
   );
 };
 
-WorkCenter.displayName = "WorkCenter";
+WorkCenters.displayName = "WorkCenter";
 
-export default WorkCenter;
+export default WorkCenters;
 
-export const useWorkCenters = (args: {
-  processId?: string;
-  locationId?: string;
-}) => {
-  const { processId, locationId } = args;
+export const useWorkCenters = () => {
   const workCenterFetcher =
     useFetcher<Awaited<ReturnType<typeof getWorkCentersList>>>();
 
@@ -78,25 +70,12 @@ export const useWorkCenters = (args: {
   const options = useMemo(
     () =>
       workCenterFetcher.data?.data
-        ? workCenterFetcher.data?.data
-            .filter((f) => {
-              if (processId) {
-                // @ts-ignore
-                return (f.processes ?? []).map((p) => p.id).includes(processId);
-              }
-
-              if (locationId) {
-                return f.locationId === locationId;
-              }
-
-              return true;
-            })
-            .map((c) => ({
-              value: c.id!,
-              label: c.name!,
-            }))
+        ? workCenterFetcher.data?.data.map((c) => ({
+            value: c.id!,
+            label: c.name!,
+          }))
         : [],
-    [workCenterFetcher.data, processId, locationId]
+    [workCenterFetcher.data]
   );
 
   return options;

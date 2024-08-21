@@ -2,6 +2,7 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
+import { useUser } from "~/hooks";
 import {
   WorkCenterForm,
   upsertWorkCenter,
@@ -55,6 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function NewWorkCenterRoute() {
   const navigate = useNavigate();
   const onClose = () => navigate(path.to.workCenters);
+  const { defaults } = useUser();
 
   const initialValues = {
     name: "",
@@ -63,6 +65,7 @@ export default function NewWorkCenterRoute() {
     laborRate: 0,
     overheadRate: 0,
     defaultStandardFactor: "Minutes/Piece" as "Minutes/Piece",
+    locationId: defaults?.locationId ?? "",
     processes: [],
   };
 

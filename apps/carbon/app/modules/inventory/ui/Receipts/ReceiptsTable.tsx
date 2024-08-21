@@ -116,7 +116,6 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
           },
         },
       },
-
       {
         accessorKey: "status",
         header: "Status",

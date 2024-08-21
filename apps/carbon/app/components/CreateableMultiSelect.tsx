@@ -92,7 +92,11 @@ const CreatableMultiSelect = forwardRef<
                 className
               )}
               onClick={() => setOpen(!open)}
-              onKeyDown={() => setOpen(!open)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  setOpen(!open);
+                }
+              }}
               asChild
             >
               <div>
@@ -199,6 +203,7 @@ function SelectedOption({
     <Badge key={item} onClick={() => onUnselect(item)} style={colors}>
       {options.find((option) => option.value === item)?.label}
       <BadgeCloseButton
+        tabIndex={-1}
         style={{ color: colors.color }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {

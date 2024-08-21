@@ -105,17 +105,19 @@ export const processValidator = z.object({
   defaultStandardFactor: z.enum(standardFactorType, {
     errorMap: () => ({ message: "Standard factor is required" }),
   }),
+  workCenters: z.array(z.string().min(20, { message: "Invalid work center" })),
 });
 
 export const workCenterValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   description: z.string(),
-  requiredAbilityId: zfd.text(z.string().optional()),
-  quotingRate: zfd.numeric(z.number().min(0)),
-  laborRate: zfd.numeric(z.number().min(0)),
   defaultStandardFactor: z.enum(standardFactorType, {
     errorMap: (issue, ctx) => ({ message: "Standard factor is required" }),
   }),
+  laborRate: zfd.numeric(z.number().min(0)),
+  locationId: z.string().min(20, { message: "Location is required" }),
   processes: z.array(z.string().min(20, { message: "Invalid process" })),
+  quotingRate: zfd.numeric(z.number().min(0)),
+  requiredAbilityId: zfd.text(z.string().optional()),
 });

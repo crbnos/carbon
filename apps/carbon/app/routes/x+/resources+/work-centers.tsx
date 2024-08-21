@@ -2,7 +2,11 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { WorkCentersTable, getWorkCenters } from "~/modules/resources";
+import {
+  WorkCentersTable,
+  getLocationsList,
+  getWorkCenters,
+} from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -27,13 +31,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const workCenters = await getWorkCenters(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters,
-  });
+  const [workCenters, locations] = await Promise.all([
+    getWorkCenters(client, companyId, {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters,
+    }),
+    getLocationsList(client, companyId),
+  ]);
 
   if (workCenters.error) {
     redirect(
@@ -48,16 +55,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: workCenters.count ?? 0,
     workCenters: workCenters.data ?? [],
+    locations: locations.data ?? [],
   });
 }
 
 export default function WorkCentersRoute() {
-  const { count, workCenters } = useLoaderData<typeof loader>();
-  console.log({ workCenters });
+  const { count, locations, workCenters } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <WorkCentersTable data={workCenters} count={count} />
+      <WorkCentersTable
+        data={workCenters}
+        count={count}
+        locations={locations}
+      />
       <Outlet />
     </VStack>
   );

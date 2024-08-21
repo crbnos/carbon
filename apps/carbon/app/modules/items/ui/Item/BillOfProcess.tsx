@@ -22,7 +22,7 @@ import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuSettings2, LuX } from "react-icons/lu";
+import { LuHammer, LuHardHat, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
@@ -71,10 +71,19 @@ function makeItem(operation: Operation): ItemWithData {
     order: operation.operationOrder,
     details: (
       <HStack spacing={1}>
-        <Badge variant="secondary">
-          {operation.laborTime} {operation.laborUnit}
-        </Badge>
-        <Badge variant="secondary">{operation.operationOrder}</Badge>
+        {operation.laborTime > 0 && (
+          <Badge variant="secondary">
+            <LuHardHat className="h-3 w-3 mr-1" />
+            {operation.laborTime} {operation.laborUnit}
+          </Badge>
+        )}
+
+        {operation.machineTime > 0 && (
+          <Badge variant="secondary">
+            <LuHammer className="h-3 w-3 mr-1" />
+            {operation.machineTime} {operation.machineUnit}
+          </Badge>
+        )}
       </HStack>
     ),
     data: operation,
@@ -630,6 +639,7 @@ function OperationForm({
           name="workCenterId"
           label="Work Center"
           isOptional
+          processId={processData.processId}
           onChange={(value) => {
             if (value) {
               onWorkCenterChange(value?.value as string);

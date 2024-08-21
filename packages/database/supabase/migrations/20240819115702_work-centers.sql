@@ -159,8 +159,11 @@ CREATE POLICY "Employees with resources_delete can delete work center/processes"
 CREATE OR REPLACE VIEW "workCenters" WITH(SECURITY_INVOKER=true) AS
   SELECT
      wc.*,
+     l.name as "locationName",
      wcp.processes
   FROM "workCenter" wc
+  LEFT JOIN location l 
+  ON wc."locationId" = l.id
   LEFT JOIN (
     SELECT
       "workCenterId",
@@ -169,6 +172,21 @@ CREATE OR REPLACE VIEW "workCenters" WITH(SECURITY_INVOKER=true) AS
     INNER JOIN "process" p ON wcp."processId" = p.id
     GROUP BY "workCenterId"
   ) wcp ON wc.id = wcp."workCenterId";
+
+CREATE OR REPLACE VIEW "processes" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    p.*,
+    wcp."workCenters"
+  FROM "process" p
+  LEFT JOIN (
+    SELECT 
+      "processId",
+      jsonb_agg(jsonb_build_object('id', "workCenterId", 'name', wc.name)) as "workCenters"
+    FROM "workCenterProcess" wcp
+    INNER JOIN "workCenter" wc ON wcp."workCenterId" = wc.id
+    GROUP BY "processId"
+  ) wcp ON p.id = wcp."processId";
+  
   
 
 DELETE FROM "customFieldTable" WHERE "table" = 'workCell';
