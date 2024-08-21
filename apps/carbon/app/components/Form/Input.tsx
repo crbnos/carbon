@@ -15,19 +15,26 @@ import { forwardRef } from "react";
 type FormInputProps = InputProps & {
   name: string;
   label?: string;
-  isRequired?: boolean;
+  isOptional?: boolean;
   helperText?: string;
   prefix?: string;
   suffix?: string;
 };
 
 const Input = forwardRef<HTMLInputElement, FormInputProps>(
-  ({ name, label, isRequired, helperText, prefix, suffix, ...rest }, ref) => {
+  (
+    { name, label, isOptional = false, helperText, prefix, suffix, ...rest },
+    ref
+  ) => {
     const { getInputProps, error } = useField(name);
 
     return (
-      <FormControl isInvalid={!!error} isRequired={isRequired}>
-        {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
+      <FormControl isInvalid={!!error}>
+        {label && (
+          <FormLabel htmlFor={name} isOptional={isOptional}>
+            {label}
+          </FormLabel>
+        )}
         {prefix || suffix ? (
           <InputGroup>
             {prefix && <InputLeftAddon children={prefix} />}
