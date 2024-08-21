@@ -130,9 +130,10 @@ export async function getConsumables(
     })
     .eq("companyId", companyId);
 
-  // TODO: this does not handle the case where active is true and false
   const includeInactive = args?.filters?.some(
-    (filter) => filter.column === "active" && filter.value === "false"
+    (filter) =>
+      (filter.column === "active" && filter.value === "false") ||
+      (filter.column === "active" && filter.operator === "in")
   );
   if (!includeInactive) {
     query = query.eq("active", true);
@@ -197,7 +198,9 @@ export async function getFixtures(
     .eq("companyId", companyId);
 
   const includeInactive = args?.filters?.some(
-    (filter) => filter.column === "active" && filter.value === "false"
+    (filter) =>
+      (filter.column === "active" && filter.value === "false") ||
+      (filter.column === "active" && filter.operator === "in")
   );
 
   if (!includeInactive) {
@@ -438,7 +441,9 @@ export async function getMaterials(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   const includeInactive = args?.filters?.some(
-    (filter) => filter.column === "active" && filter.value === "false"
+    (filter) =>
+      (filter.column === "active" && filter.value === "false") ||
+      (filter.column === "active" && filter.operator === "in")
   );
   if (!includeInactive) {
     query = query.eq("active", true);
@@ -694,7 +699,9 @@ export async function getParts(
     .eq("companyId", companyId);
 
   const includeInactive = args?.filters?.some(
-    (filter) => filter.column === "active" && filter.value === "false"
+    (filter) =>
+      (filter.column === "active" && filter.value === "false") ||
+      (filter.column === "active" && filter.operator === "in")
   );
   if (!includeInactive) {
     query = query.eq("active", true);
@@ -775,7 +782,9 @@ export async function getServices(
     .eq("companyId", companyId);
 
   const includeInactive = args?.filters?.some(
-    (filter) => filter.column === "active" && filter.value === "false"
+    (filter) =>
+      (filter.column === "active" && filter.value === "false") ||
+      (filter.column === "active" && filter.operator === "in")
   );
 
   if (!includeInactive) {
@@ -874,7 +883,9 @@ export async function getTools(
     .eq("companyId", companyId);
 
   const includeInactive = args?.filters?.some(
-    (filter) => filter.column === "active" && filter.value === "false"
+    (filter) =>
+      (filter.column === "active" && filter.value === "false") ||
+      (filter.column === "active" && filter.operator === "in")
   );
   if (!includeInactive) {
     query = query.eq("active", true);
