@@ -36,6 +36,7 @@ type WorkCenterFormProps = {
   initialValues: z.infer<typeof workCenterValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
+  showProcesses?: boolean;
   onClose: () => void;
 };
 
@@ -43,6 +44,7 @@ const WorkCenterForm = ({
   initialValues,
   open = true,
   type = "drawer",
+  showProcesses = true,
   onClose,
 }: WorkCenterFormProps) => {
   const permissions = usePermissions();
@@ -70,8 +72,8 @@ const WorkCenterForm = ({
     <ModalDrawerProvider type={type}>
       <ModalDrawer
         open={open}
-        onOpenChange={(open) => {
-          if (!open) onClose?.();
+        onOpenChange={(isOpen) => {
+          if (!isOpen) onClose?.();
         }}
       >
         <ModalDrawerContent>
@@ -97,7 +99,9 @@ const WorkCenterForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label="Name" />
-                <Processes name="processes" label="Processes" />
+                {showProcesses && (
+                  <Processes name="processes" label="Processes" />
+                )}
                 <TextArea name="description" label="Description" />
                 <Location name="locationId" label="Location" />
                 <Number

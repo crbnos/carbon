@@ -40,6 +40,7 @@ const WorkCenters = (props: WorkCenterSelectProps) => {
             newWorkCenterModal.onClose();
             triggerRef.current?.click();
           }}
+          showProcesses={false}
           initialValues={{
             name: created,
             description: "",

@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "resources",
   });
 
@@ -57,6 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const createProcess = await upsertProcess(client, {
     id,
     ...data,
+    companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
@@ -80,9 +81,11 @@ export default function ProcessRoute() {
   const onClose = () => navigate(-1);
 
   const initialValues = {
-    id: process.id,
-    name: process.name,
+    id: process.id!,
+    name: process.name!,
     defaultStandardFactor: process.defaultStandardFactor ?? "Minutes/Piece",
+    // @ts-ignore
+    workCenters: (process.workCenters ?? []).map((wc) => wc.id) ?? [],
     ...getCustomFields(process.customFields),
   };
 
