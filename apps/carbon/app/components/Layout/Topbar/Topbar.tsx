@@ -4,6 +4,7 @@ import { usePermissions } from "~/hooks";
 import AvatarMenu from "./AvatarMenu";
 import Breadcrumbs from "./Breadcrumbs";
 import CreateMenu from "./CreateMenu";
+import HelpMenu from "./HelpMenu";
 import ModeSwitcher from "./ModeSwitcher";
 
 const Topbar = () => {
@@ -15,7 +16,7 @@ const Topbar = () => {
       <HStack spacing={2} className="justify-end py-2">
         {permissions.is("employee") ? <Search /> : <div />}
         <CreateMenu />
-        {/* <HelpMenu /> */}
+        <HelpMenu />
         <ModeSwitcher />
         <AvatarMenu />
       </HStack>
