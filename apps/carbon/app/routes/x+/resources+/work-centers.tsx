@@ -2,7 +2,7 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import { WorkCellTypesTable, getWorkCellTypes } from "~/modules/resources";
+import { WorkCentersTable, getWorkCenters } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -11,8 +11,8 @@ import { getGenericQueryFilters } from "~/utils/query";
 import { error } from "~/utils/result";
 
 export const handle: Handle = {
-  breadcrumb: "Work Cells",
-  to: path.to.workCells,
+  breadcrumb: "Work Centers",
+  to: path.to.workCenters,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const workCellTypes = await getWorkCellTypes(client, companyId, {
+  const workCenters = await getWorkCenters(client, companyId, {
     search,
     limit,
     offset,
@@ -35,28 +35,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters,
   });
 
-  if (workCellTypes.error) {
+  if (workCenters.error) {
     redirect(
       path.to.resources,
       await flash(
         request,
-        error(workCellTypes.error, "Failed to fetch equipment types")
+        error(workCenters.error, "Failed to fetch work centers")
       )
     );
   }
 
   return json({
-    count: workCellTypes.count ?? 0,
-    workCellTypes: workCellTypes.data ?? [],
+    count: workCenters.count ?? 0,
+    workCenters: workCenters.data ?? [],
   });
 }
 
-export default function UserAttributesRoute() {
-  const { count, workCellTypes } = useLoaderData<typeof loader>();
+export default function WorkCentersRoute() {
+  const { count, workCenters } = useLoaderData<typeof loader>();
+  console.log({ workCenters });
 
   return (
     <VStack spacing={0} className="h-full">
-      <WorkCellTypesTable data={workCellTypes} count={count} />
+      <WorkCentersTable data={workCenters} count={count} />
       <Outlet />
     </VStack>
   );

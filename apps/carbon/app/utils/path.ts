@@ -27,7 +27,6 @@ export const path = {
       departments: `${api}/people/departments`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
-      equipmentTypes: `${api}/resources/equipment-types`,
       groupsByType: (type?: string) =>
         generatePath(`${api}/users/groups?type=${type}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
@@ -35,6 +34,7 @@ export const path = {
       itemPostingGroups: `${api}/items/groups`,
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
+      processes: `${api}/resources/processes`,
       rollback: (table: string, id: string) =>
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
@@ -52,9 +52,9 @@ export const path = {
       supplierStatuses: `${api}/purchasing/supplier-statuses`,
       supplierTypes: `${api}/purchasing/supplier-types`,
       unitOfMeasures: `${api}/items/uoms`,
-      workCells: (id: string) =>
-        generatePath(`${api}/resources/work-cells?location=${id}`),
-      workCellTypes: `${api}/resources/work-cell-types`,
+      workCentersByLocation: (id: string) =>
+        generatePath(`${api}/resources/work-centers?location=${id}`),
+      workCenters: `${api}/resources/work-centers`,
     },
     file: {
       cadModel: (urn: string) => generatePath(`${file}/autodesk/${urn}`),
@@ -211,10 +211,6 @@ export const path = {
       generatePath(`${x}/resources/ability/${abilityId}/employee/delete/${id}`),
     deleteEmployeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/delete/${id}`),
-    deleteEquipment: (id: string) =>
-      generatePath(`${x}/resources/equipment/unit/delete/${id}`),
-    deleteEquipmentType: (id: string) =>
-      generatePath(`${x}/resources/equipment/delete/${id}`),
     deleteGroup: (id: string) => generatePath(`${x}/users/groups/delete/${id}`),
     deleteHoliday: (id: string) =>
       generatePath(`${x}/people/holidays/delete/${id}`),
@@ -276,10 +272,8 @@ export const path = {
     deleteUom: (id: string) => generatePath(`${x}/items/uom/delete/${id}`),
     deleteUserAttribute: (id: string) =>
       generatePath(`${x}/account/${id}/delete/attribute`),
-    deleteWorkCell: (id: string) =>
-      generatePath(`${x}/resources/work-cells/cell/delete/${id}`),
-    deleteWorkCellType: (id: string) =>
-      generatePath(`${x}/resources/work-cells/delete/${id}`),
+    deleteWorkCenter: (id: string) =>
+      generatePath(`${x}/resources/work-centers/delete/${id}`),
     department: (id: string) => generatePath(`${x}/people/departments/${id}`),
     departments: `${x}/people/departments`,
     document: (id: string) => generatePath(`${x}/documents/search/${id}`),
@@ -297,13 +291,6 @@ export const path = {
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
-    equipment: `${x}/resources/equipment`,
-    equipmentType: (id: string) =>
-      generatePath(`${x}/resources/equipment/${id}`),
-    equipmentTypeList: (id: string) =>
-      generatePath(`${x}/resources/equipment/list/${id}`),
-    equipmentUnit: (id: string) =>
-      generatePath(`${x}/resources/equipment/unit/${id}`),
     fiscalYears: `${x}/accounting/years`,
     fixture: (id: string) => generatePath(`${x}/fixture/${id}`),
     fixtures: `${x}/items/fixtures`,
@@ -422,10 +409,6 @@ export const path = {
     newEmployeeAbility: (id: string) =>
       generatePath(`${x}/resources/ability/${id}/employee/new`),
     newEmployeeType: `${x}/users/employee-types/new`,
-    newEquipment: (id: string) =>
-      generatePath(`${x}/resources/equipment/list/${id}/new`),
-    newEquipmentUnit: `${x}/resources/equipment/unit/new`,
-    newEquipmentType: `${x}/resources/equipment/new`,
     newFixture: `${x}/fixture/new`,
     newFixtureSupplier: (id: string) =>
       generatePath(`${x}/fixture/${id}/purchasing/new`),
@@ -484,10 +467,7 @@ export const path = {
     newToolSupplier: (id: string) =>
       generatePath(`${x}/tool/${id}/purchasing/new`),
     newUom: `${x}/items/uom/new`,
-    newWorkCell: `${x}/resources/work-cells/cell/new`,
-    newWorkCellUnit: (id: string) =>
-      generatePath(`${x}/resources/work-cells/list/${id}/new`),
-    newWorkCellType: `${x}/resources/work-cells/new`,
+    newWorkCenter: `${x}/resources/work-centers/new`,
     part: (id: string) => generatePath(`${x}/part/${id}`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/costing`),
     partDetails: (id: string) => generatePath(`${x}/part/${id}/details`),
@@ -726,13 +706,9 @@ export const path = {
     uoms: `${x}/items/uom`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,
-    workCell: (id: string) =>
-      generatePath(`${x}/resources/work-cells/cell/${id}`),
-    workCells: `${x}/resources/work-cells`,
-    workCellType: (id: string) =>
-      generatePath(`${x}/resources/work-cells/${id}`),
-    workCellTypeList: (id: string) =>
-      generatePath(`/${x}/resources/work-cells/list/${id}`),
+    workCenters: `${x}/resources/work-centers`,
+    workCenter: (id: string) =>
+      generatePath(`${x}/resources/work-centers/${id}`),
   },
 } as const;
 

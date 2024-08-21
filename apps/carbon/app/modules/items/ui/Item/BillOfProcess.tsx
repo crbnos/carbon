@@ -26,16 +26,16 @@ import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
-  EquipmentType,
   Hidden,
   InputControlled,
   Number,
-  NumberControlled,
+  Process,
   Select,
   StandardFactor,
   Submit,
-  WorkCellType,
+  WorkCenter,
 } from "~/components/Form";
+import UnitHint, { getUnitHint } from "~/components/Form/UnitHint";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
@@ -72,7 +72,7 @@ function makeItem(operation: Operation): ItemWithData {
     details: (
       <HStack spacing={1}>
         <Badge variant="secondary">
-          {operation.productionStandard} {operation.standardFactor}
+          {operation.laborTime} {operation.laborUnit}
         </Badge>
         <Badge variant="secondary">{operation.operationOrder}</Badge>
       </HStack>
@@ -83,11 +83,14 @@ function makeItem(operation: Operation): ItemWithData {
 
 const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
   description: "",
-  workCellTypeId: "",
-  equipmentTypeId: "",
-  setupHours: 0,
-  productionStandard: 0,
-  standardFactor: "Hours/Piece",
+  processId: "",
+  workCenterId: "",
+  setupTime: 0,
+  setupUnit: "Total Minutes",
+  laborTime: 0,
+  laborUnit: "Minutes/Piece",
+  machineTime: 0,
+  machineUnit: "Minutes/Piece",
   operationOrder: "After Previous",
   methodOperationWorkInstruction: {
     content: {},
@@ -514,55 +517,64 @@ function OperationForm({
     }
   }, [item.id, methodOperationFetcher.data, setItems, setSelectedItemId]);
 
-  const [workCellData, setWorkCellData] = useState<{
-    workCellTypeId: string;
+  const [processData, setProcessData] = useState<{
+    processId: string;
     description: string;
-    standardFactor: string;
+    setupUnitHint: string;
+    setupUnit: string;
+    laborUnitHint: string;
+    laborUnit: string;
+    machineUnitHint: string;
+    machineUnit: string;
   }>({
-    workCellTypeId: item.data.workCellTypeId ?? "",
+    processId: item.data.processId ?? "",
     description: item.data.description ?? "",
-    standardFactor: item.data.standardFactor ?? "Hours/Piece",
+    setupUnitHint: getUnitHint(item.data.setupUnit),
+    setupUnit: item.data.setupUnit ?? "Total Minutes",
+    laborUnitHint: getUnitHint(item.data.laborUnit),
+    laborUnit: item.data.laborUnit ?? "Hours/Piece",
+    machineUnitHint: getUnitHint(item.data.machineUnit),
+    machineUnit: item.data.machineUnit ?? "Hours/Piece",
   });
 
-  const onWorkCellChange = async (workCellTypeId: string) => {
-    if (!supabase || !workCellTypeId) return;
+  const onProcessChange = async (processId: string) => {
+    if (!supabase || !processId) return;
     const { data, error } = await supabase
-      .from("workCellType")
+      .from("process")
       .select("*")
-      .eq("id", workCellTypeId)
+      .eq("id", processId)
       .single();
 
     if (error) throw new Error(error.message);
 
-    setWorkCellData({
-      workCellTypeId,
+    setProcessData((p) => ({
+      ...p,
+      processId,
       description: data?.name ?? "",
-      standardFactor: data?.defaultStandardFactor ?? "Hours/Piece",
-    });
+      laborUnit: data?.defaultStandardFactor ?? "Hours/Piece",
+      laborUnitHint: getUnitHint(data?.defaultStandardFactor),
+      machineUnit: data?.defaultStandardFactor ?? "Hours/Piece",
+      machineUnitHint: getUnitHint(data?.defaultStandardFactor),
+    }));
   };
 
-  const [equipmentData, setEquipmentData] = useState<{
-    equipmentTypeId: string;
-    setupHours: number;
-  }>({
-    equipmentTypeId: item.data.equipmentTypeId ?? "",
-    setupHours: item.data.setupHours ?? 0,
-  });
-
-  const onEquipmentChange = async (equipmentTypeId: string) => {
-    if (!supabase || !equipmentTypeId) return;
+  const onWorkCenterChange = async (workCenterId: string) => {
+    if (!supabase || !workCenterId) return;
     const { data, error } = await supabase
-      .from("equipmentType")
+      .from("workCenter")
       .select("*")
-      .eq("id", equipmentTypeId)
+      .eq("id", workCenterId)
       .single();
 
     if (error) throw new Error(error.message);
 
-    setEquipmentData({
-      equipmentTypeId,
-      setupHours: data?.setupHours ?? 0,
-    });
+    setProcessData((p) => ({
+      ...p,
+      laborUnit: data?.defaultStandardFactor ?? "Hours/Piece",
+      laborUnitHint: getUnitHint(data?.defaultStandardFactor),
+      machineUnit: data?.defaultStandardFactor ?? "Hours/Piece",
+      machineUnitHint: getUnitHint(data?.defaultStandardFactor),
+    }));
   };
 
   return (
@@ -598,17 +610,12 @@ function OperationForm({
       <Hidden name="makeMethodId" />
       <Hidden name="order" />
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-        <WorkCellType
-          name="workCellTypeId"
-          label="Work Cell"
+        <Process
+          name="processId"
+          label="Process"
           onChange={(value) => {
-            onWorkCellChange(value?.value as string);
+            onProcessChange(value?.value as string);
           }}
-        />
-        <EquipmentType
-          name="equipmentTypeId"
-          label="Equipment"
-          onChange={(value) => onEquipmentChange(value?.value as string)}
         />
         <Select
           name="operationOrder"
@@ -619,38 +626,98 @@ function OperationForm({
             label: o,
           }))}
         />
+        <WorkCenter
+          name="workCenterId"
+          label="Work Center"
+          isOptional
+          onChange={(value) => {
+            if (value) {
+              onWorkCenterChange(value?.value as string);
+            }
+          }}
+        />
       </div>
       <InputControlled
         name="description"
         label="Description"
-        value={workCellData.description}
+        value={processData.description}
         onChange={(newValue) => {
-          setWorkCellData((d) => ({ ...d, description: newValue }));
+          setProcessData((d) => ({ ...d, description: newValue }));
         }}
       />
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-        <NumberControlled
-          name="setupHours"
-          label="Setup Time (hours)"
-          minValue={0}
-          value={equipmentData.setupHours}
-          onChange={(newValue) => {
-            setEquipmentData((d) => ({ ...d, setupHours: newValue }));
+        <UnitHint
+          name="setupHint"
+          label="Setup"
+          value={processData.setupUnitHint}
+          onChange={(hint) => {
+            setProcessData((d) => ({
+              ...d,
+              setupUnitHint: hint,
+              setupUnit: hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+            }));
           }}
         />
-        <Number
-          name="productionStandard"
-          label="Production Standard"
-          minValue={0}
-        />
+        <Number name="setupTime" label="Setup Time" minValue={0} />
         <StandardFactor
-          name="standardFactor"
-          label="Standard Factor"
-          value={workCellData.standardFactor}
+          name="setupUnit"
+          label="Setup Unit"
+          hint={processData.setupUnitHint}
+          value={processData.setupUnit}
           onChange={(newValue) => {
-            setWorkCellData((d) => ({
+            setProcessData((d) => ({
               ...d,
-              standardFactor: newValue?.value ?? "Hours/Piece",
+              setupUnit: newValue?.value ?? "Total Minutes",
+            }));
+          }}
+        />
+        <UnitHint
+          name="laborHint"
+          label="Labor"
+          value={processData.laborUnitHint}
+          onChange={(hint) => {
+            setProcessData((d) => ({
+              ...d,
+              laborUnitHint: hint,
+              laborUnit: hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+            }));
+          }}
+        />
+        <Number name="laborTime" label="Labor Time" minValue={0} />
+        <StandardFactor
+          name="laborUnit"
+          label="Labor Unit"
+          hint={processData.laborUnitHint}
+          value={processData.laborUnit}
+          onChange={(newValue) => {
+            setProcessData((d) => ({
+              ...d,
+              laborUnit: newValue?.value ?? "Hours/Piece",
+            }));
+          }}
+        />
+        <UnitHint
+          name="machineHint"
+          label="Machine"
+          value={processData.machineUnitHint}
+          onChange={(hint) => {
+            setProcessData((d) => ({
+              ...d,
+              machineUnitHint: hint,
+              machineUnit: hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+            }));
+          }}
+        />
+        <Number name="machineTime" label="Machine Time" minValue={0} />
+        <StandardFactor
+          name="machineUnit"
+          label="Machine Unit"
+          hint={processData.machineUnitHint}
+          value={processData.machineUnit}
+          onChange={(newValue) => {
+            setProcessData((d) => ({
+              ...d,
+              machineUnit: newValue?.value ?? "Hours/Piece",
             }));
           }}
         />

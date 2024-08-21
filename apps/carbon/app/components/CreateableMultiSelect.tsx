@@ -1,0 +1,220 @@
+import {
+  Badge,
+  BadgeCloseButton,
+  Button,
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  HStack,
+  IconButton,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  cn,
+  multiSelectTriggerVariants,
+} from "@carbon/react";
+import { getColor } from "@carbon/utils";
+import type { ComponentPropsWithoutRef } from "react";
+import { forwardRef, useId, useState } from "react";
+import { MdClose } from "react-icons/md";
+import { RxCheck, RxMagnifyingGlass } from "react-icons/rx";
+
+export type CreatableMultiSelectProps = Omit<
+  ComponentPropsWithoutRef<"button">,
+  "onChange"
+> & {
+  size?: "sm" | "md" | "lg";
+  value: string[];
+  options: {
+    label: string;
+    value: string;
+    helper?: string;
+  }[];
+  selected?: string[];
+  isClearable?: boolean;
+  isReadOnly?: boolean;
+  label?: string;
+  placeholder?: string;
+  onChange: (selected: string[]) => void;
+  onCreateOption?: (inputValue: string) => void;
+};
+
+const CreatableMultiSelect = forwardRef<
+  HTMLButtonElement,
+  CreatableMultiSelectProps
+>(
+  (
+    {
+      size,
+      value,
+      options,
+      selected,
+      isClearable,
+      isReadOnly,
+      placeholder,
+      onChange,
+      label,
+      className,
+      ...props
+    },
+    ref
+  ) => {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const isExactMatch = options.some((option) =>
+      [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
+        search.toLowerCase()
+      )
+    );
+
+    const id = useId();
+
+    const handleUnselect = (item: string) => {
+      onChange(value.filter((i) => i !== item));
+    };
+
+    const hasSelections = value.length > 0;
+
+    return (
+      <HStack spacing={1}>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              aria-controls={id}
+              aria-expanded={open}
+              role="combobox"
+              tabIndex={0}
+              variant="secondary"
+              className={cn(
+                multiSelectTriggerVariants({ size, hasSelections }),
+                "bg-transparent px-2",
+                className
+              )}
+              onClick={() => setOpen(!open)}
+              onKeyDown={() => setOpen(!open)}
+              asChild
+            >
+              <div>
+                {hasSelections ? (
+                  <div className="flex gap-1 flex-wrap">
+                    {value.map((item) => (
+                      <SelectedOption
+                        key={item.toString()}
+                        item={item}
+                        options={options}
+                        onUnselect={handleUnselect}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {placeholder ?? "Search..."}
+                  </span>
+                )}
+
+                <RxMagnifyingGlass className="h-4 w-4 shrink-0 opacity-50" />
+              </div>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="min-w-[200px] w-[--radix-popover-trigger-width] p-0">
+            <Command>
+              <CommandInput
+                placeholder="Search..."
+                value={search}
+                onValueChange={setSearch}
+                className="h-9"
+              />
+              <CommandGroup className="max-h-64 overflow-auto">
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    onSelect={() => {
+                      onChange(
+                        value.includes(option.value)
+                          ? value.filter((item) => item !== option.value)
+                          : [...value, option.value]
+                      );
+                      setOpen(true);
+                    }}
+                  >
+                    <RxCheck
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value.includes(option.value)
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
+                {!isExactMatch && (
+                  <CommandItem
+                    onSelect={() => {
+                      props.onCreateOption?.(search);
+                      setSearch("");
+                    }}
+                    value={search?.replace(/"/g, '\\"').trim() || ""}
+                    className="cursor-pointer"
+                  >
+                    <span>Create</span>
+                    <span className="ml-1 font-bold">{search || label}</span>
+                  </CommandItem>
+                )}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        {isClearable && !isReadOnly && value && (
+          <IconButton
+            variant="ghost"
+            aria-label="Clear"
+            icon={<MdClose />}
+            onClick={() => onChange?.([])}
+            size={size === "sm" ? "md" : size}
+          />
+        )}
+      </HStack>
+    );
+  }
+);
+CreatableMultiSelect.displayName = "CreatableMultiSelect";
+
+export default CreatableMultiSelect;
+
+function SelectedOption({
+  item,
+  options,
+  onUnselect,
+}: {
+  item: string;
+  options: CreatableMultiSelectProps["options"];
+  onUnselect: (item: string) => void;
+}) {
+  const label = options.find((o) => o.value === item)?.label ?? "";
+  const colors = getColor(label);
+
+  return (
+    <Badge key={item} onClick={() => onUnselect(item)} style={colors}>
+      {options.find((option) => option.value === item)?.label}
+      <BadgeCloseButton
+        style={{ color: colors.color }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onUnselect(item);
+          }
+        }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onUnselect(item);
+        }}
+      />
+    </Badge>
+  );
+}

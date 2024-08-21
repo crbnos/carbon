@@ -20,7 +20,6 @@ import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import {
-  EquipmentType,
   Hidden,
   InputControlled,
   Number,
@@ -28,7 +27,7 @@ import {
   Select,
   StandardFactor,
   Submit,
-  WorkCellType,
+  WorkCenter,
 } from "~/components/Form";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
@@ -461,22 +460,6 @@ function OperationForm({
     setupHours: item.data.setupHours ?? 0,
   });
 
-  const onEquipmentChange = async (equipmentTypeId: string) => {
-    if (!supabase || !equipmentTypeId) return;
-    const { data, error } = await supabase
-      .from("equipmentType")
-      .select("*")
-      .eq("id", equipmentTypeId)
-      .single();
-
-    if (error) throw new Error(error.message);
-
-    setEquipmentData({
-      equipmentTypeId,
-      setupHours: data?.setupHours ?? 0,
-    });
-  };
-
   return (
     <ValidatedForm
       action={
@@ -505,19 +488,13 @@ function OperationForm({
       <Hidden name="quoteMakeMethodId" />
       <Hidden name="order" />
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-        <WorkCellType
+        <WorkCenter
           name="workCellTypeId"
           label="Work Cell"
           isReadOnly={isDisabled}
           onChange={(value) => {
             onWorkCellChange(value?.value as string);
           }}
-        />
-        <EquipmentType
-          name="equipmentTypeId"
-          label="Equipment"
-          isReadOnly={isDisabled}
-          onChange={(value) => onEquipmentChange(value?.value as string)}
         />
         <Select
           name="operationOrder"
@@ -540,7 +517,7 @@ function OperationForm({
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
         <NumberControlled
           name="setupHours"
-          label="Setup Time (hours)"
+          label="Setup Time"
           minValue={0}
           value={equipmentData.setupHours}
           onChange={(newValue) => {

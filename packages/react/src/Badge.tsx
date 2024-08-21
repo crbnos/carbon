@@ -51,12 +51,12 @@ const BadgeCloseButton = forwardRef<
 >(({ className, ...props }, ref) => (
   <button
     className={cn(
-      "ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+      "ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-muted-foreground hover:text-foreground",
       className
     )}
     {...props}
   >
-    <MdClose className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+    <MdClose className="h-3 w-3 " />
   </button>
 ));
 BadgeCloseButton.displayName = "BadgeCloseButton";

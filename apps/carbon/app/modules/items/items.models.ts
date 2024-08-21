@@ -215,20 +215,23 @@ export const methodOperationValidator = z.object({
       message: "Operation order is required",
     }),
   }),
-  workCellTypeId: z.string().min(20, { message: "Work cell is required" }),
-  equipmentTypeId: zfd.text(z.string().optional()),
+  processId: z.string().min(20, { message: "Process is required" }),
+  workCenterId: zfd.text(z.string().optional()),
   description: zfd.text(
     z.string().min(0, { message: "Description is required" })
   ),
-  setupHours: zfd.numeric(z.number().min(0)),
-  standardFactor: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Standard factor is required" }),
+  setupUnit: z.enum(standardFactorType, {
+    errorMap: () => ({ message: "Setup unit is required" }),
   }),
-  productionStandard: zfd.numeric(
-    z.number().min(0.00000001, {
-      message: "Should be greater than 0",
-    })
-  ),
+  setupTime: zfd.numeric(z.number().min(0)),
+  laborUnit: z.enum(standardFactorType, {
+    errorMap: () => ({ message: "Labor unit is required" }),
+  }),
+  laborTime: zfd.numeric(z.number().min(0)),
+  machineUnit: z.enum(standardFactorType, {
+    errorMap: () => ({ message: "Machine unit is required" }),
+  }),
+  machineTime: zfd.numeric(z.number().min(0)),
 });
 
 export const itemCostValidator = z.object({

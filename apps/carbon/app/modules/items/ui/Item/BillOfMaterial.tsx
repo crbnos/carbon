@@ -535,7 +535,7 @@ function MaterialForm({
           <Select
             name="methodOperationId"
             label="Operation"
-            isClearable
+            isOptional
             options={methodOperations.map((o) => ({
               value: o.id!,
               label: o.description,

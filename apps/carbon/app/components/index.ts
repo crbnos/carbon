@@ -4,6 +4,7 @@ import { BreadcrumbItem, BreadcrumbLink, Breadcrumbs } from "./Breadcrumb";
 import Combobox from "./Combobox";
 import Contact from "./Contact";
 import CreatableCombobox from "./CreateableCombobox";
+import CreatableMultiSelect from "./CreateableMultiSelect";
 import CustomerAvatar from "./CustomerAvatar";
 import DocumentPreview from "./DocumentPreview";
 import EmployeeAvatar from "./EmployeeAvatar";
@@ -27,6 +28,7 @@ export {
   Combobox,
   Contact,
   CreatableCombobox,
+  CreatableMultiSelect,
   CustomerAvatar,
   DocumentPreview,
   EmployeeAvatar,
