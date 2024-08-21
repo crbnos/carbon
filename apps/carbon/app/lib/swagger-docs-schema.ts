@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.2 (a4e00ff)",
+    version: "12.0.1 (cd38da5)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -2341,9 +2341,6 @@ export default {
             $ref: "#/parameters/rowFilter.quotes.revisionId",
           },
           {
-            $ref: "#/parameters/rowFilter.quotes.salesRfqId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quotes.dueDate",
           },
           {
@@ -2408,6 +2405,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quotes.favorite",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotes.salesRfqId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotes.salesOrderId",
           },
           {
             $ref: "#/parameters/select",
@@ -5527,6 +5530,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierLocation.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierLocation.name",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -5598,6 +5604,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierLocation.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierLocation.name",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -5621,6 +5630,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierLocation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierLocation.name",
           },
           {
             $ref: "#/parameters/body.supplierLocation",
@@ -5824,6 +5836,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.customerLocation.name",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -5895,6 +5910,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.customerLocation.name",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -5918,6 +5936,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerLocation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerLocation.name",
           },
           {
             $ref: "#/parameters/body.customerLocation",
@@ -8914,27 +8935,6 @@ export default {
             $ref: "#/parameters/rowFilter.contact.fax",
           },
           {
-            $ref: "#/parameters/rowFilter.contact.addressLine1",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.addressLine2",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.city",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.state",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.postalCode",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.countryCode",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.birthday",
-          },
-          {
             $ref: "#/parameters/rowFilter.contact.notes",
           },
           {
@@ -9030,27 +9030,6 @@ export default {
             $ref: "#/parameters/rowFilter.contact.fax",
           },
           {
-            $ref: "#/parameters/rowFilter.contact.addressLine1",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.addressLine2",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.city",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.state",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.postalCode",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.countryCode",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.birthday",
-          },
-          {
             $ref: "#/parameters/rowFilter.contact.notes",
           },
           {
@@ -9098,27 +9077,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.contact.fax",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.addressLine1",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.addressLine2",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.city",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.state",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.postalCode",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.countryCode",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.birthday",
           },
           {
             $ref: "#/parameters/rowFilter.contact.notes",
@@ -11593,22 +11551,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLines.modelUploadId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLines.pricingQuantity",
+            $ref: "#/parameters/rowFilter.quoteLines.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLines.pricingUnitCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLines.pricingLeadTime",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLines.pricingDiscountPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLines.pricingMarkupPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLines.pricingExtendedPrice",
+            $ref: "#/parameters/rowFilter.quoteLines.additionalCharges",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.modelId",
@@ -11627,6 +11573,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.modelSize",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.unitCost",
           },
           {
             $ref: "#/parameters/select",
@@ -14086,12 +14035,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqLine.salesRfqId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartNumber",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRfqLine.customerRevisionId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesRfqLine.itemId",
           },
           {
@@ -14132,6 +14075,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartRevision",
           },
           {
             $ref: "#/parameters/select",
@@ -14199,12 +14148,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqLine.salesRfqId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartNumber",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRfqLine.customerRevisionId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesRfqLine.itemId",
           },
           {
@@ -14245,6 +14188,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartRevision",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -14266,12 +14215,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqLine.salesRfqId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartNumber",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRfqLine.customerRevisionId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesRfqLine.itemId",
           },
           {
@@ -14312,6 +14255,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLine.customerPartRevision",
           },
           {
             $ref: "#/parameters/body.salesRfqLine",
@@ -15090,6 +15039,114 @@ export default {
         tags: ["employees"],
       },
     },
+    "/quoteOperationsWithMakeMethods": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.makeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.quoteLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.quoteMakeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.order",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.workCellTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.equipmentTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.setupHours",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.standardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.productionStandard",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.operationOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.quotingRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.customFields",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/quoteOperationsWithMakeMethods",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["quoteOperationsWithMakeMethods"],
+      },
+    },
     "/supplierStatus": {
       get: {
         parameters: [
@@ -15481,9 +15538,6 @@ export default {
             $ref: "#/parameters/rowFilter.quote.revisionId",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.salesRfqId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quote.dueDate",
           },
           {
@@ -15606,9 +15660,6 @@ export default {
             $ref: "#/parameters/rowFilter.quote.revisionId",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.salesRfqId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quote.dueDate",
           },
           {
@@ -15683,9 +15734,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quote.revisionId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quote.salesRfqId",
           },
           {
             $ref: "#/parameters/rowFilter.quote.dueDate",
@@ -17674,9 +17722,6 @@ export default {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.quoteId",
           },
           {
@@ -17686,19 +17731,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.leadTime",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.discountPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.markupPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.extendedPrice",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.createdAt",
@@ -17711,6 +17747,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.unitPrice",
           },
           {
             $ref: "#/parameters/select",
@@ -17772,9 +17811,6 @@ export default {
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.quoteId",
           },
           {
@@ -17784,19 +17820,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.leadTime",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.discountPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.markupPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.extendedPrice",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.createdAt",
@@ -17809,6 +17836,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.unitPrice",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -17824,9 +17854,6 @@ export default {
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.quoteId",
           },
           {
@@ -17836,19 +17863,10 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLinePrice.leadTime",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.discountPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.markupPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLinePrice.extendedPrice",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.createdAt",
@@ -17861,6 +17879,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.unitPrice",
           },
           {
             $ref: "#/parameters/body.quoteLinePrice",
@@ -21376,12 +21397,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqLines.salesRfqId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesRfqLines.customerPartNumber",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesRfqLines.customerRevisionId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesRfqLines.itemId",
           },
           {
@@ -21424,6 +21439,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqLines.modelUploadId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfqLines.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLines.customerPartRevision",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesRfqLines.modelId",
           },
           {
@@ -21443,6 +21464,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqLines.itemName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLines.methodType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLines.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLines.itemType",
           },
           {
             $ref: "#/parameters/select",
@@ -22828,9 +22858,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.internalNotes",
           },
           {
-            $ref: "#/parameters/rowFilter.salesRfq.externalNotes",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesRfq.locationId",
           },
           {
@@ -22853,6 +22880,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfq.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.customerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.notes",
           },
           {
             $ref: "#/parameters/select",
@@ -22947,9 +22980,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.internalNotes",
           },
           {
-            $ref: "#/parameters/rowFilter.salesRfq.externalNotes",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesRfq.locationId",
           },
           {
@@ -22972,6 +23002,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfq.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.customerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.notes",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -23020,9 +23056,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.internalNotes",
           },
           {
-            $ref: "#/parameters/rowFilter.salesRfq.externalNotes",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesRfq.locationId",
           },
           {
@@ -23045,6 +23078,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfq.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.customerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.notes",
           },
           {
             $ref: "#/parameters/body.salesRfq",
@@ -23461,6 +23500,141 @@ export default {
           },
         },
         tags: ["salesOrderCustomers"],
+      },
+    },
+    "/opportunity": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.opportunity.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.salesRfqId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/opportunity",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["opportunity"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.opportunity",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["opportunity"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.opportunity.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.salesRfqId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["opportunity"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.opportunity.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.salesRfqId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.companyId",
+          },
+          {
+            $ref: "#/parameters/body.opportunity",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["opportunity"],
       },
     },
     "/documentLabels": {
@@ -24904,6 +25078,150 @@ export default {
           },
         },
         tags: ["part"],
+      },
+    },
+    "/customerPartToItem": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerPartRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.id",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/customerPartToItem",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["customerPartToItem"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.customerPartToItem",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["customerPartToItem"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerPartRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.id",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["customerPartToItem"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.customerPartRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerPartToItem.id",
+          },
+          {
+            $ref: "#/parameters/body.customerPartToItem",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["customerPartToItem"],
       },
     },
     "/materials": {
@@ -27787,6 +28105,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.modelUploadId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.additionalCharges",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27906,6 +28230,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.modelUploadId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.additionalCharges",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27977,6 +28307,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.additionalCharges",
           },
           {
             $ref: "#/parameters/body.quoteLine",
@@ -30109,9 +30445,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqs.internalNotes",
           },
           {
-            $ref: "#/parameters/rowFilter.salesRfqs.externalNotes",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesRfqs.locationId",
           },
           {
@@ -30136,7 +30469,19 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqs.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfqs.customerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqs.notes",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesRfqs.locationName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqs.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqs.salesOrderId",
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqs.favorite",
@@ -31451,6 +31796,63 @@ export default {
         tags: ["(rpc) is_claims_admin"],
       },
     },
+    "/rpc/get_quote_methods_by_method_id": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "mid",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_quote_methods_by_method_id"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                mid: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["mid"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_quote_methods_by_method_id"],
+      },
+    },
     "/rpc/get_permission_companies": {
       get: {
         parameters: [
@@ -32298,6 +32700,7 @@ export default {
             "Parts",
             "Purchasing",
             "Resources",
+            "People",
             "Sales",
             "Settings",
             "Scheduling",
@@ -32477,12 +32880,6 @@ export default {
           format: "integer",
           type: "integer",
         },
-        salesRfqId: {
-          description:
-            "Note:\nThis is a Foreign Key to `salesRfq.id`.<fk table='salesRfq' column='id'/>",
-          format: "text",
-          type: "string",
-        },
         dueDate: {
           format: "date",
           type: "string",
@@ -32597,6 +32994,18 @@ export default {
         favorite: {
           format: "boolean",
           type: "boolean",
+        },
+        salesRfqId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesRfq.id`.<fk table='salesRfq' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -33944,7 +34353,7 @@ export default {
       type: "object",
     },
     supplierLocation: {
-      required: ["id", "supplierId", "addressId"],
+      required: ["id", "supplierId", "addressId", "name"],
       properties: {
         id: {
           default: "public.xid()",
@@ -33966,6 +34375,10 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        name: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -34029,7 +34442,7 @@ export default {
       type: "object",
     },
     customerLocation: {
-      required: ["id", "customerId", "addressId"],
+      required: ["id", "customerId", "addressId", "name"],
       properties: {
         id: {
           default: "public.xid()",
@@ -34051,6 +34464,10 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        name: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -34266,6 +34683,7 @@ export default {
             "Parts",
             "Purchasing",
             "Resources",
+            "People",
             "Sales",
             "Settings",
             "Scheduling",
@@ -34545,6 +34963,7 @@ export default {
             "Parts",
             "Purchasing",
             "Resources",
+            "People",
             "Sales",
             "Settings",
             "Scheduling",
@@ -35429,36 +35848,6 @@ export default {
         },
         fax: {
           format: "text",
-          type: "string",
-        },
-        addressLine1: {
-          format: "text",
-          type: "string",
-        },
-        addressLine2: {
-          format: "text",
-          type: "string",
-        },
-        city: {
-          format: "text",
-          type: "string",
-        },
-        state: {
-          format: "text",
-          type: "string",
-        },
-        postalCode: {
-          format: "text",
-          type: "string",
-        },
-        countryCode: {
-          description:
-            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
-          format: "integer",
-          type: "integer",
-        },
-        birthday: {
-          format: "date",
           type: "string",
         },
         notes: {
@@ -36713,29 +37102,15 @@ export default {
           format: "text",
           type: "string",
         },
-        pricingQuantity: {
-          format: "numeric",
-          type: "number",
+        quantity: {
+          format: "numeric[]",
+          items: {
+            type: "number",
+          },
+          type: "array",
         },
-        pricingUnitCost: {
-          format: "numeric",
-          type: "number",
-        },
-        pricingLeadTime: {
-          format: "numeric",
-          type: "number",
-        },
-        pricingDiscountPercent: {
-          format: "numeric",
-          type: "number",
-        },
-        pricingMarkupPercent: {
-          format: "numeric",
-          type: "number",
-        },
-        pricingExtendedPrice: {
-          format: "numeric",
-          type: "number",
+        additionalCharges: {
+          format: "jsonb",
         },
         modelId: {
           format: "text",
@@ -36760,6 +37135,10 @@ export default {
         modelSize: {
           format: "bigint",
           type: "integer",
+        },
+        unitCost: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -37351,6 +37730,7 @@ export default {
             "Parts",
             "Purchasing",
             "Resources",
+            "People",
             "Sales",
             "Settings",
             "Scheduling",
@@ -37746,11 +38126,11 @@ export default {
       required: [
         "id",
         "salesRfqId",
-        "customerPartNumber",
         "unitOfMeasureCode",
         "order",
         "companyId",
         "createdBy",
+        "customerPartId",
       ],
       properties: {
         id: {
@@ -37762,14 +38142,6 @@ export default {
         salesRfqId: {
           description:
             "Note:\nThis is a Foreign Key to `salesRfq.id`.<fk table='salesRfq' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        customerPartNumber: {
-          format: "text",
-          type: "string",
-        },
-        customerRevisionId: {
           format: "text",
           type: "string",
         },
@@ -37836,6 +38208,14 @@ export default {
           type: "string",
         },
         modelUploadId: {
+          format: "text",
+          type: "string",
+        },
+        customerPartId: {
+          format: "text",
+          type: "string",
+        },
+        customerPartRevision: {
           format: "text",
           type: "string",
         },
@@ -38180,6 +38560,130 @@ export default {
       },
       type: "object",
     },
+    quoteOperationsWithMakeMethods: {
+      properties: {
+        makeMethodId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        quoteId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quote.id`.<fk table='quote' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quoteLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quoteLine.id`.<fk table='quoteLine' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quoteMakeMethodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quoteMakeMethod.id`.<fk table='quoteMakeMethod' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        order: {
+          format: "double precision",
+          type: "number",
+        },
+        workCellTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCellType.id`.<fk table='workCellType' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        equipmentTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `equipmentType.id`.<fk table='equipmentType' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        setupHours: {
+          format: "numeric",
+          type: "number",
+        },
+        standardFactor: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        productionStandard: {
+          format: "numeric",
+          type: "number",
+        },
+        operationOrder: {
+          enum: ["After Previous", "With Previous"],
+          format: 'public."methodOperationOrder"',
+          type: "string",
+        },
+        quotingRate: {
+          format: "numeric",
+          type: "number",
+        },
+        laborRate: {
+          format: "numeric",
+          type: "number",
+        },
+        overheadRate: {
+          format: "numeric",
+          type: "number",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+      },
+      type: "object",
+    },
     supplierStatus: {
       required: ["id", "name", "companyId", "createdAt", "createdBy"],
       properties: {
@@ -38288,12 +38792,6 @@ export default {
           default: 0,
           format: "integer",
           type: "integer",
-        },
-        salesRfqId: {
-          description:
-            "Note:\nThis is a Foreign Key to `salesRfq.id`.<fk table='salesRfq' column='id'/>",
-          format: "text",
-          type: "string",
         },
         dueDate: {
           format: "date",
@@ -39211,25 +39709,16 @@ export default {
     },
     quoteLinePrice: {
       required: [
-        "id",
         "quoteId",
         "quoteLineId",
         "quantity",
-        "unitCost",
         "leadTime",
         "discountPercent",
-        "markupPercent",
-        "extendedPrice",
         "createdAt",
         "createdBy",
+        "unitPrice",
       ],
       properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
         quoteId: {
           description:
             "Note:\nThis is a Foreign Key to `quote.id`.<fk table='quote' column='id'/>",
@@ -39238,17 +39727,13 @@ export default {
         },
         quoteLineId: {
           description:
-            "Note:\nThis is a Foreign Key to `quoteLine.id`.<fk table='quoteLine' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `quoteLine.id`.<fk table='quoteLine' column='id'/>",
           format: "text",
           type: "string",
         },
         quantity: {
           default: 1,
-          format: "numeric",
-          type: "number",
-        },
-        unitCost: {
-          default: 0,
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "numeric",
           type: "number",
         },
@@ -39258,16 +39743,6 @@ export default {
           type: "number",
         },
         discountPercent: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        markupPercent: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        extendedPrice: {
           default: 0,
           format: "numeric",
           type: "number",
@@ -39292,6 +39767,11 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        unitPrice: {
+          default: 0,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -40823,14 +41303,6 @@ export default {
           format: "text",
           type: "string",
         },
-        customerPartNumber: {
-          format: "text",
-          type: "string",
-        },
-        customerRevisionId: {
-          format: "text",
-          type: "string",
-        },
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
@@ -40895,6 +41367,14 @@ export default {
           format: "text",
           type: "string",
         },
+        customerPartId: {
+          format: "text",
+          type: "string",
+        },
+        customerPartRevision: {
+          format: "text",
+          type: "string",
+        },
         modelId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -40922,6 +41402,27 @@ export default {
         },
         itemName: {
           format: "text",
+          type: "string",
+        },
+        methodType: {
+          enum: ["Buy", "Make", "Pick"],
+          format: 'public."methodType"',
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        itemType: {
+          enum: [
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+          ],
+          format: 'public."itemType"',
           type: "string",
         },
       },
@@ -41059,7 +41560,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -41108,7 +41609,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -41500,7 +42001,7 @@ export default {
         },
         status: {
           default: "Draft",
-          enum: ["Draft", "Ready for Quote", "Closed"],
+          enum: ["Draft", "Ready for Quote", "Closed", "Quoted"],
           format: 'public."salesRfqStatus"',
           type: "string",
         },
@@ -41535,10 +42036,6 @@ export default {
           type: "string",
         },
         internalNotes: {
-          format: "text",
-          type: "string",
-        },
-        externalNotes: {
           format: "text",
           type: "string",
         },
@@ -41584,6 +42081,15 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        customerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        notes: {
+          format: "json",
         },
       },
       type: "object",
@@ -41716,6 +42222,42 @@ export default {
           type: "string",
         },
         name: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    opportunity: {
+      required: ["id", "companyId"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        salesRfqId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesRfq.id`.<fk table='salesRfq' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quoteId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quote.id`.<fk table='quote' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -42270,6 +42812,45 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+      },
+      type: "object",
+    },
+    customerPartToItem: {
+      required: ["customerId", "customerPartId", "itemId", "companyId", "id"],
+      properties: {
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customerPartId: {
+          format: "text",
+          type: "string",
+        },
+        customerPartRevision: {
+          default: "",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -43909,6 +44490,16 @@ export default {
           format: "text",
           type: "string",
         },
+        quantity: {
+          format: "numeric[]",
+          items: {
+            type: "number",
+          },
+          type: "array",
+        },
+        additionalCharges: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -44688,7 +45279,7 @@ export default {
           type: "integer",
         },
         status: {
-          enum: ["Draft", "Ready for Quote", "Closed"],
+          enum: ["Draft", "Ready for Quote", "Closed", "Quoted"],
           format: 'public."salesRfqStatus"',
           type: "string",
         },
@@ -44723,10 +45314,6 @@ export default {
           type: "string",
         },
         internalNotes: {
-          format: "text",
-          type: "string",
-        },
-        externalNotes: {
           format: "text",
           type: "string",
         },
@@ -44771,7 +45358,28 @@ export default {
           format: "text",
           type: "string",
         },
+        customerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        notes: {
+          format: "json",
+        },
         locationName: {
+          format: "text",
+          type: "string",
+        },
+        quoteId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quote.id`.<fk table='quote' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -45894,13 +46502,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quotes.salesRfqId": {
-      name: "salesRfqId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quotes.dueDate": {
       name: "dueDate",
       required: false,
@@ -46052,6 +46653,20 @@ export default {
       name: "favorite",
       required: false,
       format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotes.salesRfqId": {
+      name: "salesRfqId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotes.salesOrderId": {
+      name: "salesOrderId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -47848,6 +48463,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplierLocation.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.contractor": {
       name: "contractor",
       description: "contractor",
@@ -47954,6 +48576,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerLocation.name": {
+      name: "name",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -49761,55 +50390,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.contact.addressLine1": {
-      name: "addressLine1",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.contact.addressLine2": {
-      name: "addressLine2",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.contact.city": {
-      name: "city",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.contact.state": {
-      name: "state",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.contact.postalCode": {
-      name: "postalCode",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.contact.countryCode": {
-      name: "countryCode",
-      required: false,
-      format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.contact.birthday": {
-      name: "birthday",
-      required: false,
-      format: "date",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.contact.notes": {
       name: "notes",
       required: false,
@@ -51489,45 +52069,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLines.pricingQuantity": {
-      name: "pricingQuantity",
+    "rowFilter.quoteLines.quantity": {
+      name: "quantity",
       required: false,
-      format: "numeric",
+      format: "numeric[]",
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLines.pricingUnitCost": {
-      name: "pricingUnitCost",
+    "rowFilter.quoteLines.additionalCharges": {
+      name: "additionalCharges",
       required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteLines.pricingLeadTime": {
-      name: "pricingLeadTime",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteLines.pricingDiscountPercent": {
-      name: "pricingDiscountPercent",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteLines.pricingMarkupPercent": {
-      name: "pricingMarkupPercent",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteLines.pricingExtendedPrice": {
-      name: "pricingExtendedPrice",
-      required: false,
-      format: "numeric",
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -51570,6 +52122,13 @@ export default {
       name: "modelSize",
       required: false,
       format: "bigint",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.unitCost": {
+      name: "unitCost",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -52882,20 +53441,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesRfqLine.customerPartNumber": {
-      name: "customerPartNumber",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesRfqLine.customerRevisionId": {
-      name: "customerRevisionId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesRfqLine.itemId": {
       name: "itemId",
       required: false,
@@ -52989,6 +53534,20 @@ export default {
     },
     "rowFilter.salesRfqLine.modelUploadId": {
       name: "modelUploadId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqLine.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqLine.customerPartRevision": {
+      name: "customerPartRevision",
       required: false,
       format: "text",
       in: "query",
@@ -53422,6 +53981,169 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.quoteOperationsWithMakeMethods": {
+      name: "quoteOperationsWithMakeMethods",
+      description: "quoteOperationsWithMakeMethods",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/quoteOperationsWithMakeMethods",
+      },
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.makeMethodId": {
+      name: "makeMethodId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.quoteId": {
+      name: "quoteId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.quoteLineId": {
+      name: "quoteLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.quoteMakeMethodId": {
+      name: "quoteMakeMethodId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.order": {
+      name: "order",
+      required: false,
+      format: "double precision",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.workCellTypeId": {
+      name: "workCellTypeId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.equipmentTypeId": {
+      name: "equipmentTypeId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.setupHours": {
+      name: "setupHours",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.standardFactor": {
+      name: "standardFactor",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.productionStandard": {
+      name: "productionStandard",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.operationOrder": {
+      name: "operationOrder",
+      required: false,
+      format: 'public."methodOperationOrder"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.quotingRate": {
+      name: "quotingRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.laborRate": {
+      name: "laborRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.overheadRate": {
+      name: "overheadRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.supplierStatus": {
       name: "supplierStatus",
       description: "supplierStatus",
@@ -53560,13 +54282,6 @@ export default {
       name: "revisionId",
       required: false,
       format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quote.salesRfqId": {
-      name: "salesRfqId",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },
@@ -54793,13 +55508,6 @@ export default {
         $ref: "#/definitions/quoteLinePrice",
       },
     },
-    "rowFilter.quoteLinePrice.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteLinePrice.quoteId": {
       name: "quoteId",
       required: false,
@@ -54821,13 +55529,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLinePrice.unitCost": {
-      name: "unitCost",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteLinePrice.leadTime": {
       name: "leadTime",
       required: false,
@@ -54837,20 +55538,6 @@ export default {
     },
     "rowFilter.quoteLinePrice.discountPercent": {
       name: "discountPercent",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteLinePrice.markupPercent": {
-      name: "markupPercent",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteLinePrice.extendedPrice": {
-      name: "extendedPrice",
       required: false,
       format: "numeric",
       in: "query",
@@ -54881,6 +55568,13 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrice.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -56881,20 +57575,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesRfqLines.customerPartNumber": {
-      name: "customerPartNumber",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesRfqLines.customerRevisionId": {
-      name: "customerRevisionId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesRfqLines.itemId": {
       name: "itemId",
       required: false,
@@ -56993,6 +57673,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesRfqLines.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqLines.customerPartRevision": {
+      name: "customerPartRevision",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesRfqLines.modelId": {
       name: "modelId",
       required: false,
@@ -57039,6 +57733,27 @@ export default {
       name: "itemName",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqLines.methodType": {
+      name: "methodType",
+      required: false,
+      format: 'public."methodType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqLines.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqLines.itemType": {
+      name: "itemType",
+      required: false,
+      format: 'public."itemType"',
       in: "query",
       type: "string",
     },
@@ -57844,13 +58559,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesRfq.externalNotes": {
-      name: "externalNotes",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesRfq.locationId": {
       name: "locationId",
       required: false,
@@ -57904,6 +58612,20 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfq.customerLocationId": {
+      name: "customerLocationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfq.notes": {
+      name: "notes",
+      required: false,
+      format: "json",
       in: "query",
       type: "string",
     },
@@ -58082,6 +58804,50 @@ export default {
       type: "string",
     },
     "rowFilter.salesOrderCustomers.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.opportunity": {
+      name: "opportunity",
+      description: "opportunity",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/opportunity",
+      },
+    },
+    "rowFilter.opportunity.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.opportunity.salesRfqId": {
+      name: "salesRfqId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.opportunity.quoteId": {
+      name: "quoteId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.opportunity.salesOrderId": {
+      name: "salesOrderId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.opportunity.companyId": {
       name: "companyId",
       required: false,
       format: "text",
@@ -58803,6 +59569,57 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "body.customerPartToItem": {
+      name: "customerPartToItem",
+      description: "customerPartToItem",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/customerPartToItem",
+      },
+    },
+    "rowFilter.customerPartToItem.customerId": {
+      name: "customerId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerPartToItem.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerPartToItem.customerPartRevision": {
+      name: "customerPartRevision",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerPartToItem.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerPartToItem.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerPartToItem.id": {
+      name: "id",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -60953,6 +61770,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.quoteLine.quantity": {
+      name: "quantity",
+      required: false,
+      format: "numeric[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLine.additionalCharges": {
+      name: "additionalCharges",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.currency": {
       name: "currency",
       description: "currency",
@@ -62046,13 +62877,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesRfqs.externalNotes": {
-      name: "externalNotes",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesRfqs.locationId": {
       name: "locationId",
       required: false,
@@ -62109,8 +62933,36 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesRfqs.customerLocationId": {
+      name: "customerLocationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqs.notes": {
+      name: "notes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesRfqs.locationName": {
       name: "locationName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqs.quoteId": {
+      name: "quoteId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqs.salesOrderId": {
+      name: "salesOrderId",
       required: false,
       format: "text",
       in: "query",
