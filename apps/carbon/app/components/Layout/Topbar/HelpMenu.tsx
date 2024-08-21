@@ -6,7 +6,9 @@ import {
   DropdownMenuTrigger,
   IconButton,
 } from "@carbon/react";
-import { LuHelpCircle, LuMessageSquare } from "react-icons/lu";
+import { Link } from "@remix-run/react";
+import { LuFiles, LuHelpCircle } from "react-icons/lu";
+import { path } from "~/utils/path";
 
 const HelpMenu = () => {
   return (
@@ -21,24 +23,10 @@ const HelpMenu = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem asChild>
-          <a
-            href="https://github.com/barbinbrad/carbon/issues/new/choose"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <DropdownMenuIcon icon={<LuHelpCircle />} />
-            Help
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a
-            href="https://github.com/barbinbrad/carbon/discussions/new/choose"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <DropdownMenuIcon icon={<LuMessageSquare />} />
-            Feedback
-          </a>
+          <Link to={path.to.apiIntroduction}>
+            <DropdownMenuIcon icon={<LuFiles />} />
+            API Docs
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
