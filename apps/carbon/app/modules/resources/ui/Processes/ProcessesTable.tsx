@@ -43,6 +43,19 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         ),
       },
       {
+        id: "workCenters",
+        header: "Work Centers",
+        cell: ({ row }) => (
+          <span className="flex gap-2 items-center flex-wrap py-2">
+            {((row.original.workCenters ?? []) as Array<{ name: string }>).map(
+              (wc) => (
+                <Enumerable key={wc.name} value={wc.name} />
+              )
+            )}
+          </span>
+        ),
+      },
+      {
         accessorKey: "defaultStandardFactor",
         header: "Default Unit",
         cell: (item) => item.getValue(),
