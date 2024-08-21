@@ -254,14 +254,20 @@ export const quoteOperationValidator = z.object({
   description: zfd.text(
     z.string().min(0, { message: "Description is required" })
   ),
-  setupHours: zfd.numeric(z.number().min(0)),
-  standardFactor: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Standard factor is required" }),
+  setupUnit: z.enum(standardFactorType, {
+    errorMap: () => ({ message: "Setup unit is required" }),
   }),
-  productionStandard: zfd.numeric(z.number().min(0)),
+  setupTime: zfd.numeric(z.number().min(0)),
+  laborUnit: z.enum(standardFactorType, {
+    errorMap: () => ({ message: "Labor unit is required" }),
+  }),
+  laborTime: zfd.numeric(z.number().min(0)),
+  machineUnit: z.enum(standardFactorType, {
+    errorMap: () => ({ message: "Machine unit is required" }),
+  }),
+  machineTime: zfd.numeric(z.number().min(0)),
   quotingRate: zfd.numeric(z.number().min(0)),
   laborRate: zfd.numeric(z.number().min(0)),
-  overheadRate: zfd.numeric(z.number().min(0)),
 });
 
 export const quoteFinalizeValidator = z

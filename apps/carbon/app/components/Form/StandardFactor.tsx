@@ -2,19 +2,28 @@ import { standardFactorType } from "~/modules/shared";
 import type { SelectProps } from "./SelectControlled";
 import SelectControlled from "./SelectControlled";
 
-export type StandardFactorSelectProps = Omit<SelectProps, "options">;
+export type StandardFactorSelectProps = Omit<SelectProps, "options"> & {
+  hint?: string;
+};
 
 const StandardFactor = ({
   label = "Default Unit",
+  hint,
   ...props
 }: StandardFactorSelectProps) => {
-  return (
-    <SelectControlled
-      {...props}
-      label={label}
-      options={standardFactorType.map((t) => ({ value: t, label: t }))}
-    />
-  );
+  const options = standardFactorType
+    .filter((t) => {
+      if (hint === "Fixed") {
+        return ["Total Hours", "Total Minutes"].includes(t);
+      } else if (hint === "Per Unit") {
+        return !["Total Hours", "Total Minutes"].includes(t);
+      } else {
+        return true;
+      }
+    })
+    .map((t) => ({ value: t, label: t }));
+
+  return <SelectControlled {...props} label={label} options={options} />;
 };
 
 export default StandardFactor;

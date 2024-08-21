@@ -7,9 +7,11 @@ import { cn } from "../utils/cn";
 
 export const FormLabel = forwardRef<
   ElementRef<typeof ReactAria.Label>,
-  ComponentPropsWithoutRef<typeof ReactAria.Label>
+  ComponentPropsWithoutRef<typeof ReactAria.Label> & {
+    isOptional?: boolean;
+  }
 >((props, ref) => {
-  const { className, children, ...rest } = props;
+  const { className, children, isOptional = false, ...rest } = props;
 
   const field = useFormControlContext();
   const labelProps = field?.getLabelProps(rest, ref) ?? { ref, ...rest };
@@ -18,11 +20,17 @@ export const FormLabel = forwardRef<
     <ReactAria.Label
       {...labelProps}
       ref={ref}
-      className={cn("text-xs text-muted-foreground", className)}
+      className="flex items-center justify-between"
       {...props}
     >
-      {children}
-      {field?.isRequired && <span className="text-destructive"> *</span>}
+      <span className={cn("text-xs text-muted-foreground", className)}>
+        {children}
+      </span>
+      {isOptional && (
+        <span className="text-muted-foreground font-light text-xxs">
+          Optional
+        </span>
+      )}
     </ReactAria.Label>
   );
 });

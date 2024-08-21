@@ -5,13 +5,10 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
-  equipmentTypeValidator,
-  equipmentValidator,
   locationValidator,
   partnerValidator,
   processValidator,
-  workCellTypeValidator,
-  workCellValidator,
+  workCenterValidator,
 } from "./resources.models";
 
 export async function deleteAbility(
@@ -39,26 +36,6 @@ export async function deleteEmployeeAbility(
     .from("employeeAbility")
     .update({ active: false })
     .eq("id", employeeAbilityId);
-}
-
-export async function deleteEquipment(
-  client: SupabaseClient<Database>,
-  equipmentId: string
-) {
-  return client
-    .from("equipment")
-    .update({ active: false })
-    .eq("id", equipmentId);
-}
-
-export async function deleteEquipmentType(
-  client: SupabaseClient<Database>,
-  equipmentTypeId: string
-) {
-  return client
-    .from("equipmentType")
-    .update({ active: false })
-    .eq("id", equipmentTypeId);
 }
 
 export async function deleteLocation(
@@ -90,21 +67,11 @@ export async function deleteShift(
   return client.from("shift").update({ active: false }).eq("id", shiftId);
 }
 
-export async function deleteWorkCell(
+export async function deleteWorkCenter(
   client: SupabaseClient<Database>,
-  workCellId: string
+  id: string
 ) {
-  return client.from("workCell").update({ active: false }).eq("id", workCellId);
-}
-
-export async function deleteWorkCellType(
-  client: SupabaseClient<Database>,
-  workCellTypeId: string
-) {
-  return client
-    .from("workCellType")
-    .update({ active: false })
-    .eq("id", workCellTypeId);
+  return client.from("workCenter").update({ active: false }).eq("id", id);
 }
 
 export async function getAbilities(
@@ -222,72 +189,6 @@ export async function getEmployeeAbilities(
     .select(`*, ability(id, name, curve, shadowWeeks)`)
     .eq("employeeId", employeeId)
     .eq("active", true);
-}
-
-export async function getEquipment(
-  client: SupabaseClient<Database>,
-  equipmentId: string
-) {
-  return client
-    .from("equipment")
-    .select(
-      "*, equipmentType(id, name), workCell(id, name), location(id, name)"
-    )
-    .eq("id", equipmentId)
-    .eq("active", true)
-    .single();
-}
-
-export async function getEquipmentType(
-  client: SupabaseClient<Database>,
-  equipmentTypeId: string
-) {
-  return client
-    .from("equipmentType")
-    .select(
-      "*, equipment(id, name, equipmentId, description, location(id, name))"
-    )
-    .eq("active", true)
-    .eq("id", equipmentTypeId)
-    .single();
-}
-
-export async function getEquipmentTypes(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: { search: string | null } & GenericQueryFilters
-) {
-  let query = client
-    .from("equipmentType")
-    .select("*, equipment(id, name, equipmentId, description)", {
-      count: "exact",
-    })
-    .eq("companyId", companyId)
-    .eq("active", true)
-    .eq("equipment.active", true);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true },
-    ]);
-  }
-
-  return query;
-}
-
-export async function getEquipmentTypesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("equipmentType")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .order("name");
 }
 
 export async function getLocation(
@@ -420,63 +321,30 @@ export async function getProcessesList(
     .order("name");
 }
 
-export async function getWorkCell(
+export async function getWorkCenter(
   client: SupabaseClient<Database>,
-  workCellId: string
+  id: string
 ) {
   return client
-    .from("workCell")
-    .select(
-      "*, workCellType(id, name), location(id, name), department(id, name)"
-    )
-    .eq("id", workCellId)
+    .from("workCenters")
+    .select("*")
     .eq("active", true)
+    .eq("id", id)
     .single();
 }
 
-export async function getWorkCellList(
-  client: SupabaseClient<Database>,
-  locationId: string | null,
-  workCellTypeId: string | null
-) {
-  let query = client.from("workCell").select(`id, name`).eq("active", true);
-
-  if (locationId) {
-    query = query.eq("locationId", locationId);
-  }
-
-  if (workCellTypeId) {
-    query = query.eq("workCellTypeId", workCellTypeId);
-  }
-
-  return query.order("name");
-}
-
-export async function getWorkCellType(
-  client: SupabaseClient<Database>,
-  workCellTypeId: string
-) {
-  return client
-    .from("workCellType")
-    .select("*, workCell(id, name, location(id, name), department(id, name))")
-    .eq("active", true)
-    .eq("id", workCellTypeId)
-    .single();
-}
-
-export async function getWorkCellTypes(
+export async function getWorkCenters(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: { search: string | null } & GenericQueryFilters
 ) {
   let query = client
-    .from("workCellType")
-    .select("*, workCell(id, name)", {
+    .from("workCenters")
+    .select("*", {
       count: "exact",
     })
     .eq("companyId", companyId)
-    .eq("active", true)
-    .eq("workCell.active", true);
+    .eq("active", true);
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
@@ -491,12 +359,12 @@ export async function getWorkCellTypes(
   return query;
 }
 
-export async function getWorkCellTypesList(
+export async function getWorkCentersList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   return client
-    .from("workCellType")
+    .from("workCenter")
     .select("id, name")
     .eq("companyId", companyId)
     .order("name");
@@ -648,53 +516,6 @@ export async function upsertEmployeeAbility(
     .single();
 }
 
-export async function upsertEquipment(
-  client: SupabaseClient<Database>,
-  equipment:
-    | (Omit<z.infer<typeof equipmentValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof equipmentValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in equipment) {
-    const { id, ...update } = equipment;
-    return client.from("equipment").update(sanitize(update)).eq("id", id);
-  }
-
-  return client.from("equipment").insert([equipment]).select("*").single();
-}
-
-export async function upsertEquipmentType(
-  client: SupabaseClient<Database>,
-  equipmentType:
-    | (Omit<z.infer<typeof equipmentTypeValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof equipmentTypeValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in equipmentType) {
-    const { id, ...update } = equipmentType;
-    return client.from("equipmentType").update(sanitize(update)).eq("id", id);
-  }
-  return client
-    .from("equipmentType")
-    .insert([equipmentType])
-    .select("id")
-    .single();
-}
-
 export async function upsertLocation(
   client: SupabaseClient<Database>,
   location:
@@ -765,52 +586,80 @@ export async function upsertPartner(
   }
 }
 
-export async function upsertWorkCell(
+export async function upsertWorkCenter(
   client: SupabaseClient<Database>,
-  workCell:
-    | (Omit<z.infer<typeof workCellValidator>, "id"> & {
+  workCenter:
+    | (Omit<z.infer<typeof workCenterValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof workCellValidator>, "id"> & {
+    | (Omit<z.infer<typeof workCenterValidator>, "id"> & {
         id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in workCell) {
-    return client.from("workCell").insert([workCell]).select("*").single();
-  }
-  return client
-    .from("workCell")
-    .update(sanitize(workCell))
-    .eq("id", workCell.id);
-}
-
-export async function upsertWorkCellType(
-  client: SupabaseClient<Database>,
-  workCellType:
-    | (Omit<z.infer<typeof workCellTypeValidator>, "id"> & {
         companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof workCellTypeValidator>, "id"> & {
-        id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in workCellType) {
-    return client
-      .from("workCellType")
-      .insert([workCellType])
+  if ("createdBy" in workCenter) {
+    const { processes, ...insert } = workCenter;
+    const workCenterInsert = await client
+      .from("workCenter")
+      .insert([insert])
       .select("id")
       .single();
+    if (workCenterInsert.error) {
+      return workCenterInsert;
+    }
+    const workCenterId = workCenterInsert.data.id;
+    const workCenterProcesses = processes.map((process) => ({
+      workCenterId,
+      processId: process,
+      companyId: insert.companyId,
+      createdBy: insert.createdBy,
+    }));
+
+    const workCenterProcessInsert = await client
+      .from("workCenterProcess")
+      .insert(workCenterProcesses);
+
+    if (workCenterProcessInsert.error) {
+      return workCenterProcessInsert;
+    }
+
+    return workCenterInsert;
   }
-  return client
-    .from("workCellType")
-    .update(sanitize(workCellType))
-    .eq("id", workCellType.id);
+  const { processes, ...update } = workCenter;
+  const workCenterUpdate = await client
+    .from("workCenter")
+    .update(sanitize(update))
+    .eq("id", workCenter.id);
+  if (workCenterUpdate.error) {
+    return workCenterUpdate;
+  }
+
+  const deleteProcesses = await client
+    .from("workCenterProcess")
+    .delete()
+    .eq("workCenterId", workCenter.id);
+
+  if (deleteProcesses.error) {
+    return deleteProcesses;
+  }
+
+  const workCenterProcesses = processes.map((process) => ({
+    workCenterId: workCenter.id,
+    processId: process,
+    companyId: update.companyId,
+    createdBy: update.updatedBy,
+  }));
+
+  const workCenterProcessUpdate = await client
+    .from("workCenterProcess")
+    .insert(workCenterProcesses);
+  if (workCenterProcessUpdate.error) {
+    return workCenterProcessUpdate;
+  }
+
+  return workCenterUpdate;
 }

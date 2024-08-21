@@ -3,9 +3,9 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
 import {
-  WorkCellTypeForm,
-  upsertWorkCellType,
-  workCellTypeValidator,
+  WorkCenterForm,
+  upsertWorkCenter,
+  workCenterValidator,
 } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -23,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const modal = formData.get("type") === "modal";
 
-  const validation = await validator(workCellTypeValidator).validate(formData);
+  const validation = await validator(workCenterValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -31,30 +31,30 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createWorkCellType = await upsertWorkCellType(client, {
+  const createWorkCenter = await upsertWorkCenter(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (createWorkCellType.error) {
+  if (createWorkCenter.error) {
     return modal
-      ? json(createWorkCellType)
+      ? json(createWorkCenter)
       : redirect(
-          path.to.workCells,
+          path.to.workCenters,
           await flash(
             request,
-            error(createWorkCellType.error, "Failed to create work cell type")
+            error(createWorkCenter.error, "Failed to create work cell type")
           )
         );
   }
 
-  return modal ? json(createWorkCellType) : redirect(path.to.workCells);
+  return modal ? json(createWorkCenter) : redirect(path.to.workCenters);
 }
 
-export default function NewWorkCellTypeRoute() {
+export default function NewWorkCenterRoute() {
   const navigate = useNavigate();
-  const onClose = () => navigate(path.to.workCells);
+  const onClose = () => navigate(path.to.workCenters);
 
   const initialValues = {
     name: "",
@@ -63,7 +63,8 @@ export default function NewWorkCellTypeRoute() {
     laborRate: 0,
     overheadRate: 0,
     defaultStandardFactor: "Minutes/Piece" as "Minutes/Piece",
+    processes: [],
   };
 
-  return <WorkCellTypeForm onClose={onClose} initialValues={initialValues} />;
+  return <WorkCenterForm onClose={onClose} initialValues={initialValues} />;
 }

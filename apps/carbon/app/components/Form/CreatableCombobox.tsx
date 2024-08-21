@@ -17,11 +17,12 @@ export type CreatableComboboxProps = Omit<
   name: string;
   label?: string;
   helperText?: string;
+  isOptional?: boolean;
   onChange?: (newValue: { value: string; label: string } | null) => void;
 };
 
 const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
-  ({ name, label, helperText, ...props }, ref) => {
+  ({ name, label, helperText, isOptional = false, ...props }, ref) => {
     const { getInputProps, error } = useField(name);
     const [value, setValue] = useControlField<string | undefined>(name);
 
@@ -39,7 +40,11 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
 
     return (
       <FormControl isInvalid={!!error}>
-        {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
+        {label && (
+          <FormLabel htmlFor={name} isOptional={isOptional}>
+            {label}
+          </FormLabel>
+        )}
         <input
           {...getInputProps({
             id: name,
@@ -57,6 +62,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             setValue(newValue?.replace(/"/g, '\\"') ?? "");
             onChange(newValue?.replace(/"/g, '\\"') ?? "");
           }}
+          isClearable={isOptional && !props.isReadOnly}
           label={label}
           className="w-full"
         />

@@ -12,11 +12,18 @@ import type { ComboboxProps as ComboboxBaseProps } from "~/components/Combobox";
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   name: string;
   label?: string;
+  isOptional?: boolean;
   helperText?: string;
   onChange?: (newValue: { value: string; label: string } | null) => void;
 };
 
-const Combobox = ({ name, label, helperText, ...props }: ComboboxProps) => {
+const Combobox = ({
+  name,
+  label,
+  isOptional = false,
+  helperText,
+  ...props
+}: ComboboxProps) => {
   const { getInputProps, error } = useField(name);
   const [value, setValue] = useControlField<string | undefined>(name);
 
@@ -30,7 +37,11 @@ const Combobox = ({ name, label, helperText, ...props }: ComboboxProps) => {
 
   return (
     <FormControl isInvalid={!!error}>
-      {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
+      {label && (
+        <FormLabel htmlFor={name} isOptional={isOptional}>
+          {label}
+        </FormLabel>
+      )}
       <input
         {...getInputProps({
           id: name,
@@ -47,6 +58,7 @@ const Combobox = ({ name, label, helperText, ...props }: ComboboxProps) => {
           setValue(newValue ?? "");
           onChange(newValue ?? "");
         }}
+        isClearable={isOptional && !props.isReadOnly}
         className="w-full"
       />
 

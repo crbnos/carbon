@@ -23,7 +23,6 @@ import DefaultMethodType from "./DefaultMethodType";
 import Department from "./Department";
 import Employee from "./Employee";
 import Employees from "./Employees";
-import EquipmentType from "./EquipmentType";
 import Hidden from "./Hidden";
 import Input from "./Input";
 import InputControlled from "./InputControlled";
@@ -35,6 +34,8 @@ import NumberControlled from "./NumberControlled";
 import Part from "./Part";
 import Password from "./Password";
 import PhoneInput from "./PhoneInput";
+import Process from "./Process";
+import Processes from "./Processes";
 import Radios from "./Radios";
 import RichText from "./RichText";
 import Select from "./Select";
@@ -55,7 +56,7 @@ import Timezone from "./Timezone";
 import UnitOfMeasure from "./UnitOfMeasure";
 import User from "./User";
 import Users from "./Users";
-import WorkCellType from "./WorkCellType";
+import WorkCenter from "./WorkCenter";
 
 export {
   Abilities,
@@ -83,7 +84,6 @@ export {
   Department,
   Employee,
   Employees,
-  EquipmentType,
   Hidden,
   Input,
   InputControlled,
@@ -95,6 +95,8 @@ export {
   Part,
   Password,
   PhoneInput,
+  Process,
+  Processes,
   Radios,
   RichText,
   Select,
@@ -115,5 +117,5 @@ export {
   UnitOfMeasure,
   User,
   Users,
-  WorkCellType,
+  WorkCenter,
 };

@@ -1,20 +1,20 @@
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
-import type { getWorkCellTypesList } from "~/modules/resources";
-import { WorkCellTypeForm } from "~/modules/resources";
+import type { getProcessesList } from "~/modules/resources";
+import { ProcessForm } from "~/modules/resources";
 import { path } from "~/utils/path";
 import type { ComboboxProps } from "./Combobox";
 import CreatableCombobox from "./CreatableCombobox";
 
-type WorkCellTypeSelectProps = Omit<ComboboxProps, "options">;
+type ProcessSelectProps = Omit<ComboboxProps, "options">;
 
-const WorkCellType = (props: WorkCellTypeSelectProps) => {
-  const newWorkCellTypeModal = useDisclosure();
+const Process = (props: ProcessSelectProps) => {
+  const newProcessModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useWorkCellTypes();
+  const options = useProcesses();
 
   return (
     <>
@@ -22,26 +22,22 @@ const WorkCellType = (props: WorkCellTypeSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
-        label={props?.label ?? "WorkCellType"}
+        label={props?.label ?? "Work Center"}
         onCreateOption={(option) => {
-          newWorkCellTypeModal.onOpen();
+          newProcessModal.onOpen();
           setCreated(option);
         }}
       />
-      {newWorkCellTypeModal.isOpen && (
-        <WorkCellTypeForm
+      {newProcessModal.isOpen && (
+        <ProcessForm
           type="modal"
           onClose={() => {
             setCreated("");
-            newWorkCellTypeModal.onClose();
+            newProcessModal.onClose();
             triggerRef.current?.click();
           }}
           initialValues={{
             name: created,
-            description: "",
-            quotingRate: 0,
-            laborRate: 0,
-            overheadRate: 0,
             defaultStandardFactor: "Minutes/Piece" as "Total Hours",
           }}
         />
@@ -50,27 +46,26 @@ const WorkCellType = (props: WorkCellTypeSelectProps) => {
   );
 };
 
-WorkCellType.displayName = "WorkCellType";
+Process.displayName = "Process";
 
-export default WorkCellType;
+export default Process;
 
-export const useWorkCellTypes = () => {
-  const workCellTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getWorkCellTypesList>>>();
+export const useProcesses = () => {
+  const fetcher = useFetcher<Awaited<ReturnType<typeof getProcessesList>>>();
 
   useMount(() => {
-    workCellTypeFetcher.load(path.to.api.workCellTypes);
+    fetcher.load(path.to.api.processes);
   });
 
   const options = useMemo(
     () =>
-      workCellTypeFetcher.data?.data
-        ? workCellTypeFetcher.data?.data.map((c) => ({
+      fetcher.data?.data
+        ? fetcher.data?.data.map((c) => ({
             value: c.id,
             label: c.name,
           }))
         : [],
-    [workCellTypeFetcher.data]
+    [fetcher.data]
   );
 
   return options;

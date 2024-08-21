@@ -22,27 +22,28 @@ import {
   Hidden,
   Input,
   Number,
+  Processes,
   StandardFactor,
   Submit,
   TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { workCellTypeValidator } from "~/modules/resources";
+import { workCenterValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
 
-type WorkCellTypeFormProps = {
-  initialValues: z.infer<typeof workCellTypeValidator>;
+type WorkCenterFormProps = {
+  initialValues: z.infer<typeof workCenterValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: () => void;
 };
 
-const WorkCellTypeForm = ({
+const WorkCenterForm = ({
   initialValues,
   open = true,
   type = "drawer",
   onClose,
-}: WorkCellTypeFormProps) => {
+}: WorkCenterFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
@@ -74,12 +75,12 @@ const WorkCellTypeForm = ({
       >
         <ModalDrawerContent>
           <ValidatedForm
-            validator={workCellTypeValidator}
+            validator={workCenterValidator}
             method="post"
             action={
               isEditing
-                ? path.to.workCellType(initialValues.id!)
-                : path.to.newWorkCellType
+                ? path.to.workCenter(initialValues.id!)
+                : path.to.newWorkCenter
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -87,7 +88,7 @@ const WorkCellTypeForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? "Edit" : "New"} Work Cell Type
+                {isEditing ? "Edit" : "New"} Work Center
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
@@ -95,19 +96,21 @@ const WorkCellTypeForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label="Name" />
+                <Processes name="processes" label="Processes" />
                 <TextArea name="description" label="Description" />
-                <Ability
-                  name="requiredAbility"
-                  label="Required Ability"
-                  isClearable
-                />
+
                 <Number name="quotingRate" label="Quoting Rate" />
                 <Number name="laborRate" label="Labor Rate" />
-                <Number name="overheadRate" label="Overhead Rate" />
+
                 <StandardFactor
                   name="defaultStandardFactor"
-                  label="Default Standard Factor"
+                  label="Default Unit"
                   value={initialValues.defaultStandardFactor}
+                />
+                <Ability
+                  name="requiredAbilityId"
+                  label="Required Ability"
+                  isClearable
                 />
                 <CustomFormFields table="workCellType" />
               </VStack>
@@ -127,4 +130,4 @@ const WorkCellTypeForm = ({
   );
 };
 
-export default WorkCellTypeForm;
+export default WorkCenterForm;

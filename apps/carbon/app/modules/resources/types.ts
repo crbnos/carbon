@@ -3,14 +3,10 @@ import type {
   getAbility,
   getContractors,
   getEmployeeAbilities,
-  getEquipment,
-  getEquipmentType,
-  getEquipmentTypes,
   getLocations,
   getPartners,
   getProcesses,
-  getWorkCellType,
-  getWorkCellTypes,
+  getWorkCenters,
 } from "./resources.service";
 
 export type Ability = NonNullable<
@@ -57,18 +53,6 @@ export type EmployeeAbility = NonNullable<
   Awaited<ReturnType<typeof getEmployeeAbilities>>["data"]
 >[number];
 
-export type Equipment = NonNullable<
-  Awaited<ReturnType<typeof getEquipment>>["data"]
->;
-
-export type EquipmentType = NonNullable<
-  Awaited<ReturnType<typeof getEquipmentTypes>>["data"]
->[number];
-
-export type EquipmentTypeDetailType = NonNullable<
-  Awaited<ReturnType<typeof getEquipmentType>>["data"]
->;
-
 export type Location = NonNullable<
   Awaited<ReturnType<typeof getLocations>>["data"]
 >[number];
@@ -85,10 +69,6 @@ export type ShiftLocation = NonNullable<
   Awaited<ReturnType<typeof getLocations>>["data"]
 >[number];
 
-export type WorkCellType = NonNullable<
-  Awaited<ReturnType<typeof getWorkCellTypes>>["data"]
+export type WorkCenter = NonNullable<
+  Awaited<ReturnType<typeof getWorkCenters>>["data"]
 >[number];
-
-export type WorkCellTypeDetailType = NonNullable<
-  Awaited<ReturnType<typeof getWorkCellType>>["data"]
->;

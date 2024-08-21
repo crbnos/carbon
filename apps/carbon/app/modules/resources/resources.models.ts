@@ -67,28 +67,6 @@ export const employeeAbilityValidator = z.object({
   trainingDays: zfd.numeric(z.number().optional()),
 });
 
-export const equipmentValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  equipmentId: zfd.text(z.string().optional()),
-  description: zfd.text(z.string().optional()),
-  equipmentTypeId: z.string().min(1, { message: "Type is required" }),
-  operatorsRequired: zfd.numeric(z.number().optional()),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  workCellId: zfd.text(z.string().optional()),
-  setupHours: zfd.numeric(z.number().optional()),
-});
-
-export const equipmentTypeValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  description: z.string(),
-  requiredAbility: zfd.text(z.string().optional()),
-  setupHours: zfd.numeric(
-    z.number().min(0, { message: "Setup hours is required" })
-  ),
-});
-
 export const locationValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -129,25 +107,15 @@ export const processValidator = z.object({
   }),
 });
 
-export const workCellValidator = z.object({
+export const workCenterValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   description: z.string(),
-  departmentId: z.string().min(1, { message: "Department is required" }),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  workCellTypeId: z.string().min(1, { message: "Type is required" }),
-  activeDate: zfd.text(z.string().optional()),
-});
-
-export const workCellTypeValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  description: z.string(),
-  requiredAbility: zfd.text(z.string().optional()),
+  requiredAbilityId: zfd.text(z.string().optional()),
   quotingRate: zfd.numeric(z.number().min(0)),
   laborRate: zfd.numeric(z.number().min(0)),
-  overheadRate: zfd.numeric(z.number().min(0)),
   defaultStandardFactor: z.enum(standardFactorType, {
     errorMap: (issue, ctx) => ({ message: "Standard factor is required" }),
   }),
+  processes: z.array(z.string().min(20, { message: "Invalid process" })),
 });

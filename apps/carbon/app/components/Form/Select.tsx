@@ -13,10 +13,17 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   name: string;
   label?: string;
   helperText?: string;
+  isOptional?: boolean;
   onChange?: (newValue: { value: string; label: string } | null) => void;
 };
 
-const Select = ({ name, label, helperText, ...props }: SelectProps) => {
+const Select = ({
+  name,
+  label,
+  helperText,
+  isOptional = false,
+  ...props
+}: SelectProps) => {
   const { getInputProps, error } = useField(name);
   const [value, setValue] = useControlField<string | undefined>(name);
 
@@ -30,7 +37,11 @@ const Select = ({ name, label, helperText, ...props }: SelectProps) => {
 
   return (
     <FormControl isInvalid={!!error} className={props.className}>
-      {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
+      {label && (
+        <FormLabel htmlFor={name} isOptional={isOptional}>
+          {label}
+        </FormLabel>
+      )}
       <input
         {...getInputProps({
           id: name,
@@ -47,6 +58,7 @@ const Select = ({ name, label, helperText, ...props }: SelectProps) => {
           setValue(newValue ?? "");
           onChange(newValue ?? "");
         }}
+        isClearable={isOptional && !props.isReadOnly}
         className="w-full"
       />
 
