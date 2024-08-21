@@ -549,17 +549,76 @@ export async function upsertProcess(
       })
     | (Omit<z.infer<typeof processValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("id" in process) {
-    return client
+  if ("createdBy" in process) {
+    const { workCenters, ...insert } = process;
+    const processInsert = await client
       .from("process")
-      .update(sanitize(process))
-      .eq("id", process.id);
+      .insert([insert])
+      .select("id")
+      .single();
+    if (processInsert.error) {
+      return processInsert;
+    }
+    const processId = processInsert.data.id;
+    const processProcesses = workCenters?.map((workCenterId) => ({
+      workCenterId,
+      processId,
+      companyId: insert.companyId,
+      createdBy: insert.createdBy,
+    }));
+
+    if (processProcesses) {
+      const processProcessInsert = await client
+        .from("workCenterProcess")
+        .insert(processProcesses);
+
+      if (processProcessInsert.error) {
+        return processProcessInsert;
+      }
+    }
+
+    return processInsert;
   }
-  return client.from("process").insert([process]).select("*").single();
+  const { workCenters, ...update } = process;
+  const processUpdate = await client
+    .from("process")
+    .update(sanitize(update))
+    .eq("id", process.id);
+  if (processUpdate.error) {
+    return processUpdate;
+  }
+
+  const deleteWorkCenters = await client
+    .from("workCenterProcess")
+    .delete()
+    .eq("processId", process.id);
+
+  if (deleteWorkCenters.error) {
+    return deleteWorkCenters;
+  }
+
+  const processProcesses = workCenters?.map((workCenterId) => ({
+    processId: process.id,
+    workCenterId,
+    companyId: update.companyId,
+    createdBy: update.updatedBy,
+  }));
+
+  if (processProcesses) {
+    const processProcessUpdate = await client
+      .from("workCenterProcess")
+      .insert(processProcesses);
+    if (processProcessUpdate.error) {
+      return processProcessUpdate;
+    }
+  }
+
+  return processUpdate;
 }
 
 export async function upsertPartner(
@@ -612,19 +671,21 @@ export async function upsertWorkCenter(
       return workCenterInsert;
     }
     const workCenterId = workCenterInsert.data.id;
-    const workCenterProcesses = processes.map((process) => ({
+    const workCenterProcesses = processes?.map((process) => ({
       workCenterId,
       processId: process,
       companyId: insert.companyId,
       createdBy: insert.createdBy,
     }));
 
-    const workCenterProcessInsert = await client
-      .from("workCenterProcess")
-      .insert(workCenterProcesses);
+    if (workCenterProcesses) {
+      const workCenterProcessInsert = await client
+        .from("workCenterProcess")
+        .insert(workCenterProcesses);
 
-    if (workCenterProcessInsert.error) {
-      return workCenterProcessInsert;
+      if (workCenterProcessInsert.error) {
+        return workCenterProcessInsert;
+      }
     }
 
     return workCenterInsert;
@@ -647,18 +708,20 @@ export async function upsertWorkCenter(
     return deleteProcesses;
   }
 
-  const workCenterProcesses = processes.map((process) => ({
+  const workCenterProcesses = processes?.map((process) => ({
     workCenterId: workCenter.id,
     processId: process,
     companyId: update.companyId,
     createdBy: update.updatedBy,
   }));
 
-  const workCenterProcessUpdate = await client
-    .from("workCenterProcess")
-    .insert(workCenterProcesses);
-  if (workCenterProcessUpdate.error) {
-    return workCenterProcessUpdate;
+  if (workCenterProcesses) {
+    const workCenterProcessUpdate = await client
+      .from("workCenterProcess")
+      .insert(workCenterProcesses);
+    if (workCenterProcessUpdate.error) {
+      return workCenterProcessUpdate;
+    }
   }
 
   return workCenterUpdate;

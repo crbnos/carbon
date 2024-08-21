@@ -10,6 +10,7 @@ CREATE TABLE "process" (
   "updatedAt" TIMESTAMPTZ,
 
   CONSTRAINT "process_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "process_name_companyId_key" UNIQUE ("name", "companyId"),
   CONSTRAINT "process_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE,
   CONSTRAINT "process_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON DELETE RESTRICT,
   CONSTRAINT "process_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE SET NULL
@@ -67,6 +68,7 @@ CREATE TABLE "workCenter" (
   "updatedAt" TIMESTAMPTZ,
 
   CONSTRAINT "workCenter_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "workCenter_name_companyId_key" UNIQUE ("name", "companyId"),
   CONSTRAINT "workCenter_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location" ("id") ON DELETE CASCADE,
   CONSTRAINT "workCenter_requiredAbilityId_fkey" FOREIGN KEY ("requiredAbilityId") REFERENCES "ability" ("id") ON DELETE CASCADE,
   CONSTRAINT "workCenter_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE,
