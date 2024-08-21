@@ -57,6 +57,7 @@ import UnitOfMeasure from "./UnitOfMeasure";
 import User from "./User";
 import Users from "./Users";
 import WorkCenter from "./WorkCenter";
+import WorkCenters from "./WorkCenters";
 
 export {
   Abilities,
@@ -118,4 +119,5 @@ export {
   User,
   Users,
   WorkCenter,
+  WorkCenters,
 };

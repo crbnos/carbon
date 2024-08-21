@@ -23,6 +23,7 @@ import {
   StandardFactor,
   Submit,
 } from "~/components/Form";
+import WorkCenters from "~/components/Form/WorkCenters";
 import { usePermissions } from "~/hooks";
 import { processValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
@@ -97,6 +98,7 @@ const ProcessForm = ({
                   label="Default Unit"
                   value={initialValues.defaultStandardFactor}
                 />
+                <WorkCenters name="workCenters" label="Work Centers" />
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>

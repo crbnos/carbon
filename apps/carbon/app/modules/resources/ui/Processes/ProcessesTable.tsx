@@ -15,6 +15,13 @@ type ProcessesTableProps = {
   count: number;
 };
 
+const defaultColumnVisibility = {
+  createdAt: false,
+  createdBy: false,
+  updatedAt: false,
+  updatedBy: false,
+};
+
 const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -30,7 +37,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         cell: ({ row }) => (
           <Enumerable
             value={row.original.name}
-            onClick={() => navigate(row.original.id)}
+            onClick={() => navigate(row.original.id!)}
             className="cursor-pointer"
           />
         ),
@@ -91,7 +98,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         <>
           <MenuItem
             onClick={() => {
-              navigate(`${path.to.process(row.id)}?${params.toString()}`);
+              navigate(`${path.to.process(row.id!)}?${params.toString()}`);
             }}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -100,7 +107,9 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           <MenuItem
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
-              navigate(`${path.to.deleteProcess(row.id)}?${params.toString()}`);
+              navigate(
+                `${path.to.deleteProcess(row.id!)}?${params.toString()}`
+              );
             }}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -117,6 +126,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
       data={data}
       count={count}
       columns={columns}
+      defaultColumnVisibility={defaultColumnVisibility}
       primaryAction={
         permissions.can("create", "resources") && (
           <New label="Process" to={`new?${params.toString()}`} />

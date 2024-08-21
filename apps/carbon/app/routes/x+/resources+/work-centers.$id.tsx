@@ -91,6 +91,7 @@ export default function WorkCenterRoute() {
     laborRate: workCenter?.laborRate ?? 0,
     overheadRate: workCenter?.overheadRate ?? 0,
     defaultStandardFactor: workCenter?.defaultStandardFactor ?? "Minutes/Piece",
+    locationId: workCenter?.locationId ?? "",
     // @ts-ignore
     processes: (workCenter?.processes ?? []).map((p) => p.id) ?? [],
     ...getCustomFields(workCenter?.customFields),

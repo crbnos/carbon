@@ -21,6 +21,7 @@ import {
   CustomFormFields,
   Hidden,
   Input,
+  Location,
   Number,
   Processes,
   StandardFactor,
@@ -98,9 +99,23 @@ const WorkCenterForm = ({
                 <Input name="name" label="Name" />
                 <Processes name="processes" label="Processes" />
                 <TextArea name="description" label="Description" />
-
-                <Number name="quotingRate" label="Quoting Rate" />
-                <Number name="laborRate" label="Labor Rate" />
+                <Location name="locationId" label="Location" />
+                <Number
+                  name="quotingRate"
+                  label="Quoting Rate"
+                  formatOptions={{
+                    style: "currency",
+                    currency: "USD",
+                  }}
+                />
+                <Number
+                  name="laborRate"
+                  label="Labor Rate"
+                  formatOptions={{
+                    style: "currency",
+                    currency: "USD",
+                  }}
+                />
 
                 <StandardFactor
                   name="defaultStandardFactor"
