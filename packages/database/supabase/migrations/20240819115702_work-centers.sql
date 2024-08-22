@@ -202,31 +202,31 @@ VALUES
 ('workCenter', 'Work Center', 'Resources');
 
 ALTER TABLE "methodOperation" 
-  DROP COLUMN "workCellTypeId",
-  DROP COLUMN "equipmentTypeId",
-  DROP COLUMN "setupHours",
-  DROP COLUMN "standardFactor",
-  DROP COLUMN "productionStandard";
+  DROP COLUMN IF EXISTS "workCellTypeId",
+  DROP COLUMN IF EXISTS "equipmentTypeId",
+  DROP COLUMN IF EXISTS "setupHours",
+  DROP COLUMN IF EXISTS "standardFactor",
+  DROP COLUMN IF EXISTS "productionStandard";
 
-DROP VIEW "quoteOperationsWithMakeMethods";
+DROP VIEW IF EXISTS "quoteOperationsWithMakeMethods";
 
 COMMIT;
 
 ALTER TABLE "quoteOperation" 
-  DROP COLUMN "workCellTypeId",
-  DROP COLUMN "equipmentTypeId",
-  DROP COLUMN "setupHours",
-  DROP COLUMN "standardFactor",
-  DROP COLUMN "productionStandard";
+  DROP COLUMN IF EXISTS "workCellTypeId",
+  DROP COLUMN IF EXISTS "equipmentTypeId",
+  DROP COLUMN IF EXISTS "setupHours",
+  DROP COLUMN IF EXISTS "standardFactor",
+  DROP COLUMN IF EXISTS "productionStandard";
 
 ALTER TABLE "employeeJob" DROP COLUMN "workCellId";
 
-DROP TABLE "equipment";
-DROP TABLE "equipmentType";
-DROP TABLE "crewAbility";
-DROP TABLE "crew";
-DROP TABLE "workCell";
-DROP TABLE "workCellType";
+DROP TABLE IF EXISTS "equipment";
+DROP TABLE IF EXISTS "equipmentType";
+DROP TABLE IF EXISTS "crewAbility";
+DROP TABLE IF EXISTS "crew";
+DROP TABLE IF EXISTS "workCell";
+DROP TABLE IF EXISTS "workCellType";
 
 ALTER TABLE "methodOperation" 
   ADD COLUMN "processId" TEXT NOT NULL,
