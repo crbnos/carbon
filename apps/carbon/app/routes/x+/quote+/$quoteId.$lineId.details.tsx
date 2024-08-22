@@ -6,7 +6,11 @@ import { Fragment, useMemo } from "react";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import { CadModel } from "~/modules/items";
-import type { QuotationPrice, QuoteMethod } from "~/modules/sales";
+import type {
+  QuotationOperation,
+  QuotationPrice,
+  QuoteMethod,
+} from "~/modules/sales";
 import {
   getFilesByQuoteLineId,
   getQuoteLine,
@@ -127,7 +131,7 @@ export default function QuoteLine() {
 
   const getLineCosts = useLineCosts({
     methodTree,
-    operations,
+    operations: operations as QuotationOperation[],
     unitCost: line.unitCost ?? 0,
   });
 

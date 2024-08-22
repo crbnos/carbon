@@ -181,7 +181,8 @@ const QuoteLinePricing = ({
         costs.consumableCost +
         costs.serviceCost +
         costs.laborCost +
-        costs.overheadCost +
+        costs.setupCost +
+        costs.machineCost +
         costs.outsideCost) /
       quantity;
     return totalCost;

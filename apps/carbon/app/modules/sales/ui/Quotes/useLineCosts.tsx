@@ -9,16 +9,19 @@ import type {
 } from "../../types";
 
 const defaultEffects: CostEffects = {
-  materialCost: [],
-  partCost: [],
-  toolCost: [],
-  fixtureCost: [],
   consumableCost: [],
-  serviceCost: [],
+  fixtureCost: [],
   laborCost: [],
-  overheadCost: [],
+  laborHours: [],
+  machineCost: [],
+  machineHours: [],
+  materialCost: [],
+  outsideCost: [],
+  partCost: [],
+  serviceCost: [],
+  setupCost: [],
   setupHours: [],
-  productionHours: [],
+  toolCost: [],
 };
 
 type EnhancedTree = Tree<QuoteMethod & { operations?: QuotationOperation[] }>;
@@ -109,95 +112,178 @@ export function useLineCosts({
       }
 
       data.operations?.forEach((operation: QuotationOperation) => {
-        if (operation.setupHours) {
-          // setupHours don't depend on quantity
-          effects.setupHours.push((quantity) => {
-            return operation.setupHours;
-          });
-          if (operation.quotingRate) {
-            effects.overheadCost.push((quantity) => {
-              return operation.setupHours * (operation.quotingRate ?? 0);
-            });
-          } else {
-            effects.laborCost.push((quantity) => {
-              return operation.setupHours * (operation.laborRate ?? 0);
-            });
-            effects.overheadCost.push((quantity) => {
-              return operation.setupHours * (operation.overheadRate ?? 0);
-            });
-          }
-        }
-
-        if (operation.productionStandard) {
+        if (operation.setupTime) {
           // normalize production standard to hours
-          let hoursPerProductionStandard = 0;
-          switch (operation.standardFactor) {
+          let hoursPerUnit = 0;
+          let fixedHours = 0;
+          switch (operation.setupUnit) {
             case "Total Hours":
-            case "Hours/Piece":
-              hoursPerProductionStandard = operation.productionStandard;
-              break;
-            case "Hours/100 Pieces":
-              hoursPerProductionStandard = operation.productionStandard / 100;
-              break;
-            case "Hours/1000 Pieces":
-              hoursPerProductionStandard = operation.productionStandard / 1000;
+              fixedHours = operation.setupTime;
               break;
             case "Total Minutes":
+              fixedHours = operation.setupTime / 60;
+              break;
+            case "Hours/Piece":
+              hoursPerUnit = operation.setupTime;
+              break;
+            case "Hours/100 Pieces":
+              hoursPerUnit = operation.setupTime / 100;
+              break;
+            case "Hours/1000 Pieces":
+              hoursPerUnit = operation.setupTime / 1000;
+              break;
+
             case "Minutes/Piece":
-              hoursPerProductionStandard = operation.productionStandard / 60;
+              hoursPerUnit = operation.setupTime / 60;
               break;
             case "Minutes/100 Pieces":
-              hoursPerProductionStandard =
-                operation.productionStandard / 100 / 60;
+              hoursPerUnit = operation.setupTime / 100 / 60;
               break;
             case "Minutes/1000 Pieces":
-              hoursPerProductionStandard =
-                operation.productionStandard / 1000 / 60;
+              hoursPerUnit = operation.setupTime / 1000 / 60;
               break;
             case "Pieces/Hour":
-              hoursPerProductionStandard = 1 / operation.productionStandard;
+              hoursPerUnit = 1 / operation.setupTime;
               break;
             case "Pieces/Minute":
-              hoursPerProductionStandard =
-                1 / (operation.productionStandard / 60);
+              hoursPerUnit = 1 / (operation.setupTime / 60);
               break;
             case "Seconds/Piece":
-              hoursPerProductionStandard = operation.productionStandard / 3600;
+              hoursPerUnit = operation.setupTime / 3600;
               break;
             default:
               break;
           }
 
-          effects.productionHours.push((quantity) => {
-            return hoursPerProductionStandard * quantity * data.quantity;
+          effects.setupHours.push((quantity) => {
+            return hoursPerUnit * quantity * data.quantity + fixedHours;
           });
-          if (operation.quotingRate) {
-            effects.overheadCost.push((quantity) => {
-              return (
-                hoursPerProductionStandard *
+
+          effects.setupCost.push((quantity) => {
+            return (
+              hoursPerUnit *
                 quantity *
                 data.quantity *
-                (operation.quotingRate ?? 0)
-              );
-            });
-          } else {
-            effects.laborCost.push((quantity) => {
-              return (
-                hoursPerProductionStandard *
-                quantity *
-                data.quantity *
-                (operation.laborRate ?? 0)
-              );
-            });
-            effects.overheadCost.push((quantity) => {
-              return (
-                hoursPerProductionStandard *
-                quantity *
-                data.quantity *
-                (operation.overheadRate ?? 0)
-              );
-            });
+                (operation.quotingRate ?? 0) +
+              fixedHours * (operation.quotingRate ?? 0)
+            );
+          });
+        }
+
+        if (operation.laborTime) {
+          // normalize production standard to hours
+          let hoursPerUnit = 0;
+          let fixedHours = 0;
+          switch (operation.laborUnit) {
+            case "Total Hours":
+              fixedHours = operation.laborTime;
+              break;
+            case "Total Minutes":
+              fixedHours = operation.laborTime / 60;
+              break;
+            case "Hours/Piece":
+              hoursPerUnit = operation.laborTime;
+              break;
+            case "Hours/100 Pieces":
+              hoursPerUnit = operation.laborTime / 100;
+              break;
+            case "Hours/1000 Pieces":
+              hoursPerUnit = operation.laborTime / 1000;
+              break;
+
+            case "Minutes/Piece":
+              hoursPerUnit = operation.laborTime / 60;
+              break;
+            case "Minutes/100 Pieces":
+              hoursPerUnit = operation.laborTime / 100 / 60;
+              break;
+            case "Minutes/1000 Pieces":
+              hoursPerUnit = operation.laborTime / 1000 / 60;
+              break;
+            case "Pieces/Hour":
+              hoursPerUnit = 1 / operation.laborTime;
+              break;
+            case "Pieces/Minute":
+              hoursPerUnit = 1 / (operation.laborTime / 60);
+              break;
+            case "Seconds/Piece":
+              hoursPerUnit = operation.laborTime / 3600;
+              break;
+            default:
+              break;
           }
+
+          effects.laborHours.push((quantity) => {
+            return hoursPerUnit * quantity * data.quantity + fixedHours;
+          });
+
+          effects.laborCost.push((quantity) => {
+            return (
+              hoursPerUnit *
+                quantity *
+                data.quantity *
+                (operation.quotingRate ?? 0) +
+              fixedHours * (operation.quotingRate ?? 0)
+            );
+          });
+        }
+
+        if (operation.machineTime) {
+          // normalize production standard to hours
+          let hoursPerUnit = 0;
+          let fixedHours = 0;
+          switch (operation.machineUnit) {
+            case "Total Hours":
+              fixedHours = operation.machineTime;
+              break;
+            case "Total Minutes":
+              fixedHours = operation.machineTime / 60;
+              break;
+            case "Hours/Piece":
+              hoursPerUnit = operation.machineTime;
+              break;
+            case "Hours/100 Pieces":
+              hoursPerUnit = operation.machineTime / 100;
+              break;
+            case "Hours/1000 Pieces":
+              hoursPerUnit = operation.machineTime / 1000;
+              break;
+
+            case "Minutes/Piece":
+              hoursPerUnit = operation.machineTime / 60;
+              break;
+            case "Minutes/100 Pieces":
+              hoursPerUnit = operation.machineTime / 100 / 60;
+              break;
+            case "Minutes/1000 Pieces":
+              hoursPerUnit = operation.machineTime / 1000 / 60;
+              break;
+            case "Pieces/Hour":
+              hoursPerUnit = 1 / operation.machineTime;
+              break;
+            case "Pieces/Minute":
+              hoursPerUnit = 1 / (operation.machineTime / 60);
+              break;
+            case "Seconds/Piece":
+              hoursPerUnit = operation.machineTime / 3600;
+              break;
+            default:
+              break;
+          }
+
+          effects.machineHours.push((quantity) => {
+            return hoursPerUnit * quantity * data.quantity + fixedHours;
+          });
+
+          effects.machineCost.push((quantity) => {
+            return (
+              hoursPerUnit *
+                quantity *
+                data.quantity *
+                (operation.quotingRate ?? 0) +
+              fixedHours * (operation.quotingRate ?? 0)
+            );
+          });
         }
       });
 
@@ -254,7 +340,12 @@ export function useLineCosts({
         0
       );
 
-      const overheadCost = costEffects.overheadCost.reduce(
+      const setupCost = costEffects.setupCost.reduce(
+        (acc, effect) => acc + effect(quantity),
+        0
+      );
+
+      const machineCost = costEffects.machineCost.reduce(
         (acc, effect) => acc + effect(quantity),
         0
       );
@@ -264,7 +355,12 @@ export function useLineCosts({
         0
       );
 
-      const productionHours = costEffects.productionHours.reduce(
+      const laborHours = costEffects.laborHours.reduce(
+        (acc, effect) => acc + effect(quantity),
+        0
+      );
+
+      const machineHours = costEffects.machineHours.reduce(
         (acc, effect) => acc + effect(quantity),
         0
       );
@@ -277,10 +373,12 @@ export function useLineCosts({
         consumableCost,
         serviceCost,
         laborCost,
-        overheadCost,
+        setupCost,
+        machineCost,
         outsideCost: 0,
         setupHours,
-        productionHours,
+        laborHours,
+        machineHours,
       };
     },
     [costEffects]

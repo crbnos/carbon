@@ -22,7 +22,7 @@ import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
 import { useMemo } from "react";
 import { LuInfo } from "react-icons/lu";
-import { MethodItemTypeIcon } from "~/modules/shared";
+import { MethodItemTypeIcon, TimeTypeIcon } from "~/modules/shared";
 import type { Costs } from "../../types";
 
 const QuoteLineCosting = ({
@@ -280,10 +280,41 @@ const QuoteLineCosting = ({
             <Tr>
               <Td className="border-r border-border ">
                 <HStack className="w-full justify-between ">
-                  <span className="whitespace-nowrap">
-                    Total Labor &amp; Overhead
+                  <span>Total Time Cost</span>
+                  <Enumerable value="Time" />
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }, index) => {
+                const totalLaborCost =
+                  costs.setupCost + costs.laborCost + costs.machineCost;
+
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {totalLaborCost
+                          ? formatter.format(totalLaborCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {totalLaborCost && quantity > 0
+                          ? formatter.format(totalLaborCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10 ">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap flex items-center justify-start gap-2">
+                    Setup Cost
                   </span>
-                  <Enumerable value="Labor" />
+                  <Badge variant="secondary">
+                    <TimeTypeIcon type="Setup" />
+                  </Badge>
                 </HStack>
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
@@ -291,17 +322,73 @@ const QuoteLineCosting = ({
                   <Td key={quantity.toString()}>
                     <VStack spacing={0}>
                       <span>
-                        {costs.overheadCost
-                          ? formatter.format(
-                              costs.overheadCost + costs.laborCost
-                            )
+                        {costs.setupCost
+                          ? formatter.format(costs.setupCost)
                           : formatter.format(0)}
                       </span>
                       <span className="text-muted-foreground text-xs">
-                        {costs.overheadCost && quantity > 0
-                          ? formatter.format(
-                              (costs.overheadCost + costs.laborCost) / quantity
-                            )
+                        {costs.setupCost && quantity > 0
+                          ? formatter.format(costs.setupCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10 ">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap flex items-center justify-start gap-2">
+                    Labor Cost
+                  </span>
+                  <Badge variant="secondary">
+                    <TimeTypeIcon type="Labor" />
+                  </Badge>
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }) => {
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {costs.laborCost
+                          ? formatter.format(costs.laborCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {costs.laborCost && quantity > 0
+                          ? formatter.format(costs.laborCost / quantity)
+                          : formatter.format(0)}
+                      </span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr>
+              <Td className="border-r border-border pl-10 ">
+                <HStack className="w-full justify-between ">
+                  <span className="whitespace-nowrap flex items-center justify-start gap-2">
+                    Machine Cost
+                  </span>
+                  <Badge variant="secondary">
+                    <TimeTypeIcon type="Machine" />
+                  </Badge>
+                </HStack>
+              </Td>
+              {quantityCosts.map(({ quantity, costs }) => {
+                return (
+                  <Td key={quantity.toString()}>
+                    <VStack spacing={0}>
+                      <span>
+                        {costs.machineCost
+                          ? formatter.format(costs.machineCost)
+                          : formatter.format(0)}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {costs.machineCost && quantity > 0
+                          ? formatter.format(costs.machineCost / quantity)
                           : formatter.format(0)}
                       </span>
                     </VStack>
@@ -351,8 +438,9 @@ const QuoteLineCosting = ({
                   costs.fixtureCost +
                   costs.consumableCost +
                   costs.serviceCost +
+                  costs.setupCost +
                   costs.laborCost +
-                  costs.overheadCost +
+                  costs.machineCost +
                   costs.outsideCost;
                 return (
                   <Td key={quantity.toString()}>

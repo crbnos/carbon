@@ -1,6 +1,11 @@
 import CadModelUpload from "./CadModelUpload";
 import { MethodBadge } from "./MethodBadge";
-import { MethodIcon, MethodItemTypeIcon, TrackingTypeIcon } from "./MethodIcon";
+import {
+  MethodIcon,
+  MethodItemTypeIcon,
+  TimeTypeIcon,
+  TrackingTypeIcon,
+} from "./MethodIcon";
 import Notes from "./Notes";
 import RealtimeDataProvider from "./RealtimeDataProvider";
 
@@ -11,5 +16,6 @@ export {
   MethodItemTypeIcon,
   Notes,
   RealtimeDataProvider,
+  TimeTypeIcon,
   TrackingTypeIcon,
 };

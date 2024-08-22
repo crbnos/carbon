@@ -23,7 +23,7 @@ import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuHammer, LuHardHat, LuSettings2, LuX } from "react-icons/lu";
+import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
@@ -42,7 +42,7 @@ import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import { methodOperationOrders } from "~/modules/shared";
+import { TimeTypeIcon, methodOperationOrders } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
 
@@ -75,14 +75,14 @@ function makeItem(operation: Operation): ItemWithData {
       <HStack spacing={1}>
         {operation.laborTime > 0 && (
           <Badge variant="secondary">
-            <LuHardHat className="h-3 w-3 mr-1" />
+            <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
             {operation.laborTime} {operation.laborUnit}
           </Badge>
         )}
 
         {operation.machineTime > 0 && (
           <Badge variant="secondary">
-            <LuHammer className="h-3 w-3 mr-1" />
+            <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
             {operation.machineTime} {operation.machineUnit}
           </Badge>
         )}
