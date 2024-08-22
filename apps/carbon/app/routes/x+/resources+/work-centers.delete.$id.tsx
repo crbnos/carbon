@@ -11,15 +11,15 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     delete: "resources",
   });
 
-  const { typeId } = params;
-  if (!typeId) {
+  const { id } = params;
+  if (!id) {
     throw redirect(
       path.to.workCenters,
       await flash(request, error(params, "Failed to get a work center id"))
     );
   }
 
-  const deactivateWorkCenter = await deleteWorkCenter(client, typeId);
+  const deactivateWorkCenter = await deleteWorkCenter(client, id);
   if (deactivateWorkCenter.error) {
     throw redirect(
       path.to.workCenters,

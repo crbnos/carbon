@@ -367,6 +367,7 @@ export async function getWorkCentersList(
     .from("workCenters")
     .select("*")
     .eq("companyId", companyId)
+    .eq("active", true)
     .order("name");
 }
 

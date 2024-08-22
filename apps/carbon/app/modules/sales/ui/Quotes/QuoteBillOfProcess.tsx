@@ -580,8 +580,12 @@ function OperationForm({
       supabase
         .from("workCenterProcess")
         .select("workCenter(*)")
-        .eq("processId", processId),
+        .eq("processId", processId)
+        .eq("workCenter.active", true),
     ]);
+
+    const activeWorkCenters =
+      workCenters?.data?.filter((wc) => Boolean(wc.workCenter)) ?? [];
 
     if (process.error) throw new Error(process.error.message);
 
@@ -595,18 +599,17 @@ function OperationForm({
       machineUnitHint: getUnitHint(process.data?.defaultStandardFactor),
       laborRate:
         // get the average labor rate from the work centers
-        workCenters?.data && workCenters.data.length
-          ? workCenters?.data?.reduce((acc, workCenter) => {
+        activeWorkCenters.length
+          ? activeWorkCenters.reduce((acc, workCenter) => {
               return (acc += workCenter.workCenter?.laborRate ?? 0);
-            }, 0) / workCenters?.data.length
+            }, 0) / activeWorkCenters.length
           : p.laborRate,
       // get the average quoting rate from the work centers
-      quotingRate:
-        workCenters?.data && workCenters.data.length
-          ? workCenters?.data?.reduce((acc, workCenter) => {
-              return (acc += workCenter.workCenter?.quotingRate ?? 0);
-            }, 0) / workCenters?.data.length
-          : p.laborRate,
+      quotingRate: activeWorkCenters.length
+        ? activeWorkCenters?.reduce((acc, workCenter) => {
+            return (acc += workCenter.workCenter?.quotingRate ?? 0);
+          }, 0) / activeWorkCenters.length
+        : p.laborRate,
     }));
   };
 
