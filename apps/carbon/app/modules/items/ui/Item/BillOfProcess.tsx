@@ -13,6 +13,7 @@ import {
   cn,
   generateHTML,
   useDebounce,
+  useThrottle,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -33,9 +34,10 @@ import {
   Select,
   StandardFactor,
   Submit,
+  UnitHint,
   WorkCenter,
+  getUnitHint,
 } from "~/components/Form";
-import UnitHint, { getUnitHint } from "~/components/Form/UnitHint";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
@@ -219,7 +221,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     });
   }, []);
 
-  const onUpdateWorkInstruction = useDebounce(async (content: JSONContent) => {
+  const onUpdateWorkInstruction = useThrottle(async (content: JSONContent) => {
     if (!permissions.can("update", "parts")) return;
     setItems((prevItems) =>
       prevItems.map((item) =>
@@ -244,7 +246,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
         updatedBy: userId,
       })
       .eq("methodOperationId", selectedItemId!);
-  }, 3000);
+  }, 2000);
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();

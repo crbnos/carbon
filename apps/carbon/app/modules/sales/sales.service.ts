@@ -677,7 +677,7 @@ export async function getQuoteOperation(
 ) {
   return client
     .from("quoteOperation")
-    .select("*")
+    .select("*, quoteOperationWorkInstruction(content)")
     .eq("id", quoteOperationId)
     .single();
 }
@@ -698,7 +698,7 @@ export async function getQuoteOperationsByMethodId(
 ) {
   return client
     .from("quoteOperation")
-    .select("*")
+    .select("*, quoteOperationWorkInstruction(content)")
     .eq("quoteMakeMethodId", quoteMakeMethodId)
     .order("order", { ascending: true });
 }

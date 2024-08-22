@@ -192,7 +192,7 @@ const WorkCentersTable = memo(
           <ConfirmDelete
             action={path.to.deleteWorkCenter(selectedWorkCenter.id)}
             name={selectedWorkCenter?.name ?? ""}
-            text={`Are you sure you want to deactivate the ${selectedWorkCenter?.name} work cell type?`}
+            text={`Are you sure you want to deactivate the ${selectedWorkCenter?.name} work center?`}
             isOpen={deleteModal.isOpen}
             onCancel={onDeleteCancel}
             onSubmit={onDeleteCancel}

@@ -1,4 +1,5 @@
 "use client";
+import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   Button,
@@ -7,38 +8,51 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Editor,
   HStack,
   cn,
+  generateHTML,
   useDebounce,
+  useThrottle,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuSettings2, LuX } from "react-icons/lu";
+import { LuHammer, LuHardHat, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
+import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
   Hidden,
   InputControlled,
   Number,
   NumberControlled,
+  Process,
   Select,
   StandardFactor,
   Submit,
+  UnitHint,
   WorkCenter,
+  getUnitHint,
 } from "~/components/Form";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { methodOperationOrders } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { quoteOperationValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
 
-type Operation = z.infer<typeof quoteOperationValidator>;
+type Operation = z.infer<typeof quoteOperationValidator> & {
+  quoteOperationWorkInstruction: {
+    content: JSONContent | null;
+  };
+};
 
 type ItemWithData = Item & {
   data: Operation;
@@ -61,10 +75,19 @@ function makeItem(operation: Operation): ItemWithData {
     order: operation.operationOrder,
     details: (
       <HStack spacing={1}>
-        <Badge variant="secondary">
-          {operation.productionStandard} {operation.standardFactor}
-        </Badge>
-        <Badge variant="secondary">{operation.operationOrder}</Badge>
+        {operation.laborTime > 0 && (
+          <Badge variant="secondary">
+            <LuHardHat className="h-3 w-3 mr-1" />
+            {operation.laborTime} {operation.laborUnit}
+          </Badge>
+        )}
+
+        {operation.machineTime > 0 && (
+          <Badge variant="secondary">
+            <LuHammer className="h-3 w-3 mr-1" />
+            {operation.machineTime} {operation.machineUnit}
+          </Badge>
+        )}
       </HStack>
     ),
     data: operation,
@@ -73,15 +96,20 @@ function makeItem(operation: Operation): ItemWithData {
 
 const initialMethodOperation: Omit<Operation, "quoteMakeMethodId" | "order"> = {
   description: "",
-  workCellTypeId: "",
-  equipmentTypeId: "",
-  setupHours: 0,
-  productionStandard: 0,
-  standardFactor: "Hours/Piece",
+  processId: "",
+  workCenterId: "",
+  setupTime: 0,
+  setupUnit: "Total Minutes",
+  laborTime: 0,
+  laborUnit: "Minutes/Piece",
+  machineTime: 0,
+  machineUnit: "Minutes/Piece",
   operationOrder: "After Previous",
-  quotingRate: 0,
   laborRate: 0,
-  overheadRate: 0,
+  quotingRate: 0,
+  quoteOperationWorkInstruction: {
+    content: {},
+  },
 };
 
 const QuoteBillOfProcess = ({
@@ -91,6 +119,10 @@ const QuoteBillOfProcess = ({
   const { supabase } = useSupabase();
   const sortOrderFetcher = useFetcher<{}>();
   const permissions = usePermissions();
+  const {
+    id: userId,
+    company: { id: companyId },
+  } = useUser();
 
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(operations ?? [])
@@ -203,6 +235,52 @@ const QuoteBillOfProcess = ({
     });
   }, []);
 
+  const onUpdateWorkInstruction = useThrottle(async (content: JSONContent) => {
+    if (!permissions.can("update", "parts")) return;
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === selectedItemId
+          ? {
+              ...item,
+              data: {
+                ...item.data,
+                quoteOperationWorkInstruction: {
+                  content,
+                },
+              },
+            }
+          : item
+      )
+    );
+    await supabase
+      ?.from("quoteOperationWorkInstruction")
+      .update({
+        content,
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId,
+      })
+      .eq("quoteOperationId", selectedItemId!);
+  }, 2500);
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/quote-line/${selectedItemId}/${nanoid()}.${fileType}`;
+    const result = await supabase?.storage
+      .from("private")
+      .upload(fileName, file);
+
+    if (result?.error) {
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return `/file/preview/private/${result.data.path}`;
+  };
+
+  const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,
     items,
@@ -211,6 +289,73 @@ const QuoteBillOfProcess = ({
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
     const isOpen = item.id === selectedItemId;
+    const tabs = [
+      {
+        id: 0,
+        label: "Details",
+        content: (
+          <div className="flex w-full flex-col pr-2 py-2">
+            <motion.div
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                type: "spring",
+                bounce: 0.2,
+                duration: 0.75,
+                delay: 0.15,
+              }}
+            >
+              <OperationForm
+                item={item}
+                isDisabled={isDisabled}
+                setItems={setItems}
+                setSelectedItemId={setSelectedItemId}
+              />
+            </motion.div>
+          </div>
+        ),
+      },
+      {
+        id: 1,
+        label: "Work Instructions",
+        disabled: isTemporaryId(item.id),
+        content: (
+          <div className="flex flex-col">
+            <motion.div
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                type: "spring",
+                bounce: 0.2,
+                duration: 0.75,
+                delay: 0.15,
+              }}
+            >
+              {permissions.can("update", "parts") ? (
+                <Editor
+                  initialValue={
+                    item.data.quoteOperationWorkInstruction?.content ??
+                    ({} as JSONContent)
+                  }
+                  onUpload={onUploadImage}
+                  onChange={onUpdateWorkInstruction}
+                />
+              ) : (
+                <div
+                  className="prose dark:prose-invert"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(
+                      item.data.quoteOperationWorkInstruction?.content ??
+                        ({} as JSONContent)
+                    ),
+                  }}
+                />
+              )}
+            </motion.div>
+          </div>
+        ),
+      },
+    ];
 
     return (
       <SortableListItem<Operation>
@@ -304,25 +449,13 @@ const QuoteBillOfProcess = ({
                         layout
                         className="w-full "
                       >
-                        <div className="flex w-full flex-col pr-2 py-2">
-                          <motion.div
-                            initial={{ opacity: 0, filter: "blur(4px)" }}
-                            animate={{ opacity: 1, filter: "blur(0px)" }}
-                            transition={{
-                              type: "spring",
-                              bounce: 0.2,
-                              duration: 0.75,
-                              delay: 0.15,
-                            }}
-                          >
-                            <OperationForm
-                              item={item}
-                              isDisabled={isDisabled}
-                              setItems={setItems}
-                              setSelectedItemId={setSelectedItemId}
-                            />
-                          </motion.div>
-                        </div>
+                        <DirectionAwareTabs
+                          className="mr-auto"
+                          tabs={tabs}
+                          onChange={() =>
+                            setTabChangeRerender(tabChangeRerender + 1)
+                          }
+                        />
                       </motion.div>
                     </div>
                   </motion.div>
@@ -390,22 +523,22 @@ function OperationForm({
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
 
-  const methodOperationFetcher = useFetcher<{ id: string }>();
+  const fetcher = useFetcher<{ id: string }>();
   const { supabase } = useSupabase();
 
   useEffect(() => {
     // replace the temporary id with the actual id
-    if (methodOperationFetcher.data && methodOperationFetcher.data.id) {
+    if (fetcher.data && fetcher.data.id) {
       flushSync(() => {
         setItems((prevItems) =>
           prevItems.map((i) =>
             i.id === item.id
               ? {
                   ...i,
-                  id: methodOperationFetcher.data!.id!,
+                  id: fetcher.data!.id!,
                   data: {
                     ...i.data,
-                    ...methodOperationFetcher.data,
+                    ...fetcher.data,
                   },
                 }
               : i
@@ -414,51 +547,95 @@ function OperationForm({
       });
       setSelectedItemId(null);
     }
-  }, [item.id, methodOperationFetcher.data, setItems, setSelectedItemId]);
+  }, [item.id, fetcher.data, setItems, setSelectedItemId]);
 
-  const [workCellData, setWorkCellData] = useState<{
-    workCellTypeId: string;
+  const [processData, setProcessData] = useState<{
+    processId: string;
     description: string;
-    standardFactor: string;
-    quotingRate: number;
+    setupUnitHint: string;
+    setupUnit: string;
+    laborUnitHint: string;
+    laborUnit: string;
+    machineUnitHint: string;
+    machineUnit: string;
     laborRate: number;
-    overheadRate: number;
+    quotingRate: number;
   }>({
-    workCellTypeId: item.data.workCellTypeId ?? "",
+    processId: item.data.processId ?? "",
     description: item.data.description ?? "",
-    standardFactor: item.data.standardFactor ?? "Hours/Piece",
-    quotingRate: item.data.quotingRate ?? 0,
+    setupUnitHint: getUnitHint(item.data.setupUnit),
+    setupUnit: item.data.setupUnit ?? "Total Minutes",
+    laborUnitHint: getUnitHint(item.data.laborUnit),
+    laborUnit: item.data.laborUnit ?? "Hours/Piece",
+    machineUnitHint: getUnitHint(item.data.machineUnit),
+    machineUnit: item.data.machineUnit ?? "Hours/Piece",
     laborRate: item.data.laborRate ?? 0,
-    overheadRate: item.data.overheadRate ?? 0,
+    quotingRate: item.data.quotingRate ?? 0,
   });
 
-  const onWorkCellChange = async (workCellTypeId: string) => {
-    if (!supabase || !workCellTypeId) return;
+  const onProcessChange = async (processId: string) => {
+    if (!supabase || !processId) return;
+    const [process, workCenters] = await Promise.all([
+      supabase.from("process").select("*").eq("id", processId).single(),
+      supabase
+        .from("workCenterProcess")
+        .select("workCenter(*)")
+        .eq("processId", processId),
+    ]);
+
+    if (process.error) throw new Error(process.error.message);
+
+    setProcessData((p) => ({
+      ...p,
+      processId,
+      description: process.data?.name ?? "",
+      laborUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
+      laborUnitHint: getUnitHint(process.data?.defaultStandardFactor),
+      machineUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
+      machineUnitHint: getUnitHint(process.data?.defaultStandardFactor),
+      laborRate:
+        // get the average labor rate from the work centers
+        workCenters?.data && workCenters.data.length
+          ? workCenters?.data?.reduce((acc, workCenter) => {
+              return (acc += workCenter.workCenter?.laborRate ?? 0);
+            }, 0) / workCenters?.data.length
+          : p.laborRate,
+      // get the average quoting rate from the work centers
+      quotingRate:
+        workCenters?.data && workCenters.data.length
+          ? workCenters?.data?.reduce((acc, workCenter) => {
+              return (acc += workCenter.workCenter?.quotingRate ?? 0);
+            }, 0) / workCenters?.data.length
+          : p.laborRate,
+    }));
+  };
+
+  const onWorkCenterChange = async (workCenterId: string | null) => {
+    if (!supabase) return;
+    if (!workCenterId) {
+      // get the average costs
+      await onProcessChange(processData.processId);
+      return;
+    }
+
     const { data, error } = await supabase
-      .from("workCellType")
+      .from("workCenter")
       .select("*")
-      .eq("id", workCellTypeId)
+      .eq("id", workCenterId)
       .single();
 
     if (error) throw new Error(error.message);
 
-    setWorkCellData({
-      workCellTypeId,
-      description: data?.name ?? "",
-      standardFactor: data?.defaultStandardFactor ?? "Hours/Piece",
+    setProcessData((d) => ({
+      ...d,
+      laborUnit: data?.defaultStandardFactor ?? "Hours/Piece",
+      laborUnitHint: getUnitHint(data?.defaultStandardFactor),
+      machineUnit: data?.defaultStandardFactor ?? "Hours/Piece",
+      machineUnitHint: getUnitHint(data?.defaultStandardFactor),
       quotingRate: data?.quotingRate ?? 0,
       laborRate: data?.laborRate ?? 0,
-      overheadRate: data?.overheadRate ?? 0,
-    });
+    }));
   };
-
-  const [equipmentData, setEquipmentData] = useState<{
-    equipmentTypeId: string;
-    setupHours: number;
-  }>({
-    equipmentTypeId: item.data.equipmentTypeId ?? "",
-    setupHours: item.data.setupHours ?? 0,
-  });
 
   return (
     <ValidatedForm
@@ -471,13 +648,18 @@ function OperationForm({
       defaultValues={item.data}
       validator={quoteOperationValidator}
       className="w-full flex flex-col gap-y-4"
-      fetcher={methodOperationFetcher}
+      fetcher={fetcher}
       onSubmit={(values) => {
         setItems((prevItems) =>
           prevItems.map((i) =>
             i.id === item.id
               ? {
-                  ...makeItem(values),
+                  ...makeItem({
+                    ...values,
+                    quoteOperationWorkInstruction: {
+                      content: i.data.quoteOperationWorkInstruction?.content,
+                    },
+                  }),
                   id: item.id,
                 }
               : i
@@ -488,12 +670,11 @@ function OperationForm({
       <Hidden name="quoteMakeMethodId" />
       <Hidden name="order" />
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-        <WorkCenter
-          name="workCellTypeId"
-          label="Work Cell"
-          isReadOnly={isDisabled}
+        <Process
+          name="processId"
+          label="Process"
           onChange={(value) => {
-            onWorkCellChange(value?.value as string);
+            onProcessChange(value?.value as string);
           }}
         />
         <Select
@@ -505,38 +686,97 @@ function OperationForm({
             label: o,
           }))}
         />
+        <WorkCenter
+          name="workCenterId"
+          label="Work Center"
+          isOptional
+          processId={processData.processId}
+          onChange={(value) => {
+            onWorkCenterChange(value?.value ?? null);
+          }}
+        />
       </div>
       <InputControlled
         name="description"
         label="Description"
-        value={workCellData.description}
+        value={processData.description}
         onChange={(newValue) => {
-          setWorkCellData((d) => ({ ...d, description: newValue }));
+          setProcessData((d) => ({ ...d, description: newValue }));
         }}
       />
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-        <NumberControlled
-          name="setupHours"
-          label="Setup Time"
-          minValue={0}
-          value={equipmentData.setupHours}
-          onChange={(newValue) => {
-            setEquipmentData((d) => ({ ...d, setupHours: newValue }));
+        <UnitHint
+          name="setupHint"
+          label="Setup"
+          value={processData.setupUnitHint}
+          onChange={(hint) => {
+            setProcessData((d) => ({
+              ...d,
+              setupUnitHint: hint,
+              setupUnit: hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+            }));
           }}
         />
-        <Number
-          name="productionStandard"
-          label="Production Standard"
-          minValue={0}
-        />
+        <Number name="setupTime" label="Setup Time" minValue={0} />
         <StandardFactor
-          name="standardFactor"
-          label="Standard Factor"
-          value={workCellData.standardFactor}
+          name="setupUnit"
+          label="Setup Unit"
+          hint={processData.setupUnitHint}
+          value={processData.setupUnit}
           onChange={(newValue) => {
-            setWorkCellData((d) => ({
+            setProcessData((d) => ({
               ...d,
-              standardFactor: newValue?.value ?? "Hours/Piece",
+              setupUnit: newValue?.value ?? "Total Minutes",
+            }));
+          }}
+        />
+        <UnitHint
+          name="laborHint"
+          label="Labor"
+          value={processData.laborUnitHint}
+          onChange={(hint) => {
+            setProcessData((d) => ({
+              ...d,
+              laborUnitHint: hint,
+              laborUnit: hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+            }));
+          }}
+        />
+        <Number name="laborTime" label="Labor Time" minValue={0} />
+        <StandardFactor
+          name="laborUnit"
+          label="Labor Unit"
+          hint={processData.laborUnitHint}
+          value={processData.laborUnit}
+          onChange={(newValue) => {
+            setProcessData((d) => ({
+              ...d,
+              laborUnit: newValue?.value ?? "Hours/Piece",
+            }));
+          }}
+        />
+        <UnitHint
+          name="machineHint"
+          label="Machine"
+          value={processData.machineUnitHint}
+          onChange={(hint) => {
+            setProcessData((d) => ({
+              ...d,
+              machineUnitHint: hint,
+              machineUnit: hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+            }));
+          }}
+        />
+        <Number name="machineTime" label="Machine Time" minValue={0} />
+        <StandardFactor
+          name="machineUnit"
+          label="Machine Unit"
+          hint={processData.machineUnitHint}
+          value={processData.machineUnit}
+          onChange={(newValue) => {
+            setProcessData((d) => ({
+              ...d,
+              machineUnit: newValue?.value ?? "Hours/Piece",
             }));
           }}
         />
@@ -544,9 +784,13 @@ function OperationForm({
           name="quotingRate"
           label="Quoting Rate"
           minValue={0}
-          value={workCellData.quotingRate}
+          value={processData.quotingRate}
+          formatOptions={{
+            style: "currency",
+            currency: "USD",
+          }}
           onChange={(newValue) =>
-            setWorkCellData((d) => ({
+            setProcessData((d) => ({
               ...d,
               quotingRate: newValue,
             }))
@@ -556,23 +800,15 @@ function OperationForm({
           name="laborRate"
           label="Labor Rate"
           minValue={0}
-          value={workCellData.laborRate}
+          value={processData.laborRate}
+          formatOptions={{
+            style: "currency",
+            currency: "USD",
+          }}
           onChange={(newValue) =>
-            setWorkCellData((d) => ({
+            setProcessData((d) => ({
               ...d,
               laborRate: newValue,
-            }))
-          }
-        />
-        <NumberControlled
-          name="overheadRate"
-          label="Overhead Rate"
-          minValue={0}
-          value={workCellData.overheadRate}
-          onChange={(newValue) =>
-            setWorkCellData((d) => ({
-              ...d,
-              overheadRate: newValue,
             }))
           }
         />

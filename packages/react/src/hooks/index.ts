@@ -8,6 +8,7 @@ import useKeyboardShortcuts from "./useKeyboardShortcuts";
 import useLocalStorage from "./useLocalStorage";
 import useMount from "./useMount";
 import useOutsideClick from "./useOutsideClick";
+import useThrottle from "./useThrottle";
 import useWindowSize from "./useWindowSize";
 
 export {
@@ -21,5 +22,6 @@ export {
   useLocalStorage,
   useMount,
   useOutsideClick,
+  useThrottle,
   useWindowSize,
 };

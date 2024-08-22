@@ -7,7 +7,7 @@ import {
   Editor,
   generateHTML,
   toast,
-  useDebounce,
+  useThrottle,
   VStack,
 } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
@@ -143,7 +143,7 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
     return `/file/preview/private/${result.data.path}`;
   };
 
-  const onUpdateExternalNotes = useDebounce(async (content: JSONContent) => {
+  const onUpdateExternalNotes = useThrottle(async (content: JSONContent) => {
     await supabase
       ?.from("salesRfq")
       .update({
@@ -152,7 +152,7 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
         updatedBy: userId,
       })
       .eq("id", salesRfq.id!);
-  }, 3000);
+  }, 2500);
 
   return (
     <Card>

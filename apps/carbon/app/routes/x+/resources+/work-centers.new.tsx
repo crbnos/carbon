@@ -45,7 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
           path.to.workCenters,
           await flash(
             request,
-            error(createWorkCenter.error, "Failed to create work cell type")
+            error(createWorkCenter.error, "Failed to create work center")
           )
         );
   }

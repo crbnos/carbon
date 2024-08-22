@@ -53,6 +53,7 @@ import SupplierType from "./SupplierType";
 import TextArea from "./Textarea";
 import TimePicker from "./TimePicker";
 import Timezone from "./Timezone";
+import UnitHint, { getUnitHint } from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";
 import User from "./User";
 import Users from "./Users";
@@ -74,17 +75,18 @@ export {
   ConversionFactor,
   CreatableCombobox,
   Currency,
-  CustomFormFields,
   Customer,
   CustomerContact,
   CustomerLocation,
   CustomerStatus,
   CustomerType,
+  CustomFormFields,
   DatePicker,
   DefaultMethodType,
   Department,
   Employee,
   Employees,
+  getUnitHint,
   Hidden,
   Input,
   InputControlled,
@@ -115,6 +117,7 @@ export {
   TextArea,
   TimePicker,
   Timezone,
+  UnitHint,
   UnitOfMeasure,
   User,
   Users,
