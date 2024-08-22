@@ -73,7 +73,7 @@ export default function SalesRFQExplorer() {
     unitOfMeasureCode: "EA",
   };
 
-  const isDisabled = ["Draft", "Ready for Quote"].includes(
+  const isDisabled = ["Ready for Quote"].includes(
     salesRfqData?.rfqSummary.status ?? ""
   );
 
