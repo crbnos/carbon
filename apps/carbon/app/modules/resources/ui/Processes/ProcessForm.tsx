@@ -60,8 +60,6 @@ const ProcessForm = ({
     ? !permissions.can("update", "resources")
     : !permissions.can("create", "resources");
 
-  console.log({ initialValues });
-
   return (
     <ModalDrawerProvider type={type}>
       <ModalDrawer

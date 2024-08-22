@@ -64,8 +64,6 @@ const EmployeeAbilityForm = ({
 
   if (!ability) return null;
 
-  console.log({ isEditing });
-
   return (
     <Drawer
       open
