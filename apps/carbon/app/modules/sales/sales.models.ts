@@ -12,13 +12,6 @@ export const salesRFQStatusType = [
   "Closed",
 ] as const;
 
-export const customerValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  customerStatusId: zfd.text(z.string().optional()),
-  accountManagerId: zfd.text(z.string().optional()),
-});
-
 export const customerAccountingValidator = z.object({
   id: zfd.text(z.string()),
   customerTypeId: zfd.text(z.string().optional()),
@@ -35,6 +28,13 @@ export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: zfd.text(z.string()),
   ...address,
+});
+
+export const customerValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  customerStatusId: zfd.text(z.string().optional()),
+  accountManagerId: zfd.text(z.string().optional()),
 });
 
 export const customerPaymentValidator = z.object({
