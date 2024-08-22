@@ -195,6 +195,8 @@ DELETE FROM "customFieldTable" WHERE "table" = 'workCell';
 DELETE FROM "customFieldTable" WHERE "table" = 'workCellType';
 DELETE FROM "customFieldTable" WHERE "table" = 'equipmentType';
 DELETE FROM "customFieldTable" WHERE "table" = 'equipment';
+DELETE FROM "customFieldTable" WHERE "table" = 'process';
+DELETE FROM "customFieldTable" WHERE "table" = 'workCenter';
 
 INSERT INTO "customFieldTable" ("table", "name", "module")
 VALUES 
