@@ -110,6 +110,10 @@ export type Part = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
 >[number];
 
+export type PartCustomerPart = NonNullable<
+  Awaited<ReturnType<typeof getItemCustomerParts>>
+>["data"];
+
 export type PartSummary = NonNullable<
   Awaited<ReturnType<typeof getPart>>
 >["data"];
