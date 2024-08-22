@@ -15837,105 +15837,6 @@ export default {
         tags: ["employeeShift"],
       },
     },
-    "/requestForQuote": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.requestForQuote.id",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/requestForQuote",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["requestForQuote"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.requestForQuote",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["requestForQuote"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.requestForQuote.id",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["requestForQuote"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.requestForQuote.id",
-          },
-          {
-            $ref: "#/parameters/body.requestForQuote",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["requestForQuote"],
-      },
-    },
     "/quote": {
       get: {
         parameters: [
@@ -38809,18 +38710,6 @@ export default {
       },
       type: "object",
     },
-    requestForQuote: {
-      required: ["id"],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
     quote: {
       required: [
         "id",
@@ -54382,22 +54271,6 @@ export default {
     },
     "rowFilter.employeeShift.shiftId": {
       name: "shiftId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "body.requestForQuote": {
-      name: "requestForQuote",
-      description: "requestForQuote",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/requestForQuote",
-      },
-    },
-    "rowFilter.requestForQuote.id": {
-      name: "id",
       required: false,
       format: "text",
       in: "query",
