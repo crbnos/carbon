@@ -555,132 +555,6 @@ export default {
         tags: ["supplierType"],
       },
     },
-    "/crewAbility": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.crewId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.abilityId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.active",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/crewAbility",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["crewAbility"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.crewAbility",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["crewAbility"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.crewId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.abilityId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.active",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["crewAbility"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.crewId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.abilityId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crewAbility.active",
-          },
-          {
-            $ref: "#/parameters/body.crewAbility",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["crewAbility"],
-      },
-    },
     "/customerType": {
       get: {
         parameters: [
@@ -3675,6 +3549,249 @@ export default {
         tags: ["methodMaterial"],
       },
     },
+    "/processes": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.processes.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.defaultStandardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.workCenters",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/processes",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["processes"],
+      },
+    },
+    "/process": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.process.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.defaultStandardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.updatedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/process",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["process"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.process",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["process"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.process.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.defaultStandardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.updatedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["process"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.process.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.defaultStandardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.updatedAt",
+          },
+          {
+            $ref: "#/parameters/body.process",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["process"],
+      },
+    },
     "/quoteMaterial": {
       get: {
         parameters: [
@@ -4567,6 +4684,159 @@ export default {
           },
         },
         tags: ["purchaseOrderLines"],
+      },
+    },
+    "/quoteOperationWorkInstruction": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.quoteOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/quoteOperationWorkInstruction",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["quoteOperationWorkInstruction"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.quoteOperationWorkInstruction",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["quoteOperationWorkInstruction"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.quoteOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteOperationWorkInstruction"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.quoteOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationWorkInstruction.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.quoteOperationWorkInstruction",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteOperationWorkInstruction"],
       },
     },
     "/materialForm": {
@@ -9201,6 +9471,102 @@ export default {
         tags: ["purchaseOrderSuppliers"],
       },
     },
+    "/workCenters": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenters.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.quotingRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.defaultStandardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.requiredAbilityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.locationName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.processes",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workCenters",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["workCenters"],
+      },
+    },
     "/costLedger": {
       get: {
         parameters: [
@@ -10474,231 +10840,6 @@ export default {
           },
         },
         tags: ["supplierLedger"],
-      },
-    },
-    "/workCellType": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.workCellType.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.requiredAbility",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.quotingRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.laborRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.overheadRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.defaultStandardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.customFields",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/workCellType",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["workCellType"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.workCellType",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["workCellType"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.workCellType.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.requiredAbility",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.quotingRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.laborRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.overheadRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.defaultStandardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.customFields",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["workCellType"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.workCellType.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.requiredAbility",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.quotingRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.laborRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.overheadRate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.defaultStandardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCellType.customFields",
-          },
-          {
-            $ref: "#/parameters/body.workCellType",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["workCellType"],
       },
     },
     "/holidayYears": {
@@ -12003,6 +12144,240 @@ export default {
         tags: ["note"],
       },
     },
+    "/workCenter": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.quotingRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.defaultStandardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.requiredAbilityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workCenter",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["workCenter"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.workCenter",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["workCenter"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.quotingRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.defaultStandardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.requiredAbilityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["workCenter"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.quotingRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.defaultStandardFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.requiredAbilityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/body.workCenter",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["workCenter"],
+      },
+    },
     "/tool": {
       get: {
         parameters: [
@@ -13249,22 +13624,7 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.operationOrder",
           },
           {
-            $ref: "#/parameters/rowFilter.methodOperation.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.equipmentTypeId",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodOperation.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.standardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.productionStandard",
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.companyId",
@@ -13283,6 +13643,30 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.machineUnit",
           },
           {
             $ref: "#/parameters/select",
@@ -13356,22 +13740,7 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.operationOrder",
           },
           {
-            $ref: "#/parameters/rowFilter.methodOperation.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.equipmentTypeId",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodOperation.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.standardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.productionStandard",
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.companyId",
@@ -13390,6 +13759,30 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.machineUnit",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -13417,22 +13810,7 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.operationOrder",
           },
           {
-            $ref: "#/parameters/rowFilter.methodOperation.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.equipmentTypeId",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodOperation.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.standardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodOperation.productionStandard",
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.companyId",
@@ -13451,6 +13829,30 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.machineUnit",
           },
           {
             $ref: "#/parameters/body.methodOperation",
@@ -15061,22 +15463,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.order",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.equipmentTypeId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.standardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.productionStandard",
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.operationOrder",
@@ -15107,6 +15494,30 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.machineUnit",
           },
           {
             $ref: "#/parameters/select",
@@ -15982,204 +16393,6 @@ export default {
           },
         },
         tags: ["user"],
-      },
-    },
-    "/equipmentType": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.requiredAbility",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.customFields",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/equipmentType",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["equipmentType"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.equipmentType",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["equipmentType"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.requiredAbility",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.customFields",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["equipmentType"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.requiredAbility",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipmentType.customFields",
-          },
-          {
-            $ref: "#/parameters/body.equipmentType",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["equipmentType"],
       },
     },
     "/modelUpload": {
@@ -19221,249 +19434,6 @@ export default {
         tags: ["integrations"],
       },
     },
-    "/equipment": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.equipment.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.equipmentTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.operatorsRequired",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.workCellId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.activeDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.customFields",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.equipmentId",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/equipment",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["equipment"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.equipment",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["equipment"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.equipment.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.equipmentTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.operatorsRequired",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.workCellId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.activeDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.customFields",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.equipmentId",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["equipment"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.equipment.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.equipmentTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.operatorsRequired",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.workCellId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.activeDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.customFields",
-          },
-          {
-            $ref: "#/parameters/rowFilter.equipment.equipmentId",
-          },
-          {
-            $ref: "#/parameters/body.equipment",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["equipment"],
-      },
-    },
     "/groups_recursive": {
       get: {
         parameters: [
@@ -20425,9 +20395,6 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.departmentId",
           },
           {
-            $ref: "#/parameters/rowFilter.employeeJob.workCellId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -20520,9 +20487,6 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.departmentId",
           },
           {
-            $ref: "#/parameters/rowFilter.employeeJob.workCellId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -20567,9 +20531,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employeeJob.departmentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeeJob.workCellId",
           },
           {
             $ref: "#/parameters/body.employeeJob",
@@ -20971,420 +20932,6 @@ export default {
           },
         },
         tags: ["companyIntegration"],
-      },
-    },
-    "/crew": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.crew.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.crewLeaderId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.groupId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.workCellId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.updatedAt",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/crew",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["crew"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.crew",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["crew"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.crew.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.crewLeaderId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.groupId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.workCellId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.updatedAt",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["crew"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.crew.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.crewLeaderId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.groupId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.workCellId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.crew.updatedAt",
-          },
-          {
-            $ref: "#/parameters/body.crew",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["crew"],
-      },
-    },
-    "/workCell": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.workCell.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.defaultStandardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.departmentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.activeDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.customFields",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/workCell",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["workCell"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.workCell",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["workCell"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.workCell.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.defaultStandardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.departmentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.activeDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.customFields",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["workCell"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.workCell.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.defaultStandardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.departmentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.activeDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCell.customFields",
-          },
-          {
-            $ref: "#/parameters/body.workCell",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["workCell"],
       },
     },
     "/salesRfqLines": {
@@ -21808,6 +21355,159 @@ export default {
           },
         },
         tags: ["materialSubstance"],
+      },
+    },
+    "/workCenterProcess": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.updatedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workCenterProcess",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["workCenterProcess"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.workCenterProcess",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["workCenterProcess"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.updatedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["workCenterProcess"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterProcess.updatedAt",
+          },
+          {
+            $ref: "#/parameters/body.workCenterProcess",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["workCenterProcess"],
       },
     },
     "/itemQuantities": {
@@ -22561,22 +22261,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.order",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperation.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.equipmentTypeId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperation.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.standardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.productionStandard",
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.operationOrder",
@@ -22607,6 +22292,30 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.machineUnit",
           },
           {
             $ref: "#/parameters/select",
@@ -22683,22 +22392,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.order",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperation.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.equipmentTypeId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperation.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.standardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.productionStandard",
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.operationOrder",
@@ -22729,6 +22423,30 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.machineUnit",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -22759,22 +22477,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.order",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperation.workCellTypeId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.equipmentTypeId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperation.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.setupHours",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.standardFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.productionStandard",
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.operationOrder",
@@ -22805,6 +22508,30 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.machineUnit",
           },
           {
             $ref: "#/parameters/body.quoteOperation",
@@ -32220,35 +31947,6 @@ export default {
       },
       type: "object",
     },
-    crewAbility: {
-      required: ["id", "crewId", "abilityId", "active"],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        crewId: {
-          description:
-            "Note:\nThis is a Foreign Key to `crew.id`.<fk table='crew' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        abilityId: {
-          description:
-            "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        active: {
-          default: true,
-          format: "boolean",
-          type: "boolean",
-        },
-      },
-      type: "object",
-    },
     customerType: {
       required: [
         "id",
@@ -33456,6 +33154,139 @@ export default {
       },
       type: "object",
     },
+    processes: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        defaultStandardFactor: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        workCenters: {
+          format: "jsonb",
+        },
+      },
+      type: "object",
+    },
+    process: {
+      required: [
+        "id",
+        "name",
+        "defaultStandardFactor",
+        "companyId",
+        "createdBy",
+        "createdAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        defaultStandardFactor: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     quoteMaterial: {
       required: [
         "id",
@@ -33997,6 +33828,45 @@ export default {
           type: "string",
         },
         supplierPartId: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    quoteOperationWorkInstruction: {
+      required: ["quoteOperationId", "companyId", "createdAt", "createdBy"],
+      properties: {
+        quoteOperationId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        content: {
+          format: "json",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -35905,6 +35775,105 @@ export default {
       },
       type: "object",
     },
+    workCenters: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        quotingRate: {
+          format: "numeric",
+          type: "number",
+        },
+        laborRate: {
+          format: "numeric",
+          type: "number",
+        },
+        overheadRate: {
+          format: "numeric",
+          type: "number",
+        },
+        defaultStandardFactor: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        requiredAbilityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        active: {
+          format: "boolean",
+          type: "boolean",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        locationName: {
+          format: "text",
+          type: "string",
+        },
+        processes: {
+          format: "jsonb",
+        },
+      },
+      type: "object",
+    },
     costLedger: {
       required: [
         "id",
@@ -36469,111 +36438,6 @@ export default {
           default: "now()",
           format: "timestamp with time zone",
           type: "string",
-        },
-      },
-      type: "object",
-    },
-    workCellType: {
-      required: [
-        "id",
-        "name",
-        "quotingRate",
-        "laborRate",
-        "overheadRate",
-        "defaultStandardFactor",
-        "active",
-        "companyId",
-        "createdBy",
-        "createdAt",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        name: {
-          format: "text",
-          type: "string",
-        },
-        description: {
-          format: "text",
-          type: "string",
-        },
-        requiredAbility: {
-          description:
-            "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        quotingRate: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        laborRate: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        overheadRate: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        defaultStandardFactor: {
-          default: "Total Hours",
-          enum: [
-            "Hours/Piece",
-            "Hours/100 Pieces",
-            "Hours/1000 Pieces",
-            "Minutes/Piece",
-            "Minutes/100 Pieces",
-            "Minutes/1000 Pieces",
-            "Pieces/Hour",
-            "Pieces/Minute",
-            "Seconds/Piece",
-            "Total Hours",
-            "Total Minutes",
-          ],
-          format: "public.factor",
-          type: "string",
-        },
-        active: {
-          default: true,
-          format: "boolean",
-          type: "boolean",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        updatedAt: {
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        customFields: {
-          format: "jsonb",
         },
       },
       type: "object",
@@ -37279,6 +37143,115 @@ export default {
       },
       type: "object",
     },
+    workCenter: {
+      required: [
+        "id",
+        "name",
+        "quotingRate",
+        "laborRate",
+        "defaultStandardFactor",
+        "active",
+        "companyId",
+        "createdBy",
+        "createdAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        quotingRate: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        laborRate: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        overheadRate: {
+          format: "numeric",
+          type: "number",
+        },
+        defaultStandardFactor: {
+          default: "Minutes/Piece",
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        requiredAbilityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     tool: {
       required: ["id", "approved", "companyId", "createdBy", "createdAt"],
       properties: {
@@ -37827,14 +37800,17 @@ export default {
         "makeMethodId",
         "order",
         "operationOrder",
-        "workCellTypeId",
         "description",
-        "setupHours",
-        "standardFactor",
-        "productionStandard",
         "companyId",
         "createdAt",
         "createdBy",
+        "processId",
+        "setupTime",
+        "setupUnit",
+        "laborTime",
+        "laborUnit",
+        "machineTime",
+        "machineUnit",
       ],
       properties: {
         id: {
@@ -37860,49 +37836,9 @@ export default {
           format: 'public."methodOperationOrder"',
           type: "string",
         },
-        workCellTypeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `workCellType.id`.<fk table='workCellType' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        equipmentTypeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `equipmentType.id`.<fk table='equipmentType' column='id'/>",
-          format: "text",
-          type: "string",
-        },
         description: {
           format: "text",
           type: "string",
-        },
-        setupHours: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        standardFactor: {
-          default: "Hours/Piece",
-          enum: [
-            "Hours/Piece",
-            "Hours/100 Pieces",
-            "Hours/1000 Pieces",
-            "Minutes/Piece",
-            "Minutes/100 Pieces",
-            "Minutes/1000 Pieces",
-            "Pieces/Hour",
-            "Pieces/Minute",
-            "Seconds/Piece",
-            "Total Hours",
-            "Total Minutes",
-          ],
-          format: "public.factor",
-          type: "string",
-        },
-        productionStandard: {
-          default: 0,
-          format: "numeric",
-          type: "number",
         },
         companyId: {
           description:
@@ -37933,6 +37869,87 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        setupTime: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        setupUnit: {
+          default: "Total Hours",
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        laborTime: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        laborUnit: {
+          default: "Hours/Piece",
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        machineTime: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        machineUnit: {
+          default: "Hours/Piece",
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
         },
       },
       type: "object",
@@ -38594,46 +38611,9 @@ export default {
           format: "double precision",
           type: "number",
         },
-        workCellTypeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `workCellType.id`.<fk table='workCellType' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        equipmentTypeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `equipmentType.id`.<fk table='equipmentType' column='id'/>",
-          format: "text",
-          type: "string",
-        },
         description: {
           format: "text",
           type: "string",
-        },
-        setupHours: {
-          format: "numeric",
-          type: "number",
-        },
-        standardFactor: {
-          enum: [
-            "Hours/Piece",
-            "Hours/100 Pieces",
-            "Hours/1000 Pieces",
-            "Minutes/Piece",
-            "Minutes/100 Pieces",
-            "Minutes/1000 Pieces",
-            "Pieces/Hour",
-            "Pieces/Minute",
-            "Seconds/Piece",
-            "Total Hours",
-            "Total Minutes",
-          ],
-          format: "public.factor",
-          type: "string",
-        },
-        productionStandard: {
-          format: "numeric",
-          type: "number",
         },
         operationOrder: {
           enum: ["After Previous", "With Previous"],
@@ -38680,6 +38660,81 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        setupTime: {
+          format: "numeric",
+          type: "number",
+        },
+        setupUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        laborTime: {
+          format: "numeric",
+          type: "number",
+        },
+        laborUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        machineTime: {
+          format: "numeric",
+          type: "number",
+        },
+        machineUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
         },
       },
       type: "object",
@@ -38943,80 +38998,6 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
-        },
-      },
-      type: "object",
-    },
-    equipmentType: {
-      required: [
-        "id",
-        "name",
-        "setupHours",
-        "active",
-        "companyId",
-        "createdBy",
-        "createdAt",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        name: {
-          format: "text",
-          type: "string",
-        },
-        description: {
-          format: "text",
-          type: "string",
-        },
-        requiredAbility: {
-          description:
-            "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        setupHours: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        active: {
-          default: true,
-          format: "boolean",
-          type: "boolean",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        updatedAt: {
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        customFields: {
-          format: "jsonb",
         },
       },
       type: "object",
@@ -40353,109 +40334,6 @@ export default {
       },
       type: "object",
     },
-    equipment: {
-      required: [
-        "id",
-        "name",
-        "equipmentTypeId",
-        "operatorsRequired",
-        "setupHours",
-        "locationId",
-        "active",
-        "companyId",
-        "createdBy",
-        "createdAt",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        name: {
-          format: "text",
-          type: "string",
-        },
-        description: {
-          format: "text",
-          type: "string",
-        },
-        equipmentTypeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `equipmentType.id`.<fk table='equipmentType' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        operatorsRequired: {
-          default: 1,
-          format: "numeric",
-          type: "number",
-        },
-        setupHours: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        locationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        workCellId: {
-          description:
-            "Note:\nThis is a Foreign Key to `workCell.id`.<fk table='workCell' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        active: {
-          default: true,
-          format: "boolean",
-          type: "boolean",
-        },
-        activeDate: {
-          default: "CURRENT_DATE",
-          format: "date",
-          type: "string",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        updatedAt: {
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        customFields: {
-          format: "jsonb",
-        },
-        equipmentId: {
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
     groups_recursive: {
       properties: {
         groupId: {
@@ -40970,12 +40848,6 @@ export default {
           format: "text",
           type: "string",
         },
-        workCellId: {
-          description:
-            "Note:\nThis is a Foreign Key to `workCell.id`.<fk table='workCell' column='id'/>",
-          format: "text",
-          type: "string",
-        },
       },
       type: "object",
     },
@@ -41111,181 +40983,6 @@ export default {
         updatedBy: {
           format: "text",
           type: "string",
-        },
-      },
-      type: "object",
-    },
-    crew: {
-      required: [
-        "id",
-        "name",
-        "groupId",
-        "companyId",
-        "createdBy",
-        "createdAt",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        name: {
-          format: "text",
-          type: "string",
-        },
-        description: {
-          format: "text",
-          type: "string",
-        },
-        crewLeaderId: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        groupId: {
-          description:
-            "Note:\nThis is a Foreign Key to `group.id`.<fk table='group' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        workCellId: {
-          description:
-            "Note:\nThis is a Foreign Key to `workCell.id`.<fk table='workCell' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        companyId: {
-          format: "text",
-          type: "string",
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        updatedAt: {
-          format: "timestamp without time zone",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
-    workCell: {
-      required: [
-        "id",
-        "name",
-        "defaultStandardFactor",
-        "departmentId",
-        "workCellTypeId",
-        "active",
-        "companyId",
-        "createdBy",
-        "createdAt",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        name: {
-          format: "text",
-          type: "string",
-        },
-        description: {
-          format: "text",
-          type: "string",
-        },
-        defaultStandardFactor: {
-          default: "Hours/Piece",
-          enum: [
-            "Hours/Piece",
-            "Hours/100 Pieces",
-            "Hours/1000 Pieces",
-            "Minutes/Piece",
-            "Minutes/100 Pieces",
-            "Minutes/1000 Pieces",
-            "Pieces/Hour",
-            "Pieces/Minute",
-            "Seconds/Piece",
-            "Total Hours",
-            "Total Minutes",
-          ],
-          format: "public.factor",
-          type: "string",
-        },
-        departmentId: {
-          description:
-            "Note:\nThis is a Foreign Key to `department.id`.<fk table='department' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        locationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        workCellTypeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `workCellType.id`.<fk table='workCellType' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        active: {
-          default: true,
-          format: "boolean",
-          type: "boolean",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        activeDate: {
-          format: "date",
-          type: "string",
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        updatedAt: {
-          format: "timestamp without time zone",
-          type: "string",
-        },
-        customFields: {
-          format: "jsonb",
         },
       },
       type: "object",
@@ -41490,6 +41187,57 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    workCenterProcess: {
+      required: [
+        "workCenterId",
+        "processId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+      ],
+      properties: {
+        workCenterId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
         },
         createdBy: {
           description:
@@ -41833,10 +41581,6 @@ export default {
         "quoteId",
         "quoteLineId",
         "order",
-        "workCellTypeId",
-        "setupHours",
-        "standardFactor",
-        "productionStandard",
         "operationOrder",
         "quotingRate",
         "laborRate",
@@ -41844,6 +41588,13 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "processId",
+        "setupTime",
+        "setupUnit",
+        "laborTime",
+        "laborUnit",
+        "machineTime",
+        "machineUnit",
       ],
       properties: {
         id: {
@@ -41875,49 +41626,9 @@ export default {
           format: "double precision",
           type: "number",
         },
-        workCellTypeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `workCellType.id`.<fk table='workCellType' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        equipmentTypeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `equipmentType.id`.<fk table='equipmentType' column='id'/>",
-          format: "text",
-          type: "string",
-        },
         description: {
           format: "text",
           type: "string",
-        },
-        setupHours: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        standardFactor: {
-          default: "Hours/Piece",
-          enum: [
-            "Hours/Piece",
-            "Hours/100 Pieces",
-            "Hours/1000 Pieces",
-            "Minutes/Piece",
-            "Minutes/100 Pieces",
-            "Minutes/1000 Pieces",
-            "Pieces/Hour",
-            "Pieces/Minute",
-            "Seconds/Piece",
-            "Total Hours",
-            "Total Minutes",
-          ],
-          format: "public.factor",
-          type: "string",
-        },
-        productionStandard: {
-          default: 0,
-          format: "numeric",
-          type: "number",
         },
         operationOrder: {
           default: "After Previous",
@@ -41969,6 +41680,87 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        setupTime: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        setupUnit: {
+          default: "Total Hours",
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        laborTime: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        laborUnit: {
+          default: "Hours/Piece",
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        machineTime: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        machineUnit: {
+          default: "Hours/Piece",
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
         },
       },
       type: "object",
@@ -45642,43 +45434,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "body.crewAbility": {
-      name: "crewAbility",
-      description: "crewAbility",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/crewAbility",
-      },
-    },
-    "rowFilter.crewAbility.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crewAbility.crewId": {
-      name: "crewId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crewAbility.abilityId": {
-      name: "abilityId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crewAbility.active": {
-      name: "active",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
     "body.customerType": {
       name: "customerType",
       description: "customerType",
@@ -47237,6 +46992,157 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.processes": {
+      name: "processes",
+      description: "processes",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/processes",
+      },
+    },
+    "rowFilter.processes.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.defaultStandardFactor": {
+      name: "defaultStandardFactor",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.workCenters": {
+      name: "workCenters",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "body.process": {
+      name: "process",
+      description: "process",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/process",
+      },
+    },
+    "rowFilter.process.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.defaultStandardFactor": {
+      name: "defaultStandardFactor",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
     "body.quoteMaterial": {
       name: "quoteMaterial",
       description: "quoteMaterial",
@@ -47991,6 +47897,64 @@ export default {
     },
     "rowFilter.purchaseOrderLines.supplierPartId": {
       name: "supplierPartId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.quoteOperationWorkInstruction": {
+      name: "quoteOperationWorkInstruction",
+      description: "quoteOperationWorkInstruction",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/quoteOperationWorkInstruction",
+      },
+    },
+    "rowFilter.quoteOperationWorkInstruction.quoteOperationId": {
+      name: "quoteOperationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationWorkInstruction.content": {
+      name: "content",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationWorkInstruction.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationWorkInstruction.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationWorkInstruction.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationWorkInstruction.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationWorkInstruction.updatedBy": {
+      name: "updatedBy",
       required: false,
       format: "text",
       in: "query",
@@ -50464,6 +50428,141 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.workCenters": {
+      name: "workCenters",
+      description: "workCenters",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workCenters",
+      },
+    },
+    "rowFilter.workCenters.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.quotingRate": {
+      name: "quotingRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.laborRate": {
+      name: "laborRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.overheadRate": {
+      name: "overheadRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.defaultStandardFactor": {
+      name: "defaultStandardFactor",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.requiredAbilityId": {
+      name: "requiredAbilityId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.locationName": {
+      name: "locationName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenters.processes": {
+      name: "processes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.costLedger": {
       name: "costLedger",
       description: "costLedger",
@@ -51166,120 +51265,6 @@ export default {
       name: "createdAt",
       required: false,
       format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "body.workCellType": {
-      name: "workCellType",
-      description: "workCellType",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/workCellType",
-      },
-    },
-    "rowFilter.workCellType.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.name": {
-      name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.description": {
-      name: "description",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.requiredAbility": {
-      name: "requiredAbility",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.quotingRate": {
-      name: "quotingRate",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.laborRate": {
-      name: "laborRate",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.overheadRate": {
-      name: "overheadRate",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.defaultStandardFactor": {
-      name: "defaultStandardFactor",
-      required: false,
-      format: "public.factor",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.active": {
-      name: "active",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCellType.customFields": {
-      name: "customFields",
-      required: false,
-      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -52311,6 +52296,127 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.workCenter": {
+      name: "workCenter",
+      description: "workCenter",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workCenter",
+      },
+    },
+    "rowFilter.workCenter.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.quotingRate": {
+      name: "quotingRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.laborRate": {
+      name: "laborRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.overheadRate": {
+      name: "overheadRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.defaultStandardFactor": {
+      name: "defaultStandardFactor",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.requiredAbilityId": {
+      name: "requiredAbilityId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenter.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
     "body.tool": {
       name: "tool",
       description: "tool",
@@ -53083,45 +53189,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.methodOperation.workCellTypeId": {
-      name: "workCellTypeId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.methodOperation.equipmentTypeId": {
-      name: "equipmentTypeId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.methodOperation.description": {
       name: "description",
       required: false,
       format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.methodOperation.setupHours": {
-      name: "setupHours",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.methodOperation.standardFactor": {
-      name: "standardFactor",
-      required: false,
-      format: "public.factor",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.methodOperation.productionStandard": {
-      name: "productionStandard",
-      required: false,
-      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -53164,6 +53235,62 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.processId": {
+      name: "processId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.setupTime": {
+      name: "setupTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.setupUnit": {
+      name: "setupUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.laborTime": {
+      name: "laborTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.laborUnit": {
+      name: "laborUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.machineTime": {
+      name: "machineTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.machineUnit": {
+      name: "machineUnit",
+      required: false,
+      format: "public.factor",
       in: "query",
       type: "string",
     },
@@ -54032,45 +54159,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteOperationsWithMakeMethods.workCellTypeId": {
-      name: "workCellTypeId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperationsWithMakeMethods.equipmentTypeId": {
-      name: "equipmentTypeId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteOperationsWithMakeMethods.description": {
       name: "description",
       required: false,
       format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperationsWithMakeMethods.setupHours": {
-      name: "setupHours",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperationsWithMakeMethods.standardFactor": {
-      name: "standardFactor",
-      required: false,
-      format: "public.factor",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperationsWithMakeMethods.productionStandard": {
-      name: "productionStandard",
-      required: false,
-      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -54141,6 +54233,62 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.processId": {
+      name: "processId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.setupTime": {
+      name: "setupTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.setupUnit": {
+      name: "setupUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.laborTime": {
+      name: "laborTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.laborUnit": {
+      name: "laborUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.machineTime": {
+      name: "machineTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.machineUnit": {
+      name: "machineUnit",
+      required: false,
+      format: "public.factor",
       in: "query",
       type: "string",
     },
@@ -54487,99 +54635,6 @@ export default {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "body.equipmentType": {
-      name: "equipmentType",
-      description: "equipmentType",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/equipmentType",
-      },
-    },
-    "rowFilter.equipmentType.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.name": {
-      name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.description": {
-      name: "description",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.requiredAbility": {
-      name: "requiredAbility",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.setupHours": {
-      name: "setupHours",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.active": {
-      name: "active",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipmentType.customFields": {
-      name: "customFields",
-      required: false,
-      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -56352,134 +56407,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "body.equipment": {
-      name: "equipment",
-      description: "equipment",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/equipment",
-      },
-    },
-    "rowFilter.equipment.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.name": {
-      name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.description": {
-      name: "description",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.equipmentTypeId": {
-      name: "equipmentTypeId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.operatorsRequired": {
-      name: "operatorsRequired",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.setupHours": {
-      name: "setupHours",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.locationId": {
-      name: "locationId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.workCellId": {
-      name: "workCellId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.active": {
-      name: "active",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.activeDate": {
-      name: "activeDate",
-      required: false,
-      format: "date",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.customFields": {
-      name: "customFields",
-      required: false,
-      format: "jsonb",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.equipment.equipmentId": {
-      name: "equipmentId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "body.groups_recursive": {
       name: "groups_recursive",
       description: "groups_recursive",
@@ -57166,13 +57093,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.employeeJob.workCellId": {
-      name: "workCellId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "body.account": {
       name: "account",
       description: "account",
@@ -57349,206 +57269,6 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
-      in: "query",
-      type: "string",
-    },
-    "body.crew": {
-      name: "crew",
-      description: "crew",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/crew",
-      },
-    },
-    "rowFilter.crew.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.name": {
-      name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.description": {
-      name: "description",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.crewLeaderId": {
-      name: "crewLeaderId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.groupId": {
-      name: "groupId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.workCellId": {
-      name: "workCellId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.crew.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "body.workCell": {
-      name: "workCell",
-      description: "workCell",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/workCell",
-      },
-    },
-    "rowFilter.workCell.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.name": {
-      name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.description": {
-      name: "description",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.defaultStandardFactor": {
-      name: "defaultStandardFactor",
-      required: false,
-      format: "public.factor",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.departmentId": {
-      name: "departmentId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.locationId": {
-      name: "locationId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.workCellTypeId": {
-      name: "workCellTypeId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.active": {
-      name: "active",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.activeDate": {
-      name: "activeDate",
-      required: false,
-      format: "date",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      format: "timestamp without time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.workCell.customFields": {
-      name: "customFields",
-      required: false,
-      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -57860,6 +57580,64 @@ export default {
       type: "string",
     },
     "rowFilter.materialSubstance.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "body.workCenterProcess": {
+      name: "workCenterProcess",
+      description: "workCenterProcess",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workCenterProcess",
+      },
+    },
+    "rowFilter.workCenterProcess.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenterProcess.processId": {
+      name: "processId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenterProcess.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenterProcess.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenterProcess.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenterProcess.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.workCenterProcess.updatedAt": {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
@@ -58361,45 +58139,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteOperation.workCellTypeId": {
-      name: "workCellTypeId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperation.equipmentTypeId": {
-      name: "equipmentTypeId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteOperation.description": {
       name: "description",
       required: false,
       format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperation.setupHours": {
-      name: "setupHours",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperation.standardFactor": {
-      name: "standardFactor",
-      required: false,
-      format: "public.factor",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperation.productionStandard": {
-      name: "productionStandard",
-      required: false,
-      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -58470,6 +58213,62 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.processId": {
+      name: "processId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.setupTime": {
+      name: "setupTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.setupUnit": {
+      name: "setupUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.laborTime": {
+      name: "laborTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.laborUnit": {
+      name: "laborUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.machineTime": {
+      name: "machineTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.machineUnit": {
+      name: "machineUnit",
+      required: false,
+      format: "public.factor",
       in: "query",
       type: "string",
     },
