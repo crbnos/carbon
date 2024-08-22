@@ -58,7 +58,7 @@ serve(async (req: Request) => {
         }
         const itemId = sourceId;
 
-        const [makeMethod, quoteMakeMethod] = await Promise.all([
+        const [makeMethod, quoteMakeMethod, workCenters] = await Promise.all([
           client.from("makeMethod").select("*").eq("itemId", itemId).single(),
           client
             .from("quoteMakeMethod")
@@ -66,6 +66,7 @@ serve(async (req: Request) => {
             .eq("quoteLineId", quoteLineId)
             .is("parentMaterialId", null)
             .single(),
+          client.from("workCenters").select("*").eq("companyId", companyId),
         ]);
 
         if (makeMethod.error) {
@@ -74,6 +75,10 @@ serve(async (req: Request) => {
 
         if (quoteMakeMethod.error) {
           throw new Error("Failed to get quote make method");
+        }
+
+        if (workCenters.error) {
+          throw new Error("Failed to get related work centers");
         }
 
         const [methodTrees] = await Promise.all([
@@ -86,6 +91,8 @@ serve(async (req: Request) => {
 
         const methodTree = methodTrees.data?.[0] as MethodTreeItem;
         if (!methodTree) throw new Error("Method tree not found");
+
+        const getRates = getRatesFromWorkCenters(workCenters?.data);
 
         await db.transaction().execute(async (trx) => {
           // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
@@ -119,7 +126,7 @@ serve(async (req: Request) => {
           ) {
             const relatedOperations = await client
               .from("methodOperation")
-              .select("*, workCellType(quotingRate, laborRate, overheadRate)")
+              .select("*")
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
             const quoteOperations =
@@ -127,15 +134,16 @@ serve(async (req: Request) => {
                 quoteId,
                 quoteLineId,
                 quoteMakeMethodId: parentQuoteMakeMethodId!,
-                workCellTypeId: op.workCellTypeId,
-                equipmentTypeId: op.equipmentTypeId,
+                processId: op.processId,
+                workCenterId: op.workCenterId,
                 description: op.description,
-                setupHours: op.setupHours,
-                standardFactor: op.standardFactor,
-                productionStandard: op.productionStandard,
-                quotingRate: op.workCellType?.quotingRate ?? 0,
-                laborRate: op.workCellType?.laborRate ?? 0,
-                overheadRate: op.workCellType?.overheadRate ?? 0,
+                setupTime: op.setupTime,
+                setupUnit: op.setupUnit,
+                laborTime: op.laborTime,
+                laborUnit: op.laborUnit,
+                machineTime: op.machineTime,
+                machineUnit: op.machineUnit,
+                ...getRates(op.processId, op.workCenterId),
                 order: op.order,
                 operationOrder: op.operationOrder,
                 companyId,
@@ -245,13 +253,14 @@ serve(async (req: Request) => {
         }
         const itemId = sourceId;
 
-        const [makeMethod, quoteMakeMethod] = await Promise.all([
+        const [makeMethod, quoteMakeMethod, workCenters] = await Promise.all([
           client.from("makeMethod").select("*").eq("itemId", itemId).single(),
           client
             .from("quoteMakeMethod")
             .select("*")
             .eq("id", quoteMakeMethodId)
             .single(),
+          client.from("workCenters").select("*").eq("companyId", companyId),
         ]);
 
         if (makeMethod.error) {
@@ -272,6 +281,8 @@ serve(async (req: Request) => {
 
         const methodTree = methodTrees.data?.[0] as MethodTreeItem;
         if (!methodTree) throw new Error("Method tree not found");
+
+        const getRates = getRatesFromWorkCenters(workCenters?.data);
 
         await db.transaction().execute(async (trx) => {
           // Delete existing quoteMakeMethodOperation, quoteMakeMethodMaterial
@@ -296,7 +307,7 @@ serve(async (req: Request) => {
           ) {
             const relatedOperations = await client
               .from("methodOperation")
-              .select("*, workCellType(quotingRate, laborRate, overheadRate)")
+              .select("*")
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
             const quoteOperations =
@@ -304,15 +315,17 @@ serve(async (req: Request) => {
                 quoteId: quoteMakeMethod.data?.quoteId!,
                 quoteLineId: quoteMakeMethod.data?.quoteLineId!,
                 quoteMakeMethodId: parentQuoteMakeMethodId!,
-                workCellTypeId: op.workCellTypeId,
-                equipmentTypeId: op.equipmentTypeId,
+                processId: op.processId,
+                workCenterId: op.workCenterId,
                 description: op.description,
-                setupHours: op.setupHours,
-                standardFactor: op.standardFactor,
-                productionStandard: op.productionStandard,
-                quotingRate: op.workCellType?.quotingRate ?? 0,
-                laborRate: op.workCellType?.laborRate ?? 0,
-                overheadRate: op.workCellType?.overheadRate ?? 0,
+                setupTime: op.setupTime,
+                setupUnit: op.setupUnit,
+                laborTime: op.laborTime,
+                laborUnit: op.laborUnit,
+                machineTime: op.machineTime,
+                machineUnit: op.machineUnit,
+                ...getRates(op.processId, op.workCenterId),
+
                 order: op.order,
                 operationOrder: op.operationOrder,
                 companyId,
@@ -551,12 +564,15 @@ serve(async (req: Request) => {
           quoteOperations.data?.forEach((op) => {
             operationInserts.push({
               makeMethodId: op.makeMethodId!,
+              processId: op.processId!,
+              workCenterId: op.workCenterId,
               description: op.description ?? "",
-              workCellTypeId: op.workCellTypeId!,
-              equipmentTypeId: op.equipmentTypeId,
-              setupHours: op.setupHours ?? 0,
-              standardFactor: op.standardFactor ?? "Minutes/Piece",
-              productionStandard: op.productionStandard ?? 0,
+              setupTime: op.setupTime ?? 0,
+              setupUnit: op.setupUnit ?? "Total Minutes",
+              laborTime: op.laborTime ?? 0,
+              laborUnit: op.laborUnit ?? "Minutes/Piece",
+              machineTime: op.machineTime ?? 0,
+              machineUnit: op.machineUnit ?? "Minutes/Piece",
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
               companyId,
@@ -745,12 +761,15 @@ serve(async (req: Request) => {
           quoteOperations.data?.forEach((op) => {
             operationInserts.push({
               makeMethodId: op.makeMethodId!,
+              processId: op.processId!,
+              workCenterId: op.workCenterId,
               description: op.description ?? "",
-              workCellTypeId: op.workCellTypeId!,
-              equipmentTypeId: op.equipmentTypeId,
-              setupHours: op.setupHours ?? 0,
-              standardFactor: op.standardFactor ?? "Minutes/Piece",
-              productionStandard: op.productionStandard ?? 0,
+              setupTime: op.setupTime ?? 0,
+              setupUnit: op.setupUnit ?? "Total Minutes",
+              laborTime: op.laborTime ?? 0,
+              laborUnit: op.laborUnit ?? "Minutes/Piece",
+              machineTime: op.machineTime ?? 0,
+              machineUnit: op.machineUnit ?? "Minutes/Piece",
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
               companyId,
@@ -957,3 +976,56 @@ function traverseQuoteMethod(
     }
   }
 }
+
+const getRatesFromWorkCenters =
+  (workCenters: Database["public"]["Views"]["workCenters"]["Row"][] | null) =>
+  (
+    processId: string,
+    workCenterId: string | null
+  ): { quotingRate: number; laborRate: number } => {
+    if (!workCenters) {
+      return {
+        quotingRate: 0,
+        laborRate: 0,
+      };
+    }
+
+    if (workCenterId) {
+      const workCenter = workCenters?.find(
+        (wc) => wc.id === workCenterId && wc.active
+      );
+
+      if (workCenter) {
+        return {
+          quotingRate: workCenter.quotingRate ?? 0,
+          laborRate: workCenter.laborRate ?? 0,
+        };
+      }
+    }
+
+    const relatedWorkCenters = workCenters.filter((wc) => {
+      const processes = (wc.processes ?? []) as { id: string }[];
+      return wc.active && processes.some((p) => p.id === processId);
+    });
+
+    if (relatedWorkCenters.length > 0) {
+      const quotingRate =
+        relatedWorkCenters.reduce((acc, workCenter) => {
+          return (acc += workCenter.quotingRate ?? 0);
+        }, 0) / relatedWorkCenters.length;
+      const laborRate =
+        relatedWorkCenters.reduce((acc, workCenter) => {
+          return (acc += workCenter.laborRate ?? 0);
+        }, 0) / relatedWorkCenters.length;
+
+      return {
+        quotingRate,
+        laborRate,
+      };
+    }
+
+    return {
+      quotingRate: 0,
+      laborRate: 0,
+    };
+  };
