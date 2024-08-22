@@ -14423,18 +14423,6 @@ export type Database = {
           },
         ]
       }
-      requestForQuote: {
-        Row: {
-          id: string
-        }
-        Insert: {
-          id?: string
-        }
-        Update: {
-          id?: string
-        }
-        Relationships: []
-      }
       salesOrder: {
         Row: {
           assignee: string | null

@@ -658,38 +658,6 @@ FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
 
--- requestForQuote (TODO: Ask Brad if this table should even exist?)
--- ALTER TABLE "requestForQuote" ENABLE ROW LEVEL SECURITY;
-
--- CREATE POLICY "Employees with sales_view can view requests for quote" ON "requestForQuote"
--- FOR SELECT USING (
---   has_role('employee', "companyId") AND 
---   has_company_permission('sales_view', "companyId")
--- );
-
--- CREATE POLICY "Employees with sales_create can create requests for quote" ON "requestForQuote"
--- FOR INSERT WITH CHECK (
---   has_role('employee', "companyId") AND 
---   has_company_permission('sales_create', "companyId")
--- );
-
--- CREATE POLICY "Employees with sales_update can update requests for quote" ON "requestForQuote"
--- FOR UPDATE USING (
---   has_role('employee', "companyId") AND 
---   has_company_permission('sales_update', "companyId")
--- );
-
--- CREATE POLICY "Employees with sales_delete can delete requests for quote" ON "requestForQuote"
--- FOR DELETE USING (
---   has_role('employee', "companyId") AND 
---   has_company_permission('sales_delete', "companyId")
--- );
-
--- CREATE POLICY "Requests with an API key can access requests for quote" ON "requestForQuote"
--- FOR ALL USING (
---   has_valid_api_key_for_company("companyId")
--- );
-
 -- salesOrder
 CREATE POLICY "Requests with an API key can access requests for sales order" ON "salesOrder"
 FOR ALL USING (
