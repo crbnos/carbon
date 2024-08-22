@@ -262,3 +262,65 @@ CREATE OR REPLACE VIEW "quoteOperationsWithMakeMethods" WITH(SECURITY_INVOKER=tr
     ON qo."quoteMakeMethodId" = qmm.id
   LEFT JOIN "makeMethod" mm 
     ON qmm."itemId" = mm."itemId";
+
+CREATE TABLE "quoteOperationWorkInstruction" (
+  "quoteOperationId" TEXT NOT NULL,
+  "content" JSON DEFAULT '{"type": "doc","content": [{"type": "heading","attrs": {"level": 2},"content": [{"type": "text","text": "Work Instructions"}]},{"type": "paragraph"}]}'::json,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "quoteOperationWorkInstruction_pkey" PRIMARY KEY ("quoteOperationId"),
+  CONSTRAINT "quoteOperationWorkInstruction_quoteOperationId_fkey" FOREIGN KEY ("quoteOperationId") REFERENCES "quoteOperation" ("id") ON DELETE CASCADE,
+  CONSTRAINT "quoteOperationWorkInstruction_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE ON DELETE SET NULL,
+  CONSTRAINT "quoteOperationWorkInstruction_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+CREATE FUNCTION public.create_quote_operation_work_instruction()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public."quoteOperationWorkInstruction"("quoteOperationId", "createdBy", "companyId")
+  VALUES (new."id", new."createdBy", new."companyId");
+  
+  
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER create_quote_operation_related_records
+  AFTER INSERT on public."quoteOperation"
+  FOR EACH ROW EXECUTE PROCEDURE public.create_quote_operation_work_instruction();
+
+ALTER TABLE "quoteOperationWorkInstruction" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Employees can view quote work instructions" ON "quoteOperationWorkInstruction"
+  FOR SELECT
+  USING (
+    has_role('employee', "companyId") AND
+    "companyId" = ANY(
+      select "companyId" from "userToCompany" where "userId" = auth.uid()::text
+    )
+  );
+
+CREATE POLICY "Employees with sales_create can create quote work instructions" ON "quoteOperationWorkInstruction"
+  FOR INSERT
+  WITH CHECK (
+    has_role('employee', "companyId") AND
+    has_company_permission('sales_create', "companyId")
+  );
+
+CREATE POLICY "Employees with sales_update can update quote work instructions" ON "quoteOperationWorkInstruction"
+  FOR UPDATE
+  USING (
+    has_role('employee', "companyId") AND
+    has_company_permission('sales_update', "companyId")
+  );
+
+CREATE POLICY "Employees with sales_delete can delete quote work instructions" ON "quoteOperationWorkInstruction"
+  FOR DELETE
+  USING (
+    has_role('employee', "companyId") AND
+    has_company_permission('sales_delete', "companyId")
+  );

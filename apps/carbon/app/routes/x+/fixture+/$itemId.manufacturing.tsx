@@ -97,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     methodOperations:
       methodOperations.data?.map((operation) => ({
         ...operation,
-        equipmentTypeId: operation.equipmentTypeId ?? undefined,
+        workCenterId: operation.workCenterId ?? undefined,
         methodOperationWorkInstruction:
           operation.methodOperationWorkInstruction as {
             content: JSONContent | null;

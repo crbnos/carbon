@@ -7,7 +7,7 @@ import {
   Editor,
   generateHTML,
   toast,
-  useDebounce,
+  useThrottle,
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { nanoid } from "nanoid";
@@ -44,7 +44,7 @@ const SalesRFQLineNotes = ({ line }: { line: SalesRFQLine }) => {
     return `/file/preview/private/${result.data.path}`;
   };
 
-  const onUpdateInternalNotes = useDebounce(async (content: JSONContent) => {
+  const onUpdateInternalNotes = useThrottle(async (content: JSONContent) => {
     await supabase
       ?.from("salesRfqLine")
       .update({
@@ -53,7 +53,7 @@ const SalesRFQLineNotes = ({ line }: { line: SalesRFQLine }) => {
         updatedBy: userId,
       })
       .eq("id", line.id!);
-  }, 3000);
+  }, 2500);
 
   return (
     <Card>

@@ -7,7 +7,7 @@ import {
   Editor,
   generateHTML,
   toast,
-  useDebounce,
+  useThrottle,
 } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -131,7 +131,7 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
     return `/file/preview/private/${result.data.path}`;
   };
 
-  const onUpdateExternalNotes = useDebounce(async (content: JSONContent) => {
+  const onUpdateExternalNotes = useThrottle(async (content: JSONContent) => {
     await supabase
       ?.from("quote")
       .update({
@@ -140,7 +140,7 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
         updatedBy: userId,
       })
       .eq("id", quote.id!);
-  }, 3000);
+  }, 2500);
 
   return (
     <Card>

@@ -4,8 +4,6 @@ import { Select } from "~/components";
 import type { SelectProps } from "~/components/Select";
 import type { StandardFactor } from "~/modules/shared";
 
-type UnitHints = "Per Unit" | "Fixed";
-
 export type UnitHintProps = Omit<SelectProps, "onChange" | "options"> & {
   defaultUnit?: StandardFactor;
   label?: string;
@@ -25,7 +23,7 @@ const UnitHint = ({
   value = getUnitHint(defaultUnit),
   ...props
 }: UnitHintProps) => {
-  const onChange = (value: UnitHints) => {
+  const onChange = (value: string) => {
     props?.onChange?.(value);
   };
 

@@ -245,12 +245,14 @@ export const quoteOperationValidator = z.object({
   quoteMakeMethodId: z
     .string()
     .min(1, { message: "Quote Make Method is required" }),
-  operationOrder: z.enum(methodOperationOrders, {
-    errorMap: () => ({ message: "Operation Order is required" }),
-  }),
   order: zfd.numeric(z.number().min(0)),
-  workCellTypeId: z.string().min(20, { message: "Work cell is required" }),
-  equipmentTypeId: zfd.text(z.string().optional()),
+  operationOrder: z.enum(methodOperationOrders, {
+    errorMap: (issue, ctx) => ({
+      message: "Operation order is required",
+    }),
+  }),
+  processId: z.string().min(20, { message: "Process is required" }),
+  workCenterId: zfd.text(z.string().optional()),
   description: zfd.text(
     z.string().min(0, { message: "Description is required" })
   ),

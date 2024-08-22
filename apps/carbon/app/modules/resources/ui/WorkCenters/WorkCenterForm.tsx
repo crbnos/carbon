@@ -55,10 +55,10 @@ const WorkCenterForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created work cell type`);
+      toast.success(`Created work center`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(
-        `Failed to create work cell type: ${fetcher.data.error.message}`
+        `Failed to create work center: ${fetcher.data.error.message}`
       );
     }
   }, [fetcher.data, fetcher.state, onClose, type]);

@@ -1,3 +1,4 @@
+import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
 
@@ -61,8 +62,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       operations.data?.map((o) => ({
         ...o,
         description: o.description ?? "",
-        equipmentTypeId: o.equipmentTypeId ?? undefined,
+        workCenterId: o.workCenterId ?? undefined,
         quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
+        quoteOperationWorkInstruction: {
+          content: (o.quoteOperationWorkInstruction?.content ??
+            {}) as JSONContent,
+        },
       })) ?? [],
   });
 }

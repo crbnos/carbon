@@ -253,6 +253,7 @@ const QuoteLineForm = ({
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                     <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
                       <Item
+                        autoFocus
                         name="itemId"
                         label="Part"
                         type="Part"
@@ -311,7 +312,6 @@ const QuoteLineForm = ({
                           }));
                         }}
                         onBlur={(e) => onCustomerPartChange(e.target.value)}
-                        autoFocus
                       />
                       <InputControlled
                         name="customerPartRevision"
