@@ -23,30 +23,35 @@ import type {
 } from "./sales.service";
 
 export type Costs = {
-  materialCost: number;
-  partCost: number;
-  toolCost: number;
-  fixtureCost: number;
   consumableCost: number;
-  serviceCost: number;
+  fixtureCost: number;
   laborCost: number;
-  overheadCost: number;
+  laborHours: number;
+  machineCost: number;
+  machineHours: number;
+  materialCost: number;
   outsideCost: number;
+  partCost: number;
+  serviceCost: number;
+  setupCost: number;
   setupHours: number;
-  productionHours: number;
+  toolCost: number;
 };
 
 export type CostEffects = {
-  materialCost: QuantityEffect[];
-  partCost: QuantityEffect[];
-  toolCost: QuantityEffect[];
-  fixtureCost: QuantityEffect[];
   consumableCost: QuantityEffect[];
-  serviceCost: QuantityEffect[];
+  fixtureCost: QuantityEffect[];
   laborCost: QuantityEffect[];
-  overheadCost: QuantityEffect[];
+  laborHours: QuantityEffect[];
+  machineCost: QuantityEffect[];
+  machineHours: QuantityEffect[];
+  materialCost: QuantityEffect[];
+  outsideCost: QuantityEffect[];
+  partCost: QuantityEffect[];
+  serviceCost: QuantityEffect[];
+  setupCost: QuantityEffect[];
   setupHours: QuantityEffect[];
-  productionHours: QuantityEffect[];
+  toolCost: QuantityEffect[];
 };
 
 export type Customer = NonNullable<

@@ -164,9 +164,9 @@ const QuotePDF = ({
                   )}
 
                   {Object.keys(additionalCharges).length > 0 && (
-                    <View style={styles.col}>
+                    <View style={{ ...styles.col, marginTop: 10 }}>
                       <Text style={{ fontSize: 9, fontWeight: 700 }}>
-                        Additional Charges:
+                        Additional Charges
                       </Text>
                       {Object.values(additionalCharges)
                         .sort((a, b) =>
@@ -186,7 +186,7 @@ const QuotePDF = ({
                   )}
                 </View>
                 <View style={styles.colSixty}>
-                  {line.quantity.map((quantity) => {
+                  {line.quantity.map((quantity, index) => {
                     const prices = pricesByLine[line.id] ?? [];
                     const price = prices.find(
                       (price) => price.quantity === quantity
@@ -196,7 +196,7 @@ const QuotePDF = ({
                       (1 - (price?.discountPercent ?? 0) / 100);
 
                     const additionalCharge =
-                      additionalChargesByQuantity[quantity] ?? 0;
+                      additionalChargesByQuantity[index] ?? 0;
 
                     return (
                       <View key={quantity} style={styles.row}>

@@ -2,7 +2,13 @@ import { cn } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import { HiSquares2X2 } from "react-icons/hi2";
-import { LuGrip, LuHammer, LuShoppingCart } from "react-icons/lu";
+import {
+  LuGrip,
+  LuHammer,
+  LuHardHat,
+  LuShoppingCart,
+  LuTimer,
+} from "react-icons/lu";
 
 import { CiFries } from "react-icons/ci";
 import { GiIBeam } from "react-icons/gi";
@@ -72,6 +78,25 @@ export const MethodIcon = ({
       return <RxCodesandboxLogo className={cn("text-green-500", className)} />;
     case "Pick":
       return <FaCodePullRequest className={cn("text-yellow-500", className)} />;
+  }
+
+  return <HiSquares2X2 className={cn("text-muted-foreground", className)} />;
+};
+
+export const TimeTypeIcon = ({
+  type,
+  className,
+}: {
+  type: string;
+  className?: string;
+}) => {
+  switch (type) {
+    case "Setup":
+      return <LuTimer className={className} />;
+    case "Labor":
+      return <LuHardHat className={className} />;
+    case "Machine":
+      return <LuHammer className={className} />;
   }
 
   return <HiSquares2X2 className={cn("text-muted-foreground", className)} />;
