@@ -6,6 +6,7 @@ import {
   CardTitle,
   Editor,
   generateHTML,
+  HStack,
   toast,
   useThrottle,
 } from "@carbon/react";
@@ -135,7 +136,18 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
     await supabase
       ?.from("quote")
       .update({
-        notes: content,
+        externalNotes: content,
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId,
+      })
+      .eq("id", quote.id!);
+  }, 2500);
+
+  const onUpdateInternalNotes = useThrottle(async (content: JSONContent) => {
+    await supabase
+      ?.from("quote")
+      .update({
+        internalNotes: content,
         updatedAt: today(getLocalTimeZone()).toString(),
         updatedBy: userId,
       })
@@ -143,26 +155,49 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
   }, 2500);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>External Notes</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {permissions.can("update", "sales") ? (
-          <Editor
-            initialValue={(quote.notes ?? {}) as JSONContent}
-            onUpload={onUploadImage}
-            onChange={onUpdateExternalNotes}
-          />
-        ) : (
-          <div
-            className="prose dark:prose-invert"
-            dangerouslySetInnerHTML={{
-              __html: generateHTML(quote.notes as JSONContent),
-            }}
-          />
-        )}
-      </CardContent>
-    </Card>
+    <HStack className="w-full justify-between items-stretch">
+      <Card>
+        <CardHeader>
+          <CardTitle>External Notes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {permissions.can("update", "sales") ? (
+            <Editor
+              initialValue={(quote.externalNotes ?? {}) as JSONContent}
+              onUpload={onUploadImage}
+              onChange={onUpdateExternalNotes}
+            />
+          ) : (
+            <div
+              className="prose dark:prose-invert"
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(quote.externalNotes as JSONContent),
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Internal Notes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {permissions.can("update", "sales") ? (
+            <Editor
+              initialValue={(quote.internalNotes ?? {}) as JSONContent}
+              onUpload={onUploadImage}
+              onChange={onUpdateInternalNotes}
+            />
+          ) : (
+            <div
+              className="prose dark:prose-invert"
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(quote.internalNotes as JSONContent),
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </HStack>
   );
 };
