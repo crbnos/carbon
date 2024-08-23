@@ -4,6 +4,7 @@ import {
   methodItemType,
   methodOperationOrders,
   methodType,
+  operationTypes,
   standardFactorType,
 } from "../shared";
 
@@ -206,33 +207,143 @@ export const methodMaterialValidator = z
     }
   );
 
-export const methodOperationValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  makeMethodId: z.string().min(0, { message: "Make method is required" }),
-  order: zfd.numeric(z.number().min(0)),
-  operationOrder: z.enum(methodOperationOrders, {
-    errorMap: (issue, ctx) => ({
-      message: "Operation order is required",
+export const methodOperationValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    makeMethodId: z.string().min(0, { message: "Make method is required" }),
+    order: zfd.numeric(z.number().min(0)),
+    operationOrder: z.enum(methodOperationOrders, {
+      errorMap: (issue, ctx) => ({
+        message: "Operation order is required",
+      }),
     }),
-  }),
-  processId: z.string().min(20, { message: "Process is required" }),
-  workCenterId: zfd.text(z.string().optional()),
-  description: zfd.text(
-    z.string().min(0, { message: "Description is required" })
-  ),
-  setupUnit: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Setup unit is required" }),
-  }),
-  setupTime: zfd.numeric(z.number().min(0)),
-  laborUnit: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Labor unit is required" }),
-  }),
-  laborTime: zfd.numeric(z.number().min(0)),
-  machineUnit: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Machine unit is required" }),
-  }),
-  machineTime: zfd.numeric(z.number().min(0)),
-});
+    operationType: z.enum(operationTypes, {
+      errorMap: (issue, ctx) => ({
+        message: "Operation type is required",
+      }),
+    }),
+    processId: z.string().min(20, { message: "Process is required" }),
+    workCenterId: zfd.text(z.string().optional()),
+    description: zfd.text(
+      z.string().min(0, { message: "Description is required" })
+    ),
+    setupUnit: z
+      .enum(standardFactorType, {
+        errorMap: () => ({ message: "Setup unit is required" }),
+      })
+      .optional(),
+    setupTime: zfd.numeric(z.number().min(0).optional()),
+    laborUnit: z
+      .enum(standardFactorType, {
+        errorMap: () => ({ message: "Labor unit is required" }),
+      })
+      .optional(),
+    laborTime: zfd.numeric(z.number().min(0).optional()),
+    machineUnit: z
+      .enum(standardFactorType, {
+        errorMap: () => ({ message: "Machine unit is required" }),
+      })
+      .optional(),
+    machineTime: zfd.numeric(z.number().min(0).optional()),
+    operationCost: zfd.numeric(z.number().min(0).optional()),
+    operationLeadTime: zfd.numeric(z.number().min(0).optional()),
+  })
+  .refine(
+    (data) => {
+      if (data.operationType === "Outside") {
+        return Number.isFinite(data.operationCost);
+      }
+      return true;
+    },
+    {
+      message: "Operation cost is required",
+      path: ["operationCost"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Outside") {
+        return Number.isFinite(data.operationLeadTime);
+      }
+      return true;
+    },
+    {
+      message: "Lead time is required",
+      path: ["operationLeadTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return !!data.setupUnit;
+      }
+      return true;
+    },
+    {
+      message: "Setup unit is required",
+      path: ["setupUnit"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return !!data.laborUnit;
+      }
+      return true;
+    },
+    {
+      message: "Labor unit is required",
+      path: ["laborUnit"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return !!data.laborUnit;
+      }
+      return true;
+    },
+    {
+      message: "Machine unit is required",
+      path: ["machineUnit"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.setupTime);
+      }
+      return true;
+    },
+    {
+      message: "Setup time is required",
+      path: ["setupTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.laborTime);
+      }
+      return true;
+    },
+    {
+      message: "Labor time is required",
+      path: ["laborTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.machineTime);
+      }
+      return true;
+    },
+    {
+      message: "Machine time is required",
+      path: ["machineTime"],
+    }
+  );
 
 export const itemCostValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
