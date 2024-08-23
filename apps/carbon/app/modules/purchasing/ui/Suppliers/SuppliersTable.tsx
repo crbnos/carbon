@@ -13,23 +13,18 @@ import {
 } from "~/components";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type {
-  Supplier,
-  SupplierStatus,
-  SupplierType,
-} from "~/modules/purchasing";
+import type { Supplier, SupplierStatus } from "~/modules/purchasing";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
 type SuppliersTableProps = {
   data: Supplier[];
   count: number;
-  supplierTypes: Partial<SupplierType>[];
   supplierStatuses: SupplierStatus[];
 };
 
 const SuppliersTable = memo(
-  ({ data, count, supplierStatuses, supplierTypes }: SuppliersTableProps) => {
+  ({ data, count, supplierStatuses }: SuppliersTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [people] = usePeople();
@@ -45,21 +40,6 @@ const SuppliersTable = memo(
               <SupplierAvatar supplierId={row.original.id!} />
             </Hyperlink>
           ),
-        },
-
-        {
-          accessorKey: "type",
-          header: "Supplier Type",
-          cell: (item) => <Enumerable value={item.getValue<string>()} />,
-          meta: {
-            filter: {
-              type: "static",
-              options: supplierTypes?.map((type) => ({
-                value: type.name ?? "",
-                label: <Enumerable value={type.name ?? ""} />,
-              })),
-            },
-          },
         },
         {
           accessorKey: "status",
@@ -176,7 +156,7 @@ const SuppliersTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [people, supplierTypes, supplierStatuses, customColumns]);
+    }, [people, supplierStatuses, customColumns]);
 
     const renderContextMenu = useMemo(
       // eslint-disable-next-line react/display-name
