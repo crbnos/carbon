@@ -15397,7 +15397,7 @@ export type Database = {
           expirationDate: string | null
           externalNotes: Json | null
           id: string
-          internalNotes: string | null
+          internalNotes: Json | null
           locationId: string | null
           revisionId: number
           rfqDate: string
@@ -15420,7 +15420,7 @@ export type Database = {
           expirationDate?: string | null
           externalNotes?: Json | null
           id?: string
-          internalNotes?: string | null
+          internalNotes?: Json | null
           locationId?: string | null
           revisionId?: number
           rfqDate: string
@@ -15443,7 +15443,7 @@ export type Database = {
           expirationDate?: string | null
           externalNotes?: Json | null
           id?: string
-          internalNotes?: string | null
+          internalNotes?: Json | null
           locationId?: string | null
           revisionId?: number
           rfqDate?: string
@@ -24768,7 +24768,7 @@ export type Database = {
           externalNotes: Json | null
           favorite: boolean | null
           id: string | null
-          internalNotes: string | null
+          internalNotes: Json | null
           locationId: string | null
           locationName: string | null
           quoteId: string | null

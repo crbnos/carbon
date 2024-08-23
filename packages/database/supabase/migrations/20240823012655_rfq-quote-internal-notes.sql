@@ -2,7 +2,9 @@ DROP VIEW "salesRfqs";
 
 ALTER TABLE "salesRfq"
   DROP COLUMN "notes",
-  ADD COLUMN "externalNotes" JSON DEFAULT '{}';
+  DROP Column "internalNotes",
+  ADD COLUMN "externalNotes" JSON DEFAULT '{}',
+  ADD COLUMN "internalNotes" JSON DEFAULT '{}';
 
 
 CREATE OR REPLACE VIEW "salesRfqs" WITH(SECURITY_INVOKER=true) AS
