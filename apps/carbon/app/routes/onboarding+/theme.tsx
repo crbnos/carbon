@@ -10,21 +10,24 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
-import {
-  ValidatedForm,
-  validationError,
-  validator,
-} from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/remix-validated-form";
 import { themes, type Theme } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import {
+  Link,
+  useFetcher,
+  useLoaderData,
+  useNavigation,
+  useSubmit,
+} from "@remix-run/react";
 import { useEffect, useState } from "react";
+import { BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
-import { Hidden, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
 import { themeValidator, type Theme as ThemeValue } from "~/modules/settings";
+import type { action as modeAction } from "~/root";
 import { getTheme, setTheme } from "~/services/theme.server";
 import type { Handle } from "~/utils/handle";
 import { assertIsPost } from "~/utils/http";
@@ -64,8 +67,10 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function OnboardingTheme() {
   const { theme: initialTheme } = useLoaderData<typeof loader>();
 
-  const [theme, setTheme] = useState<ThemeValue>(initialTheme as "zinc");
   const mode = useMode();
+  const modeFetcher = useFetcher<typeof modeAction>();
+
+  const [theme, setTheme] = useState<ThemeValue>(initialTheme as "zinc");
 
   const onThemeChange = (t: Theme) => {
     setTheme(t.name);
@@ -87,77 +92,131 @@ export default function OnboardingTheme() {
 
   const { next, previous } = useOnboarding();
 
+  const submit = useSubmit();
+  const onSubmit = () => {
+    const formData = new FormData();
+    formData.append("theme", theme);
+    formData.append("next", next);
+    submit(formData, {
+      method: "post",
+    });
+  };
+
+  const transition = useNavigation();
+
   return (
     <Card className="max-w-lg">
-      <ValidatedForm
-        method="post"
-        validator={themeValidator}
-        defaultValues={{ theme: initialTheme as "zinc" }}
-      >
-        <CardHeader>
-          <CardTitle>Choose your style</CardTitle>
-          <CardDescription>
-            You can change the UI style any time through the theme setting
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Hidden name="next" value={next} />
-          <Hidden name="theme" value={theme} />
-          <VStack spacing={4}>
-            <div className="w-full grid grid-cols-3 gap-4">
-              {themes.map((t) => {
-                const isActive = theme === t.name;
-                return (
-                  <Button
-                    key={t.name}
-                    variant="secondary"
-                    onClick={() => onThemeChange(t)}
-                    className={cn(
-                      "justify-start",
-                      isActive && "border-2 border-primary"
-                    )}
-                    style={
-                      {
-                        "--theme-primary": `hsl(${
-                          t?.activeColor[mode === "dark" ? "dark" : "light"]
-                        })`,
-                      } as React.CSSProperties
-                    }
-                  >
-                    <span
-                      className={cn(
-                        "mr-1 flex h-5 w-5 shrink-0 -translate-x-1 items-center justify-center rounded-full bg-[--theme-primary]"
-                      )}
-                    >
-                      {isActive && <RxCheck className="h-4 w-4 text-white" />}
-                    </span>
-                    {t.label}
-                  </Button>
-                );
-              })}
-            </div>
-          </VStack>
-        </CardContent>
-        <CardFooter>
-          <HStack>
-            {previous && (
+      <CardHeader>
+        <CardTitle>Choose your style</CardTitle>
+        <CardDescription>
+          You can change the UI style any time through the theme setting
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <VStack spacing={4}>
+          <HStack className="w-full justify-between">
+            <modeFetcher.Form
+              action={path.to.root}
+              method="post"
+              onSubmit={() => {
+                document.body.removeAttribute("style");
+              }}
+              className="w-full"
+            >
+              <input type="hidden" name="mode" value="light" />
               <Button
-                variant="solid"
-                isDisabled={!previous}
-                size="md"
-                asChild
-                tabIndex={-1}
+                variant="secondary"
+                type="submit"
+                leftIcon={<BiSun />}
+                className={cn(
+                  "w-full",
+                  mode == "light" && "border-2 border-primary"
+                )}
               >
-                <Link to={previous} prefetch="intent">
-                  Previous
-                </Link>
+                Light
               </Button>
-            )}
-
-            <Submit>Next</Submit>
+            </modeFetcher.Form>
+            <modeFetcher.Form
+              action={path.to.root}
+              method="post"
+              onSubmit={() => {
+                document.body.removeAttribute("style");
+              }}
+              className="w-full"
+            >
+              <input type="hidden" name="mode" value="dark" />
+              <Button
+                variant="secondary"
+                leftIcon={<BiMoon />}
+                type="submit"
+                className={cn(
+                  "w-full",
+                  mode == "dark" && "border-2 border-primary"
+                )}
+              >
+                Dark
+              </Button>
+            </modeFetcher.Form>
           </HStack>
-        </CardFooter>
-      </ValidatedForm>
+          <div className="w-full grid grid-cols-3 gap-4">
+            {themes.map((t) => {
+              const isActive = theme === t.name;
+              return (
+                <Button
+                  key={t.name}
+                  variant="secondary"
+                  onClick={() => onThemeChange(t)}
+                  className={cn(
+                    "justify-start",
+                    isActive && "border-2 border-primary"
+                  )}
+                  style={
+                    {
+                      "--theme-primary": `hsl(${
+                        t?.activeColor[mode === "dark" ? "dark" : "light"]
+                      })`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <span
+                    className={cn(
+                      "mr-1 flex h-5 w-5 shrink-0 -translate-x-1 items-center justify-center rounded-full bg-[--theme-primary]"
+                    )}
+                  >
+                    {isActive && <RxCheck className="h-4 w-4 text-white" />}
+                  </span>
+                  {t.label}
+                </Button>
+              );
+            })}
+          </div>
+        </VStack>
+      </CardContent>
+      <CardFooter>
+        <HStack>
+          {previous && (
+            <Button
+              variant="solid"
+              isDisabled={!previous}
+              size="md"
+              asChild
+              tabIndex={-1}
+            >
+              <Link to={previous} prefetch="intent">
+                Previous
+              </Link>
+            </Button>
+          )}
+
+          <Button
+            isLoading={transition.state !== "idle"}
+            isDisabled={transition.state !== "idle"}
+            onClick={onSubmit}
+          >
+            Next
+          </Button>
+        </HStack>
+      </CardFooter>
     </Card>
   );
 }
