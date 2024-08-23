@@ -15,14 +15,6 @@ export const methodOperationOrders = [
   "With Previous",
 ] as const;
 
-export const methodType = ["Buy", "Make", "Pick"] as const;
-
-export const noteValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  documentId: z.string().min(1),
-  note: z.string().min(1, { message: "Note is required" }),
-});
-
 export const months = [
   "January",
   "February",
@@ -37,3 +29,13 @@ export const months = [
   "November",
   "December",
 ] as const;
+
+export const methodType = ["Buy", "Make", "Pick"] as const;
+
+export const noteValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  documentId: z.string().min(1),
+  note: z.string().min(1, { message: "Note is required" }),
+});
+
+export const operationTypes = ["Inside", "Outside"] as const;

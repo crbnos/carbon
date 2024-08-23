@@ -34,6 +34,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
       prefix,
       suffix,
       value,
+      className,
       onChange,
       ...rest
     },
@@ -54,7 +55,11 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     };
 
     return (
-      <FormControl isInvalid={!!error} isRequired={isRequired}>
+      <FormControl
+        isInvalid={!!error}
+        isRequired={isRequired}
+        className={className}
+      >
         {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
         <InputGroup>
           {prefix && <InputLeftAddon children={prefix} />}
