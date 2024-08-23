@@ -12210,9 +12210,10 @@ export type Database = {
           dueDate: string | null
           estimatorId: string | null
           expirationDate: string | null
+          externalNotes: Json | null
           id: string
+          internalNotes: Json | null
           locationId: string | null
-          notes: Json | null
           quoteId: string
           revisionId: number
           salesPersonId: string | null
@@ -12233,9 +12234,10 @@ export type Database = {
           dueDate?: string | null
           estimatorId?: string | null
           expirationDate?: string | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           locationId?: string | null
-          notes?: Json | null
           quoteId: string
           revisionId?: number
           salesPersonId?: string | null
@@ -12256,9 +12258,10 @@ export type Database = {
           dueDate?: string | null
           estimatorId?: string | null
           expirationDate?: string | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           locationId?: string | null
-          notes?: Json | null
           quoteId?: string
           revisionId?: number
           salesPersonId?: string | null
@@ -23842,12 +23845,13 @@ export type Database = {
           dueDate: string | null
           estimatorId: string | null
           expirationDate: string | null
+          externalNotes: Json | null
           favorite: boolean | null
           id: string | null
+          internalNotes: Json | null
           lines: number | null
           locationId: string | null
           locationName: string | null
-          notes: Json | null
           quoteId: string | null
           revisionId: number | null
           salesOrderId: string | null
@@ -25031,12 +25035,12 @@ export type Database = {
           customFields: Json | null
           employeeId: string | null
           expirationDate: string | null
+          externalNotes: Json | null
           favorite: boolean | null
           id: string | null
           internalNotes: string | null
           locationId: string | null
           locationName: string | null
-          notes: Json | null
           quoteId: string | null
           revisionId: number | null
           rfqDate: string | null
