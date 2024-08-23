@@ -13,19 +13,18 @@ import {
 } from "~/components";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Customer, CustomerStatus, CustomerType } from "~/modules/sales";
+import type { Customer, CustomerStatus } from "~/modules/sales";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
 type CustomersTableProps = {
   data: Customer[];
   count: number;
-  customerTypes: Partial<CustomerType>[];
   customerStatuses: CustomerStatus[];
 };
 
 const CustomersTable = memo(
-  ({ data, count, customerStatuses, customerTypes }: CustomersTableProps) => {
+  ({ data, count, customerStatuses }: CustomersTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [people] = usePeople();
@@ -41,21 +40,6 @@ const CustomersTable = memo(
               <CustomerAvatar customerId={row.original.id!} />
             </Hyperlink>
           ),
-        },
-
-        {
-          accessorKey: "type",
-          header: "Customer Type",
-          cell: (item) => <Enumerable value={item.getValue<string>()} />,
-          meta: {
-            filter: {
-              type: "static",
-              options: customerTypes?.map((type) => ({
-                value: type.name ?? "",
-                label: <Enumerable value={type.name ?? ""} />,
-              })),
-            },
-          },
         },
         {
           accessorKey: "status",
@@ -148,7 +132,7 @@ const CustomersTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [customerTypes, customerStatuses, people, customColumns]);
+    }, [customerStatuses, people, customColumns]);
 
     const renderContextMenu = useMemo(
       // eslint-disable-next-line react/display-name

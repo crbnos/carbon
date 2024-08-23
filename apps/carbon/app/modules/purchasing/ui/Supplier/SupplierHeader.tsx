@@ -20,11 +20,7 @@ import {
   useOptimisticAssignment,
 } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type {
-  SupplierDetail,
-  SupplierStatus,
-  SupplierType,
-} from "~/modules/purchasing";
+import type { SupplierDetail, SupplierStatus } from "~/modules/purchasing";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -38,17 +34,12 @@ const SupplierHeader = () => {
   );
 
   const sharedSupplierData = useRouteData<{
-    supplierTypes: SupplierType[];
     supplierStatuses: SupplierStatus[];
     paymentTerms: ListItem[];
   }>(path.to.supplierRoot);
 
   const supplierStatus = sharedSupplierData?.supplierStatuses?.find(
     (status) => status.id === routeData?.supplier?.supplierStatusId
-  )?.name;
-
-  const supplierType = sharedSupplierData?.supplierTypes?.find(
-    (type) => type.id === routeData?.supplier?.supplierTypeId
   )?.name;
 
   const optimisticAssignment = useOptimisticAssignment({
@@ -102,12 +93,6 @@ const SupplierHeader = () => {
               </CardAttribute>
             )}
 
-            <CardAttribute>
-              <CardAttributeLabel>Type</CardAttributeLabel>
-              <CardAttributeValue>
-                {supplierType ? <Enumerable value={supplierType!} /> : "-"}
-              </CardAttributeValue>
-            </CardAttribute>
             <CardAttribute>
               <CardAttributeLabel>Status</CardAttributeLabel>
               <CardAttributeValue>

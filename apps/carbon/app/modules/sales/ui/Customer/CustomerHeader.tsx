@@ -20,11 +20,7 @@ import {
   useOptimisticAssignment,
 } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type {
-  CustomerDetail,
-  CustomerStatus,
-  CustomerType,
-} from "~/modules/sales";
+import type { CustomerDetail, CustomerStatus } from "~/modules/sales";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -38,17 +34,12 @@ const CustomerHeader = () => {
   );
 
   const sharedCustomerData = useRouteData<{
-    customerTypes: CustomerType[];
     customerStatuses: CustomerStatus[];
     paymentTerms: ListItem[];
   }>(path.to.customerRoot);
 
   const customerStatus = sharedCustomerData?.customerStatuses?.find(
     (status) => status.id === routeData?.customer?.customerStatusId
-  )?.name;
-
-  const customerType = sharedCustomerData?.customerTypes?.find(
-    (type) => type.id === routeData?.customer?.customerTypeId
   )?.name;
 
   const optimisticAssignment = useOptimisticAssignment({
@@ -100,12 +91,6 @@ const CustomerHeader = () => {
                 </CardAttributeValue>
               </CardAttribute>
             )}
-            <CardAttribute>
-              <CardAttributeLabel>Type</CardAttributeLabel>
-              <CardAttributeValue>
-                {customerType ? <Enumerable value={customerType!} /> : "-"}
-              </CardAttributeValue>
-            </CardAttribute>
             <CardAttribute>
               <CardAttributeLabel>Status</CardAttributeLabel>
               <CardAttributeValue>
