@@ -15447,10 +15447,10 @@ export type Database = {
           customFields: Json | null
           employeeId: string | null
           expirationDate: string | null
+          externalNotes: Json | null
           id: string
           internalNotes: string | null
           locationId: string | null
-          notes: Json | null
           revisionId: number
           rfqDate: string
           rfqId: string
@@ -15470,10 +15470,10 @@ export type Database = {
           customFields?: Json | null
           employeeId?: string | null
           expirationDate?: string | null
+          externalNotes?: Json | null
           id?: string
           internalNotes?: string | null
           locationId?: string | null
-          notes?: Json | null
           revisionId?: number
           rfqDate: string
           rfqId: string
@@ -15493,10 +15493,10 @@ export type Database = {
           customFields?: Json | null
           employeeId?: string | null
           expirationDate?: string | null
+          externalNotes?: Json | null
           id?: string
           internalNotes?: string | null
           locationId?: string | null
-          notes?: Json | null
           revisionId?: number
           rfqDate?: string
           rfqId?: string

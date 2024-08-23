@@ -144,10 +144,11 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
   };
 
   const onUpdateExternalNotes = useThrottle(async (content: JSONContent) => {
+    console.log({ content });
     await supabase
       ?.from("salesRfq")
       .update({
-        notes: content,
+        externalNotes: content,
         updatedAt: today(getLocalTimeZone()).toString(),
         updatedBy: userId,
       })
