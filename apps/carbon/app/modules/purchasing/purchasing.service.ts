@@ -14,6 +14,7 @@ import type {
   supplierAccountingValidator,
   supplierContactValidator,
   supplierPaymentValidator,
+  supplierProcessValidator,
   supplierShippingValidator,
   supplierStatusValidator,
   supplierTypeValidator,
@@ -76,6 +77,17 @@ export async function deleteSupplierLocation(
     .delete()
     .eq("supplierId", supplierId)
     .eq("id", supplierLocationId);
+}
+
+export async function deleteSupplierProcess(
+  client: SupabaseClient<Database>,
+  supplierProcessId: string
+) {
+  return client
+    .from("supplierProcess")
+    .delete()
+    .eq("id", supplierProcessId)
+    .single();
 }
 
 export async function deleteSupplierStatus(
@@ -287,6 +299,26 @@ export async function getSupplierPayment(
     .select("*")
     .eq("supplierId", supplierId)
     .single();
+}
+
+export async function getSupplierProcessesByProcess(
+  client: SupabaseClient<Database>,
+  processId: string
+) {
+  return client
+    .from("supplierProcesses")
+    .select("*")
+    .eq("processId", processId);
+}
+
+export async function getSupplierProcessesBySupplier(
+  client: SupabaseClient<Database>,
+  supplierId: string
+) {
+  return client
+    .from("supplierProcesses")
+    .select("*")
+    .eq("supplierId", supplierId);
 }
 
 export async function getSupplierShipping(
@@ -595,6 +627,35 @@ export async function upsertSupplier(
       updatedAt: today(getLocalTimeZone()).toString(),
     })
     .eq("id", supplier.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertSupplierProcess(
+  client: SupabaseClient<Database>,
+  supplierProcess:
+    | (Omit<z.infer<typeof supplierProcessValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof supplierProcessValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in supplierProcess) {
+    return client
+      .from("supplierProcess")
+      .insert([supplierProcess])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("supplierProcess")
+    .update(sanitize(supplierProcess))
+    .eq("id", supplierProcess.id)
     .select("id")
     .single();
 }

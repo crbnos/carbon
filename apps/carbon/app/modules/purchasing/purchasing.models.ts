@@ -196,6 +196,15 @@ export const supplierPaymentValidator = z.object({
   currencyCode: zfd.text(z.string().optional()),
 });
 
+export const supplierProcessValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  supplierId: z.string().min(36, { message: "Supplier is required" }),
+  processId: z.string().min(1, { message: "Process is required" }),
+  minimumCost: zfd.numeric(z.number().min(0)),
+  unitCost: zfd.numeric(z.number().min(0)),
+  leadTime: zfd.numeric(z.number().min(0)),
+});
+
 export const supplierShippingValidator = z.object({
   supplierId: z.string().min(36, { message: "Supplier is required" }),
   shippingSupplierId: zfd.text(z.string().optional()),

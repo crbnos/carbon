@@ -58,16 +58,21 @@ serve(async (req: Request) => {
         }
         const itemId = sourceId;
 
-        const [makeMethod, quoteMakeMethod, workCenters] = await Promise.all([
-          client.from("makeMethod").select("*").eq("itemId", itemId).single(),
-          client
-            .from("quoteMakeMethod")
-            .select("*")
-            .eq("quoteLineId", quoteLineId)
-            .is("parentMaterialId", null)
-            .single(),
-          client.from("workCenters").select("*").eq("companyId", companyId),
-        ]);
+        const [makeMethod, quoteMakeMethod, workCenters, supplierProcesses] =
+          await Promise.all([
+            client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+            client
+              .from("quoteMakeMethod")
+              .select("*")
+              .eq("quoteLineId", quoteLineId)
+              .is("parentMaterialId", null)
+              .single(),
+            client.from("workCenters").select("*").eq("companyId", companyId),
+            client
+              .from("supplierProcess")
+              .select("*")
+              .eq("companyId", companyId),
+          ]);
 
         if (makeMethod.error) {
           throw new Error("Failed to get make method");
@@ -92,7 +97,12 @@ serve(async (req: Request) => {
         const methodTree = methodTrees.data?.[0] as MethodTreeItem;
         if (!methodTree) throw new Error("Method tree not found");
 
-        const getRates = getRatesFromWorkCenters(workCenters?.data);
+        const getLaborAndOverheadRates = getRatesFromWorkCenters(
+          workCenters?.data
+        );
+        const getOutsideOperationRates = getRatesFromSupplierProcesses(
+          supplierProcesses?.data
+        );
 
         await db.transaction().execute(async (trx) => {
           // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
@@ -143,9 +153,15 @@ serve(async (req: Request) => {
                 laborUnit: op.laborUnit,
                 machineTime: op.machineTime,
                 machineUnit: op.machineUnit,
-                ...getRates(op.processId, op.workCenterId),
+                ...getLaborAndOverheadRates(op.processId, op.workCenterId),
                 order: op.order,
                 operationOrder: op.operationOrder,
+                operationType: op.operationType,
+                operationSupplierProcessId: op.operationSupplierProcessId,
+                ...getOutsideOperationRates(
+                  op.processId,
+                  op.operationSupplierProcessId
+                ),
                 companyId,
                 createdBy: userId,
                 customFields: {},
@@ -253,15 +269,20 @@ serve(async (req: Request) => {
         }
         const itemId = sourceId;
 
-        const [makeMethod, quoteMakeMethod, workCenters] = await Promise.all([
-          client.from("makeMethod").select("*").eq("itemId", itemId).single(),
-          client
-            .from("quoteMakeMethod")
-            .select("*")
-            .eq("id", quoteMakeMethodId)
-            .single(),
-          client.from("workCenters").select("*").eq("companyId", companyId),
-        ]);
+        const [makeMethod, quoteMakeMethod, workCenters, supplierProcesses] =
+          await Promise.all([
+            client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+            client
+              .from("quoteMakeMethod")
+              .select("*")
+              .eq("id", quoteMakeMethodId)
+              .single(),
+            client.from("workCenters").select("*").eq("companyId", companyId),
+            client
+              .from("supplierProcess")
+              .select("*")
+              .eq("companyId", companyId),
+          ]);
 
         if (makeMethod.error) {
           throw new Error("Failed to get make method");
@@ -282,7 +303,12 @@ serve(async (req: Request) => {
         const methodTree = methodTrees.data?.[0] as MethodTreeItem;
         if (!methodTree) throw new Error("Method tree not found");
 
-        const getRates = getRatesFromWorkCenters(workCenters?.data);
+        const getLaborAndOverheadRates = getRatesFromWorkCenters(
+          workCenters?.data
+        );
+        const getOutsideOperationRates = getRatesFromSupplierProcesses(
+          supplierProcesses?.data
+        );
 
         await db.transaction().execute(async (trx) => {
           // Delete existing quoteMakeMethodOperation, quoteMakeMethodMaterial
@@ -324,10 +350,15 @@ serve(async (req: Request) => {
                 laborUnit: op.laborUnit,
                 machineTime: op.machineTime,
                 machineUnit: op.machineUnit,
-                ...getRates(op.processId, op.workCenterId),
-
+                ...getLaborAndOverheadRates(op.processId, op.workCenterId),
                 order: op.order,
                 operationOrder: op.operationOrder,
+                operationType: op.operationType,
+                operationSupplierProcessId: op.operationSupplierProcessId,
+                ...getOutsideOperationRates(
+                  op.processId,
+                  op.operationSupplierProcessId
+                ),
                 companyId,
                 createdBy: userId,
                 customFields: {},
@@ -575,6 +606,8 @@ serve(async (req: Request) => {
               machineUnit: op.machineUnit ?? "Minutes/Piece",
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
+              operationType: op.operationType ?? "Inside",
+              operationSupplierProcessId: op.operationSupplierProcessId,
               companyId,
               createdBy: userId,
               customFields: {},
@@ -772,6 +805,8 @@ serve(async (req: Request) => {
               machineUnit: op.machineUnit ?? "Minutes/Piece",
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
+              operationType: op.operationType ?? "Inside",
+
               companyId,
               createdBy: userId,
               customFields: {},
@@ -982,10 +1017,10 @@ const getRatesFromWorkCenters =
   (
     processId: string,
     workCenterId: string | null
-  ): { quotingRate: number; laborRate: number } => {
+  ): { overheadRate: number; laborRate: number } => {
     if (!workCenters) {
       return {
-        quotingRate: 0,
+        overheadRate: 0,
         laborRate: 0,
       };
     }
@@ -997,7 +1032,7 @@ const getRatesFromWorkCenters =
 
       if (workCenter) {
         return {
-          quotingRate: workCenter.quotingRate ?? 0,
+          overheadRate: workCenter.overheadRate ?? 0,
           laborRate: workCenter.laborRate ?? 0,
         };
       }
@@ -1009,9 +1044,9 @@ const getRatesFromWorkCenters =
     });
 
     if (relatedWorkCenters.length > 0) {
-      const quotingRate =
+      const overheadRate =
         relatedWorkCenters.reduce((acc, workCenter) => {
-          return (acc += workCenter.quotingRate ?? 0);
+          return (acc += workCenter.overheadRate ?? 0);
         }, 0) / relatedWorkCenters.length;
       const laborRate =
         relatedWorkCenters.reduce((acc, workCenter) => {
@@ -1019,13 +1054,77 @@ const getRatesFromWorkCenters =
         }, 0) / relatedWorkCenters.length;
 
       return {
-        quotingRate,
+        overheadRate,
         laborRate,
       };
     }
 
     return {
-      quotingRate: 0,
+      overheadRate: 0,
       laborRate: 0,
+    };
+  };
+
+const getRatesFromSupplierProcesses =
+  (
+    processes: Database["public"]["Tables"]["supplierProcess"]["Row"][] | null
+  ) =>
+  (
+    processId: string,
+    supplierProcessId: string | null
+  ): {
+    operationMinimumCost: number;
+    operationUnitCost: number;
+    operationLeadTime: number;
+  } => {
+    if (!processes) {
+      return {
+        operationMinimumCost: 0,
+        operationUnitCost: 0,
+        operationLeadTime: 0,
+      };
+    }
+
+    if (supplierProcessId) {
+      const supplierProcess = processes?.find(
+        (sp) => sp.id === supplierProcessId
+      );
+
+      if (supplierProcess) {
+        return {
+          operationMinimumCost: supplierProcess.minimumCost,
+          operationUnitCost: supplierProcess.unitCost,
+          operationLeadTime: supplierProcess.leadTime,
+        };
+      }
+    }
+
+    const relatedProcesses = processes.filter((p) => p.processId === processId);
+
+    if (relatedProcesses.length > 0) {
+      const operationMinimumCost =
+        relatedProcesses.reduce((acc, process) => {
+          return (acc += process.minimumCost ?? 0);
+        }, 0) / relatedProcesses.length;
+      const operationUnitCost =
+        relatedProcesses.reduce((acc, process) => {
+          return (acc += process.unitCost ?? 0);
+        }, 0) / relatedProcesses.length;
+      const operationLeadTime =
+        relatedProcesses.reduce((acc, process) => {
+          return (acc += process.leadTime ?? 0);
+        }, 0) / relatedProcesses.length;
+
+      return {
+        operationMinimumCost,
+        operationUnitCost,
+        operationLeadTime,
+      };
+    }
+
+    return {
+      operationMinimumCost: 0,
+      operationUnitCost: 0,
+      operationLeadTime: 0,
     };
   };

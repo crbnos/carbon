@@ -72,14 +72,14 @@ CREATE POLICY "Employees with sales_view can view customer" ON "customer"
   FOR SELECT
   USING (
     has_role('employee', "companyId") AND
-    has_company_permissions('sales_view', "companyId")
+    has_company_permission('sales_view', "companyId")
   );
 
 CREATE POLICY "Customers with sales_view can their own organization" ON "customer"
   FOR SELECT
   USING (
     has_role('customer', "companyId") AND
-    has_company_permissions('sales_view', "companyId")
+    has_company_permission('sales_view', "companyId")
     AND id IN (
       SELECT "customerId" FROM "customerAccount" WHERE id::uuid = auth.uid()
     )
@@ -89,21 +89,21 @@ CREATE POLICY "Employees with sales_create can create customers" ON "customer"
   FOR INSERT
   WITH CHECK (
     has_role('employee', "companyId") AND
-    has_company_permissions('sales_create', "companyId")
+    has_company_permission('sales_create', "companyId")
   );
 
 CREATE POLICY "Employees with sales_update can update customers" ON "customer"
   FOR UPDATE
   USING (
     has_role('employee', "companyId") AND
-    has_company_permissions('sales_update', "companyId")
+    has_company_permission('sales_update', "companyId")
   );
 
 CREATE POLICY "Customers with sales_update can their own organization" ON "customer"
   FOR UPDATE
   USING (
     has_role('customer', "companyId") AND
-    has_company_permissions('sales_update', "companyId")
+    has_company_permission('sales_update', "companyId")
     AND id IN (
       SELECT "customerId" FROM "customerAccount" WHERE id::uuid = auth.uid()
     )
@@ -113,7 +113,7 @@ CREATE POLICY "Employees with sales_delete can delete customers" ON "customer"
   FOR DELETE
   USING (
     has_role('employee', "companyId") AND
-    has_company_permissions('sales_delete', "companyId")
+    has_company_permission('sales_delete', "companyId")
   );
 
 ```

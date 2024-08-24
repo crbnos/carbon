@@ -7908,12 +7908,11 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           makeMethodId: string
-          operationCost: number
-          operationLeadTime: number
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
-          operationSupplierId: string | null
+          operationSupplierProcessId: string | null
           operationType: Database["public"]["Enums"]["operationType"]
           order: number
+          overheadRate: number
           processId: string
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
@@ -7933,12 +7932,11 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           makeMethodId: string
-          operationCost?: number
-          operationLeadTime?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
-          operationSupplierId?: string | null
+          operationSupplierProcessId?: string | null
           operationType?: Database["public"]["Enums"]["operationType"]
           order?: number
+          overheadRate?: number
           processId: string
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
@@ -7958,12 +7956,11 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           makeMethodId?: string
-          operationCost?: number
-          operationLeadTime?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
-          operationSupplierId?: string | null
+          operationSupplierProcessId?: string | null
           operationType?: Database["public"]["Enums"]["operationType"]
           order?: number
+          overheadRate?: number
           processId?: string
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
@@ -8050,41 +8047,6 @@ export type Database = {
             referencedColumns: ["makeMethodId"]
           },
           {
-            foreignKeyName: "methodOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
-            isOneToOne: false
-            referencedRelation: "contractors"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "methodOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "methodOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderSuppliers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
-            isOneToOne: false
-            referencedRelation: "supplier"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "methodOperation_processId_fkey"
             columns: ["processId"]
             isOneToOne: false
@@ -8145,6 +8107,20 @@ export type Database = {
             columns: ["workCenterId"]
             isOneToOne: false
             referencedRelation: "workCenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"
+            columns: ["operationSupplierProcessId"]
+            isOneToOne: false
+            referencedRelation: "supplierProcess"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"
+            columns: ["operationSupplierProcessId"]
+            isOneToOne: false
+            referencedRelation: "supplierProcesses"
             referencedColumns: ["id"]
           },
         ]
@@ -10026,6 +10002,7 @@ export type Database = {
           defaultStandardFactor: Database["public"]["Enums"]["factor"]
           id: string
           name: string
+          processType: Database["public"]["Enums"]["processType"]
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -10037,6 +10014,7 @@ export type Database = {
           defaultStandardFactor: Database["public"]["Enums"]["factor"]
           id?: string
           name: string
+          processType?: Database["public"]["Enums"]["processType"]
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -10048,6 +10026,7 @@ export type Database = {
           defaultStandardFactor?: Database["public"]["Enums"]["factor"]
           id?: string
           name?: string
+          processType?: Database["public"]["Enums"]["processType"]
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13499,11 +13478,12 @@ export type Database = {
           laborUnit: Database["public"]["Enums"]["factor"]
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
-          operationCost: number
           operationLeadTime: number
+          operationMinimumCost: number
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
-          operationSupplierId: string | null
+          operationSupplierProcessId: string | null
           operationType: Database["public"]["Enums"]["operationType"]
+          operationUnitCost: number
           order: number
           overheadRate: number
           processId: string
@@ -13529,11 +13509,12 @@ export type Database = {
           laborUnit?: Database["public"]["Enums"]["factor"]
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
-          operationCost?: number
           operationLeadTime?: number
+          operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
-          operationSupplierId?: string | null
+          operationSupplierProcessId?: string | null
           operationType?: Database["public"]["Enums"]["operationType"]
+          operationUnitCost?: number
           order?: number
           overheadRate?: number
           processId: string
@@ -13559,11 +13540,12 @@ export type Database = {
           laborUnit?: Database["public"]["Enums"]["factor"]
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
-          operationCost?: number
           operationLeadTime?: number
+          operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
-          operationSupplierId?: string | null
+          operationSupplierProcessId?: string | null
           operationType?: Database["public"]["Enums"]["operationType"]
+          operationUnitCost?: number
           order?: number
           overheadRate?: number
           processId?: string
@@ -13642,38 +13624,17 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "quoteOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
+            foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"
+            columns: ["operationSupplierProcessId"]
             isOneToOne: false
-            referencedRelation: "contractors"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "quoteOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "quoteOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderSuppliers"
+            referencedRelation: "supplierProcess"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "quoteOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
+            foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"
+            columns: ["operationSupplierProcessId"]
             isOneToOne: false
-            referencedRelation: "supplier"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperation_operationSupplierId_fkey"
-            columns: ["operationSupplierId"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
+            referencedRelation: "supplierProcesses"
             referencedColumns: ["id"]
           },
           {
@@ -17904,8 +17865,13 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          customFields: Json | null
+          id: string
+          leadTime: number
+          minimumCost: number
           processId: string
           supplierId: string
+          unitCost: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -17913,8 +17879,13 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          customFields?: Json | null
+          id?: string
+          leadTime?: number
+          minimumCost?: number
           processId: string
           supplierId: string
+          unitCost?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -17922,8 +17893,13 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          customFields?: Json | null
+          id?: string
+          leadTime?: number
+          minimumCost?: number
           processId?: string
           supplierId?: string
+          unitCost?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -19694,8 +19670,7 @@ export type Database = {
           laborRate: number
           locationId: string | null
           name: string
-          overheadRate: number | null
-          quotingRate: number
+          overheadRate: number
           requiredAbilityId: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -19712,8 +19687,7 @@ export type Database = {
           laborRate?: number
           locationId?: string | null
           name: string
-          overheadRate?: number | null
-          quotingRate?: number
+          overheadRate?: number
           requiredAbilityId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -19730,8 +19704,7 @@ export type Database = {
           laborRate?: number
           locationId?: string | null
           name?: string
-          overheadRate?: number | null
-          quotingRate?: number
+          overheadRate?: number
           requiredAbilityId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -22279,6 +22252,8 @@ export type Database = {
           defaultStandardFactor: Database["public"]["Enums"]["factor"] | null
           id: string | null
           name: string | null
+          processType: Database["public"]["Enums"]["processType"] | null
+          suppliers: Json | null
           updatedAt: string | null
           updatedBy: string | null
           workCenters: Json | null
@@ -23635,9 +23610,14 @@ export type Database = {
           machineTime: number | null
           machineUnit: Database["public"]["Enums"]["factor"] | null
           makeMethodId: string | null
+          operationLeadTime: number | null
+          operationMinimumCost: number | null
           operationOrder:
             | Database["public"]["Enums"]["methodOperationOrder"]
             | null
+          operationSupplierProcessId: string | null
+          operationType: Database["public"]["Enums"]["operationType"] | null
+          operationUnitCost: number | null
           order: number | null
           overheadRate: number | null
           processId: string | null
@@ -23714,6 +23694,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"
+            columns: ["operationSupplierProcessId"]
+            isOneToOne: false
+            referencedRelation: "supplierProcess"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_operationSupplierProcessId_fkey"
+            columns: ["operationSupplierProcessId"]
+            isOneToOne: false
+            referencedRelation: "supplierProcesses"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteOperation_processId_fkey"
@@ -25679,6 +25673,172 @@ export type Database = {
           },
         ]
       }
+      supplierProcesses: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          id: string | null
+          leadTime: number | null
+          minimumCost: number | null
+          processId: string | null
+          processName: string | null
+          supplierId: string | null
+          unitCost: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplierProcess_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "supplierProcess_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "supplierProcess_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "supplierProcess_processId_fkey"
+            columns: ["processId"]
+            isOneToOne: false
+            referencedRelation: "process"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_processId_fkey"
+            columns: ["processId"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "supplierProcess_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "supplierProcess_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierProcess_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           accountManagerId: string | null
@@ -26178,7 +26338,6 @@ export type Database = {
           name: string | null
           overheadRate: number | null
           processes: Json | null
-          quotingRate: number | null
           requiredAbilityId: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -26712,6 +26871,7 @@ export type Database = {
         | "Consumable"
         | "Fixture"
       paymentTermCalculationMethod: "Net" | "End of Month" | "Day of Month"
+      processType: "Inside" | "Outside" | "Inside and Outside"
       purchaseInvoiceStatus:
         | "Draft"
         | "Pending"

@@ -3,6 +3,7 @@ import {
   cn,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
@@ -19,7 +20,7 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuChevronsUpDown, LuImage, LuPlus } from "react-icons/lu";
+import { LuChevronsUpDown, LuImage, LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty } from "~/components";
 import type { Tree } from "~/components/TreeView";
@@ -256,6 +257,7 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
                   onDelete(line);
                 }}
               >
+                <DropdownMenuIcon icon={<LuTrash />} />
                 Delete Line
               </DropdownMenuItem>
             </DropdownMenuContent>

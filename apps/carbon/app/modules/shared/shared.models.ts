@@ -39,3 +39,9 @@ export const noteValidator = z.object({
 });
 
 export const operationTypes = ["Inside", "Outside"] as const;
+
+export const processTypes = [
+  "Inside",
+  "Outside",
+  "Inside and Outside",
+] as const;

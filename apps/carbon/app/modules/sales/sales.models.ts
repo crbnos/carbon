@@ -2,7 +2,12 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting";
-import { methodItemType, methodOperationOrders, methodType } from "../shared";
+import {
+  methodItemType,
+  methodOperationOrders,
+  methodType,
+  operationTypes,
+} from "../shared";
 import { standardFactorType } from "../shared/types";
 
 export const salesRFQStatusType = [
@@ -240,37 +245,185 @@ export const quoteMaterialValidator = z
     }
   );
 
-export const quoteOperationValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  quoteMakeMethodId: z
-    .string()
-    .min(1, { message: "Quote Make Method is required" }),
-  order: zfd.numeric(z.number().min(0)),
-  operationOrder: z.enum(methodOperationOrders, {
-    errorMap: (issue, ctx) => ({
-      message: "Operation order is required",
+export const quoteOperationValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    quoteMakeMethodId: z
+      .string()
+      .min(1, { message: "Quote Make Method is required" }),
+    order: zfd.numeric(z.number().min(0)),
+    operationOrder: z.enum(methodOperationOrders, {
+      errorMap: (issue, ctx) => ({
+        message: "Operation order is required",
+      }),
     }),
-  }),
-  processId: z.string().min(20, { message: "Process is required" }),
-  workCenterId: zfd.text(z.string().optional()),
-  description: zfd.text(
-    z.string().min(0, { message: "Description is required" })
-  ),
-  setupUnit: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Setup unit is required" }),
-  }),
-  setupTime: zfd.numeric(z.number().min(0)),
-  laborUnit: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Labor unit is required" }),
-  }),
-  laborTime: zfd.numeric(z.number().min(0)),
-  machineUnit: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Machine unit is required" }),
-  }),
-  machineTime: zfd.numeric(z.number().min(0)),
-  quotingRate: zfd.numeric(z.number().min(0)),
-  laborRate: zfd.numeric(z.number().min(0)),
-});
+    operationType: z.enum(operationTypes, {
+      errorMap: (issue, ctx) => ({
+        message: "Operation type is required",
+      }),
+    }),
+    processId: z.string().min(20, { message: "Process is required" }),
+    workCenterId: zfd.text(z.string().optional()),
+    description: zfd.text(
+      z.string().min(0, { message: "Description is required" })
+    ),
+    setupUnit: z
+      .enum(standardFactorType, {
+        errorMap: () => ({ message: "Setup unit is required" }),
+      })
+      .optional(),
+    setupTime: zfd.numeric(z.number().min(0).optional()),
+    laborUnit: z
+      .enum(standardFactorType, {
+        errorMap: () => ({ message: "Labor unit is required" }),
+      })
+      .optional(),
+    laborTime: zfd.numeric(z.number().min(0).optional()),
+    machineUnit: z
+      .enum(standardFactorType, {
+        errorMap: () => ({ message: "Machine unit is required" }),
+      })
+      .optional(),
+    machineTime: zfd.numeric(z.number().min(0).optional()),
+    overheadRate: zfd.numeric(z.number().min(0).optional()),
+    laborRate: zfd.numeric(z.number().min(0).optional()),
+    operationSupplierProcessId: zfd.text(z.string().optional()),
+    operationMinimumCost: zfd.numeric(z.number().min(0).optional()),
+    operationUnitCost: zfd.numeric(z.number().min(0).optional()),
+    operationLeadTime: zfd.numeric(z.number().min(0).optional()),
+  })
+  .refine(
+    (data) => {
+      if (data.operationType === "Outside") {
+        return Number.isFinite(data.operationMinimumCost);
+      }
+      return true;
+    },
+    {
+      message: "Minimum is required",
+      path: ["operationMinimumCost"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Outside") {
+        return Number.isFinite(data.operationUnitCost);
+      }
+      return true;
+    },
+    {
+      message: "Unit cost is required",
+      path: ["operationUnitCost"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Outside") {
+        return Number.isFinite(data.operationLeadTime);
+      }
+      return true;
+    },
+    {
+      message: "Lead time is required",
+      path: ["operationLeadTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return !!data.setupUnit;
+      }
+      return true;
+    },
+    {
+      message: "Setup unit is required",
+      path: ["setupUnit"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return !!data.laborUnit;
+      }
+      return true;
+    },
+    {
+      message: "Labor unit is required",
+      path: ["laborUnit"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return !!data.laborUnit;
+      }
+      return true;
+    },
+    {
+      message: "Machine unit is required",
+      path: ["machineUnit"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.setupTime);
+      }
+      return true;
+    },
+    {
+      message: "Setup time is required",
+      path: ["setupTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.laborTime);
+      }
+      return true;
+    },
+    {
+      message: "Labor time is required",
+      path: ["laborTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.machineTime);
+      }
+      return true;
+    },
+    {
+      message: "Machine time is required",
+      path: ["machineTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.overheadRate);
+      }
+      return true;
+    },
+    {
+      message: "Overhead rate is required",
+      path: ["overheadRate"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.laborRate);
+      }
+      return true;
+    },
+    {
+      message: "Labor rate is required",
+      path: ["laborRate"],
+    }
+  );
 
 export const quoteFinalizeValidator = z
   .object({

@@ -1,19 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-
-export const standardFactorType = [
-  "Hours/Piece",
-  "Hours/100 Pieces",
-  "Hours/1000 Pieces",
-  "Minutes/Piece",
-  "Minutes/100 Pieces",
-  "Minutes/1000 Pieces",
-  "Pieces/Hour",
-  "Pieces/Minute",
-  "Seconds/Piece",
-  "Total Hours",
-  "Total Minutes",
-] as const;
+import { processTypes, standardFactorType } from "../shared";
 
 export const abilityValidator = z
   .object({
@@ -99,16 +86,34 @@ export const partnerValidator = z.object({
   abilityId: z.string().min(20, { message: "Invalid ability" }),
 });
 
-export const processValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Process name is required" }),
-  defaultStandardFactor: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Standard factor is required" }),
-  }),
-  workCenters: z
-    .array(z.string().min(20, { message: "Invalid work center" }))
-    .optional(),
-});
+export const processValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().min(1, { message: "Process name is required" }),
+    processType: z.enum(processTypes, {
+      errorMap: () => ({ message: "Process type is required" }),
+    }),
+    defaultStandardFactor: z
+      .enum(standardFactorType, {
+        errorMap: () => ({ message: "Standard factor is required" }),
+      })
+      .optional(),
+    workCenters: z
+      .array(z.string().min(20, { message: "Invalid work center" }))
+      .optional(),
+  })
+  .refine((data) => {
+    if (data.processType !== "Outside" && !data.workCenters) {
+      return { workCenters: ["Work center is required for inside process"] };
+    }
+    return true;
+  })
+  .refine((data) => {
+    if (data.processType !== "Outside" && !data.defaultStandardFactor) {
+      return { defaultStandardFactor: ["Standard factor is required"] };
+    }
+    return true;
+  });
 
 export const workCenterValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -119,9 +124,9 @@ export const workCenterValidator = z.object({
   }),
   laborRate: zfd.numeric(z.number().min(0)),
   locationId: z.string().min(20, { message: "Location is required" }),
+  overheadRate: zfd.numeric(z.number().min(0)),
   processes: z
     .array(z.string().min(20, { message: "Invalid process" }))
     .optional(),
-  quotingRate: zfd.numeric(z.number().min(0)),
   requiredAbilityId: zfd.text(z.string().optional()),
 });

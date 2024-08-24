@@ -74,7 +74,7 @@ export default function DeleteProcessRoute() {
   return (
     <ConfirmDelete
       action={path.to.deleteProcess(processId)}
-      name={process.name}
+      name={process.name!}
       text={`Are you sure you want to delete the process: ${process.name}? This cannot be undone.`}
       onCancel={onCancel}
     />

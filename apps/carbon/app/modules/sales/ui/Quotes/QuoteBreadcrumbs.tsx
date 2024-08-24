@@ -103,9 +103,7 @@ const QuoteBreadcrumbs = () => {
               <HStack spacing={0}>
                 <MenubarItem
                   isDisabled={
-                    !hasMethods ||
-                    !permissions.can("update", "parts") ||
-                    isSaveMethodLoading
+                    !permissions.can("update", "parts") || isSaveMethodLoading
                   }
                   isLoading={isSaveMethodLoading}
                   leftIcon={<LuUpload />}

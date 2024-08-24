@@ -1,4 +1,13 @@
-import { Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Avatar,
+  AvatarGroup,
+  AvatarGroupList,
+  AvatarOverflowIndicator,
+  Badge,
+  Enumerable,
+  MenuIcon,
+  MenuItem,
+} from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -6,7 +15,8 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { standardFactorType, type Process } from "~/modules/resources";
+import { type Process } from "~/modules/resources";
+import { standardFactorType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -43,6 +53,16 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         ),
       },
       {
+        accessorKey: "processType",
+        header: "Process Type",
+        cell: (item) =>
+          item.getValue() === "Outside" ? (
+            <Enumerable value={item.getValue<string>()} />
+          ) : (
+            <Badge variant="secondary">{item.getValue<string>()}</Badge>
+          ),
+      },
+      {
         id: "workCenters",
         header: "Work Centers",
         cell: ({ row }) => (
@@ -68,6 +88,22 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             })),
           },
         },
+      },
+      {
+        id: "suppliers",
+        header: "Suppliers",
+        cell: ({ row }) => (
+          <AvatarGroup limit={5}>
+            <AvatarGroupList>
+              {((row.original.suppliers ?? []) as Array<{ name: string }>).map(
+                (s) => (
+                  <Avatar key={s.name} name={s.name} />
+                )
+              )}
+            </AvatarGroupList>
+            <AvatarOverflowIndicator />
+          </AvatarGroup>
+        ),
       },
       {
         id: "createdBy",

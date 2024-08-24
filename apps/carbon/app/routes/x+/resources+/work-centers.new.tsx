@@ -61,7 +61,6 @@ export default function NewWorkCenterRoute() {
   const initialValues = {
     name: "",
     description: "",
-    quotingRate: 0,
     laborRate: 0,
     overheadRate: 0,
     defaultStandardFactor: "Minutes/Piece" as "Minutes/Piece",

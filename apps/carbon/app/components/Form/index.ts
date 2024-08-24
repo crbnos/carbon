@@ -48,8 +48,10 @@ import Submit from "./Submit";
 import Supplier from "./Supplier";
 import SupplierContact from "./SupplierContact";
 import SupplierLocation from "./SupplierLocation";
+import SupplierProcess from "./SupplierProcess";
 import SupplierStatus from "./SupplierStatus";
 import SupplierType from "./SupplierType";
+import Suppliers from "./Suppliers";
 import TextArea from "./Textarea";
 import TimePicker from "./TimePicker";
 import Timezone from "./Timezone";
@@ -112,6 +114,8 @@ export {
   Supplier,
   SupplierContact,
   SupplierLocation,
+  SupplierProcess,
+  Suppliers,
   SupplierStatus,
   SupplierType,
   TextArea,

@@ -44,7 +44,7 @@ const WorkCenters = (props: WorkCenterSelectProps) => {
           initialValues={{
             name: created,
             description: "",
-            quotingRate: 0,
+            overheadRate: 0,
             laborRate: 0,
             locationId: defaults?.locationId ?? "",
             processes: props?.processId ? [props.processId] : [],

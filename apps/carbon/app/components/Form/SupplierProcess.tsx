@@ -1,0 +1,85 @@
+import { useDisclosure, useMount } from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
+import { useMemo, useRef } from "react";
+import type { getSupplierProcessesByProcess } from "~/modules/purchasing";
+import { SupplierProcessForm } from "~/modules/purchasing";
+import { useSuppliers } from "~/stores";
+import { path } from "~/utils/path";
+import type { ComboboxProps } from "./Combobox";
+import CreatableCombobox from "./CreatableCombobox";
+
+type SupplierProcessSelectProps = Omit<ComboboxProps, "options"> & {
+  processId?: string;
+};
+
+const SupplierProcess = ({
+  processId,
+  ...props
+}: SupplierProcessSelectProps) => {
+  const newSupplierProcessModal = useDisclosure();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const [suppliers] = useSuppliers();
+  const options = useSupplierProcesses({
+    processId,
+  }).map((supplierProcess) => {
+    const supplier = suppliers.find(
+      (supplier) => supplier.id === supplierProcess.supplierId
+    );
+    return {
+      label: supplier?.name ?? "Unknown Supplier",
+      value: supplierProcess.id!,
+    };
+  });
+
+  return (
+    <>
+      <CreatableCombobox
+        ref={triggerRef}
+        options={options}
+        {...props}
+        label={props?.label ?? "Work Center"}
+        onCreateOption={(option) => {
+          newSupplierProcessModal.onOpen();
+        }}
+      />
+      {newSupplierProcessModal.isOpen && processId && (
+        <SupplierProcessForm
+          type="modal"
+          onClose={() => {
+            newSupplierProcessModal.onClose();
+            triggerRef.current?.click();
+          }}
+          initialValues={{
+            processId,
+            supplierId: "",
+            minimumCost: 0,
+            unitCost: 0,
+            leadTime: 0,
+          }}
+        />
+      )}
+    </>
+  );
+};
+
+SupplierProcess.displayName = "SupplierProcess";
+
+export default SupplierProcess;
+
+export const useSupplierProcesses = (args: { processId?: string }) => {
+  const { processId } = args;
+  const fetcher =
+    useFetcher<Awaited<ReturnType<typeof getSupplierProcessesByProcess>>>();
+
+  useMount(() => {
+    fetcher.load(path.to.api.supplierProcesses(processId));
+  });
+
+  const supplierProcesses = useMemo(
+    () => (fetcher.data?.data ? fetcher.data?.data : []),
+    [fetcher.data]
+  );
+
+  return supplierProcesses;
+};

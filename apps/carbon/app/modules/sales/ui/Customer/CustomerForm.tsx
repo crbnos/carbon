@@ -61,58 +61,64 @@ const CustomerForm = ({
     : !permissions.can("create", "sales");
 
   return (
-    <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
-        <ModalCardContent>
-          <ValidatedForm
-            method="post"
-            action={isEditing ? undefined : path.to.newCustomer}
-            validator={customerValidator}
-            defaultValues={initialValues}
-            fetcher={fetcher}
-          >
-            <ModalCardHeader>
-              <ModalCardTitle>
-                {isEditing ? "Customer Overview" : "New Customer"}
-              </ModalCardTitle>
-              {!isEditing && (
-                <ModalCardDescription>
-                  A customer is a business or person who buys your parts or
-                  services.
-                </ModalCardDescription>
-              )}
-            </ModalCardHeader>
-            <ModalCardBody>
-              <Hidden name="id" />
-              <Hidden name="type" value={type} />
-              <div
-                className={cn(
-                  "grid w-full gap-x-8 gap-y-4",
-                  isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-2"
+    <div>
+      <ModalCardProvider type={type}>
+        <ModalCard onClose={onClose}>
+          <ModalCardContent>
+            <ValidatedForm
+              method="post"
+              action={isEditing ? undefined : path.to.newCustomer}
+              validator={customerValidator}
+              defaultValues={initialValues}
+              fetcher={fetcher}
+            >
+              <ModalCardHeader>
+                <ModalCardTitle>
+                  {isEditing ? "Customer Overview" : "New Customer"}
+                </ModalCardTitle>
+                {!isEditing && (
+                  <ModalCardDescription>
+                    A customer is a business or person who buys your parts or
+                    services.
+                  </ModalCardDescription>
                 )}
-              >
-                <Input name="name" label="Name" autoFocus={!isEditing} />
+              </ModalCardHeader>
+              <ModalCardBody>
+                <Hidden name="id" />
+                <Hidden name="type" value={type} />
+                <div
+                  className={cn(
+                    "grid w-full gap-x-8 gap-y-4",
+                    type === "modal"
+                      ? "grid-cols-1"
+                      : isEditing
+                      ? "grid-cols-1 lg:grid-cols-3"
+                      : "grid-cols-2"
+                  )}
+                >
+                  <Input name="name" label="Name" autoFocus={!isEditing} />
 
-                <CustomerStatus
-                  name="customerStatusId"
-                  label="Customer Status"
-                  placeholder="Select Customer Status"
-                />
+                  <CustomerStatus
+                    name="customerStatusId"
+                    label="Customer Status"
+                    placeholder="Select Customer Status"
+                  />
 
-                <Employee name="accountManagerId" label="Account Manager" />
+                  <Employee name="accountManagerId" label="Account Manager" />
 
-                <CustomFormFields table="customer" />
-              </div>
-            </ModalCardBody>
-            <ModalCardFooter>
-              <HStack>
-                <Submit isDisabled={isDisabled}>Save</Submit>
-              </HStack>
-            </ModalCardFooter>
-          </ValidatedForm>
-        </ModalCardContent>
-      </ModalCard>
-    </ModalCardProvider>
+                  <CustomFormFields table="customer" />
+                </div>
+              </ModalCardBody>
+              <ModalCardFooter>
+                <HStack>
+                  <Submit isDisabled={isDisabled}>Save</Submit>
+                </HStack>
+              </ModalCardFooter>
+            </ValidatedForm>
+          </ModalCardContent>
+        </ModalCard>
+      </ModalCardProvider>
+    </div>
   );
 };
 

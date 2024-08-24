@@ -28,14 +28,15 @@ import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
-  Combobox,
   Hidden,
   InputControlled,
   Number,
   Process,
   Select,
+  SelectControlled,
   StandardFactor,
   Submit,
+  SupplierProcess,
   UnitHint,
   WorkCenter,
   getUnitHint,
@@ -104,20 +105,18 @@ function makeItem(operation: Operation): ItemWithData {
   };
 }
 
-const initialMethodOperation: Omit<Operation, "makeMethodId" | "order"> = {
+const initialOperation: Omit<Operation, "makeMethodId" | "order"> = {
   description: "",
-  processId: "",
-  workCenterId: "",
-  setupTime: 0,
-  setupUnit: "Total Minutes",
   laborTime: 0,
   laborUnit: "Minutes/Piece",
   machineTime: 0,
   machineUnit: "Minutes/Piece",
   operationOrder: "After Previous",
   operationType: "Inside",
-  operationCost: 0,
-  operationLeadTime: 0,
+  processId: "",
+  setupTime: 0,
+  setupUnit: "Total Minutes",
+  workCenterId: "",
   methodOperationWorkInstruction: {
     content: {},
   },
@@ -163,7 +162,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
           checked: false,
           id: temporaryId,
           data: {
-            ...initialMethodOperation,
+            ...initialOperation,
             order: newOrder,
             makeMethodId,
           },
@@ -544,25 +543,25 @@ function OperationForm({
   }, [item.id, methodOperationFetcher.data, setItems, setSelectedItemId]);
 
   const [processData, setProcessData] = useState<{
-    processId: string;
-    operationType: string;
     description: string;
-    setupUnitHint: string;
-    setupUnit: string;
-    laborUnitHint: string;
     laborUnit: string;
-    machineUnitHint: string;
+    laborUnitHint: string;
     machineUnit: string;
+    machineUnitHint: string;
+    operationType: string;
+    processId: string;
+    setupUnit: string;
+    setupUnitHint: string;
   }>({
-    processId: item.data.processId ?? "",
-    operationType: item.data.operationType ?? "Inside",
     description: item.data.description ?? "",
-    setupUnitHint: getUnitHint(item.data.setupUnit),
-    setupUnit: item.data.setupUnit ?? "Total Minutes",
-    laborUnitHint: getUnitHint(item.data.laborUnit),
     laborUnit: item.data.laborUnit ?? "Hours/Piece",
-    machineUnitHint: getUnitHint(item.data.machineUnit),
+    laborUnitHint: getUnitHint(item.data.laborUnit),
     machineUnit: item.data.machineUnit ?? "Hours/Piece",
+    machineUnitHint: getUnitHint(item.data.machineUnit),
+    operationType: item.data.operationType ?? "Inside",
+    processId: item.data.processId ?? "",
+    setupUnit: item.data.setupUnit ?? "Total Minutes",
+    setupUnitHint: getUnitHint(item.data.setupUnit),
   });
 
   const onProcessChange = async (processId: string) => {
@@ -583,6 +582,7 @@ function OperationForm({
       laborUnitHint: getUnitHint(data?.defaultStandardFactor),
       machineUnit: data?.defaultStandardFactor ?? "Hours/Piece",
       machineUnitHint: getUnitHint(data?.defaultStandardFactor),
+      operationType: data?.processType === "Outside" ? "Outside" : "Inside",
     }));
   };
 
@@ -654,9 +654,15 @@ function OperationForm({
             value: o,
             label: o,
           }))}
+          onChange={(value) => {
+            setProcessData((d) => ({
+              ...d,
+              operationOrder: value?.value as string,
+            }));
+          }}
         />
 
-        <Select
+        <SelectControlled
           name="operationType"
           label="Operation Type"
           placeholder="Operation Type"
@@ -664,6 +670,7 @@ function OperationForm({
             value: o,
             label: o,
           }))}
+          value={processData.operationType}
           onChange={(value) => {
             setProcessData((d) => ({
               ...d,
@@ -688,22 +695,12 @@ function OperationForm({
 
         {processData.operationType === "Outside" ? (
           <>
-            <Combobox
-              isOptional
-              name="operationSupplierId"
+            <SupplierProcess
+              name="operationSupplierProcessId"
               label="Supplier"
-              options={[]}
+              processId={processData.processId}
+              isOptional
             />
-            <Number
-              name="operationCost"
-              label="Cost per Unit"
-              minValue={0}
-              formatOptions={{
-                style: "currency",
-                currency: "USD",
-              }}
-            />
-            <Number name="operationLeadTime" label="Lead Time" minValue={0} />
           </>
         ) : (
           <>

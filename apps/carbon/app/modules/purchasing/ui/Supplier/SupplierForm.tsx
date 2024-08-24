@@ -61,58 +61,64 @@ const SupplierForm = ({
     : !permissions.can("create", "purchasing");
 
   return (
-    <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
-        <ModalCardContent>
-          <ValidatedForm
-            method="post"
-            action={isEditing ? undefined : path.to.newSupplier}
-            validator={supplierValidator}
-            defaultValues={initialValues}
-            fetcher={fetcher}
-          >
-            <ModalCardHeader>
-              <ModalCardTitle>
-                {isEditing ? "Supplier Overview" : "New Supplier"}
-              </ModalCardTitle>
-              {!isEditing && (
-                <ModalCardDescription>
-                  A supplier is a business or person who sells you parts or
-                  services.
-                </ModalCardDescription>
-              )}
-            </ModalCardHeader>
-            <ModalCardBody>
-              <Hidden name="id" />
-              <Hidden name="type" value={type} />
-              <div
-                className={cn(
-                  "grid w-full gap-x-8 gap-y-4",
-                  isEditing ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-2"
+    <div>
+      <ModalCardProvider type={type}>
+        <ModalCard onClose={onClose}>
+          <ModalCardContent>
+            <ValidatedForm
+              method="post"
+              action={isEditing ? undefined : path.to.newSupplier}
+              validator={supplierValidator}
+              defaultValues={initialValues}
+              fetcher={fetcher}
+            >
+              <ModalCardHeader>
+                <ModalCardTitle>
+                  {isEditing ? "Supplier Overview" : "New Supplier"}
+                </ModalCardTitle>
+                {!isEditing && (
+                  <ModalCardDescription>
+                    A supplier is a business or person who sells you parts or
+                    services.
+                  </ModalCardDescription>
                 )}
-              >
-                <Input autoFocus={!isEditing} name="name" label="Name" />
+              </ModalCardHeader>
+              <ModalCardBody>
+                <Hidden name="id" />
+                <Hidden name="type" value={type} />
+                <div
+                  className={cn(
+                    "grid w-full gap-x-8 gap-y-4",
+                    type === "modal"
+                      ? "grid-cols-1"
+                      : isEditing
+                      ? "grid-cols-1 lg:grid-cols-3"
+                      : "grid-cols-2"
+                  )}
+                >
+                  <Input autoFocus={!isEditing} name="name" label="Name" />
 
-                <SupplierStatus
-                  name="supplierStatusId"
-                  label="Supplier Status"
-                  placeholder="Select Supplier Status"
-                />
+                  <SupplierStatus
+                    name="supplierStatusId"
+                    label="Supplier Status"
+                    placeholder="Select Supplier Status"
+                  />
 
-                <Employee name="accountManagerId" label="Account Manager" />
+                  <Employee name="accountManagerId" label="Account Manager" />
 
-                <CustomFormFields table="supplier" />
-              </div>
-            </ModalCardBody>
-            <ModalCardFooter>
-              <HStack>
-                <Submit isDisabled={isDisabled}>Save</Submit>
-              </HStack>
-            </ModalCardFooter>
-          </ValidatedForm>
-        </ModalCardContent>
-      </ModalCard>
-    </ModalCardProvider>
+                  <CustomFormFields table="supplier" />
+                </div>
+              </ModalCardBody>
+              <ModalCardFooter>
+                <HStack>
+                  <Submit isDisabled={isDisabled}>Save</Submit>
+                </HStack>
+              </ModalCardFooter>
+            </ValidatedForm>
+          </ModalCardContent>
+        </ModalCard>
+      </ModalCardProvider>
+    </div>
   );
 };
 

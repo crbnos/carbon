@@ -91,9 +91,12 @@ const CreatableMultiSelect = forwardRef<
                 "bg-transparent px-2",
                 className
               )}
-              onClick={() => setOpen(!open)}
+              isDisabled={isReadOnly}
+              onClick={() => {
+                if (!isReadOnly) setOpen(!open);
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+                if ((e.key === "Enter" || e.key === " ") && !isReadOnly) {
                   setOpen(!open);
                 }
               }}
@@ -188,10 +191,12 @@ CreatableMultiSelect.displayName = "CreatableMultiSelect";
 export default CreatableMultiSelect;
 
 function SelectedOption({
+  isReadOnly,
   item,
   options,
   onUnselect,
 }: {
+  isReadOnly?: boolean;
   item: string;
   options: CreatableMultiSelectProps["options"];
   onUnselect: (item: string) => void;
@@ -204,9 +209,10 @@ function SelectedOption({
       {options.find((option) => option.value === item)?.label}
       <BadgeCloseButton
         tabIndex={-1}
+        disabled={isReadOnly}
         style={{ color: colors.color }}
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
+          if (e.key === "Enter" && !isReadOnly) {
             onUnselect(item);
           }
         }}
@@ -217,7 +223,7 @@ function SelectedOption({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          onUnselect(item);
+          if (!isReadOnly) onUnselect(item);
         }}
       />
     </Badge>
