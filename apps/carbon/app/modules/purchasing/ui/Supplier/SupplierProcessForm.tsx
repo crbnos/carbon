@@ -8,65 +8,61 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
-  VStack,
   toast,
+  VStack,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
-  Ability,
   CustomFormFields,
   Hidden,
-  Input,
-  Location,
   Number,
-  Processes,
-  StandardFactor,
+  Process,
   Submit,
-  TextArea,
+  Supplier,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { workCenterValidator } from "~/modules/resources";
+import type { SupplierProcess } from "~/modules/purchasing";
+import { supplierProcessValidator } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
-type WorkCenterFormProps = {
-  initialValues: z.infer<typeof workCenterValidator>;
-  type?: "modal" | "drawer";
+type SupplierProcessFormProps = {
+  initialValues: z.infer<typeof supplierProcessValidator>;
+  type?: "drawer" | "modal";
   open?: boolean;
-  showProcesses?: boolean;
-  onClose: () => void;
+  onClose?: () => void;
 };
 
-const WorkCenterForm = ({
+const SupplierProcessForm = ({
   initialValues,
-  open = true,
   type = "drawer",
-  showProcesses = true,
+  open = true,
   onClose,
-}: WorkCenterFormProps) => {
+}: SupplierProcessFormProps) => {
   const permissions = usePermissions();
-  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  const fetcher = useFetcher<PostgrestResponse<SupplierProcess>>();
+  const { supplierId } = useParams();
+  const [supplier, setSupplier] = useState<string | undefined>(supplierId);
 
   useEffect(() => {
     if (type !== "modal") return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created work center`);
+      // @ts-ignore
+      toast.success(`Created supplier process`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        `Failed to create work center: ${fetcher.data.error.message}`
-      );
+      toast.error(`Failed to create supplier process`);
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.can("update", "purchasing")
+    : !permissions.can("create", "purchasing");
 
   return (
     <ModalDrawerProvider type={type}>
@@ -78,12 +74,12 @@ const WorkCenterForm = ({
       >
         <ModalDrawerContent>
           <ValidatedForm
-            validator={workCenterValidator}
+            validator={supplierProcessValidator}
             method="post"
             action={
               isEditing
-                ? path.to.workCenter(initialValues.id!)
-                : path.to.newWorkCenter
+                ? path.to.supplierProcess(supplier!, initialValues.id!)
+                : path.to.newSupplierProcess(supplier!)
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -91,47 +87,43 @@ const WorkCenterForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? "Edit" : "New"} Work Center
+                {isEditing ? "Edit" : "New"} Supplier Process
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="type" value={type} />
+              {supplierId && <Hidden name="supplierId" value={supplierId} />}
               <VStack spacing={4}>
-                <Input name="name" label="Name" />
-                {showProcesses && (
-                  <Processes name="processes" label="Processes" />
+                {supplierId === undefined && (
+                  <Supplier
+                    name="supplierId"
+                    label="Supplier"
+                    onChange={(newValue) => setSupplier(newValue?.value)}
+                  />
                 )}
-                <TextArea name="description" label="Description" />
-                <Location name="locationId" label="Location" />
+                <Process name="processId" label="Process" />
                 <Number
-                  name="overheadRate"
-                  label="Overhead Rate"
+                  name="minimumCost"
+                  label="Minimum Cost"
                   formatOptions={{
                     style: "currency",
                     currency: "USD",
                   }}
+                  minValue={0}
                 />
                 <Number
-                  name="laborRate"
-                  label="Labor Rate"
+                  name="unitCost"
+                  label="Unit Cost"
                   formatOptions={{
                     style: "currency",
                     currency: "USD",
                   }}
+                  minValue={0}
                 />
+                <Number name="leadTime" label="Lead Time" minValue={0} />
 
-                <StandardFactor
-                  name="defaultStandardFactor"
-                  label="Default Unit"
-                  value={initialValues.defaultStandardFactor}
-                />
-                <Ability
-                  name="requiredAbilityId"
-                  label="Required Ability"
-                  isClearable
-                />
-                <CustomFormFields table="workCenter" />
+                <CustomFormFields table="supplierProcess" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -149,4 +141,4 @@ const WorkCenterForm = ({
   );
 };
 
-export default WorkCenterForm;
+export default SupplierProcessForm;

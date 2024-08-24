@@ -559,7 +559,13 @@ export async function upsertProcess(
     const { workCenters, ...insert } = process;
     const processInsert = await client
       .from("process")
-      .insert([insert])
+      .insert([
+        {
+          ...insert,
+          defaultStandardFactor:
+            insert.defaultStandardFactor ?? "Minutes/Piece",
+        },
+      ])
       .select("id")
       .single();
     if (processInsert.error) {

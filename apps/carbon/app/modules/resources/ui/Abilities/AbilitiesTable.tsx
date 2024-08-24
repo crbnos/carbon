@@ -81,6 +81,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         cell: ({ row }) => (
           <AvatarGroup limit={5}>
             <AvatarGroupList>
+              {/* @ts-ignore */}
               {row.original.employees.map((employee, index: number) => (
                 <Avatar
                   key={index}

@@ -245,33 +245,8 @@ export const methodOperationValidator = z
       })
       .optional(),
     machineTime: zfd.numeric(z.number().min(0).optional()),
-    operationCost: zfd.numeric(z.number().min(0).optional()),
-    operationLeadTime: zfd.numeric(z.number().min(0).optional()),
+    operationSupplierProcessId: zfd.text(z.string().optional()),
   })
-  .refine(
-    (data) => {
-      if (data.operationType === "Outside") {
-        return Number.isFinite(data.operationCost);
-      }
-      return true;
-    },
-    {
-      message: "Operation cost is required",
-      path: ["operationCost"],
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.operationType === "Outside") {
-        return Number.isFinite(data.operationLeadTime);
-      }
-      return true;
-    },
-    {
-      message: "Lead time is required",
-      path: ["operationLeadTime"],
-    }
-  )
   .refine(
     (data) => {
       if (data.operationType === "Inside") {

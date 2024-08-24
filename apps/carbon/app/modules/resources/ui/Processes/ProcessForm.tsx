@@ -1,6 +1,12 @@
 import {
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
+  IconButton,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -10,22 +16,30 @@ import {
   ModalDrawerTitle,
   VStack,
   toast,
+  useDisclosure,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { LuPencil, LuPlus, LuTrash } from "react-icons/lu";
+import { MdMoreHoriz } from "react-icons/md";
 import type { z } from "zod";
+import { SupplierAvatar } from "~/components";
 import {
   CustomFormFields,
   Hidden,
   Input,
+  Select,
   StandardFactor,
   Submit,
 } from "~/components/Form";
+import { useSupplierProcesses } from "~/components/Form/SupplierProcess";
 import WorkCenters from "~/components/Form/WorkCenters";
 import { usePermissions } from "~/hooks";
+import { SupplierProcessForm } from "~/modules/purchasing";
 import { processValidator } from "~/modules/resources";
+import { processTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type ProcessFormProps = {
@@ -60,6 +74,8 @@ const ProcessForm = ({
     ? !permissions.can("update", "resources")
     : !permissions.can("create", "resources");
 
+  const [processType, setProcessType] = useState(initialValues.processType);
+
   return (
     <ModalDrawerProvider type={type}>
       <ModalDrawer
@@ -91,12 +107,32 @@ const ProcessForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label="Process Name" />
-                <StandardFactor
-                  name="defaultStandardFactor"
-                  label="Default Unit"
-                  value={initialValues.defaultStandardFactor}
+                <Select
+                  name="processType"
+                  label="Process Type"
+                  options={processTypes.map((pt) => ({
+                    value: pt,
+                    label: pt,
+                  }))}
+                  onChange={(newValue) => {
+                    setProcessType(
+                      newValue?.value as (typeof processTypes)[number]
+                    );
+                  }}
                 />
-                <WorkCenters name="workCenters" label="Work Centers" />
+                {processType !== "Outside" && (
+                  <>
+                    <StandardFactor
+                      name="defaultStandardFactor"
+                      label="Default Unit"
+                      value={initialValues.defaultStandardFactor}
+                    />
+                    <WorkCenters name="workCenters" label="Work Centers" />
+                  </>
+                )}
+                {processType !== "Inside" && (
+                  <SupplierProcesses processId={initialValues.id} />
+                )}
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>
@@ -116,3 +152,89 @@ const ProcessForm = ({
 };
 
 export default ProcessForm;
+
+function SupplierProcesses({ processId }: { processId?: string }) {
+  const permissions = usePermissions();
+  const processes = useSupplierProcesses({ processId });
+  const navigate = useNavigate();
+  const isEditing = processId !== undefined;
+  const newSupplierProcessModal = useDisclosure();
+
+  return (
+    <>
+      <div className="flex flex-col gap-2 w-full">
+        {processes.length > 0 && (
+          <>
+            <label className="text-muted-foreground text-xs">Suppliers</label>
+            {processes.map((sp) => (
+              <HStack
+                key={sp.id}
+                className="w-full justify-between rounded-md border border-border p-2"
+              >
+                <SupplierAvatar supplierId={sp.supplierId} />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <IconButton
+                      aria-label="Edit supplier process"
+                      icon={<MdMoreHoriz />}
+                      size="md"
+                      variant="ghost"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        navigate(
+                          path.to.supplierProcess(sp.supplierId!, sp.id!)
+                        )
+                      }
+                      disabled={!permissions.can("update", "purchasing")}
+                    >
+                      <DropdownMenuIcon icon={<LuPencil />} />
+                      Edit Process
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        navigate(
+                          path.to.deleteSupplierProcess(sp.supplierId!, sp.id!)
+                        )
+                      }
+                      disabled={!permissions.can("delete", "purchasing")}
+                    >
+                      <DropdownMenuIcon icon={<LuTrash />} />
+                      Delete Process
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </HStack>
+            ))}
+          </>
+        )}
+        <Button
+          isDisabled={!isEditing}
+          leftIcon={<LuPlus />}
+          variant="secondary"
+          onClick={newSupplierProcessModal.onOpen}
+        >
+          Add Supplier
+        </Button>
+      </div>
+      {newSupplierProcessModal.isOpen && processId && (
+        <SupplierProcessForm
+          type="modal"
+          onClose={() => {
+            newSupplierProcessModal.onClose();
+          }}
+          initialValues={{
+            processId: processId,
+            supplierId: "",
+            minimumCost: 0,
+            unitCost: 0,
+            leadTime: 0,
+          }}
+        />
+      )}
+    </>
+  );
+}

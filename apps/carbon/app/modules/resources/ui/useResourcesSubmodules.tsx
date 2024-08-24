@@ -13,16 +13,6 @@ const resourcesRoutes: RouteGroup[] = [
         icon: <LuHammer />,
       },
       {
-        name: "Work Centers",
-        to: path.to.workCenters,
-        icon: <LuGroup />,
-      },
-    ],
-  },
-  {
-    name: "Configure",
-    routes: [
-      {
         name: "Locations",
         to: path.to.locations,
         icon: <LuMapPin />,
@@ -31,6 +21,11 @@ const resourcesRoutes: RouteGroup[] = [
         name: "Processes",
         to: path.to.processes,
         icon: <TbRoute />,
+      },
+      {
+        name: "Work Centers",
+        to: path.to.workCenters,
+        icon: <LuGroup />,
       },
     ],
   },

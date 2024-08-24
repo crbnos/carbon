@@ -38,7 +38,8 @@ const Processes = (props: ProcessSelectProps) => {
           }}
           initialValues={{
             name: created,
-            defaultStandardFactor: "Minutes/Piece" as "Total Hours",
+            defaultStandardFactor: "Minutes/Piece",
+            processType: "Inside",
             workCenters: [],
           }}
         />

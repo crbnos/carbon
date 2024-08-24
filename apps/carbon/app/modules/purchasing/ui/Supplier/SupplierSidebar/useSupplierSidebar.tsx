@@ -7,6 +7,7 @@ import {
   LuMapPin,
   LuTruck,
 } from "react-icons/lu";
+import { TbRoute } from "react-icons/tb";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -50,6 +51,13 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: LuCreditCard,
       shortcut: "Command+Shift+p",
+    },
+    {
+      name: "Processes",
+      to: path.to.supplierProcesses(supplierId),
+      role: ["employee"],
+      icon: TbRoute,
+      shortcut: "Command+Shift+r",
     },
     {
       name: "Shipping",

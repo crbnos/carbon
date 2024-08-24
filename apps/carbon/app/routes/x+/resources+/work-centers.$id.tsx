@@ -87,7 +87,6 @@ export default function WorkCenterRoute() {
     name: workCenter?.name ?? "",
     description: workCenter?.description ?? "",
     requiredAbilityId: workCenter?.requiredAbilityId ?? undefined,
-    quotingRate: workCenter?.quotingRate ?? 0,
     laborRate: workCenter?.laborRate ?? 0,
     overheadRate: workCenter?.overheadRate ?? 0,
     defaultStandardFactor: workCenter?.defaultStandardFactor ?? "Minutes/Piece",

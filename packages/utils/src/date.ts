@@ -27,13 +27,25 @@ export function formatDate(
   options?: Intl.DateTimeFormatOptions
 ) {
   if (!dateString) return "";
-  // @ts-expect-error
-  const date = parseAbsolute(dateString);
+  try {
+    // @ts-expect-error
+    const date = parseAbsolute(dateString);
 
-  return new Intl.DateTimeFormat(
-    undefined,
-    options || defaultFormatOptions
-  ).format(date.toDate());
+    return new Intl.DateTimeFormat(
+      undefined,
+      options || defaultFormatOptions
+    ).format(date.toDate());
+  } catch {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat(
+        undefined,
+        options || defaultFormatOptions
+      ).format(date);
+    } catch {
+      return dateString;
+    }
+  }
 }
 
 export function formatRelativeTime(isoString: string) {
