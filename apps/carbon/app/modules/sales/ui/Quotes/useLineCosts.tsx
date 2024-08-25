@@ -308,7 +308,6 @@ export function useLineCosts({
             );
           });
         } else if (operation.operationType === "Outside") {
-          console.log({ operation });
           effects.outsideCost.push((quantity) => {
             const unitCost =
               operation.operationUnitCost * data.quantity * quantity;
