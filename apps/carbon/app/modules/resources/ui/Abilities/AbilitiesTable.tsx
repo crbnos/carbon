@@ -2,7 +2,7 @@ import {
   AvatarGroup,
   AvatarGroupList,
   AvatarOverflowIndicator,
-  Enumerable,
+  Badge,
   MenuIcon,
   MenuItem,
 } from "@carbon/react";
@@ -68,11 +68,13 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         accessorKey: "name",
         header: "Ability",
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
+          <Badge
+            variant="secondary"
             onClick={() => navigate(path.to.ability(row.original.id))}
             className="cursor-pointer"
-          />
+          >
+            {row.original.name}
+          </Badge>
         ),
       },
       {

@@ -18,6 +18,7 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { type Process } from "~/modules/resources";
 import { standardFactorType } from "~/modules/shared";
 import { usePeople } from "~/stores";
+import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type ProcessesTableProps = {
@@ -45,11 +46,13 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         accessorKey: "name",
         header: "Process",
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
+          <Badge
+            variant="secondary"
             onClick={() => navigate(row.original.id!)}
             className="cursor-pointer"
-          />
+          >
+            {row.original.name}
+          </Badge>
         ),
       },
       {
@@ -67,11 +70,16 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         header: "Work Centers",
         cell: ({ row }) => (
           <span className="flex gap-2 items-center flex-wrap py-2">
-            {((row.original.workCenters ?? []) as Array<{ name: string }>).map(
-              (wc) => (
-                <Enumerable key={wc.name} value={wc.name} />
-              )
-            )}
+            {((row.original.workCenters ?? []) as Array<ListItem>).map((wc) => (
+              <Badge
+                key={wc.name}
+                variant="secondary"
+                onClick={() => navigate(path.to.workCenter(wc.id))}
+                className="cursor-pointer"
+              >
+                {wc.name}
+              </Badge>
+            ))}
           </span>
         ),
       },

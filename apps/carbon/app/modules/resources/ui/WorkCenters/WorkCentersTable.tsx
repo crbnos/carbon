@@ -1,4 +1,5 @@
 import {
+  Badge,
   Enumerable,
   HStack,
   MenuIcon,
@@ -74,11 +75,13 @@ const WorkCentersTable = memo(
           header: "Work Center",
           cell: ({ row }) => (
             <HStack>
-              <Enumerable
-                value={row.original.name}
+              <Badge
+                variant="secondary"
                 onClick={() => navigate(row.original.id!)}
                 className="cursor-pointer"
-              />
+              >
+                {row.original.name}
+              </Badge>
 
               {row.original.requiredAbilityId && (
                 <BsFillCheckCircleFill
@@ -94,9 +97,16 @@ const WorkCentersTable = memo(
           header: "Processes",
           cell: ({ row }) => (
             <span className="flex gap-2 items-center flex-wrap py-2">
-              {((row.original.processes ?? []) as Array<{ name: string }>).map(
+              {((row.original.processes ?? []) as Array<ListItem>).map(
                 (process) => (
-                  <Enumerable key={process.name} value={process.name} />
+                  <Badge
+                    key={process.name}
+                    variant="secondary"
+                    onClick={() => navigate(path.to.process(process.id))}
+                    className="cursor-pointer"
+                  >
+                    {row.original.name}
+                  </Badge>
                 )
               )}
             </span>
