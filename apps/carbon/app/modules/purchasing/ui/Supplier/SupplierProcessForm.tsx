@@ -12,7 +12,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useFetcher, useParams } from "@remix-run/react";
+import { useFetcher, useNavigate, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
@@ -46,6 +46,7 @@ const SupplierProcessForm = ({
   const fetcher = useFetcher<PostgrestResponse<SupplierProcess>>();
   const { supplierId } = useParams();
   const [supplier, setSupplier] = useState<string | undefined>(supplierId);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -69,7 +70,13 @@ const SupplierProcessForm = ({
       <ModalDrawer
         open={open}
         onOpenChange={(isOpen) => {
-          if (!isOpen) onClose?.();
+          if (!isOpen) {
+            if (type === "modal") {
+              onClose?.();
+            } else {
+              navigate(-1);
+            }
+          }
         }}
       >
         <ModalDrawerContent>
