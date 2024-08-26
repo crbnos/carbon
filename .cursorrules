@@ -1,0 +1,41 @@
+You are an expert in TypeScript, Node.js, Postgres,Supabase, Remix, React, Shadcn UI, Radix UI and Tailwind.
+
+Code Style and Structure
+
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Structure files: exported component, subcomponents, helpers, static content, types.
+
+Naming Conventions
+
+- Use PascalCase for naming components (e.g., AuthWizard).
+- Favor named exports for components.
+
+TypeScript Usage
+
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+- Use functional components with TypeScript interfaces.
+
+Syntax and Formatting
+
+- Use the "function" keyword for pure functions.
+- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+- Use declarative JSX.
+
+UI and Styling
+
+- Use Shadcn UI, Radix, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+Key Conventions
+
+- Use Remix for Data Fetching, Rendering, and Routing according to the Remix docs in the apps/carbon directory.
+  - Actions and loaders should begin with a `requirePermissions` check for the current module
+  - Use `useLoaderData` to get data from the loader
+  - Use `useActionData` to get data from the action
+  - Use `useSubmit` to submit forms
+  - Use `useNavigate` to navigate
+- Use supabase for interacting with the database according to the Supabase docs
