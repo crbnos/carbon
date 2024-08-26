@@ -5,13 +5,11 @@ import {
   LuCheck,
   LuCheckSquare,
   LuChevronDown,
-  LuCode,
   LuHeading1,
   LuHeading2,
   LuHeading3,
   LuListOrdered,
   LuText,
-  LuTextQuote,
 } from "react-icons/lu";
 
 import { Popover } from "@radix-ui/react-popover";
@@ -78,20 +76,13 @@ const items: SelectorItem[] = [
       editor.chain().focus().clearNodes().toggleOrderedList().run(),
     isActive: (editor) => editor.isActive("orderedList"),
   },
-  {
-    name: "Quote",
-    icon: LuTextQuote,
-    command: (editor) =>
-      editor.chain().focus().clearNodes().toggleBlockquote().run(),
-    isActive: (editor) => editor.isActive("blockquote"),
-  },
-  {
-    name: "Code",
-    icon: LuCode,
-    command: (editor) =>
-      editor.chain().focus().clearNodes().toggleCodeBlock().run(),
-    isActive: (editor) => editor.isActive("codeBlock"),
-  },
+  // {
+  //   name: "Code",
+  //   icon: LuCode,
+  //   command: (editor) =>
+  //     editor.chain().focus().clearNodes().toggleCodeBlock().run(),
+  //   isActive: (editor) => editor.isActive("codeBlock"),
+  // },
 ];
 interface NodeSelectorProps {
   open: boolean;

@@ -2,10 +2,11 @@ import type { Database } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 
+import type { JSONContent } from "@carbon/react";
 import type { PDF } from "../types";
 import { getLineDescription, getLineDescriptionDetails } from "../utils/quote";
 import { formatAddress } from "../utils/shared";
-import { Header, Summary, Template } from "./components";
+import { Header, Note, Summary, Template } from "./components";
 
 interface QuotePDFProps extends PDF {
   quote: Database["public"]["Views"]["quotes"]["Row"];
@@ -228,6 +229,7 @@ const QuotePDF = ({
             );
           })}
         </View>
+        <Note note={(quote.externalNotes ?? {}) as JSONContent} />
       </View>
     </Template>
   );
