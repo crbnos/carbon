@@ -2,31 +2,19 @@ import type { EditorView } from "@tiptap/pm/view";
 import { createSuggestionItems } from "novel/extensions";
 import {
   LuCheckSquare,
-  LuCode,
   LuHeading1,
   LuHeading2,
   LuHeading3,
   LuImage,
   LuList,
   LuListOrdered,
-  LuMessageSquarePlus,
   LuText,
-  LuTextQuote,
 } from "react-icons/lu";
 
 export const getSuggestionItems = (
   uploadFn: (file: File, view: EditorView, pos: number) => void
 ) => {
   return createSuggestionItems([
-    {
-      title: "Send Feedback",
-      description: "Let us know how we can improve.",
-      icon: <LuMessageSquarePlus size={18} />,
-      command: ({ editor, range }) => {
-        editor.chain().focus().deleteRange(range).run();
-        window.open("/feedback", "_blank");
-      },
-    },
     {
       title: "Text",
       description: "Just start typing with plain text.",
@@ -110,28 +98,14 @@ export const getSuggestionItems = (
         editor.chain().focus().deleteRange(range).toggleOrderedList().run();
       },
     },
-    {
-      title: "Quote",
-      description: "Capture a quote.",
-      searchTerms: ["blockquote"],
-      icon: <LuTextQuote size={18} />,
-      command: ({ editor, range }) =>
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .toggleNode("paragraph", "paragraph")
-          .toggleBlockquote()
-          .run(),
-    },
-    {
-      title: "Code",
-      description: "Capture a code snippet.",
-      searchTerms: ["codeblock"],
-      icon: <LuCode size={18} />,
-      command: ({ editor, range }) =>
-        editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
-    },
+    // {
+    //   title: "Code",
+    //   description: "Capture a code snippet.",
+    //   searchTerms: ["codeblock"],
+    //   icon: <LuCode size={18} />,
+    //   command: ({ editor, range }) =>
+    //     editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
+    // },
     {
       title: "Image",
       description: "Upload an image from your computer.",
