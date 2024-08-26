@@ -1,5 +1,5 @@
 import type { JSONContent } from "@carbon/react";
-import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { StyleSheet, Text, View } from "@react-pdf/renderer";
 
 const convertTiptapJSON = (
   node: JSONContent,
@@ -95,16 +95,7 @@ const convertTiptapJSON = (
       return node.text;
 
     case "image":
-      return (
-        <Image
-          key="image"
-          src={node.attrs.src}
-          style={{
-            width: node.attrs.width || "auto",
-            height: node.attrs.height || "auto",
-          }}
-        />
-      );
+      return null;
 
     default:
       return null;
