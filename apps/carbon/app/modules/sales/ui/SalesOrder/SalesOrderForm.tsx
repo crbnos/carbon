@@ -21,7 +21,6 @@ import {
   Input,
   Select,
   Submit,
-  TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { salesOrderStatusType, salesOrderValidator } from "~/modules/sales";
@@ -46,12 +45,12 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
   }));
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={salesOrderValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={salesOrderValidator}
+        defaultValues={initialValues}
+      >
         <CardHeader>
           <CardTitle>{isEditing ? "Sales Order" : "New Sales Order"}</CardTitle>
           {!isEditing && (
@@ -79,15 +78,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                 }
               />
               <Input name="customerReference" label="Customer PO Number" />
-              {isEditing && permissions.can("delete", "sales") && (
-                <Select
-                  name="status"
-                  label="Status"
-                  value={initialValues.status}
-                  options={statusOptions}
-                  isReadOnly={isCustomer}
-                />
-              )}
+
               <CustomerLocation
                 name="customerLocationId"
                 label="Customer Location"
@@ -105,9 +96,16 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                 isDisabled={isCustomer}
               />
 
-              {isEditing && (
-                <TextArea name="notes" label="Notes" readOnly={isCustomer} />
+              {isEditing && permissions.can("delete", "sales") && (
+                <Select
+                  name="status"
+                  label="Status"
+                  value={initialValues.status}
+                  options={statusOptions}
+                  isReadOnly={isCustomer}
+                />
               )}
+
               <CustomFormFields table="salesOrder" />
             </div>
           </VStack>
@@ -123,8 +121,8 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
             Save
           </Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

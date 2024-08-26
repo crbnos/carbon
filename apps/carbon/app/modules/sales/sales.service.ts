@@ -424,6 +424,16 @@ export async function getFilesByQuoteLineId(
     .list(`${companyId}/quote-line/${quoteLineId}`);
 }
 
+export async function getSalesOrderDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  salesOrderId: string
+) {
+  return client.storage
+    .from("private")
+    .list(`${companyId}/sales-order/${salesOrderId}`);
+}
+
 export async function getQuote(
   client: SupabaseClient<Database>,
   quoteId: string

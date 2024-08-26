@@ -1,4 +1,3 @@
-import { VStack } from "@carbon/react";
 import type { MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import type { Handle } from "~/utils/handle";
@@ -15,9 +14,5 @@ export const handle: Handle = {
 };
 
 export default function SalesOrderRoute() {
-  return (
-    <VStack spacing={4} className="h-full p-2">
-      <Outlet />
-    </VStack>
-  );
+  return <Outlet />;
 }

@@ -1,16 +1,21 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
-import { useEffect } from "react";
-import { getLocationsList } from "~/modules/resources";
 import {
-  SalesOrderHeader,
-  SalesOrderSidebar,
+  ClientOnly,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+  ScrollArea,
+  VStack,
+} from "@carbon/react";
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Outlet, useParams } from "@remix-run/react";
+import {
   getSalesOrder,
-  //getSalesOrderExternalDocuments,
-  //getSalesOrderInternalDocuments,
+  getSalesOrderDocuments,
   getSalesOrderLines,
-  useSalesOrderTotals,
+  SalesOrderBreadcrumbs,
+  SalesOrderExplorer,
+  SalesOrderHeader,
 } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -21,6 +26,7 @@ import { error } from "~/utils/result";
 export const handle: Handle = {
   breadcrumb: "Orders",
   to: path.to.salesOrders,
+  module: "sales",
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -31,66 +37,67 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [
-    salesOrder,
-    salesOrderLines,
-    //externalDocuments,
-    //internalDocuments,
-    locations,
-  ] = await Promise.all([
+  const [salesOrder, lines, files] = await Promise.all([
     getSalesOrder(client, orderId),
     getSalesOrderLines(client, orderId),
-    //getSalesOrderExternalDocuments(client, companyId, orderId),
-    //getSalesOrderInternalDocuments(client, companyId, orderId),
-    getLocationsList(client, companyId),
+    getSalesOrderDocuments(client, companyId, orderId),
   ]);
 
   if (salesOrder.error) {
     throw redirect(
-      path.to.salesOrders,
-      await flash(
-        request,
-        error(salesOrder.error, "Failed to load sales order summary")
-      )
+      path.to.items,
+      await flash(request, error(salesOrder.error, "Failed to load salesOrder"))
     );
   }
 
   return json({
     salesOrder: salesOrder.data,
-    salesOrderLines: salesOrderLines.data ?? [],
-    //externalDocuments: externalDocuments.data ?? [],
-    //internalDocuments: internalDocuments.data ?? [],
-    locations: locations.data ?? [],
+    lines: lines.data ?? [],
+    files: files.data ?? [],
   });
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  throw redirect(request.headers.get("Referer") ?? request.url);
-}
-
 export default function SalesOrderRoute() {
-  const { salesOrderLines } = useLoaderData<typeof loader>();
-  const [, setSalesOrderTotals] = useSalesOrderTotals();
-
-  useEffect(() => {
-    const totals = salesOrderLines.reduce(
-      (acc, line) => {
-        acc.total += (line.saleQuantity ?? 0) * (line.unitPrice ?? 0);
-
-        return acc;
-      },
-      { total: 0 }
-    );
-    setSalesOrderTotals(totals);
-  }, [salesOrderLines, setSalesOrderTotals]);
+  const params = useParams();
+  const { orderId } = params;
+  if (!orderId) throw new Error("Could not find orderId");
 
   return (
-    <>
+    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <SalesOrderHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <SalesOrderSidebar />
-        <Outlet />
+      <div className="flex h-[calc(100vh-99px)] w-full">
+        <div className="flex h-full w-full overflow-y-auto">
+          <div className="flex flex-grow overflow-hidden">
+            <ClientOnly fallback={null}>
+              {() => (
+                <ResizablePanelGroup direction="horizontal">
+                  <ResizablePanel
+                    order={1}
+                    minSize={10}
+                    defaultSize={20}
+                    className="bg-card h-full"
+                  >
+                    <ScrollArea className="h-[calc(100vh-99px)]">
+                      <div className="grid w-full h-full overflow-hidden">
+                        <SalesOrderExplorer />
+                      </div>
+                    </ScrollArea>
+                  </ResizablePanel>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel order={2}>
+                    <ScrollArea className="h-[calc(100vh-99px)]">
+                      <VStack spacing={2} className="p-2">
+                        <SalesOrderBreadcrumbs />
+                        <Outlet />
+                      </VStack>
+                    </ScrollArea>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              )}
+            </ClientOnly>
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

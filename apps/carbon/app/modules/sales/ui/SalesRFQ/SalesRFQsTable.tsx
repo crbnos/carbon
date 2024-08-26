@@ -79,7 +79,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
                 <input type="hidden" name="favorite" value="unfavorite" />
                 <button type="submit">
                   <LuPin
-                    className="cursor-pointer w-4 h-4 outline-primary/50 fill-yellow-400"
+                    className="cursor-pointer w-4 h-4 outline-yellow-400 fill-yellow-400"
                     type="submit"
                   />
                 </button>
