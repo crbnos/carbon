@@ -58,7 +58,9 @@ const SalesRFQHeader = () => {
     <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
       <HStack className="w-full justify-between">
         <HStack>
-          <Heading size="h2">{routeData?.rfqSummary?.rfqId}</Heading>
+          <Link to={path.to.salesRfqDetails(rfqId)}>
+            <Heading size="h2">{routeData?.rfqSummary?.rfqId}</Heading>
+          </Link>
           <Badge variant="secondary">
             <RiProgress2Line />
           </Badge>

@@ -43,7 +43,9 @@ const QuoteHeader = () => {
       <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
         <HStack className="w-full justify-between">
           <HStack>
-            <Heading size="h2">{routeData?.quote?.quoteId}</Heading>
+            <Link to={path.to.quoteDetails(quoteId)}>
+              <Heading size="h2">{routeData?.quote?.quoteId}</Heading>
+            </Link>
             <Badge variant="secondary">
               <Badge variant="secondary">
                 <RiProgress4Line />
