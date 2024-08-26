@@ -28,6 +28,7 @@ export type Costs = {
   laborCost: number;
   laborHours: number;
   machineHours: number;
+  machineCost: number;
   materialCost: number;
   overheadCost: number;
   outsideCost: number;
@@ -43,6 +44,7 @@ export type CostEffects = {
   laborCost: QuantityEffect[];
   laborHours: QuantityEffect[];
   machineHours: QuantityEffect[];
+  machineCost: QuantityEffect[];
   materialCost: QuantityEffect[];
   outsideCost: QuantityEffect[];
   overheadCost: QuantityEffect[];

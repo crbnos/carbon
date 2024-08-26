@@ -689,8 +689,6 @@ serve(async (req: Request) => {
 
         let quoteMethodTree: QuoteMethodTreeItem | null = null;
 
-        console.log({ quoteMakeMethodId, fullQuoteMethodTree });
-
         traverseQuoteMethod(
           fullQuoteMethodTree,
           (node: QuoteMethodTreeItem) => {
@@ -1017,11 +1015,12 @@ const getRatesFromWorkCenters =
   (
     processId: string,
     workCenterId: string | null
-  ): { overheadRate: number; laborRate: number } => {
+  ): { overheadRate: number; laborRate: number; machineRate: number } => {
     if (!workCenters) {
       return {
-        overheadRate: 0,
         laborRate: 0,
+        machineRate: 0,
+        overheadRate: 0,
       };
     }
 
@@ -1032,8 +1031,9 @@ const getRatesFromWorkCenters =
 
       if (workCenter) {
         return {
-          overheadRate: workCenter.overheadRate ?? 0,
           laborRate: workCenter.laborRate ?? 0,
+          machineRate: workCenter.machineRate ?? 0,
+          overheadRate: workCenter.overheadRate ?? 0,
         };
       }
     }
@@ -1044,24 +1044,32 @@ const getRatesFromWorkCenters =
     });
 
     if (relatedWorkCenters.length > 0) {
-      const overheadRate =
-        relatedWorkCenters.reduce((acc, workCenter) => {
-          return (acc += workCenter.overheadRate ?? 0);
-        }, 0) / relatedWorkCenters.length;
       const laborRate =
         relatedWorkCenters.reduce((acc, workCenter) => {
           return (acc += workCenter.laborRate ?? 0);
         }, 0) / relatedWorkCenters.length;
 
+      const machineRate =
+        relatedWorkCenters.reduce((acc, workCenter) => {
+          return (acc += workCenter.machineRate ?? 0);
+        }, 0) / relatedWorkCenters.length;
+
+      const overheadRate =
+        relatedWorkCenters.reduce((acc, workCenter) => {
+          return (acc += workCenter.overheadRate ?? 0);
+        }, 0) / relatedWorkCenters.length;
+
       return {
-        overheadRate,
         laborRate,
+        machineRate,
+        overheadRate,
       };
     }
 
     return {
-      overheadRate: 0,
       laborRate: 0,
+      machineRate: 0,
+      overheadRate: 0,
     };
   };
 

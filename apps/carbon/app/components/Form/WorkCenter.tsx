@@ -50,6 +50,7 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
             overheadRate: 0,
             laborRate: 0,
             locationId: props?.locationId ?? defaults?.locationId ?? "",
+            machineRate: 0,
             processes: props?.processId ? [props.processId] : [],
             defaultStandardFactor: "Minutes/Piece" as "Total Hours",
           }}

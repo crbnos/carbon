@@ -112,6 +112,7 @@ const initialOperation: Omit<Operation, "quoteMakeMethodId" | "order"> = {
   laborRate: 0,
   laborTime: 0,
   laborUnit: "Minutes/Piece",
+  machineRate: 0,
   machineTime: 0,
   machineUnit: "Minutes/Piece",
   operationUnitCost: 0,
@@ -196,7 +197,7 @@ const QuoteBillOfProcess = ({
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
 
     const response = await supabase
-      ?.from("methodOperation")
+      ?.from("quoteOperation")
       .delete()
       .eq("id", id);
     if (response?.error) {
@@ -570,6 +571,7 @@ function OperationForm({
     laborRate: number;
     laborUnit: string;
     laborUnitHint: string;
+    machineRate: number;
     machineUnit: string;
     machineUnitHint: string;
     operationMinimumCost: number;
@@ -585,6 +587,7 @@ function OperationForm({
     laborRate: item.data.laborRate ?? 0,
     laborUnit: item.data.laborUnit ?? "Hours/Piece",
     laborUnitHint: getUnitHint(item.data.laborUnit),
+    machineRate: item.data.machineRate ?? 0,
     machineUnit: item.data.machineUnit ?? "Hours/Piece",
     machineUnitHint: getUnitHint(item.data.machineUnit),
     operationMinimumCost: item.data.operationMinimumCost ?? 0,
@@ -620,8 +623,6 @@ function OperationForm({
       description: process.data?.name ?? "",
       laborUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
       laborUnitHint: getUnitHint(process.data?.defaultStandardFactor),
-      machineUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
-      machineUnitHint: getUnitHint(process.data?.defaultStandardFactor),
       laborRate:
         // get the average labor rate from the work centers
         activeWorkCenters.length
@@ -629,12 +630,21 @@ function OperationForm({
               return (acc += workCenter.workCenter?.laborRate ?? 0);
             }, 0) / activeWorkCenters.length
           : p.laborRate,
+      machineUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
+      machineUnitHint: getUnitHint(process.data?.defaultStandardFactor),
+      machineRate:
+        // get the average labor rate from the work centers
+        activeWorkCenters.length
+          ? activeWorkCenters.reduce((acc, workCenter) => {
+              return (acc += workCenter.workCenter?.machineRate ?? 0);
+            }, 0) / activeWorkCenters.length
+          : p.machineRate,
       // get the average quoting rate from the work centers
       overheadRate: activeWorkCenters.length
         ? activeWorkCenters?.reduce((acc, workCenter) => {
             return (acc += workCenter.workCenter?.overheadRate ?? 0);
           }, 0) / activeWorkCenters.length
-        : p.laborRate,
+        : p.overheadRate,
       operationMinimumCost:
         supplierProcesses.data && supplierProcesses.data.length > 0
           ? supplierProcesses.data.reduce((acc, sp) => {
@@ -676,12 +686,13 @@ function OperationForm({
 
     setProcessData((d) => ({
       ...d,
+      laborRate: data?.laborRate ?? 0,
       laborUnit: data?.defaultStandardFactor ?? "Hours/Piece",
       laborUnitHint: getUnitHint(data?.defaultStandardFactor),
+      machineRate: data?.machineRate ?? 0,
       machineUnit: data?.defaultStandardFactor ?? "Hours/Piece",
       machineUnitHint: getUnitHint(data?.defaultStandardFactor),
       overheadRate: data?.overheadRate ?? 0,
-      laborRate: data?.laborRate ?? 0,
     }));
   };
 
@@ -934,22 +945,6 @@ function OperationForm({
             />
 
             <NumberControlled
-              name="overheadRate"
-              label="Overhead Rate"
-              minValue={0}
-              value={processData.overheadRate}
-              formatOptions={{
-                style: "currency",
-                currency: "USD",
-              }}
-              onChange={(newValue) =>
-                setProcessData((d) => ({
-                  ...d,
-                  overheadRate: newValue,
-                }))
-              }
-            />
-            <NumberControlled
               name="laborRate"
               label="Labor Rate"
               minValue={0}
@@ -962,6 +957,38 @@ function OperationForm({
                 setProcessData((d) => ({
                   ...d,
                   laborRate: newValue,
+                }))
+              }
+            />
+            <NumberControlled
+              name="machineRate"
+              label="Machine Rate"
+              minValue={0}
+              value={processData.machineRate}
+              formatOptions={{
+                style: "currency",
+                currency: "USD",
+              }}
+              onChange={(newValue) =>
+                setProcessData((d) => ({
+                  ...d,
+                  machineRate: newValue,
+                }))
+              }
+            />
+            <NumberControlled
+              name="overheadRate"
+              label="Overhead Rate"
+              minValue={0}
+              value={processData.overheadRate}
+              formatOptions={{
+                style: "currency",
+                currency: "USD",
+              }}
+              onChange={(newValue) =>
+                setProcessData((d) => ({
+                  ...d,
+                  overheadRate: newValue,
                 }))
               }
             />

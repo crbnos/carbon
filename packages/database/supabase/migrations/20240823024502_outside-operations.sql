@@ -12,8 +12,8 @@ COMMIT;
 
 ALTER TABLE "workCenter"
   DROP COLUMN "quotingRate" CASCADE,
+  ADD COLUMN "machineRate" NUMERIC(10,4) NOT NULL DEFAULT 0,
   ADD COLUMN "overheadRate" NUMERIC(10,4) NOT NULL DEFAULT 0;
-
 
 
 CREATE TABLE "supplierProcess" (
@@ -92,13 +92,13 @@ CREATE VIEW "supplierProcesses" WITH(SECURITY_INVOKER=true) AS
 
 
 ALTER TABLE "methodOperation"
-  ADD COLUMN "overheadRate" NUMERIC(10,4) NOT NULL DEFAULT 0,
   ADD COLUMN "operationType" "operationType" NOT NULL DEFAULT 'Inside',
   ADD COLUMN "operationSupplierProcessId" TEXT,
   ADD CONSTRAINT "quoteOperation_operationSupplierProcessId_fkey" FOREIGN KEY ("operationSupplierProcessId") REFERENCES "supplierProcess" ("id") ON DELETE SET NULL;;
 
 
 ALTER TABLE "quoteOperation"
+  ADD COLUMN "machineRate" NUMERIC(10,4),
   ADD COLUMN "operationType" "operationType" NOT NULL DEFAULT 'Inside',
   ADD COLUMN "operationMinimumCost" NUMERIC(10,4) NOT NULL DEFAULT 0,
   ADD COLUMN "operationLeadTime" NUMERIC(10,4) NOT NULL DEFAULT 0,

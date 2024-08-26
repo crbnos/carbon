@@ -64,7 +64,7 @@ const CustomerForm = ({
     <div>
       <ModalCardProvider type={type}>
         <ModalCard onClose={onClose}>
-          <ModalCardContent>
+          <ModalCardContent size="medium">
             <ValidatedForm
               method="post"
               action={isEditing ? undefined : path.to.newCustomer}

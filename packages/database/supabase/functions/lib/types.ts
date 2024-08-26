@@ -7912,7 +7912,6 @@ export type Database = {
           operationSupplierProcessId: string | null
           operationType: Database["public"]["Enums"]["operationType"]
           order: number
-          overheadRate: number
           processId: string
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
@@ -7936,7 +7935,6 @@ export type Database = {
           operationSupplierProcessId?: string | null
           operationType?: Database["public"]["Enums"]["operationType"]
           order?: number
-          overheadRate?: number
           processId: string
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
@@ -7960,7 +7958,6 @@ export type Database = {
           operationSupplierProcessId?: string | null
           operationType?: Database["public"]["Enums"]["operationType"]
           order?: number
-          overheadRate?: number
           processId?: string
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
@@ -13476,6 +13473,7 @@ export type Database = {
           laborRate: number
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
+          machineRate: number | null
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           operationLeadTime: number
@@ -13507,6 +13505,7 @@ export type Database = {
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
+          machineRate?: number | null
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           operationLeadTime?: number
@@ -13538,6 +13537,7 @@ export type Database = {
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
+          machineRate?: number | null
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           operationLeadTime?: number
@@ -19669,6 +19669,7 @@ export type Database = {
           id: string
           laborRate: number
           locationId: string | null
+          machineRate: number
           name: string
           overheadRate: number
           requiredAbilityId: string | null
@@ -19686,6 +19687,7 @@ export type Database = {
           id?: string
           laborRate?: number
           locationId?: string | null
+          machineRate?: number
           name: string
           overheadRate?: number
           requiredAbilityId?: string | null
@@ -19703,6 +19705,7 @@ export type Database = {
           id?: string
           laborRate?: number
           locationId?: string | null
+          machineRate?: number
           name?: string
           overheadRate?: number
           requiredAbilityId?: string | null
@@ -23607,6 +23610,7 @@ export type Database = {
           laborRate: number | null
           laborTime: number | null
           laborUnit: Database["public"]["Enums"]["factor"] | null
+          machineRate: number | null
           machineTime: number | null
           machineUnit: Database["public"]["Enums"]["factor"] | null
           makeMethodId: string | null
@@ -26335,6 +26339,7 @@ export type Database = {
           laborRate: number | null
           locationId: string | null
           locationName: string | null
+          machineRate: number | null
           name: string | null
           overheadRate: number | null
           processes: Json | null

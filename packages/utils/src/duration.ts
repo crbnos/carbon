@@ -26,6 +26,13 @@ export function formatDuration(
 const aboveOneSecondUnits = ["d", "h", "m", "s"] as Unit[];
 const belowOneSecondUnits = ["ms"] as Unit[];
 
+export function formatDurationHours(
+  hours: number,
+  options?: DurationOptions
+): string {
+  return formatDurationMilliseconds(hours * 1000 * 60 * 60, options);
+}
+
 export function formatDurationMilliseconds(
   milliseconds: number,
   options?: DurationOptions

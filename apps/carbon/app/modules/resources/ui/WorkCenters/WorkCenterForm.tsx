@@ -104,17 +104,26 @@ const WorkCenterForm = ({
                 )}
                 <TextArea name="description" label="Description" />
                 <Location name="locationId" label="Location" />
+
                 <Number
-                  name="overheadRate"
-                  label="Overhead Rate"
+                  name="laborRate"
+                  label="Labor Rate"
                   formatOptions={{
                     style: "currency",
                     currency: "USD",
                   }}
                 />
                 <Number
-                  name="laborRate"
-                  label="Labor Rate"
+                  name="machineRate"
+                  label="Machine Rate"
+                  formatOptions={{
+                    style: "currency",
+                    currency: "USD",
+                  }}
+                />
+                <Number
+                  name="overheadRate"
+                  label="Overhead Rate"
                   formatOptions={{
                     style: "currency",
                     currency: "USD",

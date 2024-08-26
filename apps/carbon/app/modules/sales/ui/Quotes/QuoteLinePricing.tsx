@@ -174,14 +174,15 @@ const QuoteLinePricing = ({
   const unitCostsByQuantity = quantities.map((quantity, index) => {
     const costs = getLineCosts(quantity);
     const totalCost =
-      (costs.materialCost +
-        costs.partCost +
-        costs.toolCost +
+      (costs.consumableCost +
         costs.fixtureCost +
-        costs.consumableCost +
-        costs.serviceCost +
         costs.laborCost +
+        costs.machineCost +
+        costs.materialCost +
         costs.overheadCost +
+        costs.partCost +
+        costs.serviceCost +
+        costs.toolCost +
         costs.outsideCost) /
       quantity;
     return totalCost;

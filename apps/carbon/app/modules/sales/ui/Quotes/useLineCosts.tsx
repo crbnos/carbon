@@ -13,6 +13,7 @@ const defaultEffects: CostEffects = {
   fixtureCost: [],
   laborCost: [],
   laborHours: [],
+  machineCost: [],
   machineHours: [],
   materialCost: [],
   outsideCost: [],
@@ -180,11 +181,10 @@ export function useLineCosts({
             });
           }
 
-          let laborHoursPerUnit = 0;
-          let machineHoursPerUnit = 0;
-
           let laborFixedHours = 0;
+          let laborHoursPerUnit = 0;
           let machineFixedHours = 0;
+          let machineHoursPerUnit = 0;
 
           if (operation.laborTime) {
             // normalize production standard to hours
@@ -231,6 +231,16 @@ export function useLineCosts({
             effects.laborHours.push((quantity) => {
               return (
                 laborHoursPerUnit * quantity * data.quantity + laborFixedHours
+              );
+            });
+
+            effects.laborCost.push((quantity) => {
+              return (
+                laborHoursPerUnit *
+                  quantity *
+                  data.quantity *
+                  (operation.laborRate ?? 0) +
+                laborFixedHours * (operation.laborRate ?? 0)
               );
             });
           }
@@ -283,29 +293,32 @@ export function useLineCosts({
                 machineFixedHours
               );
             });
-          }
 
-          effects.laborCost.push((quantity) => {
-            return (
-              laborHoursPerUnit *
-                quantity *
-                data.quantity *
-                (operation.laborRate ?? 0) +
-              laborFixedHours * (operation.laborRate ?? 0)
-            );
-          });
+            effects.machineCost.push((quantity) => {
+              return (
+                machineHoursPerUnit *
+                  quantity *
+                  data.quantity *
+                  (operation.machineRate ?? 0) +
+                machineFixedHours * (operation.machineRate ?? 0)
+              );
+            });
+          }
 
           const hoursPerUnit = Math.max(laborHoursPerUnit, machineHoursPerUnit);
           const fixedHours = Math.max(laborFixedHours, machineFixedHours);
 
           effects.overheadCost.push((quantity) => {
-            return (
-              hoursPerUnit *
+            if (hoursPerUnit * quantity * data.quantity > fixedHours) {
+              return (
+                hoursPerUnit *
                 quantity *
                 data.quantity *
-                (operation.overheadRate ?? 0) +
-              fixedHours * (operation.overheadRate ?? 0)
-            );
+                (operation.overheadRate ?? 0)
+              );
+            } else {
+              return fixedHours * (operation.overheadRate ?? 0);
+            }
           });
         } else if (operation.operationType === "Outside") {
           effects.outsideCost.push((quantity) => {
@@ -389,24 +402,30 @@ export function useLineCosts({
         0
       );
 
+      const machineCost = costEffects.machineCost.reduce(
+        (acc, effect) => acc + effect(quantity),
+        0
+      );
+
       const machineHours = costEffects.machineHours.reduce(
         (acc, effect) => acc + effect(quantity),
         0
       );
 
       return {
-        materialCost,
-        partCost,
-        toolCost,
-        fixtureCost,
         consumableCost,
-        serviceCost,
+        fixtureCost,
         laborCost,
-        overheadCost,
-        outsideCost,
-        setupHours,
         laborHours,
+        machineCost,
         machineHours,
+        materialCost,
+        outsideCost,
+        overheadCost,
+        partCost,
+        serviceCost,
+        setupHours,
+        toolCost,
       };
     },
     [costEffects]
