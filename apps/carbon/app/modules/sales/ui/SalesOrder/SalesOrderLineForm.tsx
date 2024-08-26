@@ -1,18 +1,29 @@
 import {
-  Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
+  CardAction,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
+  IconButton,
+  ModalCard,
+  ModalCardBody,
+  ModalCardContent,
+  ModalCardDescription,
+  ModalCardFooter,
+  ModalCardHeader,
+  ModalCardProvider,
+  ModalCardTitle,
+  useDisclosure,
   VStack,
 } from "@carbon/react";
 
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useFetcher, useNavigate, useParams } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import {
   ComboboxControlled,
@@ -27,19 +38,29 @@ import {
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { getShelvesList } from "~/modules/items";
-import type { SalesOrder, SalesOrderLineType } from "~/modules/sales";
+import type {
+  SalesOrder,
+  SalesOrderLine,
+  SalesOrderLineType,
+} from "~/modules/sales";
 import { salesOrderLineType, salesOrderLineValidator } from "~/modules/sales";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator>;
+  type?: "card" | "modal";
+  onClose?: () => void;
 };
 
-const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
+const SalesOrderLineForm = ({
+  initialValues,
+  type,
+  onClose,
+}: SalesOrderLineFormProps) => {
   const permissions = usePermissions();
   const { supabase } = useSupabase();
-  const navigate = useNavigate();
   const { company, defaults } = useUser();
   const { orderId } = useParams();
 
@@ -60,7 +81,7 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
     routeData?.salesOrder?.status ?? ""
   );
 
-  const [type, setType] = useState(initialValues.salesOrderLineType);
+  const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
@@ -97,22 +118,20 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
   );
 
   const isEditing = initialValues.id !== undefined;
-  const isDisabled = !isEditable
-    ? true
-    : isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+  // const isDisabled = !isEditable
+  //   ? true
+  //   : isEditing
+  //   ? !permissions.can("update", "sales")
+  //   : !permissions.can("create", "sales");
 
   const salesOrderLineTypeOptions = salesOrderLineType.map((type) => ({
     label: type,
     value: type,
   }));
 
-  const onClose = () => navigate(-1);
-
-  const onTypeChange = (type: SalesOrderLineType) => {
+  const onTypeChange = (t: SalesOrderLineType) => {
     // @ts-ignore
-    setType(type);
+    setLineType(t);
     setItemData({
       itemId: "",
       itemReadableId: "",
@@ -179,135 +198,186 @@ const SalesOrderLineForm = ({ initialValues }: SalesOrderLineFormProps) => {
     }));
   };
 
+  const deleteDisclosure = useDisclosure();
+
   return (
-    <Drawer
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <DrawerContent>
-        <ValidatedForm
-          defaultValues={initialValues}
-          validator={salesOrderLineValidator}
-          method="post"
-          action={
-            isEditing
-              ? path.to.salesOrderLine(orderId, initialValues.id!)
-              : path.to.newSalesOrderLine(orderId)
-          }
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <DrawerTitle>
-              {isEditing ? "Edit" : "New"} Sales Order Line
-            </DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            <Hidden name="id" />
-            <Hidden name="salesOrderId" />
-            <Hidden name="itemReadableId" value={itemData?.itemReadableId} />
-            <Hidden name="description" value={itemData?.description} />
-            <VStack spacing={4}>
-              <Select
-                name="salesOrderLineType"
-                label="Type"
-                options={salesOrderLineTypeOptions}
-                onChange={(value) => {
-                  onTypeChange(value?.value as SalesOrderLineType);
-                }}
-              />
-
-              {[
-                "Part",
-                "Material",
-                "Service",
-                "Tool",
-                "Fixture",
-                "Consumable",
-              ].includes(type) && (
-                <Item
-                  name="itemId"
-                  label={type}
-                  // @ts-ignore
-                  type={type}
-                  onChange={(value) => {
-                    onChange(value?.value as string);
-                  }}
+    <>
+      <ModalCardProvider type={type}>
+        <ModalCard onClose={onClose}>
+          <ModalCardContent>
+            <ValidatedForm
+              defaultValues={initialValues}
+              validator={salesOrderLineValidator}
+              method="post"
+              action={
+                isEditing
+                  ? path.to.salesOrderLine(orderId, initialValues.id!)
+                  : path.to.newSalesOrderLine(orderId)
+              }
+              className="w-full"
+              onSubmit={() => {
+                if (type === "modal") onClose?.();
+              }}
+            >
+              <HStack className="w-full justify-between items-start">
+                <ModalCardHeader>
+                  <ModalCardTitle>
+                    {isEditing
+                      ? itemData?.itemReadableId ?? "Sales Order Line"
+                      : "New Sales Order Line"}
+                  </ModalCardTitle>
+                  <ModalCardDescription>
+                    {isEditing
+                      ? itemData?.description
+                      : "A sales order line contains order details for a particular item"}
+                  </ModalCardDescription>
+                </ModalCardHeader>
+                {isEditing && permissions.can("update", "sales") && (
+                  <CardAction>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <IconButton
+                          icon={<BsThreeDotsVertical />}
+                          aria-label="More"
+                          variant="secondary"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={deleteDisclosure.onOpen}>
+                          <DropdownMenuIcon icon={<LuTrash />} />
+                          Delete Line
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardAction>
+                )}
+              </HStack>
+              <ModalCardBody>
+                <Hidden name="id" />
+                <Hidden name="salesOrderId" />
+                <Hidden
+                  name="itemReadableId"
+                  value={itemData?.itemReadableId}
                 />
-              )}
-
-              {type !== "Comment" && (
-                <>
-                  <Number name="saleQuantity" label="Quantity" />
-                  {/* 
-                // TODO: implement this and replace the UoM in PartForm */}
-                  {/* <UnitOfMeasure name="unitOfMeasureCode" label="Unit of Measure" value={uom} /> */}
-                  <NumberControlled
-                    name="unitPrice"
-                    label="Unit Price"
-                    value={itemData.unitPrice}
-                    onChange={(value) =>
-                      setItemData((d) => ({
-                        ...d,
-                        unitPrice: value,
-                      }))
-                    }
-                  />
-                  {[
-                    "Part",
-                    "Material",
-                    "Service",
-                    "Tool",
-                    "Fixture",
-                    "Consumable",
-                  ].includes(type) && (
-                    <ComboboxControlled
-                      name="locationId"
-                      label="Location"
-                      options={locationOptions}
-                      value={locationId}
-                      onChange={onLocationChange}
-                    />
-                  )}
-                  {[
-                    "Part",
-                    "Material",
-                    "Tool",
-                    "Fixture",
-                    "Consumable",
-                  ].includes(type) && (
-                    <ComboboxControlled
-                      name="shelfId"
-                      label="Shelf"
-                      options={shelfOptions}
-                      value={itemData.shelfId}
-                      onChange={(newValue) => {
-                        if (newValue) {
-                          setItemData((d) => ({
-                            ...d,
-                            shelfId: newValue?.value as string,
-                          }));
-                        }
+                <Hidden name="unitOfMeasureCode" value={itemData?.uom} />
+                <Hidden
+                  name="modelUploadId"
+                  value={itemData?.modelUploadId ?? undefined}
+                />
+                <VStack>
+                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                    <Select
+                      name="salesOrderLineType"
+                      label="Type"
+                      options={salesOrderLineTypeOptions}
+                      onChange={(value) => {
+                        onTypeChange(value?.value as SalesOrderLineType);
                       }}
                     />
-                  )}
-                </>
-              )}
-              <CustomFormFields table="salesOrderLine" />
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <HStack>
-              <Submit isDisabled={isDisabled}>Save</Submit>
-              <Button size="md" variant="solid" onClick={onClose}>
-                Cancel
-              </Button>
-            </HStack>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+
+                    {[
+                      "Part",
+                      "Material",
+                      "Service",
+                      "Tool",
+                      "Fixture",
+                      "Consumable",
+                    ].includes(lineType) && (
+                      <Item
+                        name="itemId"
+                        label={lineType}
+                        // @ts-ignore
+                        type={lineType}
+                        onChange={(value) => {
+                          onChange(value?.value as string);
+                        }}
+                      />
+                    )}
+
+                    {lineType !== "Comment" && (
+                      <>
+                        <Number name="saleQuantity" label="Quantity" />
+                        {/* 
+                // TODO: implement this and replace the UoM in PartForm */}
+                        {/* <UnitOfMeasure name="unitOfMeasureCode" label="Unit of Measure" value={uom} /> */}
+                        <NumberControlled
+                          name="unitPrice"
+                          label="Unit Price"
+                          value={itemData.unitPrice}
+                          onChange={(value) =>
+                            setItemData((d) => ({
+                              ...d,
+                              unitPrice: value,
+                            }))
+                          }
+                        />
+                        {[
+                          "Part",
+                          "Material",
+                          "Service",
+                          "Tool",
+                          "Fixture",
+                          "Consumable",
+                        ].includes(lineType) && (
+                          <ComboboxControlled
+                            name="locationId"
+                            label="Location"
+                            options={locationOptions}
+                            value={locationId}
+                            onChange={onLocationChange}
+                          />
+                        )}
+                        {[
+                          "Part",
+                          "Material",
+                          "Tool",
+                          "Fixture",
+                          "Consumable",
+                        ].includes(lineType) && (
+                          <ComboboxControlled
+                            name="shelfId"
+                            label="Shelf"
+                            options={shelfOptions}
+                            value={itemData.shelfId}
+                            onChange={(newValue) => {
+                              if (newValue) {
+                                setItemData((d) => ({
+                                  ...d,
+                                  shelfId: newValue?.value as string,
+                                }));
+                              }
+                            }}
+                          />
+                        )}
+                      </>
+                    )}
+                    <CustomFormFields table="salesOrderLine" />
+                  </div>
+                </VStack>
+              </ModalCardBody>
+              <ModalCardFooter>
+                <Submit
+                  isDisabled={
+                    !isEditable ||
+                    (isEditing
+                      ? !permissions.can("update", "sales")
+                      : !permissions.can("create", "sales"))
+                  }
+                >
+                  Save
+                </Submit>
+              </ModalCardFooter>
+            </ValidatedForm>
+          </ModalCardContent>
+        </ModalCard>
+      </ModalCardProvider>
+      {isEditing && deleteDisclosure.isOpen && (
+        <DeleteSalesOrderLine
+          line={initialValues as SalesOrderLine}
+          onCancel={deleteDisclosure.onClose}
+        />
+      )}
+    </>
   );
 };
 

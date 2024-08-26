@@ -1,50 +1,25 @@
-import {
-  Card,
-  CardAction,
-  CardAttribute,
-  CardAttributeLabel,
-  CardAttributeValue,
-  CardAttributes,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  HStack,
-  VStack,
-} from "@carbon/react";
-import { formatDate } from "@carbon/utils";
-import { useLocale } from "@react-aria/i18n";
-import { useParams } from "@remix-run/react";
-import { useMemo } from "react";
+import { Badge, Button, HStack, Heading } from "@carbon/react";
+
+import { Link, useParams } from "@remix-run/react";
+import { LuEye, LuFile, LuTruck, LuXCircle } from "react-icons/lu";
+import { RiProgress8Line } from "react-icons/ri";
 import { Assignee, useOptimisticAssignment } from "~/components";
+
 import { usePermissions, useRouteData } from "~/hooks";
-import type { SalesOrder } from "~/modules/sales";
-import { SalesStatus, useSalesOrderTotals } from "~/modules/sales";
-import { useCustomers } from "~/stores";
+import type { SalesOrder, SalesOrderLine } from "~/modules/sales";
 import { path } from "~/utils/path";
-// import { useSalesOrder } from "../SalesOrders/useSalesOrder";
+
+import SalesStatus from "./SalesStatus";
 
 const SalesOrderHeader = () => {
   const permissions = usePermissions();
   const { orderId } = useParams();
-  if (!orderId) throw new Error("Could not find orderId");
+  if (!orderId) throw new Error("orderId not found");
 
-  const routeData = useRouteData<{ salesOrder: SalesOrder }>(
-    path.to.salesOrder(orderId)
-  );
-
-  if (!routeData?.salesOrder) throw new Error("salesOrder not found");
-
-  const [salesOrderTotals] = useSalesOrderTotals();
-
-  const { locale } = useLocale();
-  // TODO: factor in default currency, po currency and exchange rate
-  const formatter = useMemo(
-    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
-    [locale]
-  );
-
-  //const { receive, invoice } = useSalesOrder();
+  const routeData = useRouteData<{
+    salesOrder: SalesOrder;
+    lines: SalesOrderLine[];
+  }>(path.to.salesOrder(orderId));
 
   const optimisticAssignment = useOptimisticAssignment({
     id: orderId,
@@ -55,73 +30,51 @@ const SalesOrderHeader = () => {
       ? optimisticAssignment
       : routeData?.salesOrder?.assignee;
 
-  const [customers] = useCustomers();
-  const customer = customers.find(
-    (c) => c.id === routeData.salesOrder?.customerId
-  );
-
   return (
     <>
-      <VStack>
-        {/* Menubar */}
-        <Card>
-          <HStack className="justify-between items-start">
-            <CardHeader>
-              <CardTitle>{routeData?.salesOrder?.salesOrderId}</CardTitle>
-              <CardDescription>
-                {customer ? customer.name : "-"}
-              </CardDescription>
-            </CardHeader>
-            <CardAction>
-              {/* <Button
-                variant="secondary"
-                onClick={() => alert("TODO")}
-                leftIcon={<FaHistory />}
-              >
-                Customer Details
-              </Button> */}
-            </CardAction>
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
+        <HStack className="w-full justify-between">
+          <HStack>
+            <Link to={path.to.salesOrderDetails(orderId)}>
+              <Heading size="h2">{routeData?.salesOrder?.salesOrderId}</Heading>
+            </Link>
+            <Badge variant="secondary">
+              <Badge variant="secondary">
+                <RiProgress8Line />
+              </Badge>
+            </Badge>
+            <SalesStatus status={routeData?.salesOrder?.status} />
           </HStack>
-          <CardContent>
-            <CardAttributes>
-              <CardAttribute>
-                <CardAttributeLabel>Assignee</CardAttributeLabel>
-                <CardAttributeValue>
-                  <Assignee
-                    id={orderId}
-                    table="salesOrder"
-                    value={assignee ?? undefined}
-                    isReadOnly={!permissions.can("update", "sales")}
-                  />
-                </CardAttributeValue>
-              </CardAttribute>
+          <HStack>
+            <Assignee
+              id={orderId}
+              table="salesOrder"
+              value={assignee ?? ""}
+              className="h-8"
+              isReadOnly={!permissions.can("update", "sales")}
+            />
+            <Button leftIcon={<LuEye />} variant="secondary" asChild>
+              <a
+                target="_blank"
+                href={path.to.file.salesOrder(orderId)}
+                rel="noreferrer"
+              >
+                Preview
+              </a>
+            </Button>
+            <Button variant="secondary" isDisabled leftIcon={<LuTruck />}>
+              Ship
+            </Button>
 
-              <CardAttribute>
-                <CardAttributeLabel>Order Date</CardAttributeLabel>
-                <CardAttributeValue>
-                  {formatDate(routeData?.salesOrder?.orderDate)}
-                </CardAttributeValue>
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Status</CardAttributeLabel>
-                <SalesStatus status={routeData?.salesOrder?.status} />
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Total</CardAttributeLabel>
-                <CardAttributeValue>
-                  {formatter.format(salesOrderTotals?.total ?? 0)}
-                </CardAttributeValue>
-              </CardAttribute>
-            </CardAttributes>
-          </CardContent>
-        </Card>
-      </VStack>
-      {/*releaseDisclosure.isOpen && (
-        <SalesOrderReleaseModal
-          salesOrder={routeData?.salesOrder}
-          onClose={releaseDisclosure.onClose}
-        />
-      )*/}
+            <Button variant="secondary" isDisabled leftIcon={<LuFile />}>
+              Invoice
+            </Button>
+            <Button variant="secondary" isDisabled leftIcon={<LuXCircle />}>
+              Cancel
+            </Button>
+          </HStack>
+        </HStack>
+      </div>
     </>
   );
 };

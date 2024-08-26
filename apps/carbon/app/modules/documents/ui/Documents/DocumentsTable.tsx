@@ -172,7 +172,7 @@ const DocumentsTable = memo(
             <HStack>
               {row.original.favorite ? (
                 <LuPin
-                  className="cursor-pointer w-4 h-4 outline-primary/50 fill-yellow-400 flex-shrink-0"
+                  className="cursor-pointer w-4 h-4 outline-yellow-400 fill-yellow-400 flex-shrink-0"
                   onClick={() => onFavorite(row.original)}
                 />
               ) : (

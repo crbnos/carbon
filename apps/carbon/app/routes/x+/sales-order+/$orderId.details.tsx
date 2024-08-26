@@ -82,6 +82,8 @@ export default function SalesOrderBasicRoute() {
   };
 
   return (
-    <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
+    <>
+      <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
+    </>
   );
 }
