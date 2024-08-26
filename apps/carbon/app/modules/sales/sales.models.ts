@@ -285,6 +285,7 @@ export const quoteOperationValidator = z
       })
       .optional(),
     machineTime: zfd.numeric(z.number().min(0).optional()),
+    machineRate: zfd.numeric(z.number().min(0).optional()),
     overheadRate: zfd.numeric(z.number().min(0).optional()),
     laborRate: zfd.numeric(z.number().min(0).optional()),
     operationSupplierProcessId: zfd.text(z.string().optional()),
@@ -398,6 +399,18 @@ export const quoteOperationValidator = z
     {
       message: "Machine time is required",
       path: ["machineTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return Number.isFinite(data.machineTime);
+      }
+      return true;
+    },
+    {
+      message: "Machine rate is required",
+      path: ["machineRate"],
     }
   )
   .refine(

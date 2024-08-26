@@ -124,6 +124,7 @@ export const workCenterValidator = z.object({
   }),
   laborRate: zfd.numeric(z.number().min(0)),
   locationId: z.string().min(20, { message: "Location is required" }),
+  machineRate: zfd.numeric(z.number().min(0)),
   overheadRate: zfd.numeric(z.number().min(0)),
   processes: z
     .array(z.string().min(20, { message: "Invalid process" }))

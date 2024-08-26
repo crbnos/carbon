@@ -21,10 +21,11 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
+import { formatDurationHours } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
 import { useMemo } from "react";
-import { LuInfo } from "react-icons/lu";
+import { LuClock, LuInfo } from "react-icons/lu";
 import { MethodItemTypeIcon, TimeTypeIcon } from "~/modules/shared";
 import type { Costs } from "../../types";
 
@@ -306,22 +307,20 @@ const QuoteLineCosting = ({
             <Tr>
               <Td className="border-r border-border ">
                 <HStack className="w-full justify-between ">
-                  <span>Total Labor Cost</span>
-                  <Enumerable value="Labor" />
+                  <span>Total Direct Cost</span>
+                  <Enumerable value="Direct" />
                 </HStack>
               </Td>
               {quantityCosts.map(({ quantity, costs }, index) => {
+                const totalDirectCost =
+                  (costs.laborCost ?? 0) + (costs.machineCost ?? 0);
                 return (
                   <Td key={quantity.toString()}>
                     <VStack spacing={0}>
-                      <span>
-                        {costs.laborCost
-                          ? formatter.format(costs.laborCost)
-                          : formatter.format(0)}
-                      </span>
+                      <span>{formatter.format(totalDirectCost)}</span>
                       <span className="text-muted-foreground text-xs">
-                        {costs.laborCost && quantity > 0
-                          ? formatter.format(costs.laborCost / quantity)
+                        {totalDirectCost && quantity > 0
+                          ? formatter.format(totalDirectCost / quantity)
                           : formatter.format(0)}
                       </span>
                     </VStack>
@@ -329,10 +328,130 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
+
+            {detailsDisclosure.isOpen && (
+              <>
+                <Tr>
+                  <Td className="border-r border-border pl-10 ">
+                    <HStack className="w-full justify-between ">
+                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
+                        Labor Costs
+                      </span>
+                      <Badge variant="secondary">
+                        <TimeTypeIcon type="Labor" />
+                      </Badge>
+                    </HStack>
+                  </Td>
+                  {quantityCosts.map(({ quantity, costs }) => {
+                    return (
+                      <Td key={quantity.toString()}>
+                        <VStack spacing={0}>
+                          <span>
+                            {costs.laborCost
+                              ? formatter.format(costs.laborCost)
+                              : formatter.format(0)}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {costs.laborCost && quantity > 0
+                              ? formatter.format(costs.laborCost / quantity)
+                              : formatter.format(0)}
+                          </span>
+                        </VStack>
+                      </Td>
+                    );
+                  })}
+                </Tr>
+                <Tr>
+                  <Td className="border-r border-border pl-14 ">
+                    <HStack className="w-full justify-between ">
+                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
+                        Labor Hours
+                      </span>
+                      <Badge variant="secondary">
+                        <LuClock />
+                      </Badge>
+                    </HStack>
+                  </Td>
+                  {quantityCosts.map(({ quantity, costs }) => {
+                    const laborHours =
+                      (costs.laborHours ?? 0) + (costs.setupHours ?? 0);
+                    return (
+                      <Td key={quantity.toString()}>
+                        <VStack spacing={0}>
+                          <span>{formatDurationHours(laborHours)}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {laborHours && quantity > 0
+                              ? formatDurationHours(laborHours / quantity)
+                              : formatDurationHours(0)}
+                          </span>
+                        </VStack>
+                      </Td>
+                    );
+                  })}
+                </Tr>
+                <Tr>
+                  <Td className="border-r border-border pl-10 ">
+                    <HStack className="w-full justify-between ">
+                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
+                        Machine Costs
+                      </span>
+                      <Badge variant="secondary">
+                        <TimeTypeIcon type="Machine" />
+                      </Badge>
+                    </HStack>
+                  </Td>
+                  {quantityCosts.map(({ quantity, costs }) => {
+                    return (
+                      <Td key={quantity.toString()}>
+                        <VStack spacing={0}>
+                          <span>
+                            {costs.machineCost
+                              ? formatter.format(costs.machineCost)
+                              : formatter.format(0)}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {costs.machineCost && quantity > 0
+                              ? formatter.format(costs.machineCost / quantity)
+                              : formatter.format(0)}
+                          </span>
+                        </VStack>
+                      </Td>
+                    );
+                  })}
+                </Tr>
+                <Tr>
+                  <Td className="border-r border-border pl-14 ">
+                    <HStack className="w-full justify-between ">
+                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
+                        Machine Hours
+                      </span>
+                      <Badge variant="secondary">
+                        <LuClock />
+                      </Badge>
+                    </HStack>
+                  </Td>
+                  {quantityCosts.map(({ quantity, costs }) => {
+                    const machineHours = costs.machineHours ?? 0;
+                    return (
+                      <Td key={quantity.toString()}>
+                        <VStack spacing={0}>
+                          <span>{formatDurationHours(machineHours)}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {machineHours && quantity > 0
+                              ? formatDurationHours(machineHours / quantity)
+                              : formatDurationHours(0)}
+                          </span>
+                        </VStack>
+                      </Td>
+                    );
+                  })}
+                </Tr>
+              </>
+            )}
             <Tr>
               <Td className="border-r border-border ">
                 <HStack className="w-full justify-between ">
-                  <span>Total Overhead Cost</span>
+                  <span>Total Indirect Cost</span>
                   <Enumerable value="Overhead" />
                 </HStack>
               </Td>
@@ -355,88 +474,6 @@ const QuoteLineCosting = ({
                 );
               })}
             </Tr>
-            {detailsDisclosure.isOpen && (
-              <>
-                <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
-                        Setup Hours
-                      </span>
-                      <Badge variant="secondary">
-                        <TimeTypeIcon type="Setup" />
-                      </Badge>
-                    </HStack>
-                  </Td>
-                  {quantityCosts.map(({ quantity, costs }) => {
-                    return (
-                      <Td key={quantity.toString()}>
-                        <VStack spacing={0}>
-                          <span>{(costs.setupHours ?? 0).toFixed(2)}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {costs.setupHours && quantity > 0
-                              ? (costs.setupHours / quantity).toFixed(2)
-                              : (0).toFixed(2)}
-                          </span>
-                        </VStack>
-                      </Td>
-                    );
-                  })}
-                </Tr>
-                <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
-                        Labor Hours
-                      </span>
-                      <Badge variant="secondary">
-                        <TimeTypeIcon type="Labor" />
-                      </Badge>
-                    </HStack>
-                  </Td>
-                  {quantityCosts.map(({ quantity, costs }) => {
-                    return (
-                      <Td key={quantity.toString()}>
-                        <VStack spacing={0}>
-                          <span>{(costs.laborHours ?? 0).toFixed(2)}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {costs.laborHours && quantity > 0
-                              ? (costs.laborHours / quantity).toFixed(2)
-                              : (0).toFixed(2)}
-                          </span>
-                        </VStack>
-                      </Td>
-                    );
-                  })}
-                </Tr>
-                <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
-                        Machine Hours
-                      </span>
-                      <Badge variant="secondary">
-                        <TimeTypeIcon type="Machine" />
-                      </Badge>
-                    </HStack>
-                  </Td>
-                  {quantityCosts.map(({ quantity, costs }) => {
-                    return (
-                      <Td key={quantity.toString()}>
-                        <VStack spacing={0}>
-                          <span>{(costs.machineHours ?? 0).toFixed(2)}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {costs.machineHours && quantity > 0
-                              ? (costs.machineHours / quantity).toFixed(2)
-                              : (0).toFixed(2)}
-                          </span>
-                        </VStack>
-                      </Td>
-                    );
-                  })}
-                </Tr>
-              </>
-            )}
             <Tr>
               <Td className="border-r border-border ">
                 <HStack className="w-full justify-between ">
@@ -468,15 +505,16 @@ const QuoteLineCosting = ({
               <Td className="border-r border-border ">Total Estimated Cost</Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 const totalCost =
-                  costs.materialCost +
-                  costs.partCost +
-                  costs.toolCost +
-                  costs.fixtureCost +
                   costs.consumableCost +
-                  costs.serviceCost +
+                  costs.fixtureCost +
                   costs.laborCost +
+                  costs.machineCost +
+                  costs.materialCost +
+                  costs.outsideCost +
                   costs.overheadCost +
-                  costs.outsideCost;
+                  costs.partCost +
+                  costs.serviceCost +
+                  costs.toolCost;
                 return (
                   <Td key={quantity.toString()}>
                     <VStack spacing={0}>

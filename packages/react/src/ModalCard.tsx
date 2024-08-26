@@ -90,13 +90,15 @@ const ModalCardContent = forwardRef<
   | ComponentPropsWithoutRef<typeof ModalContent>
   | ComponentPropsWithoutRef<"div">
 >((props, ref) => {
+  // @ts-expect-error
+  const { size, ...rest } = props;
   const type = useModalCardType();
 
   if (type === "card") {
     return <div {...props} ref={ref} />;
   }
 
-  return <ModalContent {...props} size="xlarge" ref={ref} />;
+  return <ModalContent {...rest} size={size ?? "xlarge"} ref={ref} />;
 });
 ModalCardContent.displayName = "ModalCardContent";
 

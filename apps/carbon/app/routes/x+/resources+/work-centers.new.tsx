@@ -59,12 +59,13 @@ export default function NewWorkCenterRoute() {
   const { defaults } = useUser();
 
   const initialValues = {
-    name: "",
+    defaultStandardFactor: "Minutes/Piece" as "Minutes/Piece",
     description: "",
     laborRate: 0,
-    overheadRate: 0,
-    defaultStandardFactor: "Minutes/Piece" as "Minutes/Piece",
     locationId: defaults?.locationId ?? "",
+    machineRate: 0,
+    name: "",
+    overheadRate: 0,
     processes: [],
   };
 

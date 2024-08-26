@@ -84,15 +84,16 @@ export default function WorkCenterRoute() {
 
   const initialValues = {
     id: workCenter?.id ?? undefined,
-    name: workCenter?.name ?? "",
-    description: workCenter?.description ?? "",
-    requiredAbilityId: workCenter?.requiredAbilityId ?? undefined,
-    laborRate: workCenter?.laborRate ?? 0,
-    overheadRate: workCenter?.overheadRate ?? 0,
     defaultStandardFactor: workCenter?.defaultStandardFactor ?? "Minutes/Piece",
+    description: workCenter?.description ?? "",
+    laborRate: workCenter?.laborRate ?? 0,
     locationId: workCenter?.locationId ?? "",
+    machineRate: workCenter?.machineRate ?? 0,
+    name: workCenter?.name ?? "",
+    overheadRate: workCenter?.overheadRate ?? 0,
     // @ts-ignore
     processes: (workCenter?.processes ?? []).map((p) => p.id) ?? [],
+    requiredAbilityId: workCenter?.requiredAbilityId ?? undefined,
     ...getCustomFields(workCenter?.customFields),
   };
 

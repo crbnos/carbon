@@ -5,6 +5,7 @@ import {
   MenuItem,
   useDisclosure,
 } from "@carbon/react";
+import { useLocale } from "@react-aria/i18n";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -26,6 +27,10 @@ type WorkCentersTableProps = {
 };
 
 const defaultColumnVisibility = {
+  description: false,
+  laborRate: false,
+  machineRate: false,
+  overheadRate: false,
   createdAt: false,
   createdBy: false,
   updatedAt: false,
@@ -42,6 +47,14 @@ const WorkCentersTable = memo(
     const deleteModal = useDisclosure();
     const [selectedWorkCenter, setSelectedWorkCenter] =
       useState<WorkCenter | null>(null);
+
+    const { locale } = useLocale();
+    // TODO: factor in default currency, po currency and exchange rate
+    const formatter = useMemo(
+      () =>
+        new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
+      [locale]
+    );
 
     const onDelete = (data: WorkCenter) => {
       setSelectedWorkCenter(data);
@@ -110,6 +123,27 @@ const WorkCentersTable = memo(
             <span className="max-w-[300px] line-clamp-1">
               {row.original.description}
             </span>
+          ),
+        },
+        {
+          accessorKey: "laborRate",
+          header: "Labor Rate",
+          cell: ({ row }) => (
+            <span>{formatter.format(row.original.laborRate ?? 0)}</span>
+          ),
+        },
+        {
+          accessorKey: "machineRate",
+          header: "Machine Rate",
+          cell: ({ row }) => (
+            <span>{formatter.format(row.original.machineRate ?? 0)}</span>
+          ),
+        },
+        {
+          accessorKey: "overheadRate",
+          header: "Overhead Rate",
+          cell: ({ row }) => (
+            <span>{formatter.format(row.original.overheadRate ?? 0)}</span>
           ),
         },
         {
