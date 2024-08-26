@@ -371,13 +371,15 @@ const QuoteLinePricing = ({
                 return isMade ? (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
-                      <span>{formatter.format(optimisticUnitCost)}</span>
+                      <span>
+                        {formatter.format(unitCostsByQuantity[index])}
+                      </span>
                     </VStack>
                   </Td>
                 ) : (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <NumberField
-                      value={cost}
+                      value={optimisticUnitCost}
                       formatOptions={{
                         style: "currency",
                         currency: "USD",

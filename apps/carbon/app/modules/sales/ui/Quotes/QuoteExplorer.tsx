@@ -264,11 +264,13 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
           </DropdownMenu>
         </HStack>
       </HStack>
-      {disclosure.isOpen && permissions.can("update", "sales") && (
-        <VStack className="border-b border-border">
-          <QuoteBoMExplorer methods={methods} />
-        </VStack>
-      )}
+      {disclosure.isOpen &&
+        line.methodType === "Make" &&
+        permissions.can("update", "sales") && (
+          <VStack className="border-b border-border">
+            <QuoteBoMExplorer methods={methods} />
+          </VStack>
+        )}
     </VStack>
   );
 }
