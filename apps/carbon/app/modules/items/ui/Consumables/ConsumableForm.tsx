@@ -118,6 +118,7 @@ const ConsumableForm = ({
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
+                    isUppercase
                     autoFocus
                   />
                 )}

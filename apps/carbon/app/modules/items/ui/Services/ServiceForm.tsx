@@ -76,6 +76,7 @@ const ServiceForm = ({ initialValues }: ServiceFormProps) => {
                 value={id}
                 onChange={onIdChange}
                 isDisabled={loading}
+                isUppercase
                 autoFocus
               />
             )}

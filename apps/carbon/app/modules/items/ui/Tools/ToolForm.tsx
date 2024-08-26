@@ -114,6 +114,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
+                    isUppercase
                     autoFocus
                   />
                 )}

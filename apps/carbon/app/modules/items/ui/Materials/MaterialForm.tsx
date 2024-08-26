@@ -127,6 +127,7 @@ const MaterialForm = ({
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
+                    isUppercase
                     autoFocus
                   />
                 )}

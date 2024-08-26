@@ -107,7 +107,7 @@ const WorkCenterForm = ({
 
                 <Number
                   name="laborRate"
-                  label="Labor Rate"
+                  label="Labor Rate (Hourly)"
                   formatOptions={{
                     style: "currency",
                     currency: "USD",
@@ -115,7 +115,7 @@ const WorkCenterForm = ({
                 />
                 <Number
                   name="machineRate"
-                  label="Machine Rate"
+                  label="Machine Rate (Hourly)"
                   formatOptions={{
                     style: "currency",
                     currency: "USD",
@@ -123,7 +123,7 @@ const WorkCenterForm = ({
                 />
                 <Number
                   name="overheadRate"
-                  label="Overhead Rate"
+                  label="Overhead Rate (Hourly)"
                   formatOptions={{
                     style: "currency",
                     currency: "USD",

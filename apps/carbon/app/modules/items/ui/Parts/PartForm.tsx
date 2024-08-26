@@ -125,6 +125,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
+                    isUppercase
                     autoFocus
                   />
                 )}

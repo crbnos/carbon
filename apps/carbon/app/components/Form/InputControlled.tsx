@@ -16,6 +16,7 @@ import { forwardRef, useEffect } from "react";
 type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   name: string;
   label?: string;
+  isUppercase?: boolean;
   isRequired?: boolean;
   helperText?: string;
   prefix?: string;
@@ -36,6 +37,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
       value,
       className,
       onChange,
+      isUppercase,
       ...rest
     },
     ref
@@ -44,13 +46,13 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     const [controlValue, setControlValue] = useControlField<string>(name);
 
     useEffect(() => {
-      setControlValue(value);
-    }, [setControlValue, value]);
+      setControlValue(isUppercase ? uppercase(value) : value);
+    }, [isUppercase, setControlValue, value]);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
       setControlValue(e.target.value);
       if (onChange && typeof onChange === "function") {
-        onChange(e.target.value);
+        onChange(isUppercase ? uppercase(e.target.value) : e.target.value);
       }
     };
 
@@ -82,6 +84,10 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     );
   }
 );
+
+function uppercase(value?: string) {
+  return value?.toUpperCase() ?? "";
+}
 
 InputControlled.displayName = "InputControlled";
 
