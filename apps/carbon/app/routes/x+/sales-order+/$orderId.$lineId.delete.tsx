@@ -6,7 +6,7 @@ import { deleteSalesOrderLine, getSalesOrderLine } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { notFound } from "~/utils/http";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 import { error, success } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -20,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const salesOrderLine = await getSalesOrderLine(client, lineId);
   if (salesOrderLine.error) {
     throw redirect(
-      path.to.salesOrderLines(orderId),
+      path.to.salesOrder(orderId),
       await flash(
         request,
         error(salesOrderLine.error, "Failed to get sales order line")
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { error: deleteTypeError } = await deleteSalesOrderLine(client, lineId);
   if (deleteTypeError) {
     throw redirect(
-      path.to.salesOrderLines(orderId),
+      requestReferrer(request) ?? path.to.salesOrder(orderId),
       await flash(
         request,
         error(deleteTypeError, "Failed to delete sales order line")
@@ -52,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.salesOrderLines(orderId),
+    requestReferrer(request) ?? path.to.salesOrder(orderId),
     await flash(request, success("Successfully deleted sales order line"))
   );
 }
@@ -66,7 +66,7 @@ export default function DeleteSalesOrderLineRoute() {
   if (!lineId) throw notFound("Could not find lineId");
   if (!orderId) throw notFound("Could not find orderId");
 
-  const onCancel = () => navigate(path.to.salesOrderLines(orderId));
+  const onCancel = () => navigate(-1);
 
   return (
     <ConfirmDelete

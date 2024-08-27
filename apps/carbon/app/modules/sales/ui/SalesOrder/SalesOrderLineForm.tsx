@@ -34,6 +34,7 @@ import {
   NumberControlled,
   Select,
   Submit,
+  UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
@@ -90,6 +91,7 @@ const SalesOrderLineForm = ({
     unitPrice: number;
     uom: string;
     shelfId: string;
+    modelUploadId: string | null;
   }>({
     itemId: initialValues.itemId ?? "",
     itemReadableId: initialValues.itemReadableId ?? "",
@@ -97,6 +99,7 @@ const SalesOrderLineForm = ({
     unitPrice: initialValues.unitPrice ?? 0,
     uom: initialValues.unitOfMeasureCode ?? "",
     shelfId: initialValues.shelfId ?? "",
+    modelUploadId: initialValues.modelUploadId ?? null,
   });
 
   const shelfFetcher = useFetcher<Awaited<ReturnType<typeof getShelvesList>>>();
@@ -118,11 +121,6 @@ const SalesOrderLineForm = ({
   );
 
   const isEditing = initialValues.id !== undefined;
-  // const isDisabled = !isEditable
-  //   ? true
-  //   : isEditing
-  //   ? !permissions.can("update", "sales")
-  //   : !permissions.can("create", "sales");
 
   const salesOrderLineTypeOptions = salesOrderLineType.map((type) => ({
     label: type,
@@ -139,6 +137,7 @@ const SalesOrderLineForm = ({
       unitPrice: 0,
       uom: "EA",
       shelfId: "",
+      modelUploadId: null,
     });
   };
 
@@ -148,7 +147,7 @@ const SalesOrderLineForm = ({
     const [item, shelf, price] = await Promise.all([
       supabase
         .from("item")
-        .select("name, readableId, unitOfMeasureCode")
+        .select("name, readableId, unitOfMeasureCode, modelUploadId")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
@@ -174,6 +173,7 @@ const SalesOrderLineForm = ({
       unitPrice: price.data?.unitSalePrice ?? 0,
       uom: item.data?.unitOfMeasureCode ?? "EA",
       shelfId: shelf.data?.defaultShelfId ?? "",
+      modelUploadId: item.data?.modelUploadId ?? null,
     });
   };
 
@@ -259,7 +259,7 @@ const SalesOrderLineForm = ({
                   name="itemReadableId"
                   value={itemData?.itemReadableId}
                 />
-                <Hidden name="unitOfMeasureCode" value={itemData?.uom} />
+
                 <Hidden
                   name="modelUploadId"
                   value={itemData?.modelUploadId ?? undefined}
@@ -297,19 +297,26 @@ const SalesOrderLineForm = ({
                     {lineType !== "Comment" && (
                       <>
                         <Number name="saleQuantity" label="Quantity" />
-                        {/* 
-                // TODO: implement this and replace the UoM in PartForm */}
-                        {/* <UnitOfMeasure name="unitOfMeasureCode" label="Unit of Measure" value={uom} /> */}
+
                         <NumberControlled
                           name="unitPrice"
                           label="Unit Price"
                           value={itemData.unitPrice}
+                          formatOptions={{
+                            style: "currency",
+                            currency: "USD",
+                          }}
                           onChange={(value) =>
                             setItemData((d) => ({
                               ...d,
                               unitPrice: value,
                             }))
                           }
+                        />
+                        <UnitOfMeasure
+                          name="unitOfMeasureCode"
+                          label="Unit of Measure"
+                          value={itemData.uom}
                         />
                         {[
                           "Part",
