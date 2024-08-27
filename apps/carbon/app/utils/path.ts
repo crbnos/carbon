@@ -263,7 +263,7 @@ export const path = {
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/delete/${id}`),
     deleteSalesOrderLine: (orderId: string, lineId: string) =>
-      generatePath(`${x}/sales-order/${orderId}/lines/delete/${lineId}`),
+      generatePath(`${x}/sales-order/${orderId}/${lineId}/delete`),
     deleteSalesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}/delete`),
     deleteSalesRfqLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-rfq/${id}/${lineId}/delete`),
@@ -460,7 +460,7 @@ export const path = {
     newReceipt: `${x}/receipt/new`,
     newSalesOrder: `${x}/sales-order/new`,
     newSalesOrderLine: (id: string) =>
-      generatePath(`${x}/sales-order/${id}/lines/new`),
+      generatePath(`${x}/sales-order/${id}/new`),
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
     newShift: `${x}/people/shifts/new`,
@@ -630,10 +630,8 @@ export const path = {
     salesOrderFavorite: `${x}/sales-order/orders/favorite`,
     salesOrderInternalDocuments: (id: string) =>
       generatePath(`${x}/sales-order/${id}/internal`),
-    salesOrderLines: (orderId: string) =>
-      generatePath(`${x}/sales-order/${orderId}/lines`),
     salesOrderLine: (orderId: string, id: string) =>
-      generatePath(`${x}/sales-order/${orderId}/lines/${id}`),
+      generatePath(`${x}/sales-order/${orderId}/${id}/details`),
     salesOrderPayment: (id: string) =>
       generatePath(`${x}/sales-order/${id}/payment`),
     salesOrderRelease: (id: string) =>

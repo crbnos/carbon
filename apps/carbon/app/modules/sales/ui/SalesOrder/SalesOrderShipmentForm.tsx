@@ -23,6 +23,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { salesOrderShipmentValidator } from "~/modules/sales";
 import type { ListItem } from "~/types";
+import { path } from "~/utils/path";
 
 type SalesOrderShipmentFormProps = {
   initialValues: z.infer<typeof salesOrderShipmentValidator>;
@@ -56,12 +57,13 @@ const SalesOrderShipmentForm = ({
   const isCustomer = permissions.is("customer");
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={salesOrderShipmentValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        action={path.to.salesOrderShipment(initialValues.id)}
+        method="post"
+        validator={salesOrderShipmentValidator}
+        defaultValues={initialValues}
+      >
         <CardHeader>
           <CardTitle>Shipment</CardTitle>
         </CardHeader>
@@ -117,8 +119,8 @@ const SalesOrderShipmentForm = ({
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "sales")}>Save</Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

@@ -74,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (updateSalesOrderLine.error) {
     throw redirect(
-      path.to.salesOrderLines(orderId),
+      path.to.salesOrderLine(orderId, lineId),
       await flash(
         request,
         error(updateSalesOrderLine.error, "Failed to update sales order line")
@@ -82,7 +82,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.salesOrderLines(orderId));
+  throw redirect(path.to.salesOrderLine(orderId, lineId));
 }
 
 export default function EditSalesOrderLineRoute() {

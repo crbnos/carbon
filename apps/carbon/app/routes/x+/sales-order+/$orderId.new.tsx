@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createSalesOrderLine.error) {
     throw redirect(
-      path.to.salesOrderLines(orderId),
+      path.to.salesOrderDetails(orderId),
       await flash(
         request,
         error(createSalesOrderLine.error, "Failed to create sales order line.")
@@ -52,7 +52,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.salesOrderLines(orderId));
+  const salesOrderLineId = createSalesOrderLine.data.id;
+
+  throw redirect(path.to.salesOrderLine(orderId, salesOrderLineId));
 }
 
 export default function NewSalesOrderLineRoute() {
