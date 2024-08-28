@@ -14782,6 +14782,7 @@ export type Database = {
           itemId: string | null
           itemReadableId: string | null
           locationId: string | null
+          modelUploadId: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
           quantityToInvoice: number | null
@@ -14793,6 +14794,7 @@ export type Database = {
           sentComplete: boolean
           setupPrice: number | null
           shelfId: string | null
+          status: Database["public"]["Enums"]["salesOrderLineStatus"]
           unitOfMeasureCode: string | null
           unitPrice: number | null
           updatedAt: string | null
@@ -14811,6 +14813,7 @@ export type Database = {
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
+          modelUploadId?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
           quantityToInvoice?: number | null
@@ -14822,6 +14825,7 @@ export type Database = {
           sentComplete?: boolean
           setupPrice?: number | null
           shelfId?: string | null
+          status?: Database["public"]["Enums"]["salesOrderLineStatus"]
           unitOfMeasureCode?: string | null
           unitPrice?: number | null
           updatedAt?: string | null
@@ -14840,6 +14844,7 @@ export type Database = {
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
+          modelUploadId?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
           quantityToInvoice?: number | null
@@ -14851,6 +14856,7 @@ export type Database = {
           sentComplete?: boolean
           setupPrice?: number | null
           shelfId?: string | null
+          status?: Database["public"]["Enums"]["salesOrderLineStatus"]
           unitOfMeasureCode?: string | null
           unitPrice?: number | null
           updatedAt?: string | null
@@ -24501,6 +24507,7 @@ export type Database = {
         Row: {
           accountNumber: string | null
           assetId: string | null
+          autodeskUrn: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -24514,6 +24521,11 @@ export type Database = {
           itemName: string | null
           itemReadableId: string | null
           locationId: string | null
+          modelId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
+          modelUploadId: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
           quantityToInvoice: number | null
@@ -24527,6 +24539,9 @@ export type Database = {
           sentComplete: boolean | null
           setupPrice: number | null
           shelfId: string | null
+          status: Database["public"]["Enums"]["salesOrderLineStatus"] | null
+          thumbnailPath: string | null
+          unitCost: number | null
           unitOfMeasureCode: string | null
           unitPrice: number | null
           updatedAt: string | null
@@ -27029,6 +27044,7 @@ export type Database = {
         | "Manufacturing Output"
       receiptStatus: "Draft" | "Pending" | "Posted"
       role: "customer" | "employee" | "supplier"
+      salesOrderLineStatus: "Ordered" | "In Progress" | "Completed"
       salesOrderLineType:
         | "Comment"
         | "Part"

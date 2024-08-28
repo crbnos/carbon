@@ -1,6 +1,5 @@
 import {
   Checkbox,
-  Enumerable,
   HStack,
   MenuIcon,
   MenuItem,
@@ -13,6 +12,7 @@ import { BsEnvelope, BsShieldLock } from "react-icons/bs";
 import { FaBan } from "react-icons/fa";
 import { LuPencil } from "react-icons/lu";
 import { Avatar, Hyperlink, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Employee } from "~/modules/users";
 import {

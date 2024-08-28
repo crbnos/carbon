@@ -1,7 +1,8 @@
 import type { Json } from "@carbon/database";
-import { Checkbox, Enumerable, HStack } from "@carbon/react";
+import { Checkbox, HStack } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Avatar } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { DataType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { useCustomFieldsSchema } from "./useCustomFieldsSchema";

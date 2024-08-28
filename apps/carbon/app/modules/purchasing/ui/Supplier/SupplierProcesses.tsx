@@ -12,7 +12,6 @@ import {
   HStack,
   IconButton,
 } from "@carbon/react";
-import { useLocale } from "@react-aria/i18n";
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
@@ -21,7 +20,7 @@ import { MdMoreHoriz } from "react-icons/md";
 import { New } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
-import { usePermissions, useUser } from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useSupabase } from "~/lib/supabase";
 import type { SupplierProcess } from "~/modules/purchasing";
@@ -59,12 +58,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
 
   const customColumns = useCustomColumns<SupplierProcess>("supplierProcess");
 
-  // TODO: factor in default currency or quote currency
-  const { locale } = useLocale();
-  const formatter = useMemo(
-    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
-    [locale]
-  );
+  const formatter = useCurrencyFormatter();
 
   const columns = useMemo<ColumnDef<SupplierProcess>[]>(() => {
     const defaultColumns: ColumnDef<SupplierProcess>[] = [

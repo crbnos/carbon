@@ -548,6 +548,7 @@ export const salesOrderLineValidator = z
     setupPrice: zfd.numeric(z.number().optional()),
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
+    modelUploadId: zfd.text(z.string().optional()),
   })
   .refine((data) => (data.salesOrderLineType === "Part" ? data.itemId : true), {
     message: "Part is required",

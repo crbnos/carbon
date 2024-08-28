@@ -19,6 +19,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useId, useState } from "react";
 import { MdClose } from "react-icons/md";
 import { RxCheck, RxMagnifyingGlass } from "react-icons/rx";
+import { useMode } from "~/hooks/useMode";
 
 export type CreatableMultiSelectProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -201,8 +202,9 @@ function SelectedOption({
   options: CreatableMultiSelectProps["options"];
   onUnselect: (item: string) => void;
 }) {
+  const mode = useMode();
   const label = options.find((o) => o.value === item)?.label ?? "";
-  const colors = getColor(label);
+  const colors = getColor(label, mode);
 
   return (
     <Badge key={item} onClick={() => onUnselect(item)} style={colors}>

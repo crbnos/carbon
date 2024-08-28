@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
   Editor,
-  Enumerable,
   HStack,
   cn,
   generateHTML,
@@ -81,7 +80,7 @@ function makeItem(operation: Operation): ItemWithData {
     details: (
       <HStack spacing={1}>
         {operation.operationType === "Outside" ? (
-          <Enumerable value="Outside" />
+          <Badge>Outside</Badge>
         ) : (
           <>
             {(operation?.laborTime ?? 0) > 0 && (

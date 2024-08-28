@@ -1,15 +1,10 @@
-import {
-  Checkbox,
-  Enumerable,
-  HStack,
-  MenuIcon,
-  MenuItem,
-} from "@carbon/react";
+import { Checkbox, HStack, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil } from "react-icons/lu";
 import { Avatar, Hyperlink, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { DataType } from "~/modules/shared";
 import type { EmployeeType } from "~/modules/users";

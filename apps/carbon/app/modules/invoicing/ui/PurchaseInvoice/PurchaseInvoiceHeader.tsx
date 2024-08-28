@@ -14,11 +14,10 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Assignee, useOptimisticAssignment } from "~/components";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import {
@@ -33,7 +32,6 @@ const PurchaseInvoiceHeader = () => {
   const permissions = usePermissions();
   const { invoiceId } = useParams();
   const postingModal = useDisclosure();
-  const { locale } = useLocale();
 
   const { supabase } = useSupabase();
   const [linesNotAssociatedWithPO, setLinesNotAssociatedWithPO] = useState<
@@ -53,12 +51,7 @@ const PurchaseInvoiceHeader = () => {
 
   const [purchaseInvoiceTotals] = usePurchaseInvoiceTotals();
 
-  // TODO: factor in default currency, po currency and exchange rate
-  const formatter = useMemo(
-    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
-    [locale]
-  );
-
+  const formatter = useCurrencyFormatter();
   const showPostModal = async () => {
     // check if there are any lines that are not associated with a PO
     if (!supabase) throw new Error("supabase not found");

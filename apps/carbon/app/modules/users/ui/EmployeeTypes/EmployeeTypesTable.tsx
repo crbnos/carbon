@@ -1,10 +1,11 @@
-import { Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { EmployeeType } from "~/modules/users";
 import { path } from "~/utils/path";

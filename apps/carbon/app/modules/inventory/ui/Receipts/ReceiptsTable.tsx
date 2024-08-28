@@ -1,10 +1,4 @@
-import {
-  Checkbox,
-  Enumerable,
-  MenuIcon,
-  MenuItem,
-  useDisclosure,
-} from "@carbon/react";
+import { Checkbox, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -17,6 +11,7 @@ import {
   SupplierAvatar,
   Table,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";

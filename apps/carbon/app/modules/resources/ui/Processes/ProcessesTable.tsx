@@ -4,7 +4,6 @@ import {
   AvatarGroupList,
   AvatarOverflowIndicator,
   Badge,
-  Enumerable,
   MenuIcon,
   MenuItem,
 } from "@carbon/react";
@@ -13,6 +12,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { EmployeeAvatar, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { type Process } from "~/modules/resources";
@@ -46,13 +46,11 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         accessorKey: "name",
         header: "Process",
         cell: ({ row }) => (
-          <Badge
-            variant="secondary"
+          <Enumerable
+            value={row.original.name}
             onClick={() => navigate(row.original.id!)}
             className="cursor-pointer"
-          >
-            {row.original.name}
-          </Badge>
+          />
         ),
       },
       {
@@ -60,7 +58,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         header: "Process Type",
         cell: (item) =>
           item.getValue() === "Outside" ? (
-            <Enumerable value={item.getValue<string>()} />
+            <Badge>Outside</Badge>
           ) : (
             <Badge variant="secondary">{item.getValue<string>()}</Badge>
           ),

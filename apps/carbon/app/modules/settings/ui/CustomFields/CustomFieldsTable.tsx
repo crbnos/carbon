@@ -1,10 +1,11 @@
-import { Button, Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import { Button, MenuIcon, MenuItem } from "@carbon/react";
 import { Link, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BiAddToQueue } from "react-icons/bi";
 import { BsListUl } from "react-icons/bs";
 import { Hyperlink, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { modulesType, type CustomFieldsTableType } from "~/modules/settings";
 import { path } from "~/utils/path";

@@ -1,7 +1,6 @@
 import {
   Badge,
   Button,
-  Enumerable,
   HStack,
   Tooltip,
   TooltipContent,
@@ -13,6 +12,7 @@ import { Link, useParams } from "@remix-run/react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import { useOptimisticAssignment } from "~/components";
 import Assignee from "~/components/Assignee";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";

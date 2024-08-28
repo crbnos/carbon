@@ -9,6 +9,7 @@ import {
   HStack,
   VStack,
   cn,
+  useKeyboardShortcuts,
 } from "@carbon/react";
 import { validationError, validator } from "@carbon/remix-validated-form";
 import { themes, type Theme } from "@carbon/utils";
@@ -21,7 +22,7 @@ import {
   useNavigation,
   useSubmit,
 } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import { useOnboarding } from "~/hooks";
@@ -103,6 +104,14 @@ export default function OnboardingTheme() {
   };
 
   const transition = useNavigation();
+
+  const nextRef = useRef<HTMLButtonElement>(null);
+
+  useKeyboardShortcuts({
+    Enter: () => {
+      nextRef.current?.click();
+    },
+  });
 
   return (
     <Card className="max-w-lg">
@@ -211,6 +220,7 @@ export default function OnboardingTheme() {
           <Button
             isLoading={transition.state !== "idle"}
             isDisabled={transition.state !== "idle"}
+            ref={nextRef}
             onClick={onSubmit}
           >
             Next

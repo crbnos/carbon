@@ -8,7 +8,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Enumerable,
   HStack,
   VStack,
 } from "@carbon/react";
@@ -19,6 +18,7 @@ import {
   EmployeeAvatar,
   useOptimisticAssignment,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SupplierDetail, SupplierStatus } from "~/modules/purchasing";
 import type { ListItem } from "~/types";
