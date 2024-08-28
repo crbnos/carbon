@@ -1,3 +1,4 @@
+import { useCurrencyFormatter } from "./useCurrencyFormatter";
 import { useMovingCellRef } from "./useMovingCellRef";
 import { useNanoStore } from "./useNanoStore";
 import { useNextItemId } from "./useNextItemId";
@@ -12,6 +13,7 @@ import { useUrlParams } from "./useUrlParams";
 import { useUser } from "./useUser";
 
 export {
+  useCurrencyFormatter,
   useMovingCellRef,
   useNanoStore,
   useNextItemId,

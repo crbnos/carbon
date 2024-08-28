@@ -1,8 +1,8 @@
-import { Enumerable } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { Table } from "~/components";
 import { EditableList } from "~/components/Editable";
+import { Enumerable } from "~/components/Enumerable";
 import type {
   AccountListItem,
   InventoryPostingGroup,

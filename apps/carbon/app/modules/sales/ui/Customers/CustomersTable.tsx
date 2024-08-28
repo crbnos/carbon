@@ -1,4 +1,4 @@
-import { Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import { MenuIcon, MenuItem } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -11,6 +11,7 @@ import {
   New,
   Table,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Customer, CustomerStatus } from "~/modules/sales";

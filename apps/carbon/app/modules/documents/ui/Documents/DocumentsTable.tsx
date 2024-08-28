@@ -5,7 +5,6 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-  Enumerable,
   HStack,
   Heading,
   MenuIcon,
@@ -32,6 +31,7 @@ import {
 } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useUrlParams } from "~/hooks";

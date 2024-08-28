@@ -65,7 +65,7 @@ const SalesOrderShipmentForm = ({
         defaultValues={initialValues}
       >
         <CardHeader>
-          <CardTitle>Shipment</CardTitle>
+          <CardTitle>Shipping</CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="id" />

@@ -1,10 +1,4 @@
-import {
-  Enumerable,
-  HStack,
-  MenuIcon,
-  MenuItem,
-  useDisclosure,
-} from "@carbon/react";
+import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useFetcher, useFetchers, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -17,6 +11,7 @@ import {
   New,
   Table,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";

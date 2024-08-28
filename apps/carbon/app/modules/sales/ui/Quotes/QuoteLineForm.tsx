@@ -335,6 +335,7 @@ const QuoteLineForm = ({
                         name="quantity"
                         label="Quantity"
                         defaults={[1, 25, 50, 100]}
+                        isDisabled={!isEditable}
                       />
                     </div>
                   </div>

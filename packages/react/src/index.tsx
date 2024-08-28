@@ -15,6 +15,7 @@ import {
   AvatarGroupList,
   AvatarOverflowIndicator,
 } from "./Avatar";
+import type { BadgeProps } from "./Badge";
 import { Badge, BadgeCloseButton } from "./Badge";
 import type { ButtonProps } from "./Button";
 import { Button, buttonVariants } from "./Button";
@@ -102,7 +103,6 @@ import {
   DropdownMenuTrigger,
 } from "./Dropdown";
 import { Editor } from "./Editor";
-import { Enumerable } from "./Enumerable";
 import { File } from "./File";
 import {
   FormControl,
@@ -343,7 +343,6 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   Editor,
-  Enumerable,
   File,
   FormControl,
   FormErrorMessage,
@@ -483,6 +482,7 @@ export {
 };
 export type {
   AvatarProps,
+  BadgeProps,
   ButtonProps,
   InputProps,
   JSONContent,

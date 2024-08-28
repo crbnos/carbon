@@ -1,6 +1,5 @@
 import {
   Checkbox,
-  Enumerable,
   HStack,
   MenuIcon,
   MenuItem,
@@ -19,6 +18,7 @@ import {
   SupplierAvatar,
   Table,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";

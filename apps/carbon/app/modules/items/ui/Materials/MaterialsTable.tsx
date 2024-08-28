@@ -1,7 +1,6 @@
 import {
   Badge,
   Checkbox,
-  Enumerable,
   MenuIcon,
   MenuItem,
   useDisclosure,
@@ -12,6 +11,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";

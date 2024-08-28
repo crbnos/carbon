@@ -1,9 +1,10 @@
-import { Badge, Enumerable, MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { ShiftLocation } from "~/modules/resources/types";

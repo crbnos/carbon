@@ -28,7 +28,7 @@ type FormArrayNumericProps = InputProps & {
 };
 
 const ArrayNumeric = forwardRef<HTMLInputElement, FormArrayNumericProps>(
-  ({ name, label, isRequired, defaults, ...rest }, ref) => {
+  ({ name, label, isDisabled, isRequired, defaults, ...rest }, ref) => {
     const listRef = useRef<HTMLDivElement>(null);
     const [items, { push, remove }, error] = useFieldArray<number>(name);
     const onAdd = () => {
@@ -55,7 +55,12 @@ const ArrayNumeric = forwardRef<HTMLInputElement, FormArrayNumericProps>(
               {...rest}
             />
           ))}
-          <Button variant="secondary" leftIcon={<IoMdAdd />} onClick={onAdd}>
+          <Button
+            isDisabled={isDisabled}
+            variant="secondary"
+            leftIcon={<IoMdAdd />}
+            onClick={onAdd}
+          >
             Add {label ?? "Option"}
           </Button>
         </VStack>

@@ -5,7 +5,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Enumerable,
   HStack,
   Switch,
   Table,
@@ -22,10 +21,10 @@ import {
   VStack,
 } from "@carbon/react";
 import { formatDurationHours } from "@carbon/utils";
-import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
-import { useMemo } from "react";
 import { LuClock, LuInfo } from "react-icons/lu";
+import { Enumerable } from "~/components/Enumerable";
+import { useCurrencyFormatter } from "~/hooks";
 import { MethodItemTypeIcon, TimeTypeIcon } from "~/modules/shared";
 import type { Costs } from "../../types";
 
@@ -46,12 +45,7 @@ const QuoteLineCosting = ({
     costs: getLineCosts(quantity),
   }));
 
-  // TODO: factor in default currency or quote currency
-  const { locale } = useLocale();
-  const formatter = useMemo(
-    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
-    [locale]
-  );
+  const formatter = useCurrencyFormatter();
 
   const detailsDisclosure = useDisclosure();
 

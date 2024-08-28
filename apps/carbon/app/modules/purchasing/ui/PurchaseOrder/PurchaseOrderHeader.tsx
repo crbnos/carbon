@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Enumerable,
   HStack,
   Menubar,
   MenubarItem,
@@ -17,11 +16,10 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useLocale } from "@react-aria/i18n";
 import { useParams } from "@remix-run/react";
-import { useMemo } from "react";
 import { Assignee, useOptimisticAssignment } from "~/components";
-import { usePermissions, useRouteData } from "~/hooks";
+import { Enumerable } from "~/components/Enumerable";
+import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { PurchasingStatus, usePurchaseOrderTotals } from "~/modules/purchasing";
 import { useSuppliers } from "~/stores";
@@ -45,12 +43,7 @@ const PurchaseOrderHeader = () => {
 
   const [purchaseOrderTotals] = usePurchaseOrderTotals();
 
-  const { locale } = useLocale();
-  // TODO: factor in default currency, po currency and exchange rate
-  const formatter = useMemo(
-    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
-    [locale]
-  );
+  const formatter = useCurrencyFormatter();
 
   const { receive, invoice } = usePurchaseOrder();
   const releaseDisclosure = useDisclosure();

@@ -26,7 +26,6 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
-import { useLocale } from "@react-aria/i18n";
 import { useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -37,7 +36,12 @@ import {
   LuTrash,
 } from "react-icons/lu";
 import type { z } from "zod";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  usePermissions,
+  useRouteData,
+  useUser,
+} from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import { quoteLineAdditionalChargesValidator } from "../../sales.models";
@@ -99,12 +103,7 @@ const QuoteLinePricing = ({
 
   const { id: userId } = useUser();
 
-  const { locale } = useLocale();
-  // TODO: factor in default currency or quote currency
-  const formatter = useMemo(
-    () => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
-    [locale]
-  );
+  const formatter = useCurrencyFormatter();
 
   const additionalCharges = useMemo(() => {
     if (fetcher.formAction === path.to.quoteLineCost(quoteId, lineId)) {

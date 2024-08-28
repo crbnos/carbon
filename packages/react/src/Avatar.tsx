@@ -54,7 +54,8 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
     const isGroup = !!useAvatarGroupContext()?.limit;
     const avatarInitials = getInitials(name ?? "");
     const [error, setError] = useState(false);
-    const { background, color } = getColor(name ?? "");
+
+    const { background, color } = getColor(name ?? "", "light");
 
     return src && !error ? (
       <img

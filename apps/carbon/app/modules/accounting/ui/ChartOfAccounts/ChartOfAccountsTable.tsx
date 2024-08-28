@@ -1,9 +1,10 @@
-import { Button, Checkbox, Enumerable, HStack, cn } from "@carbon/react";
+import { Button, Checkbox, HStack, cn } from "@carbon/react";
 import { Link as RemixLink } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { MdMoreHoriz } from "react-icons/md";
 import { Hyperlink } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import Grid from "~/components/Grid";
 import { useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -17,7 +18,7 @@ const ChartOfAccountsTable = memo(({ data }: ChartOfAccountsTableProps) => {
   useRealtime("journal");
 
   const customColumns = useCustomColumns<Chart>("journal");
-  
+
   const columns = useMemo<ColumnDef<Chart>[]>(() => {
     const defaultColumns: ColumnDef<Chart>[] = [
       {

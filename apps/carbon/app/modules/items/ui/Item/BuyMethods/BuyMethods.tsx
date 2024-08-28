@@ -6,7 +6,6 @@ import {
   CardTitle,
   HStack,
 } from "@carbon/react";
-import { useLocale } from "@react-aria/i18n";
 import { Outlet, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -17,7 +16,7 @@ import {
   EditableText,
 } from "~/components/Editable";
 import Grid from "~/components/Grid";
-import { useRouteData } from "~/hooks";
+import { useCurrencyFormatter, useRouteData } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { BuyMethod, UnitOfMeasureListItem } from "~/modules/items";
 import { path } from "~/utils/path";
@@ -34,15 +33,7 @@ const BuyMethods = ({ buyMethods }: BuyMethodsProps) => {
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.partRoot);
 
-  const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: "USD",
-      }),
-    [locale]
-  );
+  const formatter = useCurrencyFormatter();
 
   const unitOfMeasureOptions = useMemo(() => {
     return (

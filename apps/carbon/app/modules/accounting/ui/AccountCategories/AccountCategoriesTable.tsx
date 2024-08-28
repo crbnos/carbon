@@ -1,10 +1,4 @@
-import {
-  Button,
-  Enumerable,
-  MenuIcon,
-  MenuItem,
-  useDisclosure,
-} from "@carbon/react";
+import { Button, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { Link, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -12,6 +6,7 @@ import { BiAddToQueue } from "react-icons/bi";
 import { BsListUl } from "react-icons/bs";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";

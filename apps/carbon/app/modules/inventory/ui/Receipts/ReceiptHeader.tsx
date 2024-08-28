@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Enumerable,
   HStack,
   Menubar,
   MenubarItem,
@@ -20,6 +19,7 @@ import { formatDate } from "@carbon/utils";
 
 import { useParams } from "@remix-run/react";
 import { Assignee, useOptimisticAssignment } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import { ReceiptPostModal, ReceiptStatus } from "~/modules/inventory";

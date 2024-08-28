@@ -176,10 +176,10 @@ function SalesOrderLineItem({
           <HStack spacing={2}>
             {line.thumbnailPath ? (
               <img
-                alt="P2392303"
+                alt={line.itemReadableId!}
                 className={cn(
                   "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent",
-                  line.status === "Complete" && "border-green-500",
+                  line.status === "Completed" && "border-green-500",
                   line.status === "In Progress" && "border-yellow-500"
                 )}
                 src={`/file/preview/private/${line.thumbnailPath}`}
@@ -188,7 +188,7 @@ function SalesOrderLineItem({
               <div
                 className={cn(
                   "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2",
-                  line.status === "Complete" && "border-green-500",
+                  line.status === "Completed" && "border-green-500",
                   line.status === "In Progress" && "border-yellow-500"
                 )}
               >

@@ -1,20 +1,13 @@
-import {
-  Badge,
-  Enumerable,
-  HStack,
-  MenuIcon,
-  MenuItem,
-  useDisclosure,
-} from "@carbon/react";
-import { useLocale } from "@react-aria/i18n";
+import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { BsFillCheckCircleFill } from "react-icons/bs";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { EmployeeAvatar, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { WorkCenter } from "~/modules/resources";
 import { usePeople } from "~/stores";
@@ -49,13 +42,7 @@ const WorkCentersTable = memo(
     const [selectedWorkCenter, setSelectedWorkCenter] =
       useState<WorkCenter | null>(null);
 
-    const { locale } = useLocale();
-    // TODO: factor in default currency, po currency and exchange rate
-    const formatter = useMemo(
-      () =>
-        new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }),
-      [locale]
-    );
+    const formatter = useCurrencyFormatter();
 
     const onDelete = (data: WorkCenter) => {
       setSelectedWorkCenter(data);
@@ -75,13 +62,11 @@ const WorkCentersTable = memo(
           header: "Work Center",
           cell: ({ row }) => (
             <HStack>
-              <Badge
-                variant="secondary"
+              <Enumerable
+                value={row.original.name}
                 onClick={() => navigate(row.original.id!)}
                 className="cursor-pointer"
-              >
-                {row.original.name}
-              </Badge>
+              />
 
               {row.original.requiredAbilityId && (
                 <BsFillCheckCircleFill
@@ -99,14 +84,12 @@ const WorkCentersTable = memo(
             <span className="flex gap-2 items-center flex-wrap py-2">
               {((row.original.processes ?? []) as Array<ListItem>).map(
                 (process) => (
-                  <Badge
+                  <Enumerable
                     key={process.name}
-                    variant="secondary"
+                    value={row.original.name}
                     onClick={() => navigate(path.to.process(process.id))}
                     className="cursor-pointer"
-                  >
-                    {row.original.name}
-                  </Badge>
+                  />
                 )
               )}
             </span>

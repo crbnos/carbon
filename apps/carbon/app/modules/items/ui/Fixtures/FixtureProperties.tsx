@@ -1,7 +1,6 @@
 import {
   Badge,
   Button,
-  Enumerable,
   HStack,
   Tooltip,
   TooltipContent,
@@ -16,6 +15,7 @@ import {
   CustomerAvatar,
   useOptimisticAssignment,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";

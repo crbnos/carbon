@@ -1,6 +1,5 @@
 import {
   Checkbox,
-  Enumerable,
   HStack,
   MenuIcon,
   MenuItem,
@@ -11,6 +10,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { BsEnvelope } from "react-icons/bs";
 import { FaBan } from "react-icons/fa";
 import { Avatar, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Supplier } from "~/modules/users";
 import { DeactivateUsersModal, ResendInviteModal } from "~/modules/users";

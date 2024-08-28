@@ -13,21 +13,25 @@ import { RiProgress4Line } from "react-icons/ri";
 import { Assignee, useOptimisticAssignment } from "~/components";
 
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Quotation, QuotationLine } from "~/modules/sales";
+import type { Quotation, QuotationLine, QuotationPrice } from "~/modules/sales";
 import { path } from "~/utils/path";
 import QuoteFinalizeModal from "./QuoteFinalizeModal";
 import QuoteStatus from "./QuoteStatus";
+import QuoteToOrderModal from "./QuoteToOrderModal";
 
 const QuoteHeader = () => {
   const permissions = usePermissions();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
-  const routeData = useRouteData<{ quote: Quotation; lines: QuotationLine[] }>(
-    path.to.quote(quoteId)
-  );
+  const routeData = useRouteData<{
+    quote: Quotation;
+    lines: QuotationLine[];
+    prices: QuotationPrice[];
+  }>(path.to.quote(quoteId));
 
   const finalizeModal = useDisclosure();
+  const convertToOrderModal = useDisclosure();
 
   const optimisticAssignment = useOptimisticAssignment({
     id: quoteId,
@@ -119,7 +123,12 @@ const QuoteHeader = () => {
                     Lost
                   </Button>
                 </Form>
-                <Button leftIcon={<LuTrophy />} variant="primary">
+
+                <Button
+                  leftIcon={<LuTrophy />}
+                  variant="primary"
+                  onClick={convertToOrderModal.onOpen}
+                >
                   Won
                 </Button>
               </>
@@ -166,6 +175,14 @@ const QuoteHeader = () => {
         <QuoteFinalizeModal
           quote={routeData?.quote}
           onClose={finalizeModal.onClose}
+        />
+      )}
+      {convertToOrderModal.isOpen && (
+        <QuoteToOrderModal
+          onClose={convertToOrderModal.onClose}
+          quote={routeData?.quote!}
+          lines={routeData?.lines ?? []}
+          pricing={routeData?.prices ?? []}
         />
       )}
     </>
