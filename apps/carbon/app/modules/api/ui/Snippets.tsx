@@ -19,7 +19,6 @@ const snippets = {
     },
   }),
   init: (endpoint: string) => ({
-    title: "Initializing",
     bash: {
       language: "bash",
       code: `# No client library required for Bash.`,
@@ -28,9 +27,15 @@ const snippets = {
       language: "js",
       code: `
 import { createClient } from '@supabase/supabase-js'
-const supabaseUrl = '${endpoint}'
-const supabaseKey = process.env.SUPABASE_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)`,
+const apiUrl = '${endpoint}'
+const clientKey = process.env.CLIENT_KEY
+const carbon = createClient(apiUrl, clientKey, {
+  global: {
+    headers: {
+      "carbon-key": "<your_api_key_here>",
+    },
+  },
+});`,
     },
     python: {
       language: "python",
@@ -54,7 +59,6 @@ Future<void> main() async {
     },
   }),
   authKey: (title: string, varName: string, apikey: string) => ({
-    title: `${title}`,
     bash: {
       language: "bash",
       code: `${apikey}`,
@@ -125,18 +129,12 @@ const supabase = createClient(SUPABASE_URL, process.env.${
         code: `
 curl -X POST '${endpoint}/rest/v1/rpc/${rpcName}' \\${bashParams}
 -H "Content-Type: application/json" \\
--H "apikey: ${apiKey}" ${
-          showBearer
-            ? `\\
--H "Authorization: Bearer ${apiKey}"`
-            : ""
-        }
-`,
+-H "carbon-key: <your_api_key_here>"`,
       },
       js: {
         language: "js",
         code: `
-let { data, error } = await supabase
+let { data, error } = await carbon
   .rpc('${rpcName}'${jsParams})
 if (error) console.error(error)
 else console.log(data)
@@ -255,14 +253,12 @@ const ${listenerName} = supabase.channel('custom-filter-channel')
       language: "bash",
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?select=*' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}"
-`,
+-H "carbon-key: <your_api_key_here>"`,
     },
     js: {
       language: "js",
       code: `
-let { data: ${resourceId}, error } = await supabase
+let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select('*')
 `,
@@ -286,14 +282,12 @@ let { data: ${resourceId}, error } = await supabase
       language: "bash",
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?select=${columnName}' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}"
-`,
+-H "carbon-key: <your_api_key_here>"`,
     },
     js: {
       language: "js",
       code: `
-let { data: ${resourceId}, error } = await supabase
+let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select('${columnName}')
 `,
@@ -309,14 +303,12 @@ let { data: ${resourceId}, error } = await supabase
       language: "bash",
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?select=some_column,other_table(foreign_key)' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}"
-`,
+-H "carbon-key: <your_api_key_here>"`,
     },
     js: {
       language: "js",
       code: `
-let { data: ${resourceId}, error } = await supabase
+let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select(\`
     some_column,
@@ -333,15 +325,14 @@ let { data: ${resourceId}, error } = await supabase
       language: "bash",
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?select=*' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Range: 0-9"
 `,
     },
     js: {
       language: "js",
       code: `
-let { data: ${resourceId}, error } = await supabase
+let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select('*')
   .range(0, 9)
@@ -354,15 +345,14 @@ let { data: ${resourceId}, error } = await supabase
       language: "bash",
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?id=eq.1&select=*' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Range: 0-9"
 `,
     },
     js: {
       language: "js",
       code: `
-let { data: ${resourceId}, error } = await supabase
+let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select("*")
   // Filters
@@ -388,8 +378,7 @@ let { data: ${resourceId}, error } = await supabase
       language: "bash",
       code: `
 curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -H "Prefer: return=minimal" \\
 -d '{ "some_column": "someValue", "other_column": "otherValue" }'
@@ -398,7 +387,7 @@ curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
     js: {
       language: "js",
       code: `
-const { data, error } = await supabase
+const { data, error } = await carbon
   .from('${resourceId}')
   .insert([
     { some_column: 'someValue', other_column: 'otherValue' },
@@ -413,8 +402,7 @@ const { data, error } = await supabase
       language: "bash",
       code: `
 curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '[{ "some_column": "someValue" }, { "other_column": "otherValue" }]'
 `,
@@ -422,7 +410,7 @@ curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
     js: {
       language: "js",
       code: `
-const { data, error } = await supabase
+const { data, error } = await carbon
   .from('${resourceId}')
   .insert([
     { some_column: 'someValue' },
@@ -438,8 +426,7 @@ const { data, error } = await supabase
       language: "bash",
       code: `
 curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -H "Prefer: resolution=merge-duplicates" \\
 -d '{ "some_column": "someValue", "other_column": "otherValue" }'
@@ -448,7 +435,7 @@ curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
     js: {
       language: "js",
       code: `
-const { data, error } = await supabase
+const { data, error } = await carbon
   .from('${resourceId}')
   .upsert({ some_column: 'someValue' })
   .select()
@@ -461,8 +448,7 @@ const { data, error } = await supabase
       language: "bash",
       code: `
 curl -X PATCH '${endpoint}/rest/v1/${resourceId}?some_column=eq.someValue' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -H "Prefer: return=minimal" \\
 -d '{ "other_column": "otherValue" }'
@@ -471,7 +457,7 @@ curl -X PATCH '${endpoint}/rest/v1/${resourceId}?some_column=eq.someValue' \\
     js: {
       language: "js",
       code: `
-const { data, error } = await supabase
+const { data, error } = await carbon
   .from('${resourceId}')
   .update({ other_column: 'otherValue' })
   .eq('some_column', 'someValue')
@@ -485,14 +471,12 @@ const { data, error } = await supabase
       language: "bash",
       code: `
 curl -X DELETE '${endpoint}/rest/v1/${resourceId}?some_column=eq.someValue' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer ${apiKey}"
-`,
+-H "carbon-key: <your_api_key_here>"`,
     },
     js: {
       language: "js",
       code: `
-const { error } = await supabase
+const { error } = await carbon
   .from('${resourceId}')
   .delete()
   .eq('some_column', 'someValue')
@@ -505,7 +489,7 @@ const { error } = await supabase
       language: "bash",
       code: `
 curl -X POST '${endpoint}/auth/v1/signup' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com",
@@ -516,7 +500,7 @@ curl -X POST '${endpoint}/auth/v1/signup' \\
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.signUp({
+let { data, error } = await carbon.auth.signUp({
   email: 'someone@email.com',
   password: '${randomPassword}'
 })
@@ -529,7 +513,7 @@ let { data, error } = await supabase.auth.signUp({
       language: "bash",
       code: `
 curl -X POST '${endpoint}/auth/v1/token?grant_type=password' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com",
@@ -540,7 +524,7 @@ curl -X POST '${endpoint}/auth/v1/token?grant_type=password' \\
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.signInWithPassword({
+let { data, error } = await carbon.auth.signInWithPassword({
   email: 'someone@email.com',
   password: '${randomPassword}'
 })
@@ -553,7 +537,7 @@ let { data, error } = await supabase.auth.signInWithPassword({
       language: "bash",
       code: `
 curl -X POST '${endpoint}/auth/v1/magiclink' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com"
@@ -563,7 +547,7 @@ curl -X POST '${endpoint}/auth/v1/magiclink' \\
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.signInWithOtp({
+let { data, error } = await carbon.auth.signInWithOtp({
   email: 'someone@email.com'
 })
 `,
@@ -575,7 +559,7 @@ let { data, error } = await supabase.auth.signInWithOtp({
       language: "bash",
       code: `
 curl -X POST '${endpoint}/auth/v1/signup' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '{
   "phone": "+13334445555",
@@ -586,7 +570,7 @@ curl -X POST '${endpoint}/auth/v1/signup' \\
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.signUp({
+let { data, error } = await carbon.auth.signUp({
   phone: '+13334445555',
   password: 'some-password'
 })
@@ -599,7 +583,7 @@ let { data, error } = await supabase.auth.signUp({
       language: "bash",
       code: `
 curl -X POST '${endpoint}/auth/v1/otp' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '{
   "phone": "+13334445555"
@@ -609,7 +593,7 @@ curl -X POST '${endpoint}/auth/v1/otp' \\
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.signInWithOtp({
+let { data, error } = await carbon.auth.signInWithOtp({
   phone: '+13334445555'
 })
 `,
@@ -621,7 +605,7 @@ let { data, error } = await supabase.auth.signInWithOtp({
       language: "bash",
       code: `
 curl -X POST '${endpoint}/auth/v1/verify' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '{
   "type": "sms",
@@ -633,7 +617,7 @@ curl -X POST '${endpoint}/auth/v1/verify' \\
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.verifyOtp({
+let { data, error } = await carbon.auth.verifyOtp({
   phone: '+13334445555',
   token: '123456',
   type: 'sms'
@@ -647,7 +631,7 @@ let { data, error } = await supabase.auth.verifyOtp({
       language: "bash",
       code: `
 curl -X POST '${endpoint}/auth/v1/invite' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Authorization: Bearer USER_TOKEN" \\
 -H "Content-Type: application/json" \\
 -d '{
@@ -658,7 +642,7 @@ curl -X POST '${endpoint}/auth/v1/invite' \\
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.admin.inviteUserByEmail('someone@email.com')
+let { data, error } = await carbon.auth.admin.inviteUserByEmail('someone@email.com')
 `,
     },
   }),
@@ -668,7 +652,7 @@ let { data, error } = await supabase.auth.admin.inviteUserByEmail('someone@email
       language: "bash",
       code: `
 curl -X GET '${endpoint}/auth/v1/authorize?provider=github' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Authorization: Bearer USER_TOKEN" \\
 -H "Content-Type: application/json"
 `,
@@ -676,7 +660,7 @@ curl -X GET '${endpoint}/auth/v1/authorize?provider=github' \\
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.signInWithOAuth({
+let { data, error } = await carbon.auth.signInWithOAuth({
   provider: 'github'
 })
 `,
@@ -688,14 +672,13 @@ let { data, error } = await supabase.auth.signInWithOAuth({
       language: "bash",
       code: `
 curl -X GET '${endpoint}/auth/v1/user' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer USER_TOKEN"
+-H "carbon-key: <your_api_key_here>"
 `,
     },
     js: {
       language: "js",
       code: `
-const { data: { user } } = await supabase.auth.getUser()
+const { data: { user } } = await carbon.auth.getUser()
 `,
     },
   }),
@@ -705,7 +688,7 @@ const { data: { user } } = await supabase.auth.getUser()
       language: "bash",
       code: `
       curl -X POST '${endpoint}/auth/v1/recover' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com"
@@ -715,7 +698,7 @@ const { data: { user } } = await supabase.auth.getUser()
     js: {
       language: "js",
       code: `
-let { data, error } = await supabase.auth.resetPasswordForEmail(email)
+let { data, error } = await carbon.auth.resetPasswordForEmail(email)
 `,
     },
   }),
@@ -725,8 +708,7 @@ let { data, error } = await supabase.auth.resetPasswordForEmail(email)
       language: "bash",
       code: `
       curl -X PUT '${endpoint}/auth/v1/user' \\
--H "apikey: ${apiKey}" \\
--H "Authorization: Bearer USER_TOKEN" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com",
@@ -740,7 +722,7 @@ let { data, error } = await supabase.auth.resetPasswordForEmail(email)
     js: {
       language: "js",
       code: `
-const { data, error } = await supabase.auth.updateUser({
+const { data, error } = await carbon.auth.updateUser({
   email: "new@email.com",
   password: "new-password",
   data: { hello: 'world' }
@@ -754,7 +736,7 @@ const { data, error } = await supabase.auth.updateUser({
       language: "bash",
       code: `
 curl -X POST '${endpoint}/auth/v1/logout' \\
--H "apikey: ${apiKey}" \\
+-H "carbon-key: <your_api_key_here>" \\
 -H "Content-Type: application/json" \\
 -H "Authorization: Bearer USER_TOKEN"
 `,
@@ -762,7 +744,7 @@ curl -X POST '${endpoint}/auth/v1/logout' \\
     js: {
       language: "js",
       code: `
-let { error } = await supabase.auth.signOut()
+let { error } = await carbon.auth.signOut()
 `,
     },
   }),

@@ -89,10 +89,6 @@ function useApiDocsMenu(): RouteGroup[] {
           name: "Introduction",
           to: path.to.apiIntro(selectedLang),
         },
-        {
-          name: "Authentication",
-          to: path.to.apiAuthentication(selectedLang),
-        },
       ],
     },
   ];
