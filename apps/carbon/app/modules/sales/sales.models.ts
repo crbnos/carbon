@@ -404,7 +404,7 @@ export const quoteOperationValidator = z
   .refine(
     (data) => {
       if (data.operationType === "Inside") {
-        return Number.isFinite(data.machineTime);
+        return Number.isFinite(data.machineRate);
       }
       return true;
     },

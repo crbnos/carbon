@@ -10,6 +10,7 @@ import {
   CardTitle,
   Editor,
   HStack,
+  Label,
   cn,
   generateHTML,
   useDebounce,
@@ -23,13 +24,12 @@ import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuSettings2, LuX } from "react-icons/lu";
+import { LuChevronDown, LuDollarSign, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
   Hidden,
   InputControlled,
-  Number,
   NumberControlled,
   Process,
   Select,
@@ -268,14 +268,15 @@ const QuoteBillOfProcess = ({
           : item
       )
     );
-    await supabase
-      ?.from("quoteOperationWorkInstruction")
-      .update({
-        content,
-        updatedAt: today(getLocalTimeZone()).toString(),
-        updatedBy: userId,
-      })
-      .eq("quoteOperationId", selectedItemId!);
+    if (selectedItemId !== null && !isTemporaryId(selectedItemId))
+      await supabase
+        ?.from("quoteOperationWorkInstruction")
+        .update({
+          content,
+          updatedAt: today(getLocalTimeZone()).toString(),
+          updatedBy: userId,
+        })
+        .eq("quoteOperationId", selectedItemId!);
   }, 2500);
 
   const onUploadImage = async (file: File) => {
@@ -334,7 +335,6 @@ const QuoteBillOfProcess = ({
       {
         id: 1,
         label: "Work Instructions",
-        disabled: isTemporaryId(item.id),
         content: (
           <div className="flex flex-col">
             <motion.div
@@ -565,12 +565,24 @@ function OperationForm({
     }
   }, [item.id, fetcher.data, setItems, setSelectedItemId]);
 
+  const [showSetup, setShowSetup] = useState((item.data.setupTime ?? 0) > 0);
+  const [showMachine, setShowMachine] = useState(
+    (item.data.machineTime ?? 0) > 0
+  );
+  const [showLabor, setShowLabor] = useState(
+    (item.data.laborTime ?? 0) > 0 ||
+      (showSetup === false && showMachine === false)
+  );
+  const [showCost, setShowCost] = useState(false);
+
   const [processData, setProcessData] = useState<{
     description: string;
     laborRate: number;
+    laborTime: number;
     laborUnit: string;
     laborUnitHint: string;
     machineRate: number;
+    machineTime: number;
     machineUnit: string;
     machineUnitHint: string;
     operationMinimumCost: number;
@@ -579,14 +591,17 @@ function OperationForm({
     operationUnitCost: number;
     overheadRate: number;
     processId: string;
+    setupTime: number;
     setupUnit: string;
     setupUnitHint: string;
   }>({
     description: item.data.description ?? "",
     laborRate: item.data.laborRate ?? 0,
+    laborTime: item.data.laborTime ?? 0,
     laborUnit: item.data.laborUnit ?? "Hours/Piece",
     laborUnitHint: getUnitHint(item.data.laborUnit),
     machineRate: item.data.machineRate ?? 0,
+    machineTime: item.data.machineTime ?? 0,
     machineUnit: item.data.machineUnit ?? "Hours/Piece",
     machineUnitHint: getUnitHint(item.data.machineUnit),
     operationMinimumCost: item.data.operationMinimumCost ?? 0,
@@ -595,6 +610,7 @@ function OperationForm({
     operationUnitCost: item.data.operationUnitCost ?? 0,
     overheadRate: item.data.overheadRate ?? 0,
     processId: item.data.processId ?? "",
+    setupTime: item.data.setupTime ?? 0,
     setupUnit: item.data.setupUnit ?? "Total Minutes",
     setupUnitHint: getUnitHint(item.data.setupUnit),
   });
@@ -725,7 +741,7 @@ function OperationForm({
       validator={quoteOperationValidator}
       className="w-full flex flex-col gap-y-4"
       fetcher={fetcher}
-      onSubmit={(values) => {
+      onSubmit={async (values) => {
         setItems((prevItems) =>
           prevItems.map((i) =>
             i.id === item.id
@@ -852,148 +868,273 @@ function OperationForm({
             />
           </>
         ) : (
-          <>
-            <WorkCenter
-              name="workCenterId"
-              label="Work Center"
-              isOptional
-              processId={processData.processId}
-              onChange={(value) => {
-                if (value) {
-                  onWorkCenterChange(value?.value as string);
-                }
-              }}
-            />
-            <UnitHint
-              name="setupHint"
-              label="Setup"
-              value={processData.setupUnitHint}
-              onChange={(hint) => {
-                setProcessData((d) => ({
-                  ...d,
-                  setupUnitHint: hint,
-                  setupUnit:
-                    hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
-                }));
-              }}
-            />
-            <Number name="setupTime" label="Setup Time" minValue={0} />
-            <StandardFactor
-              name="setupUnit"
-              label="Setup Unit"
-              hint={processData.setupUnitHint}
-              value={processData.setupUnit}
-              onChange={(newValue) => {
-                setProcessData((d) => ({
-                  ...d,
-                  setupUnit: newValue?.value ?? "Total Minutes",
-                }));
-              }}
-            />
-            <UnitHint
-              name="laborHint"
-              label="Labor"
-              value={processData.laborUnitHint}
-              onChange={(hint) => {
-                setProcessData((d) => ({
-                  ...d,
-                  laborUnitHint: hint,
-                  laborUnit:
-                    hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
-                }));
-              }}
-            />
-            <Number name="laborTime" label="Labor Time" minValue={0} />
-            <StandardFactor
-              name="laborUnit"
-              label="Labor Unit"
-              hint={processData.laborUnitHint}
-              value={processData.laborUnit}
-              onChange={(newValue) => {
-                setProcessData((d) => ({
-                  ...d,
-                  laborUnit: newValue?.value ?? "Hours/Piece",
-                }));
-              }}
-            />
-            <UnitHint
-              name="machineHint"
-              label="Machine"
-              value={processData.machineUnitHint}
-              onChange={(hint) => {
-                setProcessData((d) => ({
-                  ...d,
-                  machineUnitHint: hint,
-                  machineUnit:
-                    hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
-                }));
-              }}
-            />
-            <Number name="machineTime" label="Machine Time" minValue={0} />
-            <StandardFactor
-              name="machineUnit"
-              label="Machine Unit"
-              hint={processData.machineUnitHint}
-              value={processData.machineUnit}
-              onChange={(newValue) => {
-                setProcessData((d) => ({
-                  ...d,
-                  machineUnit: newValue?.value ?? "Hours/Piece",
-                }));
-              }}
-            />
-
-            <NumberControlled
-              name="laborRate"
-              label="Labor Rate"
-              minValue={0}
-              value={processData.laborRate}
-              formatOptions={{
-                style: "currency",
-                currency: "USD",
-              }}
-              onChange={(newValue) =>
-                setProcessData((d) => ({
-                  ...d,
-                  laborRate: newValue,
-                }))
+          <WorkCenter
+            name="workCenterId"
+            label="Work Center"
+            isOptional
+            processId={processData.processId}
+            onChange={(value) => {
+              if (value) {
+                onWorkCenterChange(value?.value as string);
               }
-            />
-            <NumberControlled
-              name="machineRate"
-              label="Machine Rate"
-              minValue={0}
-              value={processData.machineRate}
-              formatOptions={{
-                style: "currency",
-                currency: "USD",
-              }}
-              onChange={(newValue) =>
-                setProcessData((d) => ({
-                  ...d,
-                  machineRate: newValue,
-                }))
-              }
-            />
-            <NumberControlled
-              name="overheadRate"
-              label="Overhead Rate"
-              minValue={0}
-              value={processData.overheadRate}
-              formatOptions={{
-                style: "currency",
-                currency: "USD",
-              }}
-              onChange={(newValue) =>
-                setProcessData((d) => ({
-                  ...d,
-                  overheadRate: newValue,
-                }))
-              }
-            />
-          </>
+            }}
+          />
         )}
       </div>
+
+      {processData.operationType === "Inside" && (
+        <>
+          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+            <HStack
+              className="w-full justify-between cursor-pointer"
+              onClick={() => setShowLabor(!showLabor)}
+            >
+              <HStack>
+                <TimeTypeIcon type="Labor" />
+                <Label>Labor</Label>
+              </HStack>
+              <LuChevronDown
+                className={`transition-transform ${
+                  showLabor ? "rotate-180" : ""
+                }`}
+              />
+            </HStack>
+            <div
+              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
+                showLabor ? "" : "hidden"
+              }`}
+            >
+              <UnitHint
+                name="laborHint"
+                label="Labor"
+                value={processData.laborUnitHint}
+                onChange={(hint) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    laborUnitHint: hint,
+                    laborUnit:
+                      hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+                  }));
+                }}
+              />
+              <NumberControlled
+                name="laborTime"
+                label="Labor Time"
+                minValue={0}
+                value={processData.laborTime}
+                onChange={(newValue) =>
+                  setProcessData((d) => ({
+                    ...d,
+                    laborTime: newValue,
+                  }))
+                }
+              />
+              <StandardFactor
+                name="laborUnit"
+                label="Labor Unit"
+                hint={processData.laborUnitHint}
+                value={processData.laborUnit}
+                onChange={(newValue) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    laborUnit: newValue?.value ?? "Total Minutes",
+                  }));
+                }}
+              />
+            </div>
+          </div>
+          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+            <HStack
+              className="w-full justify-between cursor-pointer"
+              onClick={() => setShowSetup(!showSetup)}
+            >
+              <HStack>
+                <TimeTypeIcon type="Setup" />
+                <Label>Setup</Label>
+              </HStack>
+              <LuChevronDown
+                className={`transition-transform ${
+                  showSetup ? "rotate-180" : ""
+                }`}
+              />
+            </HStack>
+            <div
+              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
+                showSetup ? "" : "hidden"
+              }`}
+            >
+              <UnitHint
+                name="setupHint"
+                label="Setup"
+                value={processData.setupUnitHint}
+                onChange={(hint) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    setupUnitHint: hint,
+                    setupUnit:
+                      hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+                  }));
+                }}
+              />
+              <NumberControlled
+                name="setupTime"
+                label="Setup Time"
+                minValue={0}
+                value={processData.setupTime}
+                onChange={(newValue) =>
+                  setProcessData((d) => ({
+                    ...d,
+                    setupTime: newValue,
+                  }))
+                }
+              />
+              <StandardFactor
+                name="setupUnit"
+                label="Setup Unit"
+                hint={processData.setupUnitHint}
+                value={processData.setupUnit}
+                onChange={(newValue) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    setupUnit: newValue?.value ?? "Total Minutes",
+                  }));
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+            <HStack
+              className="w-full justify-between cursor-pointer"
+              onClick={() => setShowMachine(!showMachine)}
+            >
+              <HStack>
+                <TimeTypeIcon type="Machine" />
+                <Label>Machine</Label>
+              </HStack>
+              <LuChevronDown
+                className={`transition-transform ${
+                  showMachine ? "rotate-180" : ""
+                }`}
+              />
+            </HStack>
+            <div
+              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
+                showMachine ? "" : "hidden"
+              }`}
+            >
+              <UnitHint
+                name="machineHint"
+                label="Machine"
+                value={processData.machineUnitHint}
+                onChange={(hint) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    machineUnitHint: hint,
+                    machineUnit:
+                      hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+                  }));
+                }}
+              />
+              <NumberControlled
+                name="machineTime"
+                label="Machine Time"
+                minValue={0}
+                value={processData.machineTime}
+                onChange={(newValue) =>
+                  setProcessData((d) => ({
+                    ...d,
+                    machineTime: newValue,
+                  }))
+                }
+              />
+              <StandardFactor
+                name="machineUnit"
+                label="Machine Unit"
+                hint={processData.machineUnitHint}
+                value={processData.machineUnit}
+                onChange={(newValue) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    machineUnit: newValue?.value ?? "Total Minutes",
+                  }));
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+            <HStack
+              className="w-full justify-between cursor-pointer"
+              onClick={() => setShowCost(!showCost)}
+            >
+              <HStack>
+                <LuDollarSign />
+                <Label>Costing</Label>
+              </HStack>
+              <LuChevronDown
+                className={`transition-transform ${
+                  showCost ? "rotate-180" : ""
+                }`}
+              />
+            </HStack>
+            <div
+              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
+                showCost ? "" : "hidden"
+              }`}
+            >
+              <NumberControlled
+                name="laborRate"
+                label="Labor Rate"
+                minValue={0}
+                value={processData.laborRate}
+                formatOptions={{
+                  style: "currency",
+                  currency: "USD",
+                }}
+                onChange={(newValue) =>
+                  setProcessData((d) => ({
+                    ...d,
+                    laborRate: newValue,
+                  }))
+                }
+              />
+              <NumberControlled
+                name="machineRate"
+                label="Machine Rate"
+                minValue={0}
+                value={processData.machineRate}
+                formatOptions={{
+                  style: "currency",
+                  currency: "USD",
+                }}
+                onChange={(newValue) =>
+                  setProcessData((d) => ({
+                    ...d,
+                    machineRate: newValue,
+                  }))
+                }
+              />
+              <NumberControlled
+                name="overheadRate"
+                label="Overhead Rate"
+                minValue={0}
+                value={processData.overheadRate}
+                formatOptions={{
+                  style: "currency",
+                  currency: "USD",
+                }}
+                onChange={(newValue) =>
+                  setProcessData((d) => ({
+                    ...d,
+                    overheadRate: newValue,
+                  }))
+                }
+              />
+            </div>
+          </div>
+        </>
+      )}
       <motion.div
         className="flex w-full items-center justify-end p-2"
         initial={{ opacity: 0, filter: "blur(4px)" }}

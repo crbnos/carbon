@@ -36,6 +36,11 @@ import { Checkbox } from "./Checkbox";
 import { ClientOnly } from "./ClientOnly";
 import { CodeBlock } from "./CodeBlock";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./Collapsible";
+import {
   Command,
   CommandDialog,
   CommandEmpty,
@@ -287,6 +292,9 @@ export {
   Checkbox,
   ClientOnly,
   CodeBlock,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Command,
   CommandDialog,
   CommandEmpty,

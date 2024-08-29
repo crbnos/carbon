@@ -46,8 +46,6 @@ import type { ColumnFilter } from "./components/Filter/types";
 import type { ColumnSizeMap, TableAction } from "./types";
 import { getAccessorKey, updateNestedProperty } from "./utils";
 
-const PINNED_COLUMNS_BORDER_WIDTH = 2;
-
 interface TableProps<T extends object> {
   columns: ColumnDef<T>[];
   data: T[];
@@ -505,14 +503,15 @@ const Table = <T extends object>({
     return () => clearTimeout(timeout);
   }, [getTableWrapperEl, table, visibleColumns, pinnedColumnsKey, columnOrder]);
 
-  const lastLeftPinnedColumn = table
-    .getLeftVisibleLeafColumns()
-    .findLast((c) => c.getIsPinned() === "left");
+  // const lastLeftPinnedColumn = table
+  //   .getLeftVisibleLeafColumns()
+  //   .findLast((c) => c.getIsPinned() === "left");
 
   const getPinnedStyles = (column: Column<T>): CSSProperties => {
     const isPinned = column.getIsPinned();
 
     return {
+      // display: "inline-block",
       left:
         isPinned === "left"
           ? columnSizeMap.get(column.id)?.startX ?? 0
@@ -521,11 +520,15 @@ const Table = <T extends object>({
       position: isPinned ? "sticky" : "relative",
       zIndex: isPinned ? 1 : 0,
       backgroundColor: isPinned ? "hsl(var(--card))" : undefined,
-      borderColor: "hsl(var(--border))",
-      borderRightWidth:
-        lastLeftPinnedColumn?.id === column.id
-          ? PINNED_COLUMNS_BORDER_WIDTH
-          : 0,
+      boxShadow: isPinned
+        ? isPinned === "left"
+          ? "4px 0 6px -2px rgba(0, 0, 0, 0.1)"
+          : "-4px 0 6px -2px rgba(0, 0, 0, 0.1)"
+        : "none",
+      borderRight:
+        isPinned === "left" ? "1px solid hsl(var(--border))" : undefined,
+
+      maxWidth: isPinned === "right" ? 60 : undefined,
     };
   };
 
@@ -558,7 +561,7 @@ const Table = <T extends object>({
         <div className="flex max-w-full h-full">
           <TableBase
             ref={tableRef}
-            className="relative table-fixed border-collapse border-spacing-0"
+            className="relative border-collapse border-spacing-0"
           >
             <Thead className="sticky top-0 z-10">
               {table.getHeaderGroups().map((headerGroup) => (
