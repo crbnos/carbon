@@ -87,7 +87,10 @@ export default function ForgotPasswordRoute() {
         />
       </div>
       {actionData?.success ? (
-        <Alert className="h-[240px] [&>svg]:left-8 [&>svg]:top-8 p-8">
+        <Alert
+          variant="success"
+          className="h-[240px] [&>svg]:left-8 [&>svg]:top-8 p-8"
+        >
           <LuCheckCircle className="w-4 h-4" />
           <AlertTitle>Success</AlertTitle>
           <AlertDescription>
