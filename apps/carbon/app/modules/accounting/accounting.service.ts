@@ -5,6 +5,7 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import type { itemLedgerValidator } from "../inventory/inventory.models";
 import type {
   accountCategoryValidator,
   accountSubcategoryValidator,
@@ -13,7 +14,6 @@ import type {
   defaultBalanceSheetAccountValidator,
   defaultIncomeAcountValidator,
   fiscalYearSettingsValidator,
-  itemLedgerValidator,
   paymentTermValidator,
 } from "./accounting.models";
 import type { Account, Transaction } from "./types";

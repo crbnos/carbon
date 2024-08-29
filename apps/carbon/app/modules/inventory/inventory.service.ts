@@ -27,6 +27,35 @@ export async function deleteShippingMethod(
     .eq("id", shippingMethodId);
 }
 
+export async function getInventoryItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    favorite?: boolean;
+    recent?: boolean;
+    createdBy?: string;
+    active: boolean;
+  }
+) {
+  let query = client
+    .from("item")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .eq("active", args.active)
+    .eq("itemTrackingType", "Inventory");
+
+  if (args?.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  return query;
+}
+
 export async function getReceipts(
   client: SupabaseClient<Database>,
   companyId: string,

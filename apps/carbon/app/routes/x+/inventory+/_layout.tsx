@@ -12,11 +12,11 @@ export const meta: MetaFunction = () => {
 
 export const handle: Handle = {
   breadcrumb: "Inventory",
-  to: path.to.receipts,
+  to: path.to.inventory,
   module: "inventory",
 };
 
-export default function UsersRoute() {
+export default function InventoryRoute() {
   const { groups } = useInventorySubmodules();
 
   return (
