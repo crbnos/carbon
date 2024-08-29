@@ -30,8 +30,6 @@ FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
 
--- attributeDataType (TODO: Ask Brad what to do for tables using auth.role() == 'authenticated', do these need an API key policy?)
-
 -- contractor
 CREATE POLICY "Requests with an API key can access contractors" ON "contractor"
 FOR ALL USING (
@@ -50,7 +48,7 @@ FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
 
--- country (TODO: Ask Brad what to do for tables using auth.role() == 'authenticated', do these need an API key policy?)
+-- country 
 ALTER TABLE "country" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Authenticated users can view countries" ON "country" FOR SELECT USING (auth.role() = 'authenticated');
 
@@ -198,8 +196,6 @@ FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
 
--- customFieldTable (TODO: Ask Brad what to do for tables using auth.role() == 'authenticated', do these need an API key policy?)
-
 -- department
 CREATE POLICY "Requests with an API key can access departments" ON "department"
 FOR ALL USING (
@@ -304,8 +300,13 @@ FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
 
--- group (TODO: identity groups don't have a companyId, also should this be settings permission?)
+-- group
 ALTER TABLE "group" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Requests with an API key can access groups" ON "group"
+FOR ALL USING (
+  has_valid_api_key_for_company("companyId")
+);
 
 CREATE POLICY "Employees with settings_view can view groups" ON "group"
 FOR SELECT USING (
@@ -341,8 +342,6 @@ CREATE POLICY "Requests with an API key can access holidays" ON "holiday"
 FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
-
--- integration (TODO: Ask Brad what to do for tables using auth.role() == 'authenticated', do these need an API key policy?)
 
 -- item
 CREATE POLICY "Requests with an API key can access items" ON "item"
@@ -694,32 +693,8 @@ FOR ALL USING (
   has_valid_api_key_for_company(get_company_id_from_foreign_key("salesOrderId", 'salesOrder'))
 );
 
--- salesOrderTransaction (TODO: Ask Brad if users should be able to CRUD these)
+-- salesOrderTransaction 
 ALTER TABLE "salesOrderTransaction" ENABLE ROW LEVEL SECURITY;
-
--- CREATE POLICY "Employees with sales_view can view sales order transactions" ON "salesOrderTransaction"
--- FOR SELECT USING (
---   has_role('employee', "companyId") AND 
---   has_company_permission('sales_view', "companyId")
--- );
-
--- CREATE POLICY "Employees with sales_create can create sales order transactions" ON "salesOrderTransaction"
--- FOR INSERT WITH CHECK (
---   has_role('employee', "companyId") AND 
---   has_company_permission('sales_create', "companyId")
--- );
-
--- CREATE POLICY "Employees with sales_update can update sales order transactions" ON "salesOrderTransaction"
--- FOR UPDATE USING (
---   has_role('employee', "companyId") AND 
---   has_company_permission('sales_update', "companyId")
--- );
-
--- CREATE POLICY "Employees with sales_delete can delete sales order transactions" ON "salesOrderTransaction"
--- FOR DELETE USING (
---   has_role('employee', "companyId") AND 
---   has_company_permission('sales_delete', "companyId")
--- );
 
 CREATE POLICY "Requests with an API key can access sales order transactions" ON "salesOrderTransaction"
 FOR ALL USING (
@@ -740,12 +715,6 @@ FOR ALL USING (
 
 -- salesRfqLine
 CREATE POLICY "Requests with an API key can access sales RFQ lines" ON "salesRfqLine"
-FOR ALL USING (
-  has_valid_api_key_for_company("companyId")
-);
-
--- search (TODO: should we exclude this from the public API?)
-CREATE POLICY "Requests with an API key can access search" ON "search"
 FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
@@ -959,46 +928,6 @@ CREATE POLICY "Requests with an API key can access units of measure" ON "unitOfM
 FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
-
--- user (TODO: Ask Brad for help)
--- CREATE POLICY "Requests with an API key can access users" ON "user"
--- FOR ALL USING (
---   has_valid_api_key_for_company("companyId")
--- );
-
--- userAttribute (TODO: Ask Brad for help)
--- ALTER TABLE "userAttribute" ENABLE ROW LEVEL SECURITY;
-
--- CREATE POLICY "Requests with an API key can access user attributes" ON "userAttribute"
--- FOR ALL USING (
---   has_valid_api_key_for_company("companyId")
--- );
-
--- userAttributeCategory (TODO: Ask Brad for help)
--- ALTER TABLE "userAttributeCategory" ENABLE ROW LEVEL SECURITY;
-
--- CREATE POLICY "Requests with an API key can access user attribute categories" ON "userAttributeCategory"
--- FOR ALL USING (
---   has_valid_api_key_for_company("companyId")
--- );
-
--- userAttributeValue (TODO: Ask Brad for help)
--- CREATE POLICY "Requests with an API key can access user attribute values" ON "userAttributeValue"
--- FOR ALL USING (
---   has_valid_api_key_for_company(get_company_id_from_foreign_key("userAttributeId", 'userAttribute'))
--- );
-
--- userPermissions (TODO: Ask Brad for help)
--- CREATE POLICY "Requests with an API key can access user premissions" ON "userPermissions"
--- FOR ALL USING (
---   has_valid_api_key_for_company("companyId")
--- );
-
--- userToCompany (TODO: Ask Brad for help - should we exclude this from the public API?)
--- CREATE POLICY "Requests with an API key can access user to company mapping" ON "userToCompany"
--- FOR ALL USING (
---   has_valid_api_key_for_company("companyId")
--- );
 
 -- warehouse
 CREATE POLICY "Requests with an API key can access warehouses" ON "warehouse"
