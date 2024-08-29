@@ -28,8 +28,8 @@ const snippets = {
       code: `
 import { createClient } from '@supabase/supabase-js'
 const apiUrl = '${endpoint}'
-const clientKey = process.env.CLIENT_KEY
-const carbon = createClient(apiUrl, clientKey, {
+const publicKey = process.env.PUBLIC_KEY
+const carbon = createClient(apiUrl, publicKey, {
   global: {
     headers: {
       "carbon-key": "<your_api_key_here>",

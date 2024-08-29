@@ -77,7 +77,14 @@ export default function ApiDocsRoute() {
   );
 }
 
-const tableBlacklist = new Set(["apiKey"]);
+const tableBlacklist = new Set([
+  "apiKey",
+  "documentTransaction",
+  "purchaseOrderTransaction",
+  "salesOrderTransaction",
+  "search",
+  "user",
+]);
 
 function useApiDocsMenu(): RouteGroup[] {
   const selectedLang = useSelectedLang();

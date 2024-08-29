@@ -1,5 +1,9 @@
+import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
+import { Link } from "@remix-run/react";
+import { LuAlertTriangle } from "react-icons/lu";
 import { getBrowserEnv, SUPABASE_ANON_PUBLIC } from "~/config/env";
 import { CodeSnippet, Snippets, useSelectedLang } from "~/modules/api";
+import { path } from "~/utils/path";
 
 const { SUPABASE_API_URL } = getBrowserEnv();
 
@@ -12,9 +16,10 @@ export default function Route() {
         <article className="code-column text-foreground">
           <p>CarbonOS uses API token authentication for the public API.</p>
           <p>
-            To begin, go to the Settings page and click on API Keys, and create
-            a new API Key. Be sure to save this API Key in a secure location, as
-            you will only be able to view it once upon creation.
+            To begin, go to the Settings page and click on{" "}
+            <Link to={path.to.apiKeys}>API Keys</Link>, and create a new API
+            Key. Be sure to save this API Key in a secure location, as you will
+            only be able to view it once upon creation.
           </p>
           <p>We recommend setting your API Key as an Environment Variable. </p>
           <p>
@@ -34,15 +39,26 @@ export default function Route() {
               </p>
               <p>
                 To initialize the Client Library SDK, you will need the{" "}
-                <code>CLIENT_KEY</code> (shown below) in addition to your API
-                Key.
+                <code>PUBLIC_KEY</code> (shown below) in addition to your{" "}
+                <code>carbon-key</code> API Key.
               </p>
+              <Alert variant="destructive">
+                <LuAlertTriangle className="h-4 w-4 my-1" />
+                <AlertTitle className="!my-0 font-bold text-base">
+                  You should never expose the <code>carbon-key</code> in the
+                  client
+                </AlertTitle>
+                <AlertDescription>
+                  Your API key gives full access to your database. Never expose
+                  it in a public-facing client.
+                </AlertDescription>
+              </Alert>
               <article>
                 <CodeSnippet
                   selectedLang={selectedLang}
                   snippet={Snippets.authKey(
                     "CLIENT KEY",
-                    "CLIENT_KEY",
+                    "PUBLIC_KEY",
                     SUPABASE_ANON_PUBLIC
                   )}
                 />
