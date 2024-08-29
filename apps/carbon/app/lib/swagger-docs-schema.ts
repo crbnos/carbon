@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.1 (cd38da5)",
+    version: "12.0.2 (a4e00ff)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -4291,6 +4291,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.modelUploadId",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.customerId",
           },
           {
@@ -4298,6 +4304,27 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemDescription",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.modelId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.autodeskUrn",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.modelPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.modelName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.modelSize",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.unitCost",
           },
           {
             $ref: "#/parameters/select",
@@ -8689,6 +8716,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.modelUploadId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8829,6 +8862,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.modelUploadId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -8921,6 +8960,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.modelUploadId",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -33885,6 +33930,15 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        status: {
+          enum: ["Ordered", "In Progress", "Completed"],
+          format: 'public."salesOrderLineStatus"',
+          type: "string",
+        },
+        modelUploadId: {
+          format: "text",
+          type: "string",
+        },
         customerId: {
           description:
             "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
@@ -33898,6 +33952,34 @@ export default {
         itemDescription: {
           format: "text",
           type: "string",
+        },
+        modelId: {
+          format: "text",
+          type: "string",
+        },
+        autodeskUrn: {
+          format: "text",
+          type: "string",
+        },
+        modelPath: {
+          format: "text",
+          type: "string",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        modelName: {
+          format: "text",
+          type: "string",
+        },
+        modelSize: {
+          format: "bigint",
+          type: "integer",
+        },
+        unitCost: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -35791,6 +35873,7 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "status",
       ],
       properties: {
         id: {
@@ -35926,6 +36009,16 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        status: {
+          default: "Ordered",
+          enum: ["Ordered", "In Progress", "Completed"],
+          format: 'public."salesOrderLineStatus"',
+          type: "string",
+        },
+        modelUploadId: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -41656,7 +41749,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -41705,7 +41798,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -48082,6 +48175,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderLines.status": {
+      name: "status",
+      required: false,
+      format: 'public."salesOrderLineStatus"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrderLines.customerId": {
       name: "customerId",
       required: false,
@@ -48100,6 +48207,55 @@ export default {
       name: "itemDescription",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.modelId": {
+      name: "modelId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.autodeskUrn": {
+      name: "autodeskUrn",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.modelPath": {
+      name: "modelPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.modelName": {
+      name: "modelName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.modelSize": {
+      name: "modelSize",
+      required: false,
+      format: "bigint",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.unitCost": {
+      name: "unitCost",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -50753,6 +50909,20 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.status": {
+      name: "status",
+      required: false,
+      format: 'public."salesOrderLineStatus"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
