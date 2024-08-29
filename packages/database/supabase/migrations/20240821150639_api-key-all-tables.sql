@@ -303,33 +303,27 @@ FOR ALL USING (
 -- group
 ALTER TABLE "group" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Requests with an API key can access groups" ON "group"
-FOR ALL USING (
-  has_valid_api_key_for_company("companyId")
-);
-
-CREATE POLICY "Employees with settings_view can view groups" ON "group"
+CREATE POLICY "All employees can view groups" ON "group"
 FOR SELECT USING (
-  has_role('employee', "companyId") AND 
-  has_company_permission('settings_view', "companyId")
+  has_role('employee', "companyId") 
 );
 
-CREATE POLICY "Employees with settings_create can create groups" ON "group"
+CREATE POLICY "Employees with users_create can create groups" ON "group"
 FOR INSERT WITH CHECK (
   has_role('employee', "companyId") AND 
-  has_company_permission('settings_create', "companyId")
+  has_company_permission('users_create', "companyId")
 );
 
-CREATE POLICY "Employees with settings_update can update groups" ON "group"
+CREATE POLICY "Employees with users_update can update groups" ON "group"
 FOR UPDATE USING (
   has_role('employee', "companyId") AND 
-  has_company_permission('settings_update', "companyId")
+  has_company_permission('users_update', "companyId")
 );
 
-CREATE POLICY "Employees with settings_delete can delete groups" ON "group"
+CREATE POLICY "Employees with users_delete can delete groups" ON "group"
 FOR DELETE USING (
   has_role('employee', "companyId") AND 
-  has_company_permission('settings_delete', "companyId")
+  has_company_permission('users_delete', "companyId")
 );
 
 CREATE POLICY "Requests with an API key can access groups" ON "group"
