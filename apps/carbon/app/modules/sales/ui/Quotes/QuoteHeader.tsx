@@ -127,7 +127,10 @@ const QuoteHeader = () => {
                 <Button
                   leftIcon={<LuTrophy />}
                   variant="primary"
-                  onClick={convertToOrderModal.onOpen}
+                  onClick={() => {
+                    new Audio("/audio/airhorn.mp3").play();
+                    convertToOrderModal.onOpen();
+                  }}
                 >
                   Won
                 </Button>

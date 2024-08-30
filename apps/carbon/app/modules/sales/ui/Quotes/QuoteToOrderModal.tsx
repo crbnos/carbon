@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import {
   Button,
   cn,
@@ -23,7 +24,8 @@ import {
   VStack,
 } from "@carbon/react";
 import { Form } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   LuBan,
@@ -35,6 +37,7 @@ import {
   LuUserSquare,
 } from "react-icons/lu";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
+import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import type { Quotation, QuotationLine, QuotationPrice } from "../../types";
 
@@ -45,6 +48,10 @@ type QuoteToOrderDrawerProps = {
   pricing: QuotationPrice[];
   onClose: () => void;
 };
+
+type Customer = Database["public"]["Tables"]["customer"]["Row"];
+type CustomerPayment = Database["public"]["Tables"]["customerPayment"]["Row"];
+type CustomerShipping = Database["public"]["Tables"]["customerShipping"]["Row"];
 
 const QuoteToOrderDrawer = ({
   isOpen,
@@ -66,13 +73,54 @@ const QuoteToOrderDrawer = ({
       }
     >
   >({});
-  const [customerDetails, setCustomerDetails] = useState({});
-  const [paymentDetails, setPaymentDetails] = useState({
-    // Add default payment details from customerPayment table
-  });
-  const [shippingDetails, setShippingDetails] = useState({
-    // Add default shipping details from customerShipping table
-  });
+  const [customerDetails, setCustomerDetails] = useState<Customer | null>(null);
+  const [paymentDetails, setPaymentDetails] = useState<CustomerPayment | null>(
+    null
+  );
+  const [shippingDetails, setShippingDetails] =
+    useState<CustomerShipping | null>(null);
+
+  const { supabase } = useSupabase();
+  const fetching = useRef(false);
+  const fetchCustomerDetails = useCallback(async () => {
+    if (!supabase) return;
+    if (fetching.current) return false;
+    if (customerDetails || paymentDetails || shippingDetails) return;
+
+    fetching.current = true;
+    const [customer, payment, shipping] = await Promise.all([
+      supabase
+        .from("customer")
+        .select("*")
+        .eq("id", quote.customerId!)
+        .single(),
+      supabase
+        .from("customerPayment")
+        .select("*")
+        .eq("customerId", quote.customerId!)
+        .single(),
+      supabase
+        .from("customerShipping")
+        .select("*")
+        .eq("customerId", quote.customerId!)
+        .single(),
+    ]);
+
+    setCustomerDetails(customer.data);
+    setPaymentDetails(payment.data);
+    setShippingDetails(shipping.data);
+    fetching.current = false;
+  }, [
+    customerDetails,
+    paymentDetails,
+    quote.customerId,
+    shippingDetails,
+    supabase,
+  ]);
+
+  useEffect(() => {
+    if (isOpen) fetchCustomerDetails();
+  }, [fetchCustomerDetails, isOpen]);
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -206,8 +254,8 @@ export default QuoteToOrderDrawer;
 type LinePricingFormProps = {
   lines: QuotationLine[];
   pricing: QuotationPrice[];
-  setSelectedLines: React.Dispatch<
-    React.SetStateAction<
+  setSelectedLines: Dispatch<
+    SetStateAction<
       Record<
         string,
         {
@@ -276,8 +324,8 @@ type LinePricingOptionsProps = {
   line: QuotationLine;
   options: QuotationPrice[];
   formatter: Intl.NumberFormat;
-  setSelectedLines: React.Dispatch<
-    React.SetStateAction<
+  setSelectedLines: Dispatch<
+    SetStateAction<
       Record<
         string,
         {
@@ -469,10 +517,10 @@ const LinePricingOptions = ({
   );
 };
 
-interface PaymentDetailsFormProps {
-  paymentDetails: PaymentDetails;
-  setPaymentDetails: React.Dispatch<React.SetStateAction<PaymentDetails>>;
-}
+type PaymentDetailsFormProps = {
+  paymentDetails: CustomerPayment | null;
+  setPaymentDetails: Dispatch<SetStateAction<CustomerPayment | null>>;
+};
 
 function PaymentDetailsForm({
   paymentDetails,
@@ -494,14 +542,18 @@ function PaymentDetailsForm({
           className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
         />
       </HStack>
-      {isExpanded && <div className="py-4"></div>}
+      {isExpanded && (
+        <div className="py-4">
+          <pre>{JSON.stringify(paymentDetails, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }
-interface CustomerDetailsFormProps {
-  customerDetails: CustomerDetails;
-  setCustomerDetails: React.Dispatch<React.SetStateAction<CustomerDetails>>;
-}
+type CustomerDetailsFormProps = {
+  customerDetails: Customer | null;
+  setCustomerDetails: Dispatch<SetStateAction<Customer | null>>;
+};
 
 function CustomerDetailsForm({
   customerDetails,
@@ -523,15 +575,19 @@ function CustomerDetailsForm({
           className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
         />
       </HStack>
-      {isExpanded && <div className="py-4"></div>}
+      {isExpanded && (
+        <div className="py-4">
+          <pre>{JSON.stringify(customerDetails, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }
 
-interface ShippingDetailsFormProps {
-  shippingDetails: ShippingDetails;
-  setShippingDetails: React.Dispatch<React.SetStateAction<ShippingDetails>>;
-}
+type ShippingDetailsFormProps = {
+  shippingDetails: CustomerShipping | null;
+  setShippingDetails: Dispatch<SetStateAction<CustomerShipping | null>>;
+};
 
 function ShippingDetailsForm({
   shippingDetails,
@@ -553,7 +609,11 @@ function ShippingDetailsForm({
           className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
         />
       </HStack>
-      {isExpanded && <div className="py-4"></div>}
+      {isExpanded && (
+        <div className="py-4">
+          <pre>{JSON.stringify(shippingDetails, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }
