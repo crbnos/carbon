@@ -8,7 +8,6 @@ import {
   SESSION_KEY,
   SESSION_MAX_AGE,
   SESSION_SECRET,
-  VERCEL_URL,
 } from "~/config/env";
 
 import { redis } from "@carbon/redis";
@@ -33,15 +32,6 @@ async function assertAuthSession(
   return authSession;
 }
 
-// Function to extract domain from URL
-function removeSubdomain(url: string): string {
-  const parts = url.split("/")[0].split(".");
-
-  const domain = parts.slice(-2).join(".");
-
-  return domain;
-}
-
 const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: "carbon",
@@ -50,7 +40,6 @@ const sessionStorage = createCookieSessionStorage({
     sameSite: "lax",
     secrets: [SESSION_SECRET],
     secure: NODE_ENV === "production",
-    domain: NODE_ENV === "production" ? removeSubdomain(VERCEL_URL) : undefined,
   },
 });
 

@@ -8,13 +8,12 @@ import {
   SESSION_KEY,
   SESSION_MAX_AGE,
   SESSION_SECRET,
-  VERCEL_URL,
 } from "~/config/env";
 
 import { redis } from "@carbon/redis";
 
 import type { Result } from "~/types";
-import { path, removeSubdomain } from "~/utils/path";
+import { path } from "~/utils/path";
 import { refreshAccessToken, verifyAuthSession } from "./auth/auth.server";
 import type { AuthSession } from "./auth/types";
 
@@ -41,7 +40,6 @@ const sessionStorage = createCookieSessionStorage({
     sameSite: "lax",
     secrets: [SESSION_SECRET],
     secure: NODE_ENV === "production",
-    domain: NODE_ENV === "production" ? removeSubdomain(VERCEL_URL) : undefined,
   },
 });
 
