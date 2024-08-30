@@ -1,11 +1,20 @@
 import {
   ActionMenu,
+  Button,
   ContextMenu,
   ContextMenuContent,
   ContextMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+  Heading,
   Menu,
   Table as TableBase,
   Tbody,
+  Td,
   Th,
   Thead,
   Tr,
@@ -15,6 +24,7 @@ import {
   useMount,
 } from "@carbon/react";
 import { clamp } from "@carbon/utils";
+import { useNavigation } from "@remix-run/react";
 import type {
   Column,
   ColumnDef,
@@ -29,7 +39,7 @@ import {
 } from "@tanstack/react-table";
 import type { CSSProperties, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaSort, FaSortDown, FaSortUp } from "react-icons/fa";
+import { LuAlertTriangle, LuArrowDown, LuArrowUp } from "react-icons/lu";
 import type {
   EditableTableCellComponent,
   Position,
@@ -43,6 +53,7 @@ import {
   useSort,
 } from "./components";
 import type { ColumnFilter } from "./components/Filter/types";
+import { useFilters } from "./components/Filter/useFilters";
 import type { ColumnSizeMap, TableAction } from "./types";
 import { getAccessorKey, updateNestedProperty } from "./utils";
 
@@ -130,7 +141,7 @@ const Table = <T extends object>({
   });
 
   /* Sorting */
-  const { isSorted, toggleSortBy } = useSort();
+  const { isSorted, toggleSortByAscending, toggleSortByDescending } = useSort();
 
   const columnAccessors = useMemo(
     () =>
@@ -532,6 +543,9 @@ const Table = <T extends object>({
     };
   };
 
+  const navigation = useNavigation();
+  const { hasFilters, clearFilters } = useFilters();
+
   return (
     <VStack spacing={0} className="h-full">
       <TableHeader
@@ -559,126 +573,167 @@ const Table = <T extends object>({
         onKeyDown={editMode ? onKeyDown : undefined}
       >
         <div className="flex max-w-full h-full">
-          <TableBase
-            ref={tableRef}
-            className="relative border-collapse border-spacing-0"
-          >
-            <Thead className="sticky top-0 z-10">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <Tr key={headerGroup.id} className="h-10">
-                  {headerGroup.headers.map((header) => {
-                    const accessorKey = getAccessorKey(header.column.columnDef);
+          {rows.length === 0 ? (
+            navigation.state === "loading" ? (
+              <div className="flex h-full w-full items-center justify-center">
+                <TableBase className="w-full">
+                  <Tbody>
+                    {Array.from({ length: 30 }).map((_, rowIndex) => (
+                      <Tr key={rowIndex}>
+                        {Array.from({ length: 10 }).map((_, colIndex) => (
+                          <Td key={colIndex} className="p-2 h-[44px] w-[150px]">
+                            <div className="h-8 bg-gradient-to-r from-foreground/10 to-foreground/10 rounded animate-pulse" />
+                          </Td>
+                        ))}
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </TableBase>
+              </div>
+            ) : hasFilters ? (
+              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+                <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+                  <LuAlertTriangle className="h-6 w-6" />
+                </div>
+                <Heading size="h3">No results found</Heading>
+                <Button onClick={clearFilters}>Remove Filters</Button>
+              </div>
+            ) : (
+              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+                <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+                  <LuAlertTriangle className="h-6 w-6" />
+                </div>
+                <Heading size="h3">No data exists</Heading>
+                {primaryAction}
+              </div>
+            )
+          ) : (
+            <TableBase
+              ref={tableRef}
+              className="relative border-collapse border-spacing-0"
+            >
+              <Thead className="sticky top-0 z-10">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <Tr key={headerGroup.id} className="h-10">
+                    {headerGroup.headers.map((header) => {
+                      const accessorKey = getAccessorKey(
+                        header.column.columnDef
+                      );
 
-                    const sortable =
-                      withSimpleSorting &&
-                      accessorKey &&
-                      !accessorKey.endsWith(".id") &&
-                      header.column.columnDef.enableSorting !== false;
-                    const sorted = isSorted(accessorKey ?? "");
+                      const sortable =
+                        withSimpleSorting &&
+                        accessorKey &&
+                        !accessorKey.endsWith(".id") &&
+                        header.column.columnDef.enableSorting !== false;
+                      const sorted = isSorted(accessorKey ?? "");
 
-                    return (
-                      <Th
-                        key={header.id}
-                        colSpan={header.colSpan}
-                        id={`header-${header.id}`}
-                        className={cn(
-                          "px-4 py-3 whitespace-nowrap",
-                          editMode && "border-r-1 border-border",
-                          sortable && "cursor-pointer"
-                        )}
-                        style={{
-                          ...getPinnedStyles(header.column),
-                          width: header.getSize(),
-                        }}
-                        onClick={
-                          sortable
-                            ? () => toggleSortBy(accessorKey ?? "")
-                            : undefined
-                        }
-                      >
-                        {header.isPlaceholder ? null : (
-                          <div className="flex justify-start items-center text-xs text-muted-foreground">
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            <span className="pl-2">
-                              {sorted ? (
-                                sorted === -1 ? (
-                                  <FaSortDown
-                                    aria-label="sorted descending"
-                                    className="text-primary"
-                                  />
-                                ) : (
-                                  <FaSortUp
-                                    aria-label="sorted ascending"
-                                    className="text-primary"
-                                  />
-                                )
-                              ) : sortable ? (
-                                <FaSort
-                                  aria-label="sort"
-                                  style={{ opacity: 0.4 }}
-                                />
-                              ) : null}
-                            </span>
-                          </div>
-                        )}
-                      </Th>
-                    );
-                  })}
-                </Tr>
-              ))}
-            </Thead>
-            <Tbody>
-              {rows.map((row) => {
-                return renderContextMenu ? (
-                  <Menu type="context" key={row.index}>
-                    <ContextMenu>
-                      <ContextMenuTrigger asChild>
-                        <Row
-                          editableComponents={editableComponents}
-                          isEditing={isEditing}
-                          isEditMode={editMode}
-                          isRowSelected={
-                            row.index in rowSelection &&
-                            !!rowSelection[row.index]
-                          }
-                          pinnedColumns={pinnedColumnsKey}
-                          selectedCell={selectedCell}
-                          row={row}
-                          rowIsSelected={selectedCell?.row === row.index}
-                          getPinnedStyles={getPinnedStyles}
-                          onCellClick={onCellClick}
-                          onCellUpdate={onCellUpdate}
-                        />
-                      </ContextMenuTrigger>
-                      <ContextMenuContent className="w-128">
-                        {renderContextMenu(row.original)}
-                      </ContextMenuContent>
-                    </ContextMenu>
-                  </Menu>
-                ) : (
-                  <Row
-                    key={row.id}
-                    editableComponents={editableComponents}
-                    isEditing={isEditing}
-                    isEditMode={editMode}
-                    isRowSelected={
-                      row.index in rowSelection && !!rowSelection[row.index]
-                    }
-                    pinnedColumns={pinnedColumnsKey}
-                    selectedCell={selectedCell}
-                    row={row}
-                    rowIsSelected={selectedCell?.row === row.index}
-                    getPinnedStyles={getPinnedStyles}
-                    onCellClick={onCellClick}
-                    onCellUpdate={onCellUpdate}
-                  />
-                );
-              })}
-            </Tbody>
-          </TableBase>
+                      return (
+                        <Th
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          id={`header-${header.id}`}
+                          className={cn(
+                            "px-4 py-3 whitespace-nowrap",
+                            editMode && "border-r-1 border-border",
+                            sortable && "cursor-pointer"
+                          )}
+                          style={{
+                            ...getPinnedStyles(header.column),
+                            width: header.getSize(),
+                          }}
+                        >
+                          {header.isPlaceholder ? null : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <div className="flex justify-start items-center text-xs text-muted-foreground">
+                                  {flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                                </div>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                <DropdownMenuRadioGroup
+                                  value={sorted?.toString()}
+                                >
+                                  <DropdownMenuRadioItem
+                                    onClick={() =>
+                                      toggleSortByAscending(accessorKey!)
+                                    }
+                                    value="1"
+                                  >
+                                    <DropdownMenuIcon icon={<LuArrowUp />} />
+                                    Sort Ascending
+                                  </DropdownMenuRadioItem>
+                                  <DropdownMenuRadioItem
+                                    onClick={() =>
+                                      toggleSortByDescending(accessorKey!)
+                                    }
+                                    value="-1"
+                                  >
+                                    <DropdownMenuIcon icon={<LuArrowDown />} />
+                                    Sort Descending
+                                  </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </Th>
+                      );
+                    })}
+                  </Tr>
+                ))}
+              </Thead>
+              <Tbody>
+                {rows.map((row) => {
+                  return renderContextMenu ? (
+                    <Menu type="context" key={row.index}>
+                      <ContextMenu>
+                        <ContextMenuTrigger asChild>
+                          <Row
+                            editableComponents={editableComponents}
+                            isEditing={isEditing}
+                            isEditMode={editMode}
+                            isRowSelected={
+                              row.index in rowSelection &&
+                              !!rowSelection[row.index]
+                            }
+                            pinnedColumns={pinnedColumnsKey}
+                            selectedCell={selectedCell}
+                            row={row}
+                            rowIsSelected={selectedCell?.row === row.index}
+                            getPinnedStyles={getPinnedStyles}
+                            onCellClick={onCellClick}
+                            onCellUpdate={onCellUpdate}
+                          />
+                        </ContextMenuTrigger>
+                        <ContextMenuContent className="w-128">
+                          {renderContextMenu(row.original)}
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    </Menu>
+                  ) : (
+                    <Row
+                      key={row.id}
+                      editableComponents={editableComponents}
+                      isEditing={isEditing}
+                      isEditMode={editMode}
+                      isRowSelected={
+                        row.index in rowSelection && !!rowSelection[row.index]
+                      }
+                      pinnedColumns={pinnedColumnsKey}
+                      selectedCell={selectedCell}
+                      row={row}
+                      rowIsSelected={selectedCell?.row === row.index}
+                      getPinnedStyles={getPinnedStyles}
+                      onCellClick={onCellClick}
+                      onCellUpdate={onCellUpdate}
+                    />
+                  );
+                })}
+              </Tbody>
+            </TableBase>
+          )}
         </div>
       </div>
       {withPagination && <Pagination {...pagination} />}

@@ -18,6 +18,38 @@ export function useSort() {
     setParams({ sort: sorts.filter((s) => s !== sort) });
   };
 
+  const toggleSortByAscending = (columnId: string) => {
+    const existingSort = [...sorts];
+    const sortAsc = `${columnId}:asc`;
+    const sortDesc = `${columnId}:desc`;
+
+    if (!existingSort.includes(sortAsc)) {
+      setParams({
+        sort: existingSort.filter((s) => s !== sortDesc).concat(sortAsc),
+      });
+    } else {
+      setParams({
+        sort: existingSort.filter((s) => s !== sortAsc),
+      });
+    }
+  };
+
+  const toggleSortByDescending = (columnId: string) => {
+    const existingSort = [...sorts];
+    const sortAsc = `${columnId}:asc`;
+    const sortDesc = `${columnId}:desc`;
+
+    if (!existingSort.includes(sortDesc)) {
+      setParams({
+        sort: existingSort.filter((s) => s !== sortAsc).concat(sortDesc),
+      });
+    } else {
+      setParams({
+        sort: existingSort.filter((s) => s !== sortDesc),
+      });
+    }
+  };
+
   const toggleSortBy = (columnId: string) => {
     const existingSort = [...sorts];
     const sortAsc = `${columnId}:asc`;
@@ -56,6 +88,8 @@ export function useSort() {
     reorderSorts,
     removeSortBy,
     toggleSortBy,
+    toggleSortByAscending,
     toggleSortByDirection,
+    toggleSortByDescending,
   };
 }
