@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  VStack,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useState } from "react";
@@ -14,6 +13,7 @@ import {
   Customer,
   CustomerContact,
   CustomerLocation,
+  CustomFormFields,
   Hidden,
   Select,
   Submit,
@@ -65,35 +65,33 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
         <CardContent>
           <Hidden name="customerId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <VStack>
-              <Customer
-                name="shippingCustomerId"
-                label="Shipping Customer"
-                onChange={(value) => setCustomer(value?.value as string)}
-              />
-              <CustomerLocation
-                name="shippingCustomerLocationId"
-                label="Shipping Location"
-                customer={customer}
-              />
-              <CustomerContact
-                name="shippingCustomerContactId"
-                label="Shipping Contact"
-                customer={customer}
-              />
-            </VStack>
-            <VStack>
-              <Select
-                name="shippingMethodId"
-                label="Shipping Method"
-                options={shippingMethodOptions}
-              />
-              <Select
-                name="shippingTermId"
-                label="Shipping Term"
-                options={shippingTermOptions}
-              />
-            </VStack>
+            <Customer
+              name="shippingCustomerId"
+              label="Shipping Customer"
+              onChange={(value) => setCustomer(value?.value as string)}
+            />
+            <CustomerLocation
+              name="shippingCustomerLocationId"
+              label="Shipping Location"
+              customer={customer}
+            />
+            <CustomerContact
+              name="shippingCustomerContactId"
+              label="Shipping Contact"
+              customer={customer}
+            />
+
+            <Select
+              name="shippingMethodId"
+              label="Shipping Method"
+              options={shippingMethodOptions}
+            />
+            <Select
+              name="shippingTermId"
+              label="Shipping Term"
+              options={shippingTermOptions}
+            />
+            <CustomFormFields table="customerShipping" />
           </div>
         </CardContent>
         <CardFooter>

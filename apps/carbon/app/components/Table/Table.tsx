@@ -575,14 +575,35 @@ const Table = <T extends object>({
         <div className="flex max-w-full h-full">
           {rows.length === 0 ? (
             navigation.state === "loading" ? (
-              <div className="flex h-full w-full items-center justify-center">
+              <div className="flex h-full w-full items-start justify-center">
                 <TableBase className="w-full">
+                  <Thead>
+                    <Tr>
+                      {Array.from({ length: 7 }).map((_, colIndex) => (
+                        <Th
+                          key={colIndex}
+                          className={cn(
+                            "h-[44px] w-[200px]",
+                            colIndex === 0 && "border-r border-border"
+                          )}
+                        >
+                          <div className="h-8" />
+                        </Th>
+                      ))}
+                    </Tr>
+                  </Thead>
                   <Tbody>
                     {Array.from({ length: 30 }).map((_, rowIndex) => (
                       <Tr key={rowIndex}>
-                        {Array.from({ length: 10 }).map((_, colIndex) => (
-                          <Td key={colIndex} className="p-2 h-[44px] w-[150px]">
-                            <div className="h-8 bg-gradient-to-r from-foreground/10 to-foreground/10 rounded animate-pulse" />
+                        {Array.from({ length: 7 }).map((_, colIndex) => (
+                          <Td
+                            key={colIndex}
+                            className={cn(
+                              "h-[44px] w-[200px]",
+                              colIndex === 0 && "border-r border-border"
+                            )}
+                          >
+                            <div className="h-6 w-full bg-gradient-to-r from-foreground/10 to-foreground/10 rounded animate-pulse" />
                           </Td>
                         ))}
                       </Tr>
