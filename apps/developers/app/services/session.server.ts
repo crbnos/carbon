@@ -3,6 +3,7 @@ import { createCookieSessionStorage, redirect } from "@remix-run/node";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "~/utils/http";
 
 import {
+  DOMAIN,
   NODE_ENV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_KEY,
@@ -40,6 +41,7 @@ const sessionStorage = createCookieSessionStorage({
     sameSite: "lax",
     secrets: [SESSION_SECRET],
     secure: NODE_ENV === "production",
+    domain: NODE_ENV === "production" ? DOMAIN : undefined,
   },
 });
 

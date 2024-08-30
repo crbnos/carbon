@@ -14,6 +14,7 @@ declare global {
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      DOMAIN: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       SESSION_SECRET: string;
@@ -52,6 +53,7 @@ export function getEnv(
 /**
  * Server env
  */
+export const DOMAIN = getEnv("DOMAIN");
 export const SUPABASE_SERVICE_ROLE = getEnv("SUPABASE_SERVICE_ROLE");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";

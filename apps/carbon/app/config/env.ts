@@ -17,6 +17,7 @@ declare global {
       AUTODESK_BUCKET_NAME: string;
       AUTODESK_CLIENT_ID: string;
       AUTODESK_CLIENT_SECRET: string;
+      DOMAIN: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       SESSION_SECRET: string;
@@ -58,6 +59,7 @@ export function getEnv(
 export const AUTODESK_BUCKET_NAME = getEnv("AUTODESK_BUCKET_NAME");
 export const AUTODESK_CLIENT_ID = getEnv("AUTODESK_CLIENT_ID");
 export const AUTODESK_CLIENT_SECRET = getEnv("AUTODESK_CLIENT_SECRET");
+export const DOMAIN = getEnv("DOMAIN");
 export const SUPABASE_SERVICE_ROLE = getEnv("SUPABASE_SERVICE_ROLE");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
