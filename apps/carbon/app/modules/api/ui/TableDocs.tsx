@@ -1,7 +1,7 @@
+import { swaggerDocsSchema } from "@carbon/database";
 import { cn } from "@carbon/react";
 import { LuTable2 } from "react-icons/lu";
 import { getBrowserEnv } from "~/config/env";
-import swaggerDocsSchema from "~/lib/swagger-docs-schema";
 import type { ValidLang } from "~/modules/api";
 import { CodeSnippet, Snippets } from "~/modules/api";
 
