@@ -8,7 +8,7 @@ import type {
   ReactElement,
 } from "react";
 import { cloneElement, forwardRef } from "react";
-import { LuChevronRight, LuCircle } from "react-icons/lu";
+import { LuCheckCircle2, LuChevronRight } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 
 import { cn } from "./utils/cn";
@@ -144,17 +144,17 @@ const DropdownMenuRadioItem = forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+    {children}
+    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <LuCircle className="h-2 w-2 fill-current" />
+        <LuCheckCircle2 className="h-4 w-4 text-green-500" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
-    {children}
   </DropdownMenuPrimitive.RadioItem>
 ));
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
