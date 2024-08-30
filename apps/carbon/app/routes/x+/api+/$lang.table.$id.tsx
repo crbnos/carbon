@@ -1,6 +1,6 @@
+import { swaggerDocsSchema } from "@carbon/database";
 import { useParams } from "@remix-run/react";
 import { getBrowserEnv } from "~/config/env";
-import swaggerDocsSchema from "~/lib/swagger-docs-schema";
 import { TableDocs, useSelectedLang } from "~/modules/api";
 import { snakeToCamel } from "~/utils/string";
 

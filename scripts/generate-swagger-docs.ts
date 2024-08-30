@@ -11,7 +11,7 @@ import { writeFileSync } from "fs";
 
   // write the data to a javascript file using node fs module
   writeFileSync(
-    "apps/carbon/app/lib/swagger-docs-schema.ts",
+    "packages/database/src/swagger-docs-schema.ts",
     `export default ${JSON.stringify(data, null, 2)}`
   );
 })();

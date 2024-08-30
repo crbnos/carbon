@@ -1,4 +1,4 @@
-import swaggerDocsSchema from "~/lib/swagger-docs-schema";
+import { swaggerDocsSchema } from "@carbon/database";
 import { useSelectedLang } from "~/modules/api";
 import { snakeToCamel } from "~/utils/string";
 
