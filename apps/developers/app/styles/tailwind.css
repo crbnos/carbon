@@ -1,0 +1,136 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap&display=swap");
+
+@font-face {
+  font-family: "Triangle";
+  font-style: normal;
+  font-weight: 200;
+  src: url("/fonts/Geist-UltraLight.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Triangle";
+  font-style: normal;
+  font-weight: 300;
+  src: url("/fonts/Geist-Light.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Triangle";
+  font-style: normal;
+  font-weight: 500;
+  src: url("/fonts/Geist-Medium.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Triangle";
+  font-style: normal;
+  font-weight: 600;
+  src: url("/fonts/Geist-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Triangle";
+  font-style: normal;
+  font-weight: 700;
+  src: url("/fonts/Geist-Bold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Triangle";
+  font-style: normal;
+  font-weight: 800;
+  src: url("/fonts/Geist-Black.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Triangle";
+  font-style: normal;
+  font-weight: 900;
+  src: url("/fonts/Geist-UltraBlack.woff2") format("woff2");
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --active: 240 5.9% 10%;
+    --active-foreground: 0 0% 98%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 89.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 72.22% 50.59%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5% 64.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --active: 0 0% 98%;
+    --active-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+.forgeViewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+.forgeViewer > div {
+  border-radius: var(--radius);
+}
+
+p.is-editor-empty:first-child:before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

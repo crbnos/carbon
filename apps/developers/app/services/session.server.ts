@@ -12,9 +12,9 @@ import {
 } from "~/config/env";
 
 import { redis } from "@carbon/redis";
-import { getPermissionCacheKey } from "~/modules/users/users.server";
+
 import type { Result } from "~/types";
-import { path } from "~/utils/path";
+import { path, removeSubdomain } from "~/utils/path";
 import { refreshAccessToken, verifyAuthSession } from "./auth/auth.server";
 import type { AuthSession } from "./auth/types";
 
@@ -31,15 +31,6 @@ async function assertAuthSession(
   }
 
   return authSession;
-}
-
-// Function to extract domain from URL
-function removeSubdomain(url: string): string {
-  const parts = url.split("/")[0].split(".");
-
-  const domain = parts.slice(-2).join(".");
-
-  return domain;
 }
 
 const sessionStorage = createCookieSessionStorage({
@@ -116,6 +107,10 @@ export async function getSessionFlash(request: Request) {
   const headers = { "Set-Cookie": await sessionStorage.commitSession(session) };
 
   return { result, headers };
+}
+
+function getPermissionCacheKey(userId: string) {
+  return `permissions:${userId}`;
 }
 
 async function getSession(request: Request) {

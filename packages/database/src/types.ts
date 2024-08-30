@@ -18940,6 +18940,7 @@ export type Database = {
           active: boolean | null
           avatarUrl: string | null
           createdAt: string
+          developer: boolean | null
           email: string
           firstName: string
           fullName: string | null
@@ -18952,6 +18953,7 @@ export type Database = {
           active?: boolean | null
           avatarUrl?: string | null
           createdAt?: string
+          developer?: boolean | null
           email: string
           firstName: string
           fullName?: string | null
@@ -18964,6 +18966,7 @@ export type Database = {
           active?: boolean | null
           avatarUrl?: string | null
           createdAt?: string
+          developer?: boolean | null
           email?: string
           firstName?: string
           fullName?: string | null
