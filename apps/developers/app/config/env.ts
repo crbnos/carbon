@@ -53,7 +53,7 @@ export function getEnv(
 /**
  * Server env
  */
-export const DOMAIN = getEnv("DOMAIN");
+export const DOMAIN = getEnv("DOMAIN", { isRequired: false });
 export const SUPABASE_SERVICE_ROLE = getEnv("SUPABASE_SERVICE_ROLE");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
