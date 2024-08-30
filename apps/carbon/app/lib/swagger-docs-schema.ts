@@ -16258,6 +16258,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.user.developer",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -16347,6 +16350,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.user.developer",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -16388,6 +16394,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.user.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.user.developer",
           },
           {
             $ref: "#/parameters/body.user",
@@ -39440,6 +39449,11 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        developer: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
       },
       type: "object",
     },
@@ -55407,6 +55421,13 @@ export default {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.user.developer": {
+      name: "developer",
+      required: false,
+      format: "boolean",
       in: "query",
       type: "string",
     },
