@@ -536,6 +536,7 @@ function OperationForm({
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
 }) {
   const { quoteId, lineId } = useParams();
+  const { id: userId } = useUser();
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
 
@@ -561,18 +562,43 @@ function OperationForm({
           )
         );
       });
-      setSelectedItemId(null);
-    }
-  }, [item.id, fetcher.data, setItems, setSelectedItemId]);
 
-  const [showSetup, setShowSetup] = useState((item.data.setupTime ?? 0) > 0);
+      // save the work instructions
+      if (isTemporaryId(item.id) && supabase) {
+        supabase
+          .from("quoteOperationWorkInstruction")
+          .update({
+            content: item.data.quoteOperationWorkInstruction.content,
+            createdAt: today(getLocalTimeZone()).toString(),
+            updatedBy: userId,
+          })
+          .eq("quoteOperationId", fetcher.data.id)
+          .then(() => {
+            setSelectedItemId(null);
+          });
+      } else {
+        setSelectedItemId(null);
+      }
+    }
+  }, [
+    item.id,
+    fetcher.data,
+    setItems,
+    setSelectedItemId,
+    item.data.quoteOperationWorkInstruction.content,
+    supabase,
+    userId,
+  ]);
+
   const [showMachine, setShowMachine] = useState(
     (item.data.machineTime ?? 0) > 0
   );
-  const [showLabor, setShowLabor] = useState(
-    (item.data.laborTime ?? 0) > 0 ||
-      (showSetup === false && showMachine === false)
+  const [showLabor, setShowLabor] = useState((item.data.laborTime ?? 0) > 0);
+  const [showSetup, setShowSetup] = useState(
+    (item.data.setupTime ?? 0) > 0 ||
+      (showLabor === false && showMachine === false)
   );
+
   const [showCost, setShowCost] = useState(false);
 
   const [processData, setProcessData] = useState<{
@@ -887,65 +913,6 @@ function OperationForm({
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
               className="w-full justify-between cursor-pointer"
-              onClick={() => setShowLabor(!showLabor)}
-            >
-              <HStack>
-                <TimeTypeIcon type="Labor" />
-                <Label>Labor</Label>
-              </HStack>
-              <LuChevronDown
-                className={`transition-transform ${
-                  showLabor ? "rotate-180" : ""
-                }`}
-              />
-            </HStack>
-            <div
-              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                showLabor ? "" : "hidden"
-              }`}
-            >
-              <UnitHint
-                name="laborHint"
-                label="Labor"
-                value={processData.laborUnitHint}
-                onChange={(hint) => {
-                  setProcessData((d) => ({
-                    ...d,
-                    laborUnitHint: hint,
-                    laborUnit:
-                      hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
-                  }));
-                }}
-              />
-              <NumberControlled
-                name="laborTime"
-                label="Labor Time"
-                minValue={0}
-                value={processData.laborTime}
-                onChange={(newValue) =>
-                  setProcessData((d) => ({
-                    ...d,
-                    laborTime: newValue,
-                  }))
-                }
-              />
-              <StandardFactor
-                name="laborUnit"
-                label="Labor Unit"
-                hint={processData.laborUnitHint}
-                value={processData.laborUnit}
-                onChange={(newValue) => {
-                  setProcessData((d) => ({
-                    ...d,
-                    laborUnit: newValue?.value ?? "Total Minutes",
-                  }));
-                }}
-              />
-            </div>
-          </div>
-          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-            <HStack
-              className="w-full justify-between cursor-pointer"
               onClick={() => setShowSetup(!showSetup)}
             >
               <HStack>
@@ -997,6 +964,65 @@ function OperationForm({
                   setProcessData((d) => ({
                     ...d,
                     setupUnit: newValue?.value ?? "Total Minutes",
+                  }));
+                }}
+              />
+            </div>
+          </div>
+          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+            <HStack
+              className="w-full justify-between cursor-pointer"
+              onClick={() => setShowLabor(!showLabor)}
+            >
+              <HStack>
+                <TimeTypeIcon type="Labor" />
+                <Label>Labor</Label>
+              </HStack>
+              <LuChevronDown
+                className={`transition-transform ${
+                  showLabor ? "rotate-180" : ""
+                }`}
+              />
+            </HStack>
+            <div
+              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
+                showLabor ? "" : "hidden"
+              }`}
+            >
+              <UnitHint
+                name="laborHint"
+                label="Labor"
+                value={processData.laborUnitHint}
+                onChange={(hint) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    laborUnitHint: hint,
+                    laborUnit:
+                      hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
+                  }));
+                }}
+              />
+              <NumberControlled
+                name="laborTime"
+                label="Labor Time"
+                minValue={0}
+                value={processData.laborTime}
+                onChange={(newValue) =>
+                  setProcessData((d) => ({
+                    ...d,
+                    laborTime: newValue,
+                  }))
+                }
+              />
+              <StandardFactor
+                name="laborUnit"
+                label="Labor Unit"
+                hint={processData.laborUnitHint}
+                value={processData.laborUnit}
+                onChange={(newValue) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    laborUnit: newValue?.value ?? "Total Minutes",
                   }));
                 }}
               />

@@ -177,14 +177,14 @@ const QuoteHeader = () => {
           onClose={finalizeModal.onClose}
         />
       )}
-      {convertToOrderModal.isOpen && (
-        <QuoteToOrderModal
-          onClose={convertToOrderModal.onClose}
-          quote={routeData?.quote!}
-          lines={routeData?.lines ?? []}
-          pricing={routeData?.prices ?? []}
-        />
-      )}
+      {/* we use isOpen so we don't lose state */}
+      <QuoteToOrderModal
+        isOpen={convertToOrderModal.isOpen}
+        onClose={convertToOrderModal.onClose}
+        quote={routeData?.quote!}
+        lines={routeData?.lines ?? []}
+        pricing={routeData?.prices ?? []}
+      />
     </>
   );
 };

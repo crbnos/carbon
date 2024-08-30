@@ -446,7 +446,7 @@ const QuoteLineCosting = ({
               <Td className="border-r border-border ">
                 <HStack className="w-full justify-between ">
                   <span>Total Indirect Cost</span>
-                  <Enumerable value="Overhead" />
+                  <Enumerable value="Indirect" />
                 </HStack>
               </Td>
               {quantityCosts.map(({ quantity, costs }, index) => {
