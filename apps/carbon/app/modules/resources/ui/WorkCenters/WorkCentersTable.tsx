@@ -86,7 +86,7 @@ const WorkCentersTable = memo(
                 (process) => (
                   <Enumerable
                     key={process.name}
-                    value={row.original.name}
+                    value={process.name}
                     onClick={() => navigate(path.to.process(process.id))}
                     className="cursor-pointer"
                   />
