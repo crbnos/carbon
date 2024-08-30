@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+export const itemTypes = [
+  "Part",
+  "Material",
+  "Tool",
+  "Fixture",
+  "Consumable",
+  "Service",
+] as const;
+
 export const itemLedgerTypes = [
   "Purchase",
   "Sale",

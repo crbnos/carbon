@@ -53,6 +53,8 @@ export async function getInventoryItems(
     );
   }
 
+  query = setGenericQueryFilters(query, args);
+
   return query;
 }
 

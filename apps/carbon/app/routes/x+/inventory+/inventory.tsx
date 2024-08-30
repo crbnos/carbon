@@ -4,6 +4,7 @@ import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { InventoryItem } from "~/modules/inventory";
 import { getInventoryItems } from "~/modules/inventory";
+import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -61,7 +62,7 @@ export default function InventoryAllRoute() {
 
   return (
     <VStack spacing={0} className="h-full ">
-      <div>There are {count} inventory items!</div>
+      <InventoryTable data={inventoryItems} count={count} />
       <Outlet />
     </VStack>
   );
