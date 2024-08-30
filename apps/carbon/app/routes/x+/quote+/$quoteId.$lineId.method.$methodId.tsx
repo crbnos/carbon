@@ -63,6 +63,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ...o,
         description: o.description ?? "",
         workCenterId: o.workCenterId ?? undefined,
+        laborRate: o.laborRate ?? 0,
+        machineRate: o.machineRate ?? 0,
+        operationSupplierProcessId: o.operationSupplierProcessId ?? undefined,
         quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
         quoteOperationWorkInstruction: {
           content: (o.quoteOperationWorkInstruction?.content ??

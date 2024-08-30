@@ -30,6 +30,7 @@ export function formatDurationHours(
   hours: number,
   options?: DurationOptions
 ): string {
+  if (hours === 0) return "-";
   return formatDurationMilliseconds(hours * 1000 * 60 * 60, options);
 }
 

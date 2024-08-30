@@ -65,5 +65,8 @@
     "apps/*",
     "ci",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@xyflow/react": "^12.2.0"
+  }
 }
