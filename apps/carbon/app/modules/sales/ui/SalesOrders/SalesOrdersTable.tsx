@@ -181,11 +181,11 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         header: "Shipping Method",
         cell: (item) => item.getValue(),
       },
-      {
-        accessorKey: "shippingTermName",
-        header: "Shipping Term",
-        cell: (item) => <Enumerable value={item.getValue<string>()} />,
-      },
+      // {
+      //   accessorKey: "shippingTermName",
+      //   header: "Shipping Term",
+      //   cell: (item) => <Enumerable value={item.getValue<string>()} />,
+      // },
       {
         accessorKey: "paymentTermName",
         header: "Payment Method",

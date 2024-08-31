@@ -50,7 +50,7 @@ export const purchaseOrderDeliveryValidator = z
     id: z.string(),
     locationId: zfd.text(z.string().optional()),
     shippingMethodId: zfd.text(z.string().optional()),
-    shippingTermId: zfd.text(z.string().optional()),
+    // shippingTermId: zfd.text(z.string().optional()),
     trackingNumber: z.string(),
     deliveryDate: zfd.text(z.string().optional()),
     receiptRequestedDate: zfd.text(z.string().optional()),
@@ -210,7 +210,7 @@ export const supplierShippingValidator = z.object({
   shippingSupplierId: zfd.text(z.string().optional()),
   shippingSupplierLocationId: zfd.text(z.string().optional()),
   shippingSupplierContactId: zfd.text(z.string().optional()),
-  shippingTermId: zfd.text(z.string().optional()),
+  // shippingTermId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
 });
 

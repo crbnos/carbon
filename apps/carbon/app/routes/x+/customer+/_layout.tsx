@@ -2,11 +2,6 @@ import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
-import { getPaymentTermsList } from "~/modules/accounting";
-import {
-  getShippingMethodsList,
-  getShippingTermsList,
-} from "~/modules/inventory";
 import { getCustomerStatuses, getCustomerTypes } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";
@@ -30,23 +25,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [
     customerTypes,
     customerStatuses,
-    paymentTerms,
-    shippingMethods,
-    shippingTerms,
+    // shippingTerms,
   ] = await Promise.all([
     getCustomerTypes(client, companyId),
     getCustomerStatuses(client, companyId),
-    getPaymentTermsList(client, companyId),
-    getShippingMethodsList(client, companyId),
-    getShippingTermsList(client, companyId),
+
+    // getShippingTermsList(client, companyId),
   ]);
 
   return json({
     customerStatuses: customerStatuses.data ?? [],
     customerTypes: customerTypes.data ?? [],
-    paymentTerms: paymentTerms.data ?? [],
-    shippingMethods: shippingMethods.data ?? [],
-    shippingTerms: shippingTerms.data ?? [],
+    // shippingTerms: shippingTerms.data ?? [],
   });
 }
 

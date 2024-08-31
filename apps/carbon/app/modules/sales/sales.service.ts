@@ -28,6 +28,7 @@ import type {
   salesRfqLineValidator,
   salesRFQStatusType,
   salesRfqValidator,
+  selectedLinesValidator,
 } from "./sales.models";
 
 export async function closeSalesOrder(
@@ -65,30 +66,19 @@ export async function convertSalesRfqToQuote(
 
 export async function convertQuoteToOrder(
   client: SupabaseClient<Database>,
-  quoteId: string,
-  userId: string
-) {
-  const quoteUpdate = await client
-    .from("quote")
-    .update({
-      status: "Ordered",
-      updatedAt: today(getLocalTimeZone()).toString(),
-      updatedBy: userId,
-    })
-    .eq("id", quoteId);
-
-  if (quoteUpdate.error) {
-    return quoteUpdate;
+  payload: {
+    id: string;
+    selectedLines: z.infer<typeof selectedLinesValidator>;
+    companyId: string;
+    userId: string;
   }
-
-  return client
-    .from("quoteLine")
-    .update({
-      status: "Complete",
-      updatedAt: today(getLocalTimeZone()).toString(),
-      updatedBy: userId,
-    })
-    .eq("quoteId", quoteId);
+) {
+  return client.functions.invoke<{ convertedId: string }>("convert", {
+    body: {
+      type: "quoteToSalesOrder",
+      ...payload,
+    },
+  });
 }
 
 export async function deleteCustomerContact(
@@ -720,6 +710,20 @@ export async function getQuoteOperations(
   return client.from("quoteOperation").select("*").eq("quoteId", quoteId);
 }
 
+export async function getQuotePayment(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client.from("quotePayment").select("*").eq("id", quoteId).single();
+}
+
+export async function getQuoteShipment(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client.from("quoteShipment").select("*").eq("id", quoteId).single();
+}
+
 export async function getSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string
@@ -757,6 +761,17 @@ export async function getSalesOrders(
   ]);
 
   return query;
+}
+
+export async function getSalesOrderPayment(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("salesOrderPayment")
+    .select("*")
+    .eq("id", salesOrderId)
+    .single();
 }
 
 export async function getSalesOrderShipment(
@@ -1419,6 +1434,26 @@ export async function upsertQuote(
       })
 ) {
   if ("createdBy" in quote) {
+    const [customerPayment, customerShipping, employee] = await Promise.all([
+      getCustomerPayment(client, quote.customerId),
+      getCustomerShipping(client, quote.customerId),
+      getEmployeeJob(client, quote.createdBy, quote.companyId),
+    ]);
+
+    if (customerPayment.error) return customerPayment;
+    if (customerShipping.error) return customerShipping;
+
+    const {
+      currencyCode,
+      paymentTermId,
+      invoiceCustomerId,
+      invoiceCustomerContactId,
+      invoiceCustomerLocationId,
+    } = customerPayment.data;
+
+    const { shippingMethodId, shippingTermId } = customerShipping.data;
+
+    const locationId = employee?.data?.locationId ?? null;
     const insert = await client
       .from("quote")
       .insert([quote])
@@ -1426,12 +1461,49 @@ export async function upsertQuote(
     if (insert.error) {
       return insert;
     }
-    const opportunity = await client
-      .from("opportunity")
-      .insert([{ quoteId: insert.data[0].id, companyId: quote.companyId }]);
+
+    const quoteId = insert.data?.[0]?.id;
+    if (!quoteId) return insert;
+
+    const [shipment, payment, opportunity] = await Promise.all([
+      client.from("quoteShipment").insert([
+        {
+          id: quoteId,
+          locationId: locationId,
+          shippingMethodId: shippingMethodId,
+          shippingTermId: shippingTermId,
+          companyId: quote.companyId,
+        },
+      ]),
+      client.from("quotePayment").insert([
+        {
+          id: quoteId,
+          currencyCode: currencyCode ?? "USD",
+          invoiceCustomerId: invoiceCustomerId,
+          invoiceCustomerContactId: invoiceCustomerContactId,
+          invoiceCustomerLocationId: invoiceCustomerLocationId,
+          paymentTermId: paymentTermId,
+          companyId: quote.companyId,
+        },
+      ]),
+      client
+        .from("opportunity")
+        .insert([{ quoteId, companyId: quote.companyId }]),
+    ]);
+
+    if (shipment.error) {
+      await deleteQuote(client, quoteId);
+      return payment;
+    }
+    if (payment.error) {
+      await deleteQuote(client, quoteId);
+      return payment;
+    }
     if (opportunity.error) {
+      await deleteQuote(client, quoteId);
       return opportunity;
     }
+
     return insert;
   } else {
     return client
@@ -1733,7 +1805,7 @@ export async function upsertSalesOrder(
 
   const salesOrderId = order.data[0].id;
 
-  const [shipment, payment] = await Promise.all([
+  const [shipment, payment, opportunity] = await Promise.all([
     client.from("salesOrderShipment").insert([
       {
         id: salesOrderId,
@@ -1754,6 +1826,9 @@ export async function upsertSalesOrder(
         companyId: salesOrder.companyId,
       },
     ]),
+    client
+      .from("opportunity")
+      .insert([{ salesOrderId, companyId: salesOrder.companyId }]),
   ]);
 
   if (shipment.error) {
@@ -1763,6 +1838,10 @@ export async function upsertSalesOrder(
   if (payment.error) {
     await deleteSalesOrder(client, salesOrderId);
     return payment;
+  }
+  if (opportunity.error) {
+    await deleteSalesOrder(client, salesOrderId);
+    return opportunity;
   }
 
   return order;

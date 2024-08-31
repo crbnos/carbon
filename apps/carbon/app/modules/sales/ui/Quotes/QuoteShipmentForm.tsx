@@ -6,40 +6,28 @@ import {
   CardTitle,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useState } from "react";
 import type { z } from "zod";
 import {
-  Boolean,
-  CustomFormFields,
-  Customer,
-  CustomerLocation,
   DatePicker,
   Hidden,
-  Input,
   Location,
   ShippingMethod,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { salesOrderShipmentValidator } from "~/modules/sales";
+import { quoteShipmentValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
-type SalesOrderShipmentFormProps = {
-  initialValues: z.infer<typeof salesOrderShipmentValidator>;
+type QuoteShipmentFormProps = {
+  initialValues: z.infer<typeof quoteShipmentValidator>;
   // shippingTerms: ListItem[];
 };
 
-const SalesOrderShipmentForm = ({
+const QuoteShipmentForm = ({
   initialValues,
 }: // shippingTerms,
-SalesOrderShipmentFormProps) => {
+QuoteShipmentFormProps) => {
   const permissions = usePermissions();
-  const [dropShip, setDropShip] = useState<boolean>(
-    initialValues.dropShipment ?? false
-  );
-  const [customer, setCustomer] = useState<string | undefined>(
-    initialValues.customerId
-  );
 
   // const shippingTermOptions = shippingTerms.map((term) => ({
   //   label: term.name,
@@ -51,9 +39,9 @@ SalesOrderShipmentFormProps) => {
   return (
     <Card isCollapsible defaultCollapsed>
       <ValidatedForm
-        action={path.to.salesOrderShipment(initialValues.id)}
+        action={path.to.quoteShipment(initialValues.id)}
         method="post"
-        validator={salesOrderShipmentValidator}
+        validator={quoteShipmentValidator}
         defaultValues={initialValues}
       >
         <CardHeader>
@@ -77,31 +65,6 @@ SalesOrderShipmentFormProps) => {
             /> */}
 
             <DatePicker name="receiptRequestedDate" label="Requested Date" />
-            <DatePicker name="receiptPromisedDate" label="Promised Date" />
-            <DatePicker name="shipmentDate" label="Shipment Date" />
-
-            <Input name="trackingNumber" label="Tracking Number" />
-            {/* <TextArea name="notes" label="Shipping Notes" /> */}
-            <Boolean
-              name="dropShipment"
-              label="Drop Shipment"
-              onChange={setDropShip}
-            />
-            {dropShip && (
-              <>
-                <Customer
-                  name="customerId"
-                  label="Customer"
-                  onChange={(value) => setCustomer(value?.value as string)}
-                />
-                <CustomerLocation
-                  name="customerLocationId"
-                  label="Location"
-                  customer={customer}
-                />
-              </>
-            )}
-            <CustomFormFields table="salesOrderShipment" />
           </div>
         </CardContent>
         <CardFooter>
@@ -112,4 +75,4 @@ SalesOrderShipmentFormProps) => {
   );
 };
 
-export default SalesOrderShipmentForm;
+export default QuoteShipmentForm;

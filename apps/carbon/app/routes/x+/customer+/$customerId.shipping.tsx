@@ -88,7 +88,7 @@ export default function CustomerShippingRoute() {
     shippingCustomerLocationId:
       customerShipping?.shippingCustomerLocationId ?? "",
     shippingMethodId: customerShipping?.shippingMethodId ?? "",
-    shippingTermId: customerShipping?.shippingTermId ?? "",
+    // shippingTermId: customerShipping?.shippingTermId ?? "",
   };
 
   return (

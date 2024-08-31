@@ -1,18 +1,59 @@
 import type { HTMLAttributes } from "react";
-import { forwardRef } from "react";
+import { createContext, forwardRef, useContext, useState } from "react";
+import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { cn } from "./utils/cn";
 
-const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "flex flex-col rounded-lg border border-border bg-gradient-to-bl from-card to-background text-card-foreground shadow-sm w-full",
-        className
-      )}
-      {...props}
-    />
-  )
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  isCollapsible?: boolean;
+  defaultCollapsed?: boolean;
+}
+
+const CardContext = createContext<
+  { isCollapsed: boolean; toggle: () => void } | undefined
+>(undefined);
+
+const Card = forwardRef<HTMLDivElement, CardProps>(
+  (
+    {
+      className,
+      isCollapsible = false,
+      defaultCollapsed = false,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+    const toggle = () => setIsCollapsed(!isCollapsed);
+
+    return (
+      <CardContext.Provider value={{ isCollapsed, toggle }}>
+        <div
+          ref={ref}
+          className={cn(
+            "relative flex flex-col rounded-lg border border-border bg-gradient-to-bl from-card to-background text-card-foreground shadow-sm w-full",
+            className
+          )}
+          {...props}
+        >
+          {isCollapsible && (
+            <button
+              type="button"
+              onClick={toggle}
+              className="absolute right-3 top-4 p-2 text-muted-foreground hover:text-foreground"
+            >
+              {isCollapsed ? (
+                <LuChevronDown className="w-6 h-6" />
+              ) : (
+                <LuChevronUp className="w-6 h-6" />
+              )}
+            </button>
+          )}
+          {children}
+        </div>
+      </CardContext.Provider>
+    );
+  }
 );
 Card.displayName = "Card";
 
@@ -79,13 +120,27 @@ const CardAttributeValue = forwardRef<
 CardAttributeValue.displayName = "CardAttributeValue";
 
 const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("flex flex-col space-y-1.5 p-6", className)}
-      {...props}
-    />
-  )
+  ({ className, ...props }, ref) => {
+    const context = useContext(CardContext);
+    const handleClick = () => {
+      if (context?.isCollapsed) {
+        context.toggle();
+      }
+    };
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex flex-col space-y-1.5 p-6",
+          context?.isCollapsed && "cursor-pointer",
+          className
+        )}
+        onClick={handleClick}
+        {...props}
+      />
+    );
+  }
 );
 CardHeader.displayName = "CardHeader";
 
@@ -117,24 +172,36 @@ const CardDescription = forwardRef<
 CardDescription.displayName = "CardDescription";
 
 const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("flex flex-col flex-1 p-6 pt-0", className)}
-      {...props}
-    />
-  )
+  ({ className, ...props }, ref) => {
+    const context = useContext(CardContext);
+    if (context?.isCollapsed) {
+      return null;
+    }
+    return (
+      <div
+        ref={ref}
+        className={cn("flex flex-col flex-1 p-6 pt-0", className)}
+        {...props}
+      />
+    );
+  }
 );
 CardContent.displayName = "CardContent";
 
 const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("flex items-center p-6 pt-0", className)}
-      {...props}
-    />
-  )
+  ({ className, ...props }, ref) => {
+    const context = useContext(CardContext);
+    if (context?.isCollapsed) {
+      return null;
+    }
+    return (
+      <div
+        ref={ref}
+        className={cn("flex items-center p-6 pt-0", className)}
+        {...props}
+      />
+    );
+  }
 );
 CardFooter.displayName = "CardFooter";
 
@@ -143,8 +210,8 @@ export {
   CardAction,
   CardAttribute,
   CardAttributeLabel,
-  CardAttributeValue,
   CardAttributes,
+  CardAttributeValue,
   CardContent,
   CardDescription,
   CardFooter,

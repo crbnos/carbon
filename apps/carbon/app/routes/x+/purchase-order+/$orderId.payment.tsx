@@ -2,7 +2,6 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { getPaymentTermsList } from "~/modules/accounting";
 import {
   PurchaseOrderPaymentForm,
   getPurchaseOrderPayment,
@@ -17,16 +16,15 @@ import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "purchasing",
   });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [purchaseOrderPayment, paymentTerms] = await Promise.all([
+  const [purchaseOrderPayment] = await Promise.all([
     getPurchaseOrderPayment(client, orderId),
-    getPaymentTermsList(client, companyId),
   ]);
 
   if (purchaseOrderPayment.error) {
@@ -42,19 +40,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (paymentTerms.error) {
-    throw redirect(
-      path.to.purchaseOrders,
-      await flash(
-        request,
-        error(paymentTerms.error, "Failed to load payment terms")
-      )
-    );
-  }
-
   return json({
     purchaseOrderPayment: purchaseOrderPayment.data,
-    paymentTerms: paymentTerms.data ?? [],
   });
 }
 
@@ -102,7 +89,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchaseOrderPaymentRoute() {
-  const { purchaseOrderPayment, paymentTerms } = useLoaderData<typeof loader>();
+  const { purchaseOrderPayment } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: purchaseOrderPayment.id,
@@ -121,7 +108,6 @@ export default function PurchaseOrderPaymentRoute() {
     <PurchaseOrderPaymentForm
       key={initialValues.id}
       initialValues={initialValues}
-      paymentTerms={paymentTerms}
     />
   );
 }

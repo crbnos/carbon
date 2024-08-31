@@ -1,17 +1,19 @@
 import {
-  Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   HStack,
+  ModalDrawer,
+  ModalDrawerBody,
+  ModalDrawerContent,
+  ModalDrawerFooter,
+  ModalDrawerHeader,
+  ModalDrawerProvider,
+  ModalDrawerTitle,
   VStack,
+  toast,
 } from "@carbon/react";
 import { ValidatedForm } from "@carbon/remix-validated-form";
-import { useNavigate } from "@remix-run/react";
-import { useState } from "react";
+import { useFetcher } from "@remix-run/react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -31,21 +33,39 @@ import { path } from "~/utils/path";
 
 type PaymentTermFormProps = {
   initialValues: z.infer<typeof paymentTermValidator>;
+  type?: "modal" | "drawer";
+  open?: boolean;
+  onClose?: (data?: { id: string; name: string }) => void;
 };
 
-const PaymentTermForm = ({ initialValues }: PaymentTermFormProps) => {
+const PaymentTermForm = ({
+  initialValues,
+  open = true,
+  type = "drawer",
+  onClose,
+}: PaymentTermFormProps) => {
   const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  const [selectedCalculationMethod, setSelectedCalculationMethod] =
+    useState<PaymentTermCalculationMethod>(initialValues.calculationMethod);
+
+  useEffect(() => {
+    if (type !== "modal") return;
+
+    if (fetcher.state === "loading" && fetcher.data?.data) {
+      onClose?.();
+      toast.success(`Created payment term`);
+    } else if (fetcher.state === "idle" && fetcher.data?.error) {
+      toast.error(
+        `Failed to create payment term: ${fetcher.data.error.message}`
+      );
+    }
+  }, [fetcher.data, fetcher.state, onClose, type]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "accounting")
     : !permissions.can("create", "accounting");
-
-  const [selectedCalculationMethod, setSelectedCalculationMethod] = useState(
-    initialValues.calculationMethod
-  );
 
   const calculationMethodOptions = paymentTermsCalculationMethod.map((v) => ({
     label: v,
@@ -53,74 +73,77 @@ const PaymentTermForm = ({ initialValues }: PaymentTermFormProps) => {
   }));
 
   return (
-    <Drawer
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <DrawerContent>
-        <ValidatedForm
-          validator={paymentTermValidator}
-          method="post"
-          action={
-            isEditing
-              ? path.to.paymentTerm(initialValues.id!)
-              : path.to.newPaymentTerm
-          }
-          defaultValues={initialValues}
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <DrawerTitle>{isEditing ? "Edit" : "New"} Payment Term</DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            <Hidden name="id" />
-            <VStack spacing={4}>
-              <Input name="name" label="Name" />
-              <Select
-                name="calculationMethod"
-                label="After"
-                options={calculationMethodOptions}
-                onChange={(value) => {
-                  setSelectedCalculationMethod(
-                    value?.value as PaymentTermCalculationMethod
-                  );
-                }}
-              />
-              <Number
-                name="daysDue"
-                label={`Due Days after ${selectedCalculationMethod}`}
-                minValue={0}
-                helperText="The amount of days after the calculation method that the payment is due"
-              />
-              <Number
-                name="daysDiscount"
-                label={`Discount Days after ${selectedCalculationMethod}`}
-                minValue={0}
-                helperText="The amount of days after the calculation method that the cash discount is available"
-              />
-              <Number
-                name="discountPercentage"
-                label="Discount Percent"
-                minValue={0}
-                maxValue={100}
-                helperText="The percentage of the cash discount. Use 0 for no discount."
-              />
-              <CustomFormFields table="paymentTerm" />
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <HStack>
-              <Submit isDisabled={isDisabled}>Save</Submit>
-              <Button variant="solid" onClick={onClose}>
-                Cancel
-              </Button>
-            </HStack>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+    <ModalDrawerProvider type={type}>
+      <ModalDrawer
+        open={open}
+        onOpenChange={(open) => {
+          if (!open) onClose?.();
+        }}
+      >
+        <ModalDrawerContent>
+          <ValidatedForm
+            validator={paymentTermValidator}
+            method="post"
+            action={
+              isEditing
+                ? path.to.paymentTerm(initialValues.id!)
+                : path.to.newPaymentTerm
+            }
+            defaultValues={initialValues}
+            fetcher={fetcher}
+            className="flex flex-col h-full"
+          >
+            <ModalDrawerHeader>
+              <ModalDrawerTitle>
+                {isEditing ? "Edit" : "New"} Payment Term
+              </ModalDrawerTitle>
+            </ModalDrawerHeader>
+            <ModalDrawerBody>
+              <Hidden name="id" />
+              <Hidden name="type" value={type} />
+              <VStack spacing={4}>
+                <Input name="name" label="Name" />
+                <Select
+                  name="calculationMethod"
+                  label="After"
+                  options={calculationMethodOptions}
+                  onChange={(value) => {
+                    setSelectedCalculationMethod(
+                      value?.value as PaymentTermCalculationMethod
+                    );
+                  }}
+                />
+                <Number
+                  name="daysDue"
+                  label={`Due Days after ${selectedCalculationMethod}`}
+                  minValue={0}
+                  helperText="The amount of days after the calculation method that the payment is due"
+                />
+                <Number
+                  name="daysDiscount"
+                  label={`Discount Days after ${selectedCalculationMethod}`}
+                  minValue={0}
+                  helperText="The amount of days after the calculation method that the cash discount is available"
+                />
+                <Number
+                  name="discountPercentage"
+                  label="Discount Percent"
+                  minValue={0}
+                  maxValue={100}
+                  helperText="The percentage of the cash discount. Use 0 for no discount."
+                />
+                <CustomFormFields table="paymentTerm" />
+              </VStack>
+            </ModalDrawerBody>
+            <ModalDrawerFooter>
+              <HStack>
+                <Submit isDisabled={isDisabled}>Save</Submit>
+              </HStack>
+            </ModalDrawerFooter>
+          </ValidatedForm>
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
   );
 };
 

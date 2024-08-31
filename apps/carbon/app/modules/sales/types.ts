@@ -14,7 +14,9 @@ import type {
   getQuoteMaterials,
   getQuoteMethodTrees,
   getQuoteOperation,
+  getQuotePayment,
   getQuotes,
+  getQuoteShipment,
   getSalesOrderExternalDocuments,
   getSalesOrderLines,
   getSalesOrders,
@@ -111,6 +113,14 @@ export type QuotationPrice = NonNullable<
 >[number];
 
 export type QuotationStatusType = Database["public"]["Enums"]["quoteStatus"];
+
+export type QuotationPayment = NonNullable<
+  Awaited<ReturnType<typeof getQuotePayment>>["data"]
+>;
+
+export type QuotationShipment = NonNullable<
+  Awaited<ReturnType<typeof getQuoteShipment>>["data"]
+>;
 
 export type SalesOrder = NonNullable<
   Awaited<ReturnType<typeof getSalesOrders>>["data"]

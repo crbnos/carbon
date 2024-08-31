@@ -56,7 +56,7 @@ export const customerShippingValidator = z.object({
   shippingCustomerId: zfd.text(z.string().optional()),
   shippingCustomerLocationId: zfd.text(z.string().optional()),
   shippingCustomerContactId: zfd.text(z.string().optional()),
-  shippingTermId: zfd.text(z.string().optional()),
+  // shippingTermId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
 });
 
@@ -451,6 +451,22 @@ export const quoteFinalizeValidator = z
     }
   );
 
+export const quotePaymentValidator = z.object({
+  id: z.string(),
+  invoiceCustomerId: zfd.text(z.string().optional()),
+  invoiceCustomerLocationId: zfd.text(z.string().optional()),
+  invoiceCustomerContactId: zfd.text(z.string().optional()),
+  paymentTermId: zfd.text(z.string().optional()),
+  currencyCode: z.enum(currencyCodes).optional(),
+});
+
+export const quoteShipmentValidator = z.object({
+  id: z.string(),
+  locationId: zfd.text(z.string().optional()),
+  shippingMethodId: zfd.text(z.string().optional()),
+  receiptRequestedDate: zfd.text(z.string().optional()),
+});
+
 export const salesOrderLineType = [
   "Part",
   "Service",
@@ -490,7 +506,7 @@ export const salesOrderShipmentValidator = z
     id: z.string(),
     locationId: zfd.text(z.string().optional()),
     shippingMethodId: zfd.text(z.string().optional()),
-    shippingTermId: zfd.text(z.string().optional()),
+    // shippingTermId: zfd.text(z.string().optional()),
     trackingNumber: z.string(),
     deliveryDate: zfd.text(z.string().optional()),
     receiptRequestedDate: zfd.text(z.string().optional()),
@@ -512,18 +528,6 @@ export const salesOrderShipmentValidator = z
     {
       message: "Drop shipment requires supplier and location",
       path: ["dropShipment"], // path of error
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.locationId) {
-        return !data.dropShipment;
-      }
-      return true;
-    },
-    {
-      message: "Location is not required for drop shipment",
-      path: ["locationId"], // path of error
     }
   );
 
@@ -615,3 +619,11 @@ export const salesRfqLineValidator = z.object({
   order: zfd.numeric(z.number().min(0)),
   modelUploadId: zfd.text(z.string().optional()),
 });
+
+const selectedLineSchema = z.object({
+  unitPrice: z.number().nonnegative(),
+  addOn: z.number().nonnegative(),
+  leadTime: z.number().nonnegative().int(),
+});
+
+export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);

@@ -13960,6 +13960,304 @@ export type Database = {
           },
         ]
       }
+      quotePayment: {
+        Row: {
+          companyId: string
+          currencyCode: string
+          customFields: Json | null
+          id: string
+          invoiceCustomerContactId: string | null
+          invoiceCustomerId: string | null
+          invoiceCustomerLocationId: string | null
+          paymentTermId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          currencyCode?: string
+          customFields?: Json | null
+          id: string
+          invoiceCustomerContactId?: string | null
+          invoiceCustomerId?: string | null
+          invoiceCustomerLocationId?: string | null
+          paymentTermId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          currencyCode?: string
+          customFields?: Json | null
+          id?: string
+          invoiceCustomerContactId?: string | null
+          invoiceCustomerId?: string | null
+          invoiceCustomerLocationId?: string | null
+          paymentTermId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quotePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quotePayment_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currency"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "quotePayment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "quotePayment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_invoiceCustomerContactId_fkey"
+            columns: ["invoiceCustomerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_invoiceCustomerLocationId_fkey"
+            columns: ["invoiceCustomerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotePayment_paymentTermId_fkey"
+            columns: ["paymentTermId"]
+            isOneToOne: false
+            referencedRelation: "paymentTerm"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quoteShipment: {
+        Row: {
+          companyId: string
+          id: string
+          locationId: string | null
+          receiptRequestedDate: string | null
+          shippingMethodId: string | null
+          shippingTermId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          id: string
+          locationId?: string | null
+          receiptRequestedDate?: string | null
+          shippingMethodId?: string | null
+          shippingTermId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          id?: string
+          locationId?: string | null
+          receiptRequestedDate?: string | null
+          shippingMethodId?: string | null
+          shippingTermId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quoteShipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteShipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteShipment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "quoteShipment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "quoteShipment_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "quoteShipment_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "quoteShipment_shippingMethodId_fkey"
+            columns: ["shippingMethodId"]
+            isOneToOne: false
+            referencedRelation: "shippingMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_shippingTermId_fkey"
+            columns: ["shippingTermId"]
+            isOneToOne: false
+            referencedRelation: "shippingTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteShipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       receipt: {
         Row: {
           assignee: string | null
@@ -14425,6 +14723,7 @@ export type Database = {
       }
       salesOrder: {
         Row: {
+          addOnCost: number | null
           assignee: string | null
           closedAt: string | null
           closedBy: string | null
@@ -14438,6 +14737,7 @@ export type Database = {
           customerReference: string | null
           customFields: Json | null
           id: string
+          locationId: string | null
           notes: string | null
           orderDate: string
           revisionId: number
@@ -14447,6 +14747,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          addOnCost?: number | null
           assignee?: string | null
           closedAt?: string | null
           closedBy?: string | null
@@ -14460,6 +14761,7 @@ export type Database = {
           customerReference?: string | null
           customFields?: Json | null
           id?: string
+          locationId?: string | null
           notes?: string | null
           orderDate?: string
           revisionId?: number
@@ -14469,6 +14771,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          addOnCost?: number | null
           assignee?: string | null
           closedAt?: string | null
           closedBy?: string | null
@@ -14482,6 +14785,7 @@ export type Database = {
           customerReference?: string | null
           customFields?: Json | null
           id?: string
+          locationId?: string | null
           notes?: string | null
           orderDate?: string
           revisionId?: number
@@ -14667,6 +14971,34 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "salesOrder_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "salesOrder_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrder_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "salesOrder_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
             foreignKeyName: "salesOrder_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -14783,6 +15115,7 @@ export type Database = {
           itemReadableId: string | null
           locationId: string | null
           modelUploadId: string | null
+          promisedDate: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
           quantityToInvoice: number | null
@@ -14814,6 +15147,7 @@ export type Database = {
           itemReadableId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
+          promisedDate?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
           quantityToInvoice?: number | null
@@ -14845,6 +15179,7 @@ export type Database = {
           itemReadableId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
+          promisedDate?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
           quantityToInvoice?: number | null

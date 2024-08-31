@@ -187,11 +187,11 @@ const PurchaseOrdersTable = memo(
           header: "Shipping Method",
           cell: (item) => item.getValue(),
         },
-        {
-          accessorKey: "shippingTermName",
-          header: "Shipping Term",
-          cell: (item) => <Enumerable value={item.getValue<string>()} />,
-        },
+        // {
+        //   accessorKey: "shippingTermName",
+        //   header: "Shipping Term",
+        //   cell: (item) => <Enumerable value={item.getValue<string>()} />,
+        // },
         {
           accessorKey: "paymentTermName",
           header: "Payment Method",
@@ -310,7 +310,7 @@ const PurchaseOrdersTable = memo(
           defaultColumnVisibility={{
             receiptPromisedDate: false,
             shippingMethodName: false,
-            shippingTermName: false,
+            // shippingTermName: false,
             paymentTermName: false,
             dropShipment: false,
             createdBy: false,

@@ -1,0 +1,81 @@
+import { useDisclosure, useMount } from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
+import { useMemo, useRef, useState } from "react";
+import { usePermissions } from "~/hooks";
+import type { getPaymentTermsList } from "~/modules/accounting";
+import { PaymentTermForm } from "~/modules/accounting";
+import { path } from "~/utils/path";
+import type { ComboboxProps } from "./Combobox";
+import Combobox from "./Combobox";
+import CreatableCombobox from "./CreatableCombobox";
+
+type PaymentTermSelectProps = Omit<ComboboxProps, "options">;
+
+const PaymentTerm = (props: PaymentTermSelectProps) => {
+  const options = usePaymentTerm();
+  const permissions = usePermissions();
+
+  const newPaymentTermModal = useDisclosure();
+  const [created, setCreated] = useState<string>("");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  return permissions.can("create", "accounting") ? (
+    <>
+      <CreatableCombobox
+        ref={triggerRef}
+        options={options}
+        {...props}
+        label={props?.label ?? "Payment Term"}
+        onCreateOption={(option) => {
+          newPaymentTermModal.onOpen();
+          setCreated(option);
+        }}
+      />
+      {newPaymentTermModal.isOpen && (
+        <PaymentTermForm
+          type="modal"
+          onClose={() => {
+            setCreated("");
+            newPaymentTermModal.onClose();
+            triggerRef.current?.click();
+          }}
+          initialValues={{
+            name: created,
+            calculationMethod: "Net" as const,
+            daysDue: 0,
+            discountPercentage: 0,
+            daysDiscount: 0,
+          }}
+        />
+      )}
+    </>
+  ) : (
+    <Combobox
+      options={options}
+      {...props}
+      label={props?.label ?? "Payment Term"}
+    />
+  );
+};
+
+PaymentTerm.displayName = "PaymentTerm";
+
+export default PaymentTerm;
+
+export const usePaymentTerm = () => {
+  const paymentTermFetcher =
+    useFetcher<Awaited<ReturnType<typeof getPaymentTermsList>>>();
+
+  useMount(() => {
+    paymentTermFetcher.load(path.to.api.paymentTerms);
+  });
+
+  const options = useMemo(() => {
+    return (paymentTermFetcher.data?.data ?? []).map((c) => ({
+      value: c.id,
+      label: c.name,
+    }));
+  }, [paymentTermFetcher.data?.data]);
+
+  return options;
+};

@@ -3,10 +3,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import {
-  getShippingMethodsList,
-  getShippingTermsList,
-} from "~/modules/inventory";
-import {
   PurchaseOrderDeliveryForm,
   getPurchaseOrderDelivery,
   purchaseOrderDeliveryValidator,
@@ -14,26 +10,23 @@ import {
 } from "~/modules/purchasing";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "purchasing",
   });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [purchaseOrderDelivery, shippingMethods, shippingTerms] =
-    await Promise.all([
-      getPurchaseOrderDelivery(client, orderId),
-      getShippingMethodsList(client, companyId),
-      getShippingTermsList(client, companyId),
-    ]);
+  const [purchaseOrderDelivery] = await Promise.all([
+    getPurchaseOrderDelivery(client, orderId),
+    // getShippingTermsList(client, companyId),
+  ]);
 
   if (purchaseOrderDelivery.error) {
     throw redirect(
@@ -48,30 +41,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (shippingMethods.error) {
-    throw redirect(
-      path.to.purchaseOrders,
-      await flash(
-        request,
-        error(shippingMethods.error, "Failed to load shipping methods")
-      )
-    );
-  }
-
-  if (shippingTerms.error) {
-    throw redirect(
-      path.to.purchaseOrders,
-      await flash(
-        request,
-        error(shippingTerms.error, "Failed to load shipping terms")
-      )
-    );
-  }
+  // if (shippingTerms.error) {
+  //   throw redirect(
+  //     path.to.purchaseOrders,
+  //     await flash(
+  //       request,
+  //       error(shippingTerms.error, "Failed to load shipping terms")
+  //     )
+  //   );
+  // }
 
   return json({
     purchaseOrderDelivery: purchaseOrderDelivery.data,
-    shippingMethods: shippingMethods.data ?? [],
-    shippingTerms: shippingTerms.data ?? [],
+    // shippingTerms: shippingTerms.data ?? [],
   });
 }
 
@@ -122,8 +104,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchaseOrderDeliveryRoute() {
-  const { purchaseOrderDelivery, shippingMethods, shippingTerms } =
-    useLoaderData<typeof loader>();
+  const { purchaseOrderDelivery } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: purchaseOrderDelivery.id,
@@ -145,8 +126,7 @@ export default function PurchaseOrderDeliveryRoute() {
     <PurchaseOrderDeliveryForm
       key={initialValues.id}
       initialValues={initialValues}
-      shippingMethods={shippingMethods as ListItem[]}
-      shippingTerms={shippingTerms as ListItem[]}
+      // shippingTerms={shippingTerms as ListItem[]}
     />
   );
 }

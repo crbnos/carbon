@@ -8722,6 +8722,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.modelUploadId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.promisedDate",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8868,6 +8871,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.modelUploadId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.promisedDate",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -8966,6 +8972,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.promisedDate",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -12810,6 +12819,186 @@ export default {
         tags: ["accountCategories"],
       },
     },
+    "/quotePayment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.paymentTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.customFields",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/quotePayment",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["quotePayment"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.quotePayment",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["quotePayment"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.paymentTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.customFields",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quotePayment"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.invoiceCustomerContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.paymentTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotePayment.customFields",
+          },
+          {
+            $ref: "#/parameters/body.quotePayment",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quotePayment"],
+      },
+    },
     "/accountCategory": {
       get: {
         parameters: [
@@ -16411,6 +16600,168 @@ export default {
           },
         },
         tags: ["user"],
+      },
+    },
+    "/quoteShipment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.receiptRequestedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/quoteShipment",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["quoteShipment"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.quoteShipment",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["quoteShipment"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.receiptRequestedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteShipment"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.receiptRequestedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/body.quoteShipment",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteShipment"],
       },
     },
     "/modelUpload": {
@@ -23629,6 +23980,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.addOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.locationId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -23748,6 +24105,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.addOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.locationId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -23819,6 +24182,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.addOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.locationId",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -36029,6 +36398,10 @@ export default {
           format: "text",
           type: "string",
         },
+        promisedDate: {
+          format: "date",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -37786,6 +38159,63 @@ export default {
       },
       type: "object",
     },
+    quotePayment: {
+      required: ["id", "currencyCode", "companyId"],
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        paymentTermId: {
+          description:
+            "Note:\nThis is a Foreign Key to `paymentTerm.id`.<fk table='paymentTerm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        currencyCode: {
+          default: "USD",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+      },
+      type: "object",
+    },
     accountCategory: {
       required: [
         "id",
@@ -39453,6 +39883,55 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean",
+        },
+      },
+      type: "object",
+    },
+    quoteShipment: {
+      required: ["id", "companyId"],
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shippingMethodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shippingMethod.id`.<fk table='shippingMethod' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shippingTermId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shippingTerm.id`.<fk table='shippingTerm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        receiptRequestedDate: {
+          format: "date",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
         },
       },
       type: "object",
@@ -42753,6 +43232,16 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        addOnCost: {
+          format: "numeric",
+          type: "number",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -50940,6 +51429,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderLine.promisedDate": {
+      name: "promisedDate",
+      required: false,
+      format: "date",
+      in: "query",
+      type: "string",
+    },
     "body.salesOrderTransaction": {
       name: "salesOrderTransaction",
       description: "salesOrderTransaction",
@@ -53321,6 +53817,85 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.quotePayment": {
+      name: "quotePayment",
+      description: "quotePayment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/quotePayment",
+      },
+    },
+    "rowFilter.quotePayment.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.invoiceCustomerId": {
+      name: "invoiceCustomerId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.invoiceCustomerLocationId": {
+      name: "invoiceCustomerLocationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.invoiceCustomerContactId": {
+      name: "invoiceCustomerContactId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.paymentTermId": {
+      name: "paymentTermId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotePayment.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.accountCategory": {
       name: "accountCategory",
       description: "accountCategory",
@@ -55428,6 +56003,71 @@ export default {
       name: "developer",
       required: false,
       format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "body.quoteShipment": {
+      name: "quoteShipment",
+      description: "quoteShipment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/quoteShipment",
+      },
+    },
+    "rowFilter.quoteShipment.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteShipment.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteShipment.shippingMethodId": {
+      name: "shippingMethodId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteShipment.shippingTermId": {
+      name: "shippingTermId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteShipment.receiptRequestedDate": {
+      name: "receiptRequestedDate",
+      required: false,
+      format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteShipment.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteShipment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteShipment.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -59755,6 +60395,20 @@ export default {
     },
     "rowFilter.salesOrder.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrder.addOnCost": {
+      name: "addOnCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrder.locationId": {
+      name: "locationId",
       required: false,
       format: "text",
       in: "query",

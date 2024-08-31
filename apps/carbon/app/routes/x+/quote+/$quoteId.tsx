@@ -15,6 +15,8 @@ import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines,
   getQuoteMethodTrees,
+  getQuotePayment,
+  getQuoteShipment,
   QuoteBreadcrumbs,
   QuoteExplorer,
   QuoteHeader,
@@ -39,18 +41,47 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const [quote, lines, files, methods, prices] = await Promise.all([
+  const [
+    quote,
+    shipment,
+    payment,
+    lines,
+    files,
+    methods,
+    prices,
+    // shippingTerms,
+  ] = await Promise.all([
     getQuote(client, quoteId),
+    getQuoteShipment(client, quoteId),
+    getQuotePayment(client, quoteId),
     getQuoteLines(client, quoteId),
     getQuoteDocuments(client, companyId, quoteId),
     getQuoteMethodTrees(client, quoteId),
     getQuoteLinePricesByQuoteId(client, quoteId),
+    // getShippingTermsList(client, companyId),
   ]);
 
   if (quote.error) {
     throw redirect(
-      path.to.items,
+      path.to.quotes,
       await flash(request, error(quote.error, "Failed to load quote"))
+    );
+  }
+
+  if (shipment.error) {
+    throw redirect(
+      path.to.quotes,
+      await flash(
+        request,
+        error(shipment.error, "Failed to load quote shipment")
+      )
+    );
+  }
+
+  if (payment.error) {
+    throw redirect(
+      path.to.quotes,
+      await flash(request, error(payment.error, "Failed to load quote payment"))
     );
   }
 
@@ -60,6 +91,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     methods: methods.data ?? [],
     files: files.data ?? [],
     prices: prices.data ?? [],
+    shipment: shipment.data,
+    payment: payment.data,
+    // shippingTerms: shippingTerms.data ?? [],
   });
 }
 

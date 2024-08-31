@@ -21,7 +21,6 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SupplierDetail, SupplierStatus } from "~/modules/purchasing";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 const SupplierHeader = () => {
@@ -35,7 +34,6 @@ const SupplierHeader = () => {
 
   const sharedSupplierData = useRouteData<{
     supplierStatuses: SupplierStatus[];
-    paymentTerms: ListItem[];
   }>(path.to.supplierRoot);
 
   const supplierStatus = sharedSupplierData?.supplierStatuses?.find(
