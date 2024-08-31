@@ -29,6 +29,8 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
+  const modal = formData.get("type") === "modal";
+
   const validation = await validator(shippingMethodValidator).validate(
     formData
   );
@@ -55,21 +57,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const shippingMethodId = insertShippingMethod.data?.id;
-  if (!shippingMethodId) {
-    return json(
-      {},
-      await flash(
-        request,
-        error(insertShippingMethod, "Failed to insert shipping method")
-      )
-    );
-  }
-
-  throw redirect(
-    `${path.to.shippingMethods}?${getParams(request)}`,
-    await flash(request, success("Shipping method created"))
-  );
+  return modal
+    ? json(insertShippingMethod, { status: 201 })
+    : redirect(
+        `${path.to.shippingMethods}?${getParams(request)}`,
+        await flash(request, success("Shipping method created"))
+      );
 }
 
 export default function NewShippingMethodsRoute() {

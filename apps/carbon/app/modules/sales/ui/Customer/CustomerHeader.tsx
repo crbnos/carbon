@@ -21,7 +21,6 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { CustomerDetail, CustomerStatus } from "~/modules/sales";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 const CustomerHeader = () => {
@@ -35,7 +34,6 @@ const CustomerHeader = () => {
 
   const sharedCustomerData = useRouteData<{
     customerStatuses: CustomerStatus[];
-    paymentTerms: ListItem[];
   }>(path.to.customerRoot);
 
   const customerStatus = sharedCustomerData?.customerStatuses?.find(

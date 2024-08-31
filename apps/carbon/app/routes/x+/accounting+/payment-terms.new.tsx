@@ -29,6 +29,8 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
+  const modal = formData.get("type") === "modal";
+
   const validation = await validator(paymentTermValidator).validate(formData);
 
   if (validation.error) {
@@ -53,21 +55,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const paymentTermId = insertPaymentTerm.data?.id;
-  if (!paymentTermId) {
-    return json(
-      {},
-      await flash(
-        request,
-        error(insertPaymentTerm, "Failed to insert payment term")
-      )
-    );
-  }
-
-  throw redirect(
-    `${path.to.paymentTerms}?${getParams(request)}`,
-    await flash(request, success("Payment term created"))
-  );
+  return modal
+    ? json(insertPaymentTerm, { status: 201 })
+    : redirect(
+        `${path.to.paymentTerms}?${getParams(request)}`,
+        await flash(request, success("Payment term created"))
+      );
 }
 
 export default function NewPaymentTermsRoute() {

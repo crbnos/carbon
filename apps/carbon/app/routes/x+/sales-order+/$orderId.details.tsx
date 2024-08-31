@@ -3,21 +3,21 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
-import {
-  getShippingMethodsList,
-  getShippingTermsList,
-} from "~/modules/inventory";
+import { getPaymentTermsList } from "~/modules/accounting";
+import { getShippingMethodsList } from "~/modules/inventory";
 import type { SalesOrder } from "~/modules/sales";
 import {
+  getSalesOrderPayment,
   getSalesOrderShipment,
   SalesOrderForm,
+  SalesOrderPaymentForm,
   SalesOrderShipmentForm,
   salesOrderValidator,
   upsertSalesOrder,
 } from "~/modules/sales";
+
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
@@ -31,16 +31,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [salesOrderShipment, shippingMethods, shippingTerms] =
-    await Promise.all([
-      getSalesOrderShipment(client, orderId),
-      getShippingMethodsList(client, companyId),
-      getShippingTermsList(client, companyId),
-    ]);
+  const [
+    salesOrderShipment,
+    salesOrderPayment,
+
+    // shippingTerms,
+  ] = await Promise.all([
+    getSalesOrderShipment(client, orderId),
+    getSalesOrderPayment(client, orderId),
+    getPaymentTermsList(client, companyId),
+    getShippingMethodsList(client, companyId),
+    // getShippingTermsList(client, companyId),
+  ]);
 
   if (salesOrderShipment.error) {
+    // TODO: insert a salesOrderShipment record
     throw redirect(
-      path.to.salesOrder(orderId),
+      path.to.salesOrders,
       await flash(
         request,
         error(salesOrderShipment.error, "Failed to load sales order shipment")
@@ -48,30 +55,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (shippingMethods.error) {
+  if (salesOrderPayment.error) {
+    // TODO: insert a salesOrderPayment record
     throw redirect(
       path.to.salesOrders,
       await flash(
         request,
-        error(shippingMethods.error, "Failed to load shipping methods")
+        error(salesOrderPayment.error, "Failed to load sales order payment")
       )
     );
   }
 
-  if (shippingTerms.error) {
-    throw redirect(
-      path.to.salesOrders,
-      await flash(
-        request,
-        error(shippingTerms.error, "Failed to load shipping terms")
-      )
-    );
-  }
+  // if (shippingTerms.error) {
+  //   throw redirect(
+  //     path.to.salesOrders,
+  //     await flash(
+  //       request,
+  //       error(shippingTerms.error, "Failed to load shipping terms")
+  //     )
+  //   );
+  // }
 
   return json({
     salesOrderShipment: salesOrderShipment.data,
-    shippingMethods: shippingMethods.data ?? [],
-    shippingTerms: shippingTerms.data ?? [],
+    salesOrderPayment: salesOrderPayment.data,
+    // shippingTerms: shippingTerms.data ?? [],
   });
 }
 
@@ -117,9 +125,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export default function SalesOrderBasicRoute() {
-  const { salesOrderShipment, shippingMethods, shippingTerms } =
-    useLoaderData<typeof loader>();
+export default function SalesOrderRoute() {
+  const {
+    salesOrderShipment,
+    salesOrderPayment,
+    // shippingTerms,
+  } = useLoaderData<typeof loader>();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
   const orderData = useRouteData<{ salesOrder: SalesOrder }>(
@@ -158,6 +169,17 @@ export default function SalesOrderBasicRoute() {
     ...getCustomFields(salesOrderShipment.customFields),
   };
 
+  const paymentInitialValues = {
+    ...salesOrderPayment,
+    invoiceCustomerId: salesOrderPayment.invoiceCustomerId ?? "",
+    invoiceCustomerLocationId:
+      salesOrderPayment.invoiceCustomerLocationId ?? "",
+    invoiceCustomerContactId: salesOrderPayment.invoiceCustomerContactId ?? "",
+    paymentTermId: salesOrderPayment.paymentTermId ?? "",
+    currencyCode: salesOrderPayment.currencyCode as "USD",
+    ...getCustomFields(salesOrderPayment.customFields),
+  };
+
   return (
     <>
       <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
@@ -165,8 +187,13 @@ export default function SalesOrderBasicRoute() {
       <SalesOrderShipmentForm
         key={initialValues.id}
         initialValues={shipmentInitialValues}
-        shippingMethods={shippingMethods as ListItem[]}
-        shippingTerms={shippingTerms as ListItem[]}
+
+        // shippingTerms={shippingTerms as ListItem[]}
+      />
+
+      <SalesOrderPaymentForm
+        key={initialValues.id}
+        initialValues={paymentInitialValues}
       />
     </>
   );

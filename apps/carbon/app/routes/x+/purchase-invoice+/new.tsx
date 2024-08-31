@@ -2,7 +2,7 @@ import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import type { FunctionsResponse } from "@supabase/functions-js";
-import { useRouteData, useUrlParams } from "~/hooks";
+import { useUrlParams } from "~/hooks";
 import type { PurchaseInvoiceStatus } from "~/modules/invoicing";
 import {
   PurchaseInvoiceForm,
@@ -13,7 +13,6 @@ import { createPurchaseInvoiceFromPurchaseOrder } from "~/modules/invoicing/invo
 import { getNextSequence, rollbackNextSequence } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import type { ListItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { assertIsPost } from "~/utils/http";
@@ -123,10 +122,6 @@ export default function PurchaseInvoiceNewRoute() {
   const [params] = useUrlParams();
   const supplierId = params.get("supplierId");
 
-  const sharedData = useRouteData<{ paymentTerms: ListItem[] }>(
-    path.to.purchaseInvoiceRoot
-  );
-
   const initialValues = {
     id: undefined,
     invoiceId: undefined,
@@ -136,10 +131,7 @@ export default function PurchaseInvoiceNewRoute() {
 
   return (
     <div className="w-1/2 max-w-[600px] min-w-[420px] mx-auto mt-8">
-      <PurchaseInvoiceForm
-        initialValues={initialValues}
-        paymentTerms={sharedData?.paymentTerms ?? []}
-      />
+      <PurchaseInvoiceForm initialValues={initialValues} />
     </div>
   );
 }

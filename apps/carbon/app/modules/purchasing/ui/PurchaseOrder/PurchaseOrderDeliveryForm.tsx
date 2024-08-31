@@ -17,24 +17,21 @@ import {
   Hidden,
   Input,
   Location,
-  Select,
+  ShippingMethod,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { purchaseOrderDeliveryValidator } from "~/modules/purchasing";
-import type { ListItem } from "~/types";
 
 type PurchaseOrderDeliveryFormProps = {
   initialValues: z.infer<typeof purchaseOrderDeliveryValidator>;
-  shippingMethods: ListItem[];
-  shippingTerms: ListItem[];
+  // shippingTerms: ListItem[];
 };
 
 const PurchaseOrderDeliveryForm = ({
   initialValues,
-  shippingMethods,
-  shippingTerms,
-}: PurchaseOrderDeliveryFormProps) => {
+}: // shippingTerms,
+PurchaseOrderDeliveryFormProps) => {
   const permissions = usePermissions();
   const [dropShip, setDropShip] = useState<boolean>(
     initialValues.dropShipment ?? false
@@ -43,15 +40,10 @@ const PurchaseOrderDeliveryForm = ({
     initialValues.customerId
   );
 
-  const shippingMethodOptions = shippingMethods.map((method) => ({
-    label: method.name,
-    value: method.id,
-  }));
-
-  const shippingTermOptions = shippingTerms.map((term) => ({
-    label: term.name,
-    value: term.id,
-  }));
+  // const shippingTermOptions = shippingTerms.map((term) => ({
+  //   label: term.name,
+  //   value: term.id,
+  // }));
 
   const isSupplier = permissions.is("supplier");
 
@@ -74,17 +66,13 @@ const PurchaseOrderDeliveryForm = ({
               isReadOnly={isSupplier}
               isClearable
             />
-            <Select
-              name="shippingMethodId"
-              label="Shipping Method"
-              options={shippingMethodOptions}
-            />
-            <Select
+            <ShippingMethod name="shippingMethodId" label="Shipping Method" />
+            {/* <Select
               name="shippingTermId"
               label="Shipping Terms"
               isReadOnly={isSupplier}
               options={shippingTermOptions}
-            />
+            /> */}
 
             <DatePicker name="receiptRequestedDate" label="Requested Date" />
             <DatePicker name="receiptPromisedDate" label="Promised Date" />

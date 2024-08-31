@@ -13,16 +13,14 @@ import {
   Currency,
   CustomFormFields,
   Hidden,
-  Select,
   Submit,
   Supplier,
   SupplierContact,
   SupplierLocation,
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import PaymentTerm from "~/components/Form/PaymentTerm";
+import { usePermissions } from "~/hooks";
 import { supplierPaymentValidator } from "~/modules/purchasing";
-import type { ListItem } from "~/types";
-import { path } from "~/utils/path";
 
 type SupplierPaymentFormProps = {
   initialValues: z.infer<typeof supplierPaymentValidator>;
@@ -33,16 +31,6 @@ const SupplierPaymentForm = ({ initialValues }: SupplierPaymentFormProps) => {
   const [supplier, setSupplier] = useState<string | undefined>(
     initialValues.invoiceSupplierId
   );
-
-  const routeData = useRouteData<{
-    paymentTerms: ListItem[];
-  }>(path.to.supplierRoot);
-
-  const paymentTermOptions =
-    routeData?.paymentTerms?.map((term) => ({
-      value: term.id,
-      label: term.name,
-    })) ?? [];
 
   const isDisabled = !permissions.can("update", "purchasing");
 
@@ -75,11 +63,7 @@ const SupplierPaymentForm = ({ initialValues }: SupplierPaymentFormProps) => {
               supplier={supplier}
             />
 
-            <Select
-              name="paymentTermId"
-              label="Payment Term"
-              options={paymentTermOptions}
-            />
+            <PaymentTerm name="paymentTermId" label="Payment Term" />
             <Currency name="currencyCode" label="Currency" />
             <CustomFormFields table="supplierPayment" />
           </div>

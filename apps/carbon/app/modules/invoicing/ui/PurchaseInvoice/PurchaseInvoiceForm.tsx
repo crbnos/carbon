@@ -23,24 +23,20 @@ import {
   SupplierContact,
   SupplierLocation,
 } from "~/components/Form";
+import PaymentTerm from "~/components/Form/PaymentTerm";
 import { usePermissions } from "~/hooks";
 import {
   purchaseInvoiceStatusType,
   purchaseInvoiceValidator,
 } from "~/modules/invoicing";
-import type { ListItem } from "~/types";
 
 type PurchaseInvoiceFormValues = z.infer<typeof purchaseInvoiceValidator>;
 
 type PurchaseInvoiceFormProps = {
   initialValues: PurchaseInvoiceFormValues;
-  paymentTerms: ListItem[];
 };
 
-const PurchaseInvoiceForm = ({
-  initialValues,
-  paymentTerms,
-}: PurchaseInvoiceFormProps) => {
+const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
   const permissions = usePermissions();
   const [supplier, setSupplier] = useState<string | undefined>(
     initialValues.supplierId
@@ -51,11 +47,6 @@ const PurchaseInvoiceForm = ({
   const statusOptions = purchaseInvoiceStatusType.map((status) => ({
     label: status,
     value: status,
-  }));
-
-  const paymentTermOptions = paymentTerms.map((paymentTerm) => ({
-    label: paymentTerm.name,
-    value: paymentTerm.id,
   }));
 
   return (
@@ -126,11 +117,7 @@ const PurchaseInvoiceForm = ({
               <DatePicker name="dateIssued" label="Date Issued" />
               {isEditing && (
                 <>
-                  <Select
-                    name="paymentTermId"
-                    label="Payment Terms"
-                    options={paymentTermOptions}
-                  />
+                  <PaymentTerm name="paymentTermId" label="Payment Terms" />
                   <Currency name="currencyCode" label="Currency" />
                 </>
               )}

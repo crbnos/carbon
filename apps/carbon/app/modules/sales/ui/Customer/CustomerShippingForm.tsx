@@ -15,13 +15,11 @@ import {
   CustomerLocation,
   CustomFormFields,
   Hidden,
-  Select,
+  ShippingMethod,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { customerShippingValidator } from "~/modules/sales";
-import type { ListItem } from "~/types";
-import { path } from "~/utils/path";
 
 type CustomerShippingFormProps = {
   initialValues: z.infer<typeof customerShippingValidator>;
@@ -33,22 +31,11 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
     initialValues.shippingCustomerId
   );
 
-  const routeData = useRouteData<{
-    shippingMethods: ListItem[];
-    shippingTerms: ListItem[];
-  }>(path.to.customerRoot);
-
-  const shippingMethodOptions =
-    routeData?.shippingMethods?.map((method) => ({
-      value: method.id,
-      label: method.name,
-    })) ?? [];
-
-  const shippingTermOptions =
-    routeData?.shippingTerms?.map((term) => ({
-      value: term.id,
-      label: term.name,
-    })) ?? [];
+  // const shippingTermOptions =
+  //   routeData?.shippingTerms?.map((term) => ({
+  //     value: term.id,
+  //     label: term.name,
+  //   })) ?? [];
 
   const isDisabled = !permissions.can("update", "sales");
 
@@ -81,16 +68,12 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
               customer={customer}
             />
 
-            <Select
-              name="shippingMethodId"
-              label="Shipping Method"
-              options={shippingMethodOptions}
-            />
-            <Select
+            <ShippingMethod name="shippingMethodId" label="Shipping Method" />
+            {/* <Select
               name="shippingTermId"
               label="Shipping Term"
               options={shippingTermOptions}
-            />
+            /> */}
             <CustomFormFields table="customerShipping" />
           </div>
         </CardContent>

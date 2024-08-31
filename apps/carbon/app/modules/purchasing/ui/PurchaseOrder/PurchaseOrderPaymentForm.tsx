@@ -13,7 +13,7 @@ import {
   Currency,
   CustomFormFields,
   Hidden,
-  Select,
+  PaymentTerm,
   Submit,
   Supplier,
   SupplierContact,
@@ -21,27 +21,19 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { purchaseOrderPaymentValidator } from "~/modules/purchasing";
-import type { ListItem } from "~/types";
 
 type PurchaseOrderPaymentFormProps = {
   initialValues: z.infer<typeof purchaseOrderPaymentValidator>;
-  paymentTerms: ListItem[];
 };
 
 const PurchaseOrderPaymentForm = ({
   initialValues,
-  paymentTerms,
 }: PurchaseOrderPaymentFormProps) => {
   const permissions = usePermissions();
 
   const [supplier, setSupplier] = useState<string | undefined>(
     initialValues.invoiceSupplierId
   );
-
-  const paymentTermOptions = paymentTerms.map((term) => ({
-    label: term.name,
-    value: term.id,
-  }));
 
   return (
     <ValidatedForm
@@ -72,11 +64,7 @@ const PurchaseOrderPaymentForm = ({
               supplier={supplier}
             />
 
-            <Select
-              name="paymentTermId"
-              label="Payment Terms"
-              options={paymentTermOptions}
-            />
+            <PaymentTerm name="paymentTermId" label="Payment Terms" />
             <Currency name="currencyCode" label="Currency" />
 
             <Boolean name="paymentComplete" label="Payment Complete" />

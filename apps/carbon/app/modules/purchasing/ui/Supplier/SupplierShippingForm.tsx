@@ -12,16 +12,14 @@ import type { z } from "zod";
 import {
   CustomFormFields,
   Hidden,
-  Select,
+  ShippingMethod,
   Submit,
   Supplier,
   SupplierContact,
   SupplierLocation,
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { supplierShippingValidator } from "~/modules/purchasing";
-import type { ListItem } from "~/types";
-import { path } from "~/utils/path";
 
 type SupplierShippingFormProps = {
   initialValues: z.infer<typeof supplierShippingValidator>;
@@ -33,22 +31,11 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
     initialValues.shippingSupplierId
   );
 
-  const routeData = useRouteData<{
-    shippingMethods: ListItem[];
-    shippingTerms: ListItem[];
-  }>(path.to.supplierRoot);
-
-  const shippingMethodOptions =
-    routeData?.shippingMethods?.map((method) => ({
-      value: method.id,
-      label: method.name,
-    })) ?? [];
-
-  const shippingTermOptions =
-    routeData?.shippingTerms?.map((term) => ({
-      value: term.id,
-      label: term.name,
-    })) ?? [];
+  // const shippingTermOptions =
+  //   routeData?.shippingTerms?.map((term) => ({
+  //     value: term.id,
+  //     label: term.name,
+  //   })) ?? [];
 
   const isDisabled = !permissions.can("update", "purchasing");
 
@@ -81,16 +68,12 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
               supplier={supplier}
             />
 
-            <Select
-              name="shippingMethodId"
-              label="Shipping Method"
-              options={shippingMethodOptions}
-            />
-            <Select
+            <ShippingMethod name="shippingMethodId" label="Shipping Method" />
+            {/* <Select
               name="shippingTermId"
               label="Shipping Term"
               options={shippingTermOptions}
-            />
+            /> */}
             <CustomFormFields table="supplierShipping" />
           </div>
         </CardContent>

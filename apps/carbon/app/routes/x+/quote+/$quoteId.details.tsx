@@ -19,10 +19,16 @@ import type { FileObject } from "@supabase/storage-js";
 import { nanoid } from "nanoid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { Quotation } from "~/modules/sales";
+import type {
+  Quotation,
+  QuotationPayment,
+  QuotationShipment,
+} from "~/modules/sales";
 import {
   QuoteDocuments,
   QuoteForm,
+  QuotePaymentForm,
+  QuoteShipmentForm,
   quoteValidator,
   upsertQuote,
 } from "~/modules/sales";
@@ -79,6 +85,8 @@ export default function QuoteDetailsRoute() {
   const quoteData = useRouteData<{
     quote: Quotation;
     files: (FileObject & { quoteLineId: string | null })[];
+    shipment: QuotationShipment;
+    payment: QuotationPayment;
   }>(path.to.quote(quoteId));
 
   if (!quoteData) throw new Error("Could not find quote data");
@@ -96,10 +104,36 @@ export default function QuoteDetailsRoute() {
     status: quoteData?.quote?.status ?? "Draft",
   };
 
+  const shipmentInitialValues = {
+    id: quoteData?.shipment.id!,
+    locationId: quoteData?.shipment?.locationId ?? "",
+    shippingMethodId: quoteData?.shipment?.shippingMethodId ?? "",
+    shippingTermId: quoteData?.shipment?.shippingTermId ?? "",
+    receiptRequestedDate: quoteData?.shipment?.receiptRequestedDate ?? "",
+  };
+
+  const paymentInitialValues = {
+    ...quoteData?.payment,
+    invoiceCustomerId: quoteData?.payment.invoiceCustomerId ?? "",
+    invoiceCustomerLocationId:
+      quoteData?.payment.invoiceCustomerLocationId ?? "",
+    invoiceCustomerContactId: quoteData?.payment.invoiceCustomerContactId ?? "",
+    paymentTermId: quoteData?.payment.paymentTermId ?? "",
+    currencyCode: quoteData?.payment.currencyCode as "USD",
+  };
+
   return (
     <>
       <QuoteForm key={initialValues.id} initialValues={initialValues} />
       <QuoteDocuments id={quoteId} attachments={quoteData?.files ?? []} />
+      <QuotePaymentForm
+        key={`payment-${initialValues.id}`}
+        initialValues={paymentInitialValues}
+      />
+      <QuoteShipmentForm
+        key={`shipment-${initialValues.id}`}
+        initialValues={shipmentInitialValues}
+      />
       <QuoteNotes quote={quoteData?.quote} />
     </>
   );

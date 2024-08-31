@@ -11,22 +11,22 @@ import { useState } from "react";
 import type { z } from "zod";
 import {
   Currency,
-  CustomFormFields,
   Customer,
   CustomerContact,
   CustomerLocation,
   Hidden,
+  PaymentTerm,
   Submit,
 } from "~/components/Form";
-import PaymentTerm from "~/components/Form/PaymentTerm";
 import { usePermissions } from "~/hooks";
-import { customerPaymentValidator } from "~/modules/sales";
+import { quotePaymentValidator } from "~/modules/sales";
+import { path } from "~/utils/path";
 
-type CustomerPaymentFormProps = {
-  initialValues: z.infer<typeof customerPaymentValidator>;
+type QuotePaymentFormProps = {
+  initialValues: z.infer<typeof quotePaymentValidator>;
 };
 
-const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
+const QuotePaymentForm = ({ initialValues }: QuotePaymentFormProps) => {
   const permissions = usePermissions();
   const [customer, setCustomer] = useState<string | undefined>(
     initialValues.invoiceCustomerId
@@ -35,17 +35,18 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
   const isDisabled = !permissions.can("update", "sales");
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={customerPaymentValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card isCollapsible defaultCollapsed>
+      <ValidatedForm
+        method="post"
+        action={path.to.quotePayment(initialValues.id)}
+        validator={quotePaymentValidator}
+        defaultValues={initialValues}
+      >
         <CardHeader>
-          <CardTitle>Customer Payment</CardTitle>
+          <CardTitle>Payment</CardTitle>
         </CardHeader>
         <CardContent>
-          <Hidden name="customerId" />
+          <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Customer
               name="invoiceCustomerId"
@@ -65,7 +66,6 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
 
             <PaymentTerm name="paymentTermId" label="Payment Term" />
             <Currency name="currencyCode" label="Currency" />
-            <CustomFormFields table="customerPayment" />
           </div>
         </CardContent>
         <CardFooter>
@@ -73,9 +73,9 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
             <Submit isDisabled={isDisabled}>Save</Submit>
           </HStack>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 
-export default CustomerPaymentForm;
+export default QuotePaymentForm;

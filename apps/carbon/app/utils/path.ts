@@ -57,6 +57,8 @@ export const path = {
       workCentersByLocation: (id: string) =>
         generatePath(`${api}/resources/work-centers?location=${id}`),
       workCenters: `${api}/resources/work-centers`,
+      paymentTerms: `${api}/accounting/payment-terms`,
+      shippingMethods: `${api}/inventory/shipping-methods`,
     },
     file: {
       cadModel: (urn: string) => generatePath(`${file}/autodesk/${urn}`),
@@ -141,7 +143,7 @@ export const path = {
     consumableSuppliers: (id: string) =>
       generatePath(`${x}/consumable/${id}/suppliers`),
     convertQuoteToOrder: (id: string) =>
-      generatePath(`${x}/quote/${id}/convert-to-order`),
+      generatePath(`${x}/quote/${id}/convert`),
     currency: (id: string) => generatePath(`${x}/accounting/currencies/${id}`),
     currencies: `${x}/accounting/currencies`,
     customer: (id: string) => generatePath(`${x}/customer/${id}`),
@@ -565,6 +567,7 @@ export const path = {
     quoteExternalDocuments: (id: string) =>
       generatePath(`${x}/quote/${id}/external`),
     quoteFavorite: `${x}/sales/quotes/favorite`,
+    quoteFinalize: (id: string) => generatePath(`${x}/quote/${id}/finalize`),
     quoteInternalDocuments: (id: string) =>
       generatePath(`${x}/quote/${id}/internal`),
     quoteLine: (quoteId: string, id: string) =>
@@ -592,6 +595,9 @@ export const path = {
       ),
     quoteLineMethod: (quoteId: string, quoteLineId: string, methodId: string) =>
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
+    quoteLineRecalculatePrice: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/recalculate-price`),
+
     quoteMaterial: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/${id}`),
     quoteMaterialsOrder: `${x}/quote/methods/material/order`,
@@ -600,9 +606,8 @@ export const path = {
     quoteOperation: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,
-    quoteLineRecalculatePrice: (quoteId: string, lineId: string) =>
-      generatePath(`${x}/quote/${quoteId}/${lineId}/recalculate-price`),
-    quoteFinalize: (id: string) => generatePath(`${x}/quote/${id}/finalize`),
+    quotePayment: (id: string) => generatePath(`${x}/quote/${id}/payment`),
+    quoteShipment: (id: string) => generatePath(`${x}/quote/${id}/shipment`),
     quoteStatus: (id: string) => generatePath(`${x}/quote/${id}/status`),
     quotes: `${x}/sales/quotes`,
     receipt: (id: string) => generatePath(`${x}/receipt/${id}`),

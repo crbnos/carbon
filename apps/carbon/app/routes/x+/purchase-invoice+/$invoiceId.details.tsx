@@ -11,7 +11,6 @@ import {
 } from "~/modules/invoicing";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
@@ -64,9 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function PurchaseInvoiceBasicRoute() {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
-  const sharedData = useRouteData<{ paymentTerms: ListItem[] }>(
-    path.to.purchaseInvoiceRoot
-  );
+
   const invoiceData = useRouteData<{ purchaseInvoice: PurchaseInvoice }>(
     path.to.purchaseInvoice(invoiceId)
   );
@@ -92,10 +89,6 @@ export default function PurchaseInvoiceBasicRoute() {
   };
 
   return (
-    <PurchaseInvoiceForm
-      key={initialValues.id}
-      initialValues={initialValues}
-      paymentTerms={sharedData?.paymentTerms ?? []}
-    />
+    <PurchaseInvoiceForm key={initialValues.id} initialValues={initialValues} />
   );
 }

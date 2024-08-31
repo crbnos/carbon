@@ -33,6 +33,7 @@ import Number from "./Number";
 import NumberControlled from "./NumberControlled";
 import Part from "./Part";
 import Password from "./Password";
+import PaymentTerm from "./PaymentTerm";
 import PhoneInput from "./PhoneInput";
 import Process from "./Process";
 import Processes from "./Processes";
@@ -43,6 +44,7 @@ import SelectControlled from "./SelectControlled";
 import Sequence from "./Sequence";
 import Service from "./Service";
 import Shift from "./Shift";
+import ShippingMethod from "./ShippingMethod";
 import StandardFactor from "./StandardFactor";
 import Submit from "./Submit";
 import Supplier from "./Supplier";
@@ -99,6 +101,7 @@ export {
   NumberControlled,
   Part,
   Password,
+  PaymentTerm,
   PhoneInput,
   Process,
   Processes,
@@ -109,6 +112,7 @@ export {
   Sequence,
   Service,
   Shift,
+  ShippingMethod,
   StandardFactor,
   Submit,
   Supplier,

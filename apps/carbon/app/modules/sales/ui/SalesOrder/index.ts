@@ -7,7 +7,7 @@ import SalesOrderForm from "./SalesOrderForm";
 import SalesOrderHeader from "./SalesOrderHeader";
 import SalesOrderLineForm from "./SalesOrderLineForm";
 import SalesOrderLines from "./SalesOrderLines";
-//import SalesOrderPaymentForm from "./SalesOrderPaymentForm";
+import SalesOrderPaymentForm from "./SalesOrderPaymentForm";
 
 import SalesStatus from "./SalesStatus";
 import { useSalesOrderTotals } from "./useSalesOrderTotals";
@@ -21,8 +21,8 @@ export {
   SalesOrderHeader,
   SalesOrderLineForm,
   SalesOrderLines,
+  SalesOrderPaymentForm,
   SalesOrderShipmentForm,
-  //SalesOrderPaymentForm,
   SalesStatus,
   useSalesOrderTotals,
 };
