@@ -1,4 +1,3 @@
-import type { Database } from "@carbon/database";
 import {
   Button,
   cn,
@@ -23,9 +22,10 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
-import { Form } from "@remix-run/react";
+import { formatDate } from "@carbon/utils";
+import { Form, useParams } from "@remix-run/react";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   LuBan,
@@ -36,10 +36,20 @@ import {
   LuUpload,
   LuUserSquare,
 } from "react-icons/lu";
+import { CustomerAvatar } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
+import { usePaymentTerm } from "~/components/Form/PaymentTerm";
+import { useShippingMethod } from "~/components/Form/ShippingMethod";
+import { useRouteData } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
-import type { Quotation, QuotationLine, QuotationPrice } from "../../types";
+import type {
+  Quotation,
+  QuotationLine,
+  QuotationPayment,
+  QuotationPrice,
+  QuotationShipment,
+} from "../../types";
 
 type QuoteToOrderDrawerProps = {
   isOpen: boolean;
@@ -49,10 +59,6 @@ type QuoteToOrderDrawerProps = {
   onClose: () => void;
 };
 
-type Customer = Database["public"]["Tables"]["customer"]["Row"];
-type CustomerPayment = Database["public"]["Tables"]["customerPayment"]["Row"];
-type CustomerShipping = Database["public"]["Tables"]["customerShipping"]["Row"];
-
 const QuoteToOrderDrawer = ({
   isOpen,
   quote,
@@ -61,7 +67,6 @@ const QuoteToOrderDrawer = ({
   onClose,
 }: QuoteToOrderDrawerProps) => {
   const [step, setStep] = useState(0);
-  const [purchaseOrder, setPurchaseOrder] = useState<File | null>(null);
   const [selectedLines, setSelectedLines] = useState<
     Record<
       string,
@@ -73,55 +78,8 @@ const QuoteToOrderDrawer = ({
       }
     >
   >({});
-  const [customerDetails, setCustomerDetails] = useState<Customer | null>(null);
-  const [paymentDetails, setPaymentDetails] = useState<CustomerPayment | null>(
-    null
-  );
-  const [shippingDetails, setShippingDetails] =
-    useState<CustomerShipping | null>(null);
 
-  const { supabase } = useSupabase();
-  const fetching = useRef(false);
-  const fetchCustomerDetails = useCallback(async () => {
-    if (!supabase) return;
-    if (fetching.current) return false;
-    if (customerDetails || paymentDetails || shippingDetails) return;
-
-    fetching.current = true;
-    const [customer, payment, shipping] = await Promise.all([
-      supabase
-        .from("customer")
-        .select("*")
-        .eq("id", quote.customerId!)
-        .single(),
-      supabase
-        .from("customerPayment")
-        .select("*")
-        .eq("customerId", quote.customerId!)
-        .single(),
-      supabase
-        .from("customerShipping")
-        .select("*")
-        .eq("customerId", quote.customerId!)
-        .single(),
-    ]);
-
-    setCustomerDetails(customer.data);
-    setPaymentDetails(payment.data);
-    setShippingDetails(shipping.data);
-    fetching.current = false;
-  }, [
-    customerDetails,
-    paymentDetails,
-    quote.customerId,
-    shippingDetails,
-    supabase,
-  ]);
-
-  useEffect(() => {
-    if (isOpen) fetchCustomerDetails();
-  }, [fetchCustomerDetails, isOpen]);
-
+  const [purchaseOrder, setPurchaseOrder] = useState<File | null>(null);
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setPurchaseOrder(acceptedFiles[0]);
@@ -155,7 +113,10 @@ const QuoteToOrderDrawer = ({
               {purchaseOrder ? (
                 <p>{purchaseOrder.name}</p>
               ) : (
-                <p>Drag and drop a PDF file here, or click to select a file</p>
+                <p>
+                  Drag and drop a Purchase Order PDF here, or click to select a
+                  file
+                </p>
               )}
               <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
             </div>
@@ -181,18 +142,9 @@ const QuoteToOrderDrawer = ({
       case 2:
         return (
           <VStack spacing={4}>
-            <CustomerDetailsForm
-              customerDetails={customerDetails}
-              setCustomerDetails={setCustomerDetails}
-            />
-            <PaymentDetailsForm
-              paymentDetails={paymentDetails}
-              setPaymentDetails={setPaymentDetails}
-            />
-            <ShippingDetailsForm
-              shippingDetails={shippingDetails}
-              setShippingDetails={setShippingDetails}
-            />
+            <CustomerDetailsForm />
+            <PaymentDetailsForm />
+            <ShippingDetailsForm />
           </VStack>
         );
       default:
@@ -209,42 +161,33 @@ const QuoteToOrderDrawer = ({
         }
       }}
     >
-      <Form action={path.to.convertQuoteToOrder(quote.id!)} method="post">
-        <DrawerContent size={step === 1 ? "xl" : "md"}>
-          <input type="hidden" name="quoteId" value={quote.id!} />
-          <input
-            type="hidden"
-            name="selectedLines"
-            value={JSON.stringify(selectedLines)}
-          />
-          <input
-            type="hidden"
-            name="paymentDetails"
-            value={JSON.stringify(paymentDetails)}
-          />
-          <input
-            type="hidden"
-            name="shippingDetails"
-            value={JSON.stringify(shippingDetails)}
-          />
-          <DrawerHeader>
-            <DrawerTitle>{titles[step]}</DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>{renderStep()}</DrawerBody>
-          <DrawerFooter>
-            {step > 0 && (
-              <Button variant="secondary" onClick={() => setStep(step - 1)}>
-                Back
-              </Button>
-            )}
-            {step < 2 ? (
-              <Button onClick={() => setStep(step + 1)}>Next</Button>
-            ) : (
+      <DrawerContent size={step === 1 ? "xl" : "md"}>
+        <input type="hidden" name="quoteId" value={quote.id!} />
+
+        <DrawerHeader>
+          <DrawerTitle>{titles[step]}</DrawerTitle>
+        </DrawerHeader>
+        <DrawerBody>{renderStep()}</DrawerBody>
+        <DrawerFooter>
+          {step > 0 && (
+            <Button variant="secondary" onClick={() => setStep(step - 1)}>
+              Back
+            </Button>
+          )}
+          {step < 2 ? (
+            <Button onClick={() => setStep(step + 1)}>Next</Button>
+          ) : (
+            <Form action={path.to.convertQuoteToOrder(quote.id!)} method="post">
               <Button type="submit">Convert</Button>
-            )}
-          </DrawerFooter>
-        </DrawerContent>
-      </Form>
+              <input
+                type="hidden"
+                name="selectedLines"
+                value={JSON.stringify(selectedLines)}
+              />
+            </Form>
+          )}
+        </DrawerFooter>
+      </DrawerContent>
     </Drawer>
   );
 };
@@ -517,16 +460,19 @@ const LinePricingOptions = ({
   );
 };
 
-type PaymentDetailsFormProps = {
-  paymentDetails: CustomerPayment | null;
-  setPaymentDetails: Dispatch<SetStateAction<CustomerPayment | null>>;
-};
-
-function PaymentDetailsForm({
-  paymentDetails,
-  setPaymentDetails,
-}: PaymentDetailsFormProps) {
+function PaymentDetailsForm() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { quoteId } = useParams();
+  if (!quoteId) throw new Error("Could not find quoteId");
+
+  const quoteData = useRouteData<{
+    payment: QuotationPayment;
+  }>(path.to.quote(quoteId));
+
+  const paymentTerms = usePaymentTerm();
+  const paymentTerm = paymentTerms?.find(
+    (pt) => pt.value === quoteData?.payment?.paymentTermId
+  );
 
   return (
     <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
@@ -543,23 +489,37 @@ function PaymentDetailsForm({
         />
       </HStack>
       {isExpanded && (
-        <div className="py-4">
-          <pre>{JSON.stringify(paymentDetails, null, 2)}</pre>
-        </div>
+        <Table className="py-4">
+          <Tbody>
+            <Tr>
+              <Td>Bill To</Td>
+              <Td>
+                <CustomerAvatar
+                  customerId={quoteData?.payment.invoiceCustomerId ?? null}
+                />
+              </Td>
+            </Tr>
+            <Tr>
+              <Td>Payment Term</Td>
+              <Td>
+                <Enumerable value={paymentTerm?.value ?? null} />
+              </Td>
+            </Tr>
+          </Tbody>
+        </Table>
       )}
     </div>
   );
 }
-type CustomerDetailsFormProps = {
-  customerDetails: Customer | null;
-  setCustomerDetails: Dispatch<SetStateAction<Customer | null>>;
-};
 
-function CustomerDetailsForm({
-  customerDetails,
-  setCustomerDetails,
-}: CustomerDetailsFormProps) {
+function CustomerDetailsForm() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { quoteId } = useParams();
+  if (!quoteId) throw new Error("Could not find quoteId");
+
+  const quoteData = useRouteData<{
+    quote: Quotation;
+  }>(path.to.quote(quoteId));
 
   return (
     <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
@@ -576,24 +536,40 @@ function CustomerDetailsForm({
         />
       </HStack>
       {isExpanded && (
-        <div className="py-4">
-          <pre>{JSON.stringify(customerDetails, null, 2)}</pre>
-        </div>
+        <Table className="py-4">
+          <Tbody>
+            <Tr>
+              <Td>Customer</Td>
+              <Td>
+                <CustomerAvatar
+                  customerId={quoteData?.quote.customerId ?? null}
+                />
+              </Td>
+            </Tr>
+            <Tr>
+              <Td>Customer Ref:</Td>
+              <Td>{quoteData?.quote.customerReference}</Td>
+            </Tr>
+          </Tbody>
+        </Table>
       )}
     </div>
   );
 }
 
-type ShippingDetailsFormProps = {
-  shippingDetails: CustomerShipping | null;
-  setShippingDetails: Dispatch<SetStateAction<CustomerShipping | null>>;
-};
-
-function ShippingDetailsForm({
-  shippingDetails,
-  setShippingDetails,
-}: ShippingDetailsFormProps) {
+function ShippingDetailsForm() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { quoteId } = useParams();
+  if (!quoteId) throw new Error("Could not find quoteId");
+
+  const quoteData = useRouteData<{
+    shipment: QuotationShipment;
+  }>(path.to.quote(quoteId));
+
+  const shippingMethods = useShippingMethod();
+  const shippingMethod = shippingMethods?.find(
+    (sm) => sm.value === quoteData?.shipment?.shippingMethodId
+  );
 
   return (
     <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
@@ -610,9 +586,24 @@ function ShippingDetailsForm({
         />
       </HStack>
       {isExpanded && (
-        <div className="py-4">
-          <pre>{JSON.stringify(shippingDetails, null, 2)}</pre>
-        </div>
+        <Table className="py-4">
+          <Tbody>
+            <Tr>
+              <Td>Shipping Method</Td>
+              <Td>
+                <Enumerable value={shippingMethod?.label ?? null} />
+              </Td>
+            </Tr>
+            <Tr>
+              <Td>Requested Date</Td>
+              <Td>
+                {quoteData?.shipment.receiptRequestedDate
+                  ? formatDate(quoteData?.shipment?.receiptRequestedDate!)
+                  : null}
+              </Td>
+            </Tr>
+          </Tbody>
+        </Table>
       )}
     </div>
   );
