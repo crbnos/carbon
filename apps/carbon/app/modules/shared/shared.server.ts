@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
+import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { redis } from "../../../../../packages/kv/dist";
 import type { CustomFieldsTableType } from "../settings";
 
 export async function assign(
