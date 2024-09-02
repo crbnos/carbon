@@ -124,6 +124,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { RichText, useRichText } from "./RichText";
 
 import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
+import ActionBar, { ActionBarButton } from "./ActionBar";
 import type { CreatableComboboxProps } from "./CreateableCombobox";
 import { CreatableCombobox } from "./CreateableCombobox";
 import type { CreatableMultiSelectProps } from "./CreateableMultiSelect";
@@ -285,6 +286,8 @@ export {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  ActionBar,
+  ActionBarButton,
   ActionMenu,
   Alert,
   AlertDescription,
