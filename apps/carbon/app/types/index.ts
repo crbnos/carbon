@@ -1,4 +1,4 @@
-import type { ValidationErrorResponseData } from "@carbon/remix-validated-form";
+import type { ValidationErrorResponseData } from "@carbon/form";
 import type { TypedResponse } from "@remix-run/node";
 import type { ReactElement } from "react";
 import type { IconType } from "react-icons";

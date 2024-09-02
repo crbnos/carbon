@@ -1,6 +1,6 @@
+import type { SelectProps } from "@carbon/form";
+import { SelectControlled } from "@carbon/form";
 import { standardFactorType } from "~/modules/shared";
-import type { SelectProps } from "./SelectControlled";
-import SelectControlled from "./SelectControlled";
 
 export type StandardFactorSelectProps = Omit<SelectProps, "options"> & {
   hint?: string;

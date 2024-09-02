@@ -1,3 +1,4 @@
+import { validationError, validator } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -6,7 +7,6 @@ import {
   CardTitle,
   VStack,
 } from "@carbon/react";
-import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
@@ -31,7 +31,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, userId } = await requirePermissions(request, {});
 
   const [user] = await Promise.all([getAccount(client, userId)]);
 

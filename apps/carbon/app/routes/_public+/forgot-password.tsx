@@ -1,3 +1,4 @@
+import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Alert,
   AlertDescription,
@@ -5,11 +6,6 @@ import {
   Button,
   VStack,
 } from "@carbon/react";
-import {
-  ValidatedForm,
-  validationError,
-  validator,
-} from "@carbon/remix-validated-form";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,

@@ -1,5 +1,4 @@
-import { redis } from "@carbon/redis";
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
@@ -17,6 +16,7 @@ import { requirePermissions } from "~/services/auth/auth.server";
 import { updateCompanySession } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
+import { redis } from "../../../../../../packages/kv/dist";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

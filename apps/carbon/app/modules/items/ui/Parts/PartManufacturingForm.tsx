@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -5,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useParams } from "@remix-run/react";
 import type { z } from "zod";
 import {

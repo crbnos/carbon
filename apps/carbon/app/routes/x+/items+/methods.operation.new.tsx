@@ -1,4 +1,4 @@
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import {
   methodOperationValidator,

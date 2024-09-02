@@ -1,3 +1,4 @@
+import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
   Card,
@@ -9,11 +10,6 @@ import {
   HStack,
   VStack,
 } from "@carbon/react";
-import {
-  ValidatedForm,
-  validationError,
-  validator,
-} from "@carbon/remix-validated-form";
 import { getLocalTimeZone } from "@internationalized/date";
 import { json, redirect, type ActionFunctionArgs } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";

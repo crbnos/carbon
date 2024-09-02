@@ -5,7 +5,7 @@ import { CustomFieldForm, customFieldValidator } from "~/modules/settings";
 import { DataType } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { upsertCustomField } from "~/modules/settings/settings.server";
 import { requirePermissions } from "~/services/auth/auth.server";

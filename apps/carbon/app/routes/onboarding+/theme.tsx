@@ -1,3 +1,4 @@
+import { validationError, validator } from "@carbon/form";
 import {
   Button,
   Card,
@@ -11,7 +12,6 @@ import {
   cn,
   useKeyboardShortcuts,
 } from "@carbon/react";
-import { validationError, validator } from "@carbon/remix-validated-form";
 import { themes, type Theme } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";

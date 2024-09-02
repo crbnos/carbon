@@ -1,9 +1,9 @@
+import type { ComboboxProps } from "@carbon/form";
+import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { CustomerForm } from "~/modules/sales";
 import { useCustomers } from "~/stores";
-import type { ComboboxProps } from "./Combobox";
-import CreatableCombobox from "./CreatableCombobox";
 
 type CustomerSelectProps = Omit<ComboboxProps, "options">;
 

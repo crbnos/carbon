@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardAction,
@@ -5,12 +6,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Combobox,
   HStack,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useState } from "react";
 import type { z } from "zod";
-import { Combobox } from "~/components";
+
 import {
   Boolean,
   CustomFormFields,

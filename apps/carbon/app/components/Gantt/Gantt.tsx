@@ -1,3 +1,4 @@
+import type { Shortcut } from "@carbon/react";
 import {
   Badge,
   Button,
@@ -11,11 +12,14 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
+  ShortcutKey,
   Slider,
   Switch,
   cn,
+  shortcutKeyVariants,
   useDebounce,
   useInitialDimensions,
+  useShortcutKeys,
 } from "@carbon/react";
 import { formatDurationMilliseconds, lerp } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
@@ -38,12 +42,9 @@ import tileBgPath from "~/assets/images/error-banner-tile@2x.png";
 import { GanttIcon } from "./components/GanttIcon";
 
 import type { GanttEvent } from "~/components/Gantt/types";
-import { ShortcutKey, variants } from "~/components/ShortcutKey";
 import * as Timeline from "~/components/Timeline";
 import type { NodesState, UseTreeStateOutput } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
-import { useShortcutKeys } from "~/hooks";
-import type { Shortcut } from "~/hooks/useShortcutKeys";
 import { setResizableGanttSettings } from "~/utils/resizablePanel";
 import {
   GanttTaskStatusIcon,
@@ -854,9 +855,9 @@ function NumberShortcuts({
 
   return (
     <div className="flex items-center gap-0.5">
-      <span className={cn(variants.medium, "ml-0 mr-0")}>0</span>
+      <span className={cn(shortcutKeyVariants.medium, "ml-0 mr-0")}>0</span>
       <span className="text-[0.75rem] text-text-dimmed">–</span>
-      <span className={cn(variants.medium, "ml-0 mr-0")}>9</span>
+      <span className={cn(shortcutKeyVariants.medium, "ml-0 mr-0")}>9</span>
       <Paragraph variant="extra-small" className="ml-1.5 whitespace-nowrap">
         Toggle level
       </Paragraph>

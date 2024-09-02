@@ -1,4 +1,5 @@
 "use client";
+import { ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -16,7 +17,6 @@ import {
   useDebounce,
   useThrottle,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";

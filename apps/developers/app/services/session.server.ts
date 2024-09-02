@@ -11,7 +11,7 @@ import {
   SESSION_SECRET,
 } from "~/config/env";
 
-import { redis } from "@carbon/redis";
+import { redis } from "../../../../packages/kv/dist";
 
 import type { Result } from "~/types";
 import { path } from "~/utils/path";

@@ -5,7 +5,7 @@ import {
   upsertAccountSubcategory,
 } from "~/modules/accounting";
 
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { requirePermissions } from "~/services/auth/auth.server";

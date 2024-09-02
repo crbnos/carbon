@@ -1,5 +1,4 @@
 import type { Database, Json } from "@carbon/database";
-import { redis } from "@carbon/redis";
 import { redirect } from "@remix-run/node";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import crypto from "crypto";
@@ -25,6 +24,7 @@ import { flash, requireAuthSession } from "~/services/session.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
+import { redis } from "../../../../../packages/kv/dist";
 import { insertEmployeeJob } from "../people/people.service";
 
 export async function addUserToCompany(

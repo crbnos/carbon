@@ -1,4 +1,6 @@
 import type { Database } from "@carbon/database";
+import type { ComboboxProps } from "@carbon/form";
+import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -9,8 +11,6 @@ import {
   ToolForm,
 } from "~/modules/items";
 import { useItems } from "~/stores";
-import type { ComboboxProps } from "./Combobox";
-import CreatableCombobox from "./CreatableCombobox";
 
 type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
   type: Database["public"]["Enums"]["itemType"];

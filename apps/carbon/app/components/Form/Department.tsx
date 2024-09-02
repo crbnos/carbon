@@ -1,11 +1,11 @@
+import type { ComboboxProps } from "@carbon/form";
+import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import type { getDepartmentsList } from "~/modules/people";
 import { DepartmentForm } from "~/modules/people";
 import { path } from "~/utils/path";
-import type { ComboboxProps } from "./Combobox";
-import CreatableCombobox from "./CreatableCombobox";
 
 type DepartmentSelectProps = Omit<ComboboxProps, "options">;
 

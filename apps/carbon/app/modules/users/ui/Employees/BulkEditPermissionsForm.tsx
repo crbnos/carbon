@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   Drawer,
@@ -10,7 +11,6 @@ import {
   VStack,
   useMount,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { Employees, Hidden, Radios, Submit } from "~/components/Form";

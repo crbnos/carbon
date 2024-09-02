@@ -1,4 +1,4 @@
-import type { Validator } from "@carbon/remix-validated-form";
+import type { Validator } from "@carbon/form";
 import { z } from "zod";
 
 export type TypeOfValidator<U extends Validator<any>> = U extends Validator<

@@ -1,14 +1,7 @@
+import { Boolean, DatePicker, Input, Number, Select } from "@carbon/form";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 import { DataType } from "~/modules/shared";
-
-import {
-  Boolean,
-  DatePicker,
-  Employee,
-  Input,
-  Number,
-  Select,
-} from "~/components/Form";
+import Employee from "./Employee";
 
 type CustomFormFieldsProps = {
   table: string;

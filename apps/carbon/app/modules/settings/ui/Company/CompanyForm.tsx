@@ -1,5 +1,5 @@
+import { ValidatedForm } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { companyValidator } from "~/modules/settings";

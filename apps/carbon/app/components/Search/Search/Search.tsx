@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import type { ShortcutDefinition } from "@carbon/react";
 import {
   Button,
   Command,
@@ -11,10 +12,12 @@ import {
   HStack,
   Modal,
   ModalContent,
+  ShortcutKey,
   VStack,
   useDebounce,
   useDisclosure,
   useMount,
+  useShortcutKeys,
 } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import idb from "localforage";
@@ -34,9 +37,7 @@ import {
 } from "react-icons/ri";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { useModules } from "~/components/Layout/Navigation/useModules";
-import { ShortcutKey } from "~/components/ShortcutKey";
-import { useShortcutKeys, useUser } from "~/hooks";
-import type { ShortcutDefinition } from "~/hooks/useShortcutKeys";
+import { useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { useAccountSubmodules } from "~/modules/account";
 import { useAccountingSubmodules } from "~/modules/accounting";

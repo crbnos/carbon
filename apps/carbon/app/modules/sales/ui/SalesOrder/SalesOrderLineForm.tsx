@@ -19,7 +19,7 @@ import {
   VStack,
 } from "@carbon/react";
 
-import { ValidatedForm } from "@carbon/remix-validated-form";
+import { ValidatedForm } from "@carbon/form";
 import { useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";

@@ -1,5 +1,5 @@
+import { ValidatedForm } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useParams } from "@remix-run/react";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
 import { accountProfileValidator } from "~/modules/account";

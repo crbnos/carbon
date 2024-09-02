@@ -1,4 +1,5 @@
 "use client";
+import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
@@ -13,7 +14,6 @@ import {
   useDebounce,
   VStack,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";

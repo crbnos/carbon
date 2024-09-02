@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
@@ -11,7 +12,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useNavigate } from "@remix-run/react";
 import { z } from "zod";
 import { Hidden, Select, Submit } from "~/components/Form";

@@ -1,3 +1,4 @@
+import { validationError, validator } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -6,7 +7,6 @@ import {
   CardTitle,
   VStack,
 } from "@carbon/react";
-import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useRouteData } from "~/hooks";

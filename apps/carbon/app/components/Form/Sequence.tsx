@@ -1,11 +1,10 @@
+import type { SelectProps } from "@carbon/form";
+import { Select } from "@carbon/form";
+import { useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
-import { path } from "~/utils/path";
-
-import { useMount } from "@carbon/react";
 import type { getSequencesList } from "~/modules/settings";
-import type { SelectProps } from "./Select";
-import Select from "./Select";
+import { path } from "~/utils/path";
 
 type SequenceSelectProps = Omit<SelectProps, "options"> & {
   table: string;

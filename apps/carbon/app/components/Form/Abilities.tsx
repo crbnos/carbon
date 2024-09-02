@@ -1,10 +1,10 @@
+import type { MultiSelectProps } from "@carbon/form";
+import { MultiSelect } from "@carbon/form";
 import { useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
 import type { getAbilitiesList } from "~/modules/resources";
 import { path } from "~/utils/path";
-import type { MultiSelectProps } from "./MultiSelect";
-import MultiSelect from "./MultiSelect";
 
 type AbilitiesSelectProps = Omit<MultiSelectProps, "options" | "value">;
 

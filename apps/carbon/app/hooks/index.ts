@@ -8,7 +8,6 @@ import { usePermissions } from "./usePermissions";
 import { useRealtime } from "./useRealtime";
 import { useRouteData } from "./useRouteData";
 import { useScrollPosition } from "./useScrollPosition";
-import { useShortcutKeys } from "./useShortcutKeys";
 import { useUrlParams } from "./useUrlParams";
 import { useUser } from "./useUser";
 
@@ -23,7 +22,6 @@ export {
   useRealtime,
   useRouteData,
   useScrollPosition,
-  useShortcutKeys,
   useUrlParams,
   useUser,
 };

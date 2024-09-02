@@ -1,3 +1,4 @@
+import { useControlField, useField } from "@carbon/form";
 import {
   Button,
   CommandTrigger,
@@ -18,7 +19,6 @@ import {
   NumberInputStepper,
   VStack,
 } from "@carbon/react";
-import { useControlField, useField } from "@carbon/remix-validated-form";
 import { twoDecimals } from "@carbon/utils";
 import type { ElementRef } from "react";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";

@@ -1,9 +1,9 @@
+import type { CreatableMultiSelectProps } from "@carbon/form";
+import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { SupplierForm } from "~/modules/purchasing";
 import { useSuppliers } from "~/stores";
-import type { CreatableMultiSelectProps } from "./CreatableMultiSelect";
-import CreatableMultiSelect from "./CreatableMultiSelect";
 
 type SupplierSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
   processId?: string;

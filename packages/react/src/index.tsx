@@ -40,6 +40,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./Collapsible";
+import type { ComboboxProps } from "./Combobox";
+import { Combobox } from "./Combobox";
 import {
   Command,
   CommandDialog,
@@ -122,6 +124,10 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { RichText, useRichText } from "./RichText";
 
 import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
+import type { CreatableComboboxProps } from "./CreateableCombobox";
+import { CreatableCombobox } from "./CreateableCombobox";
+import type { CreatableMultiSelectProps } from "./CreateableMultiSelect";
+import { CreatableMultiSelect } from "./CreateableMultiSelect";
 import { defaultExtensions } from "./Editor/extensions";
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
@@ -189,6 +195,8 @@ import {
   ModalDrawerTypeProvider,
   useModalDrawerType,
 } from "./ModalDrawer";
+import type { MultiSelectProps } from "./MultiSelect";
+import { MultiSelect } from "./MultiSelect";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -198,6 +206,11 @@ import {
   NumberInputGroup,
   NumberInputStepper,
 } from "./Number";
+import type { OperatingSystemPlatform } from "./OperatingSystem";
+import {
+  OperatingSystemContextProvider,
+  useOperatingSystem,
+} from "./OperatingSystem";
 import { Paragraph } from "./Paragraph";
 import {
   Popover,
@@ -228,6 +241,7 @@ import {
   SelectValue,
 } from "./Select";
 import { Separator } from "./Separator";
+import { ShortcutKey, shortcutKeyVariants } from "./ShortcutKey";
 import { Skeleton } from "./Skeleton";
 import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
@@ -247,6 +261,11 @@ import {
   TooltipTrigger,
 } from "./Tooltip";
 import { VStack } from "./VStack";
+import type {
+  Modifier,
+  Shortcut,
+  ShortcutDefinition,
+} from "./hooks/useShortcutKeys";
 import { cn } from "./utils/cn";
 import { getValidChildren, reactNodeToString } from "./utils/react";
 
@@ -295,6 +314,7 @@ export {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  Combobox,
   Command,
   CommandDialog,
   CommandEmpty,
@@ -322,6 +342,8 @@ export {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
   Count,
+  CreatableCombobox,
+  CreatableMultiSelect,
   DatePicker,
   DateRangePicker,
   DateTimePicker,
@@ -416,12 +438,14 @@ export {
   ModalPortal,
   ModalTitle,
   ModalTrigger,
+  MultiSelect,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
+  OperatingSystemContextProvider,
   Paragraph,
   Popover,
   PopoverClose,
@@ -449,6 +473,7 @@ export {
   SelectTrigger,
   SelectValue,
   Separator,
+  ShortcutKey,
   Skeleton,
   Slider,
   Spinner,
@@ -483,17 +508,27 @@ export {
   getValidChildren,
   multiSelectTriggerVariants,
   reactNodeToString,
+  shortcutKeyVariants,
   toast,
   useModalCardType,
   useModalDrawerType,
+  useOperatingSystem,
   useRichText,
 };
 export type {
   AvatarProps,
   BadgeProps,
   ButtonProps,
+  ComboboxProps,
+  CreatableComboboxProps,
+  CreatableMultiSelectProps,
   InputProps,
   JSONContent,
+  Modifier,
+  MultiSelectProps,
   NumberFieldProps,
+  OperatingSystemPlatform,
+  Shortcut,
+  ShortcutDefinition,
   TextareaProps,
 };

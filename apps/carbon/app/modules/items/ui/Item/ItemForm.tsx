@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
@@ -9,7 +10,6 @@ import {
   CardTitle,
   HStack,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { Link, useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { LuExternalLink } from "react-icons/lu";

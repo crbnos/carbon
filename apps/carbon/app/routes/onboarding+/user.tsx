@@ -1,3 +1,4 @@
+import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
   Card,
@@ -8,11 +9,6 @@ import {
   HStack,
   VStack,
 } from "@carbon/react";
-import {
-  ValidatedForm,
-  validationError,
-  validator,
-} from "@carbon/remix-validated-form";
 import { redirect, type ActionFunctionArgs } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import type { z } from "zod";

@@ -10,7 +10,6 @@ import {
 import { parseDate } from "@internationalized/date";
 import { MdCalendarMonth, MdClose } from "react-icons/md";
 import { New, Select } from "~/components";
-import { TableFilters } from "~/components/Layout";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { incomeBalanceTypes } from "~/modules/accounting";
 
@@ -27,7 +26,7 @@ const ChartOfAccountsTableFilters = () => {
   }));
 
   return (
-    <TableFilters>
+    <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
       <HStack>
         <Select
           value={params.get("incomeBalance") ?? ""}
@@ -86,7 +85,7 @@ const ChartOfAccountsTableFilters = () => {
           <New label="Account" to={`new?${params.toString()}`} />
         )}
       </HStack>
-    </TableFilters>
+    </div>
   );
 };
 

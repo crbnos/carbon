@@ -1,3 +1,6 @@
+import type { ComboboxProps } from "@carbon/form";
+import { CreatableCombobox } from "@carbon/form";
+import { useDisclosure } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
@@ -6,10 +9,7 @@ import type {
 } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
-import { useDisclosure } from "@carbon/react";
 import { SupplierContactForm } from "~/modules/purchasing";
-import type { ComboboxProps } from "./Combobox";
-import CreatableCombobox from "./CreatableCombobox";
 
 type SupplierContactSelectProps = Omit<
   ComboboxProps,

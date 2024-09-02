@@ -5,7 +5,6 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import {
   SuppliersTable,
   getSupplierStatuses,
-  getSupplierTypes,
   getSuppliers,
 } from "~/modules/purchasing";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -34,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [suppliers, supplierTypes, supplierStatuses] = await Promise.all([
+  const [suppliers, supplierStatuses] = await Promise.all([
     getSuppliers(client, companyId, {
       search,
       type,
@@ -44,7 +43,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getSupplierTypes(client, companyId),
     getSupplierStatuses(client, companyId),
   ]);
 
@@ -59,20 +57,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: suppliers.count ?? 0,
     suppliers: suppliers.data ?? [],
     supplierStatuses: supplierStatuses.data ?? [],
-    supplierTypes: supplierTypes.data ?? [],
   });
 }
 
 export default function PurchasingSuppliersRoute() {
-  const { count, suppliers, supplierTypes, supplierStatuses } =
-    useLoaderData<typeof loader>();
+  const { count, suppliers, supplierStatuses } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <SuppliersTable
         data={suppliers}
         count={count}
-        supplierTypes={supplierTypes}
         supplierStatuses={supplierStatuses}
       />
       <Outlet />

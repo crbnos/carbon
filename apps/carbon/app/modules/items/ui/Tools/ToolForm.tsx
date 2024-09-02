@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   ModalCard,
   ModalCardBody,
@@ -10,7 +11,6 @@ import {
   cn,
   toast,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";

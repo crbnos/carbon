@@ -1,3 +1,5 @@
+import type { CreatableMultiSelectProps } from "@carbon/form";
+import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
@@ -5,8 +7,6 @@ import { useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources";
 import { WorkCenterForm } from "~/modules/resources";
 import { path } from "~/utils/path";
-import type { CreatableMultiSelectProps } from "./CreatableMultiSelect";
-import CreatableMultiSelect from "./CreatableMultiSelect";
 
 type WorkCenterSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
   processId?: string;
