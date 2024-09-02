@@ -461,7 +461,7 @@ const LinePricingOptions = ({
 };
 
 function PaymentDetailsForm() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
 
@@ -492,7 +492,7 @@ function PaymentDetailsForm() {
         <Table className="py-4">
           <Tbody>
             <Tr>
-              <Td>Bill To</Td>
+              <Td className="w-1/2">Bill To</Td>
               <Td>
                 <CustomerAvatar
                   customerId={quoteData?.payment.invoiceCustomerId ?? null}
@@ -500,9 +500,9 @@ function PaymentDetailsForm() {
               </Td>
             </Tr>
             <Tr>
-              <Td>Payment Term</Td>
+              <Td className="w-1/2">Payment Term</Td>
               <Td>
-                <Enumerable value={paymentTerm?.value ?? null} />
+                <Enumerable value={paymentTerm?.label ?? null} />
               </Td>
             </Tr>
           </Tbody>
@@ -513,7 +513,7 @@ function PaymentDetailsForm() {
 }
 
 function CustomerDetailsForm() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
 
@@ -539,7 +539,7 @@ function CustomerDetailsForm() {
         <Table className="py-4">
           <Tbody>
             <Tr>
-              <Td>Customer</Td>
+              <Td className="w-1/2">Customer</Td>
               <Td>
                 <CustomerAvatar
                   customerId={quoteData?.quote.customerId ?? null}
@@ -547,7 +547,7 @@ function CustomerDetailsForm() {
               </Td>
             </Tr>
             <Tr>
-              <Td>Customer Ref:</Td>
+              <Td className="w-1/2">Customer Ref:</Td>
               <Td>{quoteData?.quote.customerReference}</Td>
             </Tr>
           </Tbody>
@@ -558,7 +558,7 @@ function CustomerDetailsForm() {
 }
 
 function ShippingDetailsForm() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
 
@@ -589,8 +589,8 @@ function ShippingDetailsForm() {
         <Table className="py-4">
           <Tbody>
             <Tr>
-              <Td>Shipping Method</Td>
-              <Td>
+              <Td className="w-1/2">Shipping Method</Td>
+              <Td className="w-1/2">
                 <Enumerable value={shippingMethod?.label ?? null} />
               </Td>
             </Tr>

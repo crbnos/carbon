@@ -104,7 +104,7 @@ const QuotePDF = ({
         />
         <View style={styles.row}>
           <View style={{ ...styles.colThird, ...styles.header }}>
-            <Text style={styles.label}>Supplier</Text>
+            <Text style={styles.label}>Customer</Text>
             <Text>{customerName}</Text>
             {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
             {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
