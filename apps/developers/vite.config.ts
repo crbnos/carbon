@@ -46,7 +46,7 @@ export default defineConfig({
       ),
       "@carbon/form": path.resolve(
         __dirname,
-        "../../packages/remix-validated-form/src/index.tsx"
+        "../../packages/form/src/index.tsx"
       ),
       "@carbon/logger": path.resolve(
         __dirname,
