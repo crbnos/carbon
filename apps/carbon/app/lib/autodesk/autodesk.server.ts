@@ -1,5 +1,5 @@
+import { redis } from "@carbon/kv";
 import axios from "axios";
-import { redis } from "../../../../../packages/kv/dist";
 
 import { z } from "zod";
 import {
