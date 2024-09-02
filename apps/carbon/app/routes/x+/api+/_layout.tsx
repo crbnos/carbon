@@ -80,6 +80,9 @@ export default function ApiDocsRoute() {
 const tableBlacklist = new Set([
   "apiKey",
   "documentTransaction",
+  "oauthClient",
+  "oauthCode",
+  "oauthToken",
   "purchaseOrderTransaction",
   "salesOrderTransaction",
   "search",
