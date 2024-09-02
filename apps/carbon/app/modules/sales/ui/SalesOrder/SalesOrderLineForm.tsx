@@ -31,6 +31,7 @@ import {
   DatePicker,
   Hidden,
   Item,
+  Location,
   Number,
   NumberControlled,
   Select,
@@ -46,7 +47,6 @@ import type {
   SalesOrderLineType,
 } from "~/modules/sales";
 import { salesOrderLineType, salesOrderLineValidator } from "~/modules/sales";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
 
@@ -69,15 +69,8 @@ const SalesOrderLineForm = ({
   if (!orderId) throw new Error("orderId not found");
 
   const routeData = useRouteData<{
-    locations: ListItem[];
     salesOrder: SalesOrder;
   }>(path.to.salesOrder(orderId));
-
-  const locations = routeData?.locations ?? [];
-  const locationOptions = locations.map((location) => ({
-    label: location.name,
-    value: location.id,
-  }));
 
   const isEditable = ["Draft", "To Review"].includes(
     routeData?.salesOrder?.status ?? ""
@@ -336,11 +329,9 @@ const SalesOrderLineForm = ({
                           "Fixture",
                           "Consumable",
                         ].includes(lineType) && (
-                          <ComboboxControlled
+                          <Location
                             name="locationId"
                             label="Location"
-                            options={locationOptions}
-                            value={locationId}
                             onChange={onLocationChange}
                           />
                         )}

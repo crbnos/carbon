@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     rowGap: 3,
     fontSize: 11,
     fontWeight: 500,
-    width: "68%",
+    width: "60%",
   },
   companyName: {
     fontSize: 13,
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     rowGap: 3,
     fontSize: 11,
     fontWeight: 500,
-    width: "32%",
+    width: "40%",
   },
   documentSummaryItem: {
     display: "flex",
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   documentSummaryLabel: {
     color: "#7d7d7d",
     fontWeight: 700,
-    width: "30%",
+    width: "50%",
   },
   documentSummaryValue: {
     fontWeight: 500,
