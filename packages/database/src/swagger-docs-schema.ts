@@ -8725,6 +8725,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.promisedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.addOnCost",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8874,6 +8877,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.promisedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.addOnCost",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -8975,6 +8981,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.promisedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.addOnCost",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -24304,9 +24313,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.addOnCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
           },
           {
@@ -24429,9 +24435,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.addOnCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
           },
           {
@@ -24506,9 +24509,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrder.addOnCost",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
@@ -36738,6 +36738,7 @@ export default {
         "createdAt",
         "createdBy",
         "status",
+        "addOnCost",
       ],
       properties: {
         id: {
@@ -36887,6 +36888,11 @@ export default {
         promisedDate: {
           format: "date",
           type: "string",
+        },
+        addOnCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -43827,10 +43833,6 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
-        },
-        addOnCost: {
-          format: "numeric",
-          type: "number",
         },
         locationId: {
           description:
@@ -52081,6 +52083,13 @@ export default {
       name: "promisedDate",
       required: false,
       format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.addOnCost": {
+      name: "addOnCost",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -61175,13 +61184,6 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrder.addOnCost": {
-      name: "addOnCost",
-      required: false,
-      format: "numeric",
       in: "query",
       type: "string",
     },

@@ -28,6 +28,7 @@ import type { z } from "zod";
 import {
   ComboboxControlled,
   CustomFormFields,
+  DatePicker,
   Hidden,
   Item,
   Number,
@@ -313,11 +314,20 @@ const SalesOrderLineForm = ({
                             }))
                           }
                         />
+                        <Number
+                          name="addOnCost"
+                          label="Add-On Cost"
+                          formatOptions={{
+                            style: "currency",
+                            currency: "USD",
+                          }}
+                        />
                         <UnitOfMeasure
                           name="unitOfMeasureCode"
                           label="Unit of Measure"
                           value={itemData.uom}
                         />
+                        <DatePicker name="promisedDate" label="Promised Date" />
                         {[
                           "Part",
                           "Material",

@@ -153,8 +153,8 @@ const QuoteHeader = () => {
                 </Form>
               </>
             )}
-            {["Ordered", "Partial"].includes(routeData?.quote?.status ?? "") &&
-              routeData?.quote?.salesOrderId && (
+            {["Ordered", "Partial"].includes(routeData?.quote?.status ?? "") ? (
+              routeData?.quote?.salesOrderId ? (
                 <Button
                   isDisabled={!routeData?.quote.salesOrderId}
                   leftIcon={<LuSend />}
@@ -170,7 +170,20 @@ const QuoteHeader = () => {
                     View Order
                   </Link>
                 </Button>
-              )}
+              ) : (
+                <Form method="post" action={path.to.quoteStatus(quoteId)}>
+                  <input type="hidden" name="status" value="Draft" />
+                  <Button
+                    isDisabled={!permissions.can("update", "sales")}
+                    leftIcon={<LuRefreshCw />}
+                    type="submit"
+                    variant="secondary"
+                  >
+                    Reopen
+                  </Button>
+                </Form>
+              )
+            ) : null}
           </HStack>
         </HStack>
       </div>

@@ -63,17 +63,17 @@ serve(async (req: Request) => {
           await Promise.all([
             client.from("quote").select("*").eq("id", id).single(),
             client.from("quoteLine").select("*").eq("quoteId", id),
-            client.from("quotePayment").select("*").eq("quoteId", id).single(),
-            client.from("quoteShipment").select("*").eq("quoteId", id).single(),
+            client.from("quotePayment").select("*").eq("id", id).single(),
+            client.from("quoteShipment").select("*").eq("id", id).single(),
           ]);
 
         if (quote.error) throw new Error(`Quote with id ${id} not found`);
         if (quoteLines.error)
           throw new Error(`Quote Lines with id ${id} not found`);
         if (quotePayment.error)
-          throw new Error(`Quote Payment with id ${id} not found`);
+          throw new Error(`Quote payment with id ${id} not found`);
         if (quoteShipping.error)
-          throw new Error(`Quote Shipping with id ${id} not found`);
+          throw new Error(`Quote shipping with id ${id} not found`);
 
         let insertedSalesOrderId = "";
         await db.transaction().execute(async (trx) => {
@@ -133,18 +133,15 @@ serve(async (req: Request) => {
                 (line) => line.id && selectedLines && line.id in selectedLines
               )
               .map((line) => {
-                const quantity = selectedLines![line.id!].quantity;
                 return {
                   salesOrderId: insertedSalesOrderId,
                   salesOrderLineType: line.itemType as "Part",
                   status: "Ordered",
                   itemId: line.itemId,
                   itemReadableId: line.itemReadableId,
-                  saleQuantity: selectedLines![line.id!].unitPrice,
-                  quantityToSend: quantity,
-                  quantityToInvoice: quantity,
                   unitOfMeasureCode: line.unitOfMeasureCode,
                   locationId: quote.data.locationId,
+                  saleQuantity: selectedLines![line.id!].quantity,
                   unitPrice: selectedLines![line.id!].unitPrice,
                   addOnCost: selectedLines![line.id!].addOn,
                   promisedDate: format(
@@ -160,7 +157,7 @@ serve(async (req: Request) => {
               });
 
           await trx
-            .insertInto("salesOrderLines")
+            .insertInto("salesOrderLine")
             .values(salesOrderLineInserts)
             .execute();
 
