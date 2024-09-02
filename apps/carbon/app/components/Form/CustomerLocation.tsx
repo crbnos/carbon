@@ -7,10 +7,10 @@ import {
 } from "~/modules/sales";
 import { path } from "~/utils/path";
 
+import type { ComboboxProps } from "@carbon/form";
+import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
-import type { ComboboxProps } from "./Combobox";
-import CreatableCombobox from "./CreatableCombobox";
 
 type CustomerLocationSelectProps = Omit<
   ComboboxProps,

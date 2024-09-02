@@ -11,10 +11,10 @@ import {
   SESSION_SECRET,
 } from "~/config/env";
 
-import { redis } from "@carbon/redis";
 import { getPermissionCacheKey } from "~/modules/users/users.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
+import { redis } from "../../../../packages/kv/dist";
 import { refreshAccessToken, verifyAuthSession } from "./auth/auth.server";
 import type { AuthSession } from "./auth/types";
 

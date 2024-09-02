@@ -6,7 +6,7 @@ import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
 
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import {
   PersonJob,
   employeeJobValidator,

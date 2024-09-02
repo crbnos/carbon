@@ -1,5 +1,5 @@
+import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";

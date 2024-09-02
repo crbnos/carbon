@@ -151,4 +151,4 @@ export type SalesRFQLine = NonNullable<
   Awaited<ReturnType<typeof getSalesRFQLines>>["data"]
 >[number];
 
-export type SalesRFQStatus = Database["public"]["Enums"]["salesRfqStatus"];
+export type SalesRFQStatusType = Database["public"]["Enums"]["salesRfqStatus"];

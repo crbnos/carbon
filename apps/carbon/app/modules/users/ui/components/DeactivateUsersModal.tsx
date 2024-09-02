@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   HStack,
@@ -8,7 +9,6 @@ import {
   ModalHeader,
   ModalTitle,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { UserSelect } from "~/components/Selectors";
 import { deactivateUsersValidator } from "~/modules/users";
 import { path } from "~/utils/path";

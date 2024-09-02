@@ -1,12 +1,11 @@
+import type { ComboboxProps } from "@carbon/form";
+import { Combobox } from "@carbon/form";
 import { useMount } from "@carbon/react";
 
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
 import type { getAbilitiesList } from "~/modules/resources";
 import { path } from "~/utils/path";
-
-import type { ComboboxProps } from "./Combobox";
-import Combobox from "./Combobox";
 
 type AbilitySelectProps = Omit<ComboboxProps, "options">;
 

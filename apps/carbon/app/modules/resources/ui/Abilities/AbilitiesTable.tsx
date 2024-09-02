@@ -54,8 +54,10 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
           }
           return acc;
         }, [])
-      : row.employeeAbility?.user && Array.isArray(row.employeeAbility?.user)
-      ? row.employeeAbility.user.map((user) => ({
+      : // @ts-expect-error
+      row.employeeAbility?.user && Array.isArray(row.employeeAbility?.user)
+      ? // @ts-expect-error
+        row.employeeAbility.user.map((user) => ({
           name: user.fullName ?? "",
           avatarUrl: user.avatarUrl,
         }))

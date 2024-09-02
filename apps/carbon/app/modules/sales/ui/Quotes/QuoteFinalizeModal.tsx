@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   Modal,
@@ -9,7 +10,6 @@ import {
   ModalTitle,
   VStack,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import { CustomerContact, SelectControlled } from "~/components/Form";

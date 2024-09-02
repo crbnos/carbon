@@ -1,10 +1,10 @@
+import type { ComboboxProps } from "@carbon/form";
+import { Combobox } from "@carbon/form";
 import { useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
 import type { AccountClass, getAccountsList } from "~/modules/accounting";
 import { path } from "~/utils/path";
-import type { ComboboxProps } from "./Combobox";
-import Combobox from "./Combobox";
 
 type AccountSelectProps = Omit<ComboboxProps, "options"> & {
   classes?: AccountClass[];

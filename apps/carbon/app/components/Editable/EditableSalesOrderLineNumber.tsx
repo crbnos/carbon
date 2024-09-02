@@ -1,10 +1,10 @@
 /* eslint-disable react/display-name */
 import type { Database } from "@carbon/database";
+import { Combobox } from "@carbon/react";
 import type {
   PostgrestSingleResponse,
   SupabaseClient,
 } from "@supabase/supabase-js";
-import { Combobox } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import type { SalesOrderLine } from "~/modules/sales";
 import type { Item } from "~/stores";

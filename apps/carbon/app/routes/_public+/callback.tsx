@@ -1,4 +1,4 @@
-import { validator } from "@carbon/remix-validated-form";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";

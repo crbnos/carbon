@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
   CardTitle,
   cn,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import type { z } from "zod";
 import {
   Boolean,

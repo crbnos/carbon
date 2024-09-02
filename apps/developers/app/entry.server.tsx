@@ -1,3 +1,5 @@
+import type { OperatingSystemPlatform } from "@carbon/react";
+import { OperatingSystemContextProvider } from "@carbon/react";
 import { I18nProvider } from "@react-aria/i18n";
 import type { EntryContext, LoaderFunctionArgs } from "@remix-run/node";
 import { createReadableStreamFromReadable } from "@remix-run/node"; // or cloudflare/deno
@@ -6,8 +8,6 @@ import { parseAcceptLanguage } from "intl-parse-accept-language";
 import isbot from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 import { PassThrough } from "stream";
-import type { OperatingSystemPlatform } from "~/components/OperatingSystem";
-import { OperatingSystemContextProvider } from "~/components/OperatingSystem";
 import logger from "~/lib/logger";
 import { installAndLockGlobals } from "./utils/installGlobals";
 

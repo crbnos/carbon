@@ -36,12 +36,12 @@ const Progress = forwardRef<
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />
       {leftLabel && (
-        <div className="absolute left-1 z-10 inset-0 text-xs text-secondary-foreground">
+        <div className="absolute left-1.5 z-10 inset-0 text-xs text-secondary-foreground">
           {leftLabel}
         </div>
       )}
       {rightLabel && (
-        <div className="absolute right-1 top-0 z-10 text-xs text-secondary-foreground">
+        <div className="absolute right-1.5 top-0 z-10 text-xs text-secondary-foreground">
           {rightLabel}
         </div>
       )}

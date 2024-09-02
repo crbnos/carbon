@@ -1,3 +1,4 @@
+import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   HStack,
   Heading,
@@ -10,11 +11,6 @@ import {
   NumberInputStepper,
   useDisclosure,
 } from "@carbon/react";
-import {
-  ValidatedForm,
-  validationError,
-  validator,
-} from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useNavigate } from "@remix-run/react";

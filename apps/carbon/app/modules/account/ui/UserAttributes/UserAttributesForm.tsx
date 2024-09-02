@@ -1,5 +1,5 @@
+import { ValidatedForm } from "@carbon/form";
 import { Button, HStack, Switch, VStack, useDisclosure } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { parseDate } from "@internationalized/date";
 import { useLocale } from "@react-aria/i18n";
 import { useFetcher, useParams } from "@remix-run/react";
@@ -100,6 +100,7 @@ type GenericAttributeRowProps = {
   displayValue: string | number | boolean;
   isAuthorized: boolean;
   type: DataType;
+  // @ts-expect-error
   updateFetcher: ReturnType<typeof useFetcher>;
   userAttributeId: string;
   userAttributeValueId?: string;
@@ -463,7 +464,9 @@ function getGenericProps(
   )
     throw new Error("Missing attributeDataType");
 
+  // @ts-expect-error
   const type = attribute.attributeDataType.id;
+  // @ts-expect-error
   const userAttributeId = attribute.id;
   let userAttributeValueId = undefined;
 
@@ -471,10 +474,14 @@ function getGenericProps(
   let value: string | number | boolean | Date | null = null;
 
   if (
+    // @ts-expect-error
     attribute.userAttributeValue &&
+    // @ts-expect-error
     Array.isArray(attribute.userAttributeValue) &&
+    // @ts-expect-error
     attribute.userAttributeValue.length === 1
   ) {
+    // @ts-expect-error
     const userAttributeValue = attribute.userAttributeValue[0];
     userAttributeValueId = userAttributeValue.id;
 

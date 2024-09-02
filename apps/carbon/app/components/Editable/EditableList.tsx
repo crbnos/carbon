@@ -1,6 +1,6 @@
 /* eslint-disable react/display-name */
+import { Combobox } from "@carbon/react";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
-import { Combobox } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 
 const EditableList =

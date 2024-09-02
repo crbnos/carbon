@@ -1,9 +1,9 @@
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useUrlParams, useUser } from "~/hooks";
-import type { SalesRFQStatus } from "~/modules/sales";
+import type { SalesRFQStatusType } from "~/modules/sales";
 import {
   SalesRFQForm,
   salesRfqValidator,
@@ -82,7 +82,7 @@ export default function SalesRFQNewRoute() {
     locationId: defaults?.locationId ?? "",
     rfqDate: today(getLocalTimeZone()).toString(),
     rfqId: undefined,
-    status: "Draft" as SalesRFQStatus,
+    status: "Draft" as SalesRFQStatusType,
   };
 
   return (

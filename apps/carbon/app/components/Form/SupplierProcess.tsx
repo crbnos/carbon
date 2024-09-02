@@ -1,3 +1,5 @@
+import type { ComboboxProps } from "@carbon/form";
+import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef } from "react";
@@ -5,8 +7,6 @@ import type { getSupplierProcessesByProcess } from "~/modules/purchasing";
 import { SupplierProcessForm } from "~/modules/purchasing";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
-import type { ComboboxProps } from "./Combobox";
-import CreatableCombobox from "./CreatableCombobox";
 
 type SupplierProcessSelectProps = Omit<ComboboxProps, "options"> & {
   processId?: string;

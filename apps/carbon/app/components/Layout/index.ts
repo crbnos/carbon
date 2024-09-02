@@ -7,9 +7,7 @@ import {
   GroupedContentSidebar,
   IconSidebar,
 } from "./Navigation";
-import PageTitle from "./PageTitle";
-import SectionTitle from "./SectionTitle";
-import TableFilters from "./TableFilters";
+
 import Topbar from "./Topbar";
 
 export {
@@ -20,8 +18,5 @@ export {
   DetailsTopbar,
   GroupedContentSidebar,
   IconSidebar,
-  PageTitle,
-  SectionTitle,
-  TableFilters,
   Topbar,
 };

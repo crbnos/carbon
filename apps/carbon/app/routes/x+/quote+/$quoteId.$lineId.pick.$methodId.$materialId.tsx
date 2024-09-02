@@ -58,8 +58,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       operations.data?.map((o) => ({
         ...o,
         description: o.description ?? "",
-        workCenterId: o.workCenterId ?? undefined,
+        laborRate: o.laborRate ?? 0,
+        machineRate: o.machineRate ?? 0,
+        operationSupplierProcessId: o.operationSupplierProcessId ?? undefined,
         quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
+        workCenterId: o.workCenterId ?? undefined,
       })) ?? [],
   });
 }

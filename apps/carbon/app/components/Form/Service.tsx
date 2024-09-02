@@ -1,8 +1,8 @@
+import type { ComboboxProps } from "@carbon/form";
+import { Combobox } from "@carbon/form";
 import { useMemo } from "react";
 import type { ServiceType } from "~/modules/items";
 import { useServices } from "~/stores";
-import type { ComboboxProps } from "./Combobox";
-import Combobox from "./Combobox";
 
 type ServiceSelectProps = Omit<ComboboxProps, "options"> & {
   serviceType?: ServiceType;

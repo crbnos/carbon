@@ -1,3 +1,4 @@
+import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -10,7 +11,6 @@ import {
   toast,
   useThrottle,
 } from "@carbon/react";
-import { validationError, validator } from "@carbon/remix-validated-form";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";

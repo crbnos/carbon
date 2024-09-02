@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
@@ -15,7 +16,6 @@ import {
   ModalTitle,
   VStack,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";

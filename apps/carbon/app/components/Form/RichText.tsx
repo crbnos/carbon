@@ -1,10 +1,10 @@
+import { useControlField, useField } from "@carbon/form";
 import {
   FormControl,
   FormErrorMessage,
   RichText as RichTextBase,
   useRichText,
 } from "@carbon/react";
-import { useControlField, useField } from "@carbon/remix-validated-form";
 import type { ComponentProps } from "react";
 import { useEffect } from "react";
 

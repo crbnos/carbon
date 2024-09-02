@@ -1,5 +1,5 @@
 import { QuoteEmail } from "@carbon/documents";
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import { renderAsync } from "@react-email/components";
 import { redirect, type ActionFunctionArgs } from "@remix-run/node";
 import { triggerClient } from "~/lib/trigger.server";

@@ -1,7 +1,7 @@
+import type { ComboboxProps } from "@carbon/form";
+import { Combobox } from "@carbon/form";
 import { useMemo } from "react";
 import { usePeople } from "~/stores";
-import type { ComboboxProps } from "./Combobox";
-import Combobox from "./Combobox";
 
 type EmployeeSelectProps = Omit<ComboboxProps, "options" | "type"> & {
   type?: "assignee";

@@ -1,4 +1,4 @@
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import { redirect, type ActionFunctionArgs } from "@remix-run/node";
 import { salesRfqLineValidator, upsertSalesRFQLine } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";

@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   HStack,
   ModalDrawer,
@@ -10,7 +11,6 @@ import {
   VStack,
   toast,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";

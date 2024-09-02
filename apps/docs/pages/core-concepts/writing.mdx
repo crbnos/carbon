@@ -19,7 +19,7 @@ Data writes should include:
 Client-side validation and server-side validation can be done with the same validator. The convention is to store all validators for a module in `app/<module>/services/<module>.form.ts`. We use `zod` and `zod-form-data` for form validation. Here's an example of a simple validator:
 
 ```ts
-import { withZod } from "@carbon/remix-validated-form";
+import { withZod } from "@carbon/form";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
@@ -54,7 +54,7 @@ On the client-side, there are two major components to be aware of:
 Here's an example of how they work together on the client-side:
 
 ```tsx
-import { ValidatedForm } from "@carbon/remix-validated-form";
+import { ValidatedForm } from "@carbon/form";
 import { Boolean, Hidden, Input, Numeric, Submit } from "~/components/Form";
 import { personValidator } from "~/modules/people";
 
@@ -84,7 +84,7 @@ The form is validated on the client-side before the form is submitted. If the fo
 On the server-side, we use the same validator in the `action` function to validate the form data. If the form data is invalid, we return the form with the errors. If the form data is valid, we call the service layer to perform the write.
 
 ```tsx
-import { validationError, validator } from "@carbon/remix-validated-form";
+import { validationError, validator } from "@carbon/form";
 import { createPerson, personValidator } from "~/modules/people";
 
 export async function action({ request }: ActionFunctionArgs) {

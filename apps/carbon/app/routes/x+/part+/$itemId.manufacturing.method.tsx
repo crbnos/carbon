@@ -1,5 +1,5 @@
+import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { validationError, validator } from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, useLoaderData, useParams } from "@remix-run/react";
 import { redirect } from "remix-typedjson";

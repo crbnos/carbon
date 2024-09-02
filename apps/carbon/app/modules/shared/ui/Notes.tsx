@@ -1,5 +1,5 @@
+import { ValidatedForm } from "@carbon/form";
 import { Button, HStack, HTML, VStack } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { formatTimeAgo } from "@carbon/utils";
 import { Form } from "@remix-run/react";
 import { Fragment } from "react";

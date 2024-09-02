@@ -18,7 +18,7 @@ import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import EmployeeAvatar from "./EmployeeAvatar";
 
-export type ComboboxProps = Omit<
+export type AssigneeProps = Omit<
   ComponentPropsWithoutRef<"button">,
   "onChange"
 > & {
@@ -31,7 +31,7 @@ export type ComboboxProps = Omit<
   onChange?: (selected: string) => void;
 };
 
-const Assign = forwardRef<HTMLButtonElement, ComboboxProps>(
+const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
   (
     {
       id,

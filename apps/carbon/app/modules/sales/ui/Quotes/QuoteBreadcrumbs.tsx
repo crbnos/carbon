@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
@@ -17,7 +18,6 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { Link, useFetcher, useLocation, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { LuAlertTriangle, LuDownload, LuUpload } from "react-icons/lu";

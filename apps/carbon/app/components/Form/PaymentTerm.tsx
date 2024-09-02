@@ -1,3 +1,5 @@
+import type { ComboboxProps } from "@carbon/form";
+import { Combobox, CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
@@ -5,9 +7,6 @@ import { usePermissions } from "~/hooks";
 import type { getPaymentTermsList } from "~/modules/accounting";
 import { PaymentTermForm } from "~/modules/accounting";
 import { path } from "~/utils/path";
-import type { ComboboxProps } from "./Combobox";
-import Combobox from "./Combobox";
-import CreatableCombobox from "./CreatableCombobox";
 
 type PaymentTermSelectProps = Omit<ComboboxProps, "options">;
 

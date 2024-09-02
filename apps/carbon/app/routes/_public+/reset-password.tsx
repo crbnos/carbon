@@ -1,9 +1,5 @@
+import { ValidatedForm, validationError, validator } from "@carbon/form";
 import { Button, HStack, VStack } from "@carbon/react";
-import {
-  ValidatedForm,
-  validationError,
-  validator,
-} from "@carbon/remix-validated-form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";

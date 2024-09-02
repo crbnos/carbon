@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   Drawer,
@@ -11,7 +12,6 @@ import {
   HStack,
   VStack,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { useNavigate } from "@remix-run/react";
 import type { z } from "zod";
 import {

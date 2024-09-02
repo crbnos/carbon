@@ -1,4 +1,6 @@
+import { ValidatedForm, useControlField, useField } from "@carbon/form";
 import {
+  Combobox,
   FormControl,
   FormErrorMessage,
   FormLabel,
@@ -13,14 +15,9 @@ import {
   ModalTitle,
   VStack,
 } from "@carbon/react";
-import {
-  ValidatedForm,
-  useControlField,
-  useField,
-} from "@carbon/remix-validated-form";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Combobox } from "~/components";
+
 import { Customer, Submit } from "~/components/Form";
 import { useUrlParams } from "~/hooks";
 import type {

@@ -69,7 +69,7 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | `@carbon/jest`         | Jest preset configuration shared across apps and packages               |
 | `@carbon/logger`       | Shared logger used across apps                                          |
 | `@carbon/react`        | Shared web-based UI components                                          |
-| `@carbon/redis`        | Redis cache client                                                      |
+| `@carbon/kv`           | Redis cache client                                                      |
 | `@carbon/tsconfig`     | Shared, extendable tsconfig configuration used across apps and packages |
 | `@carbon/utils`        | Shared utility functions used across apps and packages                  |
 

@@ -1,11 +1,11 @@
+import type { CreatableMultiSelectProps } from "@carbon/form";
+import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import type { getProcessesList } from "~/modules/resources";
 import { ProcessForm } from "~/modules/resources";
 import { path } from "~/utils/path";
-import type { CreatableMultiSelectProps } from "./CreatableMultiSelect";
-import CreatableMultiSelect from "./CreatableMultiSelect";
 
 type ProcessSelectProps = Omit<CreatableMultiSelectProps, "options">;
 

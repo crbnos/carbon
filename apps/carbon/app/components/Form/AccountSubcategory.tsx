@@ -1,3 +1,5 @@
+import type { ComboboxProps } from "@carbon/form";
+import { Combobox } from "@carbon/form";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo } from "react";
 import type {
@@ -5,8 +7,6 @@ import type {
   getAccountSubcategoriesByCategory,
 } from "~/modules/accounting";
 import { path } from "~/utils/path";
-import type { ComboboxProps } from "./Combobox";
-import Combobox from "./Combobox";
 
 type AccountSubcategorySelectProps = Omit<
   ComboboxProps,

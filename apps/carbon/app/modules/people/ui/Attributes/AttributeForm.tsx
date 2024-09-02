@@ -10,7 +10,7 @@ import {
   VStack,
 } from "@carbon/react";
 
-import { ValidatedForm } from "@carbon/remix-validated-form";
+import { ValidatedForm } from "@carbon/form";
 import { useState } from "react";
 import type { z } from "zod";
 import {

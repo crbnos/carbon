@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Avatar,
   Badge,
@@ -22,7 +23,6 @@ import {
   useDisclosure,
   useWindowSize,
 } from "@carbon/react";
-import { ValidatedForm } from "@carbon/remix-validated-form";
 import { Form, Link, useMatches } from "@remix-run/react";
 import { BsFillHexagonFill } from "react-icons/bs";
 import { IoMdAdd } from "react-icons/io";
@@ -33,6 +33,7 @@ import {
   BreadcrumbLink,
   Breadcrumbs as BreadcrumbsBase,
 } from "~/components";
+
 import { Input, Submit } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import { companyValidator, type Company } from "~/modules/settings";

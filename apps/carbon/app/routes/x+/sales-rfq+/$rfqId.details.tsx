@@ -1,3 +1,4 @@
+import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -11,7 +12,6 @@ import {
   useThrottle,
   VStack,
 } from "@carbon/react";
-import { validationError, validator } from "@carbon/remix-validated-form";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
@@ -20,7 +20,11 @@ import type { FileObject } from "@supabase/storage-js";
 import { nanoid } from "nanoid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { SalesRFQ, SalesRFQLine, SalesRFQStatus } from "~/modules/sales";
+import type {
+  SalesRFQ,
+  SalesRFQLine,
+  SalesRFQStatusType,
+} from "~/modules/sales";
 import {
   SalesRFQDocuments,
   SalesRFQForm,
@@ -98,7 +102,7 @@ export default function SalesRFQDetailsRoute() {
       ? parseDate(rfqData?.rfqSummary?.rfqDate).toString()
       : "",
     rfqId: rfqData?.rfqSummary?.rfqId ?? "",
-    status: rfqData?.rfqSummary?.status ?? ("Draft" as SalesRFQStatus),
+    status: rfqData?.rfqSummary?.status ?? ("Draft" as SalesRFQStatusType),
     ...getCustomFields(rfqData.rfqSummary?.customFields ?? {}),
   };
 

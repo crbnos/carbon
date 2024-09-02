@@ -1,5 +1,5 @@
-import type { SelectProps } from "./SelectControlled";
-import SelectControlled from "./SelectControlled";
+import type { SelectProps } from "@carbon/form";
+import { SelectControlled } from "@carbon/form";
 
 export type DefaultMethodTypeSelectProps = Omit<SelectProps, "options"> & {
   replenishmentSystem: string;
