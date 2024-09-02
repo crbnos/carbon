@@ -19,6 +19,8 @@ import type {
   quoteLineValidator,
   quoteMaterialValidator,
   quoteOperationValidator,
+  quotePaymentValidator,
+  quoteShipmentValidator,
   quoteStatusType,
   quoteValidator,
   salesOrderLineValidator,
@@ -784,28 +786,6 @@ export async function getSalesOrderShipment(
     .eq("id", salesOrderId)
     .single();
 }
-
-/*export async function getSalesOrderLocations(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderLocations")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}*/
-
-/*export async function getSalesOrderPayment(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderPayment")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}*/
 
 export async function getSalesOrderCustomers(client: SupabaseClient<Database>) {
   return client.from("salesOrderCustomers").select("id, name");
@@ -1725,6 +1705,60 @@ export async function upsertQuoteOperation(
   return client
     .from("quoteOperation")
     .insert([operation])
+    .select("id")
+    .single();
+}
+
+export async function upsertQuotePayment(
+  client: SupabaseClient<Database>,
+  quotePayment:
+    | (z.infer<typeof quotePaymentValidator> & {
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof quotePaymentValidator> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in quotePayment) {
+    return client
+      .from("quotePayment")
+      .update(sanitize(quotePayment))
+      .eq("id", quotePayment.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("quotePayment")
+    .insert([quotePayment])
+    .select("id")
+    .single();
+}
+
+export async function upsertQuoteShipment(
+  client: SupabaseClient<Database>,
+  quoteShipment:
+    | (z.infer<typeof quoteShipmentValidator> & {
+        createdBy: string;
+      })
+    | (z.infer<typeof quoteShipmentValidator> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("id" in quoteShipment) {
+    return client
+      .from("quoteShipment")
+      .update(sanitize(quoteShipment))
+      .eq("id", quoteShipment.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("quoteShipment")
+    .insert([quoteShipment])
     .select("id")
     .single();
 }
