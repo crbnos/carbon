@@ -2,11 +2,15 @@ import { QuotePDF } from "@carbon/documents";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@remix-run/node";
 import logger from "~/lib/logger";
+import { getPaymentTermsList } from "~/modules/accounting";
+import { getShippingMethodsList } from "~/modules/inventory";
 import {
   getQuote,
   getQuoteCustomerDetails,
   getQuoteLinePricesByQuoteId,
   getQuoteLines,
+  getQuotePayment,
+  getQuoteShipment,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
@@ -20,14 +24,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [company, quote, quoteLines, quoteLinePrices, quoteLocations] =
-    await Promise.all([
-      getCompany(client, companyId),
-      getQuote(client, id),
-      getQuoteLines(client, id),
-      getQuoteLinePricesByQuoteId(client, id),
-      getQuoteCustomerDetails(client, id),
-    ]);
+  const [
+    company,
+    quote,
+    quoteLines,
+    quoteLinePrices,
+    quoteLocations,
+    quotePayment,
+    quoteShipment,
+    paymentTerms,
+    shippingMethods,
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    getQuote(client, id),
+    getQuoteLines(client, id),
+    getQuoteLinePricesByQuoteId(client, id),
+    getQuoteCustomerDetails(client, id),
+    getQuotePayment(client, id),
+    getQuoteShipment(client, id),
+    getPaymentTermsList(client, companyId),
+    getShippingMethodsList(client, companyId),
+  ]);
 
   if (company.error) {
     logger.error(company.error);
@@ -91,6 +108,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       quoteLines={quoteLines.data ?? []}
       quoteLinePrices={quoteLinePrices.data ?? []}
       quoteCustomerDetails={quoteLocations.data}
+      payment={quotePayment?.data}
+      shipment={quoteShipment?.data}
+      paymentTerms={paymentTerms.data ?? []}
+      shippingMethods={shippingMethods.data ?? []}
       thumbnails={thumbnails}
     />
   );

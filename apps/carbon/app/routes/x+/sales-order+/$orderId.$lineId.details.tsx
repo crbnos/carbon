@@ -99,6 +99,7 @@ export default function EditSalesOrderLineRoute() {
     assetId: salesOrderLine?.assetId ?? "",
     description: salesOrderLine?.description ?? "",
     itemReadableId: salesOrderLine?.itemReadableId ?? "",
+    locationId: salesOrderLine?.locationId ?? undefined,
     promisedDate: salesOrderLine?.promisedDate ?? undefined,
     saleQuantity: salesOrderLine?.saleQuantity ?? 1,
     setupPrice: salesOrderLine?.setupPrice ?? 0,

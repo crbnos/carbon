@@ -13,6 +13,10 @@ interface QuotePDFProps extends PDF {
   quoteLines: Database["public"]["Views"]["quoteLines"]["Row"][];
   quoteCustomerDetails: Database["public"]["Views"]["quoteCustomerDetails"]["Row"];
   quoteLinePrices: Database["public"]["Tables"]["quoteLinePrice"]["Row"][];
+  payment?: Database["public"]["Tables"]["quotePayment"]["Row"] | null;
+  shipment?: Database["public"]["Tables"]["quoteShipment"]["Row"] | null;
+  paymentTerms: { id: string; name: string }[];
+  shippingMethods: { id: string; name: string }[];
   thumbnails: Record<string, string | null>;
 }
 
@@ -29,6 +33,10 @@ const QuotePDF = ({
   quoteLines,
   quoteLinePrices,
   quoteCustomerDetails,
+  payment,
+  paymentTerms,
+  shipment,
+  shippingMethods,
   thumbnails,
   title = "Quote",
 }: QuotePDFProps) => {
@@ -52,6 +60,13 @@ const QuotePDF = ({
     return acc;
   }, {});
 
+  const paymentTerm = paymentTerms?.find(
+    (paymentTerm) => paymentTerm.id === payment.paymentTermId
+  );
+  const shippingMethod = shippingMethods?.find(
+    (method) => method.id === shipment.shippingMethodId
+  );
+
   return (
     <Template
       title={title}
@@ -65,42 +80,44 @@ const QuotePDF = ({
         <Header title={title} company={company} />
         <Summary
           company={company}
-          items={
-            quote.expirationDate
+          items={[
+            {
+              label: "Ref #",
+              value: quote?.customerReference,
+            },
+            {
+              label: "Date",
+              value: today(getLocalTimeZone()).toString(),
+            },
+            ...(shippingMethod
               ? [
                   {
-                    label: "Ref #",
-                    value: quote?.customerReference,
+                    label: "Shipping Method",
+                    value: shippingMethod.name,
                   },
+                ]
+              : []),
+            ...(paymentTerm
+              ? [
                   {
-                    label: "Date",
-                    value: today(getLocalTimeZone()).toString(),
+                    label: "Payment Term",
+                    value: paymentTerm.name,
                   },
+                ]
+              : []),
+            ...(quote.expirationDate
+              ? [
                   {
                     label: "Expires",
-                    value: quote?.expirationDate ?? "",
-                  },
-                  {
-                    label: "Quote #",
-                    value: quote?.quoteId,
+                    value: quote.expirationDate,
                   },
                 ]
-              : [
-                  {
-                    label: "Ref #",
-                    value: quote?.customerReference,
-                  },
-                  {
-                    label: "Date",
-                    value: today(getLocalTimeZone()).toString(),
-                  },
-
-                  {
-                    label: "Quote #",
-                    value: quote?.quoteId,
-                  },
-                ]
-          }
+              : []),
+            {
+              label: "Quote #",
+              value: quote?.quoteId,
+            },
+          ]}
         />
         <View style={styles.row}>
           <View style={{ ...styles.colThird, ...styles.header }}>
