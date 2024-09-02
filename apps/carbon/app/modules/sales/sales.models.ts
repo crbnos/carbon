@@ -540,19 +540,21 @@ export const salesOrderLineValidator = z
         message: "Type is required",
       }),
     }),
-    itemId: zfd.text(z.string().optional()),
-    itemReadableId: zfd.text(z.string().optional()),
-    serviceId: zfd.text(z.string().optional()),
     accountNumber: zfd.text(z.string().optional()),
+    addOnCost: zfd.numeric(z.number().optional()),
     assetId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),
+    itemId: zfd.text(z.string().optional()),
+    itemReadableId: zfd.text(z.string().optional()),
+    locationId: zfd.text(z.string().optional()),
+    modelUploadId: zfd.text(z.string().optional()),
+    promisedDate: zfd.text(z.string().optional()),
     saleQuantity: zfd.numeric(z.number().optional()),
+    serviceId: zfd.text(z.string().optional()),
+    setupPrice: zfd.numeric(z.number().optional()),
+    shelfId: zfd.text(z.string().optional()),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     unitPrice: zfd.numeric(z.number().optional()),
-    setupPrice: zfd.numeric(z.number().optional()),
-    locationId: zfd.text(z.string().optional()),
-    shelfId: zfd.text(z.string().optional()),
-    modelUploadId: zfd.text(z.string().optional()),
   })
   .refine((data) => (data.salesOrderLineType === "Part" ? data.itemId : true), {
     message: "Part is required",
@@ -621,9 +623,10 @@ export const salesRfqLineValidator = z.object({
 });
 
 const selectedLineSchema = z.object({
-  unitPrice: z.number().nonnegative(),
-  addOn: z.number().nonnegative(),
-  leadTime: z.number().nonnegative().int(),
+  addOn: z.number(),
+  leadTime: z.number(),
+  quantity: z.number(),
+  unitPrice: z.number(),
 });
 
 export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);

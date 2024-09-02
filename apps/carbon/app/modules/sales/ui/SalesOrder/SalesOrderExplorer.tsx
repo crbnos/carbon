@@ -42,6 +42,8 @@ export default function SalesOrderExplorer() {
     salesOrderId: orderId,
     salesOrderLineType: "Part" as const,
     saleQuantity: 1,
+    unitPrice: 0,
+    addOnCost: 0,
   };
 
   const newSalesOrderLineDisclosure = useDisclosure({

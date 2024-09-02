@@ -23,9 +23,9 @@ import {
   VStack,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { Form, useParams } from "@remix-run/react";
+import { Form, useNavigation, useParams } from "@remix-run/react";
 import type { Dispatch, SetStateAction } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   LuBan,
@@ -73,7 +73,7 @@ const QuoteToOrderDrawer = ({
       {
         quantity: number;
         unitPrice: number;
-        totalPrice: number;
+        addOn: number;
         leadTime: number;
       }
     >
@@ -152,6 +152,9 @@ const QuoteToOrderDrawer = ({
     }
   };
 
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state !== "idle";
+
   return (
     <Drawer
       open={isOpen}
@@ -178,7 +181,13 @@ const QuoteToOrderDrawer = ({
             <Button onClick={() => setStep(step + 1)}>Next</Button>
           ) : (
             <Form action={path.to.convertQuoteToOrder(quote.id!)} method="post">
-              <Button type="submit">Convert</Button>
+              <Button
+                type="submit"
+                isDisabled={isSubmitting}
+                isLoading={isSubmitting}
+              >
+                Convert
+              </Button>
               <input
                 type="hidden"
                 name="selectedLines"
@@ -204,7 +213,7 @@ type LinePricingFormProps = {
         {
           quantity: number;
           unitPrice: number;
-          totalPrice: number;
+          addOn: number;
           leadTime: number;
         }
       >
@@ -274,7 +283,7 @@ type LinePricingOptionsProps = {
         {
           quantity: number;
           unitPrice: number;
-          totalPrice: number;
+          addOn: number;
           leadTime: number;
         }
       >
@@ -288,6 +297,7 @@ const LinePricingOptions = ({
   formatter,
   setSelectedLines,
 }: LinePricingOptionsProps) => {
+  const [selectedValue, setSelectedValue] = useState("");
   const [showOverride, setShowOverride] = useState(false);
   const [overridePricing, setOverridePricing] = useState({
     quantity: 1,
@@ -295,6 +305,21 @@ const LinePricingOptions = ({
     addOns: 0,
     unitPrice: 0,
   });
+
+  useEffect(() => {
+    if (selectedValue === "custom") {
+      setSelectedLines((prev) => ({
+        ...prev,
+        [line.id!]: {
+          quantity: overridePricing.quantity,
+          unitPrice: overridePricing.unitPrice,
+          addOn: overridePricing.addOns,
+          leadTime: overridePricing.leadTime,
+        },
+      }));
+    }
+  }, [line.id, overridePricing, selectedValue, setSelectedLines]);
+
   const additionalChargesByQuantity =
     line.quantity?.map((quantity) => {
       const charges = Object.values(line.additionalCharges ?? {}).reduce(
@@ -309,7 +334,35 @@ const LinePricingOptions = ({
 
   return (
     <VStack spacing={2}>
-      <RadioGroup className="w-full">
+      <RadioGroup
+        className="w-full"
+        value={selectedValue}
+        onValueChange={(value) => {
+          const selectedOption =
+            value === "custom"
+              ? overridePricing
+              : options.find((opt) => opt.quantity.toString() === value);
+
+          if (selectedOption) {
+            const index =
+              value === "custom"
+                ? 0
+                : options.findIndex((opt) => opt.quantity.toString() === value);
+            setSelectedLines((prev) => ({
+              ...prev,
+              [line.id!]: {
+                quantity: selectedOption.quantity,
+                unitPrice: selectedOption.unitPrice,
+                addOn:
+                  selectedOption.unitPrice * selectedOption.quantity +
+                  (additionalChargesByQuantity[index] || 0),
+                leadTime: selectedOption.leadTime,
+              },
+            }));
+            setSelectedValue(value);
+          }
+        }}
+      >
         <Table>
           <Thead>
             <Tr>
@@ -335,19 +388,6 @@ const LinePricingOptions = ({
                     <RadioGroupItem
                       value={option.quantity.toString()}
                       id={`${line.id}:${option.quantity.toString()}`}
-                      onChange={() =>
-                        setSelectedLines((prev) => ({
-                          ...prev,
-                          [line.id!]: {
-                            quantity: option.quantity,
-                            unitPrice: option.unitPrice,
-                            totalPrice:
-                              option.unitPrice * option.quantity +
-                              additionalChargesByQuantity[index],
-                            leadTime: option.leadTime,
-                          },
-                        }))
-                      }
                     />
                     <label
                       htmlFor={`${line.id}:${option.quantity.toString()}`}
@@ -382,6 +422,7 @@ const LinePricingOptions = ({
                 </Td>
                 <Td>
                   <NumberField
+                    className="w-[120px]"
                     value={overridePricing.quantity}
                     onChange={(quantity) =>
                       setOverridePricing((v) => ({
@@ -390,11 +431,15 @@ const LinePricingOptions = ({
                       }))
                     }
                   >
-                    <NumberInput size="sm" />
+                    <NumberInput
+                      size="sm"
+                      className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                    />
                   </NumberField>
                 </Td>
                 <Td>
                   <NumberField
+                    className="w-[120px]"
                     value={overridePricing.unitPrice}
                     formatOptions={{
                       style: "currency",
@@ -407,11 +452,15 @@ const LinePricingOptions = ({
                       }))
                     }
                   >
-                    <NumberInput size="sm" />
+                    <NumberInput
+                      size="sm"
+                      className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                    />
                   </NumberField>
                 </Td>
                 <Td>
                   <NumberField
+                    className="w-[120px]"
                     value={overridePricing.addOns}
                     formatOptions={{
                       style: "currency",
@@ -424,11 +473,15 @@ const LinePricingOptions = ({
                       }))
                     }
                   >
-                    <NumberInput size="sm" />
+                    <NumberInput
+                      size="sm"
+                      className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                    />
                   </NumberField>
                 </Td>
                 <Td>
                   <NumberField
+                    className="w-[120px]"
                     value={overridePricing.leadTime}
                     onChange={(leadTime) =>
                       setOverridePricing((v) => ({
@@ -437,7 +490,10 @@ const LinePricingOptions = ({
                       }))
                     }
                   >
-                    <NumberInput size="sm" />
+                    <NumberInput
+                      size="sm"
+                      className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                    />
                   </NumberField>
                 </Td>
                 <Td>

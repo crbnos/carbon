@@ -105,11 +105,11 @@ CREATE POLICY "Employees with sales_delete can delete quote shipments" ON "quote
 
 -- Add locationId to salesOrder table and remove quoteId
 ALTER TABLE "salesOrder"
-  ADD COLUMN "addOnCost" NUMERIC(10,4),
   ADD COLUMN "locationId" TEXT;
   
 ALTER TABLE "salesOrderLine"
-  ADD COLUMN "promisedDate" DATE;
+  ADD COLUMN "promisedDate" DATE,
+  ADD COLUMN "addOnCost" NUMERIC(10,4) NOT NULL DEFAULT 0;
 
 -- Add foreign key constraint for locationId
 ALTER TABLE "salesOrder"

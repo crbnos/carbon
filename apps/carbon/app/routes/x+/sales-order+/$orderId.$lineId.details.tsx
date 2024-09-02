@@ -94,15 +94,17 @@ export default function EditSalesOrderLineRoute() {
     salesOrderLineType:
       salesOrderLine?.salesOrderLineType ?? ("Part" as SalesOrderLineType),
     itemId: salesOrderLine?.itemId ?? "",
-    itemReadableId: salesOrderLine?.itemReadableId ?? "",
     accountNumber: salesOrderLine?.accountNumber ?? "",
+    addOnCost: salesOrderLine?.addOnCost ?? 0,
     assetId: salesOrderLine?.assetId ?? "",
     description: salesOrderLine?.description ?? "",
+    itemReadableId: salesOrderLine?.itemReadableId ?? "",
+    promisedDate: salesOrderLine?.promisedDate ?? undefined,
     saleQuantity: salesOrderLine?.saleQuantity ?? 1,
-    unitPrice: salesOrderLine?.unitPrice ?? 0,
     setupPrice: salesOrderLine?.setupPrice ?? 0,
-    unitOfMeasureCode: salesOrderLine?.unitOfMeasureCode ?? "",
     shelfId: salesOrderLine?.shelfId ?? "",
+    unitOfMeasureCode: salesOrderLine?.unitOfMeasureCode ?? "",
+    unitPrice: salesOrderLine?.unitPrice ?? 0,
     ...getCustomFields(salesOrderLine?.customFields),
   };
 

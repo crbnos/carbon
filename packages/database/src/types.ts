@@ -14964,7 +14964,6 @@ export type Database = {
       }
       salesOrder: {
         Row: {
-          addOnCost: number | null
           assignee: string | null
           closedAt: string | null
           closedBy: string | null
@@ -14988,7 +14987,6 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
-          addOnCost?: number | null
           assignee?: string | null
           closedAt?: string | null
           closedBy?: string | null
@@ -15012,7 +15010,6 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
-          addOnCost?: number | null
           assignee?: string | null
           closedAt?: string | null
           closedBy?: string | null
@@ -15344,6 +15341,7 @@ export type Database = {
       salesOrderLine: {
         Row: {
           accountNumber: string | null
+          addOnCost: number
           assetId: string | null
           companyId: string
           createdAt: string
@@ -15376,6 +15374,7 @@ export type Database = {
         }
         Insert: {
           accountNumber?: string | null
+          addOnCost?: number
           assetId?: string | null
           companyId: string
           createdAt?: string
@@ -15408,6 +15407,7 @@ export type Database = {
         }
         Update: {
           accountNumber?: string | null
+          addOnCost?: number
           assetId?: string | null
           companyId?: string
           createdAt?: string

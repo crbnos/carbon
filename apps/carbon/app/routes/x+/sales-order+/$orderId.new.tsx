@@ -67,10 +67,10 @@ export default function NewSalesOrderLineRoute() {
     salesOrderLineType: "Part" as SalesOrderLineType,
     itemId: "",
     saleQuantity: 1,
-    unitPrice: 0,
     setupPrice: 0,
-    unitOfMeasureCode: "",
     shelfId: "",
+    unitOfMeasureCode: "",
+    unitPrice: 0,
   };
 
   return <SalesOrderLineForm initialValues={initialValues} />;
