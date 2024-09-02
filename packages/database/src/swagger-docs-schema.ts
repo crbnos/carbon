@@ -14517,6 +14517,168 @@ export default {
         tags: ["sequence"],
       },
     },
+    "/oauthClient": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.clientSecret",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.redirectUris",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.updatedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/oauthClient",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["oauthClient"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.oauthClient",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["oauthClient"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.clientSecret",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.redirectUris",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.updatedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["oauthClient"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.clientSecret",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.redirectUris",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthClient.updatedAt",
+          },
+          {
+            $ref: "#/parameters/body.oauthClient",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["oauthClient"],
+      },
+    },
     "/ability": {
       get: {
         parameters: [
@@ -15844,6 +16006,168 @@ export default {
           },
         },
         tags: ["quoteOperationsWithMakeMethods"],
+      },
+    },
+    "/oauthToken": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.accessToken",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.refreshToken",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.expiresAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/oauthToken",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["oauthToken"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.oauthToken",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["oauthToken"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.accessToken",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.refreshToken",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.expiresAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["oauthToken"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.accessToken",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.refreshToken",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthToken.expiresAt",
+          },
+          {
+            $ref: "#/parameters/body.oauthToken",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["oauthToken"],
       },
     },
     "/supplierStatus": {
@@ -26674,6 +26998,168 @@ export default {
           },
         },
         tags: ["itemCost"],
+      },
+    },
+    "/oauthCode": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.redirectUri",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.expiresAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/oauthCode",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["oauthCode"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.oauthCode",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["oauthCode"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.redirectUri",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.expiresAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["oauthCode"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.clientId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.redirectUri",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.oauthCode.expiresAt",
+          },
+          {
+            $ref: "#/parameters/body.oauthCode",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["oauthCode"],
       },
     },
     "/tools": {
@@ -38936,6 +39422,58 @@ export default {
       },
       type: "object",
     },
+    oauthClient: {
+      required: [
+        "id",
+        "name",
+        "clientId",
+        "clientSecret",
+        "redirectUris",
+        "companyId",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        clientId: {
+          format: "text",
+          type: "string",
+        },
+        clientSecret: {
+          format: "text",
+          type: "string",
+        },
+        redirectUris: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "CURRENT_TIMESTAMP",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedAt: {
+          default: "CURRENT_TIMESTAMP",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     ability: {
       required: [
         "id",
@@ -39623,6 +40161,61 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `supplierProcess.id`.<fk table='supplierProcess' column='id'/>",
           format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    oauthToken: {
+      required: [
+        "id",
+        "accessToken",
+        "refreshToken",
+        "clientId",
+        "userId",
+        "companyId",
+        "expiresAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        accessToken: {
+          format: "text",
+          type: "string",
+        },
+        refreshToken: {
+          format: "text",
+          type: "string",
+        },
+        clientId: {
+          description:
+            "Note:\nThis is a Foreign Key to `oauthClient.clientId`.<fk table='oauthClient' column='clientId'/>",
+          format: "text",
+          type: "string",
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "CURRENT_TIMESTAMP",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        expiresAt: {
+          format: "timestamp with time zone",
           type: "string",
         },
       },
@@ -44155,6 +44748,61 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+      },
+      type: "object",
+    },
+    oauthCode: {
+      required: [
+        "id",
+        "code",
+        "clientId",
+        "userId",
+        "companyId",
+        "redirectUri",
+        "expiresAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        code: {
+          format: "text",
+          type: "string",
+        },
+        clientId: {
+          description:
+            "Note:\nThis is a Foreign Key to `oauthClient.clientId`.<fk table='oauthClient' column='clientId'/>",
+          format: "text",
+          type: "string",
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        redirectUri: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "CURRENT_TIMESTAMP",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        expiresAt: {
+          format: "timestamp with time zone",
+          type: "string",
         },
       },
       type: "object",
@@ -54794,6 +55442,71 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.oauthClient": {
+      name: "oauthClient",
+      description: "oauthClient",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/oauthClient",
+      },
+    },
+    "rowFilter.oauthClient.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthClient.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthClient.clientId": {
+      name: "clientId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthClient.clientSecret": {
+      name: "clientSecret",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthClient.redirectUris": {
+      name: "redirectUris",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthClient.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthClient.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthClient.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
     "body.ability": {
       name: "ability",
       description: "ability",
@@ -55659,6 +56372,71 @@ export default {
       name: "operationSupplierProcessId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.oauthToken": {
+      name: "oauthToken",
+      description: "oauthToken",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/oauthToken",
+      },
+    },
+    "rowFilter.oauthToken.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthToken.accessToken": {
+      name: "accessToken",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthToken.refreshToken": {
+      name: "refreshToken",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthToken.clientId": {
+      name: "clientId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthToken.userId": {
+      name: "userId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthToken.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthToken.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthToken.expiresAt": {
+      name: "expiresAt",
+      required: false,
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -61582,6 +62360,71 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "body.oauthCode": {
+      name: "oauthCode",
+      description: "oauthCode",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/oauthCode",
+      },
+    },
+    "rowFilter.oauthCode.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthCode.code": {
+      name: "code",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthCode.clientId": {
+      name: "clientId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthCode.userId": {
+      name: "userId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthCode.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthCode.redirectUri": {
+      name: "redirectUri",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthCode.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.oauthCode.expiresAt": {
+      name: "expiresAt",
+      required: false,
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
