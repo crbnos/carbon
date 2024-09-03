@@ -12,12 +12,12 @@ import type {
   QuoteMethod,
 } from "~/modules/sales";
 import {
-  getFilesByQuoteLineId,
+  getOpportunityLineDocuments,
   getQuoteLine,
   getQuoteLinePrices,
   getQuoteOperationsByLine,
+  OpportunityLineDocuments,
   QuoteLineCosting,
-  QuoteLineDocuments,
   QuoteLineForm,
   QuoteLineNotes,
   QuoteLinePricing,
@@ -44,7 +44,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const [line, operations, files, prices] = await Promise.all([
     getQuoteLine(client, lineId),
     getQuoteOperationsByLine(client, lineId),
-    getFilesByQuoteLineId(client, companyId, lineId),
+    getOpportunityLineDocuments(client, companyId, lineId),
     getQuoteLinePrices(client, lineId),
   ]);
 
@@ -155,40 +155,38 @@ export default function QuoteLine() {
   return (
     <Fragment key={lineId}>
       <QuoteLineForm key={lineId} initialValues={initialValues} />
-      {permissions.is("employee") && (
-        <Fragment key={lineId}>
-          <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
-            <CadModel
-              autodeskUrn={line?.autodeskUrn ?? null}
-              isReadOnly={!permissions.can("update", "sales")}
-              metadata={{ quoteLineId: line.id ?? undefined }}
-              modelPath={line?.modelPath ?? null}
-              title="CAD Model"
-              uploadClassName="min-h-[360px]"
-              viewerClassName="min-h-[360px]"
-            />
-            <QuoteLineDocuments
-              files={files ?? []}
-              quoteId={quoteId}
-              quoteLineId={lineId}
-              modelUpload={line ?? undefined}
-            />
-          </div>
-          <QuoteLineNotes line={line} />
-          {line.methodType === "Make" && (
-            <QuoteLineCosting
-              quantities={line.quantity ?? [1]}
-              getLineCosts={getLineCosts}
-            />
-          )}
-          <QuoteLinePricing
-            line={line}
-            pricesByQuantity={pricesByQuantity}
-            getLineCosts={getLineCosts}
-          />
-          <Outlet />
-        </Fragment>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
+        <CadModel
+          autodeskUrn={line?.autodeskUrn ?? null}
+          isReadOnly={!permissions.can("update", "sales")}
+          metadata={{ quoteLineId: line.id ?? undefined }}
+          modelPath={line?.modelPath ?? null}
+          title="CAD Model"
+          uploadClassName="min-h-[360px]"
+          viewerClassName="min-h-[360px]"
+        />
+        <OpportunityLineDocuments
+          files={files ?? []}
+          id={quoteId}
+          lineId={lineId}
+          modelUpload={line ?? undefined}
+          type="Quote"
+        />
+      </div>
+      <QuoteLineNotes line={line} />
+      {line.methodType === "Make" && (
+        <QuoteLineCosting
+          quantities={line.quantity ?? [1]}
+          getLineCosts={getLineCosts}
+        />
       )}
+      <QuoteLinePricing
+        line={line}
+        pricesByQuantity={pricesByQuantity}
+        getLineCosts={getLineCosts}
+      />
+      <Outlet />
     </Fragment>
   );
 }

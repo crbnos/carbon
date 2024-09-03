@@ -25,7 +25,7 @@ const SalesRFQLineNotes = ({ line }: { line: SalesRFQLine }) => {
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/sales-rfq-line/${
+    const fileName = `${companyId}/opportunity-line/${
       line.id
     }/${nanoid()}.${fileType}`;
     const result = await supabase?.storage

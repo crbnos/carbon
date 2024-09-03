@@ -8807,21 +8807,27 @@ export type Database = {
         Row: {
           companyId: string
           id: string
+          purchaseOrderDocumentPath: string | null
           quoteId: string | null
+          requestForQuoteDocumentPath: string | null
           salesOrderId: string | null
           salesRfqId: string | null
         }
         Insert: {
           companyId: string
           id?: string
+          purchaseOrderDocumentPath?: string | null
           quoteId?: string | null
+          requestForQuoteDocumentPath?: string | null
           salesOrderId?: string | null
           salesRfqId?: string | null
         }
         Update: {
           companyId?: string
           id?: string
+          purchaseOrderDocumentPath?: string | null
           quoteId?: string | null
+          requestForQuoteDocumentPath?: string | null
           salesOrderId?: string | null
           salesRfqId?: string | null
         }
@@ -25085,19 +25091,17 @@ export type Database = {
       salesOrderLines: {
         Row: {
           accountNumber: string | null
+          addOnCost: number | null
           assetId: string | null
           autodeskUrn: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
-          customerId: string | null
           customFields: Json | null
           description: string | null
           id: string | null
           invoicedComplete: boolean | null
-          itemDescription: string | null
           itemId: string | null
-          itemName: string | null
           itemReadableId: string | null
           locationId: string | null
           modelId: string | null
@@ -25105,6 +25109,7 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           modelUploadId: string | null
+          promisedDate: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
           quantityToInvoice: number | null
@@ -25127,27 +25132,6 @@ export type Database = {
           updatedBy: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "salesOrder_customerId_fkey"
-            columns: ["customerId"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesOrder_customerId_fkey"
-            columns: ["customerId"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesOrder_customerId_fkey"
-            columns: ["customerId"]
-            isOneToOne: false
-            referencedRelation: "salesOrderCustomers"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "salesOrderLine_accountNumber_fkey"
             columns: ["accountNumber", "companyId"]

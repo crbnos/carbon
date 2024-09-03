@@ -2,29 +2,30 @@ import { File, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { LuUpload } from "react-icons/lu";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 
-type SalesOrderDocumentFormProps = {
-  orderId: string;
-  isExternal: boolean;
+type OpportunityDocumentFormProps = {
+  opportunityId: string;
+  id: string;
+  type: "Sales Order" | "Request for Quote" | "Quote";
 };
 
-const SalesOrderDocumentForm = ({
-  orderId,
-  isExternal,
-}: SalesOrderDocumentFormProps) => {
+const OpportunityDocumentForm = ({
+  opportunityId,
+  id,
+  type,
+}: OpportunityDocumentFormProps) => {
   const submit = useSubmit();
+  const { company } = useUser();
   const { supabase } = useSupabase();
-  const { id: companyId } = useUser();
+  const permissions = usePermissions();
 
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && supabase) {
+    if (e.target.files && supabase && company) {
       const file = e.target.files[0];
-      const fileName = `${companyId}/sales-order/${
-        isExternal ? "external" : "internal"
-      }/${orderId}/${file.name}`;
+      const fileName = `${company.id}/opportunity/${opportunityId}/${file.name}`;
 
       const fileUpload = await supabase.storage
         .from("private")
@@ -60,8 +61,8 @@ const SalesOrderDocumentForm = ({
     formData.append("path", filePath);
     formData.append("name", name);
     formData.append("size", Math.round(size / 1024).toString());
-    formData.append("sourceDocument", "Sales Order");
-    formData.append("sourceDocumentId", orderId);
+    formData.append("sourceDocument", type);
+    formData.append("sourceDocumentId", id);
 
     submit(formData, {
       method: "post",
@@ -70,10 +71,14 @@ const SalesOrderDocumentForm = ({
   };
 
   return (
-    <File leftIcon={<LuUpload />} onChange={uploadFile}>
+    <File
+      isDisabled={!permissions.can("update", "sales")}
+      leftIcon={<LuUpload />}
+      onChange={uploadFile}
+    >
       New
     </File>
   );
 };
 
-export default SalesOrderDocumentForm;
+export default OpportunityDocumentForm;

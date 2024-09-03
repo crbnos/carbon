@@ -35,7 +35,7 @@ import { path } from "~/utils/path";
 
 import { useCallback } from "react";
 
-const useQuoteLineDocuments = ({ quoteLineId }: { quoteLineId: string }) => {
+const useOpportunityLineDocuments = ({ lineId }: { lineId: string }) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
@@ -46,9 +46,9 @@ const useQuoteLineDocuments = ({ quoteLineId }: { quoteLineId: string }) => {
   const canUpdate = permissions.can("update", "sales");
   const getPath = useCallback(
     (file: ItemFile) => {
-      return `${company.id}/quote-line/${quoteLineId}/${file.name}`;
+      return `${company.id}/opportunity-line/${lineId}/${file.name}`;
     },
-    [company.id, quoteLineId]
+    [company.id, lineId]
   );
 
   const deleteFile = useCallback(
@@ -69,13 +69,13 @@ const useQuoteLineDocuments = ({ quoteLineId }: { quoteLineId: string }) => {
   );
 
   const deleteModel = useCallback(
-    async (quoteLineId: string) => {
-      if (!quoteLineId || !supabase) return;
+    async (lineId: string) => {
+      if (!lineId || !supabase) return;
 
       const { error } = await supabase
         .from("quoteLine")
         .update({ modelUploadId: null })
-        .eq("id", quoteLineId);
+        .eq("id", lineId);
       if (error) {
         toast.error("Error removing model from line");
         return;
@@ -134,22 +134,24 @@ const useQuoteLineDocuments = ({ quoteLineId }: { quoteLineId: string }) => {
   };
 };
 
-type QuoteLineDocumentsProps = {
+type OpportunityLineDocumentsProps = {
   files: FileObject[];
-  quoteId: string;
-  quoteLineId: string;
+  id: string;
+  lineId: string;
+  type: "Request for Quote" | "Sales Order" | "Quote";
   modelUpload?: ModelUpload;
 };
 
-const QuoteLineDocuments = ({
+const OpportunityLineDocuments = ({
   files,
-  quoteId,
-  quoteLineId,
+  id,
+  lineId,
   modelUpload,
-}: QuoteLineDocumentsProps) => {
+  type,
+}: OpportunityLineDocumentsProps) => {
   const { canDelete, download, deleteFile, deleteModel, getPath, viewModel } =
-    useQuoteLineDocuments({
-      quoteLineId,
+    useOpportunityLineDocuments({
+      lineId,
     });
 
   return (
@@ -159,7 +161,7 @@ const QuoteLineDocuments = ({
           <CardTitle>Files</CardTitle>
         </CardHeader>
         <CardAction>
-          <QuoteLineDocumentForm quoteId={quoteId} quoteLineId={quoteLineId} />
+          <OpportunityLineDocumentForm id={id} type={type} lineId={lineId} />
         </CardAction>
       </HStack>
       <CardContent>
@@ -212,7 +214,7 @@ const QuoteLineDocuments = ({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!canDelete}
-                          onClick={() => deleteModel(quoteLineId)}
+                          onClick={() => deleteModel(lineId)}
                         >
                           Delete
                         </DropdownMenuItem>
@@ -294,17 +296,19 @@ const QuoteLineDocuments = ({
   );
 };
 
-export default QuoteLineDocuments;
+export default OpportunityLineDocuments;
 
-type QuoteLineDocumentFormProps = {
-  quoteId: string;
-  quoteLineId: string;
+type OpportunityLineDocumentFormProps = {
+  id: string;
+  lineId: string;
+  type: "Request for Quote" | "Sales Order" | "Quote";
 };
 
-const QuoteLineDocumentForm = ({
-  quoteId,
-  quoteLineId,
-}: QuoteLineDocumentFormProps) => {
+const OpportunityLineDocumentForm = ({
+  id,
+  lineId,
+  type,
+}: OpportunityLineDocumentFormProps) => {
   const submit = useSubmit();
   const { company } = useUser();
   const { supabase } = useSupabase();
@@ -313,7 +317,7 @@ const QuoteLineDocumentForm = ({
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && supabase && company) {
       const file = e.target.files[0];
-      const fileName = `${company.id}/quote-line/${quoteLineId}/${file.name}`;
+      const fileName = `${company.id}/opportunity-line/${lineId}/${file.name}`;
 
       const fileUpload = await supabase.storage
         .from("private")
@@ -349,8 +353,8 @@ const QuoteLineDocumentForm = ({
     formData.append("path", filePath);
     formData.append("name", name);
     formData.append("size", Math.round(size / 1024).toString());
-    formData.append("sourceDocument", "Quote");
-    formData.append("sourceDocumentId", quoteId);
+    formData.append("sourceDocument", type);
+    formData.append("sourceDocumentId", id);
 
     submit(formData, {
       method: "post",

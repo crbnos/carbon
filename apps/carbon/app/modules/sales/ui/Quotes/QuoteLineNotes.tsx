@@ -25,7 +25,7 @@ const QuoteLineNotes = ({ line }: { line: QuotationLine }) => {
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/quote-line/${
+    const fileName = `${companyId}/opportunity/${
       line.id
     }/${nanoid()}.${fileType}`;
     const result = await supabase?.storage

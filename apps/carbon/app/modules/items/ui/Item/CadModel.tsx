@@ -15,6 +15,7 @@ type CadModelProps = {
     itemId?: string;
     salesRfqLineId?: string;
     quoteLineId?: string;
+    salesOrderLineId?: string;
   };
   title?: string;
   uploadClassName?: string;
@@ -79,6 +80,9 @@ const CadModel = ({
         }
         if (metadata.quoteLineId) {
           formData.append("quoteLineId", metadata.quoteLineId);
+        }
+        if (metadata.salesOrderLineId) {
+          formData.append("salesOrderLineId", metadata.salesOrderLineId);
         }
       }
 

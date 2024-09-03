@@ -15,8 +15,9 @@ import {
   SalesRFQBreadcrumbs,
   SalesRFQExplorer,
   SalesRFQHeader,
+  getOpportunityBySalesRFQ,
+  getOpportunityDocuments,
   getSalesRFQ,
-  getSalesRFQDocuments,
   getSalesRFQLines,
 } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -38,11 +39,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const [rfqSummary, lines, files] = await Promise.all([
+  const [rfqSummary, lines, opportunity] = await Promise.all([
     getSalesRFQ(client, rfqId),
     getSalesRFQLines(client, rfqId),
-    getSalesRFQDocuments(client, companyId, rfqId),
+    getOpportunityBySalesRFQ(client, rfqId),
   ]);
+
+  if (!opportunity.data) throw new Error("Failed to get opportunity record");
+  const files = await getOpportunityDocuments(
+    client,
+    companyId,
+    opportunity.data.id
+  );
 
   if (rfqSummary.error) {
     throw redirect(
@@ -78,6 +86,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         quantity: line.quantity ?? [1],
       })) ?? [],
     files: files.data ?? [],
+    opportunity: opportunity.data,
   });
 }
 

@@ -4297,13 +4297,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.modelUploadId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.customerId",
+            $ref: "#/parameters/rowFilter.salesOrderLines.promisedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.itemName",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLines.itemDescription",
+            $ref: "#/parameters/rowFilter.salesOrderLines.addOnCost",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.modelId",
@@ -24004,6 +24001,12 @@ export default {
             $ref: "#/parameters/rowFilter.opportunity.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.opportunity.purchaseOrderDocumentPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.requestForQuoteDocumentPath",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -24078,6 +24081,12 @@ export default {
             $ref: "#/parameters/rowFilter.opportunity.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.opportunity.purchaseOrderDocumentPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.requestForQuoteDocumentPath",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -24104,6 +24113,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.opportunity.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.purchaseOrderDocumentPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.requestForQuoteDocumentPath",
           },
           {
             $ref: "#/parameters/body.opportunity",
@@ -34803,19 +34818,13 @@ export default {
           format: "text",
           type: "string",
         },
-        customerId: {
-          description:
-            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
-          format: "text",
+        promisedDate: {
+          format: "date",
           type: "string",
         },
-        itemName: {
-          format: "text",
-          type: "string",
-        },
-        itemDescription: {
-          format: "text",
-          type: "string",
+        addOnCost: {
+          format: "numeric",
+          type: "number",
         },
         modelId: {
           format: "text",
@@ -43626,6 +43635,14 @@ export default {
           format: "text",
           type: "string",
         },
+        purchaseOrderDocumentPath: {
+          format: "text",
+          type: "string",
+        },
+        requestForQuoteDocumentPath: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -49342,24 +49359,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLines.customerId": {
-      name: "customerId",
+    "rowFilter.salesOrderLines.promisedDate": {
+      name: "promisedDate",
       required: false,
-      format: "text",
+      format: "date",
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLines.itemName": {
-      name: "itemName",
+    "rowFilter.salesOrderLines.addOnCost": {
+      name: "addOnCost",
       required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrderLines.itemDescription": {
-      name: "itemDescription",
-      required: false,
-      format: "text",
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -60910,6 +60920,20 @@ export default {
     },
     "rowFilter.opportunity.companyId": {
       name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.opportunity.purchaseOrderDocumentPath": {
+      name: "purchaseOrderDocumentPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.opportunity.requestForQuoteDocumentPath": {
+      name: "requestForQuoteDocumentPath",
       required: false,
       format: "text",
       in: "query",

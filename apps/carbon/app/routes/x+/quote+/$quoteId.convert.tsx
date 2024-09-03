@@ -18,7 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!quoteId) throw new Error("Could not find quoteId");
 
   const formData = await request.formData();
-  const selectedLinesRaw = formData.get("selectedLines");
+  const selectedLinesRaw = formData.get("selectedLines") ?? "{}";
 
   if (typeof selectedLinesRaw !== "string") {
     throw redirect(

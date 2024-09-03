@@ -25,7 +25,7 @@ import type {
   QuotationShipment,
 } from "~/modules/sales";
 import {
-  QuoteDocuments,
+  OpportunityDocuments,
   QuoteForm,
   QuotePaymentForm,
   QuoteShipmentForm,
@@ -87,6 +87,7 @@ export default function QuoteDetailsRoute() {
     files: (FileObject & { quoteLineId: string | null })[];
     shipment: QuotationShipment;
     payment: QuotationPayment;
+    opportunity: { id: string };
   }>(path.to.quote(quoteId));
 
   if (!quoteData) throw new Error("Could not find quote data");
@@ -125,7 +126,12 @@ export default function QuoteDetailsRoute() {
   return (
     <>
       <QuoteForm key={initialValues.id} initialValues={initialValues} />
-      <QuoteDocuments id={quoteId} attachments={quoteData?.files ?? []} />
+      <OpportunityDocuments
+        opportunityId={quoteData?.opportunity?.id}
+        attachments={quoteData?.files ?? []}
+        id={quoteId}
+        type="Quote"
+      />
       <QuotePaymentForm
         key={`payment-${initialValues.id}`}
         initialValues={paymentInitialValues}

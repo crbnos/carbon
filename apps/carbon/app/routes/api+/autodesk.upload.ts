@@ -18,6 +18,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const itemId = formData.get("itemId") as string | null;
   const salesRfqLineId = formData.get("salesRfqLineId") as string | null;
   const quoteLineId = formData.get("quoteLineId") as string | null;
+  const salesOrderLineId = formData.get("salesOrderLineId") as string | null;
 
   if (!fileId) {
     throw new Error("File ID is required");
@@ -46,6 +47,12 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("quoteLine")
       .update({ modelUploadId: fileId })
       .eq("id", quoteLineId);
+  }
+  if (salesOrderLineId) {
+    await client
+      .from("salesOrderLine")
+      .update({ modelUploadId: fileId })
+      .eq("id", salesOrderLineId);
   }
 
   const modelRecord = await upsertModelUpload(client, {

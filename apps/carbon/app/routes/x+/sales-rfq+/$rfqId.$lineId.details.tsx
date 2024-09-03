@@ -6,9 +6,9 @@ import { Fragment } from "react";
 import { usePermissions } from "~/hooks";
 import { CadModel } from "~/modules/items";
 import {
+  getOpportunityLineDocuments,
   getSalesRFQLine,
-  getSalesRfqLineDocuments,
-  SalesRFQLineDocuments,
+  OpportunityLineDocuments,
   SalesRFQLineForm,
   SalesRFQLineNotes,
   salesRfqLineValidator,
@@ -32,7 +32,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const [line, files] = await Promise.all([
     getSalesRFQLine(client, lineId),
-    getSalesRfqLineDocuments(client, companyId, lineId),
+    getOpportunityLineDocuments(client, companyId, lineId),
   ]);
 
   if (line.error) {
@@ -112,30 +112,28 @@ export default function SalesRFQLine() {
   return (
     <Fragment key={lineId}>
       <SalesRFQLineForm key={lineId} initialValues={initialValues} />
-      {permissions.is("employee") && (
-        <Fragment key={lineId}>
-          <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
-            <CadModel
-              autodeskUrn={line?.autodeskUrn ?? null}
-              isReadOnly={!permissions.can("update", "sales")}
-              metadata={{ salesRfqLineId: line.id ?? undefined }}
-              modelPath={line?.modelPath ?? null}
-              title="CAD Model"
-              uploadClassName="min-h-[360px]"
-              viewerClassName="min-h-[360px]"
-            />
-            <SalesRFQLineDocuments
-              files={files ?? []}
-              rfqId={rfqId}
-              salesRfqLineId={lineId}
-              modelUpload={line ?? undefined}
-            />
-          </div>
-          <SalesRFQLineNotes line={line} />
 
-          <Outlet />
-        </Fragment>
-      )}
+      <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
+        <CadModel
+          autodeskUrn={line?.autodeskUrn ?? null}
+          isReadOnly={!permissions.can("update", "sales")}
+          metadata={{ salesRfqLineId: line.id ?? undefined }}
+          modelPath={line?.modelPath ?? null}
+          title="CAD Model"
+          uploadClassName="min-h-[360px]"
+          viewerClassName="min-h-[360px]"
+        />
+        <OpportunityLineDocuments
+          files={files ?? []}
+          id={rfqId}
+          lineId={lineId}
+          modelUpload={line ?? undefined}
+          type="Request for Quote"
+        />
+      </div>
+      <SalesRFQLineNotes line={line} />
+
+      <Outlet />
     </Fragment>
   );
 }

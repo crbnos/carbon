@@ -1,10 +1,14 @@
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import { usePermissions } from "~/hooks";
+import { CadModel } from "~/modules/items";
 import type { SalesOrderLineType } from "~/modules/sales";
 import {
+  OpportunityLineDocuments,
   SalesOrderLineForm,
+  getOpportunityLineDocuments,
   getSalesOrderLine,
   salesOrderLineValidator,
   upsertSalesOrderLine,
@@ -17,7 +21,7 @@ import { path } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales",
     role: "employee",
   });
@@ -25,10 +29,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const salesOrderLine = await getSalesOrderLine(client, lineId);
+  const [line, files] = await Promise.all([
+    getSalesOrderLine(client, lineId),
+    getOpportunityLineDocuments(client, companyId, lineId),
+  ]);
 
   return json({
-    salesOrderLine: salesOrderLine?.data ?? null,
+    line: line?.data ?? null,
+    files: files?.data ?? [],
   });
 }
 
@@ -86,30 +94,61 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditSalesOrderLineRoute() {
-  const { salesOrderLine } = useLoaderData<typeof loader>();
+  const { line, files } = useLoaderData<typeof loader>();
+  const permissions = usePermissions();
+  const { orderId, lineId } = useParams();
+  if (!orderId) throw new Error("orderId not found");
+  if (!lineId) throw new Error("lineId not found");
 
   const initialValues = {
-    id: salesOrderLine?.id ?? undefined,
-    salesOrderId: salesOrderLine?.salesOrderId ?? "",
+    id: line?.id ?? undefined,
+    salesOrderId: line?.salesOrderId ?? "",
     salesOrderLineType:
-      salesOrderLine?.salesOrderLineType ?? ("Part" as SalesOrderLineType),
-    itemId: salesOrderLine?.itemId ?? "",
-    accountNumber: salesOrderLine?.accountNumber ?? "",
-    addOnCost: salesOrderLine?.addOnCost ?? 0,
-    assetId: salesOrderLine?.assetId ?? "",
-    description: salesOrderLine?.description ?? "",
-    itemReadableId: salesOrderLine?.itemReadableId ?? "",
-    locationId: salesOrderLine?.locationId ?? undefined,
-    promisedDate: salesOrderLine?.promisedDate ?? undefined,
-    saleQuantity: salesOrderLine?.saleQuantity ?? 1,
-    setupPrice: salesOrderLine?.setupPrice ?? 0,
-    shelfId: salesOrderLine?.shelfId ?? "",
-    unitOfMeasureCode: salesOrderLine?.unitOfMeasureCode ?? "",
-    unitPrice: salesOrderLine?.unitPrice ?? 0,
-    ...getCustomFields(salesOrderLine?.customFields),
+      line?.salesOrderLineType ?? ("Part" as SalesOrderLineType),
+    itemId: line?.itemId ?? "",
+    accountNumber: line?.accountNumber ?? "",
+    addOnCost: line?.addOnCost ?? 0,
+    assetId: line?.assetId ?? "",
+    description: line?.description ?? "",
+    itemReadableId: line?.itemReadableId ?? "",
+    locationId: line?.locationId ?? undefined,
+    promisedDate: line?.promisedDate ?? undefined,
+    saleQuantity: line?.saleQuantity ?? 1,
+    setupPrice: line?.setupPrice ?? 0,
+    shelfId: line?.shelfId ?? "",
+    unitOfMeasureCode: line?.unitOfMeasureCode ?? "",
+    unitPrice: line?.unitPrice ?? 0,
+    ...getCustomFields(line?.customFields),
   };
 
   return (
-    <SalesOrderLineForm key={initialValues.id} initialValues={initialValues} />
+    <>
+      <SalesOrderLineForm
+        key={initialValues.id}
+        initialValues={initialValues}
+      />
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
+        <CadModel
+          autodeskUrn={line?.autodeskUrn ?? null}
+          isReadOnly={!permissions.can("update", "sales")}
+          metadata={{ salesOrderLineId: line?.id ?? undefined }}
+          modelPath={line?.modelPath ?? null}
+          title="CAD Model"
+          uploadClassName="min-h-[360px]"
+          viewerClassName="min-h-[360px]"
+        />
+        <OpportunityLineDocuments
+          files={files ?? []}
+          id={orderId}
+          lineId={lineId}
+          modelUpload={line ?? undefined}
+          type="Sales Order"
+        />
+      </div>
+      {/* <SalesOrderLineNotes line={line} /> */}
+
+      <Outlet />
+    </>
   );
 }

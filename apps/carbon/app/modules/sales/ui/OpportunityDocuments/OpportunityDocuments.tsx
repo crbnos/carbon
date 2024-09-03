@@ -19,28 +19,29 @@ import {
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import { Outlet } from "@remix-run/react";
+import type { FileObject } from "@supabase/storage-js";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import type { SalesOrderAttachment } from "~/modules/sales";
-import SalesOrderDocumentForm from "./SalesOrderDocumentForm";
-import { useSalesOrderDocuments } from "./useSalesOrderDocuments";
+import OpportunityDocumentForm from "./OpportunityDocumentForm";
+import { useOpportunityDocuments } from "./useOpportunityDocuments";
 
-type SalesOrderDocumentsProps = {
-  attachments: SalesOrderAttachment[];
-  isExternal: boolean;
-  orderId: string;
+type OpportunityDocumentsProps = {
+  attachments: FileObject[];
+  opportunityId: string;
+  id: string;
+  type: "Sales Order" | "Request for Quote" | "Quote";
 };
 
-const SalesOrderDocuments = ({
+const OpportunityDocuments = ({
   attachments,
-  isExternal,
-  orderId,
-}: SalesOrderDocumentsProps) => {
+  opportunityId,
+  id,
+  type,
+}: OpportunityDocumentsProps) => {
   const { canDelete, download, deleteAttachment, getPath } =
-    useSalesOrderDocuments({
-      isExternal,
-      orderId,
+    useOpportunityDocuments({
+      opportunityId,
     });
 
   return (
@@ -48,12 +49,14 @@ const SalesOrderDocuments = ({
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>
-              {isExternal ? "External" : "Internal"} Attachments
-            </CardTitle>
+            <CardTitle>Documents</CardTitle>
           </CardHeader>
           <CardAction>
-            <SalesOrderDocumentForm isExternal={isExternal} orderId={orderId} />
+            <OpportunityDocumentForm
+              opportunityId={opportunityId}
+              id={id}
+              type={type}
+            />
           </CardAction>
         </HStack>
         <CardContent>
@@ -91,7 +94,7 @@ const SalesOrderDocuments = ({
                           </Hyperlink>
                         </HStack>
                       </Td>
-                      <Td>
+                      <Td className="text-xs font-mono">
                         {convertKbToString(
                           Math.floor((attachment.metadata?.size ?? 0) / 1024)
                         )}
@@ -131,7 +134,7 @@ const SalesOrderDocuments = ({
                     colSpan={24}
                     className="py-8 text-muted-foreground text-center"
                   >
-                    No {isExternal ? "external" : "internal"} attachments
+                    No files uploaded
                   </Td>
                 </Tr>
               )}
@@ -144,4 +147,4 @@ const SalesOrderDocuments = ({
   );
 };
 
-export default SalesOrderDocuments;
+export default OpportunityDocuments;
