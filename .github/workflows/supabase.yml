@@ -18,9 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
       - uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - run: npm install
-      - run: npm run ci:migrations
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix ci
+
+      - name: Run migrations
+        run: npm run -w ci ci:migrations
