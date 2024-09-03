@@ -281,7 +281,7 @@ const QuoteBillOfProcess = ({
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/quote-line/${selectedItemId}/${nanoid()}.${fileType}`;
+    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
     const result = await supabase?.storage
       .from("private")
       .upload(fileName, file);

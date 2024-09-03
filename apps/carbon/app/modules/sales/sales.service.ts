@@ -388,42 +388,53 @@ export async function getCustomerTypesList(
     .order("name");
 }
 
-export async function getSalesRFQDocuments(
+export async function getOpportunityBySalesRFQ(
   client: SupabaseClient<Database>,
-  companyId: string,
-  rfqId: string
+  salesRfqId: string
 ) {
-  return client.storage.from("private").list(`${companyId}/sales-rfq/${rfqId}`);
+  return client
+    .from("opportunity")
+    .select("*")
+    .eq("salesRfqId", salesRfqId)
+    .single();
 }
 
-export async function getSalesRfqLineDocuments(
+export async function getOpportunityByQuote(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client.from("opportunity").select("*").eq("quoteId", quoteId).single();
+}
+
+export async function getOpportunityBySalesOrder(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("opportunity")
+    .select("*")
+    .eq("salesOrderId", salesOrderId)
+    .single();
+}
+
+export async function getOpportunityDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  opportunityId: string
+) {
+  return client.storage
+    .from("private")
+    .list(`${companyId}/opportunity/${opportunityId}`);
+}
+
+export async function getOpportunityLineDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
   lineId: string
 ) {
   return client.storage
     .from("private")
-    .list(`${companyId}/sales-rfq-line/${lineId}`);
-}
-
-export async function getFilesByQuoteLineId(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  quoteLineId: string
-) {
-  return client.storage
-    .from("private")
-    .list(`${companyId}/quote-line/${quoteLineId}`);
-}
-
-export async function getSalesOrderDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  salesOrderId: string
-) {
-  return client.storage
-    .from("private")
-    .list(`${companyId}/sales-order/${salesOrderId}`);
+    .list(`${companyId}/opportunity-line/${lineId}`);
 }
 
 export async function getQuote(
@@ -807,7 +818,7 @@ export async function getSalesOrderLine(
   salesOrderLineId: string
 ) {
   return client
-    .from("salesOrderLine")
+    .from("salesOrderLines")
     .select("*")
     .eq("id", salesOrderLineId)
     .single();

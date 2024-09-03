@@ -3,6 +3,7 @@ export * from "./Customer";
 export * from "./Customers";
 export * from "./CustomerStatuses";
 export * from "./CustomerTypes";
+export * from "./OpportunityDocuments";
 export * from "./Quotes";
 export * from "./SalesOrder";
 export * from "./SalesOrders";

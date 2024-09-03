@@ -6,7 +6,6 @@ const convertTiptapJSON = (
   index?: number,
   parentNodeType?: string
 ) => {
-  console.log({ node });
   switch (node.type) {
     case "doc":
       return (

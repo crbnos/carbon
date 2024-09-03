@@ -10,8 +10,9 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useParams } from "@remix-run/react";
 import {
+  getOpportunityByQuote,
+  getOpportunityDocuments,
   getQuote,
-  getQuoteDocuments,
   getQuoteLinePricesByQuoteId,
   getQuoteLines,
   getQuoteMethodTrees,
@@ -46,20 +47,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shipment,
     payment,
     lines,
-    files,
     methods,
     prices,
     // shippingTerms,
+    opportunity,
   ] = await Promise.all([
     getQuote(client, quoteId),
     getQuoteShipment(client, quoteId),
     getQuotePayment(client, quoteId),
     getQuoteLines(client, quoteId),
-    getQuoteDocuments(client, companyId, quoteId),
     getQuoteMethodTrees(client, quoteId),
     getQuoteLinePricesByQuoteId(client, quoteId),
     // getShippingTermsList(client, companyId),
+    getOpportunityByQuote(client, quoteId),
   ]);
+
+  if (!opportunity.data) throw new Error("Failed to get opportunity record");
+  const files = await getOpportunityDocuments(
+    client,
+    companyId,
+    opportunity.data.id
+  );
 
   if (quote.error) {
     throw redirect(
@@ -94,6 +102,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shipment: shipment.data,
     payment: payment.data,
     // shippingTerms: shippingTerms.data ?? [],
+    opportunity: opportunity.data,
   });
 }
 

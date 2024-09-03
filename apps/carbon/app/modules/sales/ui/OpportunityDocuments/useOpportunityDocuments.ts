@@ -1,15 +1,15 @@
 import { toast } from "@carbon/react";
 import { useRevalidator } from "@remix-run/react";
-import type { FileObject } from "@supabase/storage-js";
 import { useCallback } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
+import type { QuotationAttachment } from "~/modules/sales/types";
 
 type Props = {
-  id: string;
+  opportunityId: string;
 };
 
-export const useSalesRFQDocuments = ({ id }: Props) => {
+export const useOpportunityDocuments = ({ opportunityId }: Props) => {
   const permissions = usePermissions();
   const { company } = useUser();
   const { supabase } = useSupabase();
@@ -18,14 +18,14 @@ export const useSalesRFQDocuments = ({ id }: Props) => {
   const canDelete = permissions.can("delete", "sales"); // TODO: or is document owner
 
   const getPath = useCallback(
-    (attachment: FileObject) => {
-      return `${company.id}/sales-rfq/${id}/${attachment.name}`;
+    (attachment: QuotationAttachment) => {
+      return `${company.id}/opportunity/${opportunityId}/${attachment.name}`;
     },
-    [company.id, id]
+    [company.id, opportunityId]
   );
 
   const deleteAttachment = useCallback(
-    async (attachment: FileObject) => {
+    async (attachment: QuotationAttachment) => {
       const result = await supabase?.storage
         .from("private")
         .remove([getPath(attachment)]);
@@ -42,7 +42,7 @@ export const useSalesRFQDocuments = ({ id }: Props) => {
   );
 
   const download = useCallback(
-    async (attachment: FileObject) => {
+    async (attachment: QuotationAttachment) => {
       const result = await supabase?.storage
         .from("private")
         .download(getPath(attachment));

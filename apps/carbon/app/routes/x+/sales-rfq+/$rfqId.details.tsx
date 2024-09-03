@@ -26,7 +26,7 @@ import type {
   SalesRFQStatusType,
 } from "~/modules/sales";
 import {
-  SalesRFQDocuments,
+  OpportunityDocuments,
   SalesRFQForm,
   salesRfqValidator,
   upsertSalesRFQ,
@@ -85,6 +85,7 @@ export default function SalesRFQDetailsRoute() {
     rfqSummary: SalesRFQ;
     lines: SalesRFQLine[];
     files: FileObject[];
+    opportunity: { id: string };
   }>(path.to.salesRfq(rfqId));
 
   if (!rfqData) throw new Error("Could not find rfq data");
@@ -112,7 +113,12 @@ export default function SalesRFQDetailsRoute() {
         key={`${initialValues.id}:${initialValues.status}`}
         initialValues={initialValues}
       />
-      <SalesRFQDocuments id={rfqId} attachments={rfqData?.files ?? []} />
+      <OpportunityDocuments
+        opportunityId={rfqData?.opportunity?.id}
+        attachments={rfqData?.files ?? []}
+        id={rfqId}
+        type="Request for Quote"
+      />
       <SalesRFQNotes salesRfq={rfqData.rfqSummary} />
     </VStack>
   );
@@ -128,7 +134,7 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/sales-rfq/${
+    const fileName = `${companyId}/opportunity/${
       salesRfq.id
     }/${nanoid()}.${fileType}`;
 

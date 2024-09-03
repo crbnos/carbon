@@ -10,8 +10,9 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useParams } from "@remix-run/react";
 import {
+  getOpportunityBySalesOrder,
+  getOpportunityDocuments,
   getSalesOrder,
-  getSalesOrderDocuments,
   getSalesOrderLines,
   SalesOrderBreadcrumbs,
   SalesOrderExplorer,
@@ -37,11 +38,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [salesOrder, lines, files] = await Promise.all([
+  const [salesOrder, lines, opportunity] = await Promise.all([
     getSalesOrder(client, orderId),
     getSalesOrderLines(client, orderId),
-    getSalesOrderDocuments(client, companyId, orderId),
+    getOpportunityBySalesOrder(client, orderId),
   ]);
+
+  if (!opportunity.data) throw new Error("Failed to get opportunity record");
+  const files = await getOpportunityDocuments(
+    client,
+    companyId,
+    opportunity.data.id
+  );
 
   if (salesOrder.error) {
     throw redirect(
@@ -54,6 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
     files: files.data ?? [],
+    opportunity: opportunity.data,
   });
 }
 

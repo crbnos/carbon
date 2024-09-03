@@ -2,6 +2,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
+import type { FileObject } from "@supabase/storage-js";
 import { useRouteData } from "~/hooks";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
@@ -9,6 +10,7 @@ import type { SalesOrder } from "~/modules/sales";
 import {
   getSalesOrderPayment,
   getSalesOrderShipment,
+  OpportunityDocuments,
   SalesOrderForm,
   SalesOrderPaymentForm,
   SalesOrderShipmentForm,
@@ -133,9 +135,11 @@ export default function SalesOrderRoute() {
   } = useLoaderData<typeof loader>();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
-  const orderData = useRouteData<{ salesOrder: SalesOrder }>(
-    path.to.salesOrder(orderId)
-  );
+  const orderData = useRouteData<{
+    salesOrder: SalesOrder;
+    opportunity: { id: string };
+    files: FileObject[];
+  }>(path.to.salesOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
 
   const initialValues = {
@@ -183,7 +187,12 @@ export default function SalesOrderRoute() {
   return (
     <>
       <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
-
+      <OpportunityDocuments
+        opportunityId={orderData?.opportunity?.id}
+        attachments={orderData?.files ?? []}
+        id={orderId}
+        type="Sales Order"
+      />
       <SalesOrderShipmentForm
         key={initialValues.id}
         initialValues={shipmentInitialValues}

@@ -32,7 +32,7 @@ const payloadValidator = z
   })
   .refine((data) => {
     if (data.type === "quoteToSalesOrder") {
-      return !!data.selectedLines && Object.keys(data.selectedLines).length > 0;
+      return !!data.selectedLines && typeof data.selectedLines === "object";
     }
     return true;
   });
@@ -134,6 +134,7 @@ serve(async (req: Request) => {
               )
               .map((line) => {
                 return {
+                  id: line.id,
                   salesOrderId: insertedSalesOrderId,
                   salesOrderLineType: line.itemType as "Part",
                   status: "Ordered",
@@ -156,20 +157,22 @@ serve(async (req: Request) => {
                 };
               });
 
-          await trx
-            .insertInto("salesOrderLine")
-            .values(salesOrderLineInserts)
-            .execute();
+          if (salesOrderLineInserts.length > 0) {
+            await trx
+              .insertInto("salesOrderLine")
+              .values(salesOrderLineInserts)
+              .execute();
 
-          await trx
-            .updateTable("item")
-            .set({ active: true })
-            .where(
-              "id",
-              "in",
-              salesOrderLineInserts.map((insert) => insert.itemId)
-            )
-            .execute();
+            await trx
+              .updateTable("item")
+              .set({ active: true })
+              .where(
+                "id",
+                "in",
+                salesOrderLineInserts.map((insert) => insert.itemId)
+              )
+              .execute();
+          }
 
           const newQuoteStatus: "Ordered" | "Partial" =
             quoteLines.data.length === salesOrderLineInserts.length
@@ -358,6 +361,7 @@ serve(async (req: Request) => {
 
           const quoteLineInserts: Database["public"]["Tables"]["quoteLine"]["Insert"][] =
             validLines.map((line) => ({
+              id: line.id ?? undefined,
               quoteId: quote.id!,
               itemId: line.itemId!,
               itemReadableId: line.itemReadableId!,
@@ -419,6 +423,14 @@ serve(async (req: Request) => {
               )
               .execute();
           }
+
+          await trx
+            .updateTable("salesRfq")
+            .set({
+              status: "Quoted",
+            })
+            .where("id", "=", id)
+            .execute();
 
           const updatedItemModels = validLines
             .filter((line) => !!line.modelUploadId && !!line.itemId)
