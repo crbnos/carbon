@@ -302,7 +302,7 @@ const LinePricingOptions = ({
   const [overridePricing, setOverridePricing] = useState({
     quantity: 1,
     leadTime: 0,
-    addOns: 0,
+    addOn: 0,
     unitPrice: 0,
   });
 
@@ -313,7 +313,7 @@ const LinePricingOptions = ({
         [line.id!]: {
           quantity: overridePricing.quantity,
           unitPrice: overridePricing.unitPrice,
-          addOn: overridePricing.addOns,
+          addOn: overridePricing.addOn,
           leadTime: overridePricing.leadTime,
         },
       }));
@@ -353,9 +353,7 @@ const LinePricingOptions = ({
               [line.id!]: {
                 quantity: selectedOption.quantity,
                 unitPrice: selectedOption.unitPrice,
-                addOn:
-                  selectedOption.unitPrice * selectedOption.quantity +
-                  (additionalChargesByQuantity[index] || 0),
+                addOn: additionalChargesByQuantity[index] || 0,
                 leadTime: selectedOption.leadTime,
               },
             }));
@@ -461,15 +459,15 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
-                    value={overridePricing.addOns}
+                    value={overridePricing.addOn}
                     formatOptions={{
                       style: "currency",
                       currency: "USD",
                     }}
-                    onChange={(addOns) =>
+                    onChange={(addOn) =>
                       setOverridePricing((v) => ({
                         ...v,
-                        addOns,
+                        addOn,
                       }))
                     }
                   >
@@ -499,7 +497,7 @@ const LinePricingOptions = ({
                 <Td>
                   {formatter.format(
                     overridePricing.unitPrice * overridePricing.quantity +
-                      overridePricing.addOns
+                      overridePricing.addOn
                   )}
                 </Td>
               </Tr>
