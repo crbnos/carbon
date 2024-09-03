@@ -1,5 +1,5 @@
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import QuotePDF from "./QuotePDF";
-// const PurchaseOrderPDF = null;
+import SalesOrderPDF from "./SalesOrderPDF";
 
-export { PurchaseOrderPDF, QuotePDF };
+export { PurchaseOrderPDF, QuotePDF, SalesOrderPDF };
