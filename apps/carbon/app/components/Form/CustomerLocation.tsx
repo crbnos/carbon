@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CustomerLocationForm,
   type CustomerLocation as CustomerLocationType,
@@ -25,7 +25,7 @@ const CustomerLocation = (props: CustomerLocationSelectProps) => {
     useFetcher<Awaited<ReturnType<typeof getCustomerLocations>>>();
 
   const newLocationModal = useDisclosure();
-  // const [created, setCreated] = useState<string>("");
+  const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ const CustomerLocation = (props: CustomerLocationSelectProps) => {
         onChange={onChange}
         onCreateOption={(option) => {
           newLocationModal.onOpen();
-          // setCreated(option);
+          setCreated(option);
         }}
       />
       {newLocationModal.isOpen && (
@@ -79,11 +79,11 @@ const CustomerLocation = (props: CustomerLocationSelectProps) => {
           customerId={props.customer!}
           type="modal"
           onClose={() => {
-            // setCreated("");
+            setCreated("");
             newLocationModal.onClose();
             triggerRef.current?.click();
           }}
-          initialValues={{ name: "" }}
+          initialValues={{ name: created }}
         />
       )}
     </>

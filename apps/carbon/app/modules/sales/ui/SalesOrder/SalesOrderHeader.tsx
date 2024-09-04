@@ -53,7 +53,7 @@ const SalesOrderHeader = () => {
               className="h-8"
               isReadOnly={!permissions.can("update", "sales")}
             />
-            <Button leftIcon={<LuEye />} isDisabled variant="secondary" asChild>
+            <Button leftIcon={<LuEye />} variant="secondary" asChild>
               <a
                 target="_blank"
                 href={path.to.file.salesOrder(orderId)}

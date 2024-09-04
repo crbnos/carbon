@@ -1,5 +1,6 @@
 import {
   CardAction,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -30,11 +31,13 @@ import {
   CustomFormFields,
   DatePicker,
   Hidden,
+  InputControlled,
   Item,
   Location,
   Number,
   NumberControlled,
   Select,
+  SelectControlled,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
@@ -47,6 +50,7 @@ import type {
   SalesOrderLineType,
 } from "~/modules/sales";
 import { salesOrderLineType, salesOrderLineValidator } from "~/modules/sales";
+import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
 
@@ -81,6 +85,7 @@ const SalesOrderLineForm = ({
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId?: string;
+    methodType: string;
     description: string;
     unitPrice: number;
     uom: string;
@@ -90,6 +95,7 @@ const SalesOrderLineForm = ({
     itemId: initialValues.itemId ?? "",
     itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
+    methodType: initialValues.methodType ?? "",
     unitPrice: initialValues.unitPrice ?? 0,
     uom: initialValues.unitOfMeasureCode ?? "",
     shelfId: initialValues.shelfId ?? "",
@@ -116,10 +122,12 @@ const SalesOrderLineForm = ({
 
   const isEditing = initialValues.id !== undefined;
 
-  const salesOrderLineTypeOptions = salesOrderLineType.map((type) => ({
-    label: type,
-    value: type,
-  }));
+  const salesOrderLineTypeOptions = salesOrderLineType
+    .filter((type) => type !== "Fixed Asset")
+    .map((type) => ({
+      label: type,
+      value: type,
+    }));
 
   const onTypeChange = (t: SalesOrderLineType) => {
     // @ts-ignore
@@ -129,6 +137,7 @@ const SalesOrderLineForm = ({
       itemReadableId: "",
       description: "",
       unitPrice: 0,
+      methodType: "",
       uom: "EA",
       shelfId: "",
       modelUploadId: null,
@@ -141,7 +150,9 @@ const SalesOrderLineForm = ({
     const [item, shelf, price] = await Promise.all([
       supabase
         .from("item")
-        .select("name, readableId, unitOfMeasureCode, modelUploadId")
+        .select(
+          "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
+        )
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
@@ -164,6 +175,7 @@ const SalesOrderLineForm = ({
       itemId,
       itemReadableId: item.data?.readableId,
       description: item.data?.name ?? "",
+      methodType: item.data?.defaultMethodType ?? "",
       unitPrice: price.data?.unitSalePrice ?? 0,
       uom: item.data?.unitOfMeasureCode ?? "EA",
       shelfId: shelf.data?.defaultShelfId ?? "",
@@ -215,14 +227,20 @@ const SalesOrderLineForm = ({
             >
               <HStack className="w-full justify-between items-start">
                 <ModalCardHeader>
-                  <ModalCardTitle>
+                  <ModalCardTitle
+                    className={cn(
+                      isEditing &&
+                        !itemData?.itemReadableId &&
+                        "text-muted-foreground"
+                    )}
+                  >
                     {isEditing
-                      ? itemData?.itemReadableId ?? "Sales Order Line"
+                      ? itemData?.itemReadableId || "..."
                       : "New Sales Order Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
                     {isEditing
-                      ? itemData?.description
+                      ? itemData?.description || lineType
                       : "A sales order line contains order details for a particular item"}
                   </ModalCardDescription>
                 </ModalCardHeader>
@@ -280,18 +298,49 @@ const SalesOrderLineForm = ({
                       <Item
                         name="itemId"
                         label={lineType}
-                        // @ts-ignore
-                        type={lineType}
+                        type={lineType as "Part"}
+                        value={itemData.itemId}
                         onChange={(value) => {
                           onChange(value?.value as string);
                         }}
                       />
                     )}
 
+                    <InputControlled
+                      name="description"
+                      label="Description"
+                      value={itemData.description}
+                      onChange={(newValue) =>
+                        setItemData((d) => ({ ...d, description: newValue }))
+                      }
+                    />
+
                     {lineType !== "Comment" && (
                       <>
+                        <SelectControlled
+                          name="methodType"
+                          label="Method"
+                          options={
+                            methodType.map((m) => ({
+                              label: m,
+                              value: m,
+                            })) ?? []
+                          }
+                          value={itemData.methodType}
+                          onChange={(newValue) => {
+                            if (newValue)
+                              setItemData((d) => ({
+                                ...d,
+                                methodType: newValue?.value,
+                              }));
+                          }}
+                        />
                         <Number name="saleQuantity" label="Quantity" />
-
+                        <UnitOfMeasure
+                          name="unitOfMeasureCode"
+                          label="Unit of Measure"
+                          value={itemData.uom}
+                        />
                         <NumberControlled
                           name="unitPrice"
                           label="Unit Price"
@@ -315,11 +364,7 @@ const SalesOrderLineForm = ({
                             currency: "USD",
                           }}
                         />
-                        <UnitOfMeasure
-                          name="unitOfMeasureCode"
-                          label="Unit of Measure"
-                          value={itemData.uom}
-                        />
+
                         <DatePicker name="promisedDate" label="Promised Date" />
                         {[
                           "Part",

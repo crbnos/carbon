@@ -10,9 +10,10 @@ const QuoteStatus = ({ status }: QuoteStatusProps) => {
     case "Draft":
       return <Status color="gray">{status}</Status>;
     case "Sent":
+      return <Status color="green">{status}</Status>;
     case "Ordered":
     case "Partial":
-      return <Status color="green">{status}</Status>;
+      return <Status color="blue">{status}</Status>;
     case "Lost":
     case "Cancelled":
     case "Expired":

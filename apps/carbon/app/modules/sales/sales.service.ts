@@ -604,6 +604,17 @@ export async function getQuoteLines(
   return client.from("quoteLines").select("*").eq("quoteId", quoteId);
 }
 
+export async function getSalesOrderCustomerDetails(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("salesOrderLocations")
+    .select("*")
+    .eq("id", salesOrderId)
+    .single();
+}
+
 export async function getSalesOrderExternalDocuments(
   client: SupabaseClient<Database>,
   companyId: string,

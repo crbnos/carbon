@@ -12,6 +12,7 @@ import {
 import { useFetcher, useFetchers } from "@remix-run/react";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useState } from "react";
+import { LuUser } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { useUser } from "~/hooks";
 import { usePeople } from "~/stores";
@@ -98,7 +99,10 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
             {value ? (
               <EmployeeAvatar size={size ?? "xs"} employeeId={value ?? null} />
             ) : (
-              <span className="text-sm">Unassigned</span>
+              <div className="flex items-center justify-start gap-2">
+                <LuUser className="w-4 h-4" />
+                <span className="text-sm">Unassigned</span>
+              </div>
             )}
           </button>
         </PopoverTrigger>

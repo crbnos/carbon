@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
-import { StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Text, View } from "@react-pdf/renderer";
+import { createTw } from "react-pdf-tailwind";
 
 import type { PDF } from "../types";
 import {
@@ -21,6 +22,22 @@ interface PurchaseOrderPDFProps extends PDF {
 const formatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
+});
+
+// Initialize tailwind-styled-components
+const tw = createTw({
+  theme: {
+    fontFamily: {
+      sans: ["Helvetica", "Arial", "sans-serif"],
+    },
+    extend: {
+      colors: {
+        gray: {
+          500: "#7d7d7d",
+        },
+      },
+    },
+  },
 });
 
 const PurchaseOrderPDF = ({
@@ -80,9 +97,9 @@ const PurchaseOrderPDF = ({
             },
           ]}
         />
-        <View style={styles.row}>
-          <View style={styles.colThird}>
-            <Text style={styles.label}>Supplier</Text>
+        <View style={tw("flex flex-row justify-between mb-5")}>
+          <View style={tw("flex flex-col w-1/3 text-sm gap-1")}>
+            <Text style={tw("text-gray-500 text-xs")}>Supplier</Text>
             <Text>{supplierName}</Text>
             {supplierAddressLine1 && <Text>{supplierAddressLine1}</Text>}
             {supplierAddressLine2 && <Text>{supplierAddressLine2}</Text>}
@@ -92,8 +109,8 @@ const PurchaseOrderPDF = ({
             <Text>{supplierCountryCode}</Text>
           </View>
           {dropShipment ? (
-            <View style={styles.colThird}>
-              <Text style={styles.label}>Ship To</Text>
+            <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
+              <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
               <Text>{customerName}</Text>
               {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
               {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
@@ -103,8 +120,8 @@ const PurchaseOrderPDF = ({
               <Text>{customerCountryCode}</Text>
             </View>
           ) : (
-            <View style={styles.colThird}>
-              <Text style={styles.label}>Ship To</Text>
+            <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
+              <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
               <Text>{deliveryName}</Text>
               {deliveryAddressLine1 && <Text>{deliveryAddressLine1}</Text>}
               {deliveryAddressLine2 && <Text>{deliveryAddressLine2}</Text>}
@@ -115,80 +132,93 @@ const PurchaseOrderPDF = ({
             </View>
           )}
         </View>
-        <View style={styles.row}>
-          <View style={styles.colThird}>
-            <Text style={styles.label}>Supplier Order #</Text>
+        <View style={tw("flex flex-row justify-between mb-5 text-sm")}>
+          <View style={tw("flex flex-col gap-1 w-1/3")}>
+            <Text style={tw("text-gray-500 text-xs")}>Supplier Order #</Text>
             <Text>{purchaseOrder?.supplierReference}</Text>
           </View>
-          <View style={styles.colThird}>
-            <Text style={styles.label}>Requested Date</Text>
+          <View style={tw("flex flex-col gap-1 w-1/3")}>
+            <Text style={tw("text-gray-500 text-xs")}>Requested Date</Text>
             <Text>{purchaseOrder?.receiptRequestedDate}</Text>
           </View>
-          <View style={styles.colThird}>
-            <Text style={styles.label}>Promised Date</Text>
+          <View style={tw("flex flex-col gap-1 w-1/3")}>
+            <Text style={tw("text-gray-500 text-xs")}>Promised Date</Text>
             <Text>{purchaseOrder?.receiptPromisedDate}</Text>
           </View>
         </View>
-        <View style={styles.row}>
-          <View style={styles.colThird}>
-            <Text style={styles.label}>Shipping Method</Text>
+        <View style={tw("flex flex-row justify-between mb-5")}>
+          <View style={tw("flex flex-col gap-1 w-1/3")}>
+            <Text style={tw("text-gray-500 text-xs")}>Shipping Method</Text>
             <Text>{purchaseOrder?.shippingMethodName}</Text>
           </View>
-          <View style={styles.colThird}>
-            <Text style={styles.label}>Shipping Terms</Text>
+          <View style={tw("flex flex-col gap-1 w-1/3")}>
+            <Text style={tw("text-gray-500 text-xs")}>Shipping Terms</Text>
             <Text>{purchaseOrder?.shippingTermName}</Text>
           </View>
-          <View style={styles.colThird}>
-            <Text style={styles.label}>Payment Terms</Text>
+          <View style={tw("flex flex-col gap-1 w-1/3")}>
+            <Text style={tw("text-gray-500 text-xs")}>Payment Terms</Text>
             <Text>{purchaseOrder?.paymentTermName}</Text>
           </View>
         </View>
-        <View style={styles.table}>
-          <View style={styles.thead}>
-            <Text style={styles.tableCol1}>Description</Text>
-            <Text style={styles.tableCol2}>Qty</Text>
-            <Text style={styles.tableCol3}>Price</Text>
-            <Text style={styles.tableCol4}>Total</Text>
+        <View style={tw("mb-5 text-xs")}>
+          <View
+            style={tw(
+              "flex flex-row justify-between items-center py-1.5 px-[6px] border-t border-b border-gray-300 font-bold text-gray-500 uppercase"
+            )}
+          >
+            <Text style={tw("w-1/2")}>Description</Text>
+            <Text style={tw("w-1/6 text-right")}>Qty</Text>
+            <Text style={tw("w-1/6 text-right")}>Price</Text>
+            <Text style={tw("w-1/5 text-right")}>Total</Text>
           </View>
           {purchaseOrderLines.map((line) => (
-            <View style={styles.tr} key={line.id}>
-              <View style={styles.tableCol1}>
-                <Text style={{ ...styles.bold, marginBottom: 4 }}>
+            <View
+              style={tw(
+                "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300"
+              )}
+              key={line.id}
+            >
+              <View style={tw("w-1/2")}>
+                <Text style={tw("font-bold mb-1")}>
                   {getLineDescription(line)}
                 </Text>
-                <Text style={{ fontSize: 9, opacity: 0.8 }}>
+                <Text style={tw("text-[9px] opacity-80")}>
                   {getLineDescriptionDetails(line)}
                 </Text>
               </View>
-              <Text style={styles.tableCol2}>
+              <Text style={tw("w-1/6 text-right")}>
                 {line.purchaseOrderLineType === "Comment"
                   ? ""
                   : `${line.purchaseQuantity} ${line.purchaseUnitOfMeasureCode}`}
               </Text>
-              <Text style={styles.tableCol3}>
+              <Text style={tw("w-1/6 text-right")}>
                 {line.purchaseOrderLineType === "Comment"
                   ? null
                   : formatter.format(line.unitPrice ?? 0)}
               </Text>
-              <Text style={styles.tableCol4}>
+              <Text style={tw("w-1/5 text-right")}>
                 {line.purchaseOrderLineType === "Comment"
                   ? null
                   : formatter.format(getLineTotal(line))}
               </Text>
             </View>
           ))}
-          <View style={styles.tfoot}>
+          <View
+            style={tw(
+              "flex flex-row justify-between items-center py-1.5 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
+            )}
+          >
             <Text>Total</Text>
-            <Text style={styles.bold}>
+            <Text style={tw("font-bold text-black")}>
               {formatter.format(getTotal(purchaseOrderLines))}
             </Text>
           </View>
         </View>
         {purchaseOrder?.notes && (
-          <View style={styles.row}>
-            <View style={styles.colHalf}>
-              <Text style={styles.label}>Notes</Text>
-              <Text>{purchaseOrder?.notes}</Text>
+          <View style={tw("flex flex-row mb-5")}>
+            <View style={tw("w-1/2")}>
+              <Text style={tw("text-gray-500 text-xs")}>Notes</Text>
+              <Text style={tw("text-sm")}>{purchaseOrder?.notes}</Text>
             </View>
           </View>
         )}
@@ -198,104 +228,3 @@ const PurchaseOrderPDF = ({
 };
 
 export default PurchaseOrderPDF;
-
-const styles = StyleSheet.create({
-  row: {
-    display: "flex",
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    width: "100%",
-  },
-  colFull: {
-    display: "flex",
-    flexDirection: "column",
-    rowGap: 3,
-    fontSize: 11,
-    fontWeight: 500,
-    width: "100%",
-  },
-  colHalf: {
-    display: "flex",
-    flexDirection: "column",
-    rowGap: 3,
-    fontSize: 11,
-    fontWeight: 500,
-    width: "50%",
-  },
-  colThird: {
-    display: "flex",
-    flexDirection: "column",
-    rowGap: 3,
-    fontSize: 11,
-    fontWeight: 500,
-    width: "32%",
-  },
-  label: {
-    color: "#7d7d7d",
-  },
-  bold: {
-    fontWeight: 700,
-    color: "#000000",
-  },
-  table: {
-    marginBottom: 20,
-    fontSize: 10,
-  },
-  thead: {
-    flexGrow: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: "20px",
-    padding: "6px 3px 6px 3px",
-    borderTop: 1,
-    borderTopColor: "#CCCCCC",
-    borderTopStyle: "solid",
-    borderBottom: 1,
-    borderBottomColor: "#CCCCCC",
-    borderBottomStyle: "solid",
-    fontWeight: 700,
-    color: "#7d7d7d",
-    textTransform: "uppercase",
-  },
-  tr: {
-    flexGrow: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: "6px 3px 6px 3px",
-    borderBottom: 1,
-    borderBottomColor: "#CCCCCC",
-  },
-  tfoot: {
-    flexGrow: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "6px 3px 6px 3px",
-    borderTopStyle: "solid",
-    borderBottom: 1,
-    borderBottomColor: "#CCCCCC",
-    borderBottomStyle: "solid",
-    fontWeight: 700,
-    color: "#7d7d7d",
-    textTransform: "uppercase",
-  },
-  tableCol1: {
-    width: "50%",
-    textAlign: "left",
-  },
-  tableCol2: {
-    width: "15%",
-    textAlign: "right",
-  },
-  tableCol3: {
-    width: "15%",
-    textAlign: "right",
-  },
-  tableCol4: {
-    width: "20%",
-    textAlign: "right",
-  },
-});

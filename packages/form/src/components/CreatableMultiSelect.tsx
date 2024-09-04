@@ -30,7 +30,8 @@ const CreatableMultiSelect = forwardRef<
   const [value, setValue] = useControlField<string[] | undefined>(name);
 
   useEffect(() => {
-    if (props.value) setValue(props.value);
+    if (props.value !== null && props.value !== undefined)
+      setValue(props.value);
   }, [props.value, setValue]);
 
   const onChange = (value: string[]) => {
