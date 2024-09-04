@@ -7,6 +7,7 @@ import {
   CardTitle,
   HStack,
 } from "@carbon/react";
+import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
@@ -18,7 +19,8 @@ import {
   PaymentTerm,
   Submit,
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { Quotation } from "~/modules/sales";
 import { quotePaymentValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -32,7 +34,16 @@ const QuotePaymentForm = ({ initialValues }: QuotePaymentFormProps) => {
     initialValues.invoiceCustomerId
   );
 
-  const isDisabled = !permissions.can("update", "sales");
+  const { quoteId } = useParams();
+  if (!quoteId) throw new Error("quoteId not found");
+  const routeData = useRouteData<{
+    quote: Quotation;
+  }>(path.to.quote(quoteId));
+
+  const isEditable = ["Draft", "To Review"].includes(
+    routeData?.quote?.status ?? ""
+  );
+  const isDisabled = !isEditable || !permissions.can("update", "sales");
 
   return (
     <Card isCollapsible defaultCollapsed>

@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Image, Text, View } from "@react-pdf/renderer";
+import { createTw } from "react-pdf-tailwind";
 
 import type { JSONContent } from "@carbon/react";
 import type { PDF } from "../types";
@@ -24,6 +25,21 @@ interface QuotePDFProps extends PDF {
 const formatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
+});
+
+const tw = createTw({
+  theme: {
+    fontFamily: {
+      sans: ["Helvetica", "Arial", "sans-serif"],
+    },
+    extend: {
+      colors: {
+        gray: {
+          500: "#7d7d7d",
+        },
+      },
+    },
+  },
 });
 
 const QuotePDF = ({
@@ -119,9 +135,9 @@ const QuotePDF = ({
             },
           ]}
         />
-        <View style={styles.row}>
-          <View style={{ ...styles.colThird, ...styles.header }}>
-            <Text style={styles.label}>Customer</Text>
+        <View style={tw("flex flex-row mb-5")}>
+          <View style={tw("flex flex-col gap-1 w-1/3 text-xs")}>
+            <Text style={tw("text-gray-500 font-bold text-xs")}>Customer</Text>
             <Text>{customerName}</Text>
             {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
             {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
@@ -132,17 +148,21 @@ const QuotePDF = ({
           </View>
         </View>
 
-        <View style={styles.table}>
-          <View style={styles.thead}>
-            <View style={styles.rowForty}>
+        <View style={tw("mb-5 text-xs")}>
+          <View
+            style={tw(
+              "flex flex-row justify-between items-center py-1.5 px-[6px] border-t border-b border-gray-300 text-gray-500 font-bold uppercase"
+            )}
+          >
+            <View style={tw("w-2/5")}>
               <Text>Description</Text>
             </View>
-            <View style={styles.rowSixty}>
-              <Text style={styles.cell15}>Qty</Text>
-              <Text style={styles.cell20}>Unit Price</Text>
-              <Text style={styles.cell20}>Add-Ons</Text>
-              <Text style={styles.cell20}>Lead Time</Text>
-              <Text style={styles.cell25}>Extended Price</Text>
+            <View style={tw("w-3/5 flex flex-row")}>
+              <Text style={tw("w-1/5 text-right")}>Qty</Text>
+              <Text style={tw("w-1/5 text-right")}>Unit Price</Text>
+              <Text style={tw("w-1/5 text-right")}>Add-Ons</Text>
+              <Text style={tw("w-1/5 text-right")}>Lead Time</Text>
+              <Text style={tw("w-1/5 text-right")}>Extended Price</Text>
             </View>
           </View>
           {quoteLines.map((line) => {
@@ -161,29 +181,34 @@ const QuotePDF = ({
             );
 
             return (
-              <View style={styles.tr} key={line.id}>
-                <View style={styles.colForty}>
-                  <View style={styles.col}>
-                    <Text style={{ ...styles.bold, marginBottom: 4 }}>
+              <View
+                style={tw(
+                  "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300"
+                )}
+                key={line.id}
+              >
+                <View style={tw("w-2/5")}>
+                  <View>
+                    <Text style={tw("font-bold mb-1")}>
                       {getLineDescription(line)}
                     </Text>
-                    <Text style={{ fontSize: 9, opacity: 0.8 }}>
+                    <Text style={tw("text-[9px] opacity-80")}>
                       {getLineDescriptionDetails(line)}
                     </Text>
                   </View>
 
                   {thumbnails && line.id in thumbnails && (
-                    <View style={styles.row}>
+                    <View style={tw("mt-2")}>
                       <Image
                         src={thumbnails[line.id]!}
-                        style={{ width: "100%", height: "auto" }}
+                        style={tw("w-full h-auto")}
                       />
                     </View>
                   )}
 
                   {Object.keys(additionalCharges).length > 0 && (
-                    <View style={{ ...styles.col, marginTop: 10 }}>
-                      <Text style={{ fontSize: 9, fontWeight: 700 }}>
+                    <View style={tw("mt-2.5")}>
+                      <Text style={tw("text-[9px] font-bold")}>
                         Additional Charges
                       </Text>
                       {Object.values(additionalCharges)
@@ -194,7 +219,7 @@ const QuotePDF = ({
                           return charge.description ? (
                             <Text
                               key={charge.description}
-                              style={{ fontSize: 9, opacity: 0.8 }}
+                              style={tw("text-[9px] opacity-80")}
                             >
                               - {charge.description}
                             </Text>
@@ -203,7 +228,7 @@ const QuotePDF = ({
                     </View>
                   )}
                 </View>
-                <View style={styles.colSixty}>
+                <View style={tw("w-3/5")}>
                   {line.quantity.map((quantity, index) => {
                     const prices = pricesByLine[line.id] ?? [];
                     const price = prices.find(
@@ -217,21 +242,20 @@ const QuotePDF = ({
                       additionalChargesByQuantity[index] ?? 0;
 
                     return (
-                      <View key={quantity} style={styles.row}>
-                        <Text style={styles.cell15}>{quantity}</Text>
-                        <Text style={styles.cell20}>
+                      <View key={quantity} style={tw("flex flex-row")}>
+                        <Text style={tw("w-1/5 text-right")}>{quantity}</Text>
+                        <Text style={tw("w-1/5 text-right")}>
                           {netPrice ? formatter.format(netPrice) : "-"}
                         </Text>
-                        <Text style={styles.cell20}>
+                        <Text style={tw("w-1/5 text-right")}>
                           {additionalCharge
                             ? formatter.format(additionalCharge)
                             : "-"}
                         </Text>
-                        <Text style={styles.cell20}>
+                        <Text style={tw("w-1/5 text-right")}>
                           {price ? `${price.leadTime} days` : "-"}
                         </Text>
-
-                        <Text style={styles.cell25}>
+                        <Text style={tw("w-1/5 text-right")}>
                           {netPrice
                             ? formatter.format(
                                 netPrice * quantity + additionalCharge
@@ -253,120 +277,3 @@ const QuotePDF = ({
 };
 
 export default QuotePDF;
-
-const styles = StyleSheet.create({
-  header: {
-    fontSize: 11,
-  },
-  row: {
-    display: "flex",
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    width: "100%",
-  },
-  rowForty: {
-    display: "flex",
-    flexDirection: "row",
-    columnGap: 3,
-    width: "40%",
-  },
-  rowSixty: {
-    display: "flex",
-    flexDirection: "row",
-    columnGap: 3,
-    width: "60%",
-  },
-  colForty: {
-    display: "flex",
-    flexDirection: "column",
-    rowGap: 3,
-    width: "40%",
-  },
-  colSixty: {
-    display: "flex",
-    flexDirection: "column",
-    columnGap: 3,
-    width: "66%",
-  },
-  colThird: {
-    display: "flex",
-    flexDirection: "column",
-    rowGap: 3,
-    width: "32%",
-  },
-  label: {
-    color: "#7d7d7d",
-    fontWeight: 700,
-  },
-  bold: {
-    fontWeight: 700,
-    color: "#000000",
-  },
-  table: {
-    marginBottom: 20,
-    fontSize: 10,
-  },
-  thead: {
-    flexGrow: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: "20px",
-    padding: "6px 3px 6px 3px",
-    borderTop: 1,
-    borderTopColor: "#CCCCCC",
-    borderTopStyle: "solid",
-    borderBottom: 1,
-    borderBottomColor: "#CCCCCC",
-    borderBottomStyle: "solid",
-    fontSize: 9,
-    fontWeight: 700,
-    color: "#7d7d7d",
-    textTransform: "uppercase",
-  },
-
-  tr: {
-    flexGrow: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: "6px 3px 6px 3px",
-    borderBottom: 1,
-    borderBottomColor: "#CCCCCC",
-    fontSize: 10,
-    fontWeight: 400,
-  },
-  tfoot: {
-    flexGrow: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "6px 3px 6px 3px",
-    borderTopStyle: "solid",
-    borderBottom: 1,
-    borderBottomColor: "#CCCCCC",
-    borderBottomStyle: "solid",
-    fontWeight: 700,
-    color: "#7d7d7d",
-    textTransform: "uppercase",
-  },
-  col: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    rowGap: 3,
-  },
-  cell15: {
-    width: "15%",
-    textAlign: "right",
-  },
-  cell20: {
-    width: "20%",
-    textAlign: "right",
-  },
-  cell25: {
-    width: "25%",
-    textAlign: "right",
-  },
-});

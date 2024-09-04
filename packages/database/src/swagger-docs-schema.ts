@@ -4303,6 +4303,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.addOnCost",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.methodType",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.modelId",
           },
           {
@@ -4322,6 +4325,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.unitCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.customerPartRevision",
           },
           {
             $ref: "#/parameters/select",
@@ -8725,6 +8734,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.addOnCost",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.methodType",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8877,6 +8889,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.addOnCost",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.methodType",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -8981,6 +8996,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.addOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.methodType",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -27015,6 +27033,93 @@ export default {
         tags: ["itemCost"],
       },
     },
+    "/salesOrderLocations": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerAddressLine1",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerAddressLine2",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerCity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerState",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerPostalCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCustomerName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentAddressLine1",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentAddressLine2",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentState",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentPostalCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCountryCode",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesOrderLocations",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["salesOrderLocations"],
+      },
+    },
     "/oauthCode": {
       get: {
         parameters: [
@@ -34826,6 +34931,11 @@ export default {
           format: "numeric",
           type: "number",
         },
+        methodType: {
+          enum: ["Buy", "Make", "Pick"],
+          format: 'public."methodType"',
+          type: "string",
+        },
         modelId: {
           format: "text",
           type: "string",
@@ -34853,6 +34963,14 @@ export default {
         unitCost: {
           format: "numeric",
           type: "number",
+        },
+        customerPartId: {
+          format: "text",
+          type: "string",
+        },
+        customerPartRevision: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -36748,6 +36866,7 @@ export default {
         "createdBy",
         "status",
         "addOnCost",
+        "methodType",
       ],
       properties: {
         id: {
@@ -36902,6 +37021,12 @@ export default {
           default: 0,
           format: "numeric",
           type: "number",
+        },
+        methodType: {
+          default: "Make",
+          enum: ["Buy", "Make", "Pick"],
+          format: 'public."methodType"',
+          type: "string",
         },
       },
       type: "object",
@@ -44771,6 +44896,76 @@ export default {
       },
       type: "object",
     },
+    salesOrderLocations: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        customerName: {
+          format: "text",
+          type: "string",
+        },
+        customerAddressLine1: {
+          format: "text",
+          type: "string",
+        },
+        customerAddressLine2: {
+          format: "text",
+          type: "string",
+        },
+        customerCity: {
+          format: "text",
+          type: "string",
+        },
+        customerState: {
+          format: "text",
+          type: "string",
+        },
+        customerPostalCode: {
+          format: "text",
+          type: "string",
+        },
+        customerCountryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
+          format: "integer",
+          type: "integer",
+        },
+        paymentCustomerName: {
+          format: "text",
+          type: "string",
+        },
+        paymentAddressLine1: {
+          format: "text",
+          type: "string",
+        },
+        paymentAddressLine2: {
+          format: "text",
+          type: "string",
+        },
+        paymentCity: {
+          format: "text",
+          type: "string",
+        },
+        paymentState: {
+          format: "text",
+          type: "string",
+        },
+        paymentPostalCode: {
+          format: "text",
+          type: "string",
+        },
+        paymentCountryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
+          format: "integer",
+          type: "integer",
+        },
+      },
+      type: "object",
+    },
     oauthCode: {
       required: [
         "id",
@@ -49373,6 +49568,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderLines.methodType": {
+      name: "methodType",
+      required: false,
+      format: 'public."methodType"',
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrderLines.modelId": {
       name: "modelId",
       required: false,
@@ -49419,6 +49621,20 @@ export default {
       name: "unitCost",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.customerPartRevision": {
+      name: "customerPartRevision",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -52100,6 +52316,13 @@ export default {
       name: "addOnCost",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.methodType": {
+      name: "methodType",
+      required: false,
+      format: 'public."methodType"',
       in: "query",
       type: "string",
     },
@@ -62386,6 +62609,120 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "body.salesOrderLocations": {
+      name: "salesOrderLocations",
+      description: "salesOrderLocations",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/salesOrderLocations",
+      },
+    },
+    "rowFilter.salesOrderLocations.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.customerName": {
+      name: "customerName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.customerAddressLine1": {
+      name: "customerAddressLine1",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.customerAddressLine2": {
+      name: "customerAddressLine2",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.customerCity": {
+      name: "customerCity",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.customerState": {
+      name: "customerState",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.customerPostalCode": {
+      name: "customerPostalCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.customerCountryCode": {
+      name: "customerCountryCode",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentCustomerName": {
+      name: "paymentCustomerName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentAddressLine1": {
+      name: "paymentAddressLine1",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentAddressLine2": {
+      name: "paymentAddressLine2",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentCity": {
+      name: "paymentCity",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentState": {
+      name: "paymentState",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentPostalCode": {
+      name: "paymentPostalCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentCountryCode": {
+      name: "paymentCountryCode",
+      required: false,
+      format: "integer",
       in: "query",
       type: "string",
     },

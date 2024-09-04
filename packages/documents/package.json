@@ -5,7 +5,8 @@
     "@react-email/components": "0.0.16",
     "@react-pdf/renderer": "^3.1.14",
     "react-icons": "^5.2.1",
-    "react-hook-form": "7.51.2"
+    "react-hook-form": "7.51.2",
+    "react-pdf-tailwind": "~2.3.0"
   },
   "devDependencies": {
     "@carbon/database": "*",

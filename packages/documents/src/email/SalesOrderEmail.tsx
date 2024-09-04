@@ -18,33 +18,31 @@ import type { Email } from "../types";
 import {
   getLineDescription,
   getLineDescriptionDetails,
+  getLineTotal,
   getTotal,
-} from "../utils/purchase-order";
+} from "../utils/sales-order";
 import { formatAddress } from "../utils/shared";
 
-interface PurchaseOrderEmailProps extends Email {
-  purchaseOrder: Database["public"]["Views"]["purchaseOrders"]["Row"];
-  purchaseOrderLines: Database["public"]["Views"]["purchaseOrderLines"]["Row"][];
-  purchaseOrderLocations: Database["public"]["Views"]["purchaseOrderLocations"]["Row"];
+interface SalesOrderEmailProps extends Email {
+  salesOrder: Database["public"]["Views"]["salesOrders"]["Row"];
+  salesOrderLines: Database["public"]["Views"]["salesOrderLines"]["Row"][];
+  salesOrderLocations: Database["public"]["Views"]["salesOrderLocations"]["Row"];
 }
 
-const PurchaseOrderEmail = ({
+const formatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+const SalesOrderEmail = ({
   company,
-  purchaseOrder,
-  purchaseOrderLines,
-  purchaseOrderLocations,
+  salesOrder,
+  salesOrderLines,
+  salesOrderLocations,
   recipient,
   sender,
-}: PurchaseOrderEmailProps) => {
+}: SalesOrderEmailProps) => {
   const {
-    deliveryName,
-    deliveryAddressLine1,
-    deliveryAddressLine2,
-    deliveryCity,
-    deliveryState,
-    deliveryPostalCode,
-    deliveryCountryCode,
-    dropShipment,
     customerName,
     customerAddressLine1,
     customerAddressLine2,
@@ -52,14 +50,21 @@ const PurchaseOrderEmail = ({
     customerState,
     customerPostalCode,
     customerCountryCode,
-  } = purchaseOrderLocations;
+    // paymentCustomerName,
+    // paymentAddressLine1,
+    // paymentAddressLine2,
+    // paymentCity,
+    // paymentState,
+    // paymentPostalCode,
+    // paymentCountryCode,
+  } = salesOrderLocations;
 
-  const reSubject = `Re: ${purchaseOrder.purchaseOrderId} from ${company.name}`;
+  const reSubject = `Re: ${salesOrder.salesOrderId} from ${company.name}`;
 
   return (
     <Html>
       <Head />
-      <Preview>{`${purchaseOrder.purchaseOrderId} from ${company.name}`}</Preview>
+      <Preview>{`${salesOrder.salesOrderId} from ${company.name}`}</Preview>
       <Tailwind>
         <Body className="bg-white font-sans">
           <Container className="mx-auto py-5 px-0 w-[660px] max-w-full">
@@ -81,14 +86,14 @@ const PurchaseOrderEmail = ({
                 </Column>
                 <Column className="text-right">
                   <Text className="text-3xl font-light text-gray-500">
-                    Purchase Order
+                    Sales Order
                   </Text>
                 </Column>
               </Row>
             </Section>
             <Section>
               <Text className="text-left text-sm font-medium text-gray-900 my-9">
-                Hi {recipient.firstName}, please see the attached purchase order
+                Hi {recipient.firstName}, please see the attached sales order
                 and let me know if you have any questions.
               </Text>
             </Section>
@@ -99,7 +104,7 @@ const PurchaseOrderEmail = ({
                     <Row>
                       <Column>
                         <Text className="text-gray-600 uppercase text-[10px]">
-                          Buyer
+                          Seller
                         </Text>
                         <Link
                           href={`mailto:${sender.email}?subject=${reSubject}`}
@@ -114,7 +119,7 @@ const PurchaseOrderEmail = ({
                         <Text className="text-gray-600 uppercase text-[10px]">
                           Payment Terms
                         </Text>
-                        <Text>{purchaseOrder.paymentTermName ?? "-"}</Text>
+                        <Text>{salesOrder.paymentTermName ?? "-"}</Text>
                       </Column>
                     </Row>
                     <Row>
@@ -122,13 +127,13 @@ const PurchaseOrderEmail = ({
                         <Text className="text-gray-600 uppercase text-[10px]">
                           Order ID
                         </Text>
-                        <Text>{purchaseOrder.purchaseOrderId}</Text>
+                        <Text>{salesOrder.salesOrderId}</Text>
                       </Column>
                       <Column>
                         <Text className="text-gray-600 uppercase text-[10px]">
                           Requested Date
                         </Text>
-                        <Text>{purchaseOrder.receiptRequestedDate ?? "-"}</Text>
+                        <Text>{salesOrder.receiptRequestedDate ?? "-"}</Text>
                       </Column>
                     </Row>
                   </Section>
@@ -137,54 +142,27 @@ const PurchaseOrderEmail = ({
                   <Text className="text-gray-600 uppercase text-[10px]">
                     Ship To
                   </Text>
-                  {dropShipment ? (
-                    <>
-                      <Text>{customerName}</Text>
-                      {customerAddressLine1 && (
-                        <Text>{customerAddressLine1}</Text>
-                      )}
-                      {customerAddressLine2 && (
-                        <Text>{customerAddressLine2}</Text>
-                      )}
-                      <Text>
-                        {formatAddress(
-                          customerCity,
-                          customerState,
-                          customerPostalCode
-                        )}
-                      </Text>
-                      <Text>{customerCountryCode}</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text>{company.name}</Text>
-                      <Text>{deliveryName}</Text>
-                      {deliveryAddressLine1 && (
-                        <Text>{deliveryAddressLine1}</Text>
-                      )}
-                      {deliveryAddressLine2 && (
-                        <Text>{deliveryAddressLine2}</Text>
-                      )}
-                      <Text>
-                        {formatAddress(
-                          deliveryCity,
-                          deliveryState,
-                          deliveryPostalCode
-                        )}
-                      </Text>
-                      <Text>{deliveryCountryCode}</Text>
-                    </>
-                  )}
+                  <Text>{customerName}</Text>
+                  {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
+                  {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
+                  <Text>
+                    {formatAddress(
+                      customerCity,
+                      customerState,
+                      customerPostalCode
+                    )}
+                  </Text>
+                  <Text>{customerCountryCode}</Text>
                 </Column>
               </Row>
             </Section>
             <Section className="mt-8 mb-4">
               <Text className="text-gray-600 uppercase text-[10px] pl-5">
-                Purchase Order Lines
+                Sales Order Lines
               </Text>
             </Section>
             <Section>
-              {purchaseOrderLines.map((line) => (
+              {salesOrderLines.map((line) => (
                 <Row key={line.id} className="mb-2.5 pl-5">
                   <Column>
                     <Text className="text-xs font-semibold">
@@ -200,18 +178,23 @@ const PurchaseOrderEmail = ({
                   </Column>
                   <Column className="text-right pr-5 align-top w-[100px]">
                     <Text className="text-xs font-semibold">
-                      {line.purchaseOrderLineType === "Comment"
+                      {line.salesOrderLineType === "Comment"
                         ? ""
-                        : `(${line.purchaseQuantity} ${line.purchaseUnitOfMeasureCode})`}
+                        : `(${line.saleQuantity} ${line.unitOfMeasureCode})`}
                     </Text>
                   </Column>
                   <Column className="text-right pr-5 align-top w-[100px]">
                     <Text className="text-xs font-semibold">
-                      {line.purchaseOrderLineType === "Comment"
+                      {line.salesOrderLineType === "Comment"
                         ? "-"
-                        : line.unitPrice
-                        ? `$${line.unitPrice.toFixed(2)}`
-                        : "-"}
+                        : formatter.format(line.unitPrice ?? 0)}
+                    </Text>
+                  </Column>
+                  <Column className="text-right pr-5 align-top w-[100px]">
+                    <Text className="text-xs font-semibold">
+                      {line.salesOrderLineType === "Comment"
+                        ? "-"
+                        : formatter.format(getLineTotal(line))}
                     </Text>
                   </Column>
                 </Row>
@@ -228,7 +211,7 @@ const PurchaseOrderEmail = ({
                 <Column className="border-l border-gray-200 h-12"></Column>
                 <Column className="w-[90px] pr-5">
                   <Text className="text-base font-semibold whitespace-nowrap">
-                    {`$${getTotal(purchaseOrderLines)}`}
+                    {formatter.format(getTotal(salesOrderLines))}
                   </Text>
                 </Column>
               </Row>
@@ -259,4 +242,4 @@ const PurchaseOrderEmail = ({
   );
 };
 
-export default PurchaseOrderEmail;
+export default SalesOrderEmail;

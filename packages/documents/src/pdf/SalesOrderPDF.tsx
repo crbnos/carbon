@@ -8,14 +8,14 @@ import {
   getLineDescriptionDetails,
   getLineTotal,
   getTotal,
-} from "../utils/purchase-order";
+} from "../utils/sales-order";
 import { formatAddress } from "../utils/shared";
 import { Header, Summary, Template } from "./components";
 
-interface PurchaseOrderPDFProps extends PDF {
-  purchaseOrder: Database["public"]["Views"]["purchaseOrders"]["Row"];
-  purchaseOrderLines: Database["public"]["Views"]["purchaseOrderLines"]["Row"][];
-  purchaseOrderLocations: Database["public"]["Views"]["purchaseOrderLocations"]["Row"];
+interface SalesOrderPDFProps extends PDF {
+  salesOrder: Database["public"]["Views"]["salesOrders"]["Row"];
+  salesOrderLines: Database["public"]["Views"]["salesOrderLines"]["Row"][];
+  salesOrderLocations: Database["public"]["Views"]["salesOrderLocations"]["Row"];
 }
 
 // TODO: format currency based on settings
@@ -40,30 +40,15 @@ const tw = createTw({
   },
 });
 
-const PurchaseOrderPDF = ({
+const SalesOrderPDF = ({
   company,
   meta,
-  purchaseOrder,
-  purchaseOrderLines,
-  purchaseOrderLocations,
-  title = "Purchase Order",
-}: PurchaseOrderPDFProps) => {
+  salesOrder,
+  salesOrderLines,
+  salesOrderLocations,
+  title = "Sales Order",
+}: SalesOrderPDFProps) => {
   const {
-    supplierName,
-    supplierAddressLine1,
-    supplierAddressLine2,
-    supplierCity,
-    supplierState,
-    supplierPostalCode,
-    supplierCountryCode,
-    deliveryName,
-    deliveryAddressLine1,
-    deliveryAddressLine2,
-    deliveryCity,
-    deliveryState,
-    deliveryPostalCode,
-    deliveryCountryCode,
-    dropShipment,
     customerName,
     customerAddressLine1,
     customerAddressLine2,
@@ -71,15 +56,22 @@ const PurchaseOrderPDF = ({
     customerState,
     customerPostalCode,
     customerCountryCode,
-  } = purchaseOrderLocations;
+    paymentCustomerName,
+    paymentAddressLine1,
+    paymentAddressLine2,
+    paymentCity,
+    paymentState,
+    paymentPostalCode,
+    paymentCountryCode,
+  } = salesOrderLocations;
 
   return (
     <Template
       title={title}
       meta={{
         author: meta?.author ?? "CarbonOS",
-        keywords: meta?.keywords ?? "purchase order",
-        subject: meta?.subject ?? "Purchase Order",
+        keywords: meta?.keywords ?? "sales order",
+        subject: meta?.subject ?? "Sales Order",
       }}
     >
       <View>
@@ -89,89 +81,86 @@ const PurchaseOrderPDF = ({
           items={[
             {
               label: "Date",
-              value: purchaseOrder?.orderDate,
+              value: salesOrder?.orderDate,
             },
             {
-              label: "PO #",
-              value: purchaseOrder?.purchaseOrderId,
+              label: "SO #",
+              value: salesOrder?.salesOrderId,
             },
           ]}
         />
         <View style={tw("flex flex-row justify-between mb-5")}>
-          <View style={tw("flex flex-col w-1/3 text-sm gap-1")}>
-            <Text style={tw("text-gray-500 text-xs")}>Supplier</Text>
-            <Text>{supplierName}</Text>
-            {supplierAddressLine1 && <Text>{supplierAddressLine1}</Text>}
-            {supplierAddressLine2 && <Text>{supplierAddressLine2}</Text>}
-            <Text>
-              {formatAddress(supplierCity, supplierState, supplierPostalCode)}
-            </Text>
-            <Text>{supplierCountryCode}</Text>
-          </View>
-          {dropShipment ? (
-            <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
-              <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
-              <Text>{customerName}</Text>
-              {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
-              {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
-              <Text>
-                {formatAddress(customerCity, customerState, customerPostalCode)}
-              </Text>
-              <Text>{customerCountryCode}</Text>
-            </View>
-          ) : (
-            <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
-              <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
-              <Text>{deliveryName}</Text>
-              {deliveryAddressLine1 && <Text>{deliveryAddressLine1}</Text>}
-              {deliveryAddressLine2 && <Text>{deliveryAddressLine2}</Text>}
-              <Text>
-                {formatAddress(deliveryCity, deliveryState, deliveryPostalCode)}
-              </Text>
-              <Text>{deliveryCountryCode}</Text>
-            </View>
-          )}
-        </View>
-        <View style={tw("flex flex-row justify-between mb-5 text-sm")}>
           <View style={tw("flex flex-col gap-1 w-1/3")}>
-            <Text style={tw("text-gray-500 text-xs")}>Supplier Order #</Text>
-            <Text>{purchaseOrder?.supplierReference}</Text>
+            <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
+            <Text style={tw("text-sm")}>{customerName}</Text>
+            {customerAddressLine1 && (
+              <Text style={tw("text-sm")}>{customerAddressLine1}</Text>
+            )}
+            {customerAddressLine2 && (
+              <Text style={tw("text-sm")}>{customerAddressLine2}</Text>
+            )}
+            <Text style={tw("text-sm")}>
+              {formatAddress(customerCity, customerState, customerPostalCode)}
+            </Text>
+            <Text style={tw("text-sm")}>{customerCountryCode}</Text>
+          </View>
+          <View style={tw("flex flex-col gap-1 w-1/3")}>
+            <Text style={tw("text-gray-500 text-xs")}>Bill To</Text>
+            <Text style={tw("text-sm")}>{paymentCustomerName}</Text>
+            {paymentAddressLine1 && (
+              <Text style={tw("text-sm")}>{paymentAddressLine1}</Text>
+            )}
+            {paymentAddressLine2 && (
+              <Text style={tw("text-sm")}>{paymentAddressLine2}</Text>
+            )}
+            <Text style={tw("text-sm")}>
+              {formatAddress(paymentCity, paymentState, paymentPostalCode)}
+            </Text>
+            <Text style={tw("text-sm")}>{paymentCountryCode}</Text>
+          </View>
+        </View>
+        <View style={tw("flex flex-row justify-between mb-5")}>
+          <View style={tw("flex flex-col gap-1 w-1/3")}>
+            <Text style={tw("text-gray-500 text-xs")}>Customer Order #</Text>
+            <Text style={tw("text-sm")}>{salesOrder?.customerReference}</Text>
           </View>
           <View style={tw("flex flex-col gap-1 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Requested Date</Text>
-            <Text>{purchaseOrder?.receiptRequestedDate}</Text>
+            <Text style={tw("text-sm")}>
+              {salesOrder?.receiptRequestedDate}
+            </Text>
           </View>
           <View style={tw("flex flex-col gap-1 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Promised Date</Text>
-            <Text>{purchaseOrder?.receiptPromisedDate}</Text>
+            <Text style={tw("text-sm")}>{salesOrder?.receiptPromisedDate}</Text>
           </View>
         </View>
         <View style={tw("flex flex-row justify-between mb-5")}>
           <View style={tw("flex flex-col gap-1 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Shipping Method</Text>
-            <Text>{purchaseOrder?.shippingMethodName}</Text>
+            <Text style={tw("text-sm")}>{salesOrder?.shippingMethodName}</Text>
           </View>
           <View style={tw("flex flex-col gap-1 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Shipping Terms</Text>
-            <Text>{purchaseOrder?.shippingTermName}</Text>
+            <Text style={tw("text-sm")}>{salesOrder?.shippingTermName}</Text>
           </View>
           <View style={tw("flex flex-col gap-1 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Payment Terms</Text>
-            <Text>{purchaseOrder?.paymentTermName}</Text>
+            <Text style={tw("text-sm")}>{salesOrder?.paymentTermName}</Text>
           </View>
         </View>
         <View style={tw("mb-5 text-xs")}>
           <View
             style={tw(
-              "flex flex-row justify-between items-center py-1.5 px-[6px] border-t border-b border-gray-300 font-bold text-gray-500 uppercase"
+              "flex flex-row justify-between items-center mt-5 py-1.5 px-[6px] border-t border-b border-gray-300 font-bold text-gray-500 uppercase"
             )}
           >
-            <Text style={tw("w-1/2")}>Description</Text>
+            <Text style={tw("w-1/2 text-left")}>Description</Text>
             <Text style={tw("w-1/6 text-right")}>Qty</Text>
             <Text style={tw("w-1/6 text-right")}>Price</Text>
             <Text style={tw("w-1/5 text-right")}>Total</Text>
           </View>
-          {purchaseOrderLines.map((line) => (
+          {salesOrderLines.map((line) => (
             <View
               style={tw(
                 "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300"
@@ -187,17 +176,17 @@ const PurchaseOrderPDF = ({
                 </Text>
               </View>
               <Text style={tw("w-1/6 text-right")}>
-                {line.purchaseOrderLineType === "Comment"
+                {line.salesOrderLineType === "Comment"
                   ? ""
-                  : `${line.purchaseQuantity} ${line.purchaseUnitOfMeasureCode}`}
+                  : `${line.saleQuantity} ${line.unitOfMeasureCode}`}
               </Text>
               <Text style={tw("w-1/6 text-right")}>
-                {line.purchaseOrderLineType === "Comment"
+                {line.salesOrderLineType === "Comment"
                   ? null
                   : formatter.format(line.unitPrice ?? 0)}
               </Text>
               <Text style={tw("w-1/5 text-right")}>
-                {line.purchaseOrderLineType === "Comment"
+                {line.salesOrderLineType === "Comment"
                   ? null
                   : formatter.format(getLineTotal(line))}
               </Text>
@@ -210,15 +199,15 @@ const PurchaseOrderPDF = ({
           >
             <Text>Total</Text>
             <Text style={tw("font-bold text-black")}>
-              {formatter.format(getTotal(purchaseOrderLines))}
+              {formatter.format(getTotal(salesOrderLines))}
             </Text>
           </View>
         </View>
-        {purchaseOrder?.notes && (
+        {salesOrder?.notes && (
           <View style={tw("flex flex-row mb-5")}>
             <View style={tw("w-1/2")}>
               <Text style={tw("text-gray-500 text-xs")}>Notes</Text>
-              <Text style={tw("text-sm")}>{purchaseOrder?.notes}</Text>
+              <Text style={tw("text-sm")}>{salesOrder?.notes}</Text>
             </View>
           </View>
         )}
@@ -227,4 +216,4 @@ const PurchaseOrderPDF = ({
   );
 };
 
-export default PurchaseOrderPDF;
+export default SalesOrderPDF;

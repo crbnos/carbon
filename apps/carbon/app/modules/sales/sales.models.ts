@@ -547,6 +547,11 @@ export const salesOrderLineValidator = z
     itemId: zfd.text(z.string().optional()),
     itemReadableId: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
+    methodType: z
+      .enum(methodType, {
+        errorMap: () => ({ message: "Method is required" }),
+      })
+      .optional(),
     modelUploadId: zfd.text(z.string().optional()),
     promisedDate: zfd.text(z.string().optional()),
     saleQuantity: zfd.numeric(z.number().optional()),
@@ -565,6 +570,34 @@ export const salesOrderLineValidator = z
     {
       message: "Comment is required",
       path: ["description"], // path of error
+    }
+  )
+  .refine(
+    (data) => {
+      if (
+        data.salesOrderLineType !== "Comment" &&
+        data.salesOrderLineType !== "Fixed Asset"
+      ) {
+        return !!data.itemId;
+      }
+      return true;
+    },
+    {
+      message: "Item is required for this line type",
+      path: ["itemId"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If sales order line type is not "Comment", we require a method type
+      if (data.salesOrderLineType !== "Comment" && !data.methodType) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Method type is required",
+      path: ["methodType"],
     }
   );
 

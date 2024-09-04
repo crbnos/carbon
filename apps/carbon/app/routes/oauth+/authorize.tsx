@@ -1,4 +1,5 @@
 import { validator } from "@carbon/form";
+import { Button } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, json, redirect, useLoaderData } from "@remix-run/react";
 import { z } from "zod";
@@ -106,12 +107,7 @@ export default function AuthorizeRoute() {
         <input type="hidden" name="redirect_uri" value={redirectUri || ""} />
         <input type="hidden" name="response_type" value={responseType || ""} />
         {state && <input type="hidden" name="state" value={state} />}
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Authorize
-        </button>
+        <Button>Authorize</Button>
       </Form>
     </div>
   );

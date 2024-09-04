@@ -8892,6 +8892,13 @@ export type Database = {
             foreignKeyName: "opportunity_salesOrderId_fkey"
             columns: ["salesOrderId"]
             isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["id"]
           },
@@ -15304,6 +15311,13 @@ export type Database = {
             foreignKeyName: "salesOrderFavorites_salesOrderId_fkey"
             columns: ["salesOrderId"]
             isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderFavorites_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["id"]
           },
@@ -15359,6 +15373,7 @@ export type Database = {
           itemId: string | null
           itemReadableId: string | null
           locationId: string | null
+          methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
           promisedDate: string | null
           quantityInvoiced: number | null
@@ -15392,6 +15407,7 @@ export type Database = {
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
+          methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           promisedDate?: string | null
           quantityInvoiced?: number | null
@@ -15425,6 +15441,7 @@ export type Database = {
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
+          methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           promisedDate?: string | null
           quantityInvoiced?: number | null
@@ -15513,6 +15530,13 @@ export type Database = {
             columns: ["salesOrderId"]
             isOneToOne: false
             referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
             referencedColumns: ["id"]
           },
           {
@@ -15654,6 +15678,13 @@ export type Database = {
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderPayment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "salesOrderLocations"
             referencedColumns: ["id"]
           },
           {
@@ -15874,6 +15905,13 @@ export type Database = {
             foreignKeyName: "salesOrderShipment_id_fkey"
             columns: ["id"]
             isOneToOne: true
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderShipment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
             referencedRelation: "salesOrders"
             referencedColumns: ["id"]
           },
@@ -16025,6 +16063,13 @@ export type Database = {
             foreignKeyName: "salesOrderStatusHistory_salesOrderId_fkey"
             columns: ["salesOrderId"]
             isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderStatusHistory_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["id"]
           },
@@ -16058,6 +16103,13 @@ export type Database = {
             columns: ["salesOrderId"]
             isOneToOne: false
             referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderTransaction_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
             referencedColumns: ["id"]
           },
           {
@@ -23529,14 +23581,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -24543,6 +24595,13 @@ export type Database = {
             foreignKeyName: "opportunity_salesOrderId_fkey"
             columns: ["salesOrderId"]
             isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["id"]
           },
@@ -25097,6 +25156,8 @@ export type Database = {
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
+          customerPartId: string | null
+          customerPartRevision: string | null
           customFields: Json | null
           description: string | null
           id: string | null
@@ -25104,6 +25165,7 @@ export type Database = {
           itemId: string | null
           itemReadableId: string | null
           locationId: string | null
+          methodType: Database["public"]["Enums"]["methodType"] | null
           modelId: string | null
           modelName: string | null
           modelPath: string | null
@@ -25206,6 +25268,13 @@ export type Database = {
             foreignKeyName: "salesOrderLine_salesOrderId_fkey"
             columns: ["salesOrderId"]
             isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["id"]
           },
@@ -25257,6 +25326,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      salesOrderLocations: {
+        Row: {
+          customerAddressLine1: string | null
+          customerAddressLine2: string | null
+          customerCity: string | null
+          customerCountryCode: number | null
+          customerName: string | null
+          customerPostalCode: string | null
+          customerState: string | null
+          id: string | null
+          paymentAddressLine1: string | null
+          paymentAddressLine2: string | null
+          paymentCity: string | null
+          paymentCountryCode: number | null
+          paymentCustomerName: string | null
+          paymentPostalCode: string | null
+          paymentState: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["paymentCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -25734,6 +25838,13 @@ export type Database = {
             columns: ["salesOrderId"]
             isOneToOne: false
             referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
             referencedColumns: ["id"]
           },
           {

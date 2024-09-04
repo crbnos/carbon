@@ -137,14 +137,16 @@ serve(async (req: Request) => {
                   id: line.id,
                   salesOrderId: insertedSalesOrderId,
                   salesOrderLineType: line.itemType as "Part",
-                  status: "Ordered",
+                  addOnCost: selectedLines![line.id!].addOn,
+                  description: line.description,
                   itemId: line.itemId,
                   itemReadableId: line.itemReadableId,
-                  unitOfMeasureCode: line.unitOfMeasureCode,
                   locationId: quote.data.locationId,
+                  methodType: line.methodType,
                   saleQuantity: selectedLines![line.id!].quantity,
+                  status: "Ordered",
+                  unitOfMeasureCode: line.unitOfMeasureCode,
                   unitPrice: selectedLines![line.id!].unitPrice,
-                  addOnCost: selectedLines![line.id!].addOn,
                   promisedDate: format(
                     new Date(
                       Date.now() +

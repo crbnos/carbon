@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@carbon/react";
+import { useParams } from "@remix-run/react";
 import type { z } from "zod";
 import {
   DatePicker,
@@ -14,7 +15,8 @@ import {
   ShippingMethod,
   Submit,
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { Quotation } from "~/modules/sales";
 import { quoteShipmentValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -35,6 +37,16 @@ QuoteShipmentFormProps) => {
   // }));
 
   const isCustomer = permissions.is("customer");
+
+  const { quoteId } = useParams();
+  if (!quoteId) throw new Error("quoteId not found");
+  const routeData = useRouteData<{
+    quote: Quotation;
+  }>(path.to.quote(quoteId));
+
+  const isEditable = ["Draft", "To Review"].includes(
+    routeData?.quote?.status ?? ""
+  );
 
   return (
     <Card isCollapsible defaultCollapsed>
@@ -68,7 +80,11 @@ QuoteShipmentFormProps) => {
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "sales")}>Save</Submit>
+          <Submit
+            isDisabled={!permissions.can("update", "sales") || !isEditable}
+          >
+            Save
+          </Submit>
         </CardFooter>
       </ValidatedForm>
     </Card>

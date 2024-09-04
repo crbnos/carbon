@@ -10,6 +10,7 @@ import {
   Preview,
   Row,
   Section,
+  Tailwind,
   Text,
 } from "@react-email/components";
 import type { Email } from "../types";
@@ -26,178 +27,107 @@ const QuoteEmail = ({ company, quote, recipient, sender }: QuoteEmailProps) => {
       <Head />
       <Preview>{`${quote.quoteId} from ${company.name}`}</Preview>
 
-      <Body style={main}>
-        <Container style={container}>
-          <Section>
-            <Row>
-              <Column>
-                {company.logo ? (
-                  <Img
-                    src={company.logo}
-                    width="auto"
-                    height="42"
-                    alt={`${company.name} Logo`}
-                  />
-                ) : (
-                  <Text style={logoText}>{company.name}</Text>
-                )}
-              </Column>
+      <Tailwind>
+        <Body className="bg-white font-sans">
+          <Container className="mx-auto my-[20px] w-[660px] max-w-full">
+            <Section>
+              <Row>
+                <Column>
+                  {company.logo ? (
+                    <Img
+                      src={company.logo}
+                      width="auto"
+                      height="42"
+                      alt={`${company.name} Logo`}
+                    />
+                  ) : (
+                    <Text className="text-[32px] font-bold text-gray-900">
+                      {company.name}
+                    </Text>
+                  )}
+                </Column>
 
-              <Column align="right" style={tableCell}>
-                <Text style={heading}>Quote</Text>
-              </Column>
-            </Row>
-          </Section>
-          <Section>
-            <Text style={subtleText}>
-              Hi {recipient.firstName}, please see the attached quote.
-            </Text>
-          </Section>
-          <Section style={informationTable}>
-            <Row style={informationTableRow}>
-              <Column colSpan={2}>
-                <Section>
-                  <Row>
-                    <Column style={informationTableColumn}>
-                      <Text style={informationTableLabel}>Quoter</Text>
-                      <Link
-                        style={{
-                          ...informationTableValue,
-                          color: "#15c",
-                          textDecoration: "underline",
-                        }}
-                        href={`mailto:${sender.email}?subject=${reSubject}`}
-                      >
-                        {`${sender.firstName} ${sender.lastName}`}
-                      </Link>
-                    </Column>
-                  </Row>
+                <Column className="text-right">
+                  <Text className="text-[32px] font-light text-gray-500">
+                    Quote
+                  </Text>
+                </Column>
+              </Row>
+            </Section>
+            <Section>
+              <Text className="mt-9 mb-10 text-left text-sm font-medium text-gray-900">
+                Hi {recipient.firstName}, please see the attached quote.
+              </Text>
+            </Section>
+            <Section className="rounded-lg bg-gray-50 text-xs">
+              <Row>
+                <Column className="p-5" colSpan={2}>
+                  <Section>
+                    <Row>
+                      <Column>
+                        <Text className="text-[10px] uppercase text-gray-600">
+                          Quoter
+                        </Text>
+                        <Link
+                          className="text-blue-600 underline"
+                          href={`mailto:${sender.email}?subject=${reSubject}`}
+                        >
+                          {`${sender.firstName} ${sender.lastName}`}
+                        </Link>
+                      </Column>
+                    </Row>
 
-                  <Row>
-                    <Column style={informationTableColumn}>
-                      <Text style={informationTableLabel}>
-                        Reference Number
-                      </Text>
-                      <Text style={informationTableValue}>
-                        {quote.customerReference ?? "-"}
-                      </Text>
-                    </Column>
-                  </Row>
+                    <Row>
+                      <Column>
+                        <Text className="text-[10px] uppercase text-gray-600">
+                          Reference Number
+                        </Text>
+                        <Text>{quote.customerReference ?? "-"}</Text>
+                      </Column>
+                    </Row>
 
-                  <Row>
-                    <Column style={informationTableColumn}>
-                      <Text style={informationTableLabel}>Quote ID</Text>
-                      <Text style={informationTableValue}>{quote.quoteId}</Text>
-                    </Column>
-                    <Column style={informationTableColumn}>
-                      <Text style={informationTableLabel}>Expiration Date</Text>
-                      <Text style={informationTableValue}>
-                        {quote.expirationDate ?? "-"}
-                      </Text>
-                    </Column>
-                  </Row>
-                </Section>
-              </Column>
-            </Row>
-          </Section>
+                    <Row>
+                      <Column>
+                        <Text className="text-[10px] uppercase text-gray-600">
+                          Quote ID
+                        </Text>
+                        <Text>{quote.quoteId}</Text>
+                      </Column>
+                      <Column>
+                        <Text className="text-[10px] uppercase text-gray-600">
+                          Expiration Date
+                        </Text>
+                        <Text>{quote.expirationDate ?? "-"}</Text>
+                      </Column>
+                    </Row>
+                  </Section>
+                </Column>
+              </Row>
+            </Section>
 
-          <Section>
-            <Row>
-              <Column align="center" style={block}>
-                {company.logo ? (
-                  <Img
-                    src={company.logo}
-                    width="60"
-                    height="auto"
-                    alt={`${company.name} Logo`}
-                  />
-                ) : (
-                  <Text style={logoText}>{company.name}</Text>
-                )}
-              </Column>
-            </Row>
-          </Section>
-        </Container>
-      </Body>
+            <Section>
+              <Row>
+                <Column className="text-center">
+                  {company.logo ? (
+                    <Img
+                      src={company.logo}
+                      width="60"
+                      height="auto"
+                      alt={`${company.name} Logo`}
+                    />
+                  ) : (
+                    <Text className="text-[32px] font-bold text-gray-900">
+                      {company.name}
+                    </Text>
+                  )}
+                </Column>
+              </Row>
+            </Section>
+          </Container>
+        </Body>
+      </Tailwind>
     </Html>
   );
 };
 
 export default QuoteEmail;
-
-const main = {
-  fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif',
-  backgroundColor: "#ffffff",
-};
-
-const resetText = {
-  margin: "0",
-  padding: "0",
-  lineHeight: 1.4,
-};
-
-const container = {
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  width: "660px",
-  maxWidth: "100%",
-};
-
-const tableCell = { display: "table-cell" };
-
-const logoText = {
-  fontSize: "32px",
-  fontWeight: "700",
-  color: "#111111",
-};
-
-const heading = {
-  fontSize: "32px",
-  fontWeight: "300",
-  color: "#888888",
-};
-
-const subtleText = {
-  textAlign: "left" as const,
-  margin: "36px 0 40px 0",
-  fontSize: "14px",
-  fontWeight: "500",
-  color: "#111111",
-};
-
-const informationTable = {
-  borderCollapse: "collapse" as const,
-  borderSpacing: "0px",
-  color: "rgb(51,51,51)",
-  backgroundColor: "rgb(250,250,250)",
-  borderRadius: "6px",
-  fontSize: "12px",
-};
-
-const informationTableRow = {
-  height: "46px",
-};
-
-const informationTableColumn = {
-  paddingLeft: "20px",
-  borderStyle: "solid",
-  borderColor: "white",
-  borderWidth: "0px 1px 1px 0px",
-  height: "44px",
-};
-
-const informationTableLabel = {
-  ...resetText,
-  color: "rgb(102,102,102)",
-  fontSize: "10px",
-  textTransform: "uppercase" as const,
-};
-
-const informationTableValue = {
-  fontSize: "12px",
-  margin: "0",
-  padding: "0",
-  lineHeight: 1.4,
-};
-
-const block = { display: "block" };
