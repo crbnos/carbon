@@ -155,10 +155,11 @@ const SalesOrderPDF = ({
               "flex flex-row justify-between items-center mt-5 py-1.5 px-[6px] border-t border-b border-gray-300 font-bold text-gray-500 uppercase"
             )}
           >
-            <Text style={tw("w-1/2 text-left")}>Description</Text>
+            <Text style={tw("w-5/12 text-left")}>Description</Text>
             <Text style={tw("w-1/6 text-right")}>Qty</Text>
             <Text style={tw("w-1/6 text-right")}>Price</Text>
-            <Text style={tw("w-1/5 text-right")}>Total</Text>
+            <Text style={tw("w-1/6 text-right")}>Add-On Cost</Text>
+            <Text style={tw("w-1/6 text-right")}>Total</Text>
           </View>
           {salesOrderLines.map((line) => (
             <View
@@ -167,7 +168,7 @@ const SalesOrderPDF = ({
               )}
               key={line.id}
             >
-              <View style={tw("w-1/2")}>
+              <View style={tw("w-5/12")}>
                 <Text style={tw("font-bold mb-1")}>
                   {getLineDescription(line)}
                 </Text>
@@ -185,7 +186,12 @@ const SalesOrderPDF = ({
                   ? null
                   : formatter.format(line.unitPrice ?? 0)}
               </Text>
-              <Text style={tw("w-1/5 text-right")}>
+              <Text style={tw("w-1/6 text-right")}>
+                {line.salesOrderLineType === "Comment"
+                  ? null
+                  : formatter.format(line.addOnCost ?? 0)}
+              </Text>
+              <Text style={tw("w-1/6 text-right")}>
                 {line.salesOrderLineType === "Comment"
                   ? null
                   : formatter.format(getLineTotal(line))}
