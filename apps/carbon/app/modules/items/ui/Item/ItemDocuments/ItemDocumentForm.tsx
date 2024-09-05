@@ -27,6 +27,7 @@ const ItemDocumentForm = ({ itemId, type }: ItemDocumentFormProps) => {
         .from("private")
         .upload(fileName, file, {
           cacheControl: `${12 * 60 * 60}`,
+          upsert: true,
         });
 
       if (fileUpload.error) {

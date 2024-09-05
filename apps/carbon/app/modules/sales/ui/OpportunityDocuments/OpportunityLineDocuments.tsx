@@ -35,17 +35,27 @@ import { path } from "~/utils/path";
 
 import { useCallback } from "react";
 
-const useOpportunityLineDocuments = ({ lineId }: { lineId: string }) => {
+const useOpportunityLineDocuments = ({
+  id,
+  lineId,
+  type,
+}: {
+  id: string;
+  lineId: string;
+  type: "Request for Quote" | "Sales Order" | "Quote";
+}) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
   const { supabase } = useSupabase();
   const { company } = useUser();
+  const submit = useSubmit();
 
   const canDelete = permissions.can("delete", "sales");
   const canUpdate = permissions.can("update", "sales");
+
   const getPath = useCallback(
-    (file: ItemFile) => {
+    (file: { name: string }) => {
       return `${company.id}/opportunity-line/${lineId}/${file.name}`;
     },
     [company.id, lineId]
@@ -123,6 +133,61 @@ const useOpportunityLineDocuments = ({ lineId }: { lineId: string }) => {
     [navigate]
   );
 
+  const createDocumentRecord = useCallback(
+    ({
+      path: filePath,
+      name,
+      size,
+    }: {
+      path: string;
+      name: string;
+      size: number;
+    }) => {
+      const formData = new FormData();
+      formData.append("path", filePath);
+      formData.append("name", name);
+      formData.append("size", Math.round(size / 1024).toString());
+      formData.append("sourceDocument", type);
+      formData.append("sourceDocumentId", id);
+
+      submit(formData, {
+        method: "post",
+        action: path.to.newDocument,
+      });
+    },
+    [id, submit, type]
+  );
+
+  const upload = useCallback(
+    async (file: File) => {
+      if (!supabase) {
+        toast.error("Supabase client not available");
+        return;
+      }
+      const fileName = getPath(file);
+
+      const fileUpload = await supabase.storage
+        .from("private")
+        .upload(fileName, file, {
+          cacheControl: `${12 * 60 * 60}`,
+          upsert: true,
+        });
+
+      if (fileUpload.error) {
+        toast.error("Failed to upload file");
+      }
+      if (fileUpload.data?.path) {
+        toast.success("File uploaded");
+        createDocumentRecord({
+          path: fileUpload.data.path,
+          name: file.name,
+          size: file.size,
+        });
+      }
+    },
+    [getPath, createDocumentRecord, supabase]
+  );
+
   return {
     canDelete,
     canUpdate,
@@ -131,6 +196,7 @@ const useOpportunityLineDocuments = ({ lineId }: { lineId: string }) => {
     download,
     getPath,
     viewModel,
+    upload,
   };
 };
 
@@ -151,7 +217,9 @@ const OpportunityLineDocuments = ({
 }: OpportunityLineDocumentsProps) => {
   const { canDelete, download, deleteFile, deleteModel, getPath, viewModel } =
     useOpportunityLineDocuments({
+      id,
       lineId,
+      type,
     });
 
   return (
@@ -309,57 +377,14 @@ const OpportunityLineDocumentForm = ({
   lineId,
   type,
 }: OpportunityLineDocumentFormProps) => {
-  const submit = useSubmit();
-  const { company } = useUser();
-  const { supabase } = useSupabase();
   const permissions = usePermissions();
+  const { upload } = useOpportunityLineDocuments({ id, lineId, type });
 
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && supabase && company) {
+    if (e.target.files) {
       const file = e.target.files[0];
-      const fileName = `${company.id}/opportunity-line/${lineId}/${file.name}`;
-
-      const fileUpload = await supabase.storage
-        .from("private")
-        .upload(fileName, file, {
-          cacheControl: `${12 * 60 * 60}`,
-        });
-
-      if (fileUpload.error) {
-        toast.error("Failed to upload file");
-      }
-
-      if (fileUpload.data?.path) {
-        toast.success("File uploaded");
-        submitFileData({
-          path: fileUpload.data.path,
-          name: file.name,
-          size: file.size,
-        });
-      }
+      upload(file);
     }
-  };
-
-  const submitFileData = ({
-    path: filePath,
-    name,
-    size,
-  }: {
-    path: string;
-    name: string;
-    size: number;
-  }) => {
-    const formData = new FormData();
-    formData.append("path", filePath);
-    formData.append("name", name);
-    formData.append("size", Math.round(size / 1024).toString());
-    formData.append("sourceDocument", type);
-    formData.append("sourceDocumentId", id);
-
-    submit(formData, {
-      method: "post",
-      action: path.to.newDocument,
-    });
   };
 
   return (

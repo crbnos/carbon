@@ -165,6 +165,7 @@ const QuotePDF = ({
               <Text style={tw("w-1/5 text-right")}>Extended Price</Text>
             </View>
           </View>
+
           {quoteLines.map((line) => {
             const additionalCharges = line.additionalCharges ?? {};
             const additionalChargesByQuantity = line.quantity.map(
@@ -183,7 +184,7 @@ const QuotePDF = ({
             return (
               <View
                 style={tw(
-                  "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300"
+                  "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300 mb-2"
                 )}
                 key={line.id}
               >
@@ -228,7 +229,7 @@ const QuotePDF = ({
                     </View>
                   )}
                 </View>
-                <View style={tw("w-3/5")}>
+                <View style={tw("flex flex-col w-3/5 gap-2")}>
                   {line.quantity.map((quantity, index) => {
                     const prices = pricesByLine[line.id] ?? [];
                     const price = prices.find(
@@ -270,8 +271,8 @@ const QuotePDF = ({
             );
           })}
         </View>
-        <Note note={(quote.externalNotes ?? {}) as JSONContent} />
       </View>
+      <Note note={(quote.externalNotes ?? {}) as JSONContent} />
     </Template>
   );
 };

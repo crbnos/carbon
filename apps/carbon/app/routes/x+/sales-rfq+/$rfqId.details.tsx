@@ -21,6 +21,7 @@ import { nanoid } from "nanoid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type {
+  Opportunity,
   SalesRFQ,
   SalesRFQLine,
   SalesRFQStatusType,
@@ -85,7 +86,7 @@ export default function SalesRFQDetailsRoute() {
     rfqSummary: SalesRFQ;
     lines: SalesRFQLine[];
     files: FileObject[];
-    opportunity: { id: string };
+    opportunity: Opportunity;
   }>(path.to.salesRfq(rfqId));
 
   if (!rfqData) throw new Error("Could not find rfq data");
@@ -114,7 +115,7 @@ export default function SalesRFQDetailsRoute() {
         initialValues={initialValues}
       />
       <OpportunityDocuments
-        opportunityId={rfqData?.opportunity?.id}
+        opportunity={rfqData?.opportunity!}
         attachments={rfqData?.files ?? []}
         id={rfqId}
         type="Request for Quote"

@@ -325,6 +325,7 @@ export async function getThumbnail(
         .from("private")
         .upload(fileName, data, {
           cacheControl: `${365 * 24 * 60 * 60}`,
+          upsert: true,
         });
 
       if (fileUpload.error) {

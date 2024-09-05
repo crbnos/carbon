@@ -284,7 +284,7 @@ const QuoteBillOfProcess = ({
     const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
     const result = await supabase?.storage
       .from("private")
-      .upload(fileName, file);
+      .upload(fileName, file, { upsert: true });
 
     if (result?.error) {
       throw new Error(result.error.message);

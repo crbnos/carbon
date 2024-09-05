@@ -7,6 +7,7 @@ import type {
   getCustomers,
   getCustomerStatuses,
   getCustomerTypes,
+  getOpportunityByQuote,
   getQuoteDocuments,
   getQuoteLinePrices,
   getQuoteLines,
@@ -79,6 +80,10 @@ export type CustomerStatus = NonNullable<
 export type CustomerType = NonNullable<
   Awaited<ReturnType<typeof getCustomerTypes>>["data"]
 >[number];
+
+export type Opportunity = NonNullable<
+  Awaited<ReturnType<typeof getOpportunityByQuote>>["data"]
+>;
 
 export type QuoteMethod = NonNullable<
   Awaited<ReturnType<typeof getQuoteMethodTrees>>["data"]
