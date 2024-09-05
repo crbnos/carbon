@@ -6,7 +6,7 @@ import type { FileObject } from "@supabase/storage-js";
 import { useRouteData } from "~/hooks";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
-import type { SalesOrder } from "~/modules/sales";
+import type { Opportunity, SalesOrder } from "~/modules/sales";
 import {
   getSalesOrderPayment,
   getSalesOrderShipment,
@@ -137,7 +137,7 @@ export default function SalesOrderRoute() {
   if (!orderId) throw new Error("Could not find orderId");
   const orderData = useRouteData<{
     salesOrder: SalesOrder;
-    opportunity: { id: string };
+    opportunity: Opportunity;
     files: FileObject[];
   }>(path.to.salesOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
@@ -188,7 +188,7 @@ export default function SalesOrderRoute() {
     <>
       <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
       <OpportunityDocuments
-        opportunityId={orderData?.opportunity?.id}
+        opportunity={orderData?.opportunity!}
         attachments={orderData?.files ?? []}
         id={orderId}
         type="Sales Order"

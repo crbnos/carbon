@@ -1,4 +1,5 @@
 import {
+  Badge,
   Card,
   CardAction,
   CardContent,
@@ -8,6 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  File,
   HStack,
   IconButton,
   Table,
@@ -16,32 +18,40 @@ import {
   Th,
   Thead,
   Tr,
+  toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
-import { Outlet } from "@remix-run/react";
+import { Outlet, useRevalidator, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
+import type { ChangeEvent } from "react";
+import { useCallback } from "react";
+import { LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, Hyperlink } from "~/components";
+import { usePermissions, useUser } from "~/hooks";
+import { useSupabase } from "~/lib/supabase";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import OpportunityDocumentForm from "./OpportunityDocumentForm";
-import { useOpportunityDocuments } from "./useOpportunityDocuments";
+import { path } from "~/utils/path";
+import type { Opportunity } from "../../types";
 
 type OpportunityDocumentsProps = {
   attachments: FileObject[];
-  opportunityId: string;
+  opportunity: Opportunity;
   id: string;
   type: "Sales Order" | "Request for Quote" | "Quote";
 };
 
 const OpportunityDocuments = ({
   attachments,
-  opportunityId,
+  opportunity,
   id,
   type,
 }: OpportunityDocumentsProps) => {
   const { canDelete, download, deleteAttachment, getPath } =
     useOpportunityDocuments({
-      opportunityId,
+      opportunityId: opportunity.id,
+      id,
+      type,
     });
 
   return (
@@ -53,7 +63,7 @@ const OpportunityDocuments = ({
           </CardHeader>
           <CardAction>
             <OpportunityDocumentForm
-              opportunityId={opportunityId}
+              opportunityId={opportunity.id}
               id={id}
               type={type}
             />
@@ -92,6 +102,14 @@ const OpportunityDocuments = ({
                               attachment.name
                             )}
                           </Hyperlink>
+                          {opportunity?.purchaseOrderDocumentPath ===
+                            getPath(attachment) && (
+                            <Badge variant="secondary">PO</Badge>
+                          )}
+                          {opportunity?.requestForQuoteDocumentPath ===
+                            getPath(attachment) && (
+                            <Badge variant="secondary">RFQ</Badge>
+                          )}
                         </HStack>
                       </Td>
                       <Td className="text-xs font-mono">
@@ -100,7 +118,7 @@ const OpportunityDocuments = ({
                         )}
                       </Td>
                       <Td>
-                        <div className="flex justify-end w-full">
+                        <div className="flex justify-end gap-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <IconButton
@@ -144,6 +162,164 @@ const OpportunityDocuments = ({
       </Card>
       <Outlet />
     </>
+  );
+};
+
+type OpportunityDocumentFormProps = {
+  opportunityId: string;
+  id: string;
+  type: "Sales Order" | "Request for Quote" | "Quote";
+};
+
+export const useOpportunityDocuments = ({
+  id,
+  opportunityId,
+  type,
+}: OpportunityDocumentFormProps) => {
+  const permissions = usePermissions();
+  const { company } = useUser();
+  const { supabase } = useSupabase();
+  const revalidator = useRevalidator();
+  const submit = useSubmit();
+
+  const canDelete = permissions.can("delete", "sales"); // TODO: or is document owner
+
+  const getPath = useCallback(
+    (attachment: { name: string }) => {
+      return `${company.id}/opportunity/${opportunityId}/${attachment.name}`;
+    },
+    [company.id, opportunityId]
+  );
+
+  const deleteAttachment = useCallback(
+    async (attachment: FileObject) => {
+      const result = await supabase?.storage
+        .from("private")
+        .remove([getPath(attachment)]);
+
+      if (!result || result.error) {
+        toast.error(result?.error?.message || "Error deleting file");
+        return;
+      }
+
+      toast.success("File deleted successfully");
+      revalidator.revalidate();
+    },
+    [supabase?.storage, getPath, revalidator]
+  );
+
+  const download = useCallback(
+    async (attachment: FileObject) => {
+      const result = await supabase?.storage
+        .from("private")
+        .download(getPath(attachment));
+
+      if (!result || result.error) {
+        toast.error(result?.error?.message || "Error downloading file");
+        return;
+      }
+
+      const a = document.createElement("a");
+      document.body.appendChild(a);
+      const url = window.URL.createObjectURL(result.data);
+      a.href = url;
+      a.download = attachment.name;
+      a.click();
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 0);
+    },
+    [supabase?.storage, getPath]
+  );
+
+  const createDocumentRecord = useCallback(
+    ({
+      path: filePath,
+      name,
+      size,
+    }: {
+      path: string;
+      name: string;
+      size: number;
+    }) => {
+      const formData = new FormData();
+      formData.append("path", filePath);
+      formData.append("name", name);
+      formData.append("size", Math.round(size / 1024).toString());
+      formData.append("sourceDocument", type);
+      formData.append("sourceDocumentId", id);
+
+      submit(formData, {
+        method: "post",
+        action: path.to.newDocument,
+      });
+    },
+    [id, submit, type]
+  );
+
+  const upload = useCallback(
+    async (file: File) => {
+      if (!supabase) {
+        toast.error("Supabase client not available");
+        return;
+      }
+      const fileName = getPath(file);
+
+      const fileUpload = await supabase.storage
+        .from("private")
+        .upload(fileName, file, {
+          cacheControl: `${12 * 60 * 60}`,
+          upsert: true,
+        });
+
+      if (fileUpload.error) {
+        toast.error("Failed to upload file");
+      }
+      if (fileUpload.data?.path) {
+        toast.success("File uploaded");
+        createDocumentRecord({
+          path: fileUpload.data.path,
+          name: file.name,
+          size: file.size,
+        });
+      }
+    },
+    [getPath, createDocumentRecord, supabase]
+  );
+
+  return {
+    canDelete,
+    deleteAttachment,
+    download,
+    upload,
+    getPath,
+  };
+};
+
+const OpportunityDocumentForm = (props: OpportunityDocumentFormProps) => {
+  const { company } = useUser();
+  const { supabase } = useSupabase();
+  const permissions = usePermissions();
+
+  const { upload } = useOpportunityDocuments(props);
+
+  const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && supabase && company) {
+      const file = e.target.files[0];
+      upload(file);
+    }
+  };
+
+  return (
+    <File
+      isDisabled={!permissions.can("update", "sales")}
+      leftIcon={<LuUpload />}
+      onChange={uploadFile}
+    >
+      New
+    </File>
   );
 };
 

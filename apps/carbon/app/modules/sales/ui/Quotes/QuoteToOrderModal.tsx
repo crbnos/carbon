@@ -14,11 +14,13 @@ import {
   NumberInput,
   RadioGroup,
   RadioGroupItem,
+  Spinner,
   Table,
   Tbody,
   Td,
   Th,
   Thead,
+  toast,
   Tr,
   VStack,
 } from "@carbon/react";
@@ -26,12 +28,14 @@ import { formatDate } from "@carbon/utils";
 import { Form, useNavigation, useParams } from "@remix-run/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import {
   LuBan,
   LuChevronDown,
   LuCreditCard,
   LuImage,
+  LuTrash,
   LuTruck,
   LuUpload,
   LuUserSquare,
@@ -42,6 +46,7 @@ import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { useRouteData } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
+import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import type {
   Quotation,
@@ -50,6 +55,7 @@ import type {
   QuotationPrice,
   QuotationShipment,
 } from "../../types";
+import { useOpportunityDocuments } from "../OpportunityDocuments/OpportunityDocuments";
 
 type QuoteToOrderDrawerProps = {
   isOpen: boolean;
@@ -79,17 +85,91 @@ const QuoteToOrderDrawer = ({
     >
   >({});
 
+  const { supabase } = useSupabase();
+  const { quoteId } = useParams();
+  if (!quoteId) throw new Error("Could not find quoteId");
+
+  const quoteData = useRouteData<{
+    opportunity: { id: string };
+  }>(path.to.quote(quoteId));
+  const { deleteAttachment, getPath, upload } = useOpportunityDocuments({
+    opportunityId: quoteData?.opportunity.id!,
+    type: "Quote",
+    id: quoteId,
+  });
   const [purchaseOrder, setPurchaseOrder] = useState<File | null>(null);
-  const onDrop = (acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      setPurchaseOrder(acceptedFiles[0]);
+  const [uploading, setUploading] = useState(false);
+
+  const onDrop = async (acceptedFiles: File[]) => {
+    if (!supabase) {
+      toast.error("Supabase client not available");
+      return;
     }
+
+    if (purchaseOrder) {
+      await removePurchaseOrder();
+    }
+
+    if (acceptedFiles.length > 0) {
+      flushSync(() => {
+        setUploading(true);
+      });
+      const file = acceptedFiles[0];
+      if (file) upload(file);
+
+      const purchaseOrderDocumentPath = getPath(file);
+      const { error } = await supabase
+        .from("opportunity")
+        .update({
+          purchaseOrderDocumentPath,
+        })
+        .eq("id", quoteData?.opportunity?.id!);
+
+      if (error) {
+        console.error("Error updating opportunity:", error);
+        toast.error("Failed to update opportunity with purchase order");
+      } else {
+        setPurchaseOrder(file);
+        setStep(1);
+      }
+
+      setUploading(false);
+    }
+  };
+
+  const removePurchaseOrder = async () => {
+    if (!supabase) {
+      toast.error("Failed to initialize Supabase client");
+      return;
+    }
+
+    setUploading(true);
+
+    const [opportunityDelete] = await Promise.all([
+      supabase
+        .from("opportunity")
+        .update({
+          purchaseOrderDocumentPath: null,
+        })
+        .eq("id", quoteData?.opportunity.id!),
+      // @ts-expect-error
+      deleteAttachment(purchaseOrder!),
+    ]);
+
+    if (opportunityDelete.error) {
+      toast.error("Failed to remove purchase order");
+    } else {
+      setPurchaseOrder(null);
+      toast.success("Purchase order removed successfully");
+    }
+    setUploading(false);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "application/pdf": [".pdf"] },
     maxFiles: 1,
+    disabled: uploading,
   });
 
   const titles = [
@@ -110,7 +190,9 @@ const QuoteToOrderDrawer = ({
               )}
             >
               <input {...getInputProps()} />
-              {purchaseOrder ? (
+              {uploading ? (
+                <Spinner className="w-8 h-8" />
+              ) : purchaseOrder ? (
                 <p>{purchaseOrder.name}</p>
               ) : (
                 <p>
@@ -120,15 +202,29 @@ const QuoteToOrderDrawer = ({
               )}
               <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
             </div>
-            <Button
-              className="w-full"
-              leftIcon={<LuBan />}
-              size="lg"
-              variant="secondary"
-              onClick={() => setStep(1)}
-            >
-              Skip
-            </Button>
+            {purchaseOrder ? (
+              <Button
+                className="w-full"
+                leftIcon={<LuTrash />}
+                size="lg"
+                isDisabled={uploading}
+                isLoading={uploading}
+                variant="secondary"
+                onClick={removePurchaseOrder}
+              >
+                Remove
+              </Button>
+            ) : (
+              <Button
+                className="w-full"
+                leftIcon={<LuBan />}
+                size="lg"
+                variant="secondary"
+                onClick={() => setStep(1)}
+              >
+                Skip
+              </Button>
+            )}
           </VStack>
         );
       case 1:

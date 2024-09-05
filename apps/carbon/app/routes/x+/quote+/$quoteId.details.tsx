@@ -20,6 +20,7 @@ import { nanoid } from "nanoid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type {
+  Opportunity,
   Quotation,
   QuotationPayment,
   QuotationShipment,
@@ -87,7 +88,7 @@ export default function QuoteDetailsRoute() {
     files: (FileObject & { quoteLineId: string | null })[];
     shipment: QuotationShipment;
     payment: QuotationPayment;
-    opportunity: { id: string };
+    opportunity: Opportunity;
   }>(path.to.quote(quoteId));
 
   if (!quoteData) throw new Error("Could not find quote data");
@@ -127,7 +128,7 @@ export default function QuoteDetailsRoute() {
     <>
       <QuoteForm key={initialValues.id} initialValues={initialValues} />
       <OpportunityDocuments
-        opportunityId={quoteData?.opportunity?.id}
+        opportunity={quoteData?.opportunity!}
         attachments={quoteData?.files ?? []}
         id={quoteId}
         type="Quote"
