@@ -25,7 +25,7 @@ import { Outlet, useRevalidator, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
-import { LuUpload } from "react-icons/lu";
+import { LuRadioTower, LuShoppingCart, LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, Hyperlink } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
@@ -104,11 +104,15 @@ const OpportunityDocuments = ({
                           </Hyperlink>
                           {opportunity?.purchaseOrderDocumentPath ===
                             getPath(attachment) && (
-                            <Badge variant="secondary">PO</Badge>
+                            <Badge variant="secondary">
+                              <LuShoppingCart />
+                            </Badge>
                           )}
                           {opportunity?.requestForQuoteDocumentPath ===
                             getPath(attachment) && (
-                            <Badge variant="secondary">RFQ</Badge>
+                            <Badge variant="secondary">
+                              <LuRadioTower />
+                            </Badge>
                           )}
                         </HStack>
                       </Td>
