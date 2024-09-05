@@ -63,7 +63,12 @@ export default function InventoryAllRoute() {
   return (
     <VStack spacing={0} className="h-full ">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel>
+        <ResizablePanel
+          defaultSize={50}
+          maxSize={70}
+          minSize={25}
+          className="bg-background p-2"
+        >
           <InventoryTable data={inventoryItems} count={count} />
         </ResizablePanel>
         <Outlet />

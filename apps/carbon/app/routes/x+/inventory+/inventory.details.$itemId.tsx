@@ -3,11 +3,11 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
+import InventoryDetailsView from "~/modules/inventory/ui/Inventory/InventoryDetailsView";
 import {
   getItemQuantities,
   getPickMethod,
   getShelvesList,
-  PickMethodForm,
   upsertPickMethod,
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
@@ -146,7 +146,7 @@ export default function ItemInventoryDetailsRoute() {
         minSize={25}
         className="bg-background p-2"
       >
-        <PickMethodForm
+        <InventoryDetailsView
           key={initialValues.itemId}
           initialValues={initialValues}
           quantities={quantities}
