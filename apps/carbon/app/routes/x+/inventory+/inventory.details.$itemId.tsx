@@ -1,4 +1,4 @@
-import { VStack } from "@carbon/react";
+import { ResizableHandle, ResizablePanel } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
@@ -128,7 +128,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ItemInventoryDetailsRoute() {
   const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.partRoot
+    path.to.inventoryRoot
   );
   const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
 
@@ -138,15 +138,23 @@ export default function ItemInventoryDetailsRoute() {
     ...getCustomFields(partInventory.customFields ?? {}),
   };
   return (
-    <VStack spacing={2} className="p-2">
-      <PickMethodForm
-        key={initialValues.itemId}
-        initialValues={initialValues}
-        quantities={quantities}
-        locations={sharedPartsData?.locations ?? []}
-        shelves={shelves}
-        type="Part"
-      />
-    </VStack>
+    <>
+      <ResizableHandle withHandle />
+      <ResizablePanel
+        defaultSize={50}
+        maxSize={70}
+        minSize={25}
+        className="bg-background p-2"
+      >
+        <PickMethodForm
+          key={initialValues.itemId}
+          initialValues={initialValues}
+          quantities={quantities}
+          locations={sharedPartsData?.locations ?? []}
+          shelves={shelves}
+          type="Part"
+        />
+      </ResizablePanel>
+    </>
   );
 }

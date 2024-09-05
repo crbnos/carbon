@@ -1,4 +1,4 @@
-import { VStack } from "@carbon/react";
+import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
@@ -62,8 +62,12 @@ export default function InventoryAllRoute() {
 
   return (
     <VStack spacing={0} className="h-full ">
-      <InventoryTable data={inventoryItems} count={count} />
-      <Outlet />
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel>
+          <InventoryTable data={inventoryItems} count={count} />
+        </ResizablePanel>
+        <Outlet />
+      </ResizablePanelGroup>
     </VStack>
   );
 }

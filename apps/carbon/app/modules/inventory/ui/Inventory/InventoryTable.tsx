@@ -8,7 +8,6 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
-import { useRevalidator } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useEffect, useMemo, useState } from "react";
 import { RxCheck } from "react-icons/rx";
@@ -28,7 +27,6 @@ type InventoryTableProps = {
 
 const InventoryTable = memo(({ data, count }: InventoryTableProps) => {
   const permissions = usePermissions();
-  const revalidator = useRevalidator();
   const [params] = useUrlParams();
   const filter = params.get("q");
   const search = params.get("search");
@@ -45,9 +43,6 @@ const InventoryTable = memo(({ data, count }: InventoryTableProps) => {
   const { hasFilters } = useFilters();
 
   const [people] = usePeople();
-
-  const [selectedInventoryItem, setSelectedInventoryItem] =
-    useState<InventoryItem | null>(null);
 
   const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
     return [
