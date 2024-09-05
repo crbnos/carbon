@@ -21,7 +21,7 @@ import {
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
-import { LuAxis3D, LuUpload } from "react-icons/lu";
+import { LuAxis3D, LuUpload, LuUploadCloud } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
@@ -34,6 +34,7 @@ import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 
 import { useCallback } from "react";
+import { useDropzone } from "react-dropzone";
 
 const useOpportunityLineDocuments = ({
   id,
@@ -159,30 +160,32 @@ const useOpportunityLineDocuments = ({
   );
 
   const upload = useCallback(
-    async (file: File) => {
+    async (files: File[]) => {
       if (!supabase) {
         toast.error("Supabase client not available");
         return;
       }
-      const fileName = getPath(file);
 
-      const fileUpload = await supabase.storage
-        .from("private")
-        .upload(fileName, file, {
-          cacheControl: `${12 * 60 * 60}`,
-          upsert: true,
-        });
+      for (const file of files) {
+        const fileName = getPath(file);
 
-      if (fileUpload.error) {
-        toast.error("Failed to upload file");
-      }
-      if (fileUpload.data?.path) {
-        toast.success("File uploaded");
-        createDocumentRecord({
-          path: fileUpload.data.path,
-          name: file.name,
-          size: file.size,
-        });
+        const fileUpload = await supabase.storage
+          .from("private")
+          .upload(fileName, file, {
+            cacheControl: `${12 * 60 * 60}`,
+            upsert: true,
+          });
+
+        if (fileUpload.error) {
+          toast.error(`Failed to upload file: ${file.name}`);
+        } else if (fileUpload.data?.path) {
+          toast.success(`File uploaded: ${file.name}`);
+          createDocumentRecord({
+            path: fileUpload.data.path,
+            name: file.name,
+            size: file.size,
+          });
+        }
       }
     },
     [getPath, createDocumentRecord, supabase]
@@ -215,12 +218,28 @@ const OpportunityLineDocuments = ({
   modelUpload,
   type,
 }: OpportunityLineDocumentsProps) => {
-  const { canDelete, download, deleteFile, deleteModel, getPath, viewModel } =
-    useOpportunityLineDocuments({
-      id,
-      lineId,
-      type,
-    });
+  const {
+    canDelete,
+    download,
+    deleteFile,
+    deleteModel,
+    getPath,
+    viewModel,
+    upload,
+  } = useOpportunityLineDocuments({
+    id,
+    lineId,
+    type,
+  });
+
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      upload(acceptedFiles);
+    },
+    [upload]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   return (
     <Card className="flex-grow">
@@ -359,6 +378,18 @@ const OpportunityLineDocuments = ({
             )}
           </Tbody>
         </Table>
+        <div
+          {...getRootProps()}
+          className={`mt-4 border-2 border-dashed rounded-md p-6 text-center ${
+            isDragActive ? "border-primary bg-primary/10" : "border-muted"
+          }`}
+        >
+          <input {...getInputProps()} />
+          <LuUploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Drag and drop some files here, or click to select files
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -380,10 +411,9 @@ const OpportunityLineDocumentForm = ({
   const permissions = usePermissions();
   const { upload } = useOpportunityLineDocuments({ id, lineId, type });
 
-  const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
+  const uploadFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const file = e.target.files[0];
-      upload(file);
+      upload(Array.from(e.target.files));
     }
   };
 
@@ -391,7 +421,8 @@ const OpportunityLineDocumentForm = ({
     <File
       isDisabled={!permissions.can("update", "sales")}
       leftIcon={<LuUpload />}
-      onChange={uploadFile}
+      onChange={uploadFiles}
+      multiple
     >
       New
     </File>

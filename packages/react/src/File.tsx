@@ -5,6 +5,7 @@ import { Button } from "./Button";
 
 type FileProps = Omit<ButtonProps, "onChange"> & {
   accept?: string;
+  multiple?: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
 };
 
@@ -12,6 +13,7 @@ const File = ({
   accept,
   className,
   children,
+  multiple = false,
   onChange,
   ...props
 }: FileProps) => {
@@ -23,6 +25,7 @@ const File = ({
         ref={fileInputRef}
         type="file"
         hidden
+        multiple={multiple}
         accept={accept}
         onChange={onChange}
       />
