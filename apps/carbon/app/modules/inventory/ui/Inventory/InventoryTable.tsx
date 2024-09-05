@@ -5,17 +5,14 @@ import {
   CommandItem,
   HStack,
   Heading,
-  MenuIcon,
-  MenuItem,
   VStack,
   cn,
 } from "@carbon/react";
 import { useRevalidator } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useEffect, useMemo, useState } from "react";
-import { LuPencil } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
-import { Table } from "~/components";
+import { Hyperlink, Table } from "~/components";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
@@ -43,7 +40,7 @@ const InventoryTable = memo(({ data, count }: InventoryTableProps) => {
     setRows(data);
   }, [data]);
 
-  const { canUpdate, canDelete, edit, view } = useInventoryItem();
+  const { view } = useInventoryItem();
 
   const { hasFilters } = useFilters();
 
@@ -57,12 +54,18 @@ const InventoryTable = memo(({ data, count }: InventoryTableProps) => {
       {
         accessorKey: "readableId",
         header: "Item ID",
-        cell: ({ row }) => row.original.readableId,
+        cell: ({ row }) => (
+          <Hyperlink
+            onClick={() => view(row.original)}
+            className="max-w-[260px] truncate"
+          >
+            <>{row.original.readableId}</>
+          </Hyperlink>
+        ),
       },
       {
         accessorKey: "type",
         header: "Type",
-        // cell: (item) => item.getValue(),
         cell: ({ row }) => row.original.type,
         meta: {
           filter: {
@@ -105,18 +108,6 @@ const InventoryTable = memo(({ data, count }: InventoryTableProps) => {
     description: true,
   };
 
-  const renderContextMenu = useMemo(() => {
-    // eslint-disable-next-line react/display-name
-    return (row: InventoryItem) => (
-      <>
-        <MenuItem disabled={canUpdate(row)} onClick={() => edit(row)}>
-          <MenuIcon icon={<LuPencil />} />
-          Edit
-        </MenuItem>
-      </>
-    );
-  }, [canUpdate, canDelete, filter, edit]);
-
   return (
     <>
       {count === 0 && !hasFilters && !search ? (
@@ -137,10 +128,6 @@ const InventoryTable = memo(({ data, count }: InventoryTableProps) => {
           columns={columns}
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}
-          // primaryAction={
-          //   permissions.can("create", "inventory") && <DocumentCreateForm />
-          // }
-          renderContextMenu={renderContextMenu}
         />
       )}
     </>
