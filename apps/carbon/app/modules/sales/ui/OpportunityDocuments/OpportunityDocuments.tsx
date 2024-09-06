@@ -39,6 +39,7 @@ import { useSupabase } from "~/lib/supabase";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import { path } from "~/utils/path";
 import type { Opportunity } from "../../types";
+import { useOptimisticDocumentDrag } from "../SalesRFQ/useOptimiticDocumentDrag";
 
 type OpportunityDocumentsProps = {
   attachments: FileObject[];
@@ -59,6 +60,8 @@ const OpportunityDocuments = ({
       id,
       type,
     });
+
+  const optimisticData = useOptimisticDocumentDrag();
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -144,42 +147,44 @@ const OpportunityDocuments = ({
             </Thead>
             <Tbody>
               {attachments.length ? (
-                attachments.map((attachment) => (
-                  <Tr key={attachment.id}>
-                    <DraggableCell attachment={attachment} />
-                    <Td className="text-xs font-mono">
-                      {convertKbToString(
-                        Math.floor((attachment.metadata?.size ?? 0) / 1024)
-                      )}
-                    </Td>
-                    <Td>
-                      <div className="flex justify-end gap-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <IconButton
-                              aria-label="More"
-                              icon={<MdMoreVert />}
-                              variant="secondary"
-                            />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem
-                              onClick={() => download(attachment)}
-                            >
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={!canDelete}
-                              onClick={() => deleteAttachment(attachment)}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </Td>
-                  </Tr>
-                ))
+                attachments
+                  .filter((d) => d.id !== optimisticData?.id)
+                  .map((attachment) => (
+                    <Tr key={attachment.id}>
+                      <DraggableCell attachment={attachment} />
+                      <Td className="text-xs font-mono">
+                        {convertKbToString(
+                          Math.floor((attachment.metadata?.size ?? 0) / 1024)
+                        )}
+                      </Td>
+                      <Td>
+                        <div className="flex justify-end gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <IconButton
+                                aria-label="More"
+                                icon={<MdMoreVert />}
+                                variant="secondary"
+                              />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem
+                                onClick={() => download(attachment)}
+                              >
+                                Download
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                disabled={!canDelete}
+                                onClick={() => deleteAttachment(attachment)}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </Td>
+                    </Tr>
+                  ))
               ) : (
                 <Tr>
                   <Td

@@ -639,6 +639,7 @@ export const salesRfqValidator = z.object({
 });
 
 export const salesRfqDragValidator = z.object({
+  id: z.string(),
   customerPartId: z.string(),
   is3DModel: z.boolean().optional(),
   lineId: z.string().optional(),

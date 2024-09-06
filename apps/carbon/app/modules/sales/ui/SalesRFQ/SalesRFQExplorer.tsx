@@ -19,21 +19,17 @@ import {
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
-import { useNavigate, useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuImage, LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty } from "~/components";
-import {
-  useOptimisticLocation,
-  usePermissions,
-  useRealtime,
-  useRouteData,
-} from "~/hooks";
+import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { SalesRFQ, SalesRFQLine } from "../../types";
 import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
 import SalesRFQLineForm from "./SalesRFQLineForm";
+import { useOptimisticDocumentDrag } from "./useOptimiticDocumentDrag";
 
 export default function SalesRFQExplorer() {
   const { rfqId } = useParams();
@@ -83,6 +79,8 @@ export default function SalesRFQExplorer() {
     unitOfMeasureCode: "EA",
   };
 
+  const optimisticData = useOptimisticDocumentDrag();
+
   const isDisabled = ["Ready for Quote"].includes(
     salesRfqData?.rfqSummary.status ?? ""
   );
@@ -123,6 +121,24 @@ export default function SalesRFQExplorer() {
                 </Button>
               )}
             </Empty>
+          )}
+          {optimisticData && (
+            <VStack spacing={0} className="border-b border-border">
+              <HStack className="w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer">
+                <HStack spacing={2}>
+                  <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+                    <Spinner className="w-6 h-6 text-muted-foreground" />
+                  </div>
+
+                  <VStack spacing={0}>
+                    <span className="font-semibold line-clamp-1">
+                      {optimisticData.customerPartId}
+                    </span>
+                  </VStack>
+                </HStack>
+                <HStack spacing={0}></HStack>
+              </HStack>
+            </VStack>
           )}
         </VStack>
         <div className="w-full flex flex-0 sm:flex-row border-t border-border p-4 sm:justify-start sm:space-x-2">
@@ -208,80 +224,76 @@ function SalesRFQLineItem({
   const { rfqId, lineId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const permissions = usePermissions();
-  const navigate = useNavigate();
-
-  const location = useOptimisticLocation();
 
   const isSelected = lineId === line.id;
-  const onLineClick = (line: SalesRFQLine) => {
-    if (location.pathname !== path.to.salesRfqLine(rfqId, line.id!)) {
-      // navigate to line
-      navigate(path.to.salesRfqLine(rfqId, line.id!));
-    }
-  };
 
   return (
     <VStack spacing={0} className="border-b border-border">
-      <HStack
-        className={cn(
-          "w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer",
-          isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
-        )}
-        onClick={() => onLineClick(line)}
+      <Link
+        className="w-full"
+        prefetch="intent"
+        to={path.to.salesRfqLine(rfqId, line.id!)}
       >
-        <HStack spacing={2}>
-          {line.thumbnailPath ? (
-            <img
-              alt="P2392303"
-              className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
-              src={`/file/preview/private/${line.thumbnailPath}`}
-            />
-          ) : !!line.modelId && !line.thumbnailPath ? (
-            <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
-              <Spinner className="w-6 h-6 text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
-              <LuImage className="w-6 h-6 text-muted-foreground" />
-            </div>
+        <HStack
+          className={cn(
+            "w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer",
+            isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
           )}
-
-          <VStack spacing={0}>
-            <span className="font-semibold line-clamp-1">
-              {" "}
-              {line.customerPartId}
-              {line.customerPartRevision && ` (${line.customerPartRevision})`}
-            </span>
-            <span className="font-mono text-muted-foreground text-xs line-clamp-1">
-              {line.itemReadableId}
-            </span>
-          </VStack>
-        </HStack>
-        <HStack spacing={0}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label="More"
-                icon={<MdMoreVert />}
-                variant="ghost"
-                onClick={(e) => e.stopPropagation()}
+        >
+          <HStack spacing={2}>
+            {line.thumbnailPath ? (
+              <img
+                alt="P2392303"
+                className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
+                src={`/file/preview/private/${line.thumbnailPath}`}
               />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                disabled={isDisabled || !permissions.can("update", "sales")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(line);
-                }}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                Delete Line
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            ) : !!line.modelId && !line.thumbnailPath ? (
+              <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+                <Spinner className="w-6 h-6 text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+                <LuImage className="w-6 h-6 text-muted-foreground" />
+              </div>
+            )}
+
+            <VStack spacing={0}>
+              <span className="font-semibold line-clamp-1">
+                {" "}
+                {line.customerPartId}
+                {line.customerPartRevision && ` (${line.customerPartRevision})`}
+              </span>
+              <span className="font-mono text-muted-foreground text-xs line-clamp-1">
+                {line.itemReadableId}
+              </span>
+            </VStack>
+          </HStack>
+          <HStack spacing={0}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="More"
+                  icon={<MdMoreVert />}
+                  variant="ghost"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  disabled={isDisabled || !permissions.can("update", "sales")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(line);
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  Delete Line
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </HStack>
         </HStack>
-      </HStack>
+      </Link>
     </VStack>
   );
 }

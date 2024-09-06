@@ -40,6 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } = validation.data;
 
   let targetLineId = lineId;
+  console.log({ targetLineId });
   if (!targetLineId) {
     // we are creating a new line
     let data = {
@@ -73,14 +74,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
   }
-
+  console.log("targetLineId2", { targetLineId });
   const fileName = documentPath.split("/").pop();
   let newPath = "";
   if (is3DModel) {
+    console.log("is3DModel");
     const fileId = nanoid();
     const fileExtension = fileName?.split(".").pop();
     newPath = `${companyId}/models/${fileId}.${fileExtension}`;
 
+    console.log("updating models");
     const [recordUpdate, recordCreate] = await Promise.all([
       client
         .from("salesRfqLine")
@@ -93,7 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         createdBy: userId,
       }),
     ]);
-
+    console.log("model update complete");
     if (recordUpdate.error) {
       throw redirect(
         path.to.salesRfqDetails(rfqId),
@@ -114,6 +117,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
+    console.log("sending autodesk event");
     await triggerClient.sendEvent({
       name: "autodesk.upload",
       payload: {
@@ -131,6 +135,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;
   }
 
+  console.log("moving to", { newPath });
   // Move the file to the new path
   const move = await client.storage.from("private").move(documentPath, newPath);
 

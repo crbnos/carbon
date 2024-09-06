@@ -118,6 +118,7 @@ export default function SalesRFQRoute() {
       const formData = new FormData();
 
       const payload = {
+        id: document.id,
         customerPartId: fileName,
         is3DModel: is3DModel ? true : undefined,
         lineId: targetId.startsWith("sales-rfq-line-")

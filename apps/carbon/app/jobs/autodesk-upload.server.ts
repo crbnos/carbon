@@ -40,7 +40,10 @@ const job = triggerClient.defineJob({
       quoteLineId,
     } = payload;
 
+    io.logger.info("Starting autodesk-upload job", { payload });
+
     try {
+      io.logger.info("Getting Autodesk token");
       const autodeskToken = await getAutodeskToken();
       if (autodeskToken.error) {
         throw new Error(
@@ -48,8 +51,14 @@ const job = triggerClient.defineJob({
         );
       }
       const token = autodeskToken.data?.token;
-      const encodedFilename = modelPath.split("/").pop() as string;
+      io.logger.info("Autodesk token obtained", {
+        token: token?.slice(0, 10) + "...",
+      });
 
+      const encodedFilename = modelPath.split("/").pop() as string;
+      io.logger.info("Encoded filename", { encodedFilename });
+
+      io.logger.info("Getting signed URL and downloading blob");
       const [signedUrl, blob] = await Promise.all([
         getAutodeskSignedUrl(encodedFilename, token),
         supabaseClient.storage.from("private").download(modelPath),
@@ -61,16 +70,24 @@ const job = triggerClient.defineJob({
         throw new Error("Failed to download blob: " + blob.error.message);
       }
 
+      io.logger.info("Signed URL and blob obtained", {
+        signedUrl: signedUrl.data?.url,
+        blobSize: blob.data?.size,
+      });
+
       const file = new File([blob.data], encodedFilename);
       const { uploadKey, url } = signedUrl.data;
 
+      io.logger.info("Uploading to Autodesk", { url, uploadKey });
       const initialUpload = await uploadToAutodesk(url, file, uploadKey);
       if (initialUpload.error) {
         throw new Error(
           "Failed to upload file: " + initialUpload.error.message
         );
       }
+      io.logger.info("Autodesk upload succeeded");
 
+      io.logger.info("Finalizing Autodesk upload");
       const upload = await finalizeAutodeskUpload(
         encodedFilename,
         token,
@@ -82,14 +99,18 @@ const job = triggerClient.defineJob({
 
       const { urn } = upload.data;
       const autodeskUrn = Buffer.from(urn).toString("base64");
+      io.logger.info("Upload finalized", { urn, autodeskUrn });
 
+      io.logger.info("Translating file");
       const translation = await translateFile(autodeskUrn, token);
       if (translation.error) {
         throw new Error(
           "Failed to translate file: " + translation.error.message
         );
       }
+      io.logger.info("File translation initiated");
 
+      io.logger.info("Sending autodesk.poll event");
       const event = await triggerClient.sendEvent({
         name: "autodesk.poll",
         payload: {
@@ -101,30 +122,40 @@ const job = triggerClient.defineJob({
         },
       });
 
-      io.logger.info("Event sent", event);
+      io.logger.info("Event sent", { event });
     } catch (err) {
+      io.logger.error("Error in autodesk-upload job", { error: err });
+
       const client = getSupabaseServiceRole();
+      io.logger.info("Resetting modelUploadId");
+
       if (itemId) {
+        io.logger.info("Resetting item modelUploadId", { itemId });
         await client
           .from("item")
           .update({ modelUploadId: null })
           .eq("id", itemId);
       }
       if (salesRfqLineId) {
+        io.logger.info("Resetting salesRfqLine modelUploadId", {
+          salesRfqLineId,
+        });
         await client
           .from("salesRfqLine")
           .update({ modelUploadId: null })
           .eq("id", salesRfqLineId);
       }
       if (quoteLineId) {
+        io.logger.info("Resetting quoteLine modelUploadId", { quoteLineId });
         await client
           .from("quoteLine")
           .update({ modelUploadId: null })
           .eq("id", quoteLineId);
       }
 
-      io.logger.error("Error uploading to Autodesk");
-      io.logger.info(JSON.stringify(err, null, 2));
+      io.logger.error("Error uploading to Autodesk", {
+        error: JSON.stringify(err, null, 2),
+      });
     }
   },
 });
