@@ -122,7 +122,7 @@ export default function SalesRFQExplorer() {
               )}
             </Empty>
           )}
-          {optimisticData && (
+          {optimisticData && !optimisticData.lineId && (
             <VStack spacing={0} className="border-b border-border">
               <HStack className="w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer">
                 <HStack spacing={2}>

@@ -1,5 +1,6 @@
 import { useFetchers, useParams } from "@remix-run/react";
 import { path } from "~/utils/path";
+import { salesRfqDragValidator } from "../../sales.models";
 
 export function useOptimisticDocumentDrag() {
   const { rfqId } = useParams();
@@ -12,7 +13,16 @@ export function useOptimisticDocumentDrag() {
 
   const payload = relevantFetcher?.formData?.get("payload");
   if (payload) {
-    return JSON.parse(payload as string);
+    try {
+      const parsedPayload = salesRfqDragValidator.safeParse(
+        JSON.parse(payload as string)
+      );
+      if (parsedPayload.success) {
+        return parsedPayload.data;
+      }
+    } catch {
+      // nothing
+    }
   }
 
   return null;
