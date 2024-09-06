@@ -7,6 +7,7 @@ import DocumentPreview from "./DocumentPreview";
 import EmployeeAvatar from "./EmployeeAvatar";
 import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
 import Empty from "./Empty";
+import FileDropzone from "./FileDropzone";
 import Hyperlink from "./Hyperlink";
 import Location from "./Location";
 import New from "./New";
@@ -26,6 +27,7 @@ export {
   EmployeeAvatar,
   EmployeeAvatarGroup,
   Empty,
+  FileDropzone,
   Hyperlink,
   Location,
   New,

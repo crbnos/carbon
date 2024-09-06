@@ -46,10 +46,7 @@ export default function SalesOrderExplorer() {
     addOnCost: 0,
   };
 
-  const newSalesOrderLineDisclosure = useDisclosure({
-    defaultIsOpen:
-      permissions.can("update", "sales") && salesOrderData?.lines?.length === 0,
-  });
+  const newSalesOrderLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<SalesOrderLine | null>(null);
   const isDisabled = salesOrderData?.salesOrder?.status !== "Draft";
@@ -199,9 +196,11 @@ function SalesOrderLineItem({
             )}
 
             <VStack spacing={0}>
-              <span className="font-semibold">{line.itemReadableId}</span>
-              <span className="text-muted-foreground text-xs truncate">
-                {line.itemName}
+              <span className="font-semibold line-clamp-1">
+                {line.itemReadableId}
+              </span>
+              <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                {line.description}
               </span>
             </VStack>
           </HStack>

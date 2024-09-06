@@ -638,6 +638,14 @@ export const salesRfqValidator = z.object({
   status: z.enum(salesRFQStatusType).optional(),
 });
 
+export const salesRfqDragValidator = z.object({
+  customerPartId: z.string(),
+  is3DModel: z.boolean().optional(),
+  lineId: z.string().optional(),
+  path: z.string(),
+  salesRfqId: z.string(),
+});
+
 export const salesRfqLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   salesRfqId: z.string().min(20, { message: "RFQ is required" }),

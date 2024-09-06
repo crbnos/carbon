@@ -21,19 +21,19 @@ import {
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
+import { useDndContext, useDraggable } from "@dnd-kit/core";
 import { Outlet, useRevalidator, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
-import { useDropzone } from "react-dropzone";
 import {
+  LuGripVertical,
   LuRadioTower,
   LuShoppingCart,
   LuUpload,
-  LuUploadCloud,
 } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
-import { DocumentPreview, Hyperlink } from "~/components";
+import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
@@ -67,7 +67,56 @@ const OpportunityDocuments = ({
     [upload]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const DraggableCell = ({ attachment }: { attachment: FileObject }) => {
+    const context = useDndContext();
+    const { attributes, listeners, setNodeRef, transform } = useDraggable({
+      id: attachment.id,
+      data: {
+        ...attachment,
+        path: getPath(attachment),
+      },
+    });
+
+    const style = transform
+      ? {
+          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+          zIndex: 1000,
+        }
+      : undefined;
+
+    return (
+      <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <HStack>
+          {context.droppableContainers.size > 0 && <LuGripVertical />}
+          <DocumentIcon type={getDocumentType(attachment.name)} />
+          <Hyperlink onClick={() => download(attachment)}>
+            {["PDF", "Image"].includes(getDocumentType(attachment.name)) ? (
+              <DocumentPreview
+                bucket="private"
+                pathToFile={getPath(attachment)}
+                // @ts-ignore
+                type={getDocumentType(attachment.name)}
+              >
+                {attachment.name}
+              </DocumentPreview>
+            ) : (
+              attachment.name
+            )}
+          </Hyperlink>
+          {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
+            <Badge variant="secondary">
+              <LuShoppingCart />
+            </Badge>
+          )}
+          {opportunity?.requestForQuoteDocumentPath === getPath(attachment) && (
+            <Badge variant="secondary">
+              <LuRadioTower />
+            </Badge>
+          )}
+        </HStack>
+      </Td>
+    );
+  };
 
   return (
     <>
@@ -90,81 +139,47 @@ const OpportunityDocuments = ({
               <Tr>
                 <Th>Name</Th>
                 <Th>Size</Th>
-
                 <Th></Th>
               </Tr>
             </Thead>
             <Tbody>
               {attachments.length ? (
-                attachments.map((attachment) => {
-                  const type = getDocumentType(attachment.name);
-                  return (
-                    <Tr key={attachment.id}>
-                      <Td>
-                        <HStack>
-                          <DocumentIcon type={type} />
-                          <Hyperlink onClick={() => download(attachment)}>
-                            {["PDF", "Image"].includes(type) ? (
-                              <DocumentPreview
-                                bucket="private"
-                                pathToFile={getPath(attachment)}
-                                // @ts-ignore
-                                type={type}
-                              >
-                                {attachment.name}
-                              </DocumentPreview>
-                            ) : (
-                              attachment.name
-                            )}
-                          </Hyperlink>
-                          {opportunity?.purchaseOrderDocumentPath ===
-                            getPath(attachment) && (
-                            <Badge variant="secondary">
-                              <LuShoppingCart />
-                            </Badge>
-                          )}
-                          {opportunity?.requestForQuoteDocumentPath ===
-                            getPath(attachment) && (
-                            <Badge variant="secondary">
-                              <LuRadioTower />
-                            </Badge>
-                          )}
-                        </HStack>
-                      </Td>
-                      <Td className="text-xs font-mono">
-                        {convertKbToString(
-                          Math.floor((attachment.metadata?.size ?? 0) / 1024)
-                        )}
-                      </Td>
-                      <Td>
-                        <div className="flex justify-end gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <IconButton
-                                aria-label="More"
-                                icon={<MdMoreVert />}
-                                variant="secondary"
-                              />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() => download(attachment)}
-                              >
-                                Download
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={!canDelete}
-                                onClick={() => deleteAttachment(attachment)}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </Td>
-                    </Tr>
-                  );
-                })
+                attachments.map((attachment) => (
+                  <Tr key={attachment.id}>
+                    <DraggableCell attachment={attachment} />
+                    <Td className="text-xs font-mono">
+                      {convertKbToString(
+                        Math.floor((attachment.metadata?.size ?? 0) / 1024)
+                      )}
+                    </Td>
+                    <Td>
+                      <div className="flex justify-end gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <IconButton
+                              aria-label="More"
+                              icon={<MdMoreVert />}
+                              variant="secondary"
+                            />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem
+                              onClick={() => download(attachment)}
+                            >
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!canDelete}
+                              onClick={() => deleteAttachment(attachment)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </Td>
+                  </Tr>
+                ))
               ) : (
                 <Tr>
                   <Td
@@ -177,20 +192,10 @@ const OpportunityDocuments = ({
               )}
             </Tbody>
           </Table>
-          <div
-            {...getRootProps()}
-            className={`mt-4 border-2 border-dashed rounded-md p-6 text-center ${
-              isDragActive ? "border-primary bg-primary/10" : "border-muted"
-            }`}
-          >
-            <input {...getInputProps()} />
-            <LuUploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              Drag and drop some files here, or click to select files
-            </p>
-          </div>
+          <FileDropzone onDrop={onDrop} />
         </CardContent>
       </Card>
+
       <Outlet />
     </>
   );
@@ -233,7 +238,7 @@ export const useOpportunityDocuments = ({
         return;
       }
 
-      toast.success("File deleted successfully");
+      toast.success(`${attachment.name} deleted successfully`);
       revalidator.revalidate();
     },
     [supabase?.storage, getPath, revalidator]
@@ -310,7 +315,7 @@ export const useOpportunityDocuments = ({
         if (fileUpload.error) {
           toast.error(`Failed to upload file: ${file.name}`);
         } else if (fileUpload.data?.path) {
-          toast.success(`File uploaded: ${file.name}`);
+          toast.success(`Uploaded: ${file.name}`);
           createDocumentRecord({
             path: fileUpload.data.path,
             name: file.name,
@@ -318,8 +323,9 @@ export const useOpportunityDocuments = ({
           });
         }
       }
+      revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, supabase]
+    [getPath, createDocumentRecord, supabase, revalidator]
   );
 
   return {

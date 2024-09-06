@@ -70,14 +70,14 @@ export async function action({ request }: ActionFunctionArgs) {
     await triggerClient.sendEvent({
       name: "autodesk.upload",
       payload: {
-        name,
-        modelPath,
         companyId,
         fileId,
-        userId,
         itemId,
-        salesRfqLineId,
+        modelPath,
+        name,
         quoteLineId,
+        salesRfqLineId,
+        userId,
       },
     });
   } catch (err) {

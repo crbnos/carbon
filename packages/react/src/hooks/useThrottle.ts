@@ -21,7 +21,9 @@ export default function useThrottle<T extends (...args: any[]) => any>(
     }
 
     timeout.current = setTimeout(() => {
-      fn(...lastArgs.current);
+      if (lastArgs.current) {
+        fn(...lastArgs.current);
+      }
       timeout.current = undefined;
     }, delay);
   };

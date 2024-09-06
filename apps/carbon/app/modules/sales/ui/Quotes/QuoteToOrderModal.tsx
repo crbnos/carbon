@@ -115,7 +115,7 @@ const QuoteToOrderDrawer = ({
         setUploading(true);
       });
       const file = acceptedFiles[0];
-      if (file) upload(file);
+      if (file) upload([file]);
 
       const purchaseOrderDocumentPath = getPath(file);
       const { error } = await supabase

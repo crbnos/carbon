@@ -9,6 +9,7 @@ import {
   HStack,
   IconButton,
   Kbd,
+  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -17,12 +18,18 @@ import {
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
+import { useDroppable } from "@dnd-kit/core";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuImage, LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty } from "~/components";
-import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
+import {
+  useOptimisticLocation,
+  usePermissions,
+  useRealtime,
+  useRouteData,
+} from "~/hooks";
 import { path } from "~/utils/path";
 import type { SalesRFQ, SalesRFQLine } from "../../types";
 import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
@@ -37,10 +44,12 @@ export default function SalesRFQExplorer() {
   }>(path.to.salesRfq(rfqId));
   const permissions = usePermissions();
 
-  const newSalesRFQLineDisclosure = useDisclosure({
-    defaultIsOpen:
-      permissions.can("update", "sales") && salesRfqData?.lines?.length === 0,
-  });
+  useRealtime(
+    "modelUpload",
+    `modelPath=in.(${salesRfqData?.lines.map((d) => d.modelPath).join(",")})`
+  );
+
+  const newSalesRFQLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<SalesRFQLine | null>(null);
 
@@ -78,13 +87,24 @@ export default function SalesRFQExplorer() {
     salesRfqData?.rfqSummary.status ?? ""
   );
 
+  const { setNodeRef: setExplorerRef, isOver: isOverExplorer } = useDroppable({
+    id: "sales-rfq-explorer",
+  });
+
   return (
-    <>
+    <div
+      ref={setExplorerRef}
+      data-sales-rfq-explorer
+      className={cn(
+        "transition-colors duration-200",
+        isOverExplorer && "bg-primary/10 border-2 border-dashed border-primary"
+      )}
+    >
       <VStack className="w-full h-[calc(100vh-99px)] justify-between">
         <VStack className="flex-1 overflow-y-auto" spacing={0}>
           {salesRfqData?.lines && salesRfqData?.lines?.length > 0 ? (
             salesRfqData?.lines.map((line) => (
-              <SalesRFQLineItem
+              <DroppableSalesRFQLineItem
                 key={line.id}
                 line={line}
                 isDisabled={isDisabled}
@@ -137,7 +157,40 @@ export default function SalesRFQExplorer() {
       {deleteLineDisclosure.isOpen && (
         <DeleteSalesRFQLine line={deleteLine!} onCancel={onDeleteCancel} />
       )}
-    </>
+    </div>
+  );
+}
+
+type DroppableSalesRFQLineItemProps = {
+  line: SalesRFQLine;
+  isDisabled: boolean;
+  onDelete: (line: SalesRFQLine) => void;
+};
+
+function DroppableSalesRFQLineItem({
+  line,
+  isDisabled,
+  onDelete,
+}: DroppableSalesRFQLineItemProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `sales-rfq-line-${line.id}`,
+    data: { lineId: line.id },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "transition-colors duration-200 w-full",
+        isOver && "bg-primary/20 border-2 border-dashed border-primary"
+      )}
+    >
+      <SalesRFQLineItem
+        line={line}
+        isDisabled={isDisabled}
+        onDelete={onDelete}
+      />
+    </div>
   );
 }
 
@@ -183,6 +236,10 @@ function SalesRFQLineItem({
               className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
               src={`/file/preview/private/${line.thumbnailPath}`}
             />
+          ) : !!line.modelId && !line.thumbnailPath ? (
+            <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+              <Spinner className="w-6 h-6 text-muted-foreground" />
+            </div>
           ) : (
             <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
               <LuImage className="w-6 h-6 text-muted-foreground" />
@@ -190,12 +247,12 @@ function SalesRFQLineItem({
           )}
 
           <VStack spacing={0}>
-            <span className="font-semibold">
+            <span className="font-semibold line-clamp-1">
               {" "}
               {line.customerPartId}
               {line.customerPartRevision && ` (${line.customerPartRevision})`}
             </span>
-            <span className="font-mono text-muted-foreground text-xs">
+            <span className="font-mono text-muted-foreground text-xs line-clamp-1">
               {line.itemReadableId}
             </span>
           </VStack>

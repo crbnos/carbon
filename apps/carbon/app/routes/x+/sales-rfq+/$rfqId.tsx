@@ -4,22 +4,28 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
+  toast,
   VStack,
   type JSONContent,
 } from "@carbon/react";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext } from "@dnd-kit/core";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
+import { Outlet, useFetcher, useParams } from "@remix-run/react";
+import type { FileObject } from "@supabase/storage-js";
+import { useCallback, useEffect } from "react";
 import type { SalesRFQLine } from "~/modules/sales";
 import {
-  SalesRFQBreadcrumbs,
-  SalesRFQExplorer,
-  SalesRFQHeader,
   getOpportunityBySalesRFQ,
   getOpportunityDocuments,
   getSalesRFQ,
   getSalesRFQLines,
+  SalesRFQBreadcrumbs,
+  SalesRFQExplorer,
+  SalesRFQHeader,
 } from "~/modules/sales";
+import { supportedFileTypes } from "~/modules/shared/ui/CadModelUpload";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -91,42 +97,95 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function SalesRFQRoute() {
+  const { rfqId } = useParams();
+  if (!rfqId) throw new Error("Could not find rfqId");
+  const fetcher = useFetcher<{ error: string }>();
+
+  useEffect(() => {
+    if (fetcher.data?.error) {
+      toast.error(fetcher.data?.error);
+    }
+  }, [fetcher.data]);
+
+  const handleDrop = useCallback(
+    (document: FileObject & { path: string }, targetId: string) => {
+      console.log({ document });
+      const fileName = document.name.split(".").slice(0, -1).join(".");
+      const fileExtension = document.name.split(".").pop()?.toLowerCase();
+      const is3DModel = fileExtension
+        ? supportedFileTypes.includes(fileExtension)
+        : false;
+
+      const formData = new FormData();
+
+      const payload = {
+        customerPartId: fileName,
+        is3DModel: is3DModel ? true : undefined,
+        lineId: targetId.startsWith("sales-rfq-line-")
+          ? targetId.replace("sales-rfq-line-", "")
+          : undefined,
+        path: document.path,
+        salesRfqId: rfqId,
+      };
+
+      formData.append("payload", JSON.stringify(payload));
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.salesRfqDrag(rfqId),
+      });
+    },
+    [fetcher, rfqId]
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { over, active } = event;
+    if (over) {
+      handleDrop(
+        active.data.current as unknown as FileObject & { path: string },
+        over.id as string
+      );
+    }
+  };
+
   return (
-    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
-      <SalesRFQHeader />
-      <div className="flex h-[calc(100vh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto">
-          <div className="flex flex-grow overflow-hidden">
-            <ClientOnly fallback={null}>
-              {() => (
-                <ResizablePanelGroup direction="horizontal">
-                  <ResizablePanel
-                    order={1}
-                    minSize={10}
-                    defaultSize={20}
-                    className="bg-card h-full"
-                  >
-                    <ScrollArea className="h-[calc(100vh-99px)]">
-                      <div className="grid w-full h-full overflow-hidden">
-                        <SalesRFQExplorer />
-                      </div>
-                    </ScrollArea>
-                  </ResizablePanel>
-                  <ResizableHandle withHandle />
-                  <ResizablePanel order={2}>
-                    <ScrollArea className="h-[calc(100vh-99px)]">
-                      <VStack spacing={2} className="p-2">
-                        <SalesRFQBreadcrumbs />
-                        <Outlet />
-                      </VStack>
-                    </ScrollArea>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
-              )}
-            </ClientOnly>
+    <DndContext onDragEnd={handleDragEnd}>
+      <div className="flex flex-col h-[calc(100vh-49px)] w-full">
+        <SalesRFQHeader />
+        <div className="flex h-[calc(100vh-99px)] w-full">
+          <div className="flex h-full w-full overflow-y-auto">
+            <div className="flex flex-grow overflow-hidden">
+              <ClientOnly fallback={null}>
+                {() => (
+                  <ResizablePanelGroup direction="horizontal">
+                    <ResizablePanel
+                      order={1}
+                      minSize={10}
+                      defaultSize={20}
+                      className="bg-card h-full z-0"
+                    >
+                      <ScrollArea className="h-[calc(100vh-99px)]">
+                        <div className="grid w-full h-full overflow-hidden">
+                          <SalesRFQExplorer />
+                        </div>
+                      </ScrollArea>
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel order={2} className="z-1">
+                      <ScrollArea className="h-[calc(100vh-99px)]">
+                        <VStack spacing={2} className="p-2">
+                          <SalesRFQBreadcrumbs />
+                          <Outlet />
+                        </VStack>
+                      </ScrollArea>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                )}
+              </ClientOnly>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DndContext>
   );
 }

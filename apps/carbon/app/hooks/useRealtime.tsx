@@ -23,6 +23,7 @@ export function useRealtime(table: string, filter?: string) {
           filter: filter,
         },
         (payload) => {
+          console.log({ table, filter, payload });
           if (
             "companyId" in payload.new &&
             payload.new.companyId !== company.id

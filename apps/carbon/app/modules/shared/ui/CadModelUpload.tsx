@@ -1,7 +1,7 @@
 import { CardHeader, CardTitle, Spinner, cn, toast } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import { useDropzone } from "react-dropzone";
-import { HiArrowUpTray } from "react-icons/hi2";
+import { LuUploadCloud } from "react-icons/lu";
 
 const fileSizeLimitMb = 50;
 
@@ -13,7 +13,7 @@ type CadModelUploadProps = {
   onFileChange: (file: File | null) => void;
 };
 
-const supportedFileTypes = [
+export const supportedFileTypes = [
   "step",
   "stp",
   "stl",
@@ -82,7 +82,7 @@ const CadModelUpload = ({
       className={cn(
         "group flex flex-col flex-grow rounded-lg border border-border bg-gradient-to-tr from-background to-card text-card-foreground shadow-sm w-full",
         !hasFile &&
-          "cursor-pointer hover:border-primary/30 hover:border-dashed hover:to-primary/10 hover:via-card",
+          "cursor-pointer hover:border-primary/30 hover:border-dashed hover:to-primary/10 hover:via-card border-2 border-dashed",
         className
       )}
     >
@@ -112,10 +112,7 @@ const CadModelUpload = ({
                   title ? "-mt-16" : "-mt-6"
                 )}
               >
-                <HiArrowUpTray
-                  className="h-10 w-10 text-foreground group-hover:text-primary-foreground"
-                  aria-hidden="true"
-                />
+                <LuUploadCloud className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
               </div>
               <p className="text-lg text-muted-foreground group-hover:text-foreground mt-8">
                 Choose file to upload or drag and drop

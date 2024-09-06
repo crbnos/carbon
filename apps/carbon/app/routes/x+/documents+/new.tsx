@@ -5,7 +5,7 @@ import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
 import { path, requestReferrer } from "~/utils/path";
-import { error, success } from "~/utils/result";
+import { error } from "~/utils/result";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -50,8 +50,5 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(
-    requestReferrer(request) ?? path.to.documents,
-    await flash(request, success(`Successfully uploaded ${name}`))
-  );
+  throw redirect(requestReferrer(request) ?? path.to.documents);
 }

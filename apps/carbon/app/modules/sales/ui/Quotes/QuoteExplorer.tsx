@@ -9,6 +9,7 @@ import {
   HStack,
   IconButton,
   Kbd,
+  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -28,6 +29,7 @@ import { flattenTree } from "~/components/TreeView";
 import {
   useOptimisticLocation,
   usePermissions,
+  useRealtime,
   useRouteData,
   useUser,
 } from "~/hooks";
@@ -57,10 +59,12 @@ export default function QuoteExplorer() {
     unitOfMeasureCode: "",
   };
 
-  const newQuoteLineDisclosure = useDisclosure({
-    defaultIsOpen:
-      permissions.can("update", "sales") && quoteData?.lines?.length === 0,
-  });
+  useRealtime(
+    "modelUpload",
+    `modelPath=in.(${quoteData?.lines.map((d) => d.modelPath).join(",")})`
+  );
+
+  const newQuoteLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<QuotationLine | null>(null);
   const isDisabled = quoteData?.quote?.status !== "Draft";
@@ -208,6 +212,10 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
               )}
               src={`/file/preview/private/${line.thumbnailPath}`}
             />
+          ) : !!line.modelId && !line.thumbnailPath ? (
+            <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+              <Spinner className="w-6 h-6 text-muted-foreground" />
+            </div>
           ) : (
             <div
               className={cn(
@@ -221,8 +229,10 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
           )}
 
           <VStack spacing={0}>
-            <span className="font-semibold">{line.itemReadableId}</span>
-            <span className="font-mono text-muted-foreground text-xs">
+            <span className="font-semibold line-clamp-1">
+              {line.itemReadableId}
+            </span>
+            <span className="font-mono text-muted-foreground text-xs line-clamp-1">
               {line.customerPartId}
               {line.customerPartRevision && ` (${line.customerPartRevision})`}
             </span>

@@ -21,9 +21,9 @@ import {
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
-import { LuAxis3D, LuUpload, LuUploadCloud } from "react-icons/lu";
+import { LuAxis3D, LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
-import { DocumentPreview, Hyperlink } from "~/components";
+import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { ItemFile, ModelUpload } from "~/modules/items";
 
@@ -34,7 +34,6 @@ import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 
 import { useCallback } from "react";
-import { useDropzone } from "react-dropzone";
 
 const useOpportunityLineDocuments = ({
   id,
@@ -73,7 +72,7 @@ const useOpportunityLineDocuments = ({
         return;
       }
 
-      toast.success("File deleted successfully");
+      toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
     [getPath, supabase?.storage, revalidator]
@@ -179,7 +178,6 @@ const useOpportunityLineDocuments = ({
         if (fileUpload.error) {
           toast.error(`Failed to upload file: ${file.name}`);
         } else if (fileUpload.data?.path) {
-          toast.success(`File uploaded: ${file.name}`);
           createDocumentRecord({
             path: fileUpload.data.path,
             name: file.name,
@@ -187,8 +185,9 @@ const useOpportunityLineDocuments = ({
           });
         }
       }
+      revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, supabase]
+    [getPath, createDocumentRecord, supabase, revalidator]
   );
 
   return {
@@ -239,105 +238,48 @@ const OpportunityLineDocuments = ({
     [upload]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
-
   return (
-    <Card className="flex-grow">
-      <HStack className="justify-between items-start">
-        <CardHeader>
-          <CardTitle>Files</CardTitle>
-        </CardHeader>
-        <CardAction>
-          <OpportunityLineDocumentForm id={id} type={type} lineId={lineId} />
-        </CardAction>
-      </HStack>
-      <CardContent>
-        <Table>
-          <Thead>
-            <Tr>
-              <Th>Name</Th>
-              <Th>Size</Th>
-              <Th />
-            </Tr>
-          </Thead>
-          <Tbody>
-            {modelUpload?.autodeskUrn && (
+    <>
+      <Card className="flex-grow">
+        <HStack className="justify-between items-start">
+          <CardHeader>
+            <CardTitle>Files</CardTitle>
+          </CardHeader>
+          <CardAction>
+            <OpportunityLineDocumentForm id={id} type={type} lineId={lineId} />
+          </CardAction>
+        </HStack>
+        <CardContent>
+          <Table>
+            <Thead>
               <Tr>
-                <Td>
-                  <HStack>
-                    <LuAxis3D className="text-green-500 w-6 h-6" />
-                    <Hyperlink
-                      target="_blank"
-                      onClick={() => viewModel(modelUpload)}
-                    >
-                      {modelUpload?.autodeskUrn
-                        ? modelUpload.modelName
-                        : "Uploading..."}
-                    </Hyperlink>
-                  </HStack>
-                </Td>
-                <Td>
-                  {modelUpload.modelSize
-                    ? convertKbToString(
-                        Math.floor((modelUpload.modelSize ?? 0) / 1024)
-                      )
-                    : "--"}
-                </Td>
-                <Td>
-                  <div className="flex justify-end w-full">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <IconButton
-                          aria-label="More"
-                          icon={<MdMoreVert />}
-                          variant="secondary"
-                        />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem
-                          onClick={() => viewModel(modelUpload)}
-                        >
-                          View
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={!canDelete}
-                          onClick={() => deleteModel(lineId)}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </Td>
+                <Th>Name</Th>
+                <Th>Size</Th>
+                <Th />
               </Tr>
-            )}
-            {files.map((file) => {
-              const type = getDocumentType(file.name);
-              return (
-                <Tr key={file.id}>
+            </Thead>
+            <Tbody>
+              {modelUpload?.autodeskUrn && (
+                <Tr>
                   <Td>
                     <HStack>
-                      <DocumentIcon type={type} />
-                      <Hyperlink onClick={() => download(file)}>
-                        {["PDF", "Image"].includes(type) ? (
-                          <DocumentPreview
-                            bucket="private"
-                            pathToFile={getPath(file)}
-                            // @ts-ignore
-                            type={type}
-                          >
-                            {file.name}
-                          </DocumentPreview>
-                        ) : (
-                          file.name
-                        )}
+                      <LuAxis3D className="text-green-500 w-6 h-6 flex-shrink-0" />
+                      <Hyperlink
+                        target="_blank"
+                        onClick={() => viewModel(modelUpload)}
+                      >
+                        {modelUpload?.autodeskUrn
+                          ? modelUpload.modelName
+                          : "Uploading..."}
                       </Hyperlink>
                     </HStack>
                   </Td>
                   <Td>
-                    {convertKbToString(
-                      Math.floor((file.metadata?.size ?? 0) / 1024)
-                    )}
+                    {modelUpload.modelSize
+                      ? convertKbToString(
+                          Math.floor((modelUpload.modelSize ?? 0) / 1024)
+                        )
+                      : "--"}
                   </Td>
                   <Td>
                     <div className="flex justify-end w-full">
@@ -350,12 +292,14 @@ const OpportunityLineDocuments = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => download(file)}>
-                            Download
+                          <DropdownMenuItem
+                            onClick={() => viewModel(modelUpload)}
+                          >
+                            View
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={!canDelete}
-                            onClick={() => deleteFile(file)}
+                            onClick={() => deleteModel(lineId)}
                           >
                             Delete
                           </DropdownMenuItem>
@@ -364,34 +308,78 @@ const OpportunityLineDocuments = ({
                     </div>
                   </Td>
                 </Tr>
-              );
-            })}
-            {files.length === 0 && !modelUpload && (
-              <Tr>
-                <Td
-                  colSpan={24}
-                  className="py-8 text-muted-foreground text-center"
-                >
-                  No files
-                </Td>
-              </Tr>
-            )}
-          </Tbody>
-        </Table>
-        <div
-          {...getRootProps()}
-          className={`mt-4 border-2 border-dashed rounded-md p-6 text-center ${
-            isDragActive ? "border-primary bg-primary/10" : "border-muted"
-          }`}
-        >
-          <input {...getInputProps()} />
-          <LuUploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            Drag and drop some files here, or click to select files
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+              )}
+              {files.map((file) => {
+                const type = getDocumentType(file.name);
+                return (
+                  <Tr key={file.id}>
+                    <Td>
+                      <HStack>
+                        <DocumentIcon type={type} />
+                        <Hyperlink onClick={() => download(file)}>
+                          {["PDF", "Image"].includes(type) ? (
+                            <DocumentPreview
+                              bucket="private"
+                              pathToFile={getPath(file)}
+                              // @ts-ignore
+                              type={type}
+                            >
+                              {file.name}
+                            </DocumentPreview>
+                          ) : (
+                            file.name
+                          )}
+                        </Hyperlink>
+                      </HStack>
+                    </Td>
+                    <Td>
+                      {convertKbToString(
+                        Math.floor((file.metadata?.size ?? 0) / 1024)
+                      )}
+                    </Td>
+                    <Td>
+                      <div className="flex justify-end w-full">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <IconButton
+                              aria-label="More"
+                              icon={<MdMoreVert />}
+                              variant="secondary"
+                            />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => download(file)}>
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!canDelete}
+                              onClick={() => deleteFile(file)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </Td>
+                  </Tr>
+                );
+              })}
+              {files.length === 0 && !modelUpload && (
+                <Tr>
+                  <Td
+                    colSpan={24}
+                    className="py-8 text-muted-foreground text-center"
+                  >
+                    No files
+                  </Td>
+                </Tr>
+              )}
+            </Tbody>
+          </Table>
+          <FileDropzone onDrop={onDrop} />
+        </CardContent>
+      </Card>
+    </>
   );
 };
 

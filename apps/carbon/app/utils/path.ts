@@ -647,6 +647,7 @@ export const path = {
       generatePath(`${x}/sales-rfq/${id}/convert`),
     salesRfqDetails: (id: string) =>
       generatePath(`${x}/sales-rfq/${id}/details`),
+    salesRfqDrag: (id: string) => generatePath(`${x}/sales-rfq/${id}/drag`),
     salesRfqFavorite: `${x}/sales/rfqs/favorite`,
     salesRfqLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-rfq/${id}/${lineId}/details`),

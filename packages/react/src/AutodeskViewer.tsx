@@ -1,6 +1,33 @@
 import React, { useEffect, useRef, useState } from "react";
 import { cn } from "./utils/cn";
 
+// Define Autodesk namespace and types
+declare namespace Autodesk {
+  namespace Viewing {
+    class GuiViewer3D {
+      constructor(container: HTMLElement, config?: object);
+      start(): void;
+      setTheme(theme: string): void;
+      resize(): void;
+      loadDocumentNode(doc: Document, node: any): Promise<void>;
+      loadExtension(extension: string): Promise<void>;
+      toolbar: { setVisible(visible: boolean): void };
+      setLightPreset(preset: number): void;
+      finish(): void;
+    }
+    class Document {
+      static load(
+        urn: string,
+        onSuccess: (doc: Document) => void,
+        onFailure: (errorCode: number, errorMsg: string, errors: any) => void
+      ): void;
+      getRoot(): { getDefaultGeometry(): any };
+    }
+    function Initializer(options: any, callback: () => void): void;
+    function shutdown(): void;
+  }
+}
+
 interface ForgeViewerProps {
   className?: string;
   urn: string;
@@ -31,7 +58,12 @@ const AutodeskViewer: React.FC<ForgeViewerProps> = ({
   const viewerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!urn || !accessToken || !viewerRef.current || !Autodesk) {
+    if (
+      !urn ||
+      !accessToken ||
+      !viewerRef.current ||
+      typeof Autodesk === "undefined"
+    ) {
       return;
     }
 
@@ -51,7 +83,7 @@ const AutodeskViewer: React.FC<ForgeViewerProps> = ({
       };
 
       const viewer = new Autodesk.Viewing.GuiViewer3D(
-        viewerRef.current,
+        viewerRef.current!,
         viewerOptions
       );
       viewer.start();

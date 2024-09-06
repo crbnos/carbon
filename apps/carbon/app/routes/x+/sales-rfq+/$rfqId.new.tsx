@@ -11,7 +11,7 @@ import { error } from "~/utils/result";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
+    create: "sales",
   });
 
   const { rfqId } = params;

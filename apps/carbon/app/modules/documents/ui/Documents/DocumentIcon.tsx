@@ -17,47 +17,59 @@ type DocumentIconProps = {
   className?: string;
 };
 
+const baseIconClasses = "w-6 h-6 flex-shrink-0";
+
 const DocumentIcon = ({ type, className }: DocumentIconProps) => {
   switch (type) {
     case "Document":
       return (
-        <BsFileWordFill className={cn("w-6 h-6 text-blue-500", className)} />
+        <BsFileWordFill
+          className={cn(baseIconClasses, "text-blue-500", className)}
+        />
       );
     case "Spreadsheet":
       return (
-        <BsFileExcelFill className={cn("w-6 h-6 text-green-700", className)} />
+        <BsFileExcelFill
+          className={cn(baseIconClasses, "text-green-700", className)}
+        />
       );
     case "Presentation":
       return (
-        <BsFilePptFill className={cn("w-6 h-6 text-orange-400", className)} />
+        <BsFilePptFill
+          className={cn(baseIconClasses, "text-orange-400", className)}
+        />
       );
     case "PDF":
       return (
-        <BsFilePdfFill className={cn("w-6 h-6 text-red-600", className)} />
+        <BsFilePdfFill
+          className={cn(baseIconClasses, "text-red-600", className)}
+        />
       );
     case "Archive":
-      return <BsFileZipFill className={cn("w-6 h-6", className)} />;
+      return <BsFileZipFill className={cn(baseIconClasses, className)} />;
     case "Text":
-      return <BsFileTextFill className={cn("w-6 h-6", className)} />;
+      return <BsFileTextFill className={cn(baseIconClasses, className)} />;
     case "Image":
       return (
-        <BsFileImageFill className={cn("w-6 h-6 text-yellow-400", className)} />
+        <BsFileImageFill
+          className={cn(baseIconClasses, "text-yellow-400", className)}
+        />
       );
     case "Video":
       return (
         <BsFileEarmarkPlayFill
-          className={cn("w-6 h-6 text-purple-500", className)}
+          className={cn(baseIconClasses, "text-purple-500", className)}
         />
       );
     case "Audio":
       return (
         <BsFileEarmarkPlayFill
-          className={cn("w-6 h-6 text-cyan-400", className)}
+          className={cn(baseIconClasses, "text-cyan-400", className)}
         />
       );
     case "Other":
     default:
-      return <BsFileEarmarkFill className={cn("w-6 h-6", className)} />;
+      return <BsFileEarmarkFill className={cn(baseIconClasses, className)} />;
   }
 };
 
