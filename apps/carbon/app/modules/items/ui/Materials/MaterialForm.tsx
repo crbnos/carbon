@@ -132,14 +132,14 @@ const MaterialForm = ({
                   />
                 )}
 
-                <Input name="name" label="Name" />
+                <Input name="name" label="Short Description" />
                 <Combobox
                   name="materialSubstanceId"
                   label="Substance"
                   options={substances}
                 />
                 {isEditing && (
-                  <TextArea name="description" label="Description" />
+                  <TextArea name="description" label="Long Description" />
                 )}
                 <Combobox name="materialFormId" label="Form" options={forms} />
                 <Input name="finish" label="Finish" />

@@ -136,14 +136,14 @@ const FixtureForm = ({
                   />
                 )}
 
-                <Input name="name" label="Name" />
+                <Input name="name" label="Short Description" />
                 <Select
                   name="itemTrackingType"
                   label="Tracking Type"
                   options={itemTrackingTypeOptions}
                 />
                 {isEditing && (
-                  <TextArea name="description" label="Description" />
+                  <TextArea name="description" label="Long Description" />
                 )}
                 <Select
                   name="replenishmentSystem"
