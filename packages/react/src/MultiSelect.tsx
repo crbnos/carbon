@@ -1,5 +1,6 @@
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
-import { forwardRef, useId, useState } from "react";
+import { forwardRef, useId, useMemo, useRef, useState } from "react";
 import { RxCheck, RxMagnifyingGlass } from "react-icons/rx";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { Button } from "./Button";
@@ -27,6 +28,7 @@ export type MultiSelectProps = Omit<
   isReadOnly?: boolean;
   placeholder?: string;
   onChange: (selected: string[]) => void;
+  itemHeight?: number;
 };
 
 const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
@@ -39,11 +41,13 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
       placeholder,
       onChange,
       className,
+      itemHeight = 40,
       ...props
     },
     ref
   ) => {
     const [open, setOpen] = useState(false);
+
     const id = useId();
 
     const handleUnselect = (item: string) => {
@@ -53,7 +57,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
     const hasSelections = value.length > 0;
 
     return (
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             aria-controls={id}
@@ -110,33 +114,13 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
           </Button>
         </PopoverTrigger>
         <PopoverContent className="min-w-[200px] w-[--radix-popover-trigger-width] p-0">
-          <Command>
-            <CommandInput placeholder="Search..." className="h-9" />
-            <CommandEmpty>No option found.</CommandEmpty>
-            <CommandGroup className="max-h-64 overflow-auto">
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  onSelect={() => {
-                    onChange(
-                      value.includes(option.value)
-                        ? value.filter((item) => item !== option.value)
-                        : [...value, option.value]
-                    );
-                    setOpen(true);
-                  }}
-                >
-                  <RxCheck
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value.includes(option.value) ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
+          <VirtualizedCommand
+            options={options}
+            value={value}
+            onChange={onChange}
+            itemHeight={itemHeight}
+            setOpen={setOpen}
+          />
         </PopoverContent>
       </Popover>
     );
@@ -145,3 +129,101 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
 MultiSelect.displayName = "MultiSelect";
 
 export { MultiSelect };
+
+type VirtualizedCommandProps = {
+  options: MultiSelectProps["options"];
+  value: string[];
+  onChange: (selected: string[]) => void;
+  itemHeight: number;
+  setOpen: (open: boolean) => void;
+};
+
+function VirtualizedCommand({
+  options,
+  value,
+  onChange,
+  itemHeight,
+  setOpen,
+}: VirtualizedCommandProps) {
+  const [search, setSearch] = useState("");
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = useMemo(() => {
+    return search
+      ? options.filter((option) =>
+          option.label.toLowerCase().includes(search.toLowerCase())
+        )
+      : options;
+  }, [options, search]);
+
+  const virtualizer = useVirtualizer({
+    count: filteredOptions.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => itemHeight,
+    overscan: 5,
+  });
+
+  const items = virtualizer.getVirtualItems();
+
+  return (
+    <Command shouldFilter={false}>
+      <CommandInput
+        value={search}
+        onValueChange={setSearch}
+        placeholder="Search..."
+        className="h-9"
+      />
+      <CommandEmpty>No option found.</CommandEmpty>
+      <div
+        ref={parentRef}
+        className="overflow-auto"
+        style={{
+          height: `${Math.min(filteredOptions.length, 6) * itemHeight}px`,
+        }}
+      >
+        <CommandGroup
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {items.map((virtualRow) => {
+            const option = filteredOptions[virtualRow.index];
+            const isSelected = value.includes(option.value);
+
+            return (
+              <CommandItem
+                key={option.value}
+                onSelect={() => {
+                  onChange(
+                    isSelected
+                      ? value.filter((item) => item !== option.value)
+                      : [...value, option.value]
+                  );
+                  setOpen(true);
+                }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: `${itemHeight}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <RxCheck
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    isSelected ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {option.label}
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+      </div>
+    </Command>
+  );
+}

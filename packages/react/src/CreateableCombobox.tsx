@@ -1,5 +1,6 @@
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
-import { forwardRef, useState } from "react";
+import { forwardRef, useMemo, useRef, useState } from "react";
 import { MdClose } from "react-icons/md";
 import { RxCheck } from "react-icons/rx";
 import {
@@ -12,7 +13,6 @@ import {
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
-import { ScrollArea } from "./ScrollArea";
 import { cn } from "./utils/cn";
 
 export type CreatableComboboxProps = Omit<
@@ -33,6 +33,7 @@ export type CreatableComboboxProps = Omit<
   placeholder?: string;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
+  itemHeight?: number;
 };
 
 const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
@@ -47,17 +48,13 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       placeholder,
       onChange,
       label,
+      onCreateOption,
+      itemHeight = 40,
       ...props
     },
     ref
   ) => {
     const [open, setOpen] = useState(false);
-    const [search, setSearch] = useState("");
-    const isExactMatch = options.some((option) =>
-      [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
-        search.toLowerCase()
-      )
-    );
 
     return (
       <HStack spacing={1}>
@@ -81,67 +78,15 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             </CommandTrigger>
           </PopoverTrigger>
           <PopoverContent className="min-w-[200px] w-[--radix-popover-trigger-width] p-0">
-            <Command>
-              <CommandInput
-                value={search}
-                onValueChange={setSearch}
-                placeholder="Search..."
-                className="h-9"
-              />
-              <ScrollArea className="overflow-auto max-h-96">
-                <CommandGroup>
-                  {options.map((option) => {
-                    const isSelected = !!selected?.includes(option.value);
-                    return (
-                      <CommandItem
-                        value={
-                          typeof option.label === "string"
-                            ? option.label.replace(/"/g, '\\"') +
-                              option.helper?.replace(/"/g, '\\"')
-                            : undefined
-                        }
-                        key={option.value}
-                        onSelect={() => {
-                          if (!isSelected) onChange?.(option.value);
-                          setOpen(false);
-                        }}
-                      >
-                        {option.helper ? (
-                          <div className="flex flex-col">
-                            <p>{option.label}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {option.helper}
-                            </p>
-                          </div>
-                        ) : (
-                          option.label
-                        )}
-                        <RxCheck
-                          className={cn(
-                            "ml-auto h-4 w-4",
-                            isSelected || option.value === value
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                      </CommandItem>
-                    );
-                  })}
-                  {!isExactMatch && (
-                    <CommandItem
-                      onSelect={() => {
-                        props.onCreateOption?.(search);
-                      }}
-                      value={search?.replace(/"/g, '\\"').trim() || ""}
-                      className="cursor-pointer"
-                    >
-                      <span>Create</span>
-                      <span className="ml-1 font-bold">{search || label}</span>
-                    </CommandItem>
-                  )}
-                </CommandGroup>
-              </ScrollArea>
-            </Command>
+            <VirtualizedCommand
+              options={options}
+              selected={selected}
+              value={value}
+              onChange={onChange}
+              onCreateOption={onCreateOption}
+              itemHeight={itemHeight}
+              setOpen={setOpen}
+            />
           </PopoverContent>
         </Popover>
         {isClearable && !isReadOnly && value && (
@@ -160,3 +105,149 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
 CreatableCombobox.displayName = "CreatableCombobox";
 
 export { CreatableCombobox };
+
+type VirtualizedCommandProps = {
+  options: CreatableComboboxProps["options"];
+  selected?: string[];
+  value?: string;
+  onChange?: (selected: string) => void;
+  onCreateOption?: (inputValue: string) => void;
+  itemHeight: number;
+  setOpen: (open: boolean) => void;
+};
+
+function VirtualizedCommand({
+  options,
+  selected,
+  value,
+  onChange,
+  onCreateOption,
+  itemHeight,
+  setOpen,
+}: VirtualizedCommandProps) {
+  const [search, setSearch] = useState("");
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = useMemo(() => {
+    const filtered = search
+      ? options.filter((option) => {
+          return `${option.label} ${option.helper}`
+            .toLowerCase()
+            .includes(search.toLowerCase());
+        })
+      : options;
+
+    if (
+      !options.some((option) =>
+        [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
+          search.toLowerCase()
+        )
+      ) &&
+      search.trim() !== ""
+    ) {
+      filtered.push({
+        label: `Create "${search}"`,
+        value: "create",
+      });
+    }
+
+    return filtered;
+  }, [options, search]);
+
+  const virtualizer = useVirtualizer({
+    count: filteredOptions.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => itemHeight,
+    overscan: 5,
+  });
+
+  const items = virtualizer.getVirtualItems();
+
+  return (
+    <Command shouldFilter={false}>
+      <CommandInput
+        value={search}
+        onValueChange={setSearch}
+        placeholder="Search..."
+        className="h-9"
+      />
+      <div
+        ref={parentRef}
+        className="overflow-auto"
+        style={{
+          height: `${Math.min(filteredOptions.length, 6) * itemHeight}px`,
+        }}
+      >
+        <CommandGroup
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {items.map((virtualRow) => {
+            const item = filteredOptions[virtualRow.index];
+
+            const isSelected = !!selected?.includes(item.value);
+            const isCreateOption = item.value === "create";
+
+            return (
+              <CommandItem
+                key={item.value}
+                value={
+                  typeof item.label === "string"
+                    ? item.label.replace(/"/g, '\\"') +
+                      item.helper?.replace(/"/g, '\\"')
+                    : undefined
+                }
+                onSelect={() => {
+                  if (isCreateOption) {
+                    onCreateOption?.(search);
+                  } else if (!isSelected) {
+                    onChange?.(item.value);
+                    setSearch("");
+                  }
+                  setOpen(false);
+                }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: `${itemHeight}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                {isCreateOption ? (
+                  <>
+                    <span>Create</span>
+                    <span className="ml-1 font-bold">{search}</span>
+                  </>
+                ) : item.helper ? (
+                  <div className="flex flex-col">
+                    <p>{item.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.helper}
+                    </p>
+                  </div>
+                ) : (
+                  item.label
+                )}
+                {!isCreateOption && (
+                  <RxCheck
+                    className={cn(
+                      "ml-auto h-4 w-4",
+                      isSelected || item.value === value
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
+                )}
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+      </div>
+    </Command>
+  );
+}
