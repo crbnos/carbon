@@ -64,9 +64,13 @@ const job = triggerClient.defineJob({
         supabaseClient.storage.from("private").download(modelPath),
       ]);
       if (signedUrl.error) {
+        io.logger.error("Filed to get signed URL");
+        io.logger.error(signedUrl.error.message);
         throw new Error("Failed to get signed URL: " + signedUrl.error.message);
       }
       if (blob.error) {
+        io.logger.error("Failed to download blob");
+        io.logger.error(blob.error.message);
         throw new Error("Failed to download blob: " + blob.error.message);
       }
 
@@ -124,7 +128,9 @@ const job = triggerClient.defineJob({
 
       io.logger.info("Event sent", { event });
     } catch (err) {
-      io.logger.error("Error in autodesk-upload job", { error: err });
+      io.logger.error("Error in autodesk-upload job", {
+        error: JSON.stringify(err, null, 2),
+      });
 
       const client = getSupabaseServiceRole();
       io.logger.info("Resetting modelUploadId");
