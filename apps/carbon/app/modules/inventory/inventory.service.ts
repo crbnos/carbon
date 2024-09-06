@@ -30,6 +30,7 @@ export async function deleteShippingMethod(
 export async function getInventoryItems(
   client: SupabaseClient<Database>,
   companyId: string,
+  locationId: string,
   args: GenericQueryFilters & {
     search: string | null;
     favorite?: boolean;
@@ -44,6 +45,7 @@ export async function getInventoryItems(
       count: "exact",
     })
     .eq("companyId", companyId)
+    .eq("locationId", locationId)
     .eq("active", args.active)
     .eq("itemTrackingType", "Inventory");
 

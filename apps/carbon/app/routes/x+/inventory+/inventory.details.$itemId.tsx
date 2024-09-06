@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.inventory,
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.inventory,
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -60,8 +60,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
     locationId = locations.data?.[0].id as string;
   }
-
-  console.log({ locationId });
 
   let [partInventory, shelves] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
@@ -79,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     if (insertPickMethod.error) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.inventory,
         await flash(
           request,
           error(insertPickMethod.error, "Failed to insert part inventory")
@@ -90,7 +88,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partInventory = await getPickMethod(client, itemId, companyId, locationId);
     if (partInventory.error || !partInventory.data) {
       throw redirect(
-        path.to.part(itemId),
+        path.to.inventory,
         await flash(
           request,
           error(partInventory.error, "Failed to load part inventory")

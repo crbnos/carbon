@@ -2,11 +2,15 @@ import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
+import { useRouteData } from "~/hooks";
 import type { InventoryItem } from "~/modules/inventory";
 import { getInventoryItems } from "~/modules/inventory";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
+import { getLocationsList } from "~/modules/resources";
+import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 import { error } from "~/utils/result";
@@ -29,17 +33,53 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const inventoryItems = await getInventoryItems(client, companyId, {
-    search,
-    favorite,
-    recent,
-    createdBy,
-    active,
-    limit,
-    offset,
-    sorts,
-    filters,
-  });
+  let locationId = searchParams.get("location");
+
+  if (!locationId) {
+    const userDefaults = await getUserDefaults(client, userId, companyId);
+    if (userDefaults.error) {
+      throw redirect(
+        path.to.inventory,
+        await flash(
+          request,
+          error(userDefaults.error, "Failed to load default location")
+        )
+      );
+    }
+
+    locationId = userDefaults.data?.locationId ?? null;
+  }
+
+  if (!locationId) {
+    const locations = await getLocationsList(client, companyId);
+    if (locations.error || !locations.data?.length) {
+      throw redirect(
+        path.to.inventory,
+        await flash(
+          request,
+          error(locations.error, "Failed to load any locations")
+        )
+      );
+    }
+    locationId = locations.data?.[0].id as string;
+  }
+
+  const inventoryItems = await getInventoryItems(
+    client,
+    companyId,
+    locationId,
+    {
+      search,
+      favorite,
+      recent,
+      createdBy,
+      active,
+      limit,
+      offset,
+      sorts,
+      filters,
+    }
+  );
 
   if (inventoryItems.error) {
     redirect(
@@ -54,11 +94,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: inventoryItems.count ?? 0,
     inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
+    locationId,
   });
 }
 
 export default function InventoryAllRoute() {
-  const { count, inventoryItems } = useLoaderData<typeof loader>();
+  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
+    path.to.inventoryRoot
+  );
+  const { count, inventoryItems, locationId } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
@@ -69,7 +113,12 @@ export default function InventoryAllRoute() {
           minSize={25}
           className="bg-background p-2"
         >
-          <InventoryTable data={inventoryItems} count={count} />
+          <InventoryTable
+            data={inventoryItems}
+            count={count}
+            locationId={locationId}
+            locations={sharedPartsData?.locations ?? []}
+          />
         </ResizablePanel>
         <Outlet />
       </ResizablePanelGroup>
