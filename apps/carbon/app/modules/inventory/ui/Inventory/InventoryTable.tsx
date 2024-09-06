@@ -160,17 +160,21 @@ const InventoryTable = memo(
           </HStack>
         ) : (
           <>
-            <CardAction>
-              <Combobox
-                size="sm"
-                value={locationId}
-                options={locationOptions}
-                onChange={(selected) => {
-                  // hard refresh because initialValues update has no effect otherwise
-                  window.location.href = getLocationPath(selected);
-                }}
-              />
-            </CardAction>
+            <div className="flex justify-end">
+              <CardAction>
+                <Combobox
+                  size="sm"
+                  value={locationId}
+                  options={locationOptions}
+                  onChange={(selected) => {
+                    // hard refresh because initialValues update has no effect otherwise
+                    window.location.href = getLocationPath(selected);
+                  }}
+                  className="w-64"
+                />
+              </CardAction>
+            </div>
+
             <Table<InventoryItem>
               actions={actions}
               count={count}

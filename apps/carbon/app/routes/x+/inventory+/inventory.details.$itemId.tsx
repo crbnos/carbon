@@ -2,7 +2,6 @@ import { ResizableHandle, ResizablePanel } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { useRouteData } from "~/hooks";
 import InventoryDetailsView from "~/modules/inventory/ui/Inventory/InventoryDetailsView";
 import {
   getItemQuantities,
@@ -14,7 +13,6 @@ import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import type { ListItem } from "~/types";
 import { getCustomFields } from "~/utils/form";
 import { notFound } from "~/utils/http";
 import { path } from "~/utils/path";
@@ -125,9 +123,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ItemInventoryDetailsRoute() {
-  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.inventoryRoot
-  );
   const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
 
   const initialValues = {
@@ -148,9 +143,7 @@ export default function ItemInventoryDetailsRoute() {
           key={initialValues.itemId}
           initialValues={initialValues}
           quantities={quantities}
-          locations={sharedPartsData?.locations ?? []}
           shelves={shelves}
-          type="Part"
         />
       </ResizablePanel>
     </>
