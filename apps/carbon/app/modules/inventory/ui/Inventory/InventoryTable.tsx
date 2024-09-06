@@ -10,8 +10,10 @@ import {
 } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useEffect, useMemo, useState } from "react";
+import { LuImage } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { Hyperlink, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
@@ -50,12 +52,27 @@ const InventoryTable = memo(({ data, count }: InventoryTableProps) => {
         accessorKey: "readableId",
         header: "Item ID",
         cell: ({ row }) => (
-          <Hyperlink
-            onClick={() => view(row.original)}
-            className="max-w-[260px] truncate"
-          >
-            <>{row.original.readableId}</>
-          </Hyperlink>
+          <>
+            <HStack>
+              {row.original.thumbnailPath ? (
+                <img
+                  alt="P2392303"
+                  className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
+                  src={`/file/preview/private/${row.original.thumbnailPath}`}
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+                  <LuImage className="w-6 h-6 text-muted-foreground" />
+                </div>
+              )}
+              <Hyperlink
+                onClick={() => view(row.original)}
+                className="max-w-[260px] truncate"
+              >
+                <>{row.original.readableId}</>
+              </Hyperlink>
+            </HStack>
+          </>
         ),
       },
       {
@@ -80,12 +97,37 @@ const InventoryTable = memo(({ data, count }: InventoryTableProps) => {
       {
         accessorKey: "name",
         header: "Name",
-        cell: (inventoryItem) => inventoryItem.getValue(),
+        cell: ({ row }) => row.original.name,
       },
       {
-        accessorKey: "description",
-        header: "Description",
-        cell: (inventoryItem) => inventoryItem.getValue(),
+        accessorKey: "locationName",
+        header: "Location",
+        cell: ({ row }) => <Enumerable value={row.original.locationName} />,
+      },
+      {
+        accessorKey: "quantityOnHand",
+        header: "Qty On Hand",
+        cell: ({ row }) => row.original.quantityOnHand,
+      },
+      {
+        accessorKey: "quantityAvailable",
+        header: "Qty Available",
+        cell: ({ row }) => row.original.quantityAvailable,
+      },
+      {
+        accessorKey: "quantityOnPurchaseOrder",
+        header: "Qty On Purchase Order",
+        cell: ({ row }) => row.original.quantityOnPurchaseOrder,
+      },
+      {
+        accessorKey: "quantityOnProdOrder",
+        header: "Qty On Prod Order",
+        cell: ({ row }) => row.original.quantityOnProdOrder,
+      },
+      {
+        accessorKey: "quantityOnSalesOrder",
+        header: "Qty On Sales Order",
+        cell: ({ row }) => row.original.quantityOnSalesOrder,
       },
     ];
     // Don't put the revalidator in the deps array

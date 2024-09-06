@@ -39,7 +39,7 @@ export async function getInventoryItems(
   }
 ) {
   let query = client
-    .from("item")
+    .from("itemQuantities")
     .select("*", {
       count: "exact",
     })

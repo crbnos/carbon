@@ -23010,14 +23010,23 @@ export type Database = {
       }
       itemQuantities: {
         Row: {
+          active: boolean | null
           companyId: string | null
           itemId: string | null
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
           locationId: string | null
+          locationName: string | null
+          name: string | null
           quantityAvailable: number | null
           quantityOnHand: number | null
           quantityOnProdOrder: number | null
           quantityOnPurchaseOrder: number | null
           quantityOnSalesOrder: number | null
+          readableId: string | null
+          thumbnailPath: string | null
+          type: Database["public"]["Enums"]["itemType"] | null
         }
         Relationships: [
           {

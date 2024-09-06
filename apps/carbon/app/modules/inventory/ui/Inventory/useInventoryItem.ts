@@ -10,7 +10,9 @@ export const useInventoryItem = () => {
 
   const view = useCallback(
     (inventoryItem: InventoryItem) => {
-      navigate(`${path.to.inventoryItemView(inventoryItem.id!)}/?${params}`);
+      navigate(
+        `${path.to.inventoryItemView(inventoryItem.itemId!)}/?${params}`
+      );
     },
     [navigate, params]
   );

@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.2 (a4e00ff)",
+    version: "12.0.1 (cd38da5)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -23211,6 +23211,27 @@ export default {
             $ref: "#/parameters/rowFilter.itemQuantities.quantityAvailable",
           },
           {
+            $ref: "#/parameters/rowFilter.itemQuantities.readableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemQuantities.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemQuantities.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemQuantities.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemQuantities.itemTrackingType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemQuantities.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemQuantities.locationName",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -44602,6 +44623,43 @@ export default {
           format: "integer",
           type: "integer",
         },
+        readableId: {
+          format: "text",
+          type: "string",
+        },
+        type: {
+          enum: [
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+          ],
+          format: 'public."itemType"',
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        active: {
+          format: "boolean",
+          type: "boolean",
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory"],
+          format: 'public."itemTrackingType"',
+          type: "string",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        locationName: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -44609,7 +44667,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -44658,7 +44716,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62600,6 +62658,55 @@ export default {
       name: "quantityAvailable",
       required: false,
       format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemQuantities.readableId": {
+      name: "readableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemQuantities.type": {
+      name: "type",
+      required: false,
+      format: 'public."itemType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemQuantities.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemQuantities.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemQuantities.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      format: 'public."itemTrackingType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemQuantities.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemQuantities.locationName": {
+      name: "locationName",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
