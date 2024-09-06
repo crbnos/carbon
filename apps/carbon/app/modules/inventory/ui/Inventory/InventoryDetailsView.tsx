@@ -1,5 +1,6 @@
 import { ValidatedForm } from "@carbon/form";
 import {
+  Badge,
   Card,
   CardContent,
   CardFooter,
@@ -21,6 +22,7 @@ import { useSupabase } from "~/lib/supabase";
 import type { ItemQuantities } from "~/modules/items";
 import { pickMethodValidator } from "~/modules/items";
 import { path } from "~/utils/path";
+import InventoryItemIcon from "./InventoryItemIcon";
 
 type InventoryDetailsViewProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
@@ -49,7 +51,14 @@ const InventoryDetailsView = ({
       >
         <HStack className="w-full justify-between items-start">
           <CardHeader>
-            <CardTitle>{quantities.readableId}</CardTitle>
+            <HStack>
+              <CardTitle>{quantities.readableId}</CardTitle>
+              {quantities.type && (
+                <Badge variant="secondary">
+                  <InventoryItemIcon type={quantities.type} />
+                </Badge>
+              )}
+            </HStack>
           </CardHeader>
         </HStack>
 
