@@ -89,6 +89,8 @@ export default function SalesRFQExplorer() {
     id: "sales-rfq-explorer",
   });
 
+  const hasOptimisticData = optimisticData && !optimisticData.lineId;
+
   return (
     <div
       ref={setExplorerRef}
@@ -100,7 +102,8 @@ export default function SalesRFQExplorer() {
     >
       <VStack className="w-full h-[calc(100vh-99px)] justify-between">
         <VStack className="flex-1 overflow-y-auto" spacing={0}>
-          {salesRfqData?.lines && salesRfqData?.lines?.length > 0 ? (
+          {(salesRfqData?.lines && salesRfqData?.lines?.length > 0) ||
+          hasOptimisticData ? (
             salesRfqData?.lines.map((line) => (
               <DroppableSalesRFQLineItem
                 key={line.id}
@@ -122,7 +125,7 @@ export default function SalesRFQExplorer() {
               )}
             </Empty>
           )}
-          {optimisticData && !optimisticData.lineId && (
+          {hasOptimisticData && (
             <VStack spacing={0} className="border-b border-border">
               <HStack className="w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer">
                 <HStack spacing={2}>
