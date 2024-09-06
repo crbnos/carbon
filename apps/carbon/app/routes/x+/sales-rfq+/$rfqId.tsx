@@ -109,7 +109,6 @@ export default function SalesRFQRoute() {
 
   const handleDrop = useCallback(
     (document: FileObject & { path: string }, targetId: string) => {
-      console.log({ document });
       const fileName = document.name.split(".").slice(0, -1).join(".");
       const fileExtension = document.name.split(".").pop()?.toLowerCase();
       const is3DModel = fileExtension

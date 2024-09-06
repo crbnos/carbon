@@ -122,7 +122,9 @@ const job = triggerClient.defineJob({
           .update({ modelUploadId: null })
           .eq("id", quoteLineId);
       }
+
       io.logger.error("Error uploading to Autodesk");
+      io.logger.info(JSON.stringify(err, null, 2));
     }
   },
 });
