@@ -11,6 +11,7 @@ import FileDropzone from "./FileDropzone";
 import Hyperlink from "./Hyperlink";
 import Location from "./Location";
 import New from "./New";
+import SearchFilter from "./SearchFilter";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
 import Table from "./Table";
@@ -31,6 +32,7 @@ export {
   Hyperlink,
   Location,
   New,
+  SearchFilter,
   Select,
   SupplierAvatar,
   Table,

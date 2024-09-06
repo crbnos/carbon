@@ -24,6 +24,7 @@ interface SortableListItemProps<T> {
   item: SortableItem<T>;
   items: SortableItem<T>[];
   order: number;
+  onSelectItem: (id: string) => void;
   onToggleItem: (id: string) => void;
   onRemoveItem: (id: string) => void;
   renderExtra?: (item: SortableItem<T>) => React.ReactNode;
@@ -36,6 +37,7 @@ function SortableListItem<T>({
   item,
   items,
   order,
+  onSelectItem,
   onToggleItem,
   onRemoveItem,
   renderExtra,
@@ -113,7 +115,9 @@ function SortableListItem<T>({
                   {/* List Title */}
                   <div
                     key={`${item.checked}`}
-                    className="px-1 flex flex-grow truncate"
+                    className="px-1 flex flex-grow truncate cursor-pointer"
+                    role="button"
+                    onClick={() => onSelectItem(item.id)}
                   >
                     <HStack className="w-full justify-between">
                       {typeof item.title === "string" ? (

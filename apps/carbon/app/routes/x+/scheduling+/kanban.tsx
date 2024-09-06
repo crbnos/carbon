@@ -12,9 +12,9 @@ import { useRevalidator } from "@remix-run/react";
 import { HiOutlineAdjustmentsHorizontal } from "react-icons/hi2";
 import { LuListFilter, LuRefreshCcw } from "react-icons/lu";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { SearchFilter } from "~/components";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
-import { DebouncedInput } from "~/components/Search";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   return typedjson({
@@ -200,7 +200,7 @@ export default function KanbanView() {
     <div className="flex flex-col h-full max-h-full  overflow-auto relative">
       <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
         <HStack>
-          <DebouncedInput param="search" size="sm" placeholder="Search" />
+          <SearchFilter param="search" size="sm" placeholder="Search" />
           {/* <Filter filters={filters} /> */}
           <Button
             rightIcon={<LuListFilter />}

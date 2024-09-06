@@ -239,6 +239,7 @@ const QuoteBillOfMaterial = ({
         order={order}
         key={item.id}
         isExpanded={isOpen}
+        onSelectItem={setSelectedItemId}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}

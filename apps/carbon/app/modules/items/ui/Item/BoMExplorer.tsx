@@ -45,7 +45,7 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
     selectedId,
     // collapsedIds,
     onSelectedIdChanged: () => {},
-    estimatedRowHeight: () => 32,
+    estimatedRowHeight: () => 40,
     parentRef,
     filter: {
       value: { text: filterText },
@@ -197,8 +197,10 @@ export default BoMExplorer;
 
 function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
-    <div className="flex items-center gap-1">
-      <span className="text-sm font-mono">{node.data.itemReadableId}</span>
+    <div className="flex flex-col items-start gap-0">
+      <span className="text-sm font-mono line-clamp-1">
+        {node.data.itemReadableId}
+      </span>
     </div>
   );
 }

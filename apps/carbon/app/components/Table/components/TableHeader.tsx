@@ -3,7 +3,7 @@ import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { type ReactNode } from "react";
 import { BsFillCheckCircleFill } from "react-icons/bs";
 import { MdOutlineEditNote } from "react-icons/md";
-import { DebouncedInput } from "~/components/Search";
+import { SearchFilter } from "~/components";
 import { useUrlParams } from "~/hooks";
 import type { TableAction } from "../types";
 import Actions from "./Actions";
@@ -57,7 +57,7 @@ const TableHeader = <T extends object>({
       <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full">
         <HStack>
           {withSearch && (
-            <DebouncedInput param="search" size="sm" placeholder="Search" />
+            <SearchFilter param="search" size="sm" placeholder="Search" />
           )}
           {!!filters?.length && <Filter filters={filters} />}
         </HStack>

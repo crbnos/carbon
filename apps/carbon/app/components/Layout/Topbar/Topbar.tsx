@@ -1,11 +1,11 @@
 import { HStack } from "@carbon/react";
-import { Search } from "~/components/Search";
 import { usePermissions } from "~/hooks";
 import AvatarMenu from "./AvatarMenu";
 import Breadcrumbs from "./Breadcrumbs";
 import CreateMenu from "./CreateMenu";
 import HelpMenu from "./HelpMenu";
 import ModeSwitcher from "./ModeSwitcher";
+import Search from "./Search";
 
 const Topbar = () => {
   const permissions = usePermissions();
