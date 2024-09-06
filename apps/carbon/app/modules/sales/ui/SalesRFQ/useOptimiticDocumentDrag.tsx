@@ -4,8 +4,9 @@ import { salesRfqDragValidator } from "../../sales.models";
 
 export function useOptimisticDocumentDrag() {
   const { rfqId } = useParams();
-  if (!rfqId) throw new Error("rfqId not found");
   const fetchers = useFetchers();
+
+  if (!rfqId) return null;
 
   const relevantFetcher = fetchers.find(
     (fetcher) => fetcher.formAction === path.to.salesRfqDrag(rfqId)
