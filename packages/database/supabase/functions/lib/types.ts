@@ -19572,6 +19572,7 @@ export type Database = {
         Row: {
           about: string
           active: boolean | null
+          admin: boolean | null
           avatarUrl: string | null
           createdAt: string
           developer: boolean | null
@@ -19585,6 +19586,7 @@ export type Database = {
         Insert: {
           about?: string
           active?: boolean | null
+          admin?: boolean | null
           avatarUrl?: string | null
           createdAt?: string
           developer?: boolean | null
@@ -19598,6 +19600,7 @@ export type Database = {
         Update: {
           about?: string
           active?: boolean | null
+          admin?: boolean | null
           avatarUrl?: string | null
           createdAt?: string
           developer?: boolean | null

@@ -16798,6 +16798,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.developer",
           },
           {
+            $ref: "#/parameters/rowFilter.user.admin",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -16890,6 +16893,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.developer",
           },
           {
+            $ref: "#/parameters/rowFilter.user.admin",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -16934,6 +16940,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.user.developer",
+          },
+          {
+            $ref: "#/parameters/rowFilter.user.admin",
           },
           {
             $ref: "#/parameters/body.user",
@@ -40617,6 +40626,11 @@ export default {
           format: "boolean",
           type: "boolean",
         },
+        admin: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
       },
       type: "object",
     },
@@ -57021,6 +57035,13 @@ export default {
     },
     "rowFilter.user.developer": {
       name: "developer",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.user.admin": {
+      name: "admin",
       required: false,
       format: "boolean",
       in: "query",

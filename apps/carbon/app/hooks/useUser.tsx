@@ -7,6 +7,7 @@ type PersonalData = {
   firstName: string;
   lastName: string;
   avatarUrl: string | null;
+  admin: boolean;
 };
 
 type Company = {

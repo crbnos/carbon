@@ -35,7 +35,7 @@ import {
 } from "~/components";
 
 import { Input, Submit } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
 import { companyValidator, type Company } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -99,11 +99,13 @@ function CompanyBreadcrumb() {
   const routeData = useRouteData<{ company: Company; companies: Company[] }>(
     path.to.authenticatedRoot
   );
+  const user = useUser();
 
-  const canCreateCompany = usePermissions().can("update", "settings");
   const hasMultipleCompanies = Boolean(
     routeData?.companies && routeData?.companies.length > 1
   );
+
+  const canCreateCompany = user.admin === true;
   const hasCompanyMenu = canCreateCompany || hasMultipleCompanies;
   const companyForm = useDisclosure();
 
