@@ -11,7 +11,6 @@ export function useNextItemId(
   const [id, setId] = useState<string>("");
 
   const onIdChange = async (newItemId: string) => {
-    console.log(newItemId);
     if (newItemId.endsWith("...") && supabase) {
       setLoading(true);
 
