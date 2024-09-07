@@ -10,11 +10,12 @@ export function useNextItemId(
   const [loading, setLoading] = useState<boolean>(false);
   const [id, setId] = useState<string>("");
 
-  const onIdChange = async (newToolId: string) => {
-    if (newToolId.endsWith("...") && supabase) {
+  const onIdChange = async (newItemId: string) => {
+    console.log(newItemId);
+    if (newItemId.endsWith("...") && supabase) {
       setLoading(true);
 
-      const prefix = newToolId.slice(0, -3);
+      const prefix = newItemId.slice(0, -3);
       try {
         const { data } = await supabase
           ?.from("item")
@@ -44,7 +45,7 @@ export function useNextItemId(
         setLoading(false);
       }
     } else {
-      setId(newToolId);
+      setId(newItemId);
     }
   };
 

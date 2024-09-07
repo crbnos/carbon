@@ -221,7 +221,14 @@ const FixtureProperties = () => {
           </HStack>
         )}
         {routeData?.files.map((file) => {
-          return <FileBadge key={file.id} file={file} itemId={itemId} />;
+          return (
+            <FileBadge
+              key={file.id}
+              file={file}
+              itemId={itemId}
+              itemType="Fixture"
+            />
+          );
         })}
       </VStack>
     </VStack>

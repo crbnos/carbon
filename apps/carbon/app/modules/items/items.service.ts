@@ -11,6 +11,7 @@ import type {
   consumableValidator,
   customerPartValidator,
   fixtureValidator,
+  getMethodValidator,
   itemCostValidator,
   itemPlanningValidator,
   itemPostingGroupValidator,
@@ -29,6 +30,24 @@ import type {
   toolValidator,
   unitOfMeasureValidator,
 } from "./items.models";
+
+export async function copyMakeMethod(
+  client: SupabaseClient<Database>,
+  args: z.infer<typeof getMethodValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("get-method", {
+    body: {
+      type: "itemToItem",
+      sourceId: args.sourceId,
+      targetId: args.targetId,
+      companyId: args.companyId,
+      userId: args.userId,
+    },
+  });
+}
 
 export async function deleteItemCustomerPart(
   client: SupabaseClient<Database>,

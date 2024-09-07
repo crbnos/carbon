@@ -221,7 +221,9 @@ function VirtualizedCommand({
                 {isCreateOption ? (
                   <>
                     <span>Create</span>
-                    <span className="ml-1 font-bold">{search}</span>
+                    <span className="ml-1 font-bold line-clamp-1">
+                      {search}
+                    </span>
                   </>
                 ) : item.helper ? (
                   <div className="flex flex-col">

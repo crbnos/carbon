@@ -102,7 +102,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
               label={`${getLabel(type)} ID`}
             />
 
-            <Input name="name" label="Name" />
+            <Input name="name" label="Short Description" />
             <Select
               name="itemTrackingType"
               label="Tracking Type"

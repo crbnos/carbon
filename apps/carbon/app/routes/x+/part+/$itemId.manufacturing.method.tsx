@@ -4,11 +4,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, useLoaderData, useParams } from "@remix-run/react";
 import { redirect } from "remix-typedjson";
 import { useRouteData } from "~/hooks";
-
 import type { MakeMethod, Material, MethodOperation } from "~/modules/items";
 import {
   BillOfMaterial,
   BillOfProcess,
+  MakeMethodBreadcrumbs,
   PartManufacturingForm,
   getItemManufacturing,
   partManufacturingValidator,
@@ -113,6 +113,7 @@ export default function MakeMethodRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
+      <MakeMethodBreadcrumbs itemId={itemId} type="Part" />
       <PartManufacturingForm
         key={itemId}
         initialValues={manufacturingInitialValues}

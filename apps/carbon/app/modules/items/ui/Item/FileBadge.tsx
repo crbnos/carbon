@@ -2,17 +2,24 @@ import { Badge, HStack, cn } from "@carbon/react";
 import { LuDownload } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
+import type { MethodItemType } from "~/modules/shared";
 import type { ItemFile } from "../../types";
-import { useItemDocuments } from "./ItemDocuments/useItemDocuments";
+import { useItemDocuments } from "./ItemDocuments";
 
 type FileBadgeProps = {
   file: ItemFile;
   itemId: string;
+  itemType: MethodItemType;
   className?: string;
 };
 
-export function FileBadge({ file, itemId, className }: FileBadgeProps) {
-  const { getPath, download } = useItemDocuments({ itemId });
+export function FileBadge({
+  file,
+  itemId,
+  itemType,
+  className,
+}: FileBadgeProps) {
+  const { getPath, download } = useItemDocuments({ itemId, type: itemType });
   const type = getDocumentType(file.name);
   return (
     <HStack className="group" spacing={1}>

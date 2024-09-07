@@ -58,7 +58,8 @@ const PartManufacturingForm = ({
             <InputControlled
               isReadOnly
               name="name"
-              label="Name"
+              label="Short Description"
+              className="col-span-2"
               value={routeData?.partSummary?.name ?? ""}
             />
             <Number name="lotSize" label="Lot Size" />

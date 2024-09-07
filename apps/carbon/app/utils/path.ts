@@ -356,6 +356,8 @@ export const path = {
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
+    makeMethodGet: `${x}/items/methods/get`,
+    makeMethodSave: `${x}/items/methods/save`,
     material: (id: string) => generatePath(`${x}/material/${id}`),
     materialCosting: (id: string) =>
       generatePath(`${x}/material/${id}/costing`),

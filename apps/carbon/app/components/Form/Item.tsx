@@ -16,7 +16,7 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
   type: Database["public"]["Enums"]["itemType"];
   disabledItems?: string[];
   includeInactive?: boolean;
-  replenishmentSystem?: string;
+  replenishmentSystem?: "Buy" | "Make";
 };
 
 const Item = ({ type, ...props }: ItemSelectProps) => {
@@ -33,7 +33,9 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
             (item) =>
               item.type === type &&
               (props.replenishmentSystem === undefined ||
-                item.replenishmentSystem === props.replenishmentSystem) &&
+                item.replenishmentSystem === props.replenishmentSystem ||
+                item.replenishmentSystem === "Buy and Make" ||
+                props.replenishmentSystem === item.replenishmentSystem) &&
               (item.active === true || props?.includeInactive === true)
           )
         : items
@@ -67,6 +69,7 @@ const Item = ({ type, ...props }: ItemSelectProps) => {
         options={options}
         {...props}
         label={props?.label ?? "Item"}
+        itemHeight={44}
         onCreateOption={(option) => {
           newItemsModal.onOpen();
           setCreated(option);

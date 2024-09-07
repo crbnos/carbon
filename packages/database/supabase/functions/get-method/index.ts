@@ -18,6 +18,7 @@ const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.object({
   type: z.enum([
+    "itemToItem",
     "itemToQuoteMakeMethod",
     "itemToQuoteLine",
     "quoteMakeMethodToItem",
@@ -51,6 +52,77 @@ serve(async (req: Request) => {
     const client = getSupabaseServiceRole(req.headers.get("Authorization"));
 
     switch (type) {
+      case "itemToItem": {
+        const [sourceMakeMethod, targetMakeMethod] = await Promise.all([
+          client.from("makeMethod").select("*").eq("itemId", sourceId).single(),
+          client.from("makeMethod").select("*").eq("itemId", targetId).single(),
+        ]);
+
+        if (sourceMakeMethod.error || targetMakeMethod.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        const [sourceMaterials, sourceOperations] = await Promise.all([
+          client
+            .from("methodMaterial")
+            .select("*")
+            .eq("makeMethodId", sourceMakeMethod.data.id),
+          client
+            .from("methodOperation")
+            .select("*")
+            .eq("makeMethodId", sourceMakeMethod.data.id),
+        ]);
+
+        if (sourceMaterials.error || sourceOperations.error) {
+          throw new Error("Failed to get source materials or operations");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing materials and operations from target method
+          await Promise.all([
+            trx
+              .deleteFrom("methodMaterial")
+              .where("makeMethodId", "=", targetMakeMethod.data.id)
+              .execute(),
+            trx
+              .deleteFrom("methodOperation")
+              .where("makeMethodId", "=", targetMakeMethod.data.id)
+              .execute(),
+          ]);
+
+          // Copy materials from source to target
+          if (sourceMaterials.data && sourceMaterials.data.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(
+                sourceMaterials.data.map((material) => ({
+                  ...material,
+                  id: undefined, // Let the database generate a new ID
+                  makeMethodId: targetMakeMethod.data.id,
+                  createdBy: userId,
+                }))
+              )
+              .execute();
+          }
+
+          // Copy operations from source to target
+          if (sourceOperations.data && sourceOperations.data.length > 0) {
+            await trx
+              .insertInto("methodOperation")
+              .values(
+                sourceOperations.data.map((operation) => ({
+                  ...operation,
+                  id: undefined, // Let the database generate a new ID
+                  makeMethodId: targetMakeMethod.data.id,
+                  createdBy: userId,
+                }))
+              )
+              .execute();
+          }
+        });
+
+        break;
+      }
       case "itemToQuoteLine": {
         const [quoteId, quoteLineId] = (targetId as string).split(":");
         if (!quoteId || !quoteLineId) {

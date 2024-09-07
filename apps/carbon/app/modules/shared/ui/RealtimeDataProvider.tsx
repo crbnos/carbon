@@ -136,9 +136,9 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                         ...i,
                         readableId: updated.readableId,
                         name: updated.name,
-                        replenishmentSystem: inserted.replenishmentSystem,
-                        type: inserted.type,
-                        active: inserted.active,
+                        replenishmentSystem: updated.replenishmentSystem,
+                        type: updated.type,
+                        active: updated.active,
                       };
                     }
                     return i;
