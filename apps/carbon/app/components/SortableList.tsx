@@ -117,7 +117,11 @@ function SortableListItem<T>({
                     key={`${item.checked}`}
                     className="px-1 flex flex-grow truncate cursor-pointer"
                     role="button"
-                    onClick={() => onSelectItem(item.id)}
+                    onClick={(e) => {
+                      if (!isDragging) {
+                        onSelectItem(item.id);
+                      }
+                    }}
                   >
                     <HStack className="w-full justify-between">
                       {typeof item.title === "string" ? (

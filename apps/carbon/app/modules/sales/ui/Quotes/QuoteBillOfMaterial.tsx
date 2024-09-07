@@ -72,8 +72,10 @@ function makeItem(material: Material): ItemWithData {
   return {
     id: material.id!,
     title: (
-      <VStack spacing={0}>
-        <h4 className="font-mono">{material.itemReadableId}</h4>
+      <VStack spacing={0} className="py-2.5">
+        <h4 className="flex tracking-tighter text-base md:text-lg truncate">
+          {material.itemReadableId}
+        </h4>
         {material?.description && (
           <span className="text-xs text-muted-foreground">
             {material.description}{" "}

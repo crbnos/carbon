@@ -8,6 +8,11 @@ import {
   standardFactorType,
 } from "../shared";
 
+export const getMethodValidator = z.object({
+  targetId: z.string().min(1, { message: "Please select a target method" }),
+  sourceId: z.string().min(1, { message: "Please select a source method" }),
+});
+
 export const itemTrackingTypes = ["Inventory", "Non-Inventory"] as const;
 
 export const itemCostingMethods = [
