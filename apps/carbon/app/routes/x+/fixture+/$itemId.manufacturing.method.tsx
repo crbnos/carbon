@@ -3,7 +3,11 @@ import { useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 
 import type { MakeMethod, Material, MethodOperation } from "~/modules/items";
-import { BillOfMaterial, BillOfProcess } from "~/modules/items";
+import {
+  BillOfMaterial,
+  BillOfProcess,
+  MakeMethodBreadcrumbs,
+} from "~/modules/items";
 import { path } from "~/utils/path";
 
 export default function MakeMethodRoute() {
@@ -21,6 +25,7 @@ export default function MakeMethodRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
+      <MakeMethodBreadcrumbs itemId={itemId} type="Fixture" />
       <BillOfProcess
         key={itemId}
         makeMethodId={makeMethodId}
