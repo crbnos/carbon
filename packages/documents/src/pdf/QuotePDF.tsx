@@ -279,7 +279,7 @@ const QuotePDF = ({
           title="Notes"
           content={(quote.externalNotes ?? {}) as JSONContent}
         />
-        <Note title="Terms" content={terms} />
+        <Note title="Standard Terms & Conditions" content={terms} />
       </View>
     </Template>
   );

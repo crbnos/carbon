@@ -222,7 +222,7 @@ const SalesOrderPDF = ({
         )}
       </View>
       <View style={tw("flex flex-col gap-4 w-full")}>
-        <Note title="Terms" content={terms} />
+        <Note title="Standard Terms & Conditions" content={terms} />
       </View>
     </Template>
   );

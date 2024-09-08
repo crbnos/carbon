@@ -113,7 +113,7 @@ export default function Terms() {
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>Purchasing Terms</CardTitle>
+            <CardTitle>Terms &amp; Conditions (Purchasing)</CardTitle>
             <CardDescription>
               Define the terms and conditions for purchase orders
             </CardDescription>
@@ -146,7 +146,7 @@ export default function Terms() {
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>Sales Terms</CardTitle>
+            <CardTitle>Terms &amp; Conditions (Sales)</CardTitle>
             <CardDescription>
               Define the terms and conditions for quotes and sales orders
             </CardDescription>

@@ -15,7 +15,7 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuFactory />,
       },
       {
-        name: "Terms",
+        name: "Standard Terms",
         to: path.to.terms,
         role: "employee",
         icon: <LuFileText />,
