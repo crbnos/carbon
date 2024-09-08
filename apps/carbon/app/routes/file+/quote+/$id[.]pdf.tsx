@@ -1,4 +1,5 @@
 import { QuotePDF } from "@carbon/documents";
+import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@remix-run/node";
 import logger from "~/lib/logger";
@@ -11,6 +12,7 @@ import {
   getQuoteLines,
   getQuotePayment,
   getQuoteShipment,
+  getSalesTerms,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
@@ -33,6 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quotePayment,
     quoteShipment,
     paymentTerms,
+    terms,
     shippingMethods,
   ] = await Promise.all([
     getCompany(client, companyId),
@@ -43,6 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getQuotePayment(client, id),
     getQuoteShipment(client, id),
     getPaymentTermsList(client, companyId),
+    getSalesTerms(client, companyId),
     getShippingMethodsList(client, companyId),
   ]);
 
@@ -112,6 +116,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       shipment={quoteShipment?.data}
       paymentTerms={paymentTerms.data ?? []}
       shippingMethods={shippingMethods.data ?? []}
+      terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
       thumbnails={thumbnails}
     />
   );

@@ -18,6 +18,7 @@ interface QuotePDFProps extends PDF {
   shipment?: Database["public"]["Tables"]["quoteShipment"]["Row"] | null;
   paymentTerms: { id: string; name: string }[];
   shippingMethods: { id: string; name: string }[];
+  terms: JSONContent;
   thumbnails: Record<string, string | null>;
 }
 
@@ -53,6 +54,7 @@ const QuotePDF = ({
   paymentTerms,
   shipment,
   shippingMethods,
+  terms,
   thumbnails,
   title = "Quote",
 }: QuotePDFProps) => {
@@ -272,7 +274,13 @@ const QuotePDF = ({
           })}
         </View>
       </View>
-      <Note note={(quote.externalNotes ?? {}) as JSONContent} />
+      <View style={tw("flex flex-col gap-4 w-full")}>
+        <Note
+          title="Notes"
+          content={(quote.externalNotes ?? {}) as JSONContent}
+        />
+        <Note title="Terms" content={terms} />
+      </View>
     </Template>
   );
 };

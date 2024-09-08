@@ -233,6 +233,17 @@ export async function getPurchaseOrderSuppliers(
     .order("name");
 }
 
+export async function getPurchasingTerms(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("terms")
+    .select("purchasingTerms")
+    .eq("id", companyId)
+    .single();
+}
+
 export async function getSupplier(
   client: SupabaseClient<Database>,
   supplierId: string

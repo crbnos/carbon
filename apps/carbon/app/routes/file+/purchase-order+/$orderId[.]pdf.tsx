@@ -1,4 +1,5 @@
 import { PurchaseOrderPDF } from "@carbon/documents";
+import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@remix-run/node";
 import logger from "~/lib/logger";
@@ -6,6 +7,7 @@ import {
   getPurchaseOrder,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
+  getPurchasingTerms,
 } from "~/modules/purchasing";
 import { getCompany } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -18,13 +20,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [company, purchaseOrder, purchaseOrderLines, purchaseOrderLocations] =
-    await Promise.all([
-      getCompany(client, companyId),
-      getPurchaseOrder(client, orderId),
-      getPurchaseOrderLines(client, orderId),
-      getPurchaseOrderLocations(client, orderId),
-    ]);
+  const [
+    company,
+    purchaseOrder,
+    purchaseOrderLines,
+    purchaseOrderLocations,
+    terms,
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    getPurchaseOrder(client, orderId),
+    getPurchaseOrderLines(client, orderId),
+    getPurchaseOrderLocations(client, orderId),
+    getPurchasingTerms(client, companyId),
+  ]);
 
   if (company.error) {
     logger.error(company.error);
@@ -42,11 +50,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     logger.error(purchaseOrderLocations.error);
   }
 
+  if (terms.error) {
+    logger.error(terms.error);
+  }
+
   if (
     company.error ||
     purchaseOrder.error ||
     purchaseOrderLines.error ||
-    purchaseOrderLocations.error
+    purchaseOrderLocations.error ||
+    terms.error
   ) {
     throw new Error("Failed to load purchase order");
   }
@@ -57,6 +70,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       purchaseOrder={purchaseOrder.data}
       purchaseOrderLines={purchaseOrderLines.data ?? []}
       purchaseOrderLocations={purchaseOrderLocations.data}
+      terms={(terms?.data?.purchasingTerms ?? {}) as JSONContent}
     />
   );
 

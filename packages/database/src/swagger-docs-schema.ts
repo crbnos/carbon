@@ -16356,6 +16356,141 @@ export default {
         tags: ["supplierStatus"],
       },
     },
+    "/terms": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.terms.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.purchasingTerms",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.salesTerms",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/terms",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["terms"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.terms",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["terms"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.terms.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.purchasingTerms",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.salesTerms",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["terms"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.terms.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.purchasingTerms",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.salesTerms",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.terms.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.terms",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["terms"],
+      },
+    },
     "/employeeShift": {
       get: {
         parameters: [
@@ -40416,6 +40551,34 @@ export default {
       },
       type: "object",
     },
+    terms: {
+      required: ["id"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        purchasingTerms: {
+          format: "json",
+        },
+        salesTerms: {
+          format: "json",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     employeeShift: {
       required: ["id", "employeeId", "shiftId"],
       properties: {
@@ -56758,6 +56921,50 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "body.terms": {
+      name: "terms",
+      description: "terms",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/terms",
+      },
+    },
+    "rowFilter.terms.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.terms.purchasingTerms": {
+      name: "purchasingTerms",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.terms.salesTerms": {
+      name: "salesTerms",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.terms.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.terms.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

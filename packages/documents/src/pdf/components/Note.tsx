@@ -3,15 +3,18 @@ import { StyleSheet, Text, View } from "@react-pdf/renderer";
 
 const convertTiptapJSON = (
   node: JSONContent,
-  index?: number,
-  parentNodeType?: string
+  args?: {
+    index?: number;
+    parentNodeType?: string;
+    title?: string;
+  }
 ) => {
   switch (node.type) {
     case "doc":
       return (
         <View style={{ fontSize: 11 }}>
           <View style={styles.thead}>
-            <Text>Notes</Text>
+            <Text>{args?.title ?? "Notes"}</Text>
           </View>
           {node.content.map((child, index) => convertTiptapJSON(child))}
         </View>
@@ -42,7 +45,10 @@ const convertTiptapJSON = (
       return (
         <View key="bulletList" style={{ marginLeft: 20 }}>
           {node.content.map((child, index) =>
-            convertTiptapJSON(child, index, "bulletList")
+            convertTiptapJSON(child, {
+              index,
+              parentNodeType: "bulletList",
+            })
           )}
         </View>
       );
@@ -51,16 +57,20 @@ const convertTiptapJSON = (
       return (
         <View key="orderedList" style={{ marginLeft: 20 }}>
           {node.content.map((child, index) =>
-            convertTiptapJSON(child, index, "orderedList")
+            convertTiptapJSON(child, {
+              index,
+              parentNodeType: "orderedList",
+            })
           )}
         </View>
       );
 
     case "listItem":
-      const indicator = parentNodeType == "orderedList" ? `${index + 1}.` : "•";
+      const indicator =
+        args.parentNodeType == "orderedList" ? `${args.index + 1}.` : "•";
       return (
         <View
-          key={`listItem-${index}`}
+          key={`listItem-${args.index}`}
           style={{ flexDirection: "row", marginBottom: 5 }}
         >
           <Text style={{ marginRight: 5 }}> {indicator} </Text>
@@ -73,14 +83,16 @@ const convertTiptapJSON = (
     case "taskList":
       return (
         <View key="taskList" style={{ marginLeft: 20 }}>
-          {node.content.map((child, index) => convertTiptapJSON(child, index))}
+          {node.content.map((child, index) =>
+            convertTiptapJSON(child, { index })
+          )}
         </View>
       );
 
     case "taskItem":
       return (
         <View
-          key={`taskItem-${index}`}
+          key={`taskItem-${args.index}`}
           style={{ flexDirection: "row", marginBottom: 5 }}
         >
           <Text style={{ marginRight: 5 }}>•</Text>
@@ -101,9 +113,9 @@ const convertTiptapJSON = (
   }
 };
 
-const Note = ({ note }: { note: JSONContent }) => {
-  if (!note || !("content" in note)) return null;
-  return <View>{convertTiptapJSON(note)}</View>;
+const Note = ({ title, content }: { title: string; content: JSONContent }) => {
+  if (!content || !("content" in content)) return null;
+  return <View>{convertTiptapJSON(content, { title })}</View>;
 };
 
 export default Note;

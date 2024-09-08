@@ -798,6 +798,13 @@ export async function getSalesOrderPayment(
     .single();
 }
 
+export async function getSalesTerms(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.from("terms").select("salesTerms").eq("id", companyId).single();
+}
+
 export async function getSalesOrderShipment(
   client: SupabaseClient<Database>,
   salesOrderId: string
