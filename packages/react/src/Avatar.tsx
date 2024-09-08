@@ -1,5 +1,5 @@
 "use client";
-import { getColor } from "@carbon/utils";
+import { getColorByValue } from "@carbon/utils";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type {
@@ -55,7 +55,7 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
     const avatarInitials = getInitials(name ?? "");
     const [error, setError] = useState(false);
 
-    const { background, color } = getColor(name ?? "", "light");
+    const { background, color } = getColorByValue(name ?? "", "light");
 
     return src && !error ? (
       <img
