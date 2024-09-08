@@ -2,6 +2,21 @@ import { getBucket } from "./hash";
 
 const cache: Record<string, number> = {};
 
+const colorIndex = {
+  gray: 0,
+  lightGray: 1,
+  brown: 2,
+  orange: 3,
+  yellow: 4,
+  green: 5,
+  blue: 6,
+  purple: 7,
+  pink: 8,
+  red: 9,
+};
+
+export type Color = keyof typeof colorIndex;
+
 const colors = [
   { background: "#e3e2e080", color: "#32302c" },
   { background: "#e3e2e0", color: "#32302c" },
@@ -28,7 +43,13 @@ const darkColors = [
   { background: "#6e3630", color: "#ffffff" },
 ];
 
-export function getColor(name: string, mode = "light") {
+export function getColor(color: Color, mode = "light") {
+  return mode === "dark"
+    ? darkColors[colorIndex[color]]
+    : colors[colorIndex[color]];
+}
+
+export function getColorByValue(name: string, mode = "light") {
   if (cache[name])
     return mode === "dark" ? darkColors[cache[name]!] : colors[cache[name]!];
   const hash = getBucket(name, colors.length);
