@@ -112,7 +112,11 @@ export default function MakeMethodRoute() {
   };
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack
+      spacing={2}
+      className="p-2"
+      key={JSON.stringify(manufacturingRouteData)}
+    >
       <MakeMethodBreadcrumbs itemId={itemId} type="Part" />
       <PartManufacturingForm
         key={itemId}
