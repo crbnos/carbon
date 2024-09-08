@@ -1,4 +1,5 @@
 import { SalesOrderPDF } from "@carbon/documents";
+import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@remix-run/node";
 import logger from "~/lib/logger";
@@ -6,6 +7,7 @@ import {
   getSalesOrder,
   getSalesOrderCustomerDetails,
   getSalesOrderLines,
+  getSalesTerms,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -18,12 +20,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [company, salesOrder, salesOrderLines, salesOrderLocations] =
+  const [company, salesOrder, salesOrderLines, salesOrderLocations, terms] =
     await Promise.all([
       getCompany(client, companyId),
       getSalesOrder(client, id),
       getSalesOrderLines(client, id),
       getSalesOrderCustomerDetails(client, id),
+      getSalesTerms(client, companyId),
     ]);
 
   if (company.error) {
@@ -42,11 +45,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     logger.error(salesOrderLocations.error);
   }
 
+  if (terms.error) {
+    logger.error(terms.error);
+  }
+
   if (
     company.error ||
     salesOrder.error ||
     salesOrderLines.error ||
-    salesOrderLocations.error
+    salesOrderLocations.error ||
+    terms.error
   ) {
     throw new Error("Failed to load sales order");
   }
@@ -62,6 +70,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       salesOrder={salesOrder.data}
       salesOrderLines={salesOrderLines.data ?? []}
       salesOrderLocations={salesOrderLocations.data}
+      terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
       title="Sales Order"
     />
   );

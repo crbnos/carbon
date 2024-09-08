@@ -2,6 +2,7 @@ import type { Database } from "@carbon/database";
 import { Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
+import type { JSONContent } from "@carbon/react";
 import type { PDF } from "../types";
 import {
   getLineDescription,
@@ -10,12 +11,13 @@ import {
   getTotal,
 } from "../utils/sales-order";
 import { formatAddress } from "../utils/shared";
-import { Header, Summary, Template } from "./components";
+import { Header, Note, Summary, Template } from "./components";
 
 interface SalesOrderPDFProps extends PDF {
   salesOrder: Database["public"]["Views"]["salesOrders"]["Row"];
   salesOrderLines: Database["public"]["Views"]["salesOrderLines"]["Row"][];
   salesOrderLocations: Database["public"]["Views"]["salesOrderLocations"]["Row"];
+  terms: JSONContent;
 }
 
 // TODO: format currency based on settings
@@ -46,6 +48,7 @@ const SalesOrderPDF = ({
   salesOrder,
   salesOrderLines,
   salesOrderLocations,
+  terms,
   title = "Sales Order",
 }: SalesOrderPDFProps) => {
   const {
@@ -217,6 +220,9 @@ const SalesOrderPDF = ({
             </View>
           </View>
         )}
+      </View>
+      <View style={tw("flex flex-col gap-4 w-full")}>
+        <Note title="Terms" content={terms} />
       </View>
     </Template>
   );

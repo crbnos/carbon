@@ -391,3 +391,11 @@ export async function updateSequence(
     .eq("companyId", companyId)
     .eq("table", table);
 }
+
+// Add this function to the file
+export async function getTerms(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.from("terms").select("*").eq("id", companyId).single();
+}

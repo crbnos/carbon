@@ -709,6 +709,7 @@ export const path = {
     supplierTypes: `${x}/purchasing/supplier-types`,
     tableSequence: (id: string) =>
       generatePath(`${x}/settings/sequences/${id}`),
+    terms: `${x}/settings/terms`,
     theme: `${x}/account/theme`,
     timecards: `${x}/timecards`,
     tool: (id: string) => generatePath(`${x}/tool/${id}`),
