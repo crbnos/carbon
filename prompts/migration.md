@@ -20,9 +20,9 @@
 
 - Avoid prefixes like 'tbl\_' and ensure no table name matches any of its column names.
 - Always add an `id` column of type `TEXT DEFAULT xid()` unless otherwise specified. Use it as the primary key.
-- Create all tables in the `public` schema unless otherwise specified.
 - Always add the schema to SQL queries for clarity.
-- Always add a `companyId` column of type `TEXT NOT NULL` that references `company("id")` unless othewise specified.
+- Always add a `companyId` column of type `TEXT NOT NULL` that references `company("id")` unless otherwise specified.
+- Always include an `assignee` column which references `user("id")` unless otherwise specified
 - Always include a `customFields` column of type `JSONB` unless otherwise specified.
 - Always include a `createdBy`, `createdAt`, `updatedBy` and `updatedAt` column unless otherwise specified.
 
