@@ -97,10 +97,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     methodOperations:
       methodOperations.data?.map((operation) => ({
         ...operation,
-        methodOperationWorkInstruction:
-          operation.methodOperationWorkInstruction as {
-            content: JSONContent | null;
-          },
+        workCenterId: operation.workCenterId ?? undefined,
+        operationSupplierProcessId:
+          operation.operationSupplierProcessId ?? undefined,
+        workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],
     methods: (methodTree.data.length > 0
       ? flattenTree(methodTree.data[0])

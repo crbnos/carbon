@@ -98,10 +98,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       methodOperations.data?.map((operation) => ({
         ...operation,
         workCenterId: operation.workCenterId ?? undefined,
-        methodOperationWorkInstruction:
-          operation.methodOperationWorkInstruction as {
-            content: JSONContent | null;
-          },
+        workInstruction: operation.workInstruction as JSONContent,
       })) ?? [],
     methods: (methodTree.data.length > 0
       ? flattenTree(methodTree.data[0])

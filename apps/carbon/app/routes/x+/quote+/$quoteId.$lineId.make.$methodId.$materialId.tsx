@@ -96,10 +96,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         machineRate: o.machineRate ?? 0,
         operationSupplierProcessId: o.operationSupplierProcessId ?? undefined,
         quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
-        quoteOperationWorkInstruction: {
-          content: (o.quoteOperationWorkInstruction?.content ??
-            {}) as JSONContent,
-        },
+        workInstruction: o.workInstruction as JSONContent | null,
       })) ?? [],
   });
 }

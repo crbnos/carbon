@@ -234,6 +234,7 @@ serve(async (req: Request) => {
                   op.processId,
                   op.operationSupplierProcessId
                 ),
+                workInstruction: op.workInstruction,
                 companyId,
                 createdBy: userId,
                 customFields: {},
@@ -431,6 +432,7 @@ serve(async (req: Request) => {
                   op.processId,
                   op.operationSupplierProcessId
                 ),
+                workInstruction: op.workInstruction,
                 companyId,
                 createdBy: userId,
                 customFields: {},
@@ -680,6 +682,7 @@ serve(async (req: Request) => {
               operationOrder: op.operationOrder ?? "After Previous",
               operationType: op.operationType ?? "Inside",
               operationSupplierProcessId: op.operationSupplierProcessId,
+              workInstruction: op.workInstruction,
               companyId,
               createdBy: userId,
               customFields: {},
@@ -876,7 +879,7 @@ serve(async (req: Request) => {
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
               operationType: op.operationType ?? "Inside",
-
+              workInstruction: op.workInstruction,
               companyId,
               createdBy: userId,
               customFields: {},

@@ -290,8 +290,8 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
       {selectedJob && selectedJob.id && (
         <ConfirmDelete
           action={path.to.deleteJob(selectedJob.id)}
-          name={selectedJob?.name ?? ""}
-          text={`Are you sure you want to deactivate the ${selectedJob?.name} work center?`}
+          name={selectedJob?.jobId ?? ""}
+          text={`Are you sure you want to delete the job: ${selectedJob?.jobId}?`}
           isOpen={deleteModal.isOpen}
           onCancel={onDeleteCancel}
           onSubmit={onDeleteCancel}
