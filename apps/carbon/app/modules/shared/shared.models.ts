@@ -1,13 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
-export const deadlineTypes = [
-  "No Deadline",
-  "ASAP",
-  "Soft Deadline",
-  "Hard Deadline",
-] as const;
-
 export const methodItemType = [
   "Part",
   "Material",

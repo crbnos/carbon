@@ -3,7 +3,7 @@ import { BsExclamationSquareFill } from "react-icons/bs";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
-import type { deadlineTypes } from "../shared.models";
+import type { deadlineTypes } from "../../production.models";
 
 export function getDeadlineIcon(
   deadlineType: (typeof deadlineTypes)[number],

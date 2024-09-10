@@ -8,8 +8,8 @@ import { cn } from "./utils/cn";
 
 type ProgressProps = ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & {
   indicatorClassName?: string;
-  leftLabel?: string;
-  rightLabel?: string;
+  numerator?: string;
+  denominator?: string;
 };
 
 const Progress = forwardRef<
@@ -17,13 +17,13 @@ const Progress = forwardRef<
   ProgressProps
 >(
   (
-    { className, indicatorClassName, leftLabel, rightLabel, value, ...props },
+    { className, indicatorClassName, numerator, denominator, value, ...props },
     ref
   ) => (
     <ProgressPrimitive.Root
       ref={ref}
       className={cn(
-        "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
+        "relative h-4 w-full overflow-hidden rounded-full bg-secondary min-w-[120px]",
         className
       )}
       {...props}
@@ -35,15 +35,10 @@ const Progress = forwardRef<
         )}
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />
-      {leftLabel && (
-        <div className="absolute left-1.5 z-10 inset-0 text-xs text-secondary-foreground">
-          {leftLabel}
-        </div>
-      )}
-      {rightLabel && (
-        <div className="absolute right-1.5 top-0 z-10 text-xs text-secondary-foreground">
-          {rightLabel}
-        </div>
+      {numerator !== undefined && denominator !== undefined && (
+        <span className="absolute text-[9px] text-foreground right-2 top-[-2px]">
+          {numerator} of {denominator}
+        </span>
       )}
     </ProgressPrimitive.Root>
   )

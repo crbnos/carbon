@@ -86,7 +86,6 @@ const tableBlacklist = new Set([
   "purchaseOrderTransaction",
   "salesOrderTransaction",
   "search",
-  "user",
 ]);
 
 function useApiDocsMenu(): RouteGroup[] {
