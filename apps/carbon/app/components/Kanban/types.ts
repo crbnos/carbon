@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { deadlineTypes } from "~/modules/shared";
 
 export const columnValidator = z.object({
   id: z.string(),
@@ -37,9 +38,7 @@ const itemValidator = z.object({
   description: z.string().optional(),
   dueDate: z.string().optional(), // 2024-05-28
   duration: z.number().optional(), // miliseconds
-  deadlineType: z
-    .enum(["ASAP", "HARD_DEADLINE", "SOFT_DEADLINE", "NO_DEADLINE"])
-    .optional(),
+  deadlineType: z.enum(deadlineTypes).optional(),
   progress: z.number().optional(), // miliseconds
   status: z
     .enum([
@@ -73,9 +72,9 @@ export enum ItemStatus {
 
 export enum ItemDeadline {
   ASAP = "ASAP",
-  HardDeadline = "HARD_DEADLINE",
-  SoftDeadline = "SOFT_DEADLINE",
-  NoDeadline = "NO_DEADLINE",
+  HardDeadline = "Hard Deadline",
+  SoftDeadline = "Soft Deadline",
+  NoDeadline = "No Deadline",
 }
 
 export enum ItemPriority {

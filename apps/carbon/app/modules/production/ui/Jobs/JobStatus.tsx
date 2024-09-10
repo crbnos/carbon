@@ -1,0 +1,27 @@
+import { Status } from "@carbon/react";
+import type { jobStatus } from "~/modules/production/production.models";
+
+type JobStatusProps = {
+  status?: (typeof jobStatus)[number] | null;
+};
+
+function JobStatus({ status }: JobStatusProps) {
+  switch (status) {
+    case "Draft":
+      return <Status color="gray">{status}</Status>;
+    case "Ready":
+      return <Status color="green">{status}</Status>;
+    case "In Progress":
+      return <Status color="green">{status}</Status>;
+    case "Paused":
+      return <Status color="yellow">{status}</Status>;
+    case "Completed":
+      return <Status color="blue">{status}</Status>;
+    case "Cancelled":
+      return <Status color="red">{status}</Status>;
+    default:
+      return null;
+  }
+}
+
+export default JobStatus;

@@ -110,7 +110,7 @@ export function Job() {
   const [activeTab, setActiveTab] = useState("details");
 
   const isOverdue =
-    job?.deadlineType !== "NO_DEADLINE" && job?.dueDate
+    job?.deadlineType !== "No Deadline" && job?.dueDate
       ? new Date(job?.dueDate) < new Date()
       : false;
 
@@ -337,7 +337,7 @@ export function Job() {
                                   isOverdue ? "text-red-500" : ""
                                 )}
                               >
-                                {["ASAP", "NO_DEADLINE"].includes(
+                                {["ASAP", "No Deadline"].includes(
                                   job.deadlineType
                                 )
                                   ? getDeadlineText(job.deadlineType)

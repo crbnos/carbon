@@ -1,4 +1,5 @@
 import CadModelUpload from "./CadModelUpload";
+import { getDeadlineIcon, getDeadlineText } from "./Deadline";
 import { MethodBadge } from "./MethodBadge";
 import {
   MethodIcon,
@@ -11,6 +12,8 @@ import RealtimeDataProvider from "./RealtimeDataProvider";
 
 export {
   CadModelUpload,
+  getDeadlineIcon,
+  getDeadlineText,
   MethodBadge,
   MethodIcon,
   MethodItemTypeIcon,

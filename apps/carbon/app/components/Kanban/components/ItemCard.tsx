@@ -18,7 +18,6 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
-import { BsExclamationSquareFill } from "react-icons/bs";
 import {
   LuCheckCircle,
   LuClipboardCheck,
@@ -30,13 +29,11 @@ import {
 } from "react-icons/lu";
 
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
-import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
-import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
-import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import CustomerAvatar from "~/components/CustomerAvatar";
 import EmployeeAvatarGroup from "~/components/EmployeeAvatarGroup";
+import { getDeadlineIcon, getDeadlineText } from "~/modules/shared";
 import type { DisplaySettings, Item, ItemDragData } from "../types";
 
 type ItemCardProps = {
@@ -121,7 +118,7 @@ export function ItemCard({
   };
 
   const isOverdue =
-    item.deadlineType !== "NO_DEADLINE" && item.dueDate
+    item.deadlineType !== "No Deadline" && item.dueDate
       ? new Date(item.dueDate) < new Date()
       : false;
 
@@ -214,7 +211,7 @@ export function ItemCard({
                 <span
                   className={cn("text-sm", isOverdue ? "text-red-500" : "")}
                 >
-                  {["ASAP", "NO_DEADLINE"].includes(item.deadlineType)
+                  {["ASAP", "No Deadline"].includes(item.deadlineType)
                     ? getDeadlineText(item.deadlineType)
                     : item.dueDate
                     ? `Due ${formatRelativeTime(
@@ -283,33 +280,5 @@ function getStatusText(status: Item["status"], overdue: boolean = false) {
       return "In progress";
     case "PAUSED":
       return "Paused";
-  }
-}
-
-function getDeadlineIcon(deadlineType: Item["deadlineType"], overdue: boolean) {
-  switch (deadlineType) {
-    case "ASAP":
-      return <BsExclamationSquareFill className="text-red-500" />;
-    case "HARD_DEADLINE":
-      return <HighPriorityIcon className={cn(overdue ? "text-red-500" : "")} />;
-    case "SOFT_DEADLINE":
-      return (
-        <MediumPriorityIcon className={cn(overdue ? "text-red-500" : "")} />
-      );
-    case "NO_DEADLINE":
-      return <LowPriorityIcon />;
-  }
-}
-
-function getDeadlineText(deadlineType: Item["deadlineType"]) {
-  switch (deadlineType) {
-    case "ASAP":
-      return "ASAP";
-    case "HARD_DEADLINE":
-      return "Hard deadline";
-    case "SOFT_DEADLINE":
-      return "Soft deadline";
-    case "NO_DEADLINE":
-      return "No deadline";
   }
 }

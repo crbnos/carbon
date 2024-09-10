@@ -53,7 +53,7 @@ export function JobCard({
 }: JobCardProps) {
   const navigate = useNavigate();
   const isOverdue =
-    job.deadlineType !== "NO_DEADLINE" && job.dueDate
+    job.deadlineType !== "No Deadline" && job.dueDate
       ? new Date(job.dueDate) < new Date()
       : false;
 
@@ -125,7 +125,7 @@ export function JobCard({
                 <span
                   className={cn("text-sm", isOverdue ? "text-red-500" : "")}
                 >
-                  {["ASAP", "NO_DEADLINE"].includes(job.deadlineType)
+                  {["ASAP", "No Deadline"].includes(job.deadlineType)
                     ? getDeadlineText(job.deadlineType)
                     : job.dueDate
                     ? `Due ${formatRelativeTime(
@@ -204,13 +204,13 @@ export function getDeadlineIcon(
   switch (deadlineType) {
     case "ASAP":
       return <BsExclamationSquareFill className="text-red-500" />;
-    case "HARD_DEADLINE":
+    case "Hard Deadline":
       return <HighPriorityIcon className={cn(overdue ? "text-red-500" : "")} />;
-    case "SOFT_DEADLINE":
+    case "Soft Deadline":
       return (
         <MediumPriorityIcon className={cn(overdue ? "text-red-500" : "")} />
       );
-    case "NO_DEADLINE":
+    case "No Deadline":
       return <LowPriorityIcon />;
   }
 }
@@ -219,11 +219,11 @@ export function getDeadlineText(deadlineType: Job["deadlineType"]) {
   switch (deadlineType) {
     case "ASAP":
       return "ASAP";
-    case "HARD_DEADLINE":
+    case "Hard Deadline":
       return "Hard deadline";
-    case "SOFT_DEADLINE":
+    case "Soft Deadline":
       return "Soft deadline";
-    case "NO_DEADLINE":
+    case "No Deadline":
       return "No deadline";
   }
 }

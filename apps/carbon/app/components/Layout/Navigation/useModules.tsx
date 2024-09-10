@@ -1,5 +1,4 @@
 import {
-  LuCalendarRange,
   LuComponent,
   LuCreditCard,
   LuCrown,
@@ -10,6 +9,7 @@ import {
   LuShield,
   LuShoppingCart,
   LuUsers,
+  LuWrench,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
@@ -37,18 +37,19 @@ export function useModules() {
     //   to: path.to.receipts,
     //   icon: LuBox,
     // },
-    {
-      permission: "scheduling",
-      name: "Scheduling",
-      to: path.to.scheduling,
-      icon: LuCalendarRange,
-    },
+
     // {
     //   permission: "timecards",
     //   name: "Timecards",
     //   to: path.to.timecards,
     //   icon: AiOutlineFieldTime,
     // },
+    {
+      permission: "production",
+      name: "Production",
+      to: path.to.production,
+      icon: LuFactory,
+    },
     {
       permission: "sales",
       name: "Sales",
@@ -61,12 +62,7 @@ export function useModules() {
       to: path.to.purchaseOrders,
       icon: LuShoppingCart,
     },
-    {
-      permission: "documents",
-      name: "Documents",
-      to: path.to.documents,
-      icon: LuFiles,
-    },
+
     // {
     //   permission: "messages",
     //   name: "Messaging",
@@ -95,7 +91,13 @@ export function useModules() {
       permission: "resources",
       name: "Resources",
       to: path.to.resources,
-      icon: LuFactory,
+      icon: LuWrench,
+    },
+    {
+      permission: "documents",
+      name: "Documents",
+      to: path.to.documents,
+      icon: LuFiles,
     },
     {
       permission: "users",

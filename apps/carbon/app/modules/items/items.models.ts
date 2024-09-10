@@ -44,7 +44,10 @@ export const serviceType = ["Internal", "External"] as const;
 
 export const itemValidator = z.object({
   id: z.string().min(1, { message: "Item ID is required" }).max(255),
-  name: z.string().min(1, { message: "Name is required" }).max(255),
+  name: z
+    .string()
+    .min(1, { message: "Short description is required" })
+    .max(255),
   description: zfd.text(z.string().optional()),
   replenishmentSystem: z.enum(itemReplenishmentSystems, {
     errorMap: (issue, ctx) => ({

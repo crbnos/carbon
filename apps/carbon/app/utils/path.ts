@@ -231,6 +231,7 @@ export const path = {
     deleteItem: (id: string) => generatePath(`${x}/items/delete/${id}`),
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
+    deleteJob: (id: string) => generatePath(`${x}/production/jobs/${id}`),
     deleteMaterialForm: (id: string) =>
       generatePath(`${x}/items/forms/delete/${id}`),
     deleteMaterialSubstance: (id: string) =>
@@ -351,7 +352,8 @@ export const path = {
     itemCostUpdate: (id: string) => generatePath(`${x}/items/cost/${id}`),
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
     itemPostingGroups: `${x}/items/groups`,
-    jobs: `${x}/jobs`,
+    jobs: `${x}/production/jobs`,
+    job: (id: string) => generatePath(`${x}/job/${id}`),
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
     login: "/login",
@@ -527,6 +529,7 @@ export const path = {
     personJob: (id: string) => generatePath(`${x}/person/${id}/job`),
     process: (id: string) => generatePath(`${x}/resources/processes/${id}`),
     processes: `${x}/resources/processes`,
+    production: `${x}/production`,
     profile: `${x}/account/profile`,
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),

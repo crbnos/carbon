@@ -1,3 +1,68 @@
+DROP VIEW "modules";
+DROP VIEW "customFieldTables";
+COMMIT;
+
+-- Remove existing values from module type
+ALTER TYPE module RENAME TO module_old;
+
+-- Create new module type with updated values
+CREATE TYPE module AS ENUM (
+  'Accounting',
+  'Documents',
+  'Invoicing',
+  'Inventory',
+  'Items',
+  'Messaging',
+  'Parts',
+  'People',
+  'Production',
+  'Purchasing',
+  'Resources',
+  'Sales',
+  'Settings',
+  'Users'
+);
+
+-- Update existing tables and views that use the module type
+ALTER TABLE "employeeTypePermission" 
+  ALTER COLUMN "module" TYPE module USING "module"::text::module;
+
+ALTER TABLE "customFieldTable"
+  ALTER COLUMN "module" TYPE module USING "module"::text::module;
+
+
+-- Drop the old type
+DROP TYPE module_old;
+
+CREATE VIEW "modules" AS
+    SELECT unnest(enum_range(NULL::module)) AS name;
+
+CREATE OR REPLACE VIEW "customFieldTables" WITH(SECURITY_INVOKER=true) AS
+SELECT 
+  cft.*, 
+  c.id AS "companyId",
+  COALESCE(cf.fields, '[]') as fields
+FROM "customFieldTable" cft 
+  CROSS JOIN "company" c 
+  LEFT JOIN (
+    SELECT 
+      cf."table",
+      cf."companyId",
+      COALESCE(json_agg(
+        json_build_object(
+          'id', id, 
+          'name', name,
+          'sortOrder', "sortOrder",
+          'dataTypeId', "dataTypeId",
+          'listOptions', "listOptions",
+          'active', active
+        )
+      ), '[]') AS fields 
+    FROM "customField" cf
+    GROUP BY cf."table", cf."companyId"
+  ) cf
+    ON cf.table = cft.table AND cf."companyId" = c.id;
+
 -- Create jobStatus type
 CREATE TYPE "public"."jobStatus" AS ENUM (
   'Draft',
@@ -21,13 +86,22 @@ CREATE TABLE "public"."job" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "jobId" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
-  "type" "itemType" NOT NULL,
+  "unitOfMeasureCode" TEXT NOT NULL,
   "customerId" TEXT,
-  "salesOrderLineId" TEXT,
   "status" "jobStatus" NOT NULL DEFAULT 'Draft',
   "dueDate" DATE,
   "deadlineType" "deadlineType" NOT NULL DEFAULT 'No Deadline',
-  "description" TEXT,
+  "orderQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "inventoryQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "productionQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "scrapQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "quantityComplete" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "quantityShipped" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "quantityReceivedToInventory" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "salesOrderId" TEXT,
+  "salesOrderLineId" TEXT,
+  "quoteId" TEXT,
+  "quoteLineId" TEXT,
   "notes" JSONB DEFAULT '{}'::jsonb,
   "assignee" TEXT,
   "customFields" JSONB,
@@ -40,23 +114,18 @@ CREATE TABLE "public"."job" (
   CONSTRAINT "job_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "job_jobId_key" UNIQUE ("jobId", "companyId"),
   CONSTRAINT "job_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT "job_type_check" CHECK ("type" IN ('Part', 'Material', 'Tool', 'Service', 'Consumable', 'Fixture')),
   CONSTRAINT "job_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "job_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure" ("code", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "job_salesOrderId_fkey" FOREIGN KEY ("salesOrderId") REFERENCES "salesOrder" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_salesOrderLineId_fkey" FOREIGN KEY ("salesOrderLineId") REFERENCES "salesOrderLine" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "job_quoteId_fkey" FOREIGN KEY ("quoteId") REFERENCES "quote" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "job_quoteLineId_fkey" FOREIGN KEY ("quoteLineId") REFERENCES "quoteLine" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "job_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "job_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
--- Add comments for the job table
-COMMENT ON TABLE "public"."job" IS 'Stores information about jobs';
-COMMENT ON COLUMN "public"."job"."jobId" IS 'Unique identifier for the job within the company';
-COMMENT ON COLUMN "public"."job"."status" IS 'Current status of the job (e.g., Draft, In Progress, Completed)';
-COMMENT ON COLUMN "public"."job"."dueDate" IS 'Due date for the job';
-COMMENT ON COLUMN "public"."job"."description" IS 'Brief description of the job';
-COMMENT ON COLUMN "public"."job"."notes" IS 'Additional notes or comments about the job';
-COMMENT ON COLUMN "public"."job"."assignee" IS 'User assigned to manage or oversee the job';
 
 -- Create index for faster lookups
 CREATE INDEX "idx_job_companyId" ON "public"."job" ("companyId");
@@ -170,3 +239,53 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER create_job_operation_related_records
   AFTER INSERT on public."jobOperation"
   FOR EACH ROW EXECUTE PROCEDURE public.create_job_operation_work_instruction();
+
+-- Update the "userPermission" table to change jobs-related permissions to production-related permissions
+-- and remove scheduling-related permissions
+UPDATE "userPermission"
+SET "permissions" = (
+  SELECT jsonb_object_agg(
+    CASE
+      WHEN key = 'jobs_view' THEN 'production_view'
+      WHEN key = 'jobs_update' THEN 'production_update'
+      WHEN key = 'jobs_create' THEN 'production_create'
+      WHEN key = 'jobs_delete' THEN 'production_delete'
+      ELSE key
+    END,
+    value
+  )
+  FROM jsonb_each("userPermission"."permissions") AS p(key, value)
+  WHERE key NOT IN ('scheduling_view', 'scheduling_update', 'scheduling_create', 'scheduling_delete')
+)
+WHERE "permissions" ? 'jobs_view'
+   OR "permissions" ? 'jobs_update'
+   OR "permissions" ? 'jobs_create'
+   OR "permissions" ? 'jobs_delete'
+   OR "permissions" ? 'scheduling_view'
+   OR "permissions" ? 'scheduling_update'
+   OR "permissions" ? 'scheduling_create'
+   OR "permissions" ? 'scheduling_delete';
+
+CREATE OR REPLACE VIEW "jobs" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    j.*,
+    i.name,
+    i."readableId" as "itemReadableId",
+    i.type,
+    i.description,
+    i."itemTrackingType",
+    i.active,
+    i."replenishmentSystem",
+    mu.id as "modelId",
+    mu."autodeskUrn",
+    mu."modelPath",
+    mu."thumbnailPath",
+    mu."name" as "modelName",
+    mu."size" as "modelSize",
+    so."salesOrderId" as "salesOrderReadableId",
+    qo."quoteId" as "quoteReadableId"
+  FROM "job" j
+  INNER JOIN "item" i ON j."itemId" = i."id"
+  LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+  LEFT JOIN "salesOrder" so on j."salesOrderId" = so.id
+  LEFT JOIN "quote" qo ON j."quoteId" = qo.id;
