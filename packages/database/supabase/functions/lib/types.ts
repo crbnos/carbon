@@ -6865,6 +6865,7 @@ export type Database = {
           inventoryQuantity: number
           itemId: string
           jobId: string
+          locationId: string
           notes: Json | null
           orderQuantity: number
           productionQuantity: number
@@ -6894,6 +6895,7 @@ export type Database = {
           inventoryQuantity?: number
           itemId: string
           jobId: string
+          locationId: string
           notes?: Json | null
           orderQuantity?: number
           productionQuantity?: number
@@ -6923,6 +6925,7 @@ export type Database = {
           inventoryQuantity?: number
           itemId?: string
           jobId?: string
+          locationId?: string
           notes?: Json | null
           orderQuantity?: number
           productionQuantity?: number
@@ -7072,6 +7075,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itemQuantities"
             referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"
@@ -7415,6 +7446,7 @@ export type Database = {
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
+          workInstruction: Json
         }
         Insert: {
           companyId: string
@@ -7439,6 +7471,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
+          workInstruction?: Json
         }
         Update: {
           companyId?: string
@@ -7463,6 +7496,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
+          workInstruction?: Json
         }
         Relationships: [
           {
@@ -7604,114 +7638,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCenters"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      jobOperationWorkInstruction: {
-        Row: {
-          companyId: string
-          content: Json | null
-          createdAt: string
-          createdBy: string
-          jobOperationId: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          content?: Json | null
-          createdAt?: string
-          createdBy: string
-          jobOperationId: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          content?: Json | null
-          createdAt?: string
-          createdBy?: string
-          jobOperationId?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "jobOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_jobOperationId_fkey"
-            columns: ["jobOperationId"]
-            isOneToOne: true
-            referencedRelation: "jobOperation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           },
         ]
       }
@@ -8873,6 +8799,7 @@ export type Database = {
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
+          workInstruction: Json
         }
         Insert: {
           companyId: string
@@ -8896,6 +8823,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
+          workInstruction?: Json
         }
         Update: {
           companyId?: string
@@ -8919,6 +8847,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
+          workInstruction?: Json
         }
         Relationships: [
           {
@@ -9074,114 +9003,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "supplierProcesses"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      methodOperationWorkInstruction: {
-        Row: {
-          companyId: string
-          content: Json | null
-          createdAt: string
-          createdBy: string
-          methodOperationId: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          content?: Json | null
-          createdAt?: string
-          createdBy: string
-          methodOperationId: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          content?: Json | null
-          createdAt?: string
-          createdBy?: string
-          methodOperationId?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "methodOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_methodOperationId_fkey"
-            columns: ["methodOperationId"]
-            isOneToOne: true
-            referencedRelation: "methodOperation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "methodOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           },
         ]
       }
@@ -14706,6 +14527,7 @@ export type Database = {
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
+          workInstruction: Json
         }
         Insert: {
           companyId: string
@@ -14738,6 +14560,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
+          workInstruction?: Json
         }
         Update: {
           companyId?: string
@@ -14770,6 +14593,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
+          workInstruction?: Json
         }
         Relationships: [
           {
@@ -14960,121 +14784,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCenters"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      quoteOperationWorkInstruction: {
-        Row: {
-          companyId: string
-          content: Json | null
-          createdAt: string
-          createdBy: string
-          quoteOperationId: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          content?: Json | null
-          createdAt?: string
-          createdBy: string
-          quoteOperationId: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          content?: Json | null
-          createdAt?: string
-          createdBy?: string
-          quoteOperationId?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_quoteOperationId_fkey"
-            columns: ["quoteOperationId"]
-            isOneToOne: true
-            referencedRelation: "quoteOperation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_quoteOperationId_fkey"
-            columns: ["quoteOperationId"]
-            isOneToOne: true
-            referencedRelation: "quoteOperationsWithMakeMethods"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteOperationWorkInstruction_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           },
         ]
       }
@@ -23347,6 +23056,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
           jobId: string | null
+          locationId: string | null
           modelId: string | null
           modelName: string | null
           modelPath: string | null
@@ -23508,6 +23218,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itemQuantities"
             referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"
@@ -25611,6 +25349,7 @@ export type Database = {
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
+          workInstruction: Json | null
         }
         Relationships: [
           {
@@ -26602,14 +26341,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]

@@ -55,9 +55,7 @@ import { quoteOperationValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
 
 type Operation = z.infer<typeof quoteOperationValidator> & {
-  quoteOperationWorkInstruction: {
-    content: JSONContent | null;
-  };
+  workInstruction: JSONContent | null;
 };
 
 type ItemWithData = Item & {
@@ -123,9 +121,7 @@ const initialOperation: Omit<Operation, "quoteMakeMethodId" | "order"> = {
   setupTime: 0,
   setupUnit: "Total Minutes",
   workCenterId: "",
-  quoteOperationWorkInstruction: {
-    content: {},
-  },
+  workInstruction: {},
 };
 
 const QuoteBillOfProcess = ({
@@ -260,9 +256,7 @@ const QuoteBillOfProcess = ({
               ...item,
               data: {
                 ...item.data,
-                quoteOperationWorkInstruction: {
-                  content,
-                },
+                workInstruction: content,
               },
             }
           : item
@@ -270,13 +264,13 @@ const QuoteBillOfProcess = ({
     );
     if (selectedItemId !== null && !isTemporaryId(selectedItemId))
       await supabase
-        ?.from("quoteOperationWorkInstruction")
+        ?.from("quoteOperation")
         .update({
-          content,
+          workInstruction: content,
           updatedAt: today(getLocalTimeZone()).toString(),
           updatedBy: userId,
         })
-        .eq("quoteOperationId", selectedItemId!);
+        .eq("id", selectedItemId!);
   }, 2500);
 
   const onUploadImage = async (file: File) => {
@@ -350,8 +344,7 @@ const QuoteBillOfProcess = ({
               {permissions.can("update", "parts") ? (
                 <Editor
                   initialValue={
-                    item.data.quoteOperationWorkInstruction?.content ??
-                    ({} as JSONContent)
+                    item.data.workInstruction ?? ({} as JSONContent)
                   }
                   onUpload={onUploadImage}
                   onChange={onUpdateWorkInstruction}
@@ -361,8 +354,7 @@ const QuoteBillOfProcess = ({
                   className="prose dark:prose-invert"
                   dangerouslySetInnerHTML={{
                     __html: generateHTML(
-                      item.data.quoteOperationWorkInstruction?.content ??
-                        ({} as JSONContent)
+                      item.data.workInstruction ?? ({} as JSONContent)
                     ),
                   }}
                 />
@@ -567,9 +559,9 @@ function OperationForm({
       // save the work instructions
       if (isTemporaryId(item.id) && supabase) {
         supabase
-          .from("quoteOperationWorkInstruction")
+          .from("quoteOperation")
           .update({
-            content: item.data.quoteOperationWorkInstruction.content,
+            workInstruction: item.data.workInstruction,
             createdAt: today(getLocalTimeZone()).toString(),
             updatedBy: userId,
           })
@@ -586,7 +578,7 @@ function OperationForm({
     fetcher.data,
     setItems,
     setSelectedItemId,
-    item.data.quoteOperationWorkInstruction.content,
+    item.data.workInstruction,
     supabase,
     userId,
   ]);
@@ -775,9 +767,7 @@ function OperationForm({
               ? {
                   ...makeItem({
                     ...values,
-                    quoteOperationWorkInstruction: {
-                      content: i.data.quoteOperationWorkInstruction?.content,
-                    },
+                    workInstruction: i.data.workInstruction,
                   }),
                   id: item.id,
                 }

@@ -54,9 +54,7 @@ import { path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
-  methodOperationWorkInstruction: {
-    content: JSONContent | null;
-  };
+  workInstruction: JSONContent | null;
 };
 
 type ItemWithData = Item & {
@@ -117,9 +115,7 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order"> = {
   setupTime: 0,
   setupUnit: "Total Minutes",
   workCenterId: "",
-  methodOperationWorkInstruction: {
-    content: {},
-  },
+  workInstruction: {},
 };
 
 const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
@@ -244,9 +240,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
               ...item,
               data: {
                 ...item.data,
-                methodOperationWorkInstruction: {
-                  content,
-                },
+                workInstruction: content,
               },
             }
           : item
@@ -255,13 +249,13 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
 
     if (selectedItemId !== null && !isTemporaryId(selectedItemId))
       await supabase
-        ?.from("methodOperationWorkInstruction")
+        ?.from("methodOperation")
         .update({
-          content,
+          workInstruction: content,
           updatedAt: today(getLocalTimeZone()).toString(),
           updatedBy: userId,
         })
-        .eq("methodOperationId", selectedItemId!);
+        .eq("id", selectedItemId!);
   }, 2000);
 
   const onUploadImage = async (file: File) => {
@@ -284,6 +278,8 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
 
     return `/file/preview/private/${result.data.path}`;
   };
+
+  console.log({ items });
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
@@ -338,8 +334,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
               {permissions.can("update", "parts") ? (
                 <Editor
                   initialValue={
-                    item.data.methodOperationWorkInstruction?.content ??
-                    ({} as JSONContent)
+                    item.data.workInstruction ?? ({} as JSONContent)
                   }
                   onUpload={onUploadImage}
                   onChange={onUpdateWorkInstruction}
@@ -349,8 +344,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
                   className="prose dark:prose-invert"
                   dangerouslySetInnerHTML={{
                     __html: generateHTML(
-                      item.data.methodOperationWorkInstruction?.content ??
-                        ({} as JSONContent)
+                      item.data.workInstruction ?? ({} as JSONContent)
                     ),
                   }}
                 />
@@ -547,13 +541,13 @@ function OperationForm({
       // save the work instructions
       if (isTemporaryId(item.id) && supabase) {
         supabase
-          .from("quoteOperationWorkInstruction")
+          .from("methodOperation")
           .update({
-            content: item.data.methodOperationWorkInstruction.content,
+            workInstruction: item.data.workInstruction,
             createdAt: today(getLocalTimeZone()).toString(),
             updatedBy: userId,
           })
-          .eq("quoteOperationId", methodOperationFetcher.data.id)
+          .eq("id", methodOperationFetcher.data.id)
           .then(() => {
             setSelectedItemId(null);
           });
@@ -562,7 +556,7 @@ function OperationForm({
       }
     }
   }, [
-    item.data.methodOperationWorkInstruction.content,
+    item.data.workInstruction,
     item.id,
     methodOperationFetcher.data,
     setItems,
@@ -668,9 +662,7 @@ function OperationForm({
               ? {
                   ...makeItem({
                     ...values,
-                    methodOperationWorkInstruction: {
-                      content: i.data.methodOperationWorkInstruction?.content,
-                    },
+                    workInstruction: i.data.workInstruction,
                   }),
                   id: item.id,
                 }
