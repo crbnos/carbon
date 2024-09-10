@@ -135,8 +135,8 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           const completedLines = row.original.completedLines ?? 0;
           return (
             <Progress
-              leftLabel={completedLines.toString()}
-              rightLabel={lines.toString()}
+              numerator={completedLines.toString()}
+              denominator={lines.toString()}
               value={lines === 0 ? 0 : (completedLines / lines) * 100}
             />
           );

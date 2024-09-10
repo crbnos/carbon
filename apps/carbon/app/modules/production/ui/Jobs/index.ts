@@ -1,4 +1,5 @@
+import { getDeadlineIcon, getDeadlineText } from "./Deadline";
 import JobsTable from "./JobsTable";
 import JobStatus from "./JobStatus";
 
-export { JobStatus, JobsTable };
+export { getDeadlineIcon, getDeadlineText, JobsTable, JobStatus };

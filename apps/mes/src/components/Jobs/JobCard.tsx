@@ -82,10 +82,10 @@ export function JobCard({
               indicatorClassName={
                 job.status === "PAUSED" ? "bg-yellow-500" : ""
               }
-              leftLabel={
+              numerator={
                 job.progress ? formatDurationMilliseconds(job.progress) : ""
               }
-              rightLabel={
+              denominator={
                 job.duration ? formatDurationMilliseconds(job.duration) : ""
               }
               value={

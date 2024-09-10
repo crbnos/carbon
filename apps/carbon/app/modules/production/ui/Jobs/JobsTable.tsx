@@ -14,8 +14,13 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { jobStatus, JobStatus, type Job } from "~/modules/production";
-import { getDeadlineIcon, getDeadlineText } from "~/modules/shared";
+import type { Job } from "~/modules/production";
+import {
+  getDeadlineIcon,
+  getDeadlineText,
+  jobStatus,
+  JobStatus,
+} from "~/modules/production";
 import { useCustomers, useFixtures, useParts, usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

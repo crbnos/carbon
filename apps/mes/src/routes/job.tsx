@@ -257,20 +257,20 @@ export function Job() {
                   <HStack>
                     <LuTimer className="h-4 w-4 mr-1" />
                     <Progress
-                      leftLabel={formatDurationMilliseconds(6.5 * 60 * 1000)}
-                      rightLabel={formatDurationMilliseconds(5 * 60 * 1000)}
+                      numerator={formatDurationMilliseconds(6.5 * 60 * 1000)}
+                      denominator={formatDurationMilliseconds(5 * 60 * 1000)}
                       value={120}
                     />
                   </HStack>
                   <HStack>
                     <LuHardHat className="h-4 w-4 mr-1" />
                     <Progress
-                      leftLabel={
+                      numerator={
                         job.progress
                           ? formatDurationMilliseconds(job.progress)
                           : ""
                       }
-                      rightLabel={
+                      denominator={
                         job.duration
                           ? formatDurationMilliseconds(job.duration)
                           : ""
@@ -285,12 +285,12 @@ export function Job() {
                   <HStack>
                     <LuHammer className="h-4 w-4 mr-1" />
                     <Progress
-                      leftLabel={
+                      numerator={
                         job.progress
                           ? formatDurationMilliseconds(job.progress)
                           : ""
                       }
-                      rightLabel={
+                      denominator={
                         job.duration
                           ? formatDurationMilliseconds(job.duration)
                           : ""
@@ -308,8 +308,8 @@ export function Job() {
                       indicatorClassName={
                         job.status === "PAUSED" ? "bg-yellow-500" : ""
                       }
-                      leftLabel={"0/15"}
-                      rightLabel={"0%"}
+                      numerator={"0/15"}
+                      denominator={"0%"}
                       value={0}
                     />
                   </HStack>

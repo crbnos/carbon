@@ -33,7 +33,7 @@ import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import CustomerAvatar from "~/components/CustomerAvatar";
 import EmployeeAvatarGroup from "~/components/EmployeeAvatarGroup";
-import { getDeadlineIcon, getDeadlineText } from "~/modules/shared";
+import { getDeadlineIcon, getDeadlineText } from "~/modules/production";
 import type { DisplaySettings, Item, ItemDragData } from "../types";
 
 type ItemCardProps = {
@@ -168,10 +168,10 @@ export function ItemCard({
               indicatorClassName={
                 item.status === "PAUSED" ? "bg-yellow-500" : ""
               }
-              leftLabel={
+              numerator={
                 item.progress ? formatDurationMilliseconds(item.progress) : ""
               }
-              rightLabel={
+              denominator={
                 item.duration ? formatDurationMilliseconds(item.duration) : ""
               }
               value={
