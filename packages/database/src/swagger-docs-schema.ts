@@ -11754,13 +11754,10 @@ export default {
             $ref: "#/parameters/rowFilter.job.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.job.type",
+            $ref: "#/parameters/rowFilter.job.unitOfMeasureCode",
           },
           {
             $ref: "#/parameters/rowFilter.job.customerId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.salesOrderLineId",
           },
           {
             $ref: "#/parameters/rowFilter.job.status",
@@ -11772,7 +11769,37 @@ export default {
             $ref: "#/parameters/rowFilter.job.deadlineType",
           },
           {
-            $ref: "#/parameters/rowFilter.job.description",
+            $ref: "#/parameters/rowFilter.job.orderQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.inventoryQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityShipped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityReceivedToInventory",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.salesOrderLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quoteLineId",
           },
           {
             $ref: "#/parameters/rowFilter.job.notes",
@@ -11834,7 +11861,6 @@ export default {
             description: "Partial Content",
           },
         },
-        summary: "Stores information about jobs",
         tags: ["job"],
       },
       post: {
@@ -11854,7 +11880,6 @@ export default {
             description: "Created",
           },
         },
-        summary: "Stores information about jobs",
         tags: ["job"],
       },
       delete: {
@@ -11869,13 +11894,10 @@ export default {
             $ref: "#/parameters/rowFilter.job.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.job.type",
+            $ref: "#/parameters/rowFilter.job.unitOfMeasureCode",
           },
           {
             $ref: "#/parameters/rowFilter.job.customerId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.salesOrderLineId",
           },
           {
             $ref: "#/parameters/rowFilter.job.status",
@@ -11887,7 +11909,37 @@ export default {
             $ref: "#/parameters/rowFilter.job.deadlineType",
           },
           {
-            $ref: "#/parameters/rowFilter.job.description",
+            $ref: "#/parameters/rowFilter.job.orderQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.inventoryQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityShipped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityReceivedToInventory",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.salesOrderLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quoteLineId",
           },
           {
             $ref: "#/parameters/rowFilter.job.notes",
@@ -11922,7 +11974,6 @@ export default {
             description: "No Content",
           },
         },
-        summary: "Stores information about jobs",
         tags: ["job"],
       },
       patch: {
@@ -11937,13 +11988,10 @@ export default {
             $ref: "#/parameters/rowFilter.job.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.job.type",
+            $ref: "#/parameters/rowFilter.job.unitOfMeasureCode",
           },
           {
             $ref: "#/parameters/rowFilter.job.customerId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.salesOrderLineId",
           },
           {
             $ref: "#/parameters/rowFilter.job.status",
@@ -11955,7 +12003,37 @@ export default {
             $ref: "#/parameters/rowFilter.job.deadlineType",
           },
           {
-            $ref: "#/parameters/rowFilter.job.description",
+            $ref: "#/parameters/rowFilter.job.orderQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.inventoryQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityShipped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quantityReceivedToInventory",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.salesOrderLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.quoteLineId",
           },
           {
             $ref: "#/parameters/rowFilter.job.notes",
@@ -11993,7 +12071,6 @@ export default {
             description: "No Content",
           },
         },
-        summary: "Stores information about jobs",
         tags: ["job"],
       },
     },
@@ -18745,6 +18822,174 @@ export default {
           },
         },
         tags: ["salesOrderStatusHistory"],
+      },
+    },
+    "/jobs": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobs.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.customerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.dueDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.deadlineType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.orderQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.inventoryQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.quantityShipped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.quantityReceivedToInventory",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.salesOrderLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.quoteLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.itemTrackingType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.replenishmentSystem",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.modelId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.autodeskUrn",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.modelPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.modelName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.modelSize",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.salesOrderReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.quoteReadableId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobs",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobs"],
       },
     },
     "/customField": {
@@ -34820,18 +35065,16 @@ export default {
             "Documents",
             "Invoicing",
             "Inventory",
-            "Jobs",
+            "Items",
             "Messaging",
             "Parts",
+            "People",
+            "Production",
             "Purchasing",
             "Resources",
-            "People",
             "Sales",
             "Settings",
-            "Scheduling",
-            "Timecards",
             "Users",
-            "Items",
           ],
           format: "public.module",
           type: "string",
@@ -37215,18 +37458,16 @@ export default {
             "Documents",
             "Invoicing",
             "Inventory",
-            "Jobs",
+            "Items",
             "Messaging",
             "Parts",
+            "People",
+            "Production",
             "Purchasing",
             "Resources",
-            "People",
             "Sales",
             "Settings",
-            "Scheduling",
-            "Timecards",
             "Users",
-            "Items",
           ],
           format: "public.module",
           type: "string",
@@ -37495,18 +37736,16 @@ export default {
             "Documents",
             "Invoicing",
             "Inventory",
-            "Jobs",
+            "Items",
             "Messaging",
             "Parts",
+            "People",
+            "Production",
             "Purchasing",
             "Resources",
-            "People",
             "Sales",
             "Settings",
-            "Scheduling",
-            "Timecards",
             "Users",
-            "Items",
           ],
           format: "public.module",
           type: "string",
@@ -39346,14 +39585,20 @@ export default {
       type: "object",
     },
     job: {
-      description: "Stores information about jobs",
       required: [
         "id",
         "jobId",
         "itemId",
-        "type",
+        "unitOfMeasureCode",
         "status",
         "deadlineType",
+        "orderQuantity",
+        "inventoryQuantity",
+        "productionQuantity",
+        "scrapQuantity",
+        "quantityComplete",
+        "quantityShipped",
+        "quantityReceivedToInventory",
         "companyId",
         "createdAt",
         "createdBy",
@@ -39366,7 +39611,6 @@ export default {
           type: "string",
         },
         jobId: {
-          description: "Unique identifier for the job within the company",
           format: "text",
           type: "string",
         },
@@ -39376,16 +39620,8 @@ export default {
           format: "text",
           type: "string",
         },
-        type: {
-          enum: [
-            "Part",
-            "Material",
-            "Tool",
-            "Service",
-            "Consumable",
-            "Fixture",
-          ],
-          format: 'public."itemType"',
+        unitOfMeasureCode: {
+          format: "text",
           type: "string",
         },
         customerId: {
@@ -39394,16 +39630,8 @@ export default {
           format: "text",
           type: "string",
         },
-        salesOrderLineId: {
-          description:
-            "Note:\nThis is a Foreign Key to `salesOrderLine.id`.<fk table='salesOrderLine' column='id'/>",
-          format: "text",
-          type: "string",
-        },
         status: {
           default: "Draft",
-          description:
-            "Current status of the job (e.g., Draft, In Progress, Completed)",
           enum: [
             "Draft",
             "Ready",
@@ -39416,7 +39644,6 @@ export default {
           type: "string",
         },
         dueDate: {
-          description: "Due date for the job",
           format: "date",
           type: "string",
         },
@@ -39426,18 +39653,71 @@ export default {
           format: 'public."deadlineType"',
           type: "string",
         },
-        description: {
-          description: "Brief description of the job",
+        orderQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        inventoryQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        productionQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        scrapQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        quantityComplete: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        quantityShipped: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        quantityReceivedToInventory: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrderLine.id`.<fk table='salesOrderLine' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quoteId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quote.id`.<fk table='quote' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quoteLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quoteLine.id`.<fk table='quoteLine' column='id'/>",
           format: "text",
           type: "string",
         },
         notes: {
-          description: "Additional notes or comments about the job",
           format: "jsonb",
         },
         assignee: {
           description:
-            "User assigned to manage or oversee the job\n\nNote:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -40694,18 +40974,16 @@ export default {
             "Documents",
             "Invoicing",
             "Inventory",
-            "Jobs",
+            "Items",
             "Messaging",
             "Parts",
+            "People",
+            "Production",
             "Purchasing",
             "Resources",
-            "People",
             "Sales",
             "Settings",
-            "Scheduling",
-            "Timecards",
             "Users",
-            "Items",
           ],
           format: "public.module",
           type: "string",
@@ -42456,6 +42734,218 @@ export default {
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    jobs: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        jobId: {
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        status: {
+          enum: [
+            "Draft",
+            "Ready",
+            "In Progress",
+            "Paused",
+            "Completed",
+            "Cancelled",
+          ],
+          format: 'public."jobStatus"',
+          type: "string",
+        },
+        dueDate: {
+          format: "date",
+          type: "string",
+        },
+        deadlineType: {
+          enum: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"],
+          format: 'public."deadlineType"',
+          type: "string",
+        },
+        orderQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        inventoryQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        productionQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        scrapQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityComplete: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityShipped: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityReceivedToInventory: {
+          format: "numeric",
+          type: "number",
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrderLine.id`.<fk table='salesOrderLine' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quoteId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quote.id`.<fk table='quote' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quoteLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quoteLine.id`.<fk table='quoteLine' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        notes: {
+          format: "jsonb",
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        type: {
+          enum: [
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+          ],
+          format: 'public."itemType"',
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory"],
+          format: 'public."itemTrackingType"',
+          type: "string",
+        },
+        active: {
+          format: "boolean",
+          type: "boolean",
+        },
+        replenishmentSystem: {
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string",
+        },
+        modelId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        autodeskUrn: {
+          format: "text",
+          type: "string",
+        },
+        modelPath: {
+          format: "text",
+          type: "string",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        modelName: {
+          format: "text",
+          type: "string",
+        },
+        modelSize: {
+          format: "bigint",
+          type: "integer",
+        },
+        salesOrderReadableId: {
+          format: "text",
+          type: "string",
+        },
+        quoteReadableId: {
           format: "text",
           type: "string",
         },
@@ -44568,7 +45058,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -44617,7 +45107,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -55425,7 +55915,6 @@ export default {
     },
     "rowFilter.job.jobId": {
       name: "jobId",
-      description: "Unique identifier for the job within the company",
       required: false,
       format: "text",
       in: "query",
@@ -55438,10 +55927,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.job.type": {
-      name: "type",
+    "rowFilter.job.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
       required: false,
-      format: 'public."itemType"',
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -55452,17 +55941,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.job.salesOrderLineId": {
-      name: "salesOrderLineId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.job.status": {
       name: "status",
-      description:
-        "Current status of the job (e.g., Draft, In Progress, Completed)",
       required: false,
       format: 'public."jobStatus"',
       in: "query",
@@ -55470,7 +55950,6 @@ export default {
     },
     "rowFilter.job.dueDate": {
       name: "dueDate",
-      description: "Due date for the job",
       required: false,
       format: "date",
       in: "query",
@@ -55483,9 +55962,78 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.job.description": {
-      name: "description",
-      description: "Brief description of the job",
+    "rowFilter.job.orderQuantity": {
+      name: "orderQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.inventoryQuantity": {
+      name: "inventoryQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.scrapQuantity": {
+      name: "scrapQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.quantityComplete": {
+      name: "quantityComplete",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.quantityShipped": {
+      name: "quantityShipped",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.quantityReceivedToInventory": {
+      name: "quantityReceivedToInventory",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.salesOrderId": {
+      name: "salesOrderId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.salesOrderLineId": {
+      name: "salesOrderLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.quoteId": {
+      name: "quoteId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.quoteLineId": {
+      name: "quoteLineId",
       required: false,
       format: "text",
       in: "query",
@@ -55493,7 +56041,6 @@ export default {
     },
     "rowFilter.job.notes": {
       name: "notes",
-      description: "Additional notes or comments about the job",
       required: false,
       format: "jsonb",
       in: "query",
@@ -55501,7 +56048,6 @@ export default {
     },
     "rowFilter.job.assignee": {
       name: "assignee",
-      description: "User assigned to manage or oversee the job",
       required: false,
       format: "text",
       in: "query",
@@ -59488,6 +60034,309 @@ export default {
     },
     "rowFilter.salesOrderStatusHistory.createdBy": {
       name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.jobs": {
+      name: "jobs",
+      description: "jobs",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobs",
+      },
+    },
+    "rowFilter.jobs.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.jobId": {
+      name: "jobId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.customerId": {
+      name: "customerId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.status": {
+      name: "status",
+      required: false,
+      format: 'public."jobStatus"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.dueDate": {
+      name: "dueDate",
+      required: false,
+      format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.deadlineType": {
+      name: "deadlineType",
+      required: false,
+      format: 'public."deadlineType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.orderQuantity": {
+      name: "orderQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.inventoryQuantity": {
+      name: "inventoryQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.scrapQuantity": {
+      name: "scrapQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.quantityComplete": {
+      name: "quantityComplete",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.quantityShipped": {
+      name: "quantityShipped",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.quantityReceivedToInventory": {
+      name: "quantityReceivedToInventory",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.salesOrderId": {
+      name: "salesOrderId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.salesOrderLineId": {
+      name: "salesOrderLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.quoteId": {
+      name: "quoteId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.quoteLineId": {
+      name: "quoteLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.notes": {
+      name: "notes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.assignee": {
+      name: "assignee",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.type": {
+      name: "type",
+      required: false,
+      format: 'public."itemType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      format: 'public."itemTrackingType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      format: 'public."itemReplenishmentSystem"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.modelId": {
+      name: "modelId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.autodeskUrn": {
+      name: "autodeskUrn",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.modelPath": {
+      name: "modelPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.modelName": {
+      name: "modelName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.modelSize": {
+      name: "modelSize",
+      required: false,
+      format: "bigint",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.salesOrderReadableId": {
+      name: "salesOrderReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.quoteReadableId": {
+      name: "quoteReadableId",
       required: false,
       format: "text",
       in: "query",

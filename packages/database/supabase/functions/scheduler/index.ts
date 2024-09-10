@@ -115,12 +115,12 @@ function sortOperations(operations: Operation[]) {
     }
     // Then we sort deadlines
     else if (
-      a.deadlineType === "HARD_DEADLINE" ||
-      a.deadlineType === "SOFT_DEADLINE"
+      a.deadlineType === "Hard Deadline" ||
+      a.deadlineType === "Soft Deadline"
     ) {
       if (
-        b.deadlineType === "HARD_DEADLINE" ||
-        b.deadlineType === "SOFT_DEADLINE"
+        b.deadlineType === "Hard Deadline" ||
+        b.deadlineType === "Soft Deadline"
       ) {
         return a.deadlineDate.localeCompare(b.deadlineDate);
       } else {
@@ -129,13 +129,13 @@ function sortOperations(operations: Operation[]) {
     }
     // Finally we add anything that has no deadline
     else if (
-      a.deadlineType === "NO_DEADLINE" &&
-      b.deadlineType !== "NO_DEADLINE"
+      a.deadlineType === "No Deadline" &&
+      b.deadlineType !== "No Deadline"
     ) {
       return 1;
     } else if (
-      a.deadlineType === "NO_DEADLINE" &&
-      b.deadlineType === "NO_DEADLINE"
+      a.deadlineType === "No Deadline" &&
+      b.deadlineType === "No Deadline"
     ) {
       return a.deadlineDate.localeCompare(b.deadlineDate);
     } else {

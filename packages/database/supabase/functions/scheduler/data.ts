@@ -2,7 +2,7 @@ export const jobs = [
   {
     id: "10323",
     deadlineDate: "2024-05-20",
-    deadlineType: "SOFT_DEADLINE",
+    deadlineType: "Soft Deadline",
     operations: [
       {
         id: "operation0",
@@ -34,7 +34,7 @@ export const jobs = [
   {
     id: "10324",
     deadlineDate: "2024-06-20",
-    deadlineType: "HARD_DEADLINE",
+    deadlineType: "Hard Deadline",
     operations: [
       {
         id: "operation3",
@@ -53,7 +53,7 @@ export const jobs = [
   {
     id: "10325",
     deadlineDate: "2024-07-20",
-    deadlineType: "SOFT_DEADLINE",
+    deadlineType: "Soft Deadline",
     operations: [
       {
         id: "operation5",
@@ -85,7 +85,7 @@ export const jobs = [
   {
     id: "10326",
     deadlineDate: "2024-08-20",
-    deadlineType: "HARD_DEADLINE",
+    deadlineType: "Hard Deadline",
     operations: [
       {
         id: "operation8",
@@ -104,7 +104,7 @@ export const jobs = [
   {
     id: "10327",
     deadlineDate: "2024-09-20",
-    deadlineType: "SOFT_DEADLINE",
+    deadlineType: "Soft Deadline",
     operations: [
       {
         id: "operation10",

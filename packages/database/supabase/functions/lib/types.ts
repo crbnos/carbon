@@ -6860,15 +6860,24 @@ export type Database = {
           customerId: string | null
           customFields: Json | null
           deadlineType: Database["public"]["Enums"]["deadlineType"]
-          description: string | null
           dueDate: string | null
           id: string
+          inventoryQuantity: number
           itemId: string
           jobId: string
           notes: Json | null
+          orderQuantity: number
+          productionQuantity: number
+          quantityComplete: number
+          quantityReceivedToInventory: number
+          quantityShipped: number
+          quoteId: string | null
+          quoteLineId: string | null
+          salesOrderId: string | null
           salesOrderLineId: string | null
+          scrapQuantity: number
           status: Database["public"]["Enums"]["jobStatus"]
-          type: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -6880,15 +6889,24 @@ export type Database = {
           customerId?: string | null
           customFields?: Json | null
           deadlineType?: Database["public"]["Enums"]["deadlineType"]
-          description?: string | null
           dueDate?: string | null
           id?: string
+          inventoryQuantity?: number
           itemId: string
           jobId: string
           notes?: Json | null
+          orderQuantity?: number
+          productionQuantity?: number
+          quantityComplete?: number
+          quantityReceivedToInventory?: number
+          quantityShipped?: number
+          quoteId?: string | null
+          quoteLineId?: string | null
+          salesOrderId?: string | null
           salesOrderLineId?: string | null
+          scrapQuantity?: number
           status?: Database["public"]["Enums"]["jobStatus"]
-          type: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6900,15 +6918,24 @@ export type Database = {
           customerId?: string | null
           customFields?: Json | null
           deadlineType?: Database["public"]["Enums"]["deadlineType"]
-          description?: string | null
           dueDate?: string | null
           id?: string
+          inventoryQuantity?: number
           itemId?: string
           jobId?: string
           notes?: Json | null
+          orderQuantity?: number
+          productionQuantity?: number
+          quantityComplete?: number
+          quantityReceivedToInventory?: number
+          quantityShipped?: number
+          quoteId?: string | null
+          quoteLineId?: string | null
+          salesOrderId?: string | null
           salesOrderLineId?: string | null
+          scrapQuantity?: number
           status?: Database["public"]["Enums"]["jobStatus"]
-          type?: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -7047,6 +7074,62 @@ export type Database = {
             referencedColumns: ["itemId"]
           },
           {
+            foreignKeyName: "job_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "job_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "job_salesOrderLineId_fkey"
             columns: ["salesOrderLineId"]
             isOneToOne: false
@@ -7059,6 +7142,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrderLines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "job_updatedBy_fkey"
@@ -7241,6 +7331,13 @@ export type Database = {
             columns: ["jobId"]
             isOneToOne: false
             referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
           {
@@ -7436,6 +7533,13 @@ export type Database = {
             columns: ["jobId"]
             isOneToOne: false
             referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
           {
@@ -23222,6 +23326,303 @@ export type Database = {
           },
         ]
       }
+      jobs: {
+        Row: {
+          active: boolean | null
+          assignee: string | null
+          autodeskUrn: string | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customerId: string | null
+          customFields: Json | null
+          deadlineType: Database["public"]["Enums"]["deadlineType"] | null
+          description: string | null
+          dueDate: string | null
+          id: string | null
+          inventoryQuantity: number | null
+          itemId: string | null
+          itemReadableId: string | null
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
+          jobId: string | null
+          modelId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
+          name: string | null
+          notes: Json | null
+          orderQuantity: number | null
+          productionQuantity: number | null
+          quantityComplete: number | null
+          quantityReceivedToInventory: number | null
+          quantityShipped: number | null
+          quoteId: string | null
+          quoteLineId: string | null
+          quoteReadableId: string | null
+          replenishmentSystem:
+            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | null
+          salesOrderId: string | null
+          salesOrderLineId: string | null
+          salesOrderReadableId: string | null
+          scrapQuantity: number | null
+          status: Database["public"]["Enums"]["jobStatus"] | null
+          thumbnailPath: string | null
+          type: Database["public"]["Enums"]["itemType"] | null
+          unitOfMeasureCode: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "job_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "job_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "job_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "job_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_salesOrderLineId_fkey"
+            columns: ["salesOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_salesOrderLineId_fkey"
+            columns: ["salesOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "job_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       materials: {
         Row: {
           active: boolean | null
@@ -23553,14 +23954,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -24432,14 +24833,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -28480,18 +28881,16 @@ export type Database = {
         | "Documents"
         | "Invoicing"
         | "Inventory"
-        | "Jobs"
+        | "Items"
         | "Messaging"
         | "Parts"
+        | "People"
+        | "Production"
         | "Purchasing"
         | "Resources"
-        | "People"
         | "Sales"
         | "Settings"
-        | "Scheduling"
-        | "Timecards"
         | "Users"
-        | "Items"
       month:
         | "January"
         | "February"

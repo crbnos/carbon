@@ -29,7 +29,7 @@ const jobValidator = z.object({
   dueDate: z.string().optional(), // 2024-05-28
   duration: z.number().optional(), // miliseconds
   deadlineType: z
-    .enum(["ASAP", "HARD_DEADLINE", "SOFT_DEADLINE", "NO_DEADLINE"])
+    .enum(["ASAP", "Hard Deadline", "Soft Deadline", "No Deadline"])
     .optional(),
   progress: z.number().optional(), // miliseconds
   order: z.number().optional(),

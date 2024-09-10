@@ -1,0 +1,67 @@
+import { VStack } from "@carbon/react";
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Outlet, useLoaderData } from "@remix-run/react";
+import { JobsTable, getJobs } from "~/modules/production";
+import { getLocationsList } from "~/modules/resources";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+import { getGenericQueryFilters } from "~/utils/query";
+import { error } from "~/utils/result";
+
+export const handle: Handle = {
+  breadcrumb: "Jobs",
+  to: path.to.jobs,
+};
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "production",
+    role: "employee",
+  });
+
+  const url = new URL(request.url);
+  const searchParams = new URLSearchParams(url.search);
+  const search = searchParams.get("search");
+  const { limit, offset, sorts, filters } =
+    getGenericQueryFilters(searchParams);
+
+  const [jobs, locations] = await Promise.all([
+    getJobs(client, companyId, {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters,
+    }),
+    getLocationsList(client, companyId),
+  ]);
+
+  if (jobs.error) {
+    redirect(
+      path.to.production,
+      await flash(request, error(jobs.error, "Failed to fetch jobs"))
+    );
+  }
+
+  return json({
+    count: jobs.count ?? 0,
+    jobs: jobs.data ?? [],
+    locations: locations.data ?? [],
+  });
+}
+
+export default function JobsRoute() {
+  const { count, locations, jobs } = useLoaderData<typeof loader>();
+
+  console.log({ jobs });
+
+  return (
+    <VStack spacing={0} className="h-full">
+      <JobsTable data={jobs} count={count} locations={locations} />
+      <Outlet />
+    </VStack>
+  );
+}

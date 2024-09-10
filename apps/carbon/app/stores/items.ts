@@ -17,6 +17,10 @@ const $partsStore = computed($itemsStore, (item) =>
   item.filter((i) => i.type === "Part")
 );
 
+const $fixturesStore = computed($itemsStore, (item) =>
+  item.filter((i) => i.type === "Fixture")
+);
+
 const $serivceStore = computed($itemsStore, (item) =>
   item.filter((i) => i.type === "Service")
 );
@@ -27,5 +31,6 @@ const $materialsStore = computed($itemsStore, (item) =>
 
 export const useItems = () => useNanoStore<Item[]>($itemsStore, "items");
 export const useParts = () => useValue($partsStore);
+export const useFixtures = () => useValue($fixturesStore);
 export const useServices = () => useValue($serivceStore);
 export const useMaterials = () => useValue($materialsStore);
