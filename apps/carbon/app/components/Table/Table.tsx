@@ -40,6 +40,7 @@ import {
 import type { CSSProperties, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuAlertTriangle, LuArrowDown, LuArrowUp } from "react-icons/lu";
+import { useSpinDelay } from "spin-delay";
 import type {
   EditableTableCellComponent,
   Position,
@@ -545,6 +546,9 @@ const Table = <T extends object>({
 
   const navigation = useNavigation();
   const { hasFilters, clearFilters } = useFilters();
+  const isLoading = useSpinDelay(navigation.state === "loading", {
+    delay: 300,
+  });
 
   return (
     <VStack spacing={0} className="h-full">
@@ -574,7 +578,7 @@ const Table = <T extends object>({
       >
         <div className="flex max-w-full h-full">
           {rows.length === 0 ? (
-            navigation.state === "loading" ? (
+            isLoading ? (
               <div className="flex h-full w-full items-start justify-center">
                 <TableBase className="w-full">
                   <Thead>
