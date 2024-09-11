@@ -21,20 +21,19 @@ import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { ItemQuantities } from "~/modules/items";
 import { pickMethodValidator } from "~/modules/items";
-import { path } from "~/utils/path";
 import InventoryItemIcon from "./InventoryItemIcon";
 
-type InventoryDetailsViewProps = {
+type InventoryDetailsProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
   shelves: string[];
 };
 
-const InventoryDetailsView = ({
+const InventoryDetails = ({
   initialValues,
   quantities,
   shelves,
-}: InventoryDetailsViewProps) => {
+}: InventoryDetailsProps) => {
   const permissions = usePermissions();
   const { supabase } = useSupabase();
   const user = useUser();
@@ -117,8 +116,4 @@ const InventoryDetailsView = ({
   );
 };
 
-export default InventoryDetailsView;
-
-function getLocationPath(itemId: string, locationId: string) {
-  return `${path.to.inventoryItemView(itemId)}?location=${locationId}`;
-}
+export default InventoryDetails;

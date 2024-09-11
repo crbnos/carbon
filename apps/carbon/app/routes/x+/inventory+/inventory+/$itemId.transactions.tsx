@@ -1,8 +1,7 @@
-import { ResizableHandle, ResizablePanel } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import InventoryDetailsView from "~/modules/inventory/ui/Inventory/InventoryDetailsView";
+import InventoryTransactions from "~/modules/inventory/ui/Inventory/InventoryTransactions";
 import {
   getItemQuantities,
   getPickMethod,
@@ -122,7 +121,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
-export default function ItemInventoryDetailsRoute() {
+export default function ItemInventoryRoute() {
   const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
 
   const initialValues = {
@@ -131,21 +130,11 @@ export default function ItemInventoryDetailsRoute() {
     ...getCustomFields(partInventory.customFields ?? {}),
   };
   return (
-    <>
-      <ResizableHandle withHandle />
-      <ResizablePanel
-        defaultSize={50}
-        maxSize={70}
-        minSize={25}
-        className="bg-background p-2"
-      >
-        <InventoryDetailsView
-          key={initialValues.itemId}
-          initialValues={initialValues}
-          quantities={quantities}
-          shelves={shelves}
-        />
-      </ResizablePanel>
-    </>
+    <InventoryTransactions
+      key={initialValues.itemId}
+      initialValues={initialValues}
+      quantities={quantities}
+      shelves={shelves}
+    />
   );
 }

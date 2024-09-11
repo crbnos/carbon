@@ -347,8 +347,10 @@ export const path = {
       generatePath(`${x}/settings/integrations/${name}`),
     integrations: `${x}/settings/integrations`,
     inventory: `${x}/inventory/inventory`,
-    inventoryItemView: (id: string) =>
-      generatePath(`${x}/inventory/inventory/details/${id}`),
+    inventoryItem: (id: string) =>
+      generatePath(`${x}/inventory/inventory/${id}/details`),
+    inventoryItemTransactions: (id: string) =>
+      generatePath(`${x}/inventory/inventory/${id}/transactions`),
     inventoryRoot: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
     items: `${x}/items`,
