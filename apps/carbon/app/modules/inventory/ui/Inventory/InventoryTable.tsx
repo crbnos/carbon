@@ -106,27 +106,27 @@ const InventoryTable = memo(
         },
         {
           accessorKey: "quantityOnHand",
-          header: "Qty On Hand",
+          header: "On Hand",
           cell: ({ row }) => row.original.quantityOnHand,
         },
         {
           accessorKey: "quantityAvailable",
-          header: "Qty Available",
+          header: "Available",
           cell: ({ row }) => row.original.quantityAvailable,
         },
         {
           accessorKey: "quantityOnPurchaseOrder",
-          header: "Qty On Purchase Order",
+          header: "On Purchase Order",
           cell: ({ row }) => row.original.quantityOnPurchaseOrder,
         },
         {
           accessorKey: "quantityOnProdOrder",
-          header: "Qty On Prod Order",
+          header: "On Prod Order",
           cell: ({ row }) => row.original.quantityOnProdOrder,
         },
         {
           accessorKey: "quantityOnSalesOrder",
-          header: "Qty On Sales Order",
+          header: "On Sales Order",
           cell: ({ row }) => row.original.quantityOnSalesOrder,
         },
       ];
