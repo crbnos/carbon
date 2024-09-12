@@ -48,9 +48,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (!jobId) throw new Error("jobId is not defined");
+  const { id, ...data } = validation.data;
 
   const createJob = await upsertJob(client, {
-    ...validation.data,
+    ...data,
     jobId,
     companyId,
     createdBy: userId,
@@ -66,6 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  console.log("redirecting to " + path.to.job(createJob.data?.id!));
   throw redirect(path.to.job(createJob.data?.id!));
 }
 
@@ -77,12 +79,15 @@ export default function JobNewRoute() {
   const initialValues = {
     customerId: customerId ?? "",
     deadlineType: "No Deadline" as const,
+    description: "",
     dueDate: "",
     itemId: "",
     itemType: "Part" as const,
     jobId: undefined,
     locationId: defaults?.locationId ?? "",
     quantity: 0,
+    scrapQuantity: 0,
+    status: "Draft" as const,
     unitOfMeasureCode: "EA",
   };
 

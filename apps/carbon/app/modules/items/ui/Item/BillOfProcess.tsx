@@ -279,8 +279,6 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     return `/file/preview/private/${result.data.path}`;
   };
 
-  console.log({ items });
-
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,

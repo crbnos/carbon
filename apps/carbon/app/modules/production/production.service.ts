@@ -6,8 +6,24 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { jobValidator } from "./production.models";
 
+export async function deleteJob(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client.from("job").delete().eq("id", jobId);
+}
+
 export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
+}
+
+export async function getJobDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobId: string
+) {
+  // TODO: get documents from sales order/quote line
+  return client.storage.from("private").list(`${companyId}/job/${jobId}`);
 }
 
 export async function getJobs(

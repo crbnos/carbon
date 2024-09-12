@@ -16,6 +16,7 @@ import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Job } from "~/modules/production";
 import {
+  deadlineTypes,
   getDeadlineIcon,
   getDeadlineText,
   jobStatus,
@@ -91,8 +92,8 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
           filter: {
             type: "static",
             options: items?.map((item) => ({
-              value: item.name,
-              label: item.name,
+              value: item.readableId,
+              label: item.readableId,
             })),
           },
         },
@@ -169,6 +170,20 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
               <span>{getDeadlineText(deadlineType)}</span>
             </div>
           );
+        },
+        meta: {
+          filter: {
+            type: "static",
+            options: deadlineTypes.map((type) => ({
+              value: type,
+              label: (
+                <div className="flex gap-1 items-center">
+                  {getDeadlineIcon(type, false)}
+                  <span>{getDeadlineText(type)}</span>
+                </div>
+              ),
+            })),
+          },
         },
       },
       {

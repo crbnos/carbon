@@ -6482,6 +6482,7 @@ export type Database = {
           purchasingLeadTime: number
           purchasingUnitOfMeasureCode: string | null
           requiresConfiguration: boolean
+          scrapPercentage: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -6499,6 +6500,7 @@ export type Database = {
           purchasingLeadTime?: number
           purchasingUnitOfMeasureCode?: string | null
           requiresConfiguration?: boolean
+          scrapPercentage?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6516,6 +6518,7 @@ export type Database = {
           purchasingLeadTime?: number
           purchasingUnitOfMeasureCode?: string | null
           requiresConfiguration?: boolean
+          scrapPercentage?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6862,13 +6865,13 @@ export type Database = {
           deadlineType: Database["public"]["Enums"]["deadlineType"]
           dueDate: string | null
           id: string
-          inventoryQuantity: number
           itemId: string
           jobId: string
           locationId: string
+          modelUploadId: string | null
           notes: Json | null
-          orderQuantity: number
-          productionQuantity: number
+          productionQuantity: number | null
+          quantity: number
           quantityComplete: number
           quantityReceivedToInventory: number
           quantityShipped: number
@@ -6892,13 +6895,13 @@ export type Database = {
           deadlineType?: Database["public"]["Enums"]["deadlineType"]
           dueDate?: string | null
           id?: string
-          inventoryQuantity?: number
           itemId: string
           jobId: string
           locationId: string
+          modelUploadId?: string | null
           notes?: Json | null
-          orderQuantity?: number
-          productionQuantity?: number
+          productionQuantity?: number | null
+          quantity?: number
           quantityComplete?: number
           quantityReceivedToInventory?: number
           quantityShipped?: number
@@ -6922,13 +6925,13 @@ export type Database = {
           deadlineType?: Database["public"]["Enums"]["deadlineType"]
           dueDate?: string | null
           id?: string
-          inventoryQuantity?: number
           itemId?: string
           jobId?: string
           locationId?: string
+          modelUploadId?: string | null
           notes?: Json | null
-          orderQuantity?: number
-          productionQuantity?: number
+          productionQuantity?: number | null
+          quantity?: number
           quantityComplete?: number
           quantityReceivedToInventory?: number
           quantityShipped?: number
@@ -7103,6 +7106,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "fixtures"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"
@@ -8576,7 +8614,9 @@ export type Database = {
           methodOperationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
+          productionQuantity: number | null
           quantity: number
+          scrapQuantity: number
           unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
@@ -8595,7 +8635,9 @@ export type Database = {
           methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
+          productionQuantity?: number | null
           quantity: number
+          scrapQuantity?: number
           unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8614,7 +8656,9 @@ export type Database = {
           methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
+          productionQuantity?: number | null
           quantity?: number
+          scrapQuantity?: number
           unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -14256,11 +14300,13 @@ export type Database = {
           itemType: string
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
+          productionQuantity: number | null
           quantity: number
           quoteId: string
           quoteLineId: string
           quoteMakeMethodId: string
           quoteOperationId: string | null
+          scrapQuantity: number
           unitCost: number
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -14278,11 +14324,13 @@ export type Database = {
           itemType?: string
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
+          productionQuantity?: number | null
           quantity?: number
           quoteId: string
           quoteLineId: string
           quoteMakeMethodId: string
           quoteOperationId?: string | null
+          scrapQuantity?: number
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -14300,11 +14348,13 @@ export type Database = {
           itemType?: string
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
+          productionQuantity?: number | null
           quantity?: number
           quoteId?: string
           quoteLineId?: string
           quoteMakeMethodId?: string
           quoteOperationId?: string | null
+          scrapQuantity?: number
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -23049,22 +23099,23 @@ export type Database = {
           description: string | null
           dueDate: string | null
           id: string | null
-          inventoryQuantity: number | null
           itemId: string | null
           itemReadableId: string | null
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
           jobId: string | null
           locationId: string | null
           modelId: string | null
           modelName: string | null
           modelPath: string | null
           modelSize: number | null
+          modelUploadId: string | null
           name: string | null
           notes: Json | null
-          orderQuantity: number | null
           productionQuantity: number | null
+          quantity: number | null
           quantityComplete: number | null
           quantityReceivedToInventory: number | null
           quantityShipped: number | null
@@ -23080,7 +23131,6 @@ export type Database = {
           scrapQuantity: number | null
           status: Database["public"]["Enums"]["jobStatus"] | null
           thumbnailPath: string | null
-          type: Database["public"]["Enums"]["itemType"] | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -23246,6 +23296,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "fixtures"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "job_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"

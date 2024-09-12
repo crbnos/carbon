@@ -2033,6 +2033,15 @@ export const postingGroupSales = {
 
 export const sequences = [
   {
+    table: "job",
+    name: "Job",
+    prefix: "WO",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1,
+  },
+  {
     table: "purchaseOrder",
     name: "Purchase Order",
     prefix: "PO",

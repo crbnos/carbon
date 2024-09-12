@@ -28,10 +28,15 @@ import {
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
+import type { jobStatus } from "~/modules/production";
 import { deadlineTypes, jobValidator } from "~/modules/production";
 import { type MethodItemType } from "~/modules/shared";
 
-type JobFormValues = z.infer<typeof jobValidator>;
+type JobFormValues = z.infer<typeof jobValidator> & {
+  description: string;
+  status: (typeof jobStatus)[number];
+  itemType: MethodItemType;
+};
 
 type JobFormProps = {
   initialValues: JobFormValues;
@@ -50,11 +55,18 @@ const JobForm = ({ initialValues }: JobFormProps) => {
     description: string;
     uom: string;
     quantity: number;
+    scrapQuantity: number;
+    scrapPercentage: number;
     modelUploadId: string | null;
   }>({
     itemId: initialValues.itemId ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 0,
+    scrapQuantity: initialValues.scrapQuantity ?? 0,
+    scrapPercentage:
+      (initialValues.quantity ?? 0) === 0
+        ? 0
+        : (initialValues.scrapQuantity ?? 0) / initialValues.scrapQuantity,
     uom: initialValues.unitOfMeasureCode ?? "",
     modelUploadId: initialValues.modelUploadId ?? null,
   });
@@ -69,6 +81,8 @@ const JobForm = ({ initialValues }: JobFormProps) => {
       description: "",
       uom: "EA",
       quantity: 0,
+      scrapPercentage: 0,
+      scrapQuantity: 0,
       modelUploadId: null,
     });
   };
@@ -87,7 +101,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
         .single(),
       supabase
         .from("itemReplenishment")
-        .select("lotSize")
+        .select("lotSize, scrapPercentage")
         .eq("itemId", itemId)
         .single(),
     ]);
@@ -98,6 +112,11 @@ const JobForm = ({ initialValues }: JobFormProps) => {
       uom: item.data?.unitOfMeasureCode ?? "EA",
       quantity: manufacturing?.data?.lotSize ?? 0,
       modelUploadId: item.data?.modelUploadId ?? null,
+      scrapPercentage: manufacturing?.data?.scrapPercentage ?? 0,
+      scrapQuantity: Math.ceil(
+        (manufacturing?.data?.lotSize ?? 0) *
+          ((manufacturing?.data?.scrapPercentage ?? 0) / 100)
+      ),
     });
   };
 
@@ -143,6 +162,8 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                 isOptional
               />
 
+              {isEditing && <div className="col-span-1" />}
+
               <Item
                 name="itemId"
                 label={type}
@@ -154,7 +175,18 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                 }}
                 onTypeChange={onTypeChange}
               />
-              <Location name="locationId" label="Location" />
+              {!isEditing && (
+                <UnitOfMeasure
+                  name="unitOfMeasureCode"
+                  value={itemData.uom}
+                  onChange={(value) => {
+                    if (value?.value) {
+                      setItemData((prev) => ({ ...prev, uom: value.value }));
+                    }
+                  }}
+                />
+              )}
+
               <InputControlled
                 name="description"
                 label="Description"
@@ -167,19 +199,39 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                 label="Quantity"
                 value={itemData.quantity}
                 onChange={(value) =>
-                  setItemData((prev) => ({ ...prev, quantity: value }))
+                  setItemData((prev) => ({
+                    ...prev,
+                    quantity: value,
+                    scrapQuantity: Math.ceil(value * prev.scrapPercentage),
+                  }))
                 }
                 minValue={0}
               />
-              <UnitOfMeasure
-                name="unitOfMeasureCode"
-                value={itemData.uom}
-                onChange={(value) => {
-                  if (value?.value) {
-                    setItemData((prev) => ({ ...prev, uom: value.value }));
-                  }
-                }}
+              <NumberControlled
+                name="scrapQuantity"
+                label="Scrap Quantity"
+                value={itemData.scrapQuantity}
+                onChange={(value) =>
+                  setItemData((prev) => ({
+                    ...prev,
+                    scrapQuantity: value,
+                    scrapPercentage:
+                      prev.quantity > 0 ? value / prev.quantity : 1,
+                  }))
+                }
+                minValue={0}
               />
+              {isEditing && (
+                <UnitOfMeasure
+                  name="unitOfMeasureCode"
+                  value={itemData.uom}
+                  onChange={(value) => {
+                    if (value?.value) {
+                      setItemData((prev) => ({ ...prev, uom: value.value }));
+                    }
+                  }}
+                />
+              )}
 
               <DatePicker
                 name="dueDate"
@@ -194,6 +246,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                   label: d,
                 }))}
               />
+              <Location name="locationId" label="Location" />
               <CustomFormFields table="job" />
             </div>
           </VStack>

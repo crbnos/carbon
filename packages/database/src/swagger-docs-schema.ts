@@ -3364,6 +3364,12 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.methodOperationId",
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -3474,6 +3480,12 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.methodOperationId",
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -3536,6 +3548,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.methodOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
           },
           {
             $ref: "#/parameters/body.methodMaterial",
@@ -3874,6 +3892,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.quoteOperationId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -3993,6 +4017,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.quoteOperationId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -4064,6 +4094,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.quoteOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
           },
           {
             $ref: "#/parameters/body.quoteMaterial",
@@ -11475,16 +11511,13 @@ export default {
             $ref: "#/parameters/rowFilter.job.deadlineType",
           },
           {
-            $ref: "#/parameters/rowFilter.job.orderQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.inventoryQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity",
+            $ref: "#/parameters/rowFilter.job.quantity",
           },
           {
             $ref: "#/parameters/rowFilter.job.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity",
           },
           {
             $ref: "#/parameters/rowFilter.job.quantityComplete",
@@ -11506,6 +11539,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.quoteLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.modelUploadId",
           },
           {
             $ref: "#/parameters/rowFilter.job.notes",
@@ -11618,16 +11654,13 @@ export default {
             $ref: "#/parameters/rowFilter.job.deadlineType",
           },
           {
-            $ref: "#/parameters/rowFilter.job.orderQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.inventoryQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity",
+            $ref: "#/parameters/rowFilter.job.quantity",
           },
           {
             $ref: "#/parameters/rowFilter.job.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity",
           },
           {
             $ref: "#/parameters/rowFilter.job.quantityComplete",
@@ -11649,6 +11682,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.quoteLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.modelUploadId",
           },
           {
             $ref: "#/parameters/rowFilter.job.notes",
@@ -11715,16 +11751,13 @@ export default {
             $ref: "#/parameters/rowFilter.job.deadlineType",
           },
           {
-            $ref: "#/parameters/rowFilter.job.orderQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.inventoryQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity",
+            $ref: "#/parameters/rowFilter.job.quantity",
           },
           {
             $ref: "#/parameters/rowFilter.job.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.productionQuantity",
           },
           {
             $ref: "#/parameters/rowFilter.job.quantityComplete",
@@ -11746,6 +11779,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.quoteLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.modelUploadId",
           },
           {
             $ref: "#/parameters/rowFilter.job.notes",
@@ -18426,16 +18462,13 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.deadlineType",
           },
           {
-            $ref: "#/parameters/rowFilter.jobs.orderQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobs.inventoryQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobs.productionQuantity",
+            $ref: "#/parameters/rowFilter.jobs.quantity",
           },
           {
             $ref: "#/parameters/rowFilter.jobs.scrapQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.productionQuantity",
           },
           {
             $ref: "#/parameters/rowFilter.jobs.quantityComplete",
@@ -18457,6 +18490,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.quoteLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.modelUploadId",
           },
           {
             $ref: "#/parameters/rowFilter.jobs.notes",
@@ -18489,7 +18525,7 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.itemReadableId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobs.type",
+            $ref: "#/parameters/rowFilter.jobs.itemType",
           },
           {
             $ref: "#/parameters/rowFilter.jobs.description",
@@ -26994,6 +27030,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemReplenishment.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemReplenishment.scrapPercentage",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27098,6 +27137,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemReplenishment.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemReplenishment.scrapPercentage",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27154,6 +27196,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemReplenishment.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemReplenishment.scrapPercentage",
           },
           {
             $ref: "#/parameters/body.itemReplenishment",
@@ -35317,6 +35362,7 @@ export default {
         "createdBy",
         "itemReadableId",
         "order",
+        "scrapQuantity",
       ],
       properties: {
         id: {
@@ -35406,6 +35452,15 @@ export default {
             "Note:\nThis is a Foreign Key to `methodOperation.id`.<fk table='methodOperation' column='id'/>",
           format: "text",
           type: "string",
+        },
+        scrapQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        productionQuantity: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -35575,6 +35630,7 @@ export default {
         "createdAt",
         "createdBy",
         "quoteMakeMethodId",
+        "scrapQuantity",
       ],
       properties: {
         id: {
@@ -35680,6 +35736,15 @@ export default {
             "Note:\nThis is a Foreign Key to `quoteOperation.id`.<fk table='quoteOperation' column='id'/>",
           format: "text",
           type: "string",
+        },
+        scrapQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        productionQuantity: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -39102,9 +39167,7 @@ export default {
         "locationId",
         "status",
         "deadlineType",
-        "orderQuantity",
-        "inventoryQuantity",
-        "productionQuantity",
+        "quantity",
         "scrapQuantity",
         "quantityComplete",
         "quantityShipped",
@@ -39169,23 +39232,17 @@ export default {
           format: 'public."deadlineType"',
           type: "string",
         },
-        orderQuantity: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        inventoryQuantity: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        productionQuantity: {
+        quantity: {
           default: 0,
           format: "numeric",
           type: "number",
         },
         scrapQuantity: {
           default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        productionQuantity: {
           format: "numeric",
           type: "number",
         },
@@ -39225,6 +39282,12 @@ export default {
         quoteLineId: {
           description:
             "Note:\nThis is a Foreign Key to `quoteLine.id`.<fk table='quoteLine' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -42278,19 +42341,15 @@ export default {
           format: 'public."deadlineType"',
           type: "string",
         },
-        orderQuantity: {
-          format: "numeric",
-          type: "number",
-        },
-        inventoryQuantity: {
-          format: "numeric",
-          type: "number",
-        },
-        productionQuantity: {
+        quantity: {
           format: "numeric",
           type: "number",
         },
         scrapQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        productionQuantity: {
           format: "numeric",
           type: "number",
         },
@@ -42327,6 +42386,12 @@ export default {
         quoteLineId: {
           description:
             "Note:\nThis is a Foreign Key to `quoteLine.id`.<fk table='quoteLine' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -42376,7 +42441,7 @@ export default {
           format: "text",
           type: "string",
         },
-        type: {
+        itemType: {
           enum: [
             "Part",
             "Material",
@@ -46121,6 +46186,7 @@ export default {
         "companyId",
         "createdBy",
         "createdAt",
+        "scrapPercentage",
       ],
       properties: {
         itemId: {
@@ -46197,6 +46263,11 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        scrapPercentage: {
+          default: 0,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -50561,6 +50632,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.methodMaterial.scrapQuantity": {
+      name: "scrapQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodMaterial.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "body.processes": {
       name: "processes",
       description: "processes",
@@ -50879,6 +50964,20 @@ export default {
       name: "quoteOperationId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteMaterial.scrapQuantity": {
+      name: "scrapQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteMaterial.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -55354,22 +55453,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.job.orderQuantity": {
-      name: "orderQuantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.job.inventoryQuantity": {
-      name: "inventoryQuantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.job.productionQuantity": {
-      name: "productionQuantity",
+    "rowFilter.job.quantity": {
+      name: "quantity",
       required: false,
       format: "numeric",
       in: "query",
@@ -55377,6 +55462,13 @@ export default {
     },
     "rowFilter.job.scrapQuantity": {
       name: "scrapQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.productionQuantity": {
+      name: "productionQuantity",
       required: false,
       format: "numeric",
       in: "query",
@@ -55426,6 +55518,13 @@ export default {
     },
     "rowFilter.job.quoteLineId": {
       name: "quoteLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.modelUploadId": {
+      name: "modelUploadId",
       required: false,
       format: "text",
       in: "query",
@@ -59459,22 +59558,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobs.orderQuantity": {
-      name: "orderQuantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobs.inventoryQuantity": {
-      name: "inventoryQuantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobs.productionQuantity": {
-      name: "productionQuantity",
+    "rowFilter.jobs.quantity": {
+      name: "quantity",
       required: false,
       format: "numeric",
       in: "query",
@@ -59482,6 +59567,13 @@ export default {
     },
     "rowFilter.jobs.scrapQuantity": {
       name: "scrapQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.productionQuantity": {
+      name: "productionQuantity",
       required: false,
       format: "numeric",
       in: "query",
@@ -59531,6 +59623,13 @@ export default {
     },
     "rowFilter.jobs.quoteLineId": {
       name: "quoteLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.modelUploadId": {
+      name: "modelUploadId",
       required: false,
       format: "text",
       in: "query",
@@ -59606,8 +59705,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobs.type": {
-      name: "type",
+    "rowFilter.jobs.itemType": {
+      name: "itemType",
       required: false,
       format: 'public."itemType"',
       in: "query",
@@ -64651,6 +64750,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemReplenishment.scrapPercentage": {
+      name: "scrapPercentage",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },

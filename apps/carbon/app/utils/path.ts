@@ -231,7 +231,7 @@ export const path = {
     deleteItem: (id: string) => generatePath(`${x}/items/delete/${id}`),
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
-    deleteJob: (id: string) => generatePath(`${x}/production/jobs/${id}`),
+    deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
     deleteMaterialForm: (id: string) =>
       generatePath(`${x}/items/forms/delete/${id}`),
     deleteMaterialSubstance: (id: string) =>

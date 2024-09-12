@@ -63,6 +63,13 @@ const PartManufacturingForm = ({
               value={routeData?.partSummary?.name ?? ""}
             />
             <Number name="lotSize" label="Lot Size" />
+            <Number
+              name="scrapPercentage"
+              label="Scrap Percent"
+              formatOptions={{
+                style: "percent",
+              }}
+            />
             <Boolean
               name="manufacturingBlocked"
               label="Manufacturing Blocked"

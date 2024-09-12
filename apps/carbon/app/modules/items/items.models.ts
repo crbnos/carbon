@@ -411,6 +411,7 @@ export const partManufacturingValidator = z.object({
   manufacturingBlocked: zfd.checkbox(),
   // requiresConfiguration: zfd.checkbox(),
   lotSize: zfd.numeric(z.number().min(0)),
+  scrapPercentage: zfd.numeric(z.number().min(0)),
 });
 
 export const pickMethodValidator = z.object({
