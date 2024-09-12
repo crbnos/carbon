@@ -40,11 +40,7 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import {
-  MethodIcon,
-  methodItemType,
-  MethodItemTypeIcon,
-} from "~/modules/shared";
+import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
 import { quoteMaterialValidator } from "../../sales.models";
@@ -544,17 +540,6 @@ function MaterialForm({
       )}
       <VStack className="pt-4">
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-          <Select
-            name="itemType"
-            label="Type"
-            options={methodItemType.map((value) => ({
-              value,
-              label: value,
-            }))}
-            onChange={(value) => {
-              onTypeChange(value?.value as MethodItemType);
-            }}
-          />
           <Item
             disabledItems={[params.itemId!]}
             isReadOnly={isDisabled}
@@ -565,26 +550,18 @@ function MaterialForm({
             onChange={(value) => {
               onItemChange(value?.value as string);
             }}
+            onTypeChange={onTypeChange}
           />
-          <Select
-            name="quoteOperationId"
-            label="Operation"
-            isClearable
-            options={quoteOperations.map((o) => ({
-              value: o.id!,
-              label: o.description,
-            }))}
+          <InputControlled
+            className="col-span-2"
+            name="description"
+            label="Description"
+            value={itemData.description}
+            onChange={(newValue) => {
+              setItemData((d) => ({ ...d, description: newValue }));
+            }}
           />
-        </div>
-        <InputControlled
-          name="description"
-          label="Description"
-          value={itemData.description}
-          onChange={(newValue) => {
-            setItemData((d) => ({ ...d, description: newValue }));
-          }}
-        />
-        <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+
           <DefaultMethodType
             name="methodType"
             label="Method Type"
@@ -601,6 +578,15 @@ function MaterialForm({
                 unitOfMeasureCode: newValue?.value ?? "EA",
               }))
             }
+          />
+          <Select
+            name="quoteOperationId"
+            label="Operation"
+            isClearable
+            options={quoteOperations.map((o) => ({
+              value: o.id!,
+              label: o.description,
+            }))}
           />
           {itemData.methodType !== "Make" && (
             <NumberControlled

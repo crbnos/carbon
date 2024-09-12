@@ -36,7 +36,6 @@ import {
   Location,
   Number,
   NumberControlled,
-  Select,
   SelectControlled,
   Submit,
   UnitOfMeasure,
@@ -49,7 +48,7 @@ import type {
   SalesOrderLine,
   SalesOrderLineType,
 } from "~/modules/sales";
-import { salesOrderLineType, salesOrderLineValidator } from "~/modules/sales";
+import { salesOrderLineValidator } from "~/modules/sales";
 import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
@@ -121,13 +120,6 @@ const SalesOrderLineForm = ({
   );
 
   const isEditing = initialValues.id !== undefined;
-
-  const salesOrderLineTypeOptions = salesOrderLineType
-    .filter((type) => type !== "Fixed Asset")
-    .map((type) => ({
-      label: type,
-      value: type,
-    }));
 
   const onTypeChange = (t: SalesOrderLineType) => {
     // @ts-ignore
@@ -278,33 +270,17 @@ const SalesOrderLineForm = ({
                 />
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                    <Select
-                      name="salesOrderLineType"
-                      label="Type"
-                      options={salesOrderLineTypeOptions}
+                    <Item
+                      name="itemId"
+                      label={lineType}
+                      type={lineType as "Part"}
+                      typeFieldName="salesOrderLineType"
+                      value={itemData.itemId}
                       onChange={(value) => {
-                        onTypeChange(value?.value as SalesOrderLineType);
+                        onChange(value?.value as string);
                       }}
+                      onTypeChange={onTypeChange}
                     />
-
-                    {[
-                      "Part",
-                      "Material",
-                      "Service",
-                      "Tool",
-                      "Fixture",
-                      "Consumable",
-                    ].includes(lineType) && (
-                      <Item
-                        name="itemId"
-                        label={lineType}
-                        type={lineType as "Part"}
-                        value={itemData.itemId}
-                        onChange={(value) => {
-                          onChange(value?.value as string);
-                        }}
-                      />
-                    )}
 
                     <InputControlled
                       name="description"

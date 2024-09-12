@@ -57,7 +57,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     const [open, setOpen] = useState(false);
 
     return (
-      <HStack spacing={1}>
+      <HStack className="w-full" spacing={1}>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <CommandTrigger
@@ -77,7 +77,10 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
               )}
             </CommandTrigger>
           </PopoverTrigger>
-          <PopoverContent className="min-w-[200px] w-[--radix-popover-trigger-width] p-0">
+          <PopoverContent
+            align="start"
+            className="min-w-[260px] w-[--radix-popover-trigger-width] p-0"
+          >
             <VirtualizedCommand
               options={options}
               selected={selected}

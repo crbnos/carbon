@@ -51,6 +51,7 @@ import Process from "./Process";
 import Processes from "./Processes";
 import RichText from "./RichText";
 import Sequence from "./Sequence";
+import SequenceOrCustomId from "./SequenceOrCustomId";
 import Service from "./Service";
 import Shift from "./Shift";
 import ShippingMethod from "./ShippingMethod";
@@ -117,6 +118,7 @@ export {
   Select,
   SelectControlled,
   Sequence,
+  SequenceOrCustomId,
   Service,
   Shift,
   ShippingMethod,

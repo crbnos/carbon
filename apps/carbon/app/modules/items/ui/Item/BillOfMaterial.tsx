@@ -39,11 +39,7 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import {
-  MethodIcon,
-  methodItemType,
-  MethodItemTypeIcon,
-} from "~/modules/shared";
+import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
@@ -444,6 +440,7 @@ function MaterialForm({
   });
 
   const onTypeChange = (value: MethodItemType) => {
+    if (value === itemType) return;
     setItemType(value);
     setItemData({
       itemId: "",
@@ -514,47 +511,27 @@ function MaterialForm({
       <Hidden name="order" />
       <VStack className="pt-4">
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-          <Select
-            name="itemType"
-            label="Type"
-            options={methodItemType.map((value) => ({
-              value,
-              label: value,
-            }))}
-            onChange={(value) => {
-              onTypeChange(value?.value as MethodItemType);
-            }}
-          />
           <Item
             disabledItems={[params.itemId!]}
             name="itemId"
             label={itemType}
-            // @ts-ignore
             type={itemType}
             onChange={(value) => {
               onItemChange(value?.value as string);
             }}
+            onTypeChange={onTypeChange}
           />
-          <Select
-            name="methodOperationId"
-            label="Operation"
-            isOptional
-            options={methodOperations.map((o) => ({
-              value: o.id!,
-              label: o.description,
-            }))}
+          <InputControlled
+            name="description"
+            label="Description"
+            className="col-span-2"
+            isReadOnly
+            value={itemData.description}
+            onChange={(newValue) => {
+              setItemData((d) => ({ ...d, description: newValue }));
+            }}
           />
-        </div>
-        <InputControlled
-          name="description"
-          label="Description"
-          isReadOnly
-          value={itemData.description}
-          onChange={(newValue) => {
-            setItemData((d) => ({ ...d, description: newValue }));
-          }}
-        />
-        <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+
           <DefaultMethodType
             name="methodType"
             label="Method Type"
@@ -571,6 +548,15 @@ function MaterialForm({
                 unitOfMeasureCode: newValue?.value ?? "EA",
               }))
             }
+          />
+          <Select
+            name="methodOperationId"
+            label="Operation"
+            isOptional
+            options={methodOperations.map((o) => ({
+              value: o.id!,
+              label: o.description,
+            }))}
           />
         </div>
 

@@ -1,7 +1,7 @@
 import { useButton } from "@react-aria/button";
 import type { AriaButtonProps } from "@react-types/button";
 import { useRef } from "react";
-import { Button } from "../../Button";
+import { LuCalendar } from "react-icons/lu";
 import type { IconButtonProps } from "../../IconButton";
 import { IconButton } from "../../IconButton";
 
@@ -21,20 +21,21 @@ export const CalendarButton = (props: AriaButtonProps & IconButtonProps) => {
 
 export interface FieldButtonProps extends AriaButtonProps {
   isPressed: boolean;
+  className?: string;
 }
 
 export const FieldButton = (props: FieldButtonProps) => {
   const ref = useRef<HTMLButtonElement>(null);
   const { buttonProps } = useButton(props, ref);
   return (
-    <Button
-      className="rounded-sm"
+    <IconButton
       {...buttonProps}
       ref={ref}
-      isIcon
-      variant="solid"
-    >
-      {props.children}
-    </Button>
+      aria-label="Toggle"
+      className="flex-shrink-0 h-10 rounded-l-none border-l-0 shadow-sm"
+      icon={<LuCalendar />}
+      variant="secondary"
+      size="lg"
+    />
   );
 };

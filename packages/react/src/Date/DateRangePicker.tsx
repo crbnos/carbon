@@ -2,8 +2,9 @@ import { useDateRangePicker } from "@react-aria/datepicker";
 import { useDateRangePickerState } from "@react-stately/datepicker";
 import type { DateRangePickerProps, DateValue } from "@react-types/datepicker";
 import { useRef } from "react";
-import { MdCalendarToday, MdOutlineDoNotDisturb } from "react-icons/md";
-import { InputGroup, InputRightElement } from "../Input";
+import { MdOutlineDoNotDisturb } from "react-icons/md";
+import { HStack } from "../HStack";
+import { InputGroup } from "../Input";
 import TimeField from "./TimePicker";
 import { FieldButton } from "./components/Button";
 import DateField from "./components/DateField";
@@ -27,23 +28,26 @@ const DateRangePicker = (props: DateRangePickerProps<DateValue>) => {
 
   return (
     <div className="relative inline-flex flex-col w-full">
-      <InputGroup {...groupProps} ref={ref} className="w-full inline-flex">
-        <div className="flex w-auto px-4 py-2">
-          <DateField {...startFieldProps} />
-          <span aria-hidden="true" className="px-2">
-            –
-          </span>
-          <DateField {...endFieldProps} />
-          {state.isInvalid && (
-            <MdOutlineDoNotDisturb className="text-destructive-foreground aboslute right-[12px]" />
-          )}
-        </div>
-        <InputRightElement>
-          <FieldButton {...buttonProps} isPressed={state.isOpen}>
-            <MdCalendarToday />
-          </FieldButton>
-        </InputRightElement>
-      </InputGroup>
+      <HStack className="w-full" spacing={0}>
+        <InputGroup
+          {...groupProps}
+          ref={ref}
+          className="w-full inline-flex rounded-r-none"
+        >
+          <div className="flex w-full px-4 py-2">
+            <DateField {...startFieldProps} />
+            <span aria-hidden="true" className="px-2">
+              –
+            </span>
+            <DateField {...endFieldProps} />
+            {state.isInvalid && (
+              <MdOutlineDoNotDisturb className="text-destructive-foreground absolute right-[12px]" />
+            )}
+          </div>
+        </InputGroup>
+
+        <FieldButton {...buttonProps} isPressed={state.isOpen} />
+      </HStack>
       {state.isOpen && (
         <Popover
           {...dialogProps}
