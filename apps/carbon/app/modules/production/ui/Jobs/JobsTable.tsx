@@ -286,7 +286,7 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
         count={count ?? 0}
         primaryAction={
           permissions.can("update", "resources") && (
-            <New label="Job" to={`new?${params.toString()}`} />
+            <New label="Job" to={path.to.newJob} />
           )
         }
         renderContextMenu={renderContextMenu}

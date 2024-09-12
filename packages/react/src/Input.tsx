@@ -195,14 +195,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         className={cn(
           inputVariants({
             size,
-            className,
             isInputGroup,
             isFirstChild,
             isLastChild,
             isInvalid,
             isReadOnly,
             isDisabled,
-          })
+          }),
+          className
         )}
         {...props}
         disabled={isDisabled}

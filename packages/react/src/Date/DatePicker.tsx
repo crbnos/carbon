@@ -3,8 +3,9 @@ import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
 import { useRef } from "react";
-import { MdOutlineCalendarToday, MdOutlineDoNotDisturb } from "react-icons/md";
-import { InputGroup, InputRightElement } from "../Input";
+import { MdOutlineDoNotDisturb } from "react-icons/md";
+import { HStack } from "../HStack";
+import { InputGroup } from "../Input";
 import { useOutsideClick } from "../hooks";
 import { FieldButton } from "./components/Button";
 import { Calendar } from "./components/Calendar";
@@ -26,19 +27,22 @@ const DatePicker = (props: DatePickerProps<CalendarDate>) => {
 
   return (
     <div className="relative inline-flex flex-col w-full">
-      <InputGroup {...groupProps} ref={ref} className="w-full inline-flex">
-        <div className="flex w-full px-4 py-2">
-          <DateField {...fieldProps} />
-          {state.isInvalid && (
-            <MdOutlineDoNotDisturb className="text-destructive-foreground aboslute right-[12px]" />
-          )}
-        </div>
-        <InputRightElement className="pr-1">
-          <FieldButton {...buttonProps} isPressed={state.isOpen}>
-            <MdOutlineCalendarToday />
-          </FieldButton>
-        </InputRightElement>
-      </InputGroup>
+      <HStack className="w-full" spacing={0}>
+        <InputGroup
+          {...groupProps}
+          ref={ref}
+          className="w-full inline-flex rounded-r-none"
+        >
+          <div className="flex w-full px-4 py-2">
+            <DateField {...fieldProps} />
+            {state.isInvalid && (
+              <MdOutlineDoNotDisturb className="text-destructive-foreground aboslute right-[12px]" />
+            )}
+          </div>
+        </InputGroup>
+
+        <FieldButton {...buttonProps} isPressed={state.isOpen} />
+      </HStack>
       {state.isOpen && (
         <Popover {...dialogProps} onClose={() => state.setOpen(false)}>
           <Calendar {...calendarProps} />

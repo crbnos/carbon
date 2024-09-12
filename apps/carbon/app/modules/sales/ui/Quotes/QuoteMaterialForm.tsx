@@ -33,7 +33,6 @@ import { useSupabase } from "~/lib/supabase";
 import type { quoteOperationValidator } from "~/modules/sales";
 import { quoteMaterialValidator } from "~/modules/sales";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import { methodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type QuoteMaterialFormProps = {
@@ -193,17 +192,6 @@ const QuoteMaterialForm = ({
           <Hidden name="order" />
           <VStack className="pt-4">
             <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-              <Select
-                name="itemType"
-                label="Type"
-                options={methodItemType.map((value) => ({
-                  value,
-                  label: value,
-                }))}
-                onChange={(value) => {
-                  onTypeChange(value?.value as MethodItemType);
-                }}
-              />
               <Item
                 name="itemId"
                 label={itemType}
@@ -212,6 +200,7 @@ const QuoteMaterialForm = ({
                 onChange={(value) => {
                   onItemChange(value?.value as string);
                 }}
+                onTypeChange={onTypeChange}
               />
               <Select
                 name="quoteOperationId"

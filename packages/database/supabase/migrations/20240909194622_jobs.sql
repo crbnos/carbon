@@ -92,10 +92,7 @@ CREATE TABLE "public"."job" (
   "status" "jobStatus" NOT NULL DEFAULT 'Draft',
   "dueDate" DATE,
   "deadlineType" "deadlineType" NOT NULL DEFAULT 'No Deadline',
-  "orderQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
-  "inventoryQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
-  "productionQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
-  "scrapQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "quantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
   "quantityComplete" NUMERIC(10, 4) NOT NULL DEFAULT 0,
   "quantityShipped" NUMERIC(10, 4) NOT NULL DEFAULT 0,
   "quantityReceivedToInventory" NUMERIC(10, 4) NOT NULL DEFAULT 0,
@@ -103,6 +100,7 @@ CREATE TABLE "public"."job" (
   "salesOrderLineId" TEXT,
   "quoteId" TEXT,
   "quoteLineId" TEXT,
+  "modelUploadId" TEXT,
   "notes" JSONB DEFAULT '{}'::jsonb,
   "assignee" TEXT,
   "customFields" JSONB,
@@ -122,6 +120,7 @@ CREATE TABLE "public"."job" (
   CONSTRAINT "job_salesOrderLineId_fkey" FOREIGN KEY ("salesOrderLineId") REFERENCES "salesOrderLine" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_quoteId_fkey" FOREIGN KEY ("quoteId") REFERENCES "quote" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_quoteLineId_fkey" FOREIGN KEY ("quoteLineId") REFERENCES "quoteLine" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "job_modelUploadId_fkey" FOREIGN KEY ("modelUploadId") REFERENCES "modelUpload" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "job_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -291,3 +290,7 @@ CREATE OR REPLACE VIEW "jobs" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
   LEFT JOIN "salesOrder" so on j."salesOrderId" = so.id
   LEFT JOIN "quote" qo ON j."quoteId" = qo.id;
+
+
+INSERT INTO "customFieldTable" ("table", "name", "module") 
+VALUES ('job', 'Job', 'Production');

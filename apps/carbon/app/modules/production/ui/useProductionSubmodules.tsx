@@ -1,4 +1,4 @@
-import { LuHammer } from "react-icons/lu";
+import { LuHardHat } from "react-icons/lu";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -8,8 +8,8 @@ const productionRoutes: RouteGroup[] = [
     routes: [
       {
         name: "Jobs",
-        to: path.to.abilities,
-        icon: <LuHammer />,
+        to: path.to.jobs,
+        icon: <LuHardHat />,
       },
     ],
   },

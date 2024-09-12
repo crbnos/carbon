@@ -71,7 +71,10 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
               )}
             </CommandTrigger>
           </PopoverTrigger>
-          <PopoverContent className="min-w-[200px] w-[--radix-popover-trigger-width] p-0">
+          <PopoverContent
+            align="start"
+            className="min-w-[260px] w-[--radix-popover-trigger-width] p-0"
+          >
             <VirtualizedCommand
               options={options}
               value={value}
