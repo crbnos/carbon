@@ -6,9 +6,44 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  inventoryAdjustmentValidator,
   receiptValidator,
   shippingMethodValidator,
 } from "./inventory.models";
+
+export async function insertManualInventoryAdjustment(
+  client: SupabaseClient<Database>,
+  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator>
+) {
+  let data;
+  if (inventoryAdjustment.adjustmentType === "Positive Adjmt.") {
+    data = {
+      companyId: inventoryAdjustment.companyId,
+      entryType: "Positive Adjmt.",
+      itemId: inventoryAdjustment.itemId,
+      locationId: inventoryAdjustment.locationId,
+      quantity: inventoryAdjustment.quantity,
+    };
+  } else if (inventoryAdjustment.adjustmentType === "Negative Adjmt.") {
+    data = {
+      companyId: inventoryAdjustment.companyId,
+      entryType: "Negative Adjmt.",
+      itemId: inventoryAdjustment.itemId,
+      locationId: inventoryAdjustment.locationId,
+      quantity: inventoryAdjustment.quantity,
+    };
+  } else {
+    data = {
+      companyId: inventoryAdjustment.companyId,
+      entryType: "Positive Adjmt.",
+      itemId: inventoryAdjustment.itemId,
+      locationId: inventoryAdjustment.locationId,
+      quantity: inventoryAdjustment.quantity,
+    };
+  }
+
+  return client.from("itemLedger").insert([data]).select("*").single();
+}
 
 export async function deleteReceipt(
   client: SupabaseClient<Database>,

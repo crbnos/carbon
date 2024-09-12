@@ -42,6 +42,15 @@ export const itemLedgerDocumentTypes = [
   "Direct Transfer",
 ] as const;
 
+export const inventoryAdjustmentValidator = z.object({
+  companyId: z.string().min(1, { message: "Company ID is required" }),
+  itemId: z.string().min(1, { message: "Item ID is required" }),
+  locationId: z.string().min(20, { message: "Location is required" }),
+  adjustmentType: z.enum(itemLedgerTypes),
+  quantity: z.number(),
+  defaultShelfId: zfd.text(z.string().optional()),
+});
+
 export const itemLedgerValidator = z.object({
   postingDate: zfd.text(z.string().optional()),
   entryType: z.enum(itemLedgerTypes),
