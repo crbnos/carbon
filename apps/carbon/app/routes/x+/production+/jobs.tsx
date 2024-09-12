@@ -56,8 +56,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function JobsRoute() {
   const { count, locations, jobs } = useLoaderData<typeof loader>();
 
-  console.log({ jobs });
-
   return (
     <VStack spacing={0} className="h-full">
       <JobsTable data={jobs} count={count} locations={locations} />

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   LuComponent,
   LuContainer,
+  LuHardHat,
   LuShoppingCart,
   LuUserSquare,
   LuUsers,
@@ -26,6 +27,14 @@ export default function useCreate(): Route[] {
         name: "Part",
         to: path.to.newPart,
         icon: <LuComponent />,
+      });
+    }
+
+    if (permissions.can("create", "production")) {
+      links.push({
+        name: "Job",
+        to: path.to.newJob,
+        icon: <LuHardHat />,
       });
     }
 

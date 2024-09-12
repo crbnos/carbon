@@ -93,6 +93,8 @@ CREATE TABLE "public"."job" (
   "dueDate" DATE,
   "deadlineType" "deadlineType" NOT NULL DEFAULT 'No Deadline',
   "quantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "scrapQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  "productionQuantity" NUMERIC(10, 4) GENERATED ALWAYS AS ("quantity" + "scrapQuantity") STORED,
   "quantityComplete" NUMERIC(10, 4) NOT NULL DEFAULT 0,
   "quantityShipped" NUMERIC(10, 4) NOT NULL DEFAULT 0,
   "quantityReceivedToInventory" NUMERIC(10, 4) NOT NULL DEFAULT 0,
@@ -272,8 +274,8 @@ CREATE OR REPLACE VIEW "jobs" WITH(SECURITY_INVOKER=true) AS
     j.*,
     i.name,
     i."readableId" as "itemReadableId",
-    i.type,
-    i.description,
+    i.type as "itemType",
+    i.name as "description",
     i."itemTrackingType",
     i.active,
     i."replenishmentSystem",
@@ -294,3 +296,176 @@ CREATE OR REPLACE VIEW "jobs" WITH(SECURITY_INVOKER=true) AS
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 
 VALUES ('job', 'Job', 'Production');
+
+-- job sequence for existing companies
+INSERT INTO "sequence" (
+  "table", 
+  "name", 
+  "prefix", 
+  "suffix", 
+  "next", 
+  "size", 
+  "step", 
+  "companyId"
+) 
+SELECT 
+  'job',
+  'Job',
+  'WO',
+  null,
+  0,
+  6,
+  1,
+  id
+FROM "company" 
+ON CONFLICT DO NOTHING;
+
+ALTER TABLE "itemReplenishment" 
+  ADD COLUMN "scrapPercentage" NUMERIC(5, 2) DEFAULT 0 NOT NULL;
+
+ALTER TABLE "methodMaterial"
+  ADD COLUMN "scrapQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  ADD COLUMN "productionQuantity" NUMERIC(10, 4) GENERATED ALWAYS AS ("quantity" + "scrapQuantity") STORED;
+
+ALTER TABLE "quoteMaterial"
+  ADD COLUMN "scrapQuantity" NUMERIC(10, 4) NOT NULL DEFAULT 0,
+  ADD COLUMN "productionQuantity" NUMERIC(10, 4) GENERATED ALWAYS AS ("quantity" + "scrapQuantity") STORED;
+
+
+ALTER TABLE "job" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Employees can view jobs" ON "job"
+  FOR SELECT
+  USING (
+    has_role('employee', "companyId")
+    AND "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = auth.uid()::text
+    )
+  );
+
+CREATE POLICY "Employees with production_create can insert jobs" ON "job"
+  FOR INSERT
+  WITH CHECK (
+    has_role('employee', "companyId")
+    AND has_company_permission('production_create', "companyId")
+  );
+
+CREATE POLICY "Employees with production_update can update jobs" ON "job"
+  FOR UPDATE
+  USING (
+    has_role('employee', "companyId")
+    AND has_company_permission('production_update', "companyId")
+  );
+
+CREATE POLICY "Employees with production_delete can delete jobs" ON "job"
+  FOR DELETE
+  USING (
+    has_role('employee', "companyId")
+    AND has_company_permission('production_delete', "companyId")
+  );
+
+CREATE POLICY "Customers with production_view can view their own jobs" ON "job"
+  FOR SELECT
+  USING (
+    has_role('customer', "companyId") AND
+    has_company_permission('production_view', "companyId") AND
+    "customerId" IN (
+      SELECT "customerId" FROM "customerAccount" WHERE id::uuid = auth.uid()
+    )
+  );
+
+-- Search
+
+CREATE FUNCTION public.create_job_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.search(name, entity, uuid, link, "companyId")
+  VALUES (new."jobId", 'Job', new.id, '/x/job/' || new.id, new."companyId");
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER create_job_search_result
+  AFTER INSERT on public."job"
+  FOR EACH ROW EXECUTE PROCEDURE public.create_job_search_result();
+
+CREATE FUNCTION public.update_job_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (old."jobId" <> new."jobId") THEN
+    UPDATE public.search SET name = new."jobId"
+    WHERE entity = 'Job' AND uuid = new.id AND "companyId" = new."companyId";
+  END IF;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER update_job_search_result
+  AFTER UPDATE on public."job"
+  FOR EACH ROW EXECUTE PROCEDURE public.update_job_search_result();
+
+CREATE FUNCTION public.delete_job_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  DELETE FROM public.search WHERE entity = 'Job' AND uuid = old.id AND "companyId" = old."companyId";
+  RETURN old;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER delete_job_search_result
+  AFTER DELETE on public."job"
+  FOR EACH ROW EXECUTE PROCEDURE public.delete_job_search_result();
+
+CREATE POLICY "Employees with production_view can search for jobs" ON "search"
+  FOR SELECT
+  USING (
+    has_role('employee', "companyId") AND
+    has_company_permission('production_view', "companyId") AND
+    entity = 'Job'
+  );
+
+CREATE POLICY "Customers with production_view can search for their own jobs" ON "search"
+  FOR SELECT
+  USING (
+    has_role('customer', "companyId") AND
+    has_company_permission('production_view', "companyId") AND
+    entity = 'Job' AND
+    uuid IN (
+      SELECT id FROM "job" WHERE "customerId" IN (
+        SELECT "customerId" FROM "customerAccount" WHERE id::uuid = auth.uid()
+      )
+    )
+  );
+
+
+CREATE POLICY "Job documents view requires production_view" ON storage.objects 
+FOR SELECT USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('production_view', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'job'
+);
+
+CREATE POLICY "Job documents insert requires production_create" ON storage.objects 
+FOR INSERT WITH CHECK (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('production_create', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'job'
+);
+
+CREATE POLICY "Job documents update requires production_update" ON storage.objects 
+FOR UPDATE USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('production_update', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'job'
+);
+
+CREATE POLICY "Job documents delete requires production_delete" ON storage.objects 
+FOR DELETE USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('production_delete', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'job'
+);

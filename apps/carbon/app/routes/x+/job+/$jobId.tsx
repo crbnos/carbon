@@ -7,16 +7,9 @@ import {
   VStack,
 } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Outlet, useParams } from "@remix-run/react";
-import {
-  getJob,
-  getJobDocuments,
-  getJobMethodTrees,
-  JobBreadcrumbs,
-  JobExplorer,
-  JobHeader,
-} from "~/modules/sales";
+import { json, Outlet, redirect, useParams } from "@remix-run/react";
+import { getJob, getJobDocuments, JobHeader } from "~/modules/production";
+import {} from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -30,17 +23,17 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "production",
   });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const [job, methods, files] = await Promise.all([
+  const [job, files] = await Promise.all([
     getJob(client, jobId),
-    getJobMethodTrees(client, jobId),
-    getJobDocuments(client, jobId),
+    getJobDocuments(client, companyId, jobId),
+    // getJobMethodTrees(client, jobId),
   ]);
 
   if (job.error) {
@@ -50,17 +43,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (methods.error) {
-    throw redirect(
-      path.to.jobs,
-      await flash(request, error(methods.error, "Failed to load job method"))
-    );
-  }
+  // if (methods.error) {
+  //   throw redirect(
+  //     path.to.jobs,
+  //     await flash(request, error(methods.error, "Failed to load job method"))
+  //   );
+  // }
 
   return json({
     job: job.data,
-    methods: methods.data ?? [],
     files: files.data ?? [],
+    // methods: methods.data ?? [],
   });
 }
 
@@ -86,7 +79,7 @@ export default function JobRoute() {
                   >
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <div className="grid w-full h-full overflow-hidden">
-                        <JobExplorer />
+                        {/* <JobExplorer /> */}
                       </div>
                     </ScrollArea>
                   </ResizablePanel>
@@ -94,7 +87,6 @@ export default function JobRoute() {
                   <ResizablePanel order={2}>
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <VStack spacing={2} className="p-2">
-                        <JobBreadcrumbs />
                         <Outlet />
                       </VStack>
                     </ScrollArea>
