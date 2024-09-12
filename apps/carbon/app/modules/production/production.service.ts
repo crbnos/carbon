@@ -5,6 +5,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { jobValidator } from "./production.models";
+import type { Job } from "./types";
 
 export async function deleteJob(
   client: SupabaseClient<Database>,
@@ -20,10 +21,23 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
 export async function getJobDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
-  jobId: string
+  job: Job
 ) {
-  // TODO: get documents from sales order/quote line
-  return client.storage.from("private").list(`${companyId}/job/${jobId}`);
+  if (job.salesOrderLineId || job.quoteLineId) {
+    const opportunityLine = job.salesOrderLineId || job.quoteLineId;
+
+    const [opportunityLineFiles, jobFiles] = await Promise.all([
+      client.storage
+        .from("private")
+        .list(`${companyId}/opportunity-line/${opportunityLine}`),
+      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+    ]);
+
+    // Combine and return both sets of files
+    return [...(opportunityLineFiles.data || []), ...(jobFiles.data || [])];
+  } else {
+    return client.storage.from("private").list(`${companyId}/job/${job.id}`);
+  }
 }
 
 export async function getJobs(
