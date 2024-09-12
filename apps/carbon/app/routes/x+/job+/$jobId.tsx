@@ -29,12 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
-
-  const [job, files] = await Promise.all([
-    getJob(client, jobId),
-    getJobDocuments(client, companyId, jobId),
-    // getJobMethodTrees(client, jobId),
-  ]);
+  const job = await getJob(client, jobId);
 
   if (job.error) {
     throw redirect(
@@ -42,6 +37,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(job.error, "Failed to load job"))
     );
   }
+
+  const files = await getJobDocuments(client, companyId, job.data);
+
+  // const methods = await getJobMethodTrees(client, jobId);
 
   // if (methods.error) {
   //   throw redirect(
@@ -52,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     job: job.data,
-    files: files.data ?? [],
+    files: files,
     // methods: methods.data ?? [],
   });
 }
