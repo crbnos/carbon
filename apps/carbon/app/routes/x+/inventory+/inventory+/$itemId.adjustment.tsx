@@ -1,6 +1,7 @@
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
+import { useParams } from "@remix-run/react";
 import {
   insertManualInventoryAdjustment,
   inventoryAdjustmentValidator,
@@ -14,21 +15,22 @@ import { error } from "~/utils/result";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
-    update: "inventory",
+    create: "inventory",
   });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(inventoryAdjustmentValidator).validate(
-    formData
-  );
+  const validation = await validator(inventoryAdjustmentValidator).validate({
+    ...Object.fromEntries(formData),
+    companyId,
+  });
 
   if (validation.error) {
+    console.log(validation.error);
     return validationError(validation.error);
   }
-
   const { ...data } = validation.data;
 
   const itemLedger = await insertManualInventoryAdjustment(client, {
@@ -39,10 +41,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const flashMessage = "Failed to create manual inventory adjustment";
 
     throw redirect(
-      path.to.partSales(itemId),
+      path.to.inventoryItem(itemId),
       await flash(request, error(itemLedger.error, flashMessage))
     );
   }
 
   throw redirect(path.to.inventoryItem(itemId));
+}
+
+export default function ItemInventoryAdjustmentRoute() {
+  const { itemId } = useParams();
+
+  if (!itemId) throw new Error("itemId not found");
+
+  return <></>;
 }

@@ -134,8 +134,8 @@ const InventoryDetails = ({
             <CardTitle>Make Adjustment</CardTitle>
           </CardHeader>
           <CardContent>
-            <Hidden name="itemId" />
-            <Hidden name="locationId" />
+            <Hidden name="itemId" value={initialValues.itemId} />
+            <Hidden name="locationId" value={initialValues.locationId} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
               <RadioGroup name="adjustmentType" className="space-y-1">
                 <div className="flex items-center space-x-2">
@@ -144,7 +144,7 @@ const InventoryDetails = ({
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem
-                    value="positiveAdjustment"
+                    value="Positive Adjmt."
                     id="positiveAdjustment"
                   />
                   <Label htmlFor="positiveAdjustment">
@@ -153,7 +153,7 @@ const InventoryDetails = ({
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem
-                    value="negativeAdjustment"
+                    value="Negative Adjmt."
                     id="negativeAdjustment"
                   />
                   <Label htmlFor="negativeAdjustment">

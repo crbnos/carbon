@@ -3,7 +3,13 @@ CREATE OR REPLACE VIEW "itemQuantities" AS
     i."id" AS "itemId", 
     i."companyId",
     loc."id" AS "locationId",
-    COALESCE(SUM(il."quantity"), 0) AS "quantityOnHand",
+    COALESCE(SUM(
+      CASE 
+        WHEN il."entryType" = 'Positive Adjmt.' THEN il."quantity"
+        WHEN il."entryType" = 'Negative Adjmt.' THEN -il."quantity"
+        ELSE il."quantity"
+      END
+    ), 0) AS "quantityOnHand",
     COALESCE(pol."quantityToReceive", 0) AS "quantityOnPurchaseOrder",
     0 AS "quantityOnSalesOrder",
     0 AS "quantityOnProdOrder",
