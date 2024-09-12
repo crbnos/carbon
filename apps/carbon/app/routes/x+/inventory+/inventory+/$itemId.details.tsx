@@ -12,7 +12,6 @@ import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import { getCustomFields } from "~/utils/form";
 import { notFound } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
@@ -124,15 +123,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function ItemInventoryRoute() {
   const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
 
-  const initialValues = {
-    ...partInventory,
-    defaultShelfId: partInventory.defaultShelfId ?? undefined,
-    ...getCustomFields(partInventory.customFields ?? {}),
-  };
   return (
     <InventoryDetails
-      key={initialValues.itemId}
-      initialValues={initialValues}
+      partInventory={{
+        ...partInventory,
+        defaultShelfId: partInventory.defaultShelfId ?? undefined,
+      }}
       quantities={quantities}
       shelves={shelves}
     />

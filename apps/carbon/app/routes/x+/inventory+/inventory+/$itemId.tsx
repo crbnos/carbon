@@ -1,4 +1,4 @@
-import { ResizableHandle, ResizablePanel } from "@carbon/react";
+import { ResizableHandle, ResizablePanel, VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
 
@@ -10,10 +10,12 @@ export default function ItemInventoryRoute() {
         defaultSize={50}
         maxSize={70}
         minSize={25}
-        className="bg-background p-2"
+        className="bg-background"
       >
         <InventoryItemHeader />
-        <Outlet />
+        <VStack className="p-2">
+          <Outlet />
+        </VStack>
       </ResizablePanel>
     </>
   );

@@ -111,7 +111,7 @@ export default function InventoryAllRoute() {
           defaultSize={50}
           maxSize={70}
           minSize={25}
-          className="bg-background p-2"
+          className="bg-background"
         >
           <InventoryTable
             data={inventoryItems}

@@ -22,10 +22,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(inventoryAdjustmentValidator).validate({
-    ...Object.fromEntries(formData),
-    companyId,
-  });
+  const validation = await validator(inventoryAdjustmentValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     console.log(validation.error);
@@ -35,6 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const itemLedger = await insertManualInventoryAdjustment(client, {
     ...data,
+    companyId,
   });
 
   if (itemLedger.error) {

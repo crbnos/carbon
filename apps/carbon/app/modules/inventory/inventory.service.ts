@@ -13,34 +13,20 @@ import type {
 
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
-  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator>
-) {
-  let data;
-  if (inventoryAdjustment.adjustmentType === "Positive Adjmt.") {
-    data = {
-      companyId: inventoryAdjustment.companyId,
-      entryType: "Positive Adjmt.",
-      itemId: inventoryAdjustment.itemId,
-      locationId: inventoryAdjustment.locationId,
-      quantity: inventoryAdjustment.quantity,
-    };
-  } else if (inventoryAdjustment.adjustmentType === "Negative Adjmt.") {
-    data = {
-      companyId: inventoryAdjustment.companyId,
-      entryType: "Negative Adjmt.",
-      itemId: inventoryAdjustment.itemId,
-      locationId: inventoryAdjustment.locationId,
-      quantity: inventoryAdjustment.quantity,
-    };
-  } else {
-    data = {
-      companyId: inventoryAdjustment.companyId,
-      entryType: "Positive Adjmt.",
-      itemId: inventoryAdjustment.itemId,
-      locationId: inventoryAdjustment.locationId,
-      quantity: inventoryAdjustment.quantity,
-    };
+  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
+    companyId: string;
   }
+) {
+  const data = {
+    companyId: inventoryAdjustment.companyId,
+    entryType:
+      inventoryAdjustment.adjustmentType === "Set Quantity"
+        ? "Positive Adjmt."
+        : inventoryAdjustment.adjustmentType,
+    itemId: inventoryAdjustment.itemId,
+    locationId: inventoryAdjustment.locationId,
+    quantity: inventoryAdjustment.quantity,
+  };
 
   return client.from("itemLedger").insert([data]).select("*").single();
 }

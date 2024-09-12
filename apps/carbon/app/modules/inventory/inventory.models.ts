@@ -43,12 +43,10 @@ export const itemLedgerDocumentTypes = [
 ] as const;
 
 export const inventoryAdjustmentValidator = z.object({
-  companyId: z.string().min(1, { message: "Company ID is required" }),
   itemId: z.string().min(1, { message: "Item ID is required" }),
   locationId: z.string().min(20, { message: "Location is required" }),
   adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
   quantity: zfd.numeric(z.number()),
-  defaultShelfId: zfd.text(z.string().optional()),
 });
 
 export const itemLedgerValidator = z.object({

@@ -1,10 +1,7 @@
 import { Badge, CardHeader, CardTitle, HStack } from "@carbon/react";
-import { useRevalidator } from "@remix-run/react";
 import type { z } from "zod";
-import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { ItemQuantities, pickMethodValidator } from "~/modules/items";
-import InventoryItemIcon from "./InventoryItemIcon";
+import { MethodItemTypeIcon } from "~/modules/shared";
 
 type InventoryTransactionsProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
@@ -17,11 +14,6 @@ const InventoryTransactions = ({
   quantities,
   shelves,
 }: InventoryTransactionsProps) => {
-  const permissions = usePermissions();
-  const { supabase } = useSupabase();
-  const user = useUser();
-  const revalidator = useRevalidator();
-
   const shelfOptions = shelves.map((shelf) => ({ value: shelf, label: shelf }));
 
   return (
@@ -31,7 +23,7 @@ const InventoryTransactions = ({
           <CardTitle>{quantities.readableId}</CardTitle>
           {quantities.type && (
             <Badge variant="secondary">
-              <InventoryItemIcon type={quantities.type} />
+              <MethodItemTypeIcon type={quantities.type} />
             </Badge>
           )}
         </HStack>

@@ -1,175 +1,191 @@
 import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
+  Button,
   Card,
-  CardContent,
+  CardAction,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-  HStack,
-  Label,
-  RadioGroup,
-  RadioGroupItem,
+  Combobox,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  useDisclosure,
+  VStack,
 } from "@carbon/react";
-import { useRevalidator } from "@remix-run/react";
+import { useLocale } from "@react-aria/i18n";
 import type { z } from "zod";
-import {
-  CreatableCombobox,
-  CustomFormFields,
-  Hidden,
-  Number,
-  Submit,
-} from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
-import type { ItemQuantities } from "~/modules/items";
-import { pickMethodValidator } from "~/modules/items";
+import { Hidden, Number, Select, Submit } from "~/components/Form";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { ItemQuantities, pickMethodValidator } from "~/modules/items";
+import { MethodItemTypeIcon } from "~/modules/shared";
+import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import InventoryItemIcon from "./InventoryItemIcon";
+import { inventoryAdjustmentValidator } from "../../inventory.models";
 
 type InventoryDetailsProps = {
-  initialValues: z.infer<typeof pickMethodValidator>;
+  partInventory: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
   shelves: string[];
 };
 
 const InventoryDetails = ({
-  initialValues,
+  partInventory,
   quantities,
   shelves,
 }: InventoryDetailsProps) => {
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
-  const user = useUser();
-  const revalidator = useRevalidator();
+  const adjustmentModal = useDisclosure();
 
+  const routeData = useRouteData<{ locations: ListItem[] }>(
+    path.to.inventoryRoot
+  );
   const shelfOptions = shelves.map((shelf) => ({ value: shelf, label: shelf }));
+  const locationOptions =
+    routeData?.locations?.map((location) => ({
+      value: location.id,
+      label: location.name,
+    })) ?? [];
+
+  const { locale } = useLocale();
+  const formatter = Intl.NumberFormat(locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  });
 
   return (
     <>
-      <Card>
-        <ValidatedForm
-          method="post"
-          validator={pickMethodValidator}
-          defaultValues={{ ...quantities, ...initialValues }}
-        >
-          <HStack className="w-full justify-between items-start">
-            <CardHeader>
-              <HStack>
-                <CardTitle>{quantities.readableId}</CardTitle>
-                {quantities.type && (
-                  <Badge variant="secondary">
-                    <InventoryItemIcon type={quantities.type} />
-                  </Badge>
-                )}
-              </HStack>
+      <div className="w-full grid gap-2 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
+        <Card className="sm:col-span-2" x-chunk="dashboard-05-chunk-0">
+          <div className="relative">
+            <CardHeader className="pb-3">
+              <CardTitle>
+                {quantities.readableId}{" "}
+                <Badge className="ml-2" variant="secondary">
+                  <MethodItemTypeIcon type={quantities.type ?? "Part"} />
+                </Badge>
+              </CardTitle>
+              <CardDescription className="max-w-lg text-balance leading-relaxed">
+                {quantities.name}
+              </CardDescription>
             </CardHeader>
-          </HStack>
-
-          <CardContent>
-            <Hidden name="itemId" />
-            <Hidden name="locationId" />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-              <CreatableCombobox
-                name="defaultShelfId"
-                label="Default Shelf"
-                options={shelfOptions}
-                onCreateOption={async (option) => {
-                  const response = await supabase?.from("shelf").insert({
-                    id: option,
-                    companyId: user.company.id,
-                    locationId: initialValues.locationId,
-                    createdBy: user.id,
-                  });
-                  if (response && response.error === null)
-                    revalidator.revalidate();
+            <CardAction className="absolute right-0 top-2">
+              <Combobox
+                size="sm"
+                value={partInventory.locationId}
+                options={locationOptions}
+                onChange={(selected) => {
+                  // hard refresh because initialValues update has no effect otherwise
+                  window.location.href = `${path.to.inventoryItem(
+                    partInventory.itemId!
+                  )}?location=${partInventory.locationId}`;
                 }}
-                className="w-full"
+                className="w-64"
               />
-
-              <Number
-                name="quantityOnHand"
-                label="Quantity On Hand"
-                isReadOnly
-              />
-
-              <Number
-                name="quantityAvailable"
-                label="Quantity Available"
-                isReadOnly
-              />
-              <Number
-                name="quantityOnPurchaseOrder"
-                label="Quantity On Purchase Order"
-                isReadOnly
-              />
-
-              <Number
-                name="quantityOnProdOrder"
-                label="Quantity On Prod Order"
-                isReadOnly
-              />
-              <Number
-                name="quantityOnSalesOrder"
-                label="Quantity On Sales Order"
-                isReadOnly
-              />
-              <CustomFormFields table="partInventory" />
-            </div>
-          </CardContent>
+            </CardAction>
+          </div>
           <CardFooter>
-            <Submit isDisabled={!permissions.can("update", "inventory")}>
-              Save
-            </Submit>
+            <Button onClick={adjustmentModal.onOpen}>Update Inventory</Button>
           </CardFooter>
-        </ValidatedForm>
-      </Card>
-      <Card>
-        <ValidatedForm
-          method="post"
-          validator={pickMethodValidator}
-          action={path.to.inventoryItemAdjustment(initialValues.itemId)}
-        >
-          <CardHeader>
-            <CardTitle>Make Adjustment</CardTitle>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-8">
+            <CardDescription>Quantity on Hand</CardDescription>
+            <CardTitle className="text-4xl">
+              {formatter.format(quantities.quantityOnHand ?? 0)}
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Hidden name="itemId" value={initialValues.itemId} />
-            <Hidden name="locationId" value={initialValues.locationId} />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-              <RadioGroup name="adjustmentType" className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="setQuantity" id="setQuantity" />
-                  <Label htmlFor="setQuantity">Set Quantity</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem
-                    value="Positive Adjmt."
-                    id="positiveAdjustment"
-                  />
-                  <Label htmlFor="positiveAdjustment">
-                    Positive Adjustment
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem
-                    value="Negative Adjmt."
-                    id="negativeAdjustment"
-                  />
-                  <Label htmlFor="negativeAdjustment">
-                    Negative Adjustment
-                  </Label>
-                </div>
-              </RadioGroup>
-              <Number name="quantity" label="Quantity" />
+        </Card>
+        <Card>
+          <CardHeader className="pb-8">
+            <CardDescription>Quantity Available</CardDescription>
+            <CardTitle className="text-4xl">
+              {formatter.format(quantities.quantityAvailable ?? 0)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-8">
+            <CardDescription>Quantity on Purchase Order</CardDescription>
+            <CardTitle className="text-4xl">
+              {formatter.format(quantities.quantityOnPurchaseOrder ?? 0)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-8">
+            <CardDescription>Quantity on Sales Order</CardDescription>
+            <CardTitle className="text-4xl">
+              {formatter.format(quantities.quantityOnSalesOrder ?? 0)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-8">
+            <CardDescription>Quantity on Production Order</CardDescription>
+            <CardTitle className="text-4xl">
+              {formatter.format(quantities.quantityOnProdOrder ?? 0)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <Modal
+        open={adjustmentModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            adjustmentModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            validator={inventoryAdjustmentValidator}
+            action={path.to.inventoryItemAdjustment(partInventory.itemId)}
+            defaultValues={{
+              itemId: partInventory.itemId,
+              locationId: partInventory.locationId,
+              adjustmentType: "Set Quantity",
+            }}
+            onSubmit={adjustmentModal.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>Inventory Adjustment</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="itemId" />
+              <Hidden name="locationId" />
+              <VStack spacing={2}>
+                <Select
+                  name="adjustmentType"
+                  label="Adjustment Type"
+                  options={[
+                    { label: "Set Quantity", value: "Set Quantity" },
+                    { label: "Positive Adjustment", value: "Positive Adjmt." },
+                    { label: "Negative Adjustment", value: "Negative Adjmt." },
+                  ]}
+                />
+                <Number name="quantity" label="Quantity" />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={adjustmentModal.onClose} variant="secondary">
+                Cancel
+              </Button>
               <Submit isDisabled={!permissions.can("update", "inventory")}>
                 Save
               </Submit>
-            </div>
-          </CardContent>
-          <CardFooter></CardFooter>
-        </ValidatedForm>
-      </Card>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </>
   );
 };
