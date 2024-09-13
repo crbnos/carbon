@@ -25,10 +25,20 @@ CREATE TYPE module AS ENUM (
 
 -- Update existing tables and views that use the module type
 ALTER TABLE "employeeTypePermission" 
-  ALTER COLUMN "module" TYPE module USING "module"::text::module;
+  ALTER COLUMN "module" TYPE module USING (
+    CASE 
+      WHEN "module"::text = 'Jobs' THEN 'Production'::module
+      ELSE "module"::text::module
+    END
+  );
 
 ALTER TABLE "customFieldTable"
-  ALTER COLUMN "module" TYPE module USING "module"::text::module;
+  ALTER COLUMN "module" TYPE module USING (
+    CASE 
+      WHEN "module"::text = 'Jobs' THEN 'Production'::module
+      ELSE "module"::text::module
+    END
+  );
 
 
 -- Drop the old type
