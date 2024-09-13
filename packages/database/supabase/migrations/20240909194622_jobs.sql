@@ -1,8 +1,9 @@
-DROP VIEW "modules";
-DROP VIEW "customFieldTables";
+DROP VIEW IF EXISTS "modules";
+DROP VIEW IF EXISTS "customFieldTables";
 COMMIT;
 
 -- Remove existing values from module type
+DROP TYPE IF EXISTS module_old;
 ALTER TYPE module RENAME TO module_old;
 
 -- Create new module type with updated values
