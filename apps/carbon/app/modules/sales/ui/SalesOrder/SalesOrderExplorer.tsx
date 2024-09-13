@@ -22,14 +22,13 @@ import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
-import { Empty } from "~/components";
+import { Empty, ItemThumbnail } from "~/components";
 import {
   useOptimisticLocation,
   usePermissions,
   useRealtime,
   useRouteData,
 } from "~/hooks";
-import { ItemThumbnail } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { SalesOrder, SalesOrderLine } from "../../types";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";

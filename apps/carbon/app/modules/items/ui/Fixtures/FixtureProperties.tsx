@@ -13,11 +13,13 @@ import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import {
   Assignee,
   CustomerAvatar,
+  MethodBadge,
+  MethodIcon,
+  TrackingTypeIcon,
   useOptimisticAssignment,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
-import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";

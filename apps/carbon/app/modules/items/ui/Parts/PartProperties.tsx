@@ -10,11 +10,15 @@ import {
 } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
-import { useOptimisticAssignment } from "~/components";
+import {
+  MethodBadge,
+  MethodIcon,
+  TrackingTypeIcon,
+  useOptimisticAssignment,
+} from "~/components";
 import Assignee from "~/components/Assignee";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
-import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";

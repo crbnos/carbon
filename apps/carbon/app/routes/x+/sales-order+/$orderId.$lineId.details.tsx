@@ -2,6 +2,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import { CadModel } from "~/components";
 import { usePermissions } from "~/hooks";
 import type { SalesOrderLineType } from "~/modules/sales";
 import {
@@ -12,7 +13,6 @@ import {
   salesOrderLineValidator,
   upsertSalesOrderLine,
 } from "~/modules/sales";
-import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";

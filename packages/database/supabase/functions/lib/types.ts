@@ -7108,41 +7108,6 @@ export type Database = {
             referencedColumns: ["locationId"]
           },
           {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "fixtures"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "modelUpload"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
             foreignKeyName: "job_quoteId_fkey"
             columns: ["quoteId"]
             isOneToOne: false
@@ -23296,41 +23261,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["locationId"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "modelUpload"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "fixtures"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "job_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"

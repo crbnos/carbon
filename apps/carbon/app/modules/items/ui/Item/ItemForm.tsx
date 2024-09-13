@@ -14,6 +14,7 @@ import { Link, useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import type { z } from "zod";
+import { MethodItemTypeIcon } from "~/components";
 import {
   Boolean,
   DefaultMethodType,
@@ -31,7 +32,6 @@ import {
   itemValidator,
 } from "~/modules/items";
 import type { MethodItemType } from "~/modules/shared";
-import { MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 

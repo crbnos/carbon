@@ -24,12 +24,9 @@ import {
   PartForm,
   ToolForm,
 } from "~/modules/items";
-import {
-  methodItemType,
-  MethodItemTypeIcon,
-  type MethodItemType,
-} from "~/modules/shared";
+import { methodItemType, type MethodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
+import { MethodItemTypeIcon } from "../Icons";
 
 type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
   disabledItems?: string[];

@@ -4,10 +4,10 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
-import { usePermissions, useRouteData } from "~/hooks";
+import { CadModel } from "~/components";
+import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import { JobForm, jobValidator, upsertJob } from "~/modules/production";
-import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -64,6 +64,8 @@ export default function JobDetailsRoute() {
   if (!jobData) throw new Error("Could not find job data");
   // const permissions = usePermissions();
 
+  useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
+
   const jobInitialValues = {
     id: jobData.job?.id ?? "",
     jobId: jobData.job?.jobId ?? "",
@@ -88,16 +90,15 @@ export default function JobDetailsRoute() {
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
             autodeskUrn={jobData?.job?.autodeskUrn ?? null}
-            isReadOnly={!permissions.can("update", "jobs")}
-            metadata={{ itemId: jobData?.job?.itemId ?? undefined }}
+            isReadOnly={!permissions.can("update", "production")}
+            metadata={{ jobId: jobData?.job?.id ?? undefined }}
             modelPath={jobData?.job?.modelPath ?? null}
             title="CAD Model"
           />
-          {/* <ItemDocuments
+          {/* <JobDocuments
             files={jobData?.files ?? []}
             jobId={jobId}
             modelUpload={jobData.job ?? undefined}
-            type="Job"
           /> */}
         </div>
       )}
