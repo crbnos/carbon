@@ -21,10 +21,11 @@ import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuImage, LuPlus, LuTrash } from "react-icons/lu";
+import { LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
+import { ItemThumbnail } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { SalesRFQ, SalesRFQLine } from "../../types";
 import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
@@ -244,21 +245,10 @@ function SalesRFQLineItem({
           )}
         >
           <HStack spacing={2}>
-            {line.thumbnailPath ? (
-              <img
-                alt="P2392303"
-                className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
-                src={`/file/preview/private/${line.thumbnailPath}`}
-              />
-            ) : !!line.modelId && !line.thumbnailPath ? (
-              <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
-                <Spinner className="w-6 h-6 text-muted-foreground" />
-              </div>
-            ) : (
-              <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
-                <LuImage className="w-6 h-6 text-muted-foreground" />
-              </div>
-            )}
+            <ItemThumbnail
+              modelId={line.modelId}
+              thumbnailPath={line.thumbnailPath}
+            />
 
             <VStack spacing={0}>
               <span className="font-semibold line-clamp-1">

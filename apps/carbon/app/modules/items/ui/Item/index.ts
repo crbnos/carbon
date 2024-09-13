@@ -3,7 +3,7 @@ import BillOfProcess from "./BillOfProcess";
 import BoMExplorer from "./BoMExplorer";
 import BuyMethodForm from "./BuyMethodForm";
 import BuyMethods from "./BuyMethods";
-import CadModel from "./CadModel";
+
 import { FileBadge } from "./FileBadge";
 import ItemCostingForm from "./ItemCostingForm";
 import ItemDocuments from "./ItemDocuments";
@@ -20,7 +20,6 @@ export {
   BoMExplorer,
   BuyMethodForm,
   BuyMethods,
-  CadModel,
   FileBadge,
   ItemCostingForm,
   ItemDocuments,

@@ -20,10 +20,16 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuImage, LuPlus, LuTrash } from "react-icons/lu";
+import { LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty } from "~/components";
-import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
+import {
+  useOptimisticLocation,
+  usePermissions,
+  useRealtime,
+  useRouteData,
+} from "~/hooks";
+import { ItemThumbnail } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { SalesOrder, SalesOrderLine } from "../../types";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
@@ -50,6 +56,11 @@ export default function SalesOrderExplorer() {
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<SalesOrderLine | null>(null);
   const isDisabled = salesOrderData?.salesOrder?.status !== "Draft";
+
+  useRealtime(
+    "modelUpload",
+    `modelPath=in.(${salesOrderData?.lines.map((d) => d.modelPath).join(",")})`
+  );
 
   const onDeleteLine = (line: SalesOrderLine) => {
     setDeleteLine(line);
@@ -173,27 +184,10 @@ function SalesOrderLineItem({
           )}
         >
           <HStack spacing={2}>
-            {line.thumbnailPath ? (
-              <img
-                alt={line.itemReadableId!}
-                className={cn(
-                  "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent",
-                  line.status === "Completed" && "border-green-500",
-                  line.status === "In Progress" && "border-yellow-500"
-                )}
-                src={`/file/preview/private/${line.thumbnailPath}`}
-              />
-            ) : (
-              <div
-                className={cn(
-                  "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2",
-                  line.status === "Completed" && "border-green-500",
-                  line.status === "In Progress" && "border-yellow-500"
-                )}
-              >
-                <LuImage className="w-6 h-6 text-muted-foreground" />
-              </div>
-            )}
+            <ItemThumbnail
+              modelId={line.modelId}
+              thumbnailPath={line.thumbnailPath}
+            />
 
             <VStack spacing={0}>
               <span className="font-semibold line-clamp-1">

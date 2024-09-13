@@ -4,9 +4,10 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import { JobForm, jobValidator, upsertJob } from "~/modules/production";
+import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -53,6 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function JobDetailsRoute() {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
+  const permissions = usePermissions();
 
   const jobData = useRouteData<{
     job: Job;
@@ -80,25 +82,25 @@ export default function JobDetailsRoute() {
   };
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={2}>
       <JobForm key={jobInitialValues.id} initialValues={jobInitialValues} />
-      {/* {permissions.is("employee") && (
+      {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
-            autodeskUrn={jobData?.jobSummary?.autodeskUrn ?? null}
+            autodeskUrn={jobData?.job?.autodeskUrn ?? null}
             isReadOnly={!permissions.can("update", "jobs")}
-            metadata={{ jobId }}
-            modelPath={jobData?.jobSummary?.modelPath ?? null}
+            metadata={{ itemId: jobData?.job?.itemId ?? undefined }}
+            modelPath={jobData?.job?.modelPath ?? null}
             title="CAD Model"
           />
-          <ItemDocuments
+          {/* <ItemDocuments
             files={jobData?.files ?? []}
             jobId={jobId}
-            modelUpload={jobData.jobSummary ?? undefined}
+            modelUpload={jobData.job ?? undefined}
             type="Job"
-          />
+          /> */}
         </div>
-      )} */}
+      )}
     </VStack>
   );
 }

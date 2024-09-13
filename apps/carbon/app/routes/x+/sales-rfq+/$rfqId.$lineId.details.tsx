@@ -4,7 +4,6 @@ import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { Fragment } from "react";
 import { usePermissions } from "~/hooks";
-import { CadModel } from "~/modules/items";
 import {
   getOpportunityLineDocuments,
   getSalesRFQLine,
@@ -14,6 +13,7 @@ import {
   salesRfqLineValidator,
   upsertSalesRFQLine,
 } from "~/modules/sales";
+import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
