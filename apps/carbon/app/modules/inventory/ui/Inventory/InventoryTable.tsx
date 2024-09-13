@@ -1,12 +1,15 @@
 import { Combobox, HStack, Heading, VStack } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
-import { LuImage } from "react-icons/lu";
-import { Hyperlink, Table } from "~/components";
+import {
+  Hyperlink,
+  ItemThumbnail,
+  MethodItemTypeIcon,
+  Table,
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
-import { MethodItemTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { itemTypes } from "../../inventory.models";
@@ -37,17 +40,7 @@ const InventoryTable = memo(
           cell: ({ row }) => (
             <div className="py-1">
               <HStack>
-                {row.original.thumbnailPath ? (
-                  <img
-                    alt="P2392303"
-                    className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
-                    src={`/file/preview/private/${row.original.thumbnailPath}`}
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-1.5">
-                    <LuImage className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                )}
+                <ItemThumbnail thumbnailPath={row.original.thumbnailPath} />
                 <Hyperlink
                   to={`${path.to.inventoryItem(
                     row.original.itemId!

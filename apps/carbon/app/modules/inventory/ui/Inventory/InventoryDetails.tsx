@@ -20,10 +20,10 @@ import {
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
 import type { z } from "zod";
+import { MethodItemTypeIcon } from "~/components";
 import { Hidden, Number, Select, Submit } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemQuantities, pickMethodValidator } from "~/modules/items";
-import { MethodItemTypeIcon } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";

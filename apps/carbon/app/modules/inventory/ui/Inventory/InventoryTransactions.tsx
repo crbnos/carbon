@@ -1,7 +1,7 @@
 import { Badge, CardHeader, CardTitle, HStack } from "@carbon/react";
 import type { z } from "zod";
+import { MethodItemTypeIcon } from "~/components";
 import type { ItemQuantities, pickMethodValidator } from "~/modules/items";
-import { MethodItemTypeIcon } from "~/modules/shared";
 
 type InventoryTransactionsProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
