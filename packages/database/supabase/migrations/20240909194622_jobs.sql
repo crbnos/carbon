@@ -24,28 +24,43 @@ CREATE TYPE module AS ENUM (
   'Users'
 );
 
--- Drop the primary key constraint
-ALTER TABLE "employeeTypePermission" DROP CONSTRAINT IF EXISTS "employeeTypePermission_pkey";
+-- Create a new table for employeeTypePermission
+CREATE TABLE "employeeTypePermission_new" (
+  "employeeTypeId" TEXT NOT NULL,
+  "module" "module" NOT NULL,  
+  "create" TEXT[] NOT NULL DEFAULT '{}',
+  "delete" TEXT[] NOT NULL DEFAULT '{}',
+  "update" TEXT[] NOT NULL DEFAULT '{}',
+  "view" TEXT[] NOT NULL DEFAULT '{}',
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
 
--- Update existing tables and views that use the module type
-ALTER TABLE "employeeTypePermission" 
-  ALTER COLUMN "module" TYPE TEXT;
+  CONSTRAINT "employeeTypePermission_new_pkey" PRIMARY KEY ("employeeTypeId", "module"),
+  CONSTRAINT "employeeTypePermission_new_employeeTypeId_fkey" FOREIGN KEY ("employeeTypeId") REFERENCES "employeeType"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
 
--- Update the values in the module column
-UPDATE "employeeTypePermission"
-SET "module" = CASE 
-  WHEN "module" = 'Jobs' THEN 'Production'
-  WHEN "module" = 'Scheduling' THEN 'Production'
-  WHEN "module" = 'Timecards' THEN 'Production'
-  ELSE "module"
-END;
+-- Copy data from the old table to the new table, transforming the module values
+INSERT INTO "employeeTypePermission_new" ("employeeTypeId", "module", "create", "delete", "update", "view")
+SELECT DISTINCT "employeeTypeId", 
+  CASE 
+    WHEN "module"::text = 'Jobs' THEN 'Production'::module
+    WHEN "module"::text = 'Scheduling' THEN 'Production'::module
+    WHEN "module"::text = 'Timecards' THEN 'Production'::module
+    ELSE "module"::text::module
+  END,
+  "create",
+  "delete",
+  "update",
+  "view"
+FROM "employeeTypePermission"
+ON CONFLICT DO NOTHING;
 
--- Now alter the column to use the new enum type
-ALTER TABLE "employeeTypePermission" 
-  ALTER COLUMN "module" TYPE module USING "module"::module;
+-- Drop the old table
+DROP TABLE "employeeTypePermission";
 
--- Recreate the primary key
-ALTER TABLE "employeeTypePermission" ADD PRIMARY KEY ("employeeTypeId", "module");
+-- Rename the new table to the original name
+ALTER TABLE "employeeTypePermission_new" RENAME TO "employeeTypePermission";
+
 
 ALTER TABLE "customFieldTable"
   ALTER COLUMN "module" TYPE module USING (
