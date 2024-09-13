@@ -24,6 +24,8 @@ CREATE TYPE module AS ENUM (
   'Users'
 );
 
+ALTER TABLE "employeeTypePermission" DROP CONSTRAINT IF EXISTS "employeeTypePermission_pkey";
+
 -- Update existing tables and views that use the module type
 ALTER TABLE "employeeTypePermission" 
   ALTER COLUMN "module" TYPE module USING (
@@ -34,6 +36,8 @@ ALTER TABLE "employeeTypePermission"
       ELSE "module"::text::module
     END
   );
+
+ALTER TABLE "employeeTypePermission" ADD PRIMARY KEY ("employeeTypeId", "module", "permission");
 
 ALTER TABLE "customFieldTable"
   ALTER COLUMN "module" TYPE module USING (
