@@ -29,6 +29,7 @@ ALTER TABLE "employeeTypePermission"
   ALTER COLUMN "module" TYPE module USING (
     CASE 
       WHEN "module"::text = 'Jobs' THEN 'Production'::module
+      WHEN "module"::text = 'Scheduling' THEN 'Production'::module
       ELSE "module"::text::module
     END
   );
@@ -37,6 +38,7 @@ ALTER TABLE "customFieldTable"
   ALTER COLUMN "module" TYPE module USING (
     CASE 
       WHEN "module"::text = 'Jobs' THEN 'Production'::module
+      WHEN "module"::text = 'Scheduling' THEN 'Production'::module
       ELSE "module"::text::module
     END
   );
