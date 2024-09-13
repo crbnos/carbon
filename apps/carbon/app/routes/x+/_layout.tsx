@@ -5,11 +5,11 @@ import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import NProgress from "nprogress";
 import { useEffect } from "react";
 
+import { RealtimeDataProvider } from "~/components";
 import { IconSidebar, Topbar } from "~/components/Layout";
 import { AutodeskProvider } from "~/lib/autodesk";
 import { SupabaseProvider, getSupabase } from "~/lib/supabase";
 import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
-import { RealtimeDataProvider } from "~/modules/shared";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
 import {
   getUser,

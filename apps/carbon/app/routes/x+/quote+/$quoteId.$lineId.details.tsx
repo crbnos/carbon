@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { Fragment, useMemo } from "react";
+import { CadModel } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type {
@@ -24,7 +25,6 @@ import {
   upsertQuoteLine,
   useLineCosts,
 } from "~/modules/sales";
-import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";

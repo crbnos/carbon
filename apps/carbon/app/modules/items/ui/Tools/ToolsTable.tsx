@@ -10,13 +10,20 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  EmployeeAvatar,
+  Hyperlink,
+  MethodIcon,
+  New,
+  Table,
+  TrackingTypeIcon,
+} from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Tool } from "~/modules/items";
 import { itemTrackingTypes } from "~/modules/items";
-import { MethodIcon, TrackingTypeIcon, methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

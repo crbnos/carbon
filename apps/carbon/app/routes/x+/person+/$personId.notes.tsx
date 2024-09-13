@@ -2,8 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
+import { RichText } from "~/components";
 
-import { Notes, getNotes } from "~/modules/shared";
+import { getNotes } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -45,7 +46,7 @@ export default function PersonNotesRoute() {
         <CardTitle>Notes</CardTitle>
       </CardHeader>
       <CardContent>
-        <Notes documentId={personId} notes={notes} />
+        <RichText documentId={personId} notes={notes} />
       </CardContent>
     </Card>
   );

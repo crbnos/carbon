@@ -2,10 +2,10 @@ import { Badge, HStack, Spinner, VStack, cn } from "@carbon/react";
 import { useFetchers, useNavigate } from "@remix-run/react";
 import { useRef } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
-import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { QuoteMethod } from "../../types";
 

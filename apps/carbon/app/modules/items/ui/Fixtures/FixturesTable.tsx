@@ -14,8 +14,10 @@ import {
   CustomerAvatar,
   EmployeeAvatar,
   Hyperlink,
+  MethodIcon,
   New,
   Table,
+  TrackingTypeIcon,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
@@ -23,7 +25,7 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Fixture } from "~/modules/items";
 import { itemReplenishmentSystems, itemTrackingTypes } from "~/modules/items";
-import { MethodIcon, TrackingTypeIcon, methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared";
 import { useCustomers, usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

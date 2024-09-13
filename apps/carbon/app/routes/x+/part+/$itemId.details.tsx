@@ -3,6 +3,7 @@ import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
+import { CadModel } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
@@ -11,7 +12,6 @@ import {
   partValidator,
   upsertPart,
 } from "~/modules/items";
-import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";

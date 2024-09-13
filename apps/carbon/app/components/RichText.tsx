@@ -4,18 +4,18 @@ import { formatTimeAgo } from "@carbon/utils";
 import { Form } from "@remix-run/react";
 import { Fragment } from "react";
 import { Avatar } from "~/components";
-import { Hidden, RichText, Submit } from "~/components/Form";
+import { Hidden, RichText as RichTextForm, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import type { Note } from "~/modules/shared";
 import { noteValidator } from "~/modules/shared";
 import { path } from "~/utils/path";
 
-type NotesProps = {
+type RichTextProps = {
   documentId: string;
   notes: Note[];
 };
 
-const Notes = ({ documentId, notes }: NotesProps) => {
+const RichText = ({ documentId, notes }: RichTextProps) => {
   const user = useUser();
   const permissions = usePermissions();
   const isEmployee = permissions.is("employee");
@@ -71,7 +71,7 @@ const Notes = ({ documentId, notes }: NotesProps) => {
           <Hidden name="documentId" value={documentId} />
           <VStack spacing={3}>
             <div className="w-full border border-border rounded-md">
-              <RichText name="note" className="min-h-[160px]" />
+              <RichTextForm name="note" className="min-h-[160px]" />
             </div>
             <div className="flex justify-end w-full">
               <Submit>Add Note</Submit>
@@ -83,4 +83,4 @@ const Notes = ({ documentId, notes }: NotesProps) => {
   );
 };
 
-export default Notes;
+export default RichText;

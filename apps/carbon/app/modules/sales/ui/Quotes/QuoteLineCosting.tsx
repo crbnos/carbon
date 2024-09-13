@@ -23,9 +23,9 @@ import {
 import { formatDurationHours } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { LuClock, LuInfo } from "react-icons/lu";
+import { MethodItemTypeIcon, TimeTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks";
-import { MethodItemTypeIcon, TimeTypeIcon } from "~/modules/shared";
 import type { Costs } from "../../types";
 
 const QuoteLineCosting = ({

@@ -22,7 +22,7 @@ import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronsUpDown, LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
-import { Empty } from "~/components";
+import { Empty, ItemThumbnail } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import {
@@ -32,7 +32,6 @@ import {
   useRouteData,
   useUser,
 } from "~/hooks";
-import { ItemThumbnail } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";

@@ -15,6 +15,7 @@ import { json, redirect } from "@remix-run/node";
 import { Outlet, useFetcher, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import { useCallback, useEffect } from "react";
+import { supportedFileTypes } from "~/components/CadModel";
 import type { SalesRFQLine } from "~/modules/sales";
 import {
   getOpportunityBySalesRFQ,
@@ -25,7 +26,7 @@ import {
   SalesRFQExplorer,
   SalesRFQHeader,
 } from "~/modules/sales";
-import { supportedFileTypes } from "~/modules/shared/ui/CadModel";
+
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";

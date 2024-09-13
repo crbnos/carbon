@@ -1,10 +1,10 @@
 import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
+import { MethodItemTypeIcon } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
-import { MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { usePartNavigation } from "./usePartNavigation";
 

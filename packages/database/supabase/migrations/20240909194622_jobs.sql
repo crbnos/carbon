@@ -122,7 +122,6 @@ CREATE TABLE "public"."job" (
   CONSTRAINT "job_salesOrderLineId_fkey" FOREIGN KEY ("salesOrderLineId") REFERENCES "salesOrderLine" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_quoteId_fkey" FOREIGN KEY ("quoteId") REFERENCES "quote" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_quoteLineId_fkey" FOREIGN KEY ("quoteLineId") REFERENCES "quoteLine" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "job_modelUploadId_fkey" FOREIGN KEY ("modelUploadId") REFERENCES "modelUpload" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "job_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "job_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -270,28 +269,36 @@ WHERE "permissions" ? 'jobs_view'
    OR "permissions" ? 'scheduling_delete';
 
 CREATE OR REPLACE VIEW "jobs" WITH(SECURITY_INVOKER=true) AS
+WITH job_model AS (
   SELECT
-    j.*,
-    i.name,
-    i."readableId" as "itemReadableId",
-    i.type as "itemType",
-    i.name as "description",
-    i."itemTrackingType",
-    i.active,
-    i."replenishmentSystem",
-    mu.id as "modelId",
-    mu."autodeskUrn",
-    mu."modelPath",
-    mu."thumbnailPath",
-    mu."name" as "modelName",
-    mu."size" as "modelSize",
-    so."salesOrderId" as "salesOrderReadableId",
-    qo."quoteId" as "quoteReadableId"
+    j.id AS job_id,
+    COALESCE(j."modelUploadId", i."modelUploadId") AS model_upload_id
   FROM "job" j
   INNER JOIN "item" i ON j."itemId" = i."id"
-  LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
-  LEFT JOIN "salesOrder" so on j."salesOrderId" = so.id
-  LEFT JOIN "quote" qo ON j."quoteId" = qo.id;
+)
+SELECT
+  j.*,
+  i.name,
+  i."readableId" as "itemReadableId",
+  i.type as "itemType",
+  i.name as "description",
+  i."itemTrackingType",
+  i.active,
+  i."replenishmentSystem",
+  mu.id as "modelId",
+  mu."autodeskUrn",
+  mu."modelPath",
+  mu."thumbnailPath",
+  mu."name" as "modelName",
+  mu."size" as "modelSize",
+  so."salesOrderId" as "salesOrderReadableId",
+  qo."quoteId" as "quoteReadableId"
+FROM "job" j
+INNER JOIN "item" i ON j."itemId" = i."id"
+LEFT JOIN job_model jm ON j.id = jm.job_id
+LEFT JOIN "modelUpload" mu ON mu.id = jm.model_upload_id
+LEFT JOIN "salesOrder" so on j."salesOrderId" = so.id
+LEFT JOIN "quote" qo ON j."quoteId" = qo.id;
 
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 

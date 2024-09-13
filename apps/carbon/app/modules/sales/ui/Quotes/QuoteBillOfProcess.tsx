@@ -26,6 +26,7 @@ import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { LuChevronDown, LuDollarSign, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
+import { TimeTypeIcon } from "~/components";
 import { DirectionAwareTabs } from "~/components/DirectionAwareTabs";
 import {
   Hidden,
@@ -45,11 +46,7 @@ import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import {
-  TimeTypeIcon,
-  methodOperationOrders,
-  operationTypes,
-} from "~/modules/shared";
+import { methodOperationOrders, operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { quoteOperationValidator } from "../../sales.models";
 import type { Quotation } from "../../types";

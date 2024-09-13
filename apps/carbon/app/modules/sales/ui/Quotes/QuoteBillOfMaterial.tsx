@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
+import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import {
   DefaultMethodType,
   Hidden,
@@ -40,7 +41,6 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import { MethodIcon, MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
 import { quoteMaterialValidator } from "../../sales.models";
