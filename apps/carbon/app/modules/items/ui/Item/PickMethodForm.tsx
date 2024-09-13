@@ -104,11 +104,6 @@ const PickMethodForm = ({
             <Number name="quantityOnHand" label="Quantity On Hand" isReadOnly />
 
             <Number
-              name="quantityAvailable"
-              label="Quantity Available"
-              isReadOnly
-            />
-            <Number
               name="quantityOnPurchaseOrder"
               label="Quantity On Purchase Order"
               isReadOnly

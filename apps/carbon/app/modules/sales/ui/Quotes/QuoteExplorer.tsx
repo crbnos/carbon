@@ -39,6 +39,7 @@ import QuoteBoMExplorer from "./QuoteBoMExplorer";
 import QuoteLineForm from "./QuoteLineForm";
 
 export default function QuoteExplorer() {
+  const { defaults } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const quoteData = useRouteData<{ quote: Quotation; lines: QuotationLine[] }>(
@@ -53,6 +54,7 @@ export default function QuoteExplorer() {
     estimatorId: userId,
     itemId: "",
     itemReadableId: "",
+    locationId: quoteData?.quote?.locationId ?? defaults.locationId ?? "",
     methodType: "Make" as const,
     status: "Draft" as const,
     quantity: [1],

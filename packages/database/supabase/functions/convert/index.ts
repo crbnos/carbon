@@ -371,6 +371,7 @@ serve(async (req: Request) => {
               customerPartRevision: line.customerPartRevision,
               description: line.description ?? line.itemName ?? "",
               itemType: line.itemType!,
+              locationId: salesRfq.data?.locationId,
               methodType: line.methodType!,
               modelUploadId: line.modelUploadId,
               notes: line.internalNotes,

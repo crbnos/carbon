@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "remix-typedjson";
-import { quoteStatusType, updateQuoteStatus } from "~/modules/sales";
+import { salesOrderStatusType, updateSalesOrderStatus } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
@@ -13,20 +13,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "sales",
   });
 
-  const { quoteId: id } = params;
+  const { orderId: id } = params;
   if (!id) throw new Error("Could not find id");
 
   const formData = await request.formData();
-  const status = formData.get("status") as (typeof quoteStatusType)[number];
+  const status = formData.get(
+    "status"
+  ) as (typeof salesOrderStatusType)[number];
 
-  if (!status || !quoteStatusType.includes(status)) {
+  if (!status || !salesOrderStatusType.includes(status)) {
     throw redirect(
       path.to.quote(id),
       await flash(request, error(null, "Invalid status"))
     );
   }
 
-  const update = await updateQuoteStatus(client, {
+  const update = await updateSalesOrderStatus(client, {
     id,
     status,
     assignee: ["Closed"].includes(status) ? null : undefined,

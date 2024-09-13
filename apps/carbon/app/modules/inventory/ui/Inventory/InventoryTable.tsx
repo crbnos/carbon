@@ -87,11 +87,7 @@ const InventoryTable = memo(
           header: "On Hand",
           cell: ({ row }) => row.original.quantityOnHand,
         },
-        {
-          accessorKey: "quantityAvailable",
-          header: "Available",
-          cell: ({ row }) => row.original.quantityAvailable,
-        },
+
         {
           accessorKey: "quantityOnPurchaseOrder",
           header: "On Purchase Order",

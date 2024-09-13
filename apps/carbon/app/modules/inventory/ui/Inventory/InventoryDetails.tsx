@@ -61,8 +61,8 @@ const InventoryDetails = ({
 
   return (
     <>
-      <div className="w-full grid gap-2 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
-        <Card className="sm:col-span-2" x-chunk="dashboard-05-chunk-0">
+      <div className="w-full grid gap-2 grid-cols-1">
+        <Card>
           <div className="relative">
             <CardHeader className="pb-3">
               <CardTitle>
@@ -94,19 +94,11 @@ const InventoryDetails = ({
             <Button onClick={adjustmentModal.onOpen}>Update Inventory</Button>
           </CardFooter>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader className="pb-8">
             <CardDescription>Quantity on Hand</CardDescription>
             <CardTitle className="text-4xl">
               {formatter.format(quantities.quantityOnHand ?? 0)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-8">
-            <CardDescription>Quantity Available</CardDescription>
-            <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityAvailable ?? 0)}
             </CardTitle>
           </CardHeader>
         </Card>

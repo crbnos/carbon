@@ -66,7 +66,7 @@ const SalesOrderLineForm = ({
 }: SalesOrderLineFormProps) => {
   const permissions = usePermissions();
   const { supabase } = useSupabase();
-  const { company, defaults } = useUser();
+  const { company } = useUser();
   const { orderId } = useParams();
 
   if (!orderId) throw new Error("orderId not found");
@@ -80,7 +80,7 @@ const SalesOrderLineForm = ({
   );
 
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
-  const [locationId, setLocationId] = useState(defaults.locationId ?? "");
+  const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId?: string;

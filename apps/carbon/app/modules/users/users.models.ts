@@ -25,6 +25,7 @@ export const createEmployeeValidator = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
   employeeType: z.string().min(20, { message: "Employee type is required" }),
+  locationId: z.string().min(0, { message: "Location is required" }),
 });
 
 export const createSupplierAccountValidator = z.object({
