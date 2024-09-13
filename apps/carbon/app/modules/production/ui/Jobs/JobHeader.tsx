@@ -1,8 +1,8 @@
 import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
+import { LuHardHat } from "react-icons/lu";
 import { useRouteData } from "~/hooks";
-import { MethodItemTypeIcon } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Job } from "../../types";
 
@@ -21,7 +21,7 @@ const JobHeader = () => {
             <Heading size="h2">{routeData?.job?.jobId}</Heading>
           </Link>
           <Badge variant="secondary">
-            <MethodItemTypeIcon type="Job" />
+            <LuHardHat />
           </Badge>
         </HStack>
       </VStack>

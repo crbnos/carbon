@@ -6,12 +6,12 @@ import { useParams } from "@remix-run/react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Fixture, ItemFile } from "~/modules/items";
 import {
-  CadModel,
   FixtureForm,
   ItemDocuments,
   fixtureValidator,
   upsertFixture,
 } from "~/modules/items";
+import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";

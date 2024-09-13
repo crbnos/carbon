@@ -1,4 +1,6 @@
-import CadModelUpload from "./CadModelUpload";
+import CadModel from "./CadModel";
+
+import ItemThumbnail from "./ItemThumbnail";
 import { MethodBadge } from "./MethodBadge";
 import {
   MethodIcon,
@@ -10,7 +12,8 @@ import Notes from "./Notes";
 import RealtimeDataProvider from "./RealtimeDataProvider";
 
 export {
-  CadModelUpload,
+  CadModel,
+  ItemThumbnail,
   MethodBadge,
   MethodIcon,
   MethodItemTypeIcon,

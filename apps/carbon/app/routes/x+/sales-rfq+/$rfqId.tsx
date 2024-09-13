@@ -25,7 +25,7 @@ import {
   SalesRFQExplorer,
   SalesRFQHeader,
 } from "~/modules/sales";
-import { supportedFileTypes } from "~/modules/shared/ui/CadModelUpload";
+import { supportedFileTypes } from "~/modules/shared/ui/CadModel";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";

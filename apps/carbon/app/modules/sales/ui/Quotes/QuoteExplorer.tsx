@@ -9,7 +9,6 @@ import {
   HStack,
   IconButton,
   Kbd,
-  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -21,7 +20,7 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuChevronsUpDown, LuImage, LuPlus, LuTrash } from "react-icons/lu";
+import { LuChevronsUpDown, LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty } from "~/components";
 import type { Tree } from "~/components/TreeView";
@@ -33,6 +32,7 @@ import {
   useRouteData,
   useUser,
 } from "~/hooks";
+import { ItemThumbnail } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
@@ -45,6 +45,7 @@ export default function QuoteExplorer() {
   const quoteData = useRouteData<{ quote: Quotation; lines: QuotationLine[] }>(
     path.to.quote(quoteId)
   );
+
   const permissions = usePermissions();
   const { id: userId } = useUser();
   const quoteLineInitialValues = {
@@ -202,31 +203,10 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
         onClick={() => onLineClick(line)}
       >
         <HStack spacing={2}>
-          {line.thumbnailPath ? (
-            <img
-              alt="P2392303"
-              className={cn(
-                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent",
-                line.status === "Complete" && "border-green-500",
-                line.status === "In Progress" && "border-yellow-500"
-              )}
-              src={`/file/preview/private/${line.thumbnailPath}`}
-            />
-          ) : !!line.modelId && !line.thumbnailPath ? (
-            <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
-              <Spinner className="w-6 h-6 text-muted-foreground" />
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2",
-                line.status === "Complete" && "border-green-500",
-                line.status === "In Progress" && "border-yellow-500"
-              )}
-            >
-              <LuImage className="w-6 h-6 text-muted-foreground" />
-            </div>
-          )}
+          <ItemThumbnail
+            modelId={line.modelId}
+            thumbnailPath={line.thumbnailPath}
+          />
 
           <VStack spacing={0}>
             <span className="font-semibold line-clamp-1">

@@ -5,7 +5,6 @@ import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { Fragment, useMemo } from "react";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
-import { CadModel } from "~/modules/items";
 import type {
   QuotationOperation,
   QuotationPrice,
@@ -25,6 +24,7 @@ import {
   upsertQuoteLine,
   useLineCosts,
 } from "~/modules/sales";
+import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";

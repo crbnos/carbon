@@ -3,7 +3,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { usePermissions } from "~/hooks";
-import { CadModel } from "~/modules/items";
 import type { SalesOrderLineType } from "~/modules/sales";
 import {
   OpportunityLineDocuments,
@@ -13,6 +12,7 @@ import {
   salesOrderLineValidator,
   upsertSalesOrderLine,
 } from "~/modules/sales";
+import { CadModel } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";

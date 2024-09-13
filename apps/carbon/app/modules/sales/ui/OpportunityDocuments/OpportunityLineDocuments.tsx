@@ -82,12 +82,34 @@ const useOpportunityLineDocuments = ({
     async (lineId: string) => {
       if (!lineId || !supabase) return;
 
-      const { error } = await supabase
-        .from("quoteLine")
-        .update({ modelUploadId: null })
-        .eq("id", lineId);
-      if (error) {
-        toast.error("Error removing model from line");
+      const [salesRfqLineResult, quoteLineResult, salesOrderLineResult] =
+        await Promise.all([
+          supabase
+            .from("salesRfqLine")
+            .update({ modelUploadId: null })
+            .eq("id", lineId),
+          supabase
+            .from("quoteLine")
+            .update({ modelUploadId: null })
+            .eq("id", lineId),
+          supabase
+            .from("salesOrderLine")
+            .update({ modelUploadId: null })
+            .eq("id", lineId),
+        ]);
+
+      if (salesRfqLineResult.error) {
+        toast.error("Error removing model from RFQ line");
+        return;
+      }
+
+      if (quoteLineResult.error) {
+        toast.error("Error removing model from quote line");
+        return;
+      }
+
+      if (salesOrderLineResult.error) {
+        toast.error("Error removing model from sales order line");
         return;
       }
       toast.success("Model removed from line");
