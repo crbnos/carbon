@@ -37,7 +37,7 @@ ALTER TABLE "employeeTypePermission"
     END
   );
 
-ALTER TABLE "employeeTypePermission" ADD PRIMARY KEY ("employeeTypeId", "module", "permission");
+ALTER TABLE "employeeTypePermission" ADD PRIMARY KEY ("employeeTypeId", "module");
 
 ALTER TABLE "customFieldTable"
   ALTER COLUMN "module" TYPE module USING (
