@@ -24,19 +24,27 @@ CREATE TYPE module AS ENUM (
   'Users'
 );
 
+-- Drop the primary key constraint
 ALTER TABLE "employeeTypePermission" DROP CONSTRAINT IF EXISTS "employeeTypePermission_pkey";
 
 -- Update existing tables and views that use the module type
 ALTER TABLE "employeeTypePermission" 
-  ALTER COLUMN "module" TYPE module USING (
-    CASE 
-      WHEN "module"::text = 'Jobs' THEN 'Production'::module
-      WHEN "module"::text = 'Scheduling' THEN 'Production'::module
-      WHEN "module"::text = 'Timecards' THEN 'Production'::module
-      ELSE "module"::text::module
-    END
-  );
+  ALTER COLUMN "module" TYPE TEXT;
 
+-- Update the values in the module column
+UPDATE "employeeTypePermission"
+SET "module" = CASE 
+  WHEN "module" = 'Jobs' THEN 'Production'
+  WHEN "module" = 'Scheduling' THEN 'Production'
+  WHEN "module" = 'Timecards' THEN 'Production'
+  ELSE "module"
+END;
+
+-- Now alter the column to use the new enum type
+ALTER TABLE "employeeTypePermission" 
+  ALTER COLUMN "module" TYPE module USING "module"::module;
+
+-- Recreate the primary key
 ALTER TABLE "employeeTypePermission" ADD PRIMARY KEY ("employeeTypeId", "module");
 
 ALTER TABLE "customFieldTable"
