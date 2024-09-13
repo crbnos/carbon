@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import { useParams } from "@remix-run/react";
+import { RichText } from "~/components";
 import { useRouteData } from "~/hooks";
 import type { Note } from "~/modules/shared";
-import { Notes } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export default function ReceiptNotesRoute() {
@@ -16,7 +16,7 @@ export default function ReceiptNotesRoute() {
         <CardTitle>Notes</CardTitle>
       </CardHeader>
       <CardContent>
-        <Notes documentId={receiptId} notes={routeData?.notes ?? []} />
+        <RichText documentId={receiptId} notes={routeData?.notes ?? []} />
       </CardContent>
     </Card>
   );
