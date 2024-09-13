@@ -30,6 +30,7 @@ ALTER TABLE "employeeTypePermission"
     CASE 
       WHEN "module"::text = 'Jobs' THEN 'Production'::module
       WHEN "module"::text = 'Scheduling' THEN 'Production'::module
+      WHEN "module"::text = 'Timecards' THEN 'Production'::module
       ELSE "module"::text::module
     END
   );
@@ -39,6 +40,7 @@ ALTER TABLE "customFieldTable"
     CASE 
       WHEN "module"::text = 'Jobs' THEN 'Production'::module
       WHEN "module"::text = 'Scheduling' THEN 'Production'::module
+      WHEN "module"::text = 'Timecards' THEN 'Production'::module
       ELSE "module"::text::module
     END
   );
