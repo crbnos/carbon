@@ -5,7 +5,6 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import type { itemLedgerValidator } from "../inventory/inventory.models";
 import type {
   accountCategoryValidator,
   accountSubcategoryValidator,
@@ -641,24 +640,6 @@ export async function getSalesPostingGroups(
     { column: "itemPostingGroupId", ascending: false },
   ]);
   return query;
-}
-
-export async function insertPartEntries(
-  client: SupabaseClient<Database>,
-  itemEntries: (z.infer<typeof itemLedgerValidator> & {
-    companyId: string;
-  })[]
-) {
-  return client.from("itemLedger").insert(itemEntries);
-}
-
-export async function insertItemLedger(
-  client: SupabaseClient<Database>,
-  itemEntry: z.infer<typeof itemLedgerValidator> & {
-    companyId: string;
-  }
-) {
-  return client.from("itemLedger").insert([itemEntry]);
 }
 
 export async function updateDefaultBalanceSheetAccounts(

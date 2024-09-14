@@ -9,6 +9,7 @@ const supabaseClient = getSupabaseServiceRole();
 export const postTransactionSchema = z.object({
   documentId: z.string(),
   type: z.enum(["receipt", "purchase-invoice"]),
+  userId: z.string(),
 });
 
 const job = triggerClient.defineJob({
@@ -34,6 +35,7 @@ const job = triggerClient.defineJob({
           {
             body: {
               receiptId: payload.documentId,
+              userId: payload.userId,
             },
           }
         );
@@ -53,6 +55,7 @@ const job = triggerClient.defineJob({
           {
             body: {
               invoiceId: payload.documentId,
+              userId: payload.userId,
             },
           }
         );

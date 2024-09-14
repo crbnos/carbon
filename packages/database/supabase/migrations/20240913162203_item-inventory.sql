@@ -91,7 +91,6 @@ AFTER INSERT OR UPDATE ON "itemLedger"
 FOR EACH ROW
 EXECUTE FUNCTION update_item_inventory_from_item_ledger();
 
-
 -- Function to update inventory quantity on purchase order based on purchase order status changes
 CREATE OR REPLACE FUNCTION update_inventory_quantity_on_purchase_order()
 RETURNS TRIGGER AS $$
@@ -111,7 +110,7 @@ BEGIN
       ) THEN
         -- Update existing row
         UPDATE "itemInventory"
-        SET "quantityOnPurchase" = "quantityOnPurchase" + line."quantityToReceive"
+        SET "quantityOnPurchase" = "quantityOnPurchase" + (line."quantityToReceive" - COALESCE(line."quantityReceived", 0))
         WHERE "itemId" = line."itemId"
           AND "companyId" = line."companyId"
           AND (("locationId" = line."locationId") OR (line."locationId" IS NULL AND "locationId" IS NULL))
@@ -119,7 +118,7 @@ BEGIN
       ELSE
         -- Insert new row
         INSERT INTO "itemInventory" ("itemId", "locationId", "shelfId", "companyId", "quantityOnPurchase")
-        VALUES (line."itemId", line."locationId", line."shelfId", line."companyId", line."quantityToReceive");
+        VALUES (line."itemId", line."locationId", line."shelfId", line."companyId", line."quantityToReceive" - COALESCE(line."quantityReceived", 0));
       END IF;
     END LOOP;
 
@@ -135,7 +134,7 @@ BEGIN
           AND (("shelfId" = line."shelfId") OR (line."shelfId" IS NULL AND "shelfId" IS NULL))
       ) THEN
         UPDATE "itemInventory"
-        SET "quantityOnPurchase" = "quantityOnPurchase" - line."quantityToReceive"
+        SET "quantityOnPurchase" = "quantityOnPurchase" - (line."quantityToReceive" - COALESCE(line."quantityReceived", 0))
         WHERE "itemId" = line."itemId"
           AND "companyId" = line."companyId"
           AND (("locationId" = line."locationId") OR (line."locationId" IS NULL AND "locationId" IS NULL))
@@ -171,7 +170,7 @@ BEGIN
     ) THEN
       -- Update existing row
       UPDATE "itemInventory"
-      SET "quantityOnPurchase" = "quantityOnPurchase" + (NEW."quantityReceived" - OLD."quantityReceived")
+      SET "quantityOnPurchase" = "quantityOnPurchase" - (NEW."quantityReceived" - OLD."quantityReceived")
       WHERE "itemId" = NEW."itemId"
         AND "companyId" = NEW."companyId"
         AND (("locationId" = NEW."locationId") OR (NEW."locationId" IS NULL AND "locationId" IS NULL))
@@ -179,7 +178,7 @@ BEGIN
     ELSE
       -- Insert new row
       INSERT INTO "itemInventory" ("itemId", "locationId", "shelfId", "companyId", "quantityOnPurchase")
-      VALUES (NEW."itemId", NEW."locationId", NEW."shelfId", NEW."companyId", NEW."quantityReceived");
+      VALUES (NEW."itemId", NEW."locationId", NEW."shelfId", NEW."companyId", NEW."quantityToReceive");
     END IF;
   END IF;
 
@@ -275,6 +274,7 @@ BEGIN
     ) THEN
       -- Update existing row
       UPDATE "itemInventory"
+      
       SET "quantityOnSalesOrder" = "quantityOnSalesOrder" - (NEW."quantitySent" - OLD."quantitySent")
       WHERE "itemId" = NEW."itemId"
         AND "companyId" = NEW."companyId"
@@ -375,3 +375,13 @@ GROUP BY
   i."itemTrackingType",
   m."thumbnailPath",
   loc."name";
+
+ALTER TABLE "itemLedger" ADD COLUMN "createdBy" TEXT REFERENCES "user"("id");
+-- Set default value for createdBy column to 'system' for existing rows
+UPDATE "itemLedger" SET "createdBy" = 'system' WHERE "createdBy" IS NULL;
+
+-- Make createdBy column NOT NULL
+ALTER TABLE "itemLedger" ALTER COLUMN "createdBy" SET NOT NULL;
+
+-- Set default value for createdBy column to 'system' for new rows
+ALTER TABLE "itemLedger" ALTER COLUMN "createdBy" SET DEFAULT 'system';

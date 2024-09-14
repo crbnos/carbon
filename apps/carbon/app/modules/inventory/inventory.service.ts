@@ -17,17 +17,15 @@ export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
     companyId: string;
+    createdBy: string;
   }
 ) {
   const data = {
-    companyId: inventoryAdjustment.companyId,
+    ...inventoryAdjustment,
     entryType:
       inventoryAdjustment.adjustmentType === "Set Quantity"
         ? "Positive Adjmt."
         : inventoryAdjustment.adjustmentType,
-    itemId: inventoryAdjustment.itemId,
-    locationId: inventoryAdjustment.locationId,
-    quantity: inventoryAdjustment.quantity,
   };
 
   return client.from("itemLedger").insert([data]).select("*").single();

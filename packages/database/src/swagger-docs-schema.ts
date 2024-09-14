@@ -20796,6 +20796,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.createdAt",
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedger.createdBy",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -20897,6 +20900,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.createdAt",
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedger.createdBy",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -20950,6 +20956,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemLedger.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedger.createdBy",
           },
           {
             $ref: "#/parameters/body.itemLedger",
@@ -43720,6 +43729,7 @@ export default {
         "quantity",
         "companyId",
         "createdAt",
+        "createdBy",
       ],
       properties: {
         id: {
@@ -43818,6 +43828,13 @@ export default {
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          default: "system",
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -61557,6 +61574,13 @@ export default {
       name: "createdAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemLedger.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

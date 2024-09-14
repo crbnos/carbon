@@ -14,7 +14,7 @@ import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "inventory",
   });
 
@@ -35,6 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const itemLedger = await insertManualInventoryAdjustment(client, {
     ...data,
     companyId,
+    createdBy: userId,
   });
 
   if (itemLedger.error) {

@@ -7,7 +7,7 @@ import { path } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "invoicing",
   });
 
@@ -36,6 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     payload: {
       type: "purchase-invoice",
       documentId: invoiceId,
+      userId,
     },
   });
 

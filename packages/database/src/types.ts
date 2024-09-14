@@ -6099,6 +6099,7 @@ export type Database = {
         Row: {
           companyId: string
           createdAt: string
+          createdBy: string
           documentId: string | null
           documentType:
             | Database["public"]["Enums"]["itemLedgerDocumentType"]
@@ -6117,6 +6118,7 @@ export type Database = {
         Insert: {
           companyId: string
           createdAt?: string
+          createdBy?: string
           documentId?: string | null
           documentType?:
             | Database["public"]["Enums"]["itemLedgerDocumentType"]
@@ -6135,6 +6137,7 @@ export type Database = {
         Update: {
           companyId?: string
           createdAt?: string
+          createdBy?: string
           documentId?: string | null
           documentType?:
             | Database["public"]["Enums"]["itemLedgerDocumentType"]
@@ -6151,6 +6154,41 @@ export type Database = {
           shelfId?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "itemLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "itemLedger_itemId_fkey"
             columns: ["itemId"]
