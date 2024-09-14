@@ -176,7 +176,7 @@ const InventoryDetails = ({
                     { label: "Negative Adjustment", value: "Negative Adjmt." },
                   ]}
                 />
-                <Number name="quantity" label="Quantity" />
+                <Number name="quantity" label="Quantity" minValue={0} />
               </VStack>
             </ModalBody>
             <ModalFooter>

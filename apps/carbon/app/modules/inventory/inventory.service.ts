@@ -20,13 +20,52 @@ export async function insertManualInventoryAdjustment(
     createdBy: string;
   }
 ) {
+  const { adjustmentType, ...rest } = inventoryAdjustment;
   const data = {
-    ...inventoryAdjustment,
+    ...rest,
     entryType:
-      inventoryAdjustment.adjustmentType === "Set Quantity"
-        ? "Positive Adjmt."
-        : inventoryAdjustment.adjustmentType,
+      adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType, // This will be overwritten below
   };
+
+  // Look up the current quantity for this itemId, locationId, and shelfId
+  const query = client
+    .from("itemInventory")
+    .select("quantityOnHand")
+    .eq("itemId", data.itemId)
+    .eq("locationId", data.locationId);
+
+  if (data.shelfId) {
+    query.eq("shelfId", data.shelfId);
+  }
+
+  const { data: currentQuantity, error: quantityError } = await query.single();
+
+  if (quantityError) {
+    return { error: "Failed to fetch current quantity" };
+  }
+
+  if (adjustmentType === "Set Quantity" && currentQuantity) {
+    const quantityDifference = data.quantity - currentQuantity.quantityOnHand;
+    if (quantityDifference > 0) {
+      data.entryType = "Positive Adjmt.";
+      data.quantity = quantityDifference;
+    } else if (quantityDifference < 0) {
+      data.entryType = "Negative Adjmt.";
+      data.quantity = Math.abs(quantityDifference);
+    } else {
+      // No change in quantity, we can return early
+      return { error: "No change in quantity" };
+    }
+  }
+
+  // Check if it's a negative adjustment and if the quantity is sufficient
+  if (data.entryType === "Negative Adjmt." && currentQuantity) {
+    if (data.quantity > currentQuantity.quantityOnHand) {
+      return {
+        error: "Insufficient quantity for negative adjustment",
+      };
+    }
+  }
 
   return client.from("itemLedger").insert([data]).select("*").single();
 }
