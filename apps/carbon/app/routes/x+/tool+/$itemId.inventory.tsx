@@ -7,7 +7,6 @@ import {
   PickMethodForm,
   getItemQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -62,9 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [toolInventory, shelves] = await Promise.all([
+  let [toolInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (toolInventory.error || !toolInventory.data) {
@@ -98,13 +96,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
@@ -121,7 +112,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     toolInventory: toolInventory.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
   });
 }
 
@@ -170,7 +160,7 @@ export default function ToolInventoryRoute() {
   const sharedToolsData = useRouteData<{ locations: ListItem[] }>(
     path.to.toolRoot
   );
-  const { toolInventory, quantities, shelves } = useLoaderData<typeof loader>();
+  const { toolInventory, quantities } = useLoaderData<typeof loader>();
 
   const initialValues = {
     ...toolInventory,
@@ -183,7 +173,6 @@ export default function ToolInventoryRoute() {
       initialValues={initialValues}
       quantities={quantities}
       locations={sharedToolsData?.locations ?? []}
-      shelves={shelves}
       type="Tool"
     />
   );

@@ -21,7 +21,14 @@ import {
 import { useLocale } from "@react-aria/i18n";
 import type { z } from "zod";
 import { MethodItemTypeIcon } from "~/components";
-import { Hidden, Number, Select, Submit } from "~/components/Form";
+import {
+  Hidden,
+  Location,
+  Number,
+  Select,
+  Shelf,
+  Submit,
+} from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemQuantities, pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
@@ -31,13 +38,11 @@ import { inventoryAdjustmentValidator } from "../../inventory.models";
 type InventoryDetailsProps = {
   partInventory: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
-  shelves: string[];
 };
 
 const InventoryDetails = ({
   partInventory,
   quantities,
-  shelves,
 }: InventoryDetailsProps) => {
   const permissions = usePermissions();
   const adjustmentModal = useDisclosure();
@@ -45,7 +50,7 @@ const InventoryDetails = ({
   const routeData = useRouteData<{ locations: ListItem[] }>(
     path.to.inventoryRoot
   );
-  const shelfOptions = shelves.map((shelf) => ({ value: shelf, label: shelf }));
+
   const locationOptions =
     routeData?.locations?.map((location) => ({
       value: location.id,
@@ -144,6 +149,7 @@ const InventoryDetails = ({
             defaultValues={{
               itemId: partInventory.itemId,
               locationId: partInventory.locationId,
+              shelfId: partInventory.defaultShelfId,
               adjustmentType: "Set Quantity",
             }}
             onSubmit={adjustmentModal.onClose}
@@ -153,8 +159,14 @@ const InventoryDetails = ({
             </ModalHeader>
             <ModalBody>
               <Hidden name="itemId" />
-              <Hidden name="locationId" />
+
               <VStack spacing={2}>
+                <Location name="locationId" label="Location" isReadOnly />
+                <Shelf
+                  name="shelfId"
+                  locationId={partInventory.locationId}
+                  label="Shelf"
+                />
                 <Select
                   name="adjustmentType"
                   label="Adjustment Type"

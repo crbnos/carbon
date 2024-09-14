@@ -5,6 +5,7 @@ import {
   Hyperlink,
   ItemThumbnail,
   MethodItemTypeIcon,
+  New,
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -38,19 +39,15 @@ const InventoryTable = memo(
           accessorKey: "readableId",
           header: "Item ID",
           cell: ({ row }) => (
-            <div className="py-1">
-              <HStack>
-                <ItemThumbnail thumbnailPath={row.original.thumbnailPath} />
-                <Hyperlink
-                  to={`${path.to.inventoryItem(
-                    row.original.itemId!
-                  )}/?${params}`}
-                  className="max-w-[260px] truncate"
-                >
-                  <>{row.original.readableId}</>
-                </Hyperlink>
-              </HStack>
-            </div>
+            <HStack className="py-1">
+              <ItemThumbnail thumbnailPath={row.original.thumbnailPath} />
+              <Hyperlink
+                to={`${path.to.inventoryItem(row.original.itemId!)}/?${params}`}
+                className="max-w-[260px] truncate"
+              >
+                <>{row.original.readableId}</>
+              </Hyperlink>
+            </HStack>
           ),
         },
         {
@@ -125,8 +122,9 @@ const InventoryTable = memo(
               <div className="w-full flex flex-col gap-4 items-center justify-center py-8 bg-gradient-to-bl from-card to-background rounded-lg text-center group ring-4 ring-transparent hover:ring-white/10">
                 <Heading size="h2">No Items Yet</Heading>
                 <p className="text-muted-foreground text-base font-light">
-                  Start by creating your first item
+                  Start by creating your first part
                 </p>
+                <New label="Part" to={path.to.newPart} />
               </div>
             </VStack>
           </HStack>

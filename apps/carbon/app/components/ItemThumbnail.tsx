@@ -18,7 +18,7 @@ const ItemThumbnail = ({ thumbnailPath, modelId }: ItemThumbnailProps) => {
       <Spinner className="w-6 h-6 text-muted-foreground" />
     </div>
   ) : (
-    <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+    <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-1.5">
       <LuImage className="w-6 h-6 text-muted-foreground" />
     </div>
   );

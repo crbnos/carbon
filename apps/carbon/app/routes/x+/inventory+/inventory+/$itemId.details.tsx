@@ -5,7 +5,6 @@ import InventoryDetails from "~/modules/inventory/ui/Inventory/InventoryDetails"
 import {
   getItemQuantities,
   getPickMethod,
-  getShelvesList,
   upsertPickMethod,
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
@@ -57,9 +56,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [partInventory, shelves] = await Promise.all([
+  let [partInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (partInventory.error || !partInventory.data) {
@@ -93,13 +91,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.inventory,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
@@ -116,12 +107,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     partInventory: partInventory.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
   });
 }
 
 export default function ItemInventoryRoute() {
-  const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
+  const { partInventory, quantities } = useLoaderData<typeof loader>();
 
   return (
     <InventoryDetails
@@ -130,7 +120,6 @@ export default function ItemInventoryRoute() {
         defaultShelfId: partInventory.defaultShelfId ?? undefined,
       }}
       quantities={quantities}
-      shelves={shelves}
     />
   );
 }

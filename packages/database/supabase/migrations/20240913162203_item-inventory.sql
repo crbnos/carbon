@@ -303,6 +303,40 @@ AFTER UPDATE OF "quantitySent" ON "salesOrderLine"
 FOR EACH ROW
 EXECUTE FUNCTION update_inventory_quantity_on_sales_order_line();
 
+
+
+ALTER TABLE "pickMethod" DROP CONSTRAINT IF EXISTS "pickMethod_shelfId_fkey";
+ALTER TABLE "purchaseOrderLine" DROP CONSTRAINT IF EXISTS "purchaseOrderLine_shelfId_fkey";
+ALTER TABLE "itemLedger" DROP CONSTRAINT IF EXISTS "itemLedger_shelfId_fkey";
+ALTER TABLE "receiptLine" DROP CONSTRAINT IF EXISTS "receiptLine_shelfId_fkey";
+ALTER TABLE "purchaseInvoiceLine" DROP CONSTRAINT IF EXISTS "purchaseInvoiceLines_shelfId_fkey";
+ALTER TABLE "salesOrderLine" DROP CONSTRAINT IF EXISTS "salesOrderLine_shelfId_fkey";
+ALTER TABLE "itemInventory" DROP CONSTRAINT IF EXISTS "itemInventory_shelfId_fkey";
+
+-- Drop the existing primary key constraint
+ALTER TABLE "shelf" DROP CONSTRAINT IF EXISTS "shelf_pkey";
+
+-- Add the 'id' column as the new primary key
+ALTER TABLE "shelf" ADD COLUMN IF NOT EXISTS "id" TEXT NOT NULL DEFAULT xid();
+ALTER TABLE "shelf" ADD PRIMARY KEY ("id");
+
+-- Add the 'name' column
+ALTER TABLE "shelf" ADD COLUMN IF NOT EXISTS "name" TEXT NOT NULL;
+
+-- Add a unique constraint for name and locationId
+ALTER TABLE "shelf" ADD CONSTRAINT "shelf_name_locationId_key" UNIQUE ("name", "locationId");
+
+-- Add back the foreign key constraints
+ALTER TABLE "pickMethod" ADD CONSTRAINT "pickMethod_shelfId_fkey" FOREIGN KEY ("defaultShelfId") REFERENCES "shelf"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "purchaseOrderLine" ADD CONSTRAINT "purchaseOrderLine_shelfId_fkey" FOREIGN KEY ("shelfId") REFERENCES "shelf"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "itemLedger" ADD CONSTRAINT "itemLedger_shelfId_fkey" FOREIGN KEY ("shelfId") REFERENCES "shelf"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "receiptLine" ADD CONSTRAINT "receiptLine_shelfId_fkey" FOREIGN KEY ("shelfId") REFERENCES "shelf"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "purchaseInvoiceLine" ADD CONSTRAINT "purchaseInvoiceLines_shelfId_fkey" FOREIGN KEY ("shelfId") REFERENCES "shelf"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "salesOrderLine" ADD CONSTRAINT "salesOrderLine_shelfId_fkey" FOREIGN KEY ("shelfId") REFERENCES "shelf"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "itemInventory" ADD CONSTRAINT "itemInventory_shelfId_fkey" FOREIGN KEY ("shelfId") REFERENCES "shelf"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+
+
 -- Drop the existing view
 DROP VIEW IF EXISTS "itemQuantities";
 
@@ -311,7 +345,7 @@ CREATE OR REPLACE VIEW "itemQuantities" AS
 SELECT 
   i."id" AS "itemId",
   i."companyId",
-  inv."locationId",
+  loc."id" AS "locationId",
   COALESCE(SUM(inv."quantityOnHand"), 0) AS "quantityOnHand",
   COALESCE(SUM(inv."quantityOnPurchase"), 0) AS "quantityOnPurchaseOrder",
   COALESCE(SUM(inv."quantityOnSalesOrder"), 0) AS "quantityOnSalesOrder",
@@ -325,21 +359,19 @@ SELECT
   i."active",
   i."itemTrackingType",
   m."thumbnailPath",
-  l."name" AS "locationName"
+  loc."name" AS "locationName"
 FROM "item" i
-LEFT JOIN "itemInventory" inv ON i."id" = inv."itemId"
-LEFT JOIN "location" l ON inv."locationId" = l."id"
+CROSS JOIN "location" loc
+LEFT JOIN "itemInventory" inv ON i."id" = inv."itemId" AND loc."id" = inv."locationId"
 LEFT JOIN "modelUpload" m ON m."id" = i."modelUploadId"
 GROUP BY 
   i."id",
   i."companyId",
-  inv."locationId",
+  loc."id",
   i."readableId",
   i."type",
   i."name",
   i."active",
   i."itemTrackingType",
   m."thumbnailPath",
-  l."name";
-
-
+  loc."name";

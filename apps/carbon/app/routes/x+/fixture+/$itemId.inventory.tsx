@@ -8,7 +8,6 @@ import {
   PickMethodForm,
   getItemQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -63,9 +62,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [fixtureInventory, shelves] = await Promise.all([
+  let [fixtureInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (fixtureInventory.error || !fixtureInventory.data) {
@@ -104,13 +102,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
@@ -130,7 +121,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     fixtureInventory: fixtureInventory.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
   });
 }
 
@@ -179,8 +169,7 @@ export default function FixtureInventoryRoute() {
   const sharedFixturesData = useRouteData<{ locations: ListItem[] }>(
     path.to.fixtureRoot
   );
-  const { fixtureInventory, quantities, shelves } =
-    useLoaderData<typeof loader>();
+  const { fixtureInventory, quantities } = useLoaderData<typeof loader>();
 
   const initialValues = {
     ...fixtureInventory,
@@ -194,7 +183,6 @@ export default function FixtureInventoryRoute() {
         initialValues={initialValues}
         quantities={quantities}
         locations={sharedFixturesData?.locations ?? []}
-        shelves={shelves}
         type="Fixture"
       />
     </VStack>

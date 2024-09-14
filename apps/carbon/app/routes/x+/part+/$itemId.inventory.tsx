@@ -8,7 +8,6 @@ import {
   PickMethodForm,
   getItemQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -63,9 +62,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [partInventory, shelves] = await Promise.all([
+  let [partInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (partInventory.error || !partInventory.data) {
@@ -99,13 +97,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
@@ -122,7 +113,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     partInventory: partInventory.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
   });
 }
 
@@ -171,7 +161,7 @@ export default function PartInventoryRoute() {
   const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
     path.to.partRoot
   );
-  const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
+  const { partInventory, quantities } = useLoaderData<typeof loader>();
 
   const initialValues = {
     ...partInventory,
@@ -185,7 +175,6 @@ export default function PartInventoryRoute() {
         initialValues={initialValues}
         quantities={quantities}
         locations={sharedPartsData?.locations ?? []}
-        shelves={shelves}
         type="Part"
       />
     </VStack>

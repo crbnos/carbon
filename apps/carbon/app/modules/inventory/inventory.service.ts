@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
@@ -8,6 +9,7 @@ import { sanitize } from "~/utils/supabase";
 import type {
   inventoryAdjustmentValidator,
   receiptValidator,
+  shelfValidator,
   shippingMethodValidator,
 } from "./inventory.models";
 
@@ -122,6 +124,18 @@ export async function getReceiptLines(
   return client.from("receiptLine").select("*").eq("receiptId", receiptId);
 }
 
+export async function getShelvesList(
+  client: SupabaseClient<Database>,
+  locationId: string
+) {
+  return client
+    .from("shelf")
+    .select("id, name")
+    .eq("active", true)
+    .eq("locationId", locationId)
+    .order("name");
+}
+
 export async function getShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethodId: string
@@ -210,6 +224,41 @@ export async function upsertReceipt(
       updatedAt: today(getLocalTimeZone()).toString(),
     })
     .eq("id", receipt.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertShelf(
+  client: SupabaseClient<Database>,
+  shelf:
+    | (Omit<z.infer<typeof shelfValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof shelfValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in shelf) {
+    return client
+      .from("shelf")
+      .insert({
+        ...shelf,
+        id: nanoid(),
+      })
+      .select("id")
+      .single();
+  }
+  return client
+    .from("shelf")
+    .update({
+      ...sanitize(shelf),
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("id", shelf.id)
     .select("id")
     .single();
 }

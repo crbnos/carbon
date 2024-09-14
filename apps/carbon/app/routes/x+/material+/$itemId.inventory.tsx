@@ -7,7 +7,6 @@ import {
   PickMethodForm,
   getItemQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -62,9 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [materialInventory, shelves] = await Promise.all([
+  let [materialInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (materialInventory.error || !materialInventory.data) {
@@ -103,13 +101,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
@@ -129,7 +120,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     materialInventory: materialInventory.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
   });
 }
 
@@ -178,8 +168,7 @@ export default function MaterialInventoryRoute() {
   const sharedMaterialsData = useRouteData<{ locations: ListItem[] }>(
     path.to.materialRoot
   );
-  const { materialInventory, quantities, shelves } =
-    useLoaderData<typeof loader>();
+  const { materialInventory, quantities } = useLoaderData<typeof loader>();
 
   const initialValues = {
     ...materialInventory,
@@ -192,7 +181,6 @@ export default function MaterialInventoryRoute() {
       initialValues={initialValues}
       quantities={quantities}
       locations={sharedMaterialsData?.locations ?? []}
-      shelves={shelves}
       type="Material"
     />
   );

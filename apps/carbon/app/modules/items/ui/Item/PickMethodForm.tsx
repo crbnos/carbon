@@ -9,17 +9,15 @@ import {
   Combobox,
   HStack,
 } from "@carbon/react";
-import { useRevalidator } from "@remix-run/react";
 import type { z } from "zod";
 import {
-  CreatableCombobox,
   CustomFormFields,
   Hidden,
   Number,
+  Shelf,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
+import { usePermissions } from "~/hooks";
 import type { ItemQuantities } from "~/modules/items";
 import { pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
@@ -29,7 +27,6 @@ type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
   locations: ListItem[];
-  shelves: string[];
   type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
 };
 
@@ -37,15 +34,10 @@ const PickMethodForm = ({
   initialValues,
   locations,
   quantities,
-  shelves,
   type,
 }: PickMethodFormProps) => {
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
-  const user = useUser();
-  const revalidator = useRevalidator();
 
-  const shelfOptions = shelves.map((shelf) => ({ value: shelf, label: shelf }));
   const locationOptions = locations.map((location) => ({
     label: location.name,
     value: location.id,
@@ -84,20 +76,10 @@ const PickMethodForm = ({
           <Hidden name="itemId" />
           <Hidden name="locationId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <CreatableCombobox
+            <Shelf
               name="defaultShelfId"
               label="Default Shelf"
-              options={shelfOptions}
-              onCreateOption={async (option) => {
-                const response = await supabase?.from("shelf").insert({
-                  id: option,
-                  companyId: user.company.id,
-                  locationId: initialValues.locationId,
-                  createdBy: user.id,
-                });
-                if (response && response.error === null)
-                  revalidator.revalidate();
-              }}
+              locationId={initialValues.locationId}
               className="w-full"
             />
 

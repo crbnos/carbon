@@ -1,6 +1,7 @@
 import {
   Badge,
   Checkbox,
+  HStack,
   MenuIcon,
   MenuItem,
   useDisclosure,
@@ -13,6 +14,7 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   MethodIcon,
   New,
   Table,
@@ -51,9 +53,12 @@ const PartsTable = memo(({ data, count }: PartsTableProps) => {
         accessorKey: "id",
         header: "Part ID",
         cell: ({ row }) => (
-          <Hyperlink to={path.to.partDetails(row.original.itemId!)}>
-            {row.original.id}
-          </Hyperlink>
+          <HStack className="py-1">
+            <ItemThumbnail thumbnailPath={row.original.thumbnailPath} />
+            <Hyperlink to={path.to.partDetails(row.original.itemId!)}>
+              {row.original.id}
+            </Hyperlink>
+          </HStack>
         ),
       },
       {

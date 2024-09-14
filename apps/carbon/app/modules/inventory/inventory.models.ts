@@ -45,6 +45,7 @@ export const itemLedgerDocumentTypes = [
 export const inventoryAdjustmentValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   locationId: z.string().min(20, { message: "Location is required" }),
+  shelfId: zfd.text(z.string().optional()),
   adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
   quantity: zfd.numeric(z.number()),
 });
@@ -87,6 +88,12 @@ export const receiptValidator = z.object({
   externalDocumentId: zfd.text(z.string().optional()),
   sourceDocumentReadableId: zfd.text(z.string().optional()),
   supplierId: zfd.text(z.string().optional()),
+});
+
+export const shelfValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  locationId: z.string().min(1, { message: "Location ID is required" }),
 });
 
 export const shippingCarrierType = [

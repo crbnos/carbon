@@ -7,7 +7,6 @@ import {
   PickMethodForm,
   getItemQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -62,9 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [consumableInventory, shelves] = await Promise.all([
+  let [consumableInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (consumableInventory.error || !consumableInventory.data) {
@@ -106,13 +104,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
@@ -132,7 +123,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     consumableInventory: consumableInventory.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
   });
 }
 
@@ -181,8 +171,7 @@ export default function ConsumableInventoryRoute() {
   const sharedConsumablesData = useRouteData<{ locations: ListItem[] }>(
     path.to.consumableRoot
   );
-  const { consumableInventory, quantities, shelves } =
-    useLoaderData<typeof loader>();
+  const { consumableInventory, quantities } = useLoaderData<typeof loader>();
 
   const initialValues = {
     ...consumableInventory,
@@ -195,7 +184,6 @@ export default function ConsumableInventoryRoute() {
       initialValues={initialValues}
       quantities={quantities}
       locations={sharedConsumablesData?.locations ?? []}
-      shelves={shelves}
       type="Consumable"
     />
   );

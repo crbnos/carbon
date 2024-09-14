@@ -11070,6 +11070,9 @@ export default {
             $ref: "#/parameters/rowFilter.shelf.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.shelf.name",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -11159,6 +11162,9 @@ export default {
             $ref: "#/parameters/rowFilter.shelf.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.shelf.name",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -11200,6 +11206,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shelf.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shelf.name",
           },
           {
             $ref: "#/parameters/body.shelf",
@@ -34373,6 +34382,8 @@ export default {
           type: "string",
         },
         shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -36114,6 +36125,8 @@ export default {
           type: "string",
         },
         shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -36579,6 +36592,8 @@ export default {
           type: "string",
         },
         shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -38299,6 +38314,8 @@ export default {
           type: "string",
         },
         shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -38981,6 +38998,8 @@ export default {
           type: "string",
         },
         shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -39190,6 +39209,7 @@ export default {
         "companyId",
         "createdBy",
         "createdAt",
+        "name",
       ],
       properties: {
         id: {
@@ -39199,7 +39219,7 @@ export default {
         },
         locationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -39243,6 +39263,10 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        name: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -42896,6 +42920,8 @@ export default {
           type: "string",
         },
         defaultShelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -43201,6 +43227,8 @@ export default {
           type: "string",
         },
         shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -43772,6 +43800,8 @@ export default {
           type: "string",
         },
         shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -44834,8 +44864,7 @@ export default {
           type: "string",
         },
         locationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
         },
@@ -48896,6 +48925,8 @@ export default {
           type: "string",
         },
         shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -55539,6 +55570,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shelf.name": {
+      name: "name",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
