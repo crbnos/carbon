@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
+import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -22,7 +23,7 @@ export async function getJobDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
   job: Job
-) {
+): Promise<StorageItem[]> {
   if (job.salesOrderLineId || job.quoteLineId) {
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
@@ -34,9 +35,18 @@ export async function getJobDocuments(
     ]);
 
     // Combine and return both sets of files
-    return [...(opportunityLineFiles.data || []), ...(jobFiles.data || [])];
+    return [
+      ...(opportunityLineFiles.data?.map((f) => ({
+        ...f,
+        bucket: "opportunity-line",
+      })) || []),
+      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+    ];
   } else {
-    return client.storage.from("private").list(`${companyId}/job/${job.id}`);
+    const jobFiles = await client.storage
+      .from("private")
+      .list(`${companyId}/job/${job.id}`);
+    return jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || [];
   }
 }
 

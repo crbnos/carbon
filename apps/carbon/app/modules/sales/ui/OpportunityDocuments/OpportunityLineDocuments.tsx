@@ -25,7 +25,7 @@ import { LuAxis3D, LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import type { ItemFile, ModelUpload } from "~/modules/items";
+import type { ItemFile } from "~/modules/items";
 
 import { useNavigate, useRevalidator, useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
@@ -34,6 +34,7 @@ import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 
 import { useCallback } from "react";
+import type { ModelUpload } from "~/types";
 
 const useOpportunityLineDocuments = ({
   id,

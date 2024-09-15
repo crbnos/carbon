@@ -25,7 +25,7 @@ import {
   LuXCircle,
 } from "react-icons/lu";
 import { RiProgress2Line, RiProgress4Line } from "react-icons/ri";
-import { Assignee, useOptimisticAssignment } from "~/components";
+import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -65,6 +65,7 @@ const SalesRFQHeader = () => {
             <RiProgress2Line />
           </Badge>
           <SalesRFQStatus status={routeData?.rfqSummary?.status} />
+          <Copy text={routeData?.rfqSummary?.rfqId ?? ""} />
         </HStack>
         <HStack>
           <Assignee

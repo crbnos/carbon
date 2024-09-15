@@ -3,7 +3,7 @@ import { Badge, Button, HStack, Heading } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
 import { LuEye, LuFile, LuTruck, LuXCircle } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Assignee, useOptimisticAssignment } from "~/components";
+import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesOrder, SalesOrderLine } from "~/modules/sales";
@@ -44,6 +44,7 @@ const SalesOrderHeader = () => {
               </Badge>
             </Badge>
             <SalesStatus status={routeData?.salesOrder?.status} />
+            <Copy text={routeData?.salesOrder?.salesOrderId ?? ""} />
           </HStack>
           <HStack>
             <Assignee

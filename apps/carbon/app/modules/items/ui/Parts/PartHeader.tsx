@@ -1,7 +1,7 @@
 import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { MethodItemTypeIcon } from "~/components";
+import { Copy, MethodItemTypeIcon } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
@@ -27,6 +27,7 @@ const PartHeader = () => {
           <Badge variant="secondary">
             <MethodItemTypeIcon type="Part" />
           </Badge>
+          <Copy text={routeData?.partSummary?.id ?? ""} />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

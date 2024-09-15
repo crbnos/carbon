@@ -422,9 +422,16 @@ export async function getOpportunityDocuments(
   companyId: string,
   opportunityId: string
 ) {
-  return client.storage
+  const result = await client.storage
     .from("private")
     .list(`${companyId}/opportunity/${opportunityId}`);
+
+  if (result.error) return result;
+
+  return {
+    data: result.data.map((f) => ({ ...f, bucket: "opportunity" })),
+    error: null,
+  };
 }
 
 export async function getOpportunityLineDocuments(
@@ -432,9 +439,16 @@ export async function getOpportunityLineDocuments(
   companyId: string,
   lineId: string
 ) {
-  return client.storage
+  const result = await client.storage
     .from("private")
     .list(`${companyId}/opportunity-line/${lineId}`);
+
+  if (result.error) return result;
+
+  return {
+    data: result.data.map((f) => ({ ...f, bucket: "opportunity-line" })),
+    error: null,
+  };
 }
 
 export async function getQuote(

@@ -3,13 +3,13 @@ import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
-import type { FileObject } from "@supabase/storage-js";
-import { CadModel } from "~/components";
+import { CadModel, Documents } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import { JobForm, jobValidator, upsertJob } from "~/modules/production";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { StorageItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
@@ -58,7 +58,7 @@ export default function JobDetailsRoute() {
 
   const jobData = useRouteData<{
     job: Job;
-    files: FileObject[];
+    files: StorageItem[];
   }>(path.to.job(jobId));
 
   if (!jobData) throw new Error("Could not find job data");
@@ -94,12 +94,17 @@ export default function JobDetailsRoute() {
             metadata={{ jobId: jobData?.job?.id ?? undefined }}
             modelPath={jobData?.job?.modelPath ?? null}
             title="CAD Model"
+            uploadClassName="min-h-[360px]"
+            viewerClassName="min-h-[360px]"
           />
-          {/* <JobDocuments
-            files={jobData?.files ?? []}
-            jobId={jobId}
-            modelUpload={jobData.job ?? undefined}
-          /> */}
+          <Documents
+            files={jobData.files}
+            modelUpload={{ ...jobData.job }}
+            sourceDocument="Job"
+            sourceDocumentId={jobData.job.id ?? ""}
+            writeBucket="job"
+            writeBucketPermission="production"
+          />
         </div>
       )}
     </VStack>
