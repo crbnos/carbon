@@ -10,7 +10,7 @@ import {
   LuXCircle,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { Assignee, useOptimisticAssignment } from "~/components";
+import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Quotation, QuotationLine, QuotationPrice } from "~/modules/sales";
@@ -56,6 +56,7 @@ const QuoteHeader = () => {
               </Badge>
             </Badge>
             <QuoteStatus status={routeData?.quote?.status} />
+            <Copy text={routeData?.quote?.quoteId ?? ""} />
           </HStack>
           <HStack>
             <Assignee

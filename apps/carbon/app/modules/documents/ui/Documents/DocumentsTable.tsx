@@ -656,6 +656,8 @@ function getDocumentLocation(
       return path.to.quote(sourceDocumentId);
     case "Request for Quote":
       return path.to.salesRfq(sourceDocumentId);
+    case "Job":
+      return path.to.job(sourceDocumentId);
     default:
       return "#";
   }

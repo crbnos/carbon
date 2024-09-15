@@ -2,6 +2,7 @@ import { Badge, HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
 import { LuHardHat } from "react-icons/lu";
+import { Copy } from "~/components";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Job } from "../../types";
@@ -23,6 +24,7 @@ const JobHeader = () => {
           <Badge variant="secondary">
             <LuHardHat />
           </Badge>
+          <Copy text={routeData?.job?.jobId ?? ""} />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

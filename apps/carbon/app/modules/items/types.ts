@@ -97,15 +97,6 @@ export type MethodOperation = NonNullable<
   Awaited<ReturnType<typeof getMethodOperations>>["data"]
 >[number];
 
-export type ModelUpload = {
-  modelId: string | null;
-  modelName: string | null;
-  modelPath: string | null;
-  modelSize: number | null;
-  thumbnailPath: string | null;
-  autodeskUrn: string | null;
-};
-
 export type Part = NonNullable<
   Awaited<ReturnType<typeof getParts>>["data"]
 >[number];

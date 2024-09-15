@@ -15,6 +15,7 @@ export const documentTypes = [
 ] as const;
 
 export const documentSourceTypes = [
+  "Job",
   "Purchase Order",
   "Quote",
   "Request for Quote",

@@ -24,11 +24,10 @@ import idb from "localforage";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useState } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
-import { BiListCheck } from "react-icons/bi";
 import { BsCartDash } from "react-icons/bs";
 import { CgProfile } from "react-icons/cg";
 import { HiOutlineDocumentDuplicate } from "react-icons/hi";
-import { LuSearch, LuUserSquare } from "react-icons/lu";
+import { LuHardHat, LuSearch, LuUserSquare } from "react-icons/lu";
 import { PiShareNetworkFill } from "react-icons/pi";
 import {
   RiProgress2Line,
@@ -255,7 +254,7 @@ function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
     case "Document":
       return <HiOutlineDocumentDuplicate className="w-4 h-4 mr-2" />;
     case "Job":
-      return <BiListCheck className="w-4 h-4 mr-2" />;
+      return <LuHardHat className="w-4 h-4 mr-2" />;
     case "Part":
       return <AiOutlinePartition className="w-4 h-4 mr-2" />;
     case "Person":

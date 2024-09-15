@@ -1,5 +1,6 @@
 import type { ValidationErrorResponseData } from "@carbon/form";
 import type { TypedResponse } from "@remix-run/node";
+import type { FileObject } from "@supabase/storage-js";
 import type { ReactElement } from "react";
 import type { IconType } from "react-icons";
 
@@ -27,6 +28,15 @@ export type FormActionData = Promise<
 export type ListItem = {
   id: string;
   name: string;
+};
+
+export type ModelUpload = {
+  modelId: string | null;
+  modelName: string | null;
+  modelPath: string | null;
+  modelSize: number | null;
+  thumbnailPath: string | null;
+  autodeskUrn: string | null;
 };
 
 export type NavItem = Omit<Route, "icon"> & {
@@ -59,3 +69,7 @@ export interface SelectOption {
   value: string;
   helper?: string;
 }
+
+export type StorageItem = FileObject & {
+  bucket: string;
+};
