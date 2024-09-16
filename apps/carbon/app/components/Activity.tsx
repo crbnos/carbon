@@ -40,7 +40,7 @@ const Activity = ({
       <EmployeeAvatar employeeId={employeeId} />
       <div className="flex-grow">
         <div className="flex items-start justify-between">
-          <span className="text-gray-400">{activityMessage}</span>
+          <span className="text-gray-500">{activityMessage}</span>
           {activityIcon && <div className="mt-1 ml-4">{activityIcon}</div>}
         </div>
         <div className="text-sm text-gray-400 mt-1">

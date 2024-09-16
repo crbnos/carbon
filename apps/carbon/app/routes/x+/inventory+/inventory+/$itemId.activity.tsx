@@ -56,7 +56,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     client,
     itemId,
     companyId,
-    locationId
+    locationId,
+    true
   );
   if (itemLedgerRecords.error || !itemLedgerRecords.data) {
     throw redirect(

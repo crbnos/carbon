@@ -20,9 +20,9 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
 const getActivityIcon = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.entryType) {
     case "Positive Adjmt.":
-      return <LuPlusCircle className="text-blue-500" />;
+      return <LuPlusCircle className="text-blue-500 w-5 h-5" />;
     case "Negative Adjmt.":
-      return <LuMinusCircle className="text-red-500" />;
+      return <LuMinusCircle className="text-red-500 w-5 h-5" />;
     default:
       return "";
   }
@@ -31,7 +31,8 @@ const getActivityIcon = (ledgerRecord: ItemLedger) => {
 const InventoryActivity = ({ itemLedgerRecords }: InventoryActivityProps) => {
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-4 pt-6 px-4">
+        <h2 className="text-2xl font-semibold mb-4">Activity</h2>
         {itemLedgerRecords.map((ledgerRecord, index) => (
           <Activity
             key={index}

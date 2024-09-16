@@ -74,14 +74,23 @@ export async function getItemLedger(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string,
-  locationId: string
+  locationId: string,
+  sortDescending: boolean = false
 ) {
-  return client
+  let query = client
     .from("itemLedger")
     .select("*")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .eq("locationId", locationId);
+
+  if (sortDescending) {
+    query = query.order("createdAt", { ascending: false });
+  } else {
+    query = query.order("createdAt", { ascending: true });
+  }
+
+  return query;
 }
 
 export async function deleteReceipt(
