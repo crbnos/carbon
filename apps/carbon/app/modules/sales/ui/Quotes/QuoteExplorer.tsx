@@ -256,7 +256,7 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
       {disclosure.isOpen &&
         line.methodType === "Make" &&
         permissions.can("update", "sales") && (
-          <VStack className="border-b border-border">
+          <VStack className="border-b border-border p-1">
             <QuoteBoMExplorer methods={methods} />
           </VStack>
         )}
