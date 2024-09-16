@@ -232,6 +232,8 @@ export const path = {
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
+    deleteJobMaterial: (jobId: string, id: string) =>
+      generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
     deleteMaterialForm: (id: string) =>
       generatePath(`${x}/items/forms/delete/${id}`),
     deleteMaterialSubstance: (id: string) =>
@@ -354,6 +356,26 @@ export const path = {
     itemPostingGroups: `${x}/items/groups`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
     jobDetails: (id: string) => generatePath(`${x}/job/${id}/details`),
+    jobMaterial: (jobId: string, id: string) =>
+      generatePath(`${x}/job/methods/${jobId}/material/${id}`),
+    jobMethod: (jobId: string, methodId: string) =>
+      generatePath(`${x}/job/${jobId}/method/${methodId}`),
+    jobMakeMethod: (jobId: string, makeMethodId: string, materialId: string) =>
+      generatePath(`${x}/job/${jobId}/make/${makeMethodId}/${materialId}`),
+    jobMethodMaterial: (
+      jobId: string,
+      methodType: string,
+      makeMethodId: string,
+      materialId: string
+    ) =>
+      generatePath(
+        `${x}/job/${jobId}/${methodType}/${makeMethodId}/${materialId}`
+      ),
+    jobMaterialsOrder: `${x}/job/methods/material/order`,
+    jobMethodGet: `${x}/job/methods/get`,
+    jobOperation: (jobId: string, id: string) =>
+      generatePath(`${x}/job/methods/${jobId}/operation/${id}`),
+    jobOperationsOrder: `${x}/job/methods/operation/order`,
     jobs: `${x}/production/jobs`,
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
@@ -435,6 +457,10 @@ export const path = {
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
     newJob: `${x}/job/new`,
+    newJobMaterial: (jobId: string) =>
+      generatePath(`${x}/job/methods/${jobId}/material/new`),
+    newJobOperation: (jobId: string) =>
+      generatePath(`${x}/job/methods/${jobId}/operation/new`),
     newLocation: `${x}/resources/locations/new`,
     newMaterial: `${x}/material/new`,
     newMethodMaterial: `${x}/items/methods/material/new`,

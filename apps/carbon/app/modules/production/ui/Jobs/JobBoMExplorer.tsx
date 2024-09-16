@@ -7,26 +7,23 @@ import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
 import { path } from "~/utils/path";
-import type { QuoteMethod } from "../../types";
+import type { JobMethod } from "../../production.service";
 
-type QuoteBoMExplorerProps = {
-  methods: FlatTree<QuoteMethod>;
+type JobBoMExplorerProps = {
+  method: FlatTree<JobMethod>;
 };
 
-const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
+const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useOptimisticLocation();
 
   const fetchers = useFetchers();
   const getMethodFetcher = fetchers.find(
-    (f) => f.formAction === path.to.quoteMethodGet
+    (f) => f.formAction === path.to.jobMethodGet
   );
 
-  const isLoading =
-    getMethodFetcher?.state === "loading" &&
-    getMethodFetcher.formData?.get("quoteLineId") ===
-      methods?.[0].data.quoteLineId;
+  const isLoading = getMethodFetcher?.state === "loading";
 
   const {
     nodes,
@@ -40,7 +37,7 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
     scrollToNode,
     virtualizer,
   } = useTree({
-    tree: methods,
+    tree: method,
     // selectedId,
     // collapsedIds,
     onSelectedIdChanged: () => {},
@@ -60,7 +57,7 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
           parentRef={parentRef}
           virtualizer={virtualizer}
           autoFocus
-          tree={methods}
+          tree={method}
           nodes={nodes}
           getNodeProps={getNodeProps}
           getTreeProps={getTreeProps}
@@ -145,9 +142,9 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
   );
 };
 
-export default QuoteBoMExplorer;
+export default JobBoMExplorer;
 
-function NodeText({ node }: { node: FlatTreeItem<QuoteMethod> }) {
+function NodeText({ node }: { node: FlatTreeItem<JobMethod> }) {
   return (
     <div className="flex items-center gap-1">
       <span className="text-sm font-mono">{node.data.itemReadableId}</span>
@@ -155,7 +152,7 @@ function NodeText({ node }: { node: FlatTreeItem<QuoteMethod> }) {
   );
 }
 
-function NodeData({ node }: { node: FlatTreeItem<QuoteMethod> }) {
+function NodeData({ node }: { node: FlatTreeItem<JobMethod> }) {
   return (
     <HStack spacing={1}>
       <Badge className="text-xs" variant="outline">
@@ -168,25 +165,19 @@ function NodeData({ node }: { node: FlatTreeItem<QuoteMethod> }) {
   );
 }
 
-function getNodePath(node: FlatTreeItem<QuoteMethod>) {
+function getNodePath(node: FlatTreeItem<JobMethod>) {
   return node.data.isRoot
-    ? path.to.quoteLineMethod(
-        node.data.quoteId,
-        node.data.quoteLineId,
-        node.data.quoteMaterialMakeMethodId
-      )
+    ? path.to.jobMethod(node.data.jobId, node.data.jobMaterialMakeMethodId)
     : node.data.methodType === "Make"
-    ? path.to.quoteLineMaterialMake(
-        node.data.quoteId,
-        node.data.quoteLineId,
-        node.data.quoteMaterialMakeMethodId,
+    ? path.to.jobMakeMethod(
+        node.data.jobId,
+        node.data.jobMaterialMakeMethodId,
         node.data.methodMaterialId
       )
-    : path.to.quoteLineMaterial(
-        node.data.quoteId,
-        node.data.quoteLineId,
+    : path.to.jobMethodMaterial(
+        node.data.jobId,
         node.data.methodType.toLowerCase(),
-        node.data.quoteMakeMethodId,
+        node.data.jobMakeMethodId,
         node.data.methodMaterialId
       );
 }

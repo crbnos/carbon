@@ -7,8 +7,21 @@ import {
   VStack,
 } from "@carbon/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, Outlet, redirect, useParams } from "@remix-run/react";
-import { getJob, getJobDocuments, JobHeader } from "~/modules/production";
+import {
+  json,
+  Outlet,
+  redirect,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
+import { flattenTree } from "~/components/TreeView";
+import {
+  getJob,
+  getJobDocuments,
+  getJobMethodTree,
+  JobBoMExplorer,
+  JobHeader,
+} from "~/modules/production";
 import {} from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -40,19 +53,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const files = await getJobDocuments(client, companyId, job.data);
 
-  // const methods = await getJobMethodTrees(client, jobId);
+  const method = await getJobMethodTree(client, jobId);
 
-  // if (methods.error) {
-  //   throw redirect(
-  //     path.to.jobs,
-  //     await flash(request, error(methods.error, "Failed to load job method"))
-  //   );
-  // }
+  if (method.error) {
+    throw redirect(
+      path.to.jobs,
+      await flash(request, error(method.error, "Failed to load job method"))
+    );
+  }
 
   return json({
     job: job.data,
     files: files,
-    // methods: methods.data ?? [],
+    method: method.data ?? [],
   });
 }
 
@@ -60,6 +73,9 @@ export default function JobRoute() {
   const params = useParams();
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
+
+  const { method } = useLoaderData<typeof loader>();
+  const flattenedTree = method.length > 0 ? flattenTree(method[0]) : [];
 
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
@@ -77,8 +93,8 @@ export default function JobRoute() {
                     className="bg-card h-full"
                   >
                     <ScrollArea className="h-[calc(100vh-99px)]">
-                      <div className="grid w-full h-full overflow-hidden">
-                        {/* <JobExplorer /> */}
+                      <div className="grid w-full h-full overflow-hidden p-2">
+                        <JobBoMExplorer method={flattenedTree} />
                       </div>
                     </ScrollArea>
                   </ResizablePanel>
