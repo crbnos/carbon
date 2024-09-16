@@ -2,10 +2,6 @@ import { LuMinusCircle, LuPlusCircle } from "react-icons/lu";
 import Activity from "~/components/Activity";
 import type { ItemLedger } from "../../types";
 
-type InventoryActivityProps = {
-  itemLedgerRecords: ItemLedger[];
-};
-
 const getActivityText = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.entryType) {
     case "Positive Adjmt.":
@@ -28,22 +24,18 @@ const getActivityIcon = (ledgerRecord: ItemLedger) => {
   }
 };
 
-const InventoryActivity = ({ itemLedgerRecords }: InventoryActivityProps) => {
+type InventoryActivityProps = {
+  item: ItemLedger;
+};
+
+const InventoryActivity = ({ item }: InventoryActivityProps) => {
   return (
-    <>
-      <div className="space-y-4 pt-6 px-4">
-        <h2 className="text-2xl font-semibold mb-4">Activity</h2>
-        {itemLedgerRecords.map((ledgerRecord, index) => (
-          <Activity
-            key={index}
-            employeeId={ledgerRecord.createdBy}
-            activityMessage={getActivityText(ledgerRecord)}
-            activityTime={ledgerRecord.createdAt}
-            activityIcon={getActivityIcon(ledgerRecord)}
-          />
-        ))}
-      </div>
-    </>
+    <Activity
+      employeeId={item.createdBy}
+      activityMessage={getActivityText(item)}
+      activityTime={item.createdAt}
+      activityIcon={getActivityIcon(item)}
+    />
   );
 };
 

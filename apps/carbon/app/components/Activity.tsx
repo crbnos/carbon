@@ -15,7 +15,7 @@ const Activity = ({
   activityIcon,
 }: ActivityProps) => {
   return (
-    <div className="flex items-start space-x-4">
+    <div className="flex items-start space-x-4 p-2">
       <EmployeeAvatar employeeId={employeeId} />
       <div className="flex-grow">
         <div className="flex items-start justify-between">

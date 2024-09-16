@@ -1,6 +1,9 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import { useCallback, useState } from "react";
+import InfiniteScroll from "~/components/InfiniteScroll";
+import { useSupabase } from "~/lib/supabase";
 import { getItemLedger } from "~/modules/inventory";
 import InventoryActivity from "~/modules/inventory/ui/Inventory/InventoryActivity";
 import { getLocationsList } from "~/modules/resources";
@@ -70,12 +73,64 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return json({
-    itemLedgerRecords: itemLedgerRecords.data,
+    initialItemLedgers: itemLedgerRecords.data,
+    itemId,
+    companyId,
+    locationId,
   });
 }
 
-export default function ItemInventoryRoute() {
-  const { itemLedgerRecords } = useLoaderData<typeof loader>();
+export default function ItemInventoryActivityRoute() {
+  const { initialItemLedgers, itemId, companyId, locationId } =
+    useLoaderData<typeof loader>();
 
-  return <InventoryActivity itemLedgerRecords={itemLedgerRecords} />;
+  const { supabase } = useSupabase();
+
+  const [itemLedgers, setItemLedgers] = useState<any[]>(initialItemLedgers);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  const loadMoreItemLedgers = useCallback(async () => {
+    if (isLoading || !hasMore) return;
+
+    setIsLoading(true);
+    console.log("loadMoreItemLedgers", page);
+    const newItemLedgers = await getItemLedger(
+      supabase!,
+      itemId,
+      companyId,
+      locationId,
+      true,
+      page + 1
+    );
+
+    if (newItemLedgers.data && newItemLedgers.data.length > 0) {
+      setItemLedgers((prevItemLedgers) => [
+        ...prevItemLedgers,
+        ...newItemLedgers.data,
+      ]);
+      setPage((prevPage) => prevPage + 1);
+    } else {
+      setHasMore(false);
+    }
+
+    setIsLoading(false);
+  }, [page, supabase, companyId, locationId, itemId, isLoading, hasMore]);
+
+  return (
+    <>
+      <div className="space-y-4 pt-6 px-4 ">
+        <h2 className="text-2xl font-semibold mb-4">Activity</h2>
+        <div className="h-full overflow-y-auto ">
+          <InfiniteScroll
+            component={InventoryActivity}
+            items={itemLedgers}
+            loadMore={loadMoreItemLedgers}
+            hasMore={hasMore}
+          />
+        </div>
+      </div>
+    </>
+  );
 }

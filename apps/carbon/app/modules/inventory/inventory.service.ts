@@ -75,22 +75,42 @@ export async function getItemLedger(
   itemId: string,
   companyId: string,
   locationId: string,
-  sortDescending: boolean = false
+  sortDescending: boolean = false,
+  page: number = 1
 ) {
+  console.log(
+    "getItemLedger",
+    itemId,
+    companyId,
+    locationId,
+    sortDescending,
+    page
+  );
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
+
   let query = client
     .from("itemLedger")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("itemId", itemId)
     .eq("companyId", companyId)
-    .eq("locationId", locationId);
+    .eq("locationId", locationId)
+    .order("createdAt", { ascending: !sortDescending })
+    .range(offset, offset + pageSize - 1);
 
-  if (sortDescending) {
-    query = query.order("createdAt", { ascending: false });
-  } else {
-    query = query.order("createdAt", { ascending: true });
+  const { data, error, count } = await query;
+
+  if (error) {
+    return { error };
   }
 
-  return query;
+  return {
+    data,
+    count,
+    page,
+    pageSize,
+    hasMore: count !== null && offset + pageSize < count,
+  };
 }
 
 export async function deleteReceipt(

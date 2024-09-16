@@ -68,7 +68,8 @@
     "packages/*"
   ],
   "dependencies": {
-    "@xyflow/react": "^12.2.0"
+    "@xyflow/react": "^12.2.0",
+    "react-intersection-observer": "^9.13.1"
   },
   "packageManager": "npm@10.7.0"
 }
