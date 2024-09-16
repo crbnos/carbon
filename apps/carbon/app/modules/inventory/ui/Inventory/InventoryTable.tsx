@@ -53,7 +53,13 @@ const InventoryTable = memo(
         {
           accessorKey: "type",
           header: "Type",
-          cell: ({ row }) => row.original.type,
+          cell: ({ row }) =>
+            row.original.type && (
+              <HStack>
+                <MethodItemTypeIcon type={row.original.type} />
+                <span>{row.original.type}</span>
+              </HStack>
+            ),
           meta: {
             filter: {
               type: "static",

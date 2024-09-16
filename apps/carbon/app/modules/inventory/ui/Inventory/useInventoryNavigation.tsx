@@ -18,8 +18,8 @@ export function useInventoryNavigation() {
       shortcut: "Command+Shift+d",
     },
     {
-      name: "Transactions",
-      to: path.to.inventoryItemTransactions(itemId),
+      name: "Activity",
+      to: path.to.inventoryItemActivity(itemId),
       role: ["employee"],
       icon: LuFileBarChart,
       shortcut: "Command+Shift+t",

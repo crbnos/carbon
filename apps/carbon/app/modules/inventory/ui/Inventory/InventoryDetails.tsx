@@ -30,7 +30,7 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemQuantities, pickMethodValidator } from "~/modules/items";
+import { type ItemQuantities, type pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
@@ -38,11 +38,17 @@ import { inventoryAdjustmentValidator } from "../../inventory.models";
 type InventoryDetailsProps = {
   partInventory: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
+  itemReadableId: string;
+  itemName: string;
+  itemType: string;
 };
 
 const InventoryDetails = ({
   partInventory,
   quantities,
+  itemReadableId,
+  itemName,
+  itemType,
 }: InventoryDetailsProps) => {
   const permissions = usePermissions();
   const adjustmentModal = useDisclosure();
@@ -71,13 +77,13 @@ const InventoryDetails = ({
           <div className="relative">
             <CardHeader className="pb-3">
               <CardTitle>
-                {quantities.readableId}{" "}
+                {itemReadableId}{" "}
                 <Badge className="ml-2" variant="secondary">
-                  <MethodItemTypeIcon type={quantities.type ?? "Part"} />
+                  <MethodItemTypeIcon type={itemType} />
                 </Badge>
               </CardTitle>
               <CardDescription className="max-w-lg text-balance leading-relaxed">
-                {quantities.name}
+                {itemName}
               </CardDescription>
             </CardHeader>
             <CardAction className="absolute right-0 top-2">

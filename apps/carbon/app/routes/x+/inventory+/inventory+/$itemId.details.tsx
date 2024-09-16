@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import InventoryDetails from "~/modules/inventory/ui/Inventory/InventoryDetails";
 import {
+  getItem,
   getItemQuantities,
   getPickMethod,
   upsertPickMethod,
@@ -104,14 +105,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const item = await getItem(client, itemId);
+  if (item.error || !item.data) {
+    throw redirect(
+      path.to.inventory,
+      await flash(request, error(item.error, "Failed to load item"))
+    );
+  }
+
   return json({
     partInventory: partInventory.data,
     quantities: quantities.data,
+    item: item.data,
   });
 }
 
 export default function ItemInventoryRoute() {
-  const { partInventory, quantities } = useLoaderData<typeof loader>();
+  const { partInventory, quantities, item } = useLoaderData<typeof loader>();
 
   return (
     <InventoryDetails
@@ -120,6 +130,9 @@ export default function ItemInventoryRoute() {
         defaultShelfId: partInventory.defaultShelfId ?? undefined,
       }}
       quantities={quantities}
+      itemReadableId={item.readableId}
+      itemName={item.name}
+      itemType={item.type}
     />
   );
 }

@@ -1,17 +1,12 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import InventoryTransactions from "~/modules/inventory/ui/Inventory/InventoryTransactions";
-import {
-  getItemQuantities,
-  getPickMethod,
-  upsertPickMethod,
-} from "~/modules/items";
+import { getItemLedger } from "~/modules/inventory";
+import InventoryActivity from "~/modules/inventory/ui/Inventory/InventoryActivity";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import { getCustomFields } from "~/utils/form";
 import { notFound } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
@@ -57,73 +52,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [partInventory] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId),
-  ]);
-
-  if (partInventory.error || !partInventory.data) {
-    const insertPickMethod = await upsertPickMethod(client, {
-      itemId,
-      companyId,
-      locationId,
-      customFields: {},
-      createdBy: userId,
-    });
-
-    if (insertPickMethod.error) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(insertPickMethod.error, "Failed to insert part inventory")
-        )
-      );
-    }
-
-    partInventory = await getPickMethod(client, itemId, companyId, locationId);
-    if (partInventory.error || !partInventory.data) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(partInventory.error, "Failed to load part inventory")
-        )
-      );
-    }
-  }
-
-  const quantities = await getItemQuantities(
+  const itemLedgerRecords = await getItemLedger(
     client,
     itemId,
     companyId,
     locationId
   );
-  if (quantities.error || !quantities.data) {
+  if (itemLedgerRecords.error || !itemLedgerRecords.data) {
     throw redirect(
       path.to.inventory,
-      await flash(request, error(quantities, "Failed to load part quantities"))
+      await flash(
+        request,
+        error(itemLedgerRecords, "Failed to load item inventory activity")
+      )
     );
   }
 
   return json({
-    partInventory: partInventory.data,
-    quantities: quantities.data,
+    itemLedgerRecords: itemLedgerRecords.data,
   });
 }
 
 export default function ItemInventoryRoute() {
-  const { partInventory, quantities } = useLoaderData<typeof loader>();
+  const { itemLedgerRecords } = useLoaderData<typeof loader>();
 
-  const initialValues = {
-    ...partInventory,
-    defaultShelfId: partInventory.defaultShelfId ?? undefined,
-    ...getCustomFields(partInventory.customFields ?? {}),
-  };
-  return (
-    <InventoryTransactions
-      key={initialValues.itemId}
-      initialValues={initialValues}
-      quantities={quantities}
-    />
-  );
+  return <InventoryActivity itemLedgerRecords={itemLedgerRecords} />;
 }

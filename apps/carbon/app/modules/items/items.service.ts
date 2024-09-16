@@ -397,7 +397,7 @@ export async function getItemQuantities(
   locationId: string
 ) {
   return client
-    .from("itemQuantities")
+    .from("itemInventory")
     .select("*")
     .eq("itemId", itemId)
     .eq("companyId", companyId)

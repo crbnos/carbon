@@ -70,6 +70,20 @@ export async function insertManualInventoryAdjustment(
   return client.from("itemLedger").insert([data]).select("*").single();
 }
 
+export async function getItemLedger(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("itemLedger")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+}
+
 export async function deleteReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
