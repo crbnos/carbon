@@ -38,14 +38,17 @@ export async function insertManualInventoryAdjustment(
     query.eq("shelfId", data.shelfId);
   }
 
-  const { data: currentQuantity, error: quantityError } = await query.single();
+  const { data: currentQuantity, error: quantityError } =
+    await query.maybeSingle();
+  const currentQuantityOnHand = currentQuantity?.quantityOnHand ?? 0;
 
   if (quantityError) {
+    console.error(quantityError);
     return { error: "Failed to fetch current quantity" };
   }
 
   if (adjustmentType === "Set Quantity" && currentQuantity) {
-    const quantityDifference = data.quantity - currentQuantity.quantityOnHand;
+    const quantityDifference = data.quantity - currentQuantityOnHand;
     if (quantityDifference > 0) {
       data.entryType = "Positive Adjmt.";
       data.quantity = quantityDifference;
@@ -59,8 +62,8 @@ export async function insertManualInventoryAdjustment(
   }
 
   // Check if it's a negative adjustment and if the quantity is sufficient
-  if (data.entryType === "Negative Adjmt." && currentQuantity) {
-    if (data.quantity > currentQuantity.quantityOnHand) {
+  if (data.entryType === "Negative Adjmt.") {
+    if (data.quantity > currentQuantityOnHand) {
       return {
         error: "Insufficient quantity for negative adjustment",
       };
