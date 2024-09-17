@@ -23,6 +23,8 @@ const payloadValidator = z.object({
     "itemToJobMakeMethod",
     "itemToQuoteMakeMethod",
     "itemToQuoteLine",
+    "jobToItem",
+    "jobMakeMethodToItem",
     "quoteLineToItem",
     "quoteLineToJob",
     "quoteMakeMethodToItem",
@@ -928,6 +930,374 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "jobMakeMethodToItem": {
+        const jobMakeMethodId = sourceId;
+        const itemId = targetId;
+
+        const [makeMethod, jobMakeMethod] = await Promise.all([
+          client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+          client
+            .from("jobMakeMethod")
+            .select("*")
+            .eq("id", jobMakeMethodId)
+            .single(),
+        ]);
+
+        if (makeMethod.error) {
+          throw new Error("Failed to get make method");
+        }
+
+        if (jobMakeMethod.error) {
+          throw new Error("Failed to get job make method");
+        }
+
+        const [jobOperations, jobParentMakeMethod] = await Promise.all([
+          client
+            .from("jobOperationsWithMakeMethods")
+            .select("*")
+            .eq("jobId", jobMakeMethod.data.jobId),
+          client
+            .from("jobMakeMethod")
+            .select("*")
+            .eq("jobId", jobMakeMethod.data.jobId)
+            .is("parentMaterialId", null)
+            .single(),
+        ]);
+
+        if (jobOperations.error) {
+          throw new Error("Failed to get job operations");
+        }
+
+        if (jobParentMakeMethod.error) {
+          throw new Error("Failed to get parent make method");
+        }
+
+        const [jobMethodTrees] = await Promise.all([
+          getJobMethodTree(client, jobParentMakeMethod.data.id),
+        ]);
+
+        if (jobMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const fullJobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
+        if (!fullJobMethodTree) throw new Error("Method tree not found");
+
+        let jobMethodTree: JobMethodTreeItem | null = null;
+
+        traverseJobMethod(fullJobMethodTree, (node: JobMethodTreeItem) => {
+          if (node.data.jobMaterialMakeMethodId === jobMakeMethodId) {
+            jobMethodTree = node;
+            return;
+          }
+        });
+        if (!jobMethodTree) throw new Error("Job method tree not found");
+
+        const madeItemIds: string[] = [];
+
+        traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
+          if (node.data.itemId && node.data.methodType === "Make") {
+            madeItemIds.push(node.data.itemId);
+          }
+        });
+
+        const makeMethods = await client
+          .from("makeMethod")
+          .select("*")
+          .in("itemId", madeItemIds);
+        if (makeMethods.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        const makeMethodByItemId: Record<string, string> = {};
+        makeMethods.data?.forEach((m) => {
+          makeMethodByItemId[m.itemId] = m.id;
+        });
+
+        await db.transaction().execute(async (trx) => {
+          let makeMethodsToDelete: string[] = [];
+          const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
+            [];
+          const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
+            [];
+
+          traverseJobMethod(jobMethodTree!, (node: JobMethodTreeItem) => {
+            if (node.data.itemId && node.data.methodType === "Make") {
+              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+            }
+
+            node.children.forEach((child) => {
+              materialInserts.push({
+                makeMethodId: makeMethodByItemId[node.data.itemId],
+                materialMakeMethodId: makeMethodByItemId[child.data.itemId],
+                itemId: child.data.itemId,
+                itemReadableId: child.data.itemReadableId,
+                itemType: child.data.itemType,
+                methodType: child.data.methodType,
+                order: child.data.order,
+                quantity: child.data.quantity,
+                unitOfMeasureCode: child.data.unitOfMeasureCode,
+                companyId,
+                createdBy: userId,
+                customFields: {},
+              });
+            });
+          });
+
+          if (makeMethodsToDelete.length > 0) {
+            makeMethodsToDelete = makeMethodsToDelete.map((mm) =>
+              mm === makeMethodByItemId[jobMakeMethod.data.itemId]
+                ? makeMethod.data.id
+                : mm
+            );
+            await Promise.all([
+              trx
+                .deleteFrom("methodMaterial")
+                .where("makeMethodId", "in", makeMethodsToDelete)
+                .execute(),
+              trx
+                .deleteFrom("methodOperation")
+                .where("makeMethodId", "in", makeMethodsToDelete)
+                .execute(),
+            ]);
+          }
+
+          if (materialInserts.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(
+                materialInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[jobMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                  itemId:
+                    insert.itemId === jobMakeMethod.data.itemId
+                      ? itemId
+                      : insert.itemId,
+                }))
+              )
+              .execute();
+          }
+
+          jobOperations.data?.forEach((op) => {
+            operationInserts.push({
+              makeMethodId: op.makeMethodId!,
+              processId: op.processId!,
+              workCenterId: op.workCenterId,
+              description: op.description ?? "",
+              setupTime: op.setupTime ?? 0,
+              setupUnit: op.setupUnit ?? "Total Minutes",
+              laborTime: op.laborTime ?? 0,
+              laborUnit: op.laborUnit ?? "Minutes/Piece",
+              machineTime: op.machineTime ?? 0,
+              machineUnit: op.machineUnit ?? "Minutes/Piece",
+              order: op.order ?? 1,
+              operationOrder: op.operationOrder ?? "After Previous",
+              operationType: op.operationType ?? "Inside",
+              workInstruction: op.workInstruction,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+          });
+
+          if (operationInserts.length > 0) {
+            await trx
+              .insertInto("methodOperation")
+              .values(
+                operationInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[jobMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                }))
+              )
+              .execute();
+          }
+        });
+
+        break;
+      }
+      case "jobToItem": {
+        const jobId = sourceId;
+        if (!jobId) {
+          throw new Error("Invalid sourceId");
+        }
+        const itemId = targetId;
+
+        const [makeMethod, jobMakeMethod, jobOperations] = await Promise.all([
+          client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+          client
+            .from("jobMakeMethod")
+            .select("*")
+            .eq("jobId", jobId)
+            .is("parentMaterialId", null)
+            .single(),
+          client
+            .from("jobOperationsWithMakeMethods")
+            .select("*")
+            .eq("jobId", jobId),
+        ]);
+
+        if (makeMethod.error) {
+          throw new Error("Failed to get make method");
+        }
+
+        if (jobMakeMethod.error) {
+          throw new Error("Failed to get job make method");
+        }
+
+        if (jobOperations.error) {
+          throw new Error("Failed to get job operations");
+        }
+
+        const [jobMethodTrees] = await Promise.all([
+          getJobMethodTree(client, jobMakeMethod.data.id),
+        ]);
+
+        if (jobMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
+        if (!jobMethodTree) throw new Error("Method tree not found");
+
+        const madeItemIds: string[] = [];
+
+        traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
+          if (node.data.itemId && node.data.methodType === "Make") {
+            madeItemIds.push(node.data.itemId);
+          }
+        });
+
+        const makeMethods = await client
+          .from("makeMethod")
+          .select("*")
+          .in("itemId", madeItemIds);
+        if (makeMethods.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        const makeMethodByItemId: Record<string, string> = {};
+        makeMethods.data?.forEach((m) => {
+          makeMethodByItemId[m.itemId] = m.id;
+        });
+
+        await db.transaction().execute(async (trx) => {
+          let makeMethodsToDelete: string[] = [];
+          const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
+            [];
+          const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
+            [];
+
+          traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
+            if (node.data.itemId && node.data.methodType === "Make") {
+              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+            }
+
+            node.children.forEach((child) => {
+              materialInserts.push({
+                makeMethodId: makeMethodByItemId[node.data.itemId],
+                materialMakeMethodId: makeMethodByItemId[child.data.itemId],
+                itemId: child.data.itemId,
+                itemReadableId: child.data.itemReadableId,
+                itemType: child.data.itemType,
+                methodType: child.data.methodType,
+                order: child.data.order,
+                quantity: child.data.quantity,
+                unitOfMeasureCode: child.data.unitOfMeasureCode,
+                companyId,
+                createdBy: userId,
+                customFields: {},
+              });
+            });
+          });
+
+          if (makeMethodsToDelete.length > 0) {
+            makeMethodsToDelete = makeMethodsToDelete.map((mm) =>
+              mm === makeMethodByItemId[jobMakeMethod.data.itemId]
+                ? makeMethod.data.id
+                : mm
+            );
+            await Promise.all([
+              trx
+                .deleteFrom("methodMaterial")
+                .where("makeMethodId", "in", makeMethodsToDelete)
+                .execute(),
+              trx
+                .deleteFrom("methodOperation")
+                .where("makeMethodId", "in", makeMethodsToDelete)
+                .execute(),
+            ]);
+          }
+
+          if (materialInserts.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(
+                materialInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[jobMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                  itemId:
+                    insert.itemId === jobMakeMethod.data.itemId
+                      ? itemId
+                      : insert.itemId,
+                }))
+              )
+              .execute();
+          }
+
+          jobOperations.data?.forEach((op) => {
+            operationInserts.push({
+              makeMethodId: op.makeMethodId!,
+              processId: op.processId!,
+              workCenterId: op.workCenterId,
+              description: op.description ?? "",
+              setupTime: op.setupTime ?? 0,
+              setupUnit: op.setupUnit ?? "Total Minutes",
+              laborTime: op.laborTime ?? 0,
+              laborUnit: op.laborUnit ?? "Minutes/Piece",
+              machineTime: op.machineTime ?? 0,
+              machineUnit: op.machineUnit ?? "Minutes/Piece",
+              order: op.order ?? 1,
+              operationOrder: op.operationOrder ?? "After Previous",
+              operationType: op.operationType ?? "Inside",
+              operationSupplierProcessId: op.operationSupplierProcessId,
+              workInstruction: op.workInstruction,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+          });
+
+          if (operationInserts.length > 0) {
+            await trx
+              .insertInto("methodOperation")
+              .values(
+                operationInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[jobMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                }))
+              )
+              .execute();
+          }
+        });
+
+        break;
+      }
       case "quoteLineToItem": {
         const [quoteId, quoteLineId] = (sourceId as string).split(":");
         if (!quoteId || !quoteLineId) {
@@ -1634,6 +2004,90 @@ function traverseQuoteMethod(
   if (node.children) {
     for (const child of node.children) {
       traverseQuoteMethod(child, callback);
+    }
+  }
+}
+
+type JobMethod = NonNullable<
+  Awaited<ReturnType<typeof getJobMethodTreeArray>>["data"]
+>[number];
+type JobMethodTreeItem = {
+  id: string;
+  data: JobMethod;
+  children: JobMethodTreeItem[];
+};
+
+export async function getJobMethodTree(
+  client: SupabaseClient<Database>,
+  methodId: string
+) {
+  const items = await getJobMethodTreeArray(client, methodId);
+  if (items.error) return items;
+
+  const tree = getJobMethodTreeArrayToTree(items.data);
+
+  return {
+    data: tree,
+    error: null,
+  };
+}
+
+export function getJobMethodTreeArray(
+  client: SupabaseClient<Database>,
+  methodId: string
+) {
+  return client.rpc("get_job_methods_by_method_id", {
+    mid: methodId,
+  });
+}
+
+function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
+  // function traverseAndRenameIds(node: JobMethodTreeItem) {
+  //   const clone = structuredClone(node);
+  //   clone.id = `node-${Math.random().toString(16).slice(2)}`;
+  //   clone.children = clone.children.map((n) => traverseAndRenameIds(n));
+  //   return clone;
+  // }
+
+  const rootItems: JobMethodTreeItem[] = [];
+  const lookup: { [id: string]: JobMethodTreeItem } = {};
+
+  for (const item of items) {
+    const itemId = item.methodMaterialId;
+    const parentId = item.parentMaterialId;
+
+    if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
+      // @ts-ignore - we don't add data here
+      lookup[itemId] = { id: itemId, children: [] };
+    }
+
+    lookup[itemId]["data"] = item;
+
+    const treeItem = lookup[itemId];
+
+    if (parentId === null || parentId === undefined) {
+      rootItems.push(treeItem);
+    } else {
+      if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
+        // @ts-ignore - we don't add data here
+        lookup[parentId] = { id: parentId, children: [] };
+      }
+
+      lookup[parentId]["children"].push(treeItem);
+    }
+  }
+  return rootItems;
+}
+
+function traverseJobMethod(
+  node: JobMethodTreeItem,
+  callback: (node: JobMethodTreeItem) => void
+) {
+  callback(node);
+
+  if (node.children) {
+    for (const child of node.children) {
+      traverseJobMethod(child, callback);
     }
   }
 }
