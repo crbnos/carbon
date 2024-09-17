@@ -57,11 +57,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [partInventory] = await Promise.all([
+  let [pickMethod] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
   ]);
 
-  if (partInventory.error || !partInventory.data) {
+  if (pickMethod.error || !pickMethod.data) {
     const insertPickMethod = await upsertPickMethod(client, {
       itemId,
       companyId,
@@ -80,13 +80,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    partInventory = await getPickMethod(client, itemId, companyId, locationId);
-    if (partInventory.error || !partInventory.data) {
+    pickMethod = await getPickMethod(client, itemId, companyId, locationId);
+    if (pickMethod.error || !pickMethod.data) {
       throw redirect(
         path.to.inventory,
         await flash(
           request,
-          error(partInventory.error, "Failed to load part inventory")
+          error(pickMethod.error, "Failed to load part inventory")
         )
       );
     }
@@ -114,25 +114,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return json({
-    partInventory: partInventory.data,
+    pickMethod: pickMethod.data,
     quantities: quantities.data,
     item: item.data,
   });
 }
 
 export default function ItemInventoryRoute() {
-  const { partInventory, quantities, item } = useLoaderData<typeof loader>();
+  const { pickMethod, quantities } = useLoaderData<typeof loader>();
 
   return (
     <InventoryDetails
-      partInventory={{
-        ...partInventory,
-        defaultShelfId: partInventory.defaultShelfId ?? undefined,
+      pickMethod={{
+        ...pickMethod,
+        defaultShelfId: pickMethod.defaultShelfId ?? undefined,
       }}
       quantities={quantities}
-      itemReadableId={item.readableId}
-      itemName={item.name}
-      itemType={item.type}
     />
   );
 }

@@ -1,14 +1,10 @@
 import { ValidatedForm } from "@carbon/form";
 import {
-  Badge,
   Button,
   Card,
-  CardAction,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
-  Combobox,
   Modal,
   ModalBody,
   ModalContent,
@@ -20,7 +16,6 @@ import {
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
 import type { z } from "zod";
-import { MethodItemTypeIcon } from "~/components";
 import {
   Hidden,
   Location,
@@ -29,39 +24,22 @@ import {
   Shelf,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { type ItemQuantities, type pickMethodValidator } from "~/modules/items";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
 
 type InventoryDetailsProps = {
-  partInventory: z.infer<typeof pickMethodValidator>;
+  pickMethod: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
-  itemReadableId: string;
-  itemName: string;
-  itemType: string;
 };
 
 const InventoryDetails = ({
-  partInventory,
+  pickMethod,
   quantities,
-  itemReadableId,
-  itemName,
-  itemType,
 }: InventoryDetailsProps) => {
   const permissions = usePermissions();
   const adjustmentModal = useDisclosure();
-
-  const routeData = useRouteData<{ locations: ListItem[] }>(
-    path.to.inventoryRoot
-  );
-
-  const locationOptions =
-    routeData?.locations?.map((location) => ({
-      value: location.id,
-      label: location.name,
-    })) ?? [];
 
   const { locale } = useLocale();
   const formatter = Intl.NumberFormat(locale, {
@@ -73,38 +51,9 @@ const InventoryDetails = ({
   return (
     <>
       <div className="w-full grid gap-2 grid-cols-1">
-        <Card>
-          <div className="relative">
-            <CardHeader className="pb-3">
-              <CardTitle>
-                {itemReadableId}{" "}
-                <Badge className="ml-2" variant="secondary">
-                  <MethodItemTypeIcon type={itemType} />
-                </Badge>
-              </CardTitle>
-              <CardDescription className="max-w-lg text-balance leading-relaxed">
-                {itemName}
-              </CardDescription>
-            </CardHeader>
-            <CardAction className="absolute right-0 top-2">
-              <Combobox
-                size="sm"
-                value={partInventory.locationId}
-                options={locationOptions}
-                onChange={(selected) => {
-                  // hard refresh because initialValues update has no effect otherwise
-                  window.location.href = `${path.to.inventoryItem(
-                    partInventory.itemId!
-                  )}?location=${partInventory.locationId}`;
-                }}
-                className="w-64"
-              />
-            </CardAction>
-          </div>
-          <CardFooter>
-            <Button onClick={adjustmentModal.onOpen}>Update Inventory</Button>
-          </CardFooter>
-        </Card>
+        <Button onClick={adjustmentModal.onOpen} className="w-fit">
+          Update Inventory
+        </Button>
         <Card>
           <CardHeader className="pb-8">
             <CardDescription>Quantity on Hand</CardDescription>
@@ -151,11 +100,11 @@ const InventoryDetails = ({
           <ValidatedForm
             method="post"
             validator={inventoryAdjustmentValidator}
-            action={path.to.inventoryItemAdjustment(partInventory.itemId)}
+            action={path.to.inventoryItemAdjustment(pickMethod.itemId)}
             defaultValues={{
-              itemId: partInventory.itemId,
-              locationId: partInventory.locationId,
-              shelfId: partInventory.defaultShelfId,
+              itemId: pickMethod.itemId,
+              locationId: pickMethod.locationId,
+              shelfId: pickMethod.defaultShelfId,
               adjustmentType: "Set Quantity",
             }}
             onSubmit={adjustmentModal.onClose}
@@ -170,7 +119,7 @@ const InventoryDetails = ({
                 <Location name="locationId" label="Location" isReadOnly />
                 <Shelf
                   name="shelfId"
-                  locationId={partInventory.locationId}
+                  locationId={pickMethod.locationId}
                   label="Shelf"
                 />
                 <Select
