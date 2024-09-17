@@ -373,6 +373,7 @@ export const path = {
       ),
     jobMaterialsOrder: `${x}/job/methods/material/order`,
     jobMethodGet: `${x}/job/methods/get`,
+    jobMethodSave: `${x}/job/methods/save`,
     jobOperation: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/${id}`),
     jobOperationsOrder: `${x}/job/methods/operation/order`,
@@ -607,7 +608,7 @@ export const path = {
       generatePath(`${x}/quote/${quoteId}/${id}/details`),
     quoteLineCost: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/cost/update`),
-    quoteLineMaterial: (
+    quoteLineMethodMaterial: (
       quoteId: string,
       lineId: string,
       methodType: string,
@@ -617,7 +618,7 @@ export const path = {
       generatePath(
         `${x}/quote/${quoteId}/${lineId}/${methodType}/${methodId}/${id}`
       ),
-    quoteLineMaterialMake: (
+    quoteLineMakeMethod: (
       quoteId: string,
       lineId: string,
       makeMethodId: string,

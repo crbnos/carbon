@@ -33557,6 +33557,63 @@ export default {
         tags: ["(rpc) _xid_machine_id"],
       },
     },
+    "/rpc/get_job_methods_by_method_id": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "mid",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_job_methods_by_method_id"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                mid: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["mid"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_job_methods_by_method_id"],
+      },
+    },
     "/rpc/xid_encode": {
       get: {
         parameters: [

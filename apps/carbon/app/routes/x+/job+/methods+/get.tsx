@@ -2,7 +2,6 @@ import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@remix-run/node";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
-  getJobMaterialMethodValidator,
   getJobMethodValidator,
   upsertJobMaterialMakeMethod,
   upsertJobMethod,
@@ -19,14 +18,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const type = formData.get("type") as string;
 
   const serviceRole = getSupabaseServiceRole();
-  if (["item", "quoteLine"].includes(type)) {
-    const validation = await validator(getJobMethodValidator).validate(
-      formData
-    );
-    if (validation.error) {
-      return validationError(validation.error);
-    }
 
+  const validation = await validator(getJobMethodValidator).validate(formData);
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  if (["item", "quoteLine"].includes(type)) {
     const jobMethod = await upsertJobMethod(
       serviceRole,
       type === "item" ? "itemToJob" : "quoteLineToJob",
@@ -42,18 +40,11 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  if (type === "material") {
-    const validation = await validator(getJobMaterialMethodValidator).validate(
-      formData
-    );
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
+  if (type === "method") {
     const makeMethod = await upsertJobMaterialMakeMethod(serviceRole, {
       ...validation.data,
       companyId,
-      createdBy: userId,
+      userId,
     });
 
     if (makeMethod.error) {

@@ -28790,6 +28790,28 @@ export type Database = {
           isRoot: boolean
         }[]
       }
+      get_job_methods_by_method_id: {
+        Args: {
+          mid: string
+        }
+        Returns: {
+          jobId: string
+          methodMaterialId: string
+          jobMakeMethodId: string
+          jobMaterialMakeMethodId: string
+          itemId: string
+          itemReadableId: string
+          description: string
+          unitOfMeasureCode: string
+          itemType: string
+          quantity: number
+          unitCost: number
+          methodType: Database["public"]["Enums"]["methodType"]
+          parentMaterialId: string
+          order: number
+          isRoot: boolean
+        }[]
+      }
       get_method_tree: {
         Args: {
           uid: string

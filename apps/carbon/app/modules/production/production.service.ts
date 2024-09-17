@@ -6,7 +6,6 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
-  getJobMaterialMethodValidator,
   jobMaterialValidator,
   jobOperationValidator,
   jobValidator,
@@ -22,6 +21,20 @@ export async function deleteJob(
 
 export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
+}
+
+export async function deleteJobMaterial(
+  client: SupabaseClient<Database>,
+  jobMaterialId: string
+) {
+  return client.from("jobMaterial").delete().eq("id", jobMaterialId);
+}
+
+export async function deleteJobOperation(
+  client: SupabaseClient<Database>,
+  jobOperationId: string
+) {
+  return client.from("jobOperation").delete().eq("id", jobOperationId);
 }
 
 export async function getJobDocuments(
@@ -163,34 +176,6 @@ type JobMethodTreeItem = {
   children: JobMethodTreeItem[];
 };
 
-export async function upsertJob(
-  client: SupabaseClient<Database>,
-  job:
-    | (Omit<z.infer<typeof jobValidator>, "id" | "jobId"> & {
-        jobId: string;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof jobValidator>, "id" | "jobId"> & {
-        id: string;
-        jobId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("updatedBy" in job) {
-    return client
-      .from("job")
-      .update(sanitize(job))
-      .eq("id", job.id)
-      .select("id")
-      .single();
-  } else {
-    return client.from("job").insert([job]).select("id").single();
-  }
-}
-
 export async function getJobMaterial(
   client: SupabaseClient<Database>,
   materialId: string
@@ -261,6 +246,34 @@ export async function updateJobOperationOrder(
     client.from("jobOperation").update({ order, updatedBy }).eq("id", id)
   );
   return Promise.all(updatePromises);
+}
+
+export async function upsertJob(
+  client: SupabaseClient<Database>,
+  job:
+    | (Omit<z.infer<typeof jobValidator>, "id" | "jobId"> & {
+        jobId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof jobValidator>, "id" | "jobId"> & {
+        id: string;
+        jobId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("updatedBy" in job) {
+    return client
+      .from("job")
+      .update(sanitize(job))
+      .eq("id", job.id)
+      .select("id")
+      .single();
+  } else {
+    return client.from("job").insert([job]).select("id").single();
+  }
 }
 
 export async function upsertJobMaterial(
@@ -347,15 +360,17 @@ export async function upsertJobMethod(
 
 export async function upsertJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
-  jobMaterial: z.infer<typeof getJobMaterialMethodValidator> & {
+  jobMaterial: {
+    sourceId: string;
+    targetId: string;
     companyId: string;
-    createdBy: string;
+    userId: string;
   }
 ) {
   const makeMethod = await client
     .from("jobMakeMethod")
     .select("id")
-    .eq("parentMaterialId", jobMaterial.jobMaterialId)
+    .eq("parentMaterialId", jobMaterial.targetId)
     .single();
   if (makeMethod.error) {
     return makeMethod;
@@ -364,10 +379,10 @@ export async function upsertJobMaterialMakeMethod(
   const { error } = await client.functions.invoke("get-method", {
     body: {
       type: "itemToJobMakeMethod",
-      sourceId: jobMaterial.itemId,
+      sourceId: jobMaterial.sourceId,
       targetId: makeMethod.data.id,
       companyId: jobMaterial.companyId,
-      userId: jobMaterial.createdBy,
+      userId: jobMaterial.userId,
     },
   });
 
@@ -381,9 +396,60 @@ export async function upsertJobMaterialMakeMethod(
   return { data: null, error: null };
 }
 
-export async function deleteJobMaterial(
+export async function upsertMakeMethodFromJob(
   client: SupabaseClient<Database>,
-  jobMaterialId: string
+  jobMethod: {
+    sourceId: string;
+    targetId: string;
+    companyId: string;
+    userId: string;
+  }
 ) {
-  return client.from("jobMaterial").delete().eq("id", jobMaterialId);
+  return client.functions.invoke("get-method", {
+    body: {
+      type: "jobToItem",
+      sourceId: jobMethod.sourceId,
+      targetId: jobMethod.targetId,
+      companyId: jobMethod.companyId,
+      userId: jobMethod.userId,
+    },
+  });
+}
+
+export async function upsertMakeMethodFromJobMethod(
+  client: SupabaseClient<Database>,
+  jobMethod: {
+    sourceId: string;
+    targetId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const makeMethod = await client
+    .from("jobMakeMethod")
+    .select("id")
+    .eq("parentMaterialId", jobMethod.sourceId)
+    .single();
+  if (makeMethod.error) {
+    return makeMethod;
+  }
+
+  const { error } = await client.functions.invoke("get-method", {
+    body: {
+      type: "jobMakeMethodToItem",
+      sourceId: makeMethod.data.id,
+      targetId: jobMethod.targetId,
+      companyId: jobMethod.companyId,
+      userId: jobMethod.userId,
+    },
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: { message: "Failed to save method" } as PostgrestError,
+    };
+  }
+
+  return { data: null, error: null };
 }

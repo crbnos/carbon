@@ -22,6 +22,7 @@ import {
   JobBoMExplorer,
   JobHeader,
 } from "~/modules/production";
+import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
 import {} from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -102,6 +103,7 @@ export default function JobRoute() {
                   <ResizablePanel order={2}>
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <VStack spacing={2} className="p-2">
+                        <JobBreadcrumbs />
                         <Outlet />
                       </VStack>
                     </ScrollArea>

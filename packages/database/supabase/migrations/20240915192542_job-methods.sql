@@ -204,6 +204,16 @@ CREATE OR REPLACE VIEW "jobMaterialWithMakeMethodId" WITH(SECURITY_INVOKER=true)
   LEFT JOIN "jobMakeMethod" jmm 
     ON jmm."parentMaterialId" = jm."id";
 
+CREATE OR REPLACE VIEW "jobOperationsWithMakeMethods" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+    mm.id AS "makeMethodId",
+    jo.*
+  FROM "jobOperation" jo
+  INNER JOIN "jobMakeMethod" jmm 
+    ON jo."jobMakeMethodId" = jmm.id
+  LEFT JOIN "makeMethod" mm 
+    ON jmm."itemId" = mm."itemId";
+
 CREATE OR REPLACE FUNCTION get_job_method(jid TEXT)
 RETURNS TABLE (
     "jobId" TEXT,
@@ -423,3 +433,78 @@ CREATE POLICY "Customers with production_view can view their own job make method
       )
     )
   );
+
+CREATE OR REPLACE FUNCTION get_job_methods_by_method_id(mid TEXT)
+RETURNS TABLE (
+    "jobId" TEXT,
+    "methodMaterialId" TEXT,
+    "jobMakeMethodId" TEXT,
+    "jobMaterialMakeMethodId" TEXT,  
+    "itemId" TEXT,
+    "itemReadableId" TEXT,
+    "description" TEXT,
+    "unitOfMeasureCode" TEXT,
+    "itemType" TEXT,
+    "quantity" NUMERIC,
+    "unitCost" NUMERIC,
+    "methodType" "methodType",
+    "parentMaterialId" TEXT,
+    "order" DOUBLE PRECISION,
+    "isRoot" BOOLEAN
+) AS $$
+WITH RECURSIVE material AS (
+    SELECT 
+        "jobId",
+        "id", 
+        "id" AS "jobMakeMethodId",
+        'Make'::"methodType" AS "methodType",
+        "id" AS "jobMaterialMakeMethodId",
+        "itemId", 
+        'Part' AS "itemType",
+        1::NUMERIC(10,4) AS "quantity",
+        0::NUMERIC(10,4) AS "unitCost",
+        "parentMaterialId",
+        CAST(1 AS DOUBLE PRECISION) AS "order",
+        TRUE AS "isRoot"
+    FROM 
+        "jobMakeMethod" 
+    WHERE 
+        "id" = mid
+    UNION 
+    SELECT 
+        child."jobId",
+        child."id", 
+        child."jobMakeMethodId",
+        child."methodType",
+        child."jobMaterialMakeMethodId",
+        child."itemId", 
+        child."itemType",
+        child."quantity",
+        child."unitCost",
+        parent."id" AS "parentMaterialId",
+        child."order",
+        FALSE AS "isRoot"
+    FROM 
+        "jobMaterialWithMakeMethodId" child 
+        INNER JOIN material parent ON parent."jobMaterialMakeMethodId" = child."jobMakeMethodId"
+) 
+SELECT 
+  material."jobId",
+  material.id as "methodMaterialId", 
+  material."jobMakeMethodId",
+  material."jobMaterialMakeMethodId",
+  material."itemId",
+  item."readableId" AS "itemReadableId",
+  item."name" AS "description",
+  item."unitOfMeasureCode",
+  material."itemType",
+  material."quantity",
+  material."unitCost",
+  material."methodType",
+  material."parentMaterialId",
+  material."order",
+  material."isRoot"
+FROM material 
+INNER JOIN item ON material."itemId" = item.id
+ORDER BY "order"
+$$ LANGUAGE sql STABLE;

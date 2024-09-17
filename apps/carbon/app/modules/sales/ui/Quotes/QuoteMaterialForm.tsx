@@ -126,13 +126,13 @@ const QuoteMaterialForm = ({
   useEffect(() => {
     const newPath =
       initialValues.methodType === "Make"
-        ? path.to.quoteLineMaterialMake(
+        ? path.to.quoteLineMakeMethod(
             quoteId,
             lineId,
             initialValues.quoteMaterialMakeMethodId!,
             initialValues.id!
           )
-        : path.to.quoteLineMaterial(
+        : path.to.quoteLineMethodMaterial(
             quoteId,
             lineId,
             initialValues.methodType.toLowerCase(),

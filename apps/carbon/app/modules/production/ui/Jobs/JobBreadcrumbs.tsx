@@ -20,39 +20,40 @@ import {
 } from "@carbon/react";
 import { Link, useFetcher, useLocation, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { LuAlertTriangle, LuDownload, LuUpload } from "react-icons/lu";
-import { RiProgress4Line } from "react-icons/ri";
+import {
+  LuAlertTriangle,
+  LuDownload,
+  LuHardHat,
+  LuUpload,
+} from "react-icons/lu";
 import { BreadcrumbItem, Breadcrumbs } from "~/components";
 import { Hidden, Item, Submit } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
-import { getLineMethodValidator, getMethodValidator } from "../../sales.models";
-import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
+import { getJobMethodValidator } from "../../production.models";
+import type { Job, JobMethod } from "../../types";
 
-const QuoteBreadcrumbs = () => {
+const JobBreadcrumbs = () => {
   const permissions = usePermissions();
-  const { quoteId, lineId, methodId, materialId } = useParams();
-  if (!quoteId) throw new Error("quoteId not found");
+  const { jobId, methodId, materialId } = useParams();
+  if (!jobId) throw new Error("jobId not found");
 
   const fetcher = useFetcher<{ error: string | null }>();
   const routeData = useRouteData<{
-    quote: Quotation;
-    lines: QuotationLine[];
-    methods: Tree<QuoteMethod>[];
-  }>(path.to.quote(quoteId));
-  const line = routeData?.lines.find((line) => line.id === lineId);
+    job: Job;
+    method: Tree<JobMethod>;
+  }>(path.to.job(jobId));
+
   const { pathname } = useLocation();
 
-  const methodTree = routeData?.methods.find(
-    (m) => m.data.quoteLineId === line?.id
-  );
+  const methodTree = routeData?.method;
   const hasMethods = methodTree?.children && methodTree.children.length > 0;
 
   const isGetMethodLoading =
-    fetcher.state !== "idle" && fetcher.formAction === path.to.quoteMethodGet;
+    fetcher.state !== "idle" && fetcher.formAction === path.to.jobMethodGet;
   const isSaveMethodLoading =
-    fetcher.state !== "idle" && fetcher.formAction === path.to.quoteMethodSave;
+    fetcher.state !== "idle" && fetcher.formAction === path.to.jobMethodSave;
 
   useEffect(() => {
     if (fetcher.data?.error) {
@@ -67,39 +68,27 @@ const QuoteBreadcrumbs = () => {
   const getMethodModal = useDisclosure();
   const saveMethodModal = useDisclosure();
 
-  const isQuoteLineMethod =
-    pathname === path.to.quoteLineMethod(quoteId, lineId!, methodId!);
-  const isQuoteMakeMethod =
+  const isJobMethod = pathname === path.to.jobMethod(jobId, methodId!);
+  const isJobMakeMethod =
     methodId &&
     materialId &&
-    pathname ===
-      path.to.quoteLineMakeMethod(quoteId, lineId!, methodId, materialId);
+    pathname === path.to.jobMakeMethod(jobId, methodId, materialId);
 
-  return (
+  return isJobMethod || isJobMakeMethod ? (
     <>
       <Menubar>
         <HStack className="w-full justify-between">
           <Breadcrumbs>
             <BreadcrumbItem>
-              <Button leftIcon={<RiProgress4Line />} variant="ghost" asChild>
-                <Link to={path.to.quoteDetails(quoteId)}>
-                  {routeData?.quote?.quoteId}
+              <Button leftIcon={<LuHardHat />} variant="ghost" asChild>
+                <Link to={path.to.jobDetails(jobId)}>
+                  {routeData?.job?.jobId}
                 </Link>
               </Button>
             </BreadcrumbItem>
-            {line && (
-              <BreadcrumbItem>
-                <Button variant="ghost" asChild>
-                  <Link to={path.to.quoteLine(quoteId, line.id!)}>
-                    {line.itemReadableId}
-                  </Link>
-                </Button>
-              </BreadcrumbItem>
-            )}
           </Breadcrumbs>
-          {line &&
-            permissions.can("update", "sales") &&
-            (isQuoteLineMethod || isQuoteMakeMethod) && (
+          {permissions.can("update", "production") &&
+            (isJobMethod || isJobMakeMethod) && (
               <HStack spacing={0}>
                 <MenubarItem
                   isDisabled={
@@ -136,37 +125,34 @@ const QuoteBreadcrumbs = () => {
             <ValidatedForm
               method="post"
               fetcher={fetcher}
-              action={path.to.quoteMethodGet}
-              validator={
-                isQuoteLineMethod ? getLineMethodValidator : getMethodValidator
-              }
+              action={path.to.jobMethodGet}
+              validator={getJobMethodValidator}
               onSubmit={getMethodModal.onClose}
             >
               <ModalHeader>
                 <ModalTitle>Get Method</ModalTitle>
                 <ModalDescription>
-                  Overwrite the quote method with the source method
+                  Overwrite the job method with the source method
                 </ModalDescription>
               </ModalHeader>
               <ModalBody>
-                {isQuoteLineMethod ? (
+                {isJobMethod ? (
                   <>
-                    <Hidden name="type" value="line" />
-                    <Hidden name="quoteId" value={quoteId} />
-                    <Hidden name="quoteLineId" value={lineId} />
+                    <Hidden name="type" value="item" />
+                    <Hidden name="targetId" value={jobId} />
                   </>
                 ) : (
                   <>
                     <Hidden name="type" value="method" />
-                    <Hidden name="quoteMaterialId" value={materialId!} />
+                    <Hidden name="targetId" value={materialId!} />
                   </>
                 )}
 
                 <VStack spacing={4}>
                   <Item
-                    name="itemId"
+                    name="sourceId"
                     label="Source Method"
-                    type={(line?.itemType ?? "Part") as "Part"}
+                    type={(routeData?.job.itemType ?? "Part") as "Part"}
                     includeInactive={includeInactive === true}
                     replenishmentSystem="Make"
                   />
@@ -187,7 +173,7 @@ const QuoteBreadcrumbs = () => {
                     <Alert variant="destructive">
                       <LuAlertTriangle className="h-4 w-4" />
                       <AlertTitle>
-                        This will overwrite the existing quote method
+                        This will overwrite the existing job method
                       </AlertTitle>
                     </Alert>
                   )}
@@ -219,13 +205,11 @@ const QuoteBreadcrumbs = () => {
             <ValidatedForm
               method="post"
               fetcher={fetcher}
-              action={path.to.quoteMethodSave}
-              validator={
-                isQuoteLineMethod ? getLineMethodValidator : getMethodValidator
-              }
+              action={path.to.jobMethodSave}
+              validator={getJobMethodValidator}
               defaultValues={{
-                itemId: isQuoteLineMethod
-                  ? line?.itemId ?? undefined
+                targetId: isJobMethod
+                  ? routeData?.job?.itemId ?? undefined
                   : undefined,
               }}
               onSubmit={saveMethodModal.onClose}
@@ -233,29 +217,27 @@ const QuoteBreadcrumbs = () => {
               <ModalHeader>
                 <ModalTitle>Save Method</ModalTitle>
                 <ModalDescription>
-                  Overwrite the target manufacturing method with the quote
-                  method
+                  Overwrite the target manufacturing method with the job method
                 </ModalDescription>
               </ModalHeader>
               <ModalBody>
-                {isQuoteLineMethod ? (
+                {isJobMethod ? (
                   <>
-                    <Hidden name="type" value="line" />
-                    <Hidden name="quoteId" value={quoteId} />
-                    <Hidden name="quoteLineId" value={lineId} />
+                    <Hidden name="type" value="job" />
+                    <Hidden name="sourceId" value={jobId} />
                   </>
                 ) : (
                   <>
                     <Hidden name="type" value="method" />
-                    <Hidden name="quoteMaterialId" value={materialId!} />
+                    <Hidden name="sourceId" value={materialId!} />
                   </>
                 )}
 
                 <VStack spacing={4}>
                   <Item
-                    name="itemId"
+                    name="targetId"
                     label="Target Method"
-                    type={(line?.itemType ?? "Part") as "Part"}
+                    type={(routeData?.job?.itemType ?? "Part") as "Part"}
                     includeInactive={includeInactive === true}
                     replenishmentSystem="Make"
                   />
@@ -295,7 +277,7 @@ const QuoteBreadcrumbs = () => {
         </Modal>
       )}
     </>
-  );
+  ) : null;
 };
 
-export default QuoteBreadcrumbs;
+export default JobBreadcrumbs;

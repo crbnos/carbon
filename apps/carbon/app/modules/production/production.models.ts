@@ -353,7 +353,7 @@ export const getJobMethodValidator = z.object({
   targetId: z.string().min(1, { message: "Please select a source method" }),
 });
 
-export const getJobMaterialMethodValidator = z.object({
-  jobMaterialId: z.string().min(1, { message: "Quote Material is required" }),
-  itemId: z.string().min(1, { message: "Please select a source method" }),
-});
+// export const getJobMaterialMethodValidator = z.object({
+//   jobMaterialId: z.string().min(1, { message: "Quote Material is required" }),
+//   itemId: z.string().min(1, { message: "Please select a source method" }),
+// });
