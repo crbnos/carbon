@@ -19,10 +19,13 @@ const db = getDatabaseClient<DB>(pool);
 const payloadValidator = z.object({
   type: z.enum([
     "itemToItem",
+    "itemToJob",
+    "itemToJobMakeMethod",
     "itemToQuoteMakeMethod",
     "itemToQuoteLine",
-    "quoteMakeMethodToItem",
     "quoteLineToItem",
+    "quoteLineToJob",
+    "quoteMakeMethodToItem",
   ]),
   sourceId: z.string(),
   targetId: z.string(),
@@ -121,6 +124,400 @@ serve(async (req: Request) => {
           }
         });
 
+        break;
+      }
+      case "itemToJob": {
+        const jobId = targetId;
+        if (!jobId) {
+          throw new Error("Invalid targetId");
+        }
+        const itemId = sourceId;
+
+        const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
+          await Promise.all([
+            client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+            client
+              .from("jobMakeMethod")
+              .select("*")
+              .eq("jobId", jobId)
+              .is("parentMaterialId", null)
+              .single(),
+            client.from("workCenters").select("*").eq("companyId", companyId),
+            client
+              .from("supplierProcess")
+              .select("*")
+              .eq("companyId", companyId),
+          ]);
+
+        if (makeMethod.error) {
+          throw new Error("Failed to get make method");
+        }
+
+        if (jobMakeMethod.error) {
+          throw new Error("Failed to get job make method");
+        }
+
+        if (workCenters.error) {
+          throw new Error("Failed to get related work centers");
+        }
+
+        const [methodTrees] = await Promise.all([
+          getMethodTree(client, makeMethod.data.id),
+        ]);
+
+        if (methodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const methodTree = methodTrees.data?.[0] as MethodTreeItem;
+        if (!methodTree) throw new Error("Method tree not found");
+
+        const getLaborAndOverheadRates = getRatesFromWorkCenters(
+          workCenters?.data
+        );
+        const getOutsideOperationRates = getRatesFromSupplierProcesses(
+          supplierProcesses?.data
+        );
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing jobMakeMethod, jobMakeMethodOperation, jobMakeMethodMaterial
+          await Promise.all([
+            trx
+              .deleteFrom("jobMakeMethod")
+              .where((eb) =>
+                eb.and([
+                  eb("jobId", "=", jobId),
+                  eb("parentMaterialId", "is not", null),
+                ])
+              )
+              .execute(),
+            trx.deleteFrom("jobMaterial").where("jobId", "=", jobId).execute(),
+            trx.deleteFrom("jobOperation").where("jobId", "=", jobId).execute(),
+          ]);
+
+          // traverse method tree and create:
+          // - jobMakeMethod
+          // - jobMakeMethodOperation
+          // - jobMakeMethodMaterial
+          async function traverseMethod(
+            node: MethodTreeItem,
+            parentJobMakeMethodId: string | null
+          ) {
+            const relatedOperations = await client
+              .from("methodOperation")
+              .select("*")
+              .eq("makeMethodId", node.data.materialMakeMethodId);
+
+            const jobOperations =
+              relatedOperations?.data?.map((op) => ({
+                jobId,
+                jobMakeMethodId: parentJobMakeMethodId!,
+                processId: op.processId,
+                workCenterId: op.workCenterId,
+                description: op.description,
+                setupTime: op.setupTime,
+                setupUnit: op.setupUnit,
+                laborTime: op.laborTime,
+                laborUnit: op.laborUnit,
+                machineTime: op.machineTime,
+                machineUnit: op.machineUnit,
+                ...getLaborAndOverheadRates(op.processId, op.workCenterId),
+                order: op.order,
+                operationOrder: op.operationOrder,
+                operationType: op.operationType,
+                operationSupplierProcessId: op.operationSupplierProcessId,
+                ...getOutsideOperationRates(
+                  op.processId,
+                  op.operationSupplierProcessId
+                ),
+                workInstruction: op.workInstruction,
+                companyId,
+                createdBy: userId,
+                customFields: {},
+              })) ?? [];
+
+            let methodOperationsToJobOperations: Record<string, string> = {};
+            if (jobOperations?.length > 0) {
+              const operationIds = await trx
+                .insertInto("jobOperation")
+                .values(jobOperations)
+                .returning(["id"])
+                .execute();
+
+              methodOperationsToJobOperations =
+                relatedOperations.data?.reduce<Record<string, string>>(
+                  (acc, op, index) => {
+                    if (operationIds[index].id) {
+                      acc[op.id!] = operationIds[index].id!;
+                    }
+                    return acc;
+                  },
+                  {}
+                ) ?? {};
+            }
+
+            const mapMethodMaterialToJobMaterial = (child: MethodTreeItem) => ({
+              jobId,
+              jobMakeMethodId: parentJobMakeMethodId!,
+              jobOperationId:
+                methodOperationsToJobOperations[child.data.operationId],
+              itemId: child.data.itemId,
+              itemReadableId: child.data.itemReadableId,
+              itemType: child.data.itemType,
+              methodType: child.data.methodType,
+              order: child.data.order,
+              description: child.data.description,
+              quantity: child.data.quantity,
+              unitOfMeasureCode: child.data.unitOfMeasureCode,
+              unitCost: child.data.unitCost,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+
+            const madeChildren = node.children.filter(
+              (child) => child.data.methodType === "Make"
+            );
+            const unmadeChildren = node.children.filter(
+              (child) => child.data.methodType !== "Make"
+            );
+
+            const madeMaterials = madeChildren.map(
+              mapMethodMaterialToJobMaterial
+            );
+            const pickedOrBoughtMaterials = unmadeChildren.map(
+              mapMethodMaterialToJobMaterial
+            );
+            if (madeMaterials.length > 0) {
+              const madeMaterialIds = await trx
+                .insertInto("jobMaterial")
+                .values(madeMaterials)
+                .returning(["id"])
+                .execute();
+
+              const jobMakeMethods = await trx
+                .selectFrom("jobMakeMethod")
+                .select(["id"])
+                .where(
+                  "parentMaterialId",
+                  "in",
+                  madeMaterialIds.map((m) => m.id)
+                )
+                .execute();
+
+              for (const [index, child] of madeChildren.entries()) {
+                const makeMethodId = jobMakeMethods[index].id ?? null;
+                // prevent an infinite loop
+                if (child.data.itemId !== itemId) {
+                  await traverseMethod(child, makeMethodId);
+                }
+              }
+            }
+
+            if (pickedOrBoughtMaterials.length > 0) {
+              await trx
+                .insertInto("jobMaterial")
+                .values(pickedOrBoughtMaterials)
+                .execute();
+            }
+          }
+
+          await traverseMethod(methodTree, jobMakeMethod.data.id);
+        });
+
+        break;
+      }
+      case "itemToJobMakeMethod": {
+        const jobMakeMethodId = targetId;
+
+        if (!jobMakeMethodId) {
+          throw new Error("Invalid targetId");
+        }
+        const itemId = sourceId;
+
+        const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
+          await Promise.all([
+            client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+            client
+              .from("jobMakeMethod")
+              .select("*")
+              .eq("id", jobMakeMethodId)
+              .single(),
+            client.from("workCenters").select("*").eq("companyId", companyId),
+            client
+              .from("supplierProcess")
+              .select("*")
+              .eq("companyId", companyId),
+          ]);
+
+        if (makeMethod.error) {
+          throw new Error("Failed to get make method");
+        }
+
+        if (jobMakeMethod.error || !jobMakeMethod.data) {
+          throw new Error("Failed to get job make method");
+        }
+
+        const [methodTrees] = await Promise.all([
+          getMethodTree(client, makeMethod.data.id),
+        ]);
+
+        if (methodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const methodTree = methodTrees.data?.[0] as MethodTreeItem;
+        if (!methodTree) throw new Error("Method tree not found");
+
+        const getLaborAndOverheadRates = getRatesFromWorkCenters(
+          workCenters?.data
+        );
+        const getOutsideOperationRates = getRatesFromSupplierProcesses(
+          supplierProcesses?.data
+        );
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing jobMakeMethodOperation, jobMakeMethodMaterial
+          await Promise.all([
+            trx
+              .deleteFrom("jobMaterial")
+              .where("jobMakeMethodId", "=", jobMakeMethodId)
+              .execute(),
+            trx
+              .deleteFrom("jobOperation")
+              .where("jobMakeMethodId", "=", jobMakeMethodId)
+              .execute(),
+          ]);
+
+          // traverse method tree and create:
+          // - jobMakeMethod
+          // - jobMakeMethodOperation
+          // - jobMakeMethodMaterial
+          async function traverseMethod(
+            node: MethodTreeItem,
+            parentJobMakeMethodId: string | null
+          ) {
+            const relatedOperations = await client
+              .from("methodOperation")
+              .select("*")
+              .eq("makeMethodId", node.data.materialMakeMethodId);
+
+            const jobOperations =
+              relatedOperations?.data?.map((op) => ({
+                jobId: jobMakeMethod.data?.jobId!,
+                jobMakeMethodId: parentJobMakeMethodId!,
+                processId: op.processId,
+                workCenterId: op.workCenterId,
+                description: op.description,
+                setupTime: op.setupTime,
+                setupUnit: op.setupUnit,
+                laborTime: op.laborTime,
+                laborUnit: op.laborUnit,
+                machineTime: op.machineTime,
+                machineUnit: op.machineUnit,
+                ...getLaborAndOverheadRates(op.processId, op.workCenterId),
+                order: op.order,
+                operationOrder: op.operationOrder,
+                operationType: op.operationType,
+                operationSupplierProcessId: op.operationSupplierProcessId,
+                ...getOutsideOperationRates(
+                  op.processId,
+                  op.operationSupplierProcessId
+                ),
+                workInstruction: op.workInstruction,
+                companyId,
+                createdBy: userId,
+                customFields: {},
+              })) ?? [];
+
+            let methodOperationsToJobOperations: Record<string, string> = {};
+            if (jobOperations?.length > 0) {
+              const operationIds = await trx
+                .insertInto("jobOperation")
+                .values(jobOperations)
+                .returning(["id"])
+                .execute();
+
+              methodOperationsToJobOperations =
+                relatedOperations.data?.reduce<Record<string, string>>(
+                  (acc, op, index) => {
+                    if (operationIds[index].id) {
+                      acc[op.id!] = operationIds[index].id!;
+                    }
+                    return acc;
+                  },
+                  {}
+                ) ?? {};
+            }
+
+            const mapMethodMaterialToJobMaterial = (child: MethodTreeItem) => ({
+              jobId: jobMakeMethod.data?.jobId!,
+              jobMakeMethodId: parentJobMakeMethodId!,
+              jobOperationId:
+                methodOperationsToJobOperations[child.data.operationId],
+              itemId: child.data.itemId,
+              itemReadableId: child.data.itemReadableId,
+              itemType: child.data.itemType,
+              methodType: child.data.methodType,
+              order: child.data.order,
+              description: child.data.description,
+              quantity: child.data.quantity,
+              unitOfMeasureCode: child.data.unitOfMeasureCode,
+              unitCost: child.data.unitCost,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+
+            const madeChildren = node.children.filter(
+              (child) => child.data.methodType === "Make"
+            );
+            const unmadeChildren = node.children.filter(
+              (child) => child.data.methodType !== "Make"
+            );
+
+            const madeMaterials = madeChildren.map(
+              mapMethodMaterialToJobMaterial
+            );
+            const pickedOrBoughtMaterials = unmadeChildren.map(
+              mapMethodMaterialToJobMaterial
+            );
+            if (madeMaterials.length > 0) {
+              const madeMaterialIds = await trx
+                .insertInto("jobMaterial")
+                .values(madeMaterials)
+                .returning(["id"])
+                .execute();
+
+              const jobMakeMethods = await trx
+                .selectFrom("jobMakeMethod")
+                .select(["id"])
+                .where(
+                  "parentMaterialId",
+                  "in",
+                  madeMaterialIds.map((m) => m.id)
+                )
+                .execute();
+
+              for (const [index, child] of madeChildren.entries()) {
+                const makeMethodId = jobMakeMethods[index].id ?? null;
+                // prevent an infinite loop
+                if (child.data.itemId !== itemId) {
+                  await traverseMethod(child, makeMethodId);
+                }
+              }
+            }
+
+            if (pickedOrBoughtMaterials.length > 0) {
+              await trx
+                .insertInto("jobMaterial")
+                .values(pickedOrBoughtMaterials)
+                .execute();
+            }
+          }
+
+          await traverseMethod(methodTree, jobMakeMethod.data.id);
+        });
         break;
       }
       case "itemToQuoteLine": {
@@ -534,7 +931,7 @@ serve(async (req: Request) => {
       case "quoteLineToItem": {
         const [quoteId, quoteLineId] = (sourceId as string).split(":");
         if (!quoteId || !quoteLineId) {
-          throw new Error("Invalid targetId");
+          throw new Error("Invalid sourceId");
         }
         const itemId = targetId;
 
@@ -706,6 +1103,162 @@ serve(async (req: Request) => {
           }
         });
 
+        break;
+      }
+      case "quoteLineToJob": {
+        const jobId = targetId;
+        if (!jobId) {
+          throw new Error("Invalid targetId");
+        }
+
+        const [quoteId, quoteLineId] = (sourceId as string).split(":");
+        if (!quoteId || !quoteLineId) {
+          throw new Error("Invalid sourceId");
+        }
+
+        const [
+          jobMakeMethod,
+          quoteMakeMethods,
+          quoteMaterials,
+          quoteOperations,
+        ] = await Promise.all([
+          client
+            .from("jobMakeMethod")
+            .select("*")
+            .eq("jobId", jobId)
+            .is("parentMaterialId", null)
+            .single(),
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .eq("quoteLineId", quoteLineId),
+          client
+            .from("quoteMaterial")
+            .select("*")
+            .eq("quoteLineId", quoteLineId),
+          client
+            .from("quoteOperation")
+            .select("*")
+            .eq("quoteLineId", quoteLineId),
+        ]);
+
+        if (jobMakeMethod.error || !jobMakeMethod.data) {
+          throw new Error("Failed to get job make method");
+        }
+
+        if (
+          quoteMakeMethods.error ||
+          quoteMaterials.error ||
+          quoteOperations.error
+        ) {
+          throw new Error("Failed to fetch quote data");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          // delete the existing jobMakeMethods where jobId is jobId and parentMaterialId is not null
+          await trx
+            .deleteFrom("jobMakeMethod")
+            .where((eb) =>
+              eb.and([
+                eb("jobId", "=", jobId),
+                eb("parentMaterialId", "is not", null),
+              ])
+            )
+            .execute();
+
+          // Delete existing jobMaterials for this job
+          await trx
+            .deleteFrom("jobMaterial")
+            .where("jobId", "=", jobId)
+            .execute();
+
+          // Delete existing jobOperations for this job
+          await trx
+            .deleteFrom("jobOperation")
+            .where("jobId", "=", jobId)
+            .execute();
+
+          // Copy quoteMakeMethods to jobMakeMethods
+          const jobMakeMethodInserts = quoteMakeMethods.data.map((qmm) => {
+            const {
+              quoteId: _quoteId,
+              quoteLineId: _quoteLineId,
+              ...data
+            } = qmm;
+            if (qmm.parentMaterialId === null) {
+              return {
+                ...data,
+                id: jobMakeMethod.data.id,
+                jobId,
+                createdBy: userId,
+              };
+            }
+            return {
+              ...data,
+              jobId,
+              createdBy: userId,
+            };
+          });
+
+          const insertedJobMakeMethods = await trx
+            .insertInto("jobMakeMethod")
+            .values(jobMakeMethodInserts)
+            .returning(["id", "parentMaterialId"])
+            .execute();
+
+          // Create a map of quoteMakeMethodId to jobMakeMethodId
+          const makeMethodIdMap = new Map(
+            quoteMakeMethods.data.map((qmm, index) => [
+              qmm.id,
+              insertedJobMakeMethods[index].id,
+            ])
+          );
+
+          // Copy quoteMaterials to jobMaterials
+          const jobMaterialInserts = quoteMaterials.data.map((qm) => {
+            const {
+              quoteId: _quoteId,
+              quoteLineId: _quoteLineId,
+              ...data
+            } = qm;
+            return {
+              ...data,
+              jobId,
+              jobMakeMethodId: makeMethodIdMap.get(qm.quoteMakeMethodId)!,
+              createdBy: userId,
+            };
+          });
+
+          if (jobMakeMethodInserts.length > 0) {
+            await trx
+              .insertInto("jobMaterial")
+              .values(jobMaterialInserts)
+              .execute();
+          }
+
+          // Copy quoteOperations to jobOperations
+          const jobOperationInserts = quoteOperations.data.map((qo) => {
+            const {
+              quoteId: _quoteId,
+              quoteLineId: _quoteLineId,
+              quoteMakeMethodId,
+              ...data
+            } = qo;
+            return {
+              ...data,
+              jobId,
+              jobMakeMethodId: makeMethodIdMap.get(quoteMakeMethodId!)!,
+              createdBy: userId,
+            };
+          });
+
+          if (jobOperationInserts.length > 0) {
+            await trx
+              .insertInto("jobOperation")
+              .values(jobOperationInserts)
+              .execute();
+          }
+        });
         break;
       }
       case "quoteMakeMethodToItem": {
