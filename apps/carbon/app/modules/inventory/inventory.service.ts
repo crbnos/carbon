@@ -43,7 +43,6 @@ export async function insertManualInventoryAdjustment(
   const currentQuantityOnHand = currentQuantity?.quantityOnHand ?? 0;
 
   if (quantityError) {
-    console.error(quantityError);
     return { error: "Failed to fetch current quantity" };
   }
 
