@@ -19,7 +19,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const type = formData.get("type") as string;
 
   const serviceRole = getSupabaseServiceRole();
-  if (type === "method") {
+  if (["item", "quoteLine"].includes(type)) {
     const validation = await validator(getJobMethodValidator).validate(
       formData
     );
@@ -27,11 +27,15 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const jobMethod = await upsertJobMethod(serviceRole, {
-      ...validation.data,
-      companyId,
-      userId,
-    });
+    const jobMethod = await upsertJobMethod(
+      serviceRole,
+      type === "item" ? "itemToJob" : "quoteLineToJob",
+      {
+        ...validation.data,
+        companyId,
+        userId,
+      }
+    );
 
     return json({
       error: jobMethod.error ? "Failed to get job method" : null,

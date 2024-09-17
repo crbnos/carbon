@@ -329,20 +329,18 @@ export async function upsertJobOperation(
 
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
+  type: "itemToJob" | "quoteLineToJob",
   jobMethod: {
-    itemId: string;
-    jobId: string;
+    sourceId: string;
+    targetId: string;
     companyId: string;
     userId: string;
   }
 ) {
   return client.functions.invoke("get-method", {
     body: {
-      type: "itemToJob",
-      sourceId: jobMethod.itemId,
-      targetId: jobMethod.jobId,
-      companyId: jobMethod.companyId,
-      userId: jobMethod.userId,
+      type,
+      ...jobMethod,
     },
   });
 }
