@@ -1,25 +1,16 @@
-import { ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardAction,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
   Combobox,
   HStack,
 } from "@carbon/react";
 import type { z } from "zod";
-import {
-  CustomFormFields,
-  Hidden,
-  Number,
-  Shelf,
-  Submit,
-} from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { ItemQuantities } from "~/modules/items";
-import { pickMethodValidator } from "~/modules/items";
+import InventoryDetails from "~/modules/inventory/ui/Inventory/InventoryDetails";
+import type { ItemQuantities, pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -36,7 +27,7 @@ const PickMethodForm = ({
   quantities,
   type,
 }: PickMethodFormProps) => {
-  const permissions = usePermissions();
+  usePermissions();
 
   const locationOptions = locations.map((location) => ({
     label: location.name,
@@ -45,69 +36,31 @@ const PickMethodForm = ({
 
   return (
     <Card>
-      <ValidatedForm
-        method="post"
-        validator={pickMethodValidator}
-        defaultValues={{ ...quantities, ...initialValues }}
-      >
-        <HStack className="w-full justify-between items-start">
-          <CardHeader>
-            <CardTitle>Inventory</CardTitle>
-          </CardHeader>
+      <HStack className="w-full justify-between items-start">
+        <CardHeader>
+          <CardTitle>Inventory</CardTitle>
+        </CardHeader>
 
-          <CardAction>
-            <Combobox
-              size="sm"
-              value={initialValues.locationId}
-              options={locationOptions}
-              onChange={(selected) => {
-                // hard refresh because initialValues update has no effect otherwise
-                window.location.href = getLocationPath(
-                  initialValues.itemId,
-                  selected,
-                  type
-                );
-              }}
-            />
-          </CardAction>
-        </HStack>
+        <CardAction>
+          <Combobox
+            size="sm"
+            value={initialValues.locationId}
+            options={locationOptions}
+            onChange={(selected) => {
+              // hard refresh because initialValues update has no effect otherwise
+              window.location.href = getLocationPath(
+                initialValues.itemId,
+                selected,
+                type
+              );
+            }}
+          />
+        </CardAction>
+      </HStack>
 
-        <CardContent>
-          <Hidden name="itemId" />
-          <Hidden name="locationId" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <Shelf
-              name="defaultShelfId"
-              label="Default Shelf"
-              locationId={initialValues.locationId}
-              className="w-full"
-            />
-
-            <Number name="quantityOnHand" label="Quantity On Hand" isReadOnly />
-
-            <Number
-              name="quantityOnPurchaseOrder"
-              label="Quantity On Purchase Order"
-              isReadOnly
-            />
-
-            <Number
-              name="quantityOnProdOrder"
-              label="Quantity On Prod Order"
-              isReadOnly
-            />
-            <Number
-              name="quantityOnSalesOrder"
-              label="Quantity On Sales Order"
-              isReadOnly
-            />
-            <CustomFormFields table="partInventory" />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
-        </CardFooter>
-      </ValidatedForm>
+      <CardContent>
+        <InventoryDetails pickMethod={initialValues} quantities={quantities} />
+      </CardContent>
     </Card>
   );
 };
