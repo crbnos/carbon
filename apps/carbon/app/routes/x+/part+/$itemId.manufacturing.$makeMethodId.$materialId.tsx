@@ -107,17 +107,17 @@ export default function MethodMaterialMakePage() {
     <VStack spacing={2} className="p-2" key={JSON.stringify(loaderData)}>
       <MakeMethodBreadcrumbs itemId={item.id} type="Part" />
       <ItemForm
-        key={`item:${itemId}:${makeMethodId}:${materialId}`}
+        key={JSON.stringify(item)}
         type={item.type}
         initialValues={item}
       />
       <BillOfProcess
-        key={`bop:${itemId}:${makeMethodId}:${materialId}`}
+        key={JSON.stringify(methodOperations)}
         makeMethodId={makeMethodId}
         operations={methodOperations}
       />
       <BillOfMaterial
-        key={`bom:${itemId}:${makeMethodId}:${materialId}`}
+        key={JSON.stringify(methodMaterials)}
         makeMethodId={makeMethodId}
         materials={methodMaterials}
         operations={methodOperations}

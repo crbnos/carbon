@@ -78,16 +78,17 @@ export default function QuoteMakeMethodRoute() {
   if (!lineId) throw new Error("Could not find lineId");
   if (!methodId) throw new Error("Could not find methodId");
 
-  const loaderData = useLoaderData<typeof loader>();
-  const { materials, operations } = loaderData;
+  const { materials, operations } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={2} key={JSON.stringify(loaderData)}>
+    <VStack spacing={2}>
       <QuoteBillOfProcess
+        key={JSON.stringify(operations)}
         quoteMakeMethodId={methodId}
         operations={operations}
       />
       <QuoteBillOfMaterial
+        key={JSON.stringify(materials)}
         quoteMakeMethodId={methodId}
         materials={materials}
         operations={operations}

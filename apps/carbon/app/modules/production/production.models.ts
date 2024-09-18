@@ -253,8 +253,9 @@ export const jobOperationValidator = z
 export const jobMaterialValidator = z
   .object({
     id: zfd.text(z.string().optional()),
+    description: z.string().min(1, { message: "Description is required" }),
     jobMakeMethodId: z.string().min(20, { message: "Make method is required" }),
-    order: zfd.numeric(z.number().min(0)),
+    jobOperationId: zfd.text(z.string().optional()),
     itemType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
         message: "Item type is required",
@@ -267,8 +268,7 @@ export const jobMaterialValidator = z
     }),
     itemId: z.string().min(1, { message: "Item is required" }),
     itemReadableId: z.string().min(1, { message: "Item ID is required" }),
-    description: z.string().min(1, { message: "Description is required" }),
-    quoteOperationId: zfd.text(z.string().optional()),
+    order: zfd.numeric(z.number().min(0)),
     quantity: zfd.numeric(z.number().min(0)),
     unitCost: zfd.numeric(z.number().min(0)),
     unitOfMeasureCode: z

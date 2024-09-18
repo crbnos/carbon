@@ -75,13 +75,17 @@ export default function JobMakeMethodRoute() {
   if (!jobId) throw new Error("Could not find jobId");
   if (!methodId) throw new Error("Could not find methodId");
 
-  const loaderData = useLoaderData<typeof loader>();
-  const { materials, operations } = loaderData;
+  const { materials, operations } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={2} key={JSON.stringify(loaderData)}>
-      <JobBillOfProcess jobMakeMethodId={methodId} operations={operations} />
+    <VStack spacing={2}>
+      <JobBillOfProcess
+        jobMakeMethodId={methodId}
+        operations={operations}
+        key={JSON.stringify(operations)}
+      />
       <JobBillOfMaterial
+        key={JSON.stringify(materials)}
         jobMakeMethodId={methodId}
         materials={materials}
         operations={operations}

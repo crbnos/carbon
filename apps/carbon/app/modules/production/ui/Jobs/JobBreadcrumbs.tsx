@@ -74,7 +74,7 @@ const JobBreadcrumbs = () => {
     materialId &&
     pathname === path.to.jobMakeMethod(jobId, methodId, materialId);
 
-  return isJobMethod || isJobMakeMethod ? (
+  return (
     <>
       <Menubar>
         <HStack className="w-full justify-between">
@@ -277,7 +277,7 @@ const JobBreadcrumbs = () => {
         </Modal>
       )}
     </>
-  ) : null;
+  );
 };
 
 export default JobBreadcrumbs;
