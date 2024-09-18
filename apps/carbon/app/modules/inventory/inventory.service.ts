@@ -56,7 +56,7 @@ export async function insertManualInventoryAdjustment(
       data.quantity = Math.abs(quantityDifference);
     } else {
       // No change in quantity, we can return early
-      return { error: "No change in quantity" };
+      return { data: null };
     }
   }
 

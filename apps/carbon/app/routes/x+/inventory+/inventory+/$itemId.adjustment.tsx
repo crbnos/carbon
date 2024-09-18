@@ -9,7 +9,7 @@ import {
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -50,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.inventoryItem(itemId));
+  throw redirect(requestReferrer(request) ?? path.to.inventoryItem(itemId));
 }
 
 export default function ItemInventoryAdjustmentRoute() {

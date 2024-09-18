@@ -49,11 +49,11 @@ const InventoryDetails = ({
   });
 
   return (
-    <>
-      <div className="w-full grid gap-2 grid-cols-1">
-        <Button onClick={adjustmentModal.onOpen} className="w-fit">
-          Update Inventory
-        </Button>
+    <VStack>
+      <Button onClick={adjustmentModal.onOpen} className="w-fit">
+        Update Inventory
+      </Button>
+      <div className="w-full grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-8">
             <CardDescription>Quantity on Hand</CardDescription>
@@ -145,7 +145,7 @@ const InventoryDetails = ({
           </ValidatedForm>
         </ModalContent>
       </Modal>
-    </>
+    </VStack>
   );
 };
 

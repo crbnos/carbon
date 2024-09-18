@@ -88,7 +88,7 @@ const InventoryItemHeader = ({
                   // hard refresh because initialValues update has no effect otherwise
                   window.location.href = `${path.to.inventoryItem(
                     pickMethod.itemId!
-                  )}?location=${pickMethod.locationId}`;
+                  )}?location=${selected}`;
                 }}
                 className="w-64"
               />
