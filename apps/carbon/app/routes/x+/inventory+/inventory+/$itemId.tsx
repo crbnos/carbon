@@ -29,8 +29,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   let locationId = searchParams.get("location");
 
-  console.log({ locationId });
-
   if (!locationId) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
