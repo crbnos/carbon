@@ -27,6 +27,7 @@ import { error } from "~/utils/result";
 import { useMode } from "./hooks/useMode";
 import { getSessionFlash } from "./services/session.server";
 import { modeValidator } from "./types/validators";
+import { parseVercelId } from "./utils/http";
 
 export function links() {
   return [
@@ -36,6 +37,8 @@ export function links() {
     { rel: "stylesheet", href: "/assets/theme.css" },
   ];
 }
+
+export const config = { runtime: "edge" };
 
 export const meta: MetaFunction = () => {
   return [
@@ -54,6 +57,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   } = getBrowserEnv();
 
   const sessionFlash = await getSessionFlash(request);
+  const { computeRegion, proxyRegion } = parseVercelId(
+    request.headers.get("x-vercel-id")
+  );
+
+  console.log({
+    computeRegion,
+    proxyRegion,
+  });
 
   return json(
     {
