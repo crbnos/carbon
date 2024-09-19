@@ -6,12 +6,8 @@ import type { EntryContext } from "@vercel/remix";
 import { handleRequest } from "@vercel/remix";
 
 import { parseAcceptLanguage } from "intl-parse-accept-language";
-import { installAndLockGlobals } from "./utils/installGlobals";
 
 export * from "~/jobs";
-
-// Workaround for vite single fetch mode
-installAndLockGlobals();
 
 export default async function (
   request: Request,
