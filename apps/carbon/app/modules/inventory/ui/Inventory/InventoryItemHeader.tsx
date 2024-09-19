@@ -1,14 +1,4 @@
-import {
-  Badge,
-  Button,
-  Card,
-  CardAction,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Combobox,
-  VStack,
-} from "@carbon/react";
+import { Badge, Button, Combobox, HStack, VStack } from "@carbon/react";
 
 import { useNavigate, useParams } from "@remix-run/react";
 import { LuX } from "react-icons/lu";
@@ -66,35 +56,33 @@ const InventoryItemHeader = ({
           </Button>
           <DetailsTopbar links={links} />
         </div>
-        <Card>
-          <div className="relative">
-            <CardHeader className="pb-3">
-              <CardTitle>
-                {itemReadableId}{" "}
-                <Badge className="ml-2" variant="secondary">
-                  <MethodItemTypeIcon type={itemType} />
-                </Badge>
-              </CardTitle>
-              <CardDescription className="max-w-lg text-balance leading-relaxed">
-                {itemName}
-              </CardDescription>
-            </CardHeader>
-            <CardAction className="absolute right-0 top-2">
-              <Combobox
-                size="sm"
-                value={pickMethod.locationId}
-                options={locationOptions}
-                onChange={(selected) => {
-                  // hard refresh because initialValues update has no effect otherwise
-                  window.location.href = `${path.to.inventoryItem(
-                    pickMethod.itemId!
-                  )}?location=${selected}`;
-                }}
-                className="w-64"
-              />
-            </CardAction>
+        <HStack className="justify-between w-full">
+          <div className="p-2 pb-3">
+            <div className="text-2xl font-semibold">
+              {itemReadableId}{" "}
+              <Badge className="ml-2" variant="secondary">
+                <MethodItemTypeIcon type={itemType} />
+              </Badge>
+            </div>
+            <div className="max-w-lg text-balance leading-relaxed text-muted-foreground">
+              {itemName}
+            </div>
           </div>
-        </Card>
+          <div className="p-2">
+            <Combobox
+              size="sm"
+              value={pickMethod.locationId}
+              options={locationOptions}
+              onChange={(selected) => {
+                // hard refresh because initialValues update has no effect otherwise
+                window.location.href = `${path.to.inventoryItem(
+                  pickMethod.itemId!
+                )}?location=${selected}`;
+              }}
+              className="w-64"
+            />
+          </div>
+        </HStack>
       </VStack>
     </div>
   );
