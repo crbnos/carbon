@@ -67,7 +67,7 @@ export const itemValidator = z.object({
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of Measure is required" }),
-
+  unitCost: zfd.numeric(z.number().nonnegative().optional()),
   active: zfd.checkbox(),
 });
 

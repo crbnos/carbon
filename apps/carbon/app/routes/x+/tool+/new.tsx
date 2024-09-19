@@ -66,6 +66,7 @@ export default function ToolsNewRoute() {
     defaultMethodType: "Buy" as const,
     itemTrackingType: "Inventory" as "Inventory",
     unitOfMeasureCode: "EA",
+    unitCost: 0,
     active: true,
   };
 

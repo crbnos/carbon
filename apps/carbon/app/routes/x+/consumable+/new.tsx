@@ -76,6 +76,7 @@ export default function ConsumablesNewRoute() {
     replenishmentSystem: "Buy" as const,
     defaultMethodType: "Buy" as const,
     unitOfMeasureCode: "EA",
+    unitCost: 0,
     active: true,
   };
 

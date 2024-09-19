@@ -214,6 +214,7 @@ const Item = ({
             unitOfMeasureCode: "EA",
             defaultMethodType: "Make",
             active: props?.includeInactive === undefined,
+            unitCost: 0,
           }}
         />
       )}
@@ -234,6 +235,7 @@ const Item = ({
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
+            unitCost: 0,
           }}
         />
       )}
@@ -254,6 +256,7 @@ const Item = ({
             replenishmentSystem: "Make",
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
+            unitCost: 0,
           }}
         />
       )}
@@ -276,6 +279,7 @@ const Item = ({
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
+            unitCost: 0,
           }}
         />
       )}
@@ -297,6 +301,7 @@ const Item = ({
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
+            unitCost: 0,
           }}
         />
       )}
