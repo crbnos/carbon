@@ -44,36 +44,38 @@ const PrimaryNavigation = () => {
         onMouseLeave={navigationPanel.onClose}
       >
         <VStack spacing={1} className="flex flex-col justify-start h-full px-2">
-          <Button isIcon asChild variant="ghost" size="lg">
-            <Link to="/">
-              {company?.logo ? (
-                <img
-                  src={company.logo}
-                  alt={`${company.name} logo`}
-                  className="w-full h-auto rounded"
+          <VStack spacing={1}>
+            <Button isIcon asChild variant="ghost" size="lg">
+              <Link to="/">
+                {company?.logo ? (
+                  <img
+                    src={company.logo}
+                    alt={`${company.name} logo`}
+                    className="w-full h-auto rounded"
+                  />
+                ) : (
+                  <BsFillHexagonFill />
+                )}
+              </Link>
+            </Button>
+
+            {links.map((link) => {
+              const m = getModule(link.to);
+
+              const moduleMatches = matchedModules.has(m);
+
+              const isActive = currentModule === m || moduleMatches;
+              return (
+                <NavigationIconLink
+                  key={link.name}
+                  link={link}
+                  isActive={isActive}
+                  isOpen={navigationPanel.isOpen}
+                  onClick={navigationPanel.onClose}
                 />
-              ) : (
-                <BsFillHexagonFill />
-              )}
-            </Link>
-          </Button>
-
-          {links.map((link) => {
-            const m = getModule(link.to);
-
-            const moduleMatches = matchedModules.has(m);
-
-            const isActive = currentModule === m || moduleMatches;
-            return (
-              <NavigationIconLink
-                key={link.name}
-                link={link}
-                isActive={isActive}
-                isOpen={navigationPanel.isOpen}
-                onClick={navigationPanel.onClose}
-              />
-            );
-          })}
+              );
+            })}
+          </VStack>
         </VStack>
       </nav>
     </div>
