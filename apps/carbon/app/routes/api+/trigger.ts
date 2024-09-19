@@ -3,6 +3,7 @@ import serverRuntime from "@remix-run/server-runtime";
 import { triggerClient } from "~/lib/trigger.server";
 
 export const config = {
+  runtime: "node",
   maxDuration: 300, // 5 minutes
 };
 
