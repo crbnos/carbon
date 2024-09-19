@@ -1,7 +1,7 @@
 import { VStack } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { getAccountsList } from "~/modules/accounting";
 import { ItemPostingGroupsTable, getItemPostingGroups } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";

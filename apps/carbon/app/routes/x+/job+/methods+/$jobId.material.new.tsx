@@ -1,5 +1,5 @@
 import { validationError, validator } from "@carbon/form";
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   jobMaterialValidator,
@@ -67,10 +67,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (data.methodType === "Make") {
     const makeMethod = await upsertJobMaterialMakeMethod(serviceRole, {
-      ...data,
-      jobMaterialId,
+      sourceId: data.itemId,
+      targetId: jobMaterialId,
       companyId,
-      createdBy: userId,
+      userId,
     });
 
     if (makeMethod.error) {

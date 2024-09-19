@@ -1,7 +1,7 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { SupplierDetail } from "~/modules/purchasing";
 import {

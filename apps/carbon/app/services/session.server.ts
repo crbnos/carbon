@@ -1,4 +1,4 @@
-import { createCookieSessionStorage, redirect } from "@remix-run/node";
+import { createCookieSessionStorage, redirect } from "@vercel/remix";
 
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "~/utils/http";
 

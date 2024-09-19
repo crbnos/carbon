@@ -1,4 +1,4 @@
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { deleteJobMaterial } from "~/modules/production";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

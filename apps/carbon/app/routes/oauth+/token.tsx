@@ -1,5 +1,5 @@
 import { validator } from "@carbon/form";
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 

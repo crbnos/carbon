@@ -1,7 +1,7 @@
 import { QuotePDF } from "@carbon/documents";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
-import { type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@vercel/remix";
 import logger from "~/lib/logger";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";

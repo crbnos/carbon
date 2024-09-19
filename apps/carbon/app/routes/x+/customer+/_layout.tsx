@@ -1,7 +1,7 @@
 import { VStack } from "@carbon/react";
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { getCustomerStatuses, getCustomerTypes } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";

@@ -1,6 +1,6 @@
 import { VStack } from "@carbon/react";
-import type { MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import type { MetaFunction } from "@vercel/remix";
 import { ContentSidebar } from "~/components/Layout/Navigation";
 import { useDocumentsSubmodules } from "~/modules/documents";
 import type { Handle } from "~/utils/handle";

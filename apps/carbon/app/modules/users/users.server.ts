@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
-import { redirect } from "@remix-run/node";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { redirect } from "@vercel/remix";
 import crypto from "crypto";
 import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";

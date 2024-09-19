@@ -1,6 +1,6 @@
 import { VStack } from "@carbon/react";
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { getUnitOfMeasuresList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";

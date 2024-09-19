@@ -1,4 +1,4 @@
-import { redirect } from "@remix-run/node";
+import { redirect } from "@vercel/remix";
 import { path } from "~/utils/path";
 
 export async function loader() {

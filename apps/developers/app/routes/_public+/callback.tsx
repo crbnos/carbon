@@ -1,7 +1,7 @@
 import { validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { useEffect, useRef } from "react";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { supabaseClient } from "~/lib/supabase/client";

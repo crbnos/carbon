@@ -1,7 +1,7 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { ThemeForm, themeValidator } from "~/modules/settings";
 import { getTheme, setTheme } from "~/services/theme.server";
 import type { Handle } from "~/utils/handle";

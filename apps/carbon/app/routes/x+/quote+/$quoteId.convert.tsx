@@ -1,4 +1,4 @@
-import { type ActionFunctionArgs } from "@remix-run/node";
+import { type ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "remix-typedjson";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { convertQuoteToOrder, selectedLinesValidator } from "~/modules/sales";

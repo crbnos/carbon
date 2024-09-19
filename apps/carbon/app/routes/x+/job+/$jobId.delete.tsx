@@ -1,6 +1,6 @@
 import { json, redirect } from "@remix-run/react";
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
 import { deleteJob } from "~/modules/production";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

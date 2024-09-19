@@ -11,9 +11,9 @@ import {
   NumberInputStepper,
   useDisclosure,
 } from "@carbon/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useNavigate } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { ParentSize } from "@visx/responsive";
 import { useState } from "react";
 import { IoMdClose } from "react-icons/io";

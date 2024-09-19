@@ -1,5 +1,5 @@
 import { validationError, validator } from "@carbon/form";
-import { redirect, type ActionFunctionArgs } from "@remix-run/node";
+import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { salesRfqLineValidator, upsertSalesRFQLine } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

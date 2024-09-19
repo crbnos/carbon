@@ -1,6 +1,6 @@
 import { VStack } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 
 import {
   getQuoteMaterial,

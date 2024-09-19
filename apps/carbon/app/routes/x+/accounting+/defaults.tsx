@@ -1,8 +1,8 @@
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { AccountListItem } from "~/modules/accounting";
 import {

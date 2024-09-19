@@ -7,8 +7,8 @@ import {
   Switch,
   useLocalStorage,
 } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
 import { useRevalidator } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import { HiOutlineAdjustmentsHorizontal } from "react-icons/hi2";
 import { LuListFilter, LuRefreshCcw } from "react-icons/lu";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";

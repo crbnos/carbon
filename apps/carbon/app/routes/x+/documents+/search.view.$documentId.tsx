@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { getDocument } from "~/modules/documents";
 import DocumentView from "~/modules/documents/ui/Documents/DocumentView";
 import { requirePermissions } from "~/services/auth/auth.server";

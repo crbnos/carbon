@@ -1,4 +1,4 @@
-import { json, redirect, type ActionFunctionArgs } from "@remix-run/node";
+import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { triggerClient } from "~/lib/trigger.server";
 import { salesRfqDragValidator, upsertSalesRFQLine } from "~/modules/sales";

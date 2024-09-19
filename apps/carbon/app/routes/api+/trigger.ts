@@ -1,5 +1,5 @@
-import type { ActionFunction } from "@remix-run/node";
 import serverRuntime from "@remix-run/server-runtime";
+import type { ActionFunction } from "@vercel/remix";
 import { triggerClient } from "~/lib/trigger.server";
 
 export const config = {

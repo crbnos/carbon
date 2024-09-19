@@ -1,4 +1,4 @@
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import {
   quoteLineAdditionalChargesValidator,

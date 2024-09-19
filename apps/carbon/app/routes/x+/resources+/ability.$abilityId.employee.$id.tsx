@@ -1,7 +1,7 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { Ability } from "~/modules/resources";
 import {

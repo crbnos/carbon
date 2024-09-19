@@ -1,6 +1,6 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import type { z } from "zod";
 import type { userAdminSchema } from "~/jobs/user-admin.server";
 import { triggerClient } from "~/lib/trigger.server";

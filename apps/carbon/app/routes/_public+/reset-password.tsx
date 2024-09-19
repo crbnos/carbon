@@ -1,8 +1,8 @@
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import { Button, HStack, VStack } from "@carbon/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { Password, Submit } from "~/components/Form";
 import { resetPassword } from "~/modules/users/users.server";
 import { resetPasswordValidator } from "~/services/auth";

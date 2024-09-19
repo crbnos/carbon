@@ -1,4 +1,4 @@
-import { installGlobals } from "@remix-run/node";
+import { installGlobals } from "@vercel/remix";
 import { IncomingMessage } from "node:http";
 
 export function installAndLockGlobals() {

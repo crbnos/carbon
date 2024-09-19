@@ -6,7 +6,6 @@ import {
   ScrollArea,
   VStack,
 } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
 import {
   json,
   Outlet,
@@ -14,6 +13,7 @@ import {
   useLoaderData,
   useParams,
 } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import { flattenTree } from "~/components/TreeView";
 import {
   getJob,

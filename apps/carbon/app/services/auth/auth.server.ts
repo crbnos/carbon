@@ -1,9 +1,9 @@
 import type { Database } from "@carbon/database";
-import { redirect } from "@remix-run/node";
 import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient,
 } from "@supabase/supabase-js";
+import { redirect } from "@vercel/remix";
 import { REFRESH_ACCESS_TOKEN_THRESHOLD, VERCEL_URL } from "~/config/env";
 import { getSupabase, getSupabaseServiceRole } from "~/lib/supabase";
 import { getCompaniesForUser } from "~/modules/users";

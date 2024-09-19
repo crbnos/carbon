@@ -6,7 +6,6 @@ import {
   ResizablePanelGroup,
   ScrollArea,
 } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
 import {
   Outlet,
   json,
@@ -14,6 +13,7 @@ import {
   useLoaderData,
   useParams,
 } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 
 import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";

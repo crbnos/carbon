@@ -1,11 +1,5 @@
 import { validator } from "@carbon/form";
 import { Button, Heading, toast } from "@carbon/react";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
-import { json } from "@remix-run/node";
 import {
   Links,
   Meta,
@@ -17,6 +11,12 @@ import {
   useRouteError,
 } from "@remix-run/react";
 import { Analytics } from "@vercel/analytics/react";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@vercel/remix";
+import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
 import { getBrowserEnv } from "~/config/env";
 import { getMode, setMode } from "~/services/mode.server";

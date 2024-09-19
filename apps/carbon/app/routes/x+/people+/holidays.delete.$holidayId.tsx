@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteHoliday, getHoliday } from "~/modules/people";
 import { requirePermissions } from "~/services/auth/auth.server";

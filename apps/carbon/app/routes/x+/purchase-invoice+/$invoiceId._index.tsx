@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import { notFound } from "~/utils/http";
 import { path } from "~/utils/path";
 

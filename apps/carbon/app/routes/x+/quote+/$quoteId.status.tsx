@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "remix-typedjson";
 import { quoteStatusType, updateQuoteStatus } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";

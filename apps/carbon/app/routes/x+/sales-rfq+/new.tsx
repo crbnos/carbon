@@ -1,7 +1,7 @@
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
 import type { SalesRFQStatusType } from "~/modules/sales";
 import {

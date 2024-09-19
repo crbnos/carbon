@@ -1,7 +1,7 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { arrayToTree } from "performant-array-to-tree";
 import type { Group } from "~/modules/users";
 import { requirePermissions } from "~/services/auth/auth.server";

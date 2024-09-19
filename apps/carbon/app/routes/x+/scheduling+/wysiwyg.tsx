@@ -4,7 +4,7 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 import ProseMirror from "~/styles/prosemirror.css?url";
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
 
 export function links() {
   return [{ rel: "stylesheet", href: ProseMirror }];

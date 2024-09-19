@@ -1,7 +1,7 @@
 import { validator } from "@carbon/form";
 import { Button } from "@carbon/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, json, redirect, useLoaderData } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
 import { requirePermissions } from "~/services/auth/auth.server";
 

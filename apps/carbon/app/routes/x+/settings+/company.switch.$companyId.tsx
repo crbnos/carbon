@@ -1,4 +1,4 @@
-import { redirect, type ActionFunctionArgs } from "@remix-run/node";
+import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { getCompanies } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import {

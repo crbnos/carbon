@@ -1,4 +1,4 @@
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { assign } from "~/modules/shared/shared.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

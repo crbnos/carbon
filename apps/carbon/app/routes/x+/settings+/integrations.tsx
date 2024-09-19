@@ -1,5 +1,5 @@
-import { redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
+import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { IntegrationsList, getIntegrations } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

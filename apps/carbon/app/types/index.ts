@@ -1,6 +1,6 @@
 import type { ValidationErrorResponseData } from "@carbon/form";
-import type { TypedResponse } from "@remix-run/node";
 import type { FileObject } from "@supabase/storage-js";
+import type { TypedResponse } from "@vercel/remix";
 import type { ReactElement } from "react";
 import type { IconType } from "react-icons";
 

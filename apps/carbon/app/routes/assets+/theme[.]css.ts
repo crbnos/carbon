@@ -1,5 +1,5 @@
 import { getThemeCode, themes } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import { getTheme } from "~/services/theme.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -1,4 +1,4 @@
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { triggerClient } from "~/lib/trigger.server";
 import { upsertModelUpload } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";

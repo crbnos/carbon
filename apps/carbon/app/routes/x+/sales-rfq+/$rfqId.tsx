@@ -10,10 +10,10 @@ import {
 } from "@carbon/react";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Outlet, useFetcher, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { useCallback, useEffect } from "react";
 import { supportedFileTypes } from "~/components/CadModel";
 import type { SalesRFQLine } from "~/modules/sales";

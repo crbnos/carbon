@@ -1,8 +1,8 @@
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLocalTimeZone } from "@internationalized/date";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { insertEmployeeJob } from "~/modules/people";

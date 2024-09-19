@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { getCurrentSequence, rollbackNextSequence } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
