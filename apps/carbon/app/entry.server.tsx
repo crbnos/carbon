@@ -173,7 +173,6 @@ function handleBrowserRequest(
     setTimeout(abort, ABORT_DELAY);
   });
 }
-
 export function handleError(
   error: unknown,
   { request, params, context }: LoaderFunctionArgs

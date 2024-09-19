@@ -25,6 +25,9 @@ import { path } from "~/utils/path";
 
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { getAutodeskToken } from "~/lib/autodesk/autodesk.server";
+import { parseVercelId } from "~/utils/http";
+
+export const config = { runtime: "edge" };
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -52,6 +55,15 @@ export function links() {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
     await requireAuthSession(request, { verify: true });
+
+  const { computeRegion, proxyRegion } = parseVercelId(
+    request.headers.get("x-vercel-id")
+  );
+
+  console.log({
+    computeRegion,
+    proxyRegion,
+  });
 
   // share a client between requests
   const client = getSupabase(accessToken);
