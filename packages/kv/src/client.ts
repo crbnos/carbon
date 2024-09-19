@@ -24,7 +24,7 @@ if (!UPSTASH_REDIS_REST_TOKEN) {
 // this is needed because in development we don't want to restart
 // the server with every change, but we want to make sure we don't
 // create a new connection to the Redis with every change either.
-if (process.env.NODE_ENV === "production") {
+if (process.env.VERCEL_ENV === "production") {
   redis = new Redis({
     url: UPSTASH_REDIS_REST_URL,
     token: UPSTASH_REDIS_REST_TOKEN,

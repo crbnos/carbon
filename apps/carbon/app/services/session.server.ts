@@ -4,11 +4,11 @@ import { getCurrentPath, isGet, makeRedirectToFromHere } from "~/utils/http";
 
 import {
   DOMAIN,
-  NODE_ENV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_KEY,
   SESSION_MAX_AGE,
   SESSION_SECRET,
+  VERCEL_ENV,
 } from "~/config/env";
 
 import { redis } from "@carbon/kv";
@@ -40,8 +40,8 @@ const sessionStorage = createCookieSessionStorage({
     path: "/",
     sameSite: "lax",
     secrets: [SESSION_SECRET],
-    secure: NODE_ENV === "production",
-    domain: NODE_ENV === "production" ? DOMAIN : undefined,
+    secure: VERCEL_ENV === "production",
+    domain: VERCEL_ENV === "production" ? DOMAIN : undefined,
   },
 });
 

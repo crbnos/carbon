@@ -71,7 +71,7 @@ export const VERCEL_URL = getEnv("VERCEL_URL");
 /**
  * Shared envs
  */
-export const NODE_ENV = getEnv("NODE_ENV", {
+export const VERCEL_ENV = getEnv("VERCEL_ENV", {
   isSecret: false,
   isRequired: false,
 });
