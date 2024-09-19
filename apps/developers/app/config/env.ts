@@ -65,7 +65,7 @@ export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before
  * Shared envs
  */
 export const VERCEL_URL = getEnv("VERCEL_URL", { isSecret: false });
-export const NODE_ENV = getEnv("NODE_ENV", {
+export const VERCEL_ENV = getEnv("VERCEL_ENV", {
   isSecret: false,
   isRequired: false,
 });
