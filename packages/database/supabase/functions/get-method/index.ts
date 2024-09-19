@@ -1488,7 +1488,7 @@ serve(async (req: Request) => {
 
         const [
           jobMakeMethod,
-          quoteMakeMethods,
+          quoteMakeMethod,
           quoteMaterials,
           quoteOperations,
         ] = await Promise.all([
@@ -1501,7 +1501,9 @@ serve(async (req: Request) => {
           client
             .from("quoteMakeMethod")
             .select("*")
-            .eq("quoteLineId", quoteLineId),
+            .is("parentMaterialId", null)
+            .eq("quoteLineId", quoteLineId)
+            .single(),
           client
             .from("quoteMaterial")
             .select("*")
@@ -1517,110 +1519,141 @@ serve(async (req: Request) => {
         }
 
         if (
-          quoteMakeMethods.error ||
+          quoteMakeMethod.error ||
           quoteMaterials.error ||
           quoteOperations.error
         ) {
           throw new Error("Failed to fetch quote data");
         }
 
+        const [quoteMethodTrees] = await Promise.all([
+          getQuoteMethodTree(client, quoteMakeMethod.data.id),
+        ]);
+
+        if (quoteMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const quoteMethodTree = quoteMethodTrees
+          .data?.[0] as QuoteMethodTreeItem;
+        if (!quoteMethodTree) throw new Error("Method tree not found");
+
         await db.transaction().execute(async (trx) => {
-          // delete the existing jobMakeMethods where jobId is jobId and parentMaterialId is not null
-          await trx
-            .deleteFrom("jobMakeMethod")
-            .where((eb) =>
-              eb.and([
-                eb("jobId", "=", jobId),
-                eb("parentMaterialId", "is not", null),
-              ])
-            )
-            .execute();
+          // Delete existing jobMakeMethods, jobMaterials, and jobOperations for this job
+          await Promise.all([
+            trx
+              .deleteFrom("jobMakeMethod")
+              .where((eb) =>
+                eb.and([
+                  eb("jobId", "=", jobId),
+                  eb("parentMaterialId", "is not", null),
+                ])
+              )
+              .execute(),
+            trx.deleteFrom("jobMaterial").where("jobId", "=", jobId).execute(),
+            trx.deleteFrom("jobOperation").where("jobId", "=", jobId).execute(),
+          ]);
 
-          // Delete existing jobMaterials for this job
-          await trx
-            .deleteFrom("jobMaterial")
-            .where("jobId", "=", jobId)
-            .execute();
+          await traverseQuoteMethod(
+            quoteMethodTree,
+            async (node: QuoteMethodTreeItem) => {
+              const jobMaterialInserts: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
+                [];
+              const jobMakeMethodInserts: Database["public"]["Tables"]["jobMakeMethod"]["Insert"][] =
+                [];
 
-          // Delete existing jobOperations for this job
-          await trx
-            .deleteFrom("jobOperation")
-            .where("jobId", "=", jobId)
-            .execute();
+              console.log({ node });
+              for await (const child of node.children) {
+                console.log({
+                  child,
+                });
 
-          // Copy quoteMakeMethods to jobMakeMethods
-          const jobMakeMethodInserts = quoteMakeMethods.data.map((qmm) => {
-            const {
-              quoteId: _quoteId,
-              quoteLineId: _quoteLineId,
-              ...data
-            } = qmm;
-            if (qmm.parentMaterialId === null) {
-              return {
-                ...data,
-                id: jobMakeMethod.data.id,
-                jobId,
-                createdBy: userId,
-              };
+                jobMaterialInserts.push({
+                  id: child.id,
+                  jobId,
+                  itemId: child.data.itemId,
+                  itemReadableId: child.data.itemReadableId,
+                  itemType: child.data.itemType,
+                  methodType: child.data.methodType,
+                  order: child.data.order,
+                  description: child.data.description,
+                  jobMakeMethodId:
+                    child.data.quoteMakeMethodId === quoteMakeMethod.data.id
+                      ? jobMakeMethod.data.id
+                      : child.data.quoteMakeMethodId,
+                  quantity: child.data.quantity,
+                  unitOfMeasureCode: child.data.unitOfMeasureCode,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                });
+
+                if (child.data.quoteMaterialMakeMethodId) {
+                  jobMakeMethodInserts.push({
+                    id: child.data.quoteMaterialMakeMethodId,
+                    jobId,
+                    parentMaterialId: child.id,
+                    itemId: child.data.itemId,
+                    quantityPerParent: child.data.quantity,
+                    companyId,
+                    createdBy: userId,
+                  });
+                }
+              }
+
+              if (jobMaterialInserts.length > 0) {
+                await trx
+                  .insertInto("jobMaterial")
+                  .values(jobMaterialInserts)
+                  .execute();
+                console.log(
+                  `finished inserting ${jobMaterialInserts.length} materials`
+                );
+              }
+
+              if (jobMakeMethodInserts.length > 0) {
+                // we use an update instead of an insert because
+                // the trigger is creating a record automatically
+                for await (const insert of jobMakeMethodInserts) {
+                  await trx
+                    .updateTable("jobMakeMethod")
+                    .set({
+                      id: insert.id,
+                      quantityPerParent: insert.quantityPerParent,
+                    })
+                    .where("jobId", "=", jobId)
+                    .where("parentMaterialId", "=", insert.parentMaterialId)
+                    .execute();
+                }
+              }
             }
-            return {
-              ...data,
-              jobId,
-              createdBy: userId,
-            };
-          });
-
-          const insertedJobMakeMethods = await trx
-            .insertInto("jobMakeMethod")
-            .values(jobMakeMethodInserts)
-            .returning(["id", "parentMaterialId"])
-            .execute();
-
-          // Create a map of quoteMakeMethodId to jobMakeMethodId
-          const makeMethodIdMap = new Map(
-            quoteMakeMethods.data.map((qmm, index) => [
-              qmm.id,
-              insertedJobMakeMethods[index].id,
-            ])
           );
 
-          // Copy quoteMaterials to jobMaterials
-          const jobMaterialInserts = quoteMaterials.data.map((qm) => {
-            const {
-              quoteId: _quoteId,
-              quoteLineId: _quoteLineId,
-              ...data
-            } = qm;
-            return {
-              ...data,
+          const jobOperationInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
+            quoteOperations.data.map((op) => ({
               jobId,
-              jobMakeMethodId: makeMethodIdMap.get(qm.quoteMakeMethodId)!,
+              jobMakeMethodId:
+                op.quoteMakeMethodId === quoteMakeMethod.data.id
+                  ? jobMakeMethod.data.id
+                  : op.quoteMakeMethodId,
+              processId: op.processId,
+              workCenterId: op.workCenterId,
+              description: op.description,
+              setupTime: op.setupTime,
+              setupUnit: op.setupUnit,
+              laborTime: op.laborTime,
+              laborUnit: op.laborUnit,
+              machineTime: op.machineTime,
+              machineUnit: op.machineUnit,
+              order: op.order,
+              operationOrder: op.operationOrder,
+              operationType: op.operationType,
+              operationSupplierProcessId: op.operationSupplierProcessId,
+              workInstruction: op.workInstruction,
+              companyId,
               createdBy: userId,
-            };
-          });
-
-          if (jobMakeMethodInserts.length > 0) {
-            await trx
-              .insertInto("jobMaterial")
-              .values(jobMaterialInserts)
-              .execute();
-          }
-
-          // Copy quoteOperations to jobOperations
-          const jobOperationInserts = quoteOperations.data.map((qo) => {
-            const {
-              quoteId: _quoteId,
-              quoteLineId: _quoteLineId,
-              quoteMakeMethodId,
-              ...data
-            } = qo;
-            return {
-              ...data,
-              jobId,
-              jobMakeMethodId: makeMethodIdMap.get(quoteMakeMethodId!)!,
-              createdBy: userId,
-            };
-          });
+              customFields: {},
+            }));
 
           if (jobOperationInserts.length > 0) {
             await trx
@@ -1629,6 +1662,7 @@ serve(async (req: Request) => {
               .execute();
           }
         });
+
         break;
       }
       case "quoteMakeMethodToItem": {
@@ -1995,14 +2029,14 @@ function getQuoteMethodTreeArrayToTree(
   return rootItems;
 }
 
-function traverseQuoteMethod(
+async function traverseQuoteMethod(
   node: QuoteMethodTreeItem,
-  callback: (node: QuoteMethodTreeItem) => void
+  callback: (node: QuoteMethodTreeItem) => void | Promise<void>
 ) {
-  callback(node);
+  await callback(node);
 
   if (node.children) {
-    for (const child of node.children) {
+    for await (const child of node.children) {
       traverseQuoteMethod(child, callback);
     }
   }

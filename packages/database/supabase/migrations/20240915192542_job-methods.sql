@@ -508,3 +508,16 @@ FROM material
 INNER JOIN item ON material."itemId" = item.id
 ORDER BY "order"
 $$ LANGUAGE sql STABLE;
+
+DROP VIEW "quoteOperationsWithMakeMethods";
+COMMIT; 
+ALTER TABLE "quoteOperation" DROP COLUMN "quotingRate";
+CREATE OR REPLACE VIEW "quoteOperationsWithMakeMethods" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+    mm.id AS "makeMethodId",
+    qo.*
+  FROM "quoteOperation" qo
+  INNER JOIN "quoteMakeMethod" qmm 
+    ON qo."quoteMakeMethodId" = qmm.id
+  LEFT JOIN "makeMethod" mm 
+    ON qmm."itemId" = mm."itemId";

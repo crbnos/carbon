@@ -6,7 +6,7 @@ import NProgress from "nprogress";
 import { useEffect } from "react";
 
 import { RealtimeDataProvider } from "~/components";
-import { IconSidebar, Topbar } from "~/components/Layout";
+import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { AutodeskProvider } from "~/lib/autodesk";
 import { SupabaseProvider, getSupabase } from "~/lib/supabase";
 import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
@@ -133,7 +133,7 @@ export default function AuthenticatedRoute() {
               <div className="flex-none" />
               <div className="h-screen min-h-[0px] basis-0 flex-1">
                 <div className="flex h-full">
-                  <IconSidebar />
+                  <PrimaryNavigation />
                   <div className="flex w-full h-full">
                     <div className="w-full h-full flex-1 overflow-hidden">
                       <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-x-hidden bg-muted">

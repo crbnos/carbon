@@ -1,26 +1,32 @@
 import { Button, VStack, cn, useDisclosure } from "@carbon/react";
 import { Link, useMatches } from "@remix-run/react";
 import { noop } from "@tanstack/react-table";
-import { forwardRef, type AnchorHTMLAttributes } from "react";
+import type { AnchorHTMLAttributes } from "react";
+import { forwardRef } from "react";
+import type { IconType } from "react-icons";
 import { BsFillHexagonFill } from "react-icons/bs";
-import { LuUserCircle } from "react-icons/lu";
 import { z } from "zod";
 import { useOptimisticLocation, useUser } from "~/hooks";
-import type { Authenticated, NavItem } from "~/types";
-import { path } from "~/utils/path";
-import { useModules } from "./useModules";
 
 export const ModuleHandle = z.object({
   module: z.string(),
 });
 
-const IconSidebar = () => {
+type NavLink = {
+  to: string;
+  icon: IconType;
+  name: string;
+};
+
+const links: NavLink[] = [];
+
+const PrimaryNavigation = () => {
   const { company } = useUser();
 
   const navigationPanel = useDisclosure();
   const location = useOptimisticLocation();
   const currentModule = getModule(location.pathname);
-  const links = useModules();
+
   const matchedModules = useMatches().reduce((acc, match) => {
     if (match.handle) {
       const result = ModuleHandle.safeParse(match.handle);
@@ -80,19 +86,6 @@ const IconSidebar = () => {
               );
             })}
           </VStack>
-
-          <VStack spacing={1}>
-            <NavigationIconLink
-              link={{
-                to: path.to.profile,
-                icon: LuUserCircle,
-                name: "Account",
-              }}
-              isActive={matchedModules.has(getModule(path.to.profile))}
-              isOpen={navigationPanel.isOpen}
-              onClick={navigationPanel.onClose}
-            />
-          </VStack>
         </VStack>
       </nav>
     </div>
@@ -101,7 +94,7 @@ const IconSidebar = () => {
 
 interface NavigationIconButtonProps
   extends AnchorHTMLAttributes<HTMLAnchorElement> {
-  link: Authenticated<NavItem>;
+  link: NavLink;
   isActive?: boolean;
   isOpen?: boolean;
 }
@@ -163,7 +156,7 @@ const NavigationIconLink = forwardRef<
 );
 NavigationIconLink.displayName = "NavigationIconLink";
 
-export default IconSidebar;
+export default PrimaryNavigation;
 
 function getModule(link: string) {
   return link.split("/")?.[2];
