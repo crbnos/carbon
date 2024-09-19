@@ -6,6 +6,8 @@ import { triggerClient } from "~/lib/trigger.server";
 import type { CurrencyCode } from "~/modules/accounting";
 import { exchangeRatesFormValidator } from "~/modules/settings";
 
+export const config = { runtime: "nodejs" };
+
 const supabaseClient = getSupabaseServiceRole();
 
 const job = triggerClient.defineJob({

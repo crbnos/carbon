@@ -5,6 +5,8 @@ import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { error } from "~/utils/result";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts",

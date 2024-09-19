@@ -6,6 +6,8 @@ import { triggerClient } from "~/lib/trigger.server";
 import { deactivateUser, resendInvite } from "~/modules/users/users.server";
 import type { Result } from "~/types";
 
+export const config = { runtime: "nodejs" };
+
 const supabaseClient = getSupabaseServiceRole();
 export const userAdminSchema = z.object({
   id: z.string(),

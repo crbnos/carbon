@@ -11,6 +11,8 @@ import {
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { triggerClient } from "~/lib/trigger.server";
 
+export const config = { runtime: "nodejs" };
+
 const supabaseClient = getSupabaseServiceRole();
 
 const job = triggerClient.defineJob({

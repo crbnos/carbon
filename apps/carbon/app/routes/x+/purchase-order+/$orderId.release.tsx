@@ -21,6 +21,8 @@ import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
 
+export const config = { runtime: "nodejs" };
+
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);

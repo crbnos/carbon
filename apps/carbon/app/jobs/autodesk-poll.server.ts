@@ -8,6 +8,8 @@ import { upsertModelUpload } from "~/modules/shared";
 
 const supabaseClient = getSupabaseServiceRole();
 
+export const config = { runtime: "nodejs" };
+
 const job = triggerClient.defineJob({
   id: "autodesk-poll",
   name: "Poll Autodesk for Translation Progress",

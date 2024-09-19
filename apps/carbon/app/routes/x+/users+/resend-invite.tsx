@@ -10,6 +10,8 @@ import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { error, success } from "~/utils/result";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
     delete: "users",

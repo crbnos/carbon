@@ -5,6 +5,8 @@ import { getSupabaseServiceRole } from "~/lib/supabase";
 import { triggerClient } from "~/lib/trigger.server";
 import { updatePermissions } from "~/modules/users/users.server";
 
+export const config = { runtime: "nodejs" };
+
 const supabaseClient = getSupabaseServiceRole();
 export const permissionsUpdateSchema = z.object({
   id: z.string(),

@@ -7,6 +7,8 @@ import { getSupabaseServiceRole } from "~/lib/supabase";
 import { triggerClient } from "~/lib/trigger.server";
 import { resendFormValidator } from "~/modules/settings";
 
+export const config = { runtime: "nodejs" };
+
 const supabaseClient = getSupabaseServiceRole();
 
 const job = triggerClient.defineJob({

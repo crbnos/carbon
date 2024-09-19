@@ -15,6 +15,8 @@ import { assertIsPost } from "~/utils/http";
 import { getParams, path } from "~/utils/path";
 import { error, success } from "~/utils/result";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId } = await requirePermissions(request, {

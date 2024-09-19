@@ -5,6 +5,8 @@ import { getSupabaseServiceRole } from "~/lib/supabase";
 import { triggerClient } from "~/lib/trigger.server";
 import type { Result } from "~/types";
 
+export const config = { runtime: "nodejs" };
+
 const supabaseClient = getSupabaseServiceRole();
 export const postTransactionSchema = z.object({
   documentId: z.string(),
