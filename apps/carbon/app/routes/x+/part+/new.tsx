@@ -66,6 +66,7 @@ export default function PartsNewRoute() {
     replenishmentSystem: "Buy" as "Buy",
     defaultMethodType: "Buy" as "Buy",
     unitOfMeasureCode: "EA",
+    unitCost: 0,
     active: true,
   };
 

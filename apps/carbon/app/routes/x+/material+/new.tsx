@@ -78,6 +78,7 @@ export default function MaterialsNewRoute() {
     defaultMethodType: "Buy" as const,
     itemTrackingType: "Inventory" as "Inventory",
     unitOfMeasureCode: "EA",
+    unitCost: 0,
     active: true,
   };
 

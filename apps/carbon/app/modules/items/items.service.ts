@@ -1114,7 +1114,7 @@ export async function upsertConsumable(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    return client
+    const consumableInsert = await client
       .from("consumable")
       .insert({
         id: consumable.id,
@@ -1125,6 +1125,19 @@ export async function upsertConsumable(
       })
       .select("*")
       .single();
+
+    if (consumableInsert.error) return consumableInsert;
+
+    const costUpdate = await client
+      .from("itemCost")
+      .update({ unitCost: consumable.unitCost })
+      .eq("itemId", itemId)
+      .select("*")
+      .single();
+
+    if (costUpdate.error) return costUpdate;
+
+    return consumableInsert;
   }
 
   const itemUpdate = {
@@ -1197,18 +1210,31 @@ export async function upsertFixture(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    return client
+    const fixtureInsert = await client
       .from("fixture")
       .insert({
         id: fixture.id,
         itemId: itemId,
         companyId: fixture.companyId,
-        customerId: fixture.customerId ? fixture.customerId : undefined,
+        customerId: fixture.customerId || null,
         createdBy: fixture.createdBy,
         customFields: fixture.customFields,
       })
       .select("*")
       .single();
+
+    if (fixtureInsert.error) return fixtureInsert;
+
+    const costUpdate = await client
+      .from("itemCost")
+      .update({ unitCost: fixture.unitCost })
+      .eq("itemId", itemId)
+      .select("*")
+      .single();
+
+    if (costUpdate.error) return costUpdate;
+
+    return fixtureInsert;
   }
 
   const itemUpdate = {
@@ -1281,7 +1307,7 @@ export async function upsertPart(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    return client
+    const partInsert = await client
       .from("part")
       .insert({
         id: part.id,
@@ -1292,6 +1318,19 @@ export async function upsertPart(
       })
       .select("*")
       .single();
+
+    if (partInsert.error) return partInsert;
+
+    const costUpdate = await client
+      .from("itemCost")
+      .update({ unitCost: part.unitCost })
+      .eq("itemId", itemId)
+      .select("*")
+      .single();
+
+    if (costUpdate.error) return costUpdate;
+
+    return partInsert;
   }
 
   const itemUpdate = {
@@ -1637,7 +1676,7 @@ export async function upsertMaterial(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    return client
+    const materialInsert = await client
       .from("material")
       .insert({
         id: material.id,
@@ -1653,6 +1692,19 @@ export async function upsertMaterial(
       })
       .select("*")
       .single();
+
+    if (materialInsert.error) return materialInsert;
+
+    const costUpdate = await client
+      .from("itemCost")
+      .update({ unitCost: material.unitCost })
+      .eq("itemId", itemId)
+      .select("*")
+      .single();
+
+    if (costUpdate.error) return costUpdate;
+
+    return materialInsert;
   }
 
   const itemUpdate = {
@@ -1795,7 +1847,7 @@ export async function upsertService(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    return client
+    const serviceInsert = await client
       .from("service")
       .insert({
         id: service.id,
@@ -1803,9 +1855,23 @@ export async function upsertService(
         serviceType: service.serviceType,
         companyId: service.companyId,
         createdBy: service.createdBy,
+        customFields: service.customFields,
       })
       .select("*")
       .single();
+
+    if (serviceInsert.error) return serviceInsert;
+
+    const costUpdate = await client
+      .from("itemCost")
+      .update({ unitCost: service.unitCost })
+      .eq("itemId", itemId)
+      .select("*")
+      .single();
+
+    if (costUpdate.error) return costUpdate;
+
+    return serviceInsert;
   }
   const itemUpdate = {
     id: service.id,
@@ -1906,7 +1972,7 @@ export async function upsertTool(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    return client
+    const toolInsert = await client
       .from("tool")
       .insert({
         id: tool.id,
@@ -1917,6 +1983,19 @@ export async function upsertTool(
       })
       .select("*")
       .single();
+
+    if (toolInsert.error) return toolInsert;
+
+    const costUpdate = await client
+      .from("itemCost")
+      .update({ unitCost: tool.unitCost })
+      .eq("itemId", itemId)
+      .select("*")
+      .single();
+
+    if (costUpdate.error) return costUpdate;
+
+    return toolInsert;
   }
 
   const itemUpdate = {

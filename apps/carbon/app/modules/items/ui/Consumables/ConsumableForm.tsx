@@ -22,6 +22,7 @@ import {
   Hidden,
   Input,
   InputControlled,
+  Number,
   Select,
   Submit,
   TextArea,
@@ -146,7 +147,17 @@ const ConsumableForm = ({
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
-
+                {!isEditing && (
+                  <Number
+                    name="unitCost"
+                    label="Unit Cost"
+                    formatOptions={{
+                      style: "currency",
+                      currency: "USD",
+                    }}
+                    minValue={0}
+                  />
+                )}
                 <Boolean name="active" label="Active" />
 
                 <CustomFormFields table="consumable" />

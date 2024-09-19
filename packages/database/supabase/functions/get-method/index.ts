@@ -1562,12 +1562,7 @@ serve(async (req: Request) => {
               const jobMakeMethodInserts: Database["public"]["Tables"]["jobMakeMethod"]["Insert"][] =
                 [];
 
-              console.log({ node });
               for await (const child of node.children) {
-                console.log({
-                  child,
-                });
-
                 jobMaterialInserts.push({
                   id: child.id,
                   jobId,
@@ -1606,9 +1601,6 @@ serve(async (req: Request) => {
                   .insertInto("jobMaterial")
                   .values(jobMaterialInserts)
                   .execute();
-                console.log(
-                  `finished inserting ${jobMaterialInserts.length} materials`
-                );
               }
 
               if (jobMakeMethodInserts.length > 0) {

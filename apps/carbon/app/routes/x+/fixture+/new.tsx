@@ -71,6 +71,7 @@ export default function FixturesNewRoute() {
     defaultMethodType: "Make" as const,
     itemTrackingType: "Inventory" as "Inventory",
     unitOfMeasureCode: "EA",
+    unitCost: 0,
     active: true,
   };
 

@@ -63,6 +63,7 @@ export default function ServiceNewRoute() {
     name: "",
     description: "",
     serviceType: "External" as "External",
+    unitCost: 0,
     active: true,
   };
 
