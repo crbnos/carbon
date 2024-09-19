@@ -6222,6 +6222,138 @@ export default {
         tags: ["contractor"],
       },
     },
+    "/jobOperationsWithMakeMethods": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.makeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.jobMakeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.order",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.machineUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.operationOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.machineRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.operationType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.operationMinimumCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.operationLeadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.operationUnitCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.operationSupplierProcessId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.workInstruction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.customFields",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationsWithMakeMethods",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobOperationsWithMakeMethods"],
+      },
+    },
     "/customerLocation": {
       get: {
         parameters: [
@@ -16825,9 +16957,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.operationOrder",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.quotingRate",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.laborRate",
           },
           {
@@ -24310,9 +24439,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.operationOrder",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperation.quotingRate",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperation.laborRate",
           },
           {
@@ -24462,9 +24588,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.operationOrder",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperation.quotingRate",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperation.laborRate",
           },
           {
@@ -24566,9 +24689,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.operationOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteOperation.quotingRate",
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.laborRate",
@@ -37420,6 +37540,186 @@ export default {
       },
       type: "object",
     },
+    jobOperationsWithMakeMethods: {
+      properties: {
+        makeMethodId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobMakeMethodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobMakeMethod.id`.<fk table='jobMakeMethod' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        order: {
+          format: "double precision",
+          type: "number",
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        setupTime: {
+          format: "numeric",
+          type: "number",
+        },
+        setupUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        laborTime: {
+          format: "numeric",
+          type: "number",
+        },
+        laborUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        machineTime: {
+          format: "numeric",
+          type: "number",
+        },
+        machineUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        operationOrder: {
+          enum: ["After Previous", "With Previous"],
+          format: 'public."methodOperationOrder"',
+          type: "string",
+        },
+        laborRate: {
+          format: "numeric",
+          type: "number",
+        },
+        overheadRate: {
+          format: "numeric",
+          type: "number",
+        },
+        machineRate: {
+          format: "numeric",
+          type: "number",
+        },
+        operationType: {
+          enum: ["Inside", "Outside"],
+          format: 'public."operationType"',
+          type: "string",
+        },
+        operationMinimumCost: {
+          format: "numeric",
+          type: "number",
+        },
+        operationLeadTime: {
+          format: "numeric",
+          type: "number",
+        },
+        operationUnitCost: {
+          format: "numeric",
+          type: "number",
+        },
+        operationSupplierProcessId: {
+          format: "text",
+          type: "string",
+        },
+        workInstruction: {
+          format: "json",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+      },
+      type: "object",
+    },
     customerLocation: {
       required: ["id", "customerId", "addressId", "name"],
       properties: {
@@ -42254,10 +42554,6 @@ export default {
           format: 'public."methodOperationOrder"',
           type: "string",
         },
-        quotingRate: {
-          format: "numeric",
-          type: "number",
-        },
         laborRate: {
           format: "numeric",
           type: "number",
@@ -45341,7 +45637,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -45390,7 +45686,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -45615,7 +45911,6 @@ export default {
         "quoteLineId",
         "order",
         "operationOrder",
-        "quotingRate",
         "laborRate",
         "overheadRate",
         "companyId",
@@ -45673,11 +45968,6 @@ export default {
           enum: ["After Previous", "With Previous"],
           format: 'public."methodOperationOrder"',
           type: "string",
-        },
-        quotingRate: {
-          default: 0,
-          format: "numeric",
-          type: "number",
         },
         laborRate: {
           default: 0,
@@ -53205,6 +53495,225 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.jobOperationsWithMakeMethods": {
+      name: "jobOperationsWithMakeMethods",
+      description: "jobOperationsWithMakeMethods",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationsWithMakeMethods",
+      },
+    },
+    "rowFilter.jobOperationsWithMakeMethods.makeMethodId": {
+      name: "makeMethodId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.jobId": {
+      name: "jobId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.jobMakeMethodId": {
+      name: "jobMakeMethodId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.order": {
+      name: "order",
+      required: false,
+      format: "double precision",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.processId": {
+      name: "processId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.setupTime": {
+      name: "setupTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.setupUnit": {
+      name: "setupUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.laborTime": {
+      name: "laborTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.laborUnit": {
+      name: "laborUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.machineTime": {
+      name: "machineTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.machineUnit": {
+      name: "machineUnit",
+      required: false,
+      format: "public.factor",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.operationOrder": {
+      name: "operationOrder",
+      required: false,
+      format: 'public."methodOperationOrder"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.laborRate": {
+      name: "laborRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.overheadRate": {
+      name: "overheadRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.machineRate": {
+      name: "machineRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.operationType": {
+      name: "operationType",
+      required: false,
+      format: 'public."operationType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.operationMinimumCost": {
+      name: "operationMinimumCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.operationLeadTime": {
+      name: "operationLeadTime",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.operationUnitCost": {
+      name: "operationUnitCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.operationSupplierProcessId": {
+      name: "operationSupplierProcessId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.workInstruction": {
+      name: "workInstruction",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.customerLocation": {
       name: "customerLocation",
       description: "customerLocation",
@@ -59519,13 +60028,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteOperationsWithMakeMethods.quotingRate": {
-      name: "quotingRate",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteOperationsWithMakeMethods.laborRate": {
       name: "laborRate",
       required: false,
@@ -64057,13 +64559,6 @@ export default {
       name: "operationOrder",
       required: false,
       format: 'public."methodOperationOrder"',
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteOperation.quotingRate": {
-      name: "quotingRate",
-      required: false,
-      format: "numeric",
       in: "query",
       type: "string",
     },
