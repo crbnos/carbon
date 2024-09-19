@@ -24,8 +24,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  console.log({ type, validation });
-
   if (["item", "quoteLine"].includes(type)) {
     const jobMethod = await upsertJobMethod(
       serviceRole,
