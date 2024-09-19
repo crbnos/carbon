@@ -35,6 +35,9 @@ export const path = {
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
       processes: `${api}/resources/processes`,
+      quotes: `${api}/sales/quotes`,
+      quoteLines: (quoteId: string) =>
+        generatePath(`${api}/sales/quotes/${quoteId}/lines`),
       rollback: (table: string, id: string) =>
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`

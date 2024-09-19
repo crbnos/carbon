@@ -483,6 +483,17 @@ export async function getQuotes(
   return query;
 }
 
+export async function getQuotesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("quote")
+    .select("id, quoteId")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
 export async function getQuoteAssembliesByLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -524,6 +535,16 @@ export async function getQuoteLine(
   quoteLineId: string
 ) {
   return client.from("quoteLines").select("*").eq("id", quoteLineId).single();
+}
+
+export async function getQuoteLinesList(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client
+    .from("quoteLine")
+    .select("id, itemReadableId, description")
+    .eq("quoteId", quoteId);
 }
 
 type QuoteMethod = NonNullable<

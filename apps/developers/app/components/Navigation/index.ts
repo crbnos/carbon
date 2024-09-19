@@ -1,3 +1,3 @@
-import IconSidebar from "./IconSidebar";
+import PrimaryNavigation from "./PrimaryNavigation";
 
-export { IconSidebar };
+export { PrimaryNavigation };

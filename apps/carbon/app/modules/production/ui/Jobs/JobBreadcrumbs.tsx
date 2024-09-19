@@ -14,12 +14,18 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   toast,
   useDisclosure,
+  useMount,
   VStack,
 } from "@carbon/react";
 import { Link, useFetcher, useLocation, useParams } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
+import { useEffect, useMemo, useState } from "react";
 import {
   LuAlertTriangle,
   LuDownload,
@@ -27,7 +33,13 @@ import {
   LuUpload,
 } from "react-icons/lu";
 import { BreadcrumbItem, Breadcrumbs } from "~/components";
-import { Hidden, Item, Submit } from "~/components/Form";
+import {
+  Hidden,
+  Item,
+  Select,
+  SelectControlled,
+  Submit,
+} from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -136,48 +148,63 @@ const JobBreadcrumbs = () => {
                 </ModalDescription>
               </ModalHeader>
               <ModalBody>
-                {isJobMethod ? (
-                  <>
-                    <Hidden name="type" value="item" />
-                    <Hidden name="targetId" value={jobId} />
-                  </>
-                ) : (
-                  <>
-                    <Hidden name="type" value="method" />
-                    <Hidden name="targetId" value={materialId!} />
-                  </>
-                )}
-
-                <VStack spacing={4}>
-                  <Item
-                    name="sourceId"
-                    label="Source Method"
-                    type={(routeData?.job.itemType ?? "Part") as "Part"}
-                    includeInactive={includeInactive === true}
-                    replenishmentSystem="Make"
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="include-inactive"
-                      checked={includeInactive}
-                      onCheckedChange={setIncludeInactive}
-                    />
-                    <label
-                      htmlFor="include-inactive"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Include Inactive
-                    </label>
-                  </div>
-                  {hasMethods && (
-                    <Alert variant="destructive">
-                      <LuAlertTriangle className="h-4 w-4" />
-                      <AlertTitle>
-                        This will overwrite the existing job method
-                      </AlertTitle>
-                    </Alert>
+                <Tabs defaultValue="item" className="w-full">
+                  {isJobMethod && (
+                    <TabsList className="grid w-full grid-cols-2 my-4">
+                      <TabsTrigger value="item">Item</TabsTrigger>
+                      <TabsTrigger value="quote">Quote</TabsTrigger>
+                    </TabsList>
                   )}
-                </VStack>
+                  <TabsContent value="item">
+                    {isJobMethod ? (
+                      <>
+                        <Hidden name="type" value="item" />
+                        <Hidden name="targetId" value={jobId} />
+                      </>
+                    ) : (
+                      <>
+                        <Hidden name="type" value="method" />
+                        <Hidden name="targetId" value={materialId!} />
+                      </>
+                    )}
+
+                    <VStack spacing={4}>
+                      <Item
+                        name="sourceId"
+                        label="Source Method"
+                        type={(routeData?.job.itemType ?? "Part") as "Part"}
+                        includeInactive={includeInactive === true}
+                        replenishmentSystem="Make"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="include-inactive"
+                          checked={includeInactive}
+                          onCheckedChange={setIncludeInactive}
+                        />
+                        <label
+                          htmlFor="include-inactive"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Include Inactive
+                        </label>
+                      </div>
+                      {hasMethods && (
+                        <Alert variant="destructive">
+                          <LuAlertTriangle className="h-4 w-4" />
+                          <AlertTitle>
+                            This will overwrite the existing job method
+                          </AlertTitle>
+                        </Alert>
+                      )}
+                    </VStack>
+                  </TabsContent>
+                  <TabsContent value="quote">
+                    <Hidden name="type" value="quoteLine" />
+                    <Hidden name="targetId" value={jobId} />
+                    <QuoteLineForm />
+                  </TabsContent>
+                </Tabs>
               </ModalBody>
               <ModalFooter>
                 <Button onClick={getMethodModal.onClose} variant="secondary">
@@ -281,3 +308,85 @@ const JobBreadcrumbs = () => {
 };
 
 export default JobBreadcrumbs;
+
+function QuoteLineForm() {
+  const quoteFetcher =
+    useFetcher<PostgrestResponse<{ id: string; quoteId: string }>>();
+  const quoteLineFetcher = useFetcher<
+    PostgrestResponse<{
+      id: string;
+      itemReadableId: string;
+      description: string;
+    }>
+  >();
+
+  // const quotesLoading = quoteFetcher.state === "loading";
+  // const quoteLinesLoading = quoteLineFetcher.state === "loading";
+  const [quote, setQuote] = useState<string | null>(null);
+  const [quoteLine, setQuoteLine] = useState<string | null>(null);
+
+  useMount(() => {
+    quoteFetcher.load(path.to.api.quotes);
+  });
+
+  useEffect(() => {
+    if (quote) {
+      quoteLineFetcher.load(path.to.api.quoteLines(quote));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quote]);
+
+  const quoteOptions = useMemo(
+    () =>
+      quoteFetcher.data?.data?.map((quote) => ({
+        label: quote.quoteId,
+        value: quote.id,
+      })) ?? [],
+    [quoteFetcher.data]
+  );
+
+  const quoteLineOptions = useMemo(
+    () =>
+      quoteLineFetcher.data?.data?.map((quoteLine) => ({
+        label: quoteLine.itemReadableId,
+        value: quoteLine.id,
+      })) ?? [],
+    [quoteLineFetcher.data]
+  );
+
+  return (
+    <>
+      <VStack spacing={4} className="w-full">
+        <Select
+          name="quoteId"
+          label="Quote"
+          options={quoteOptions}
+          placeholder="Select a quote"
+          onChange={(newValue) => {
+            if (newValue) {
+              setQuote(newValue.value);
+              setQuoteLine(null);
+            }
+          }}
+        />
+        <SelectControlled
+          name="quoteLineId"
+          label="Quote Line"
+          options={quoteLineOptions}
+          placeholder="Select a quote line"
+          isReadOnly={!quote}
+          onChange={(newValue) => {
+            if (newValue) {
+              setQuoteLine(newValue.value);
+            }
+          }}
+        />
+      </VStack>
+      <Hidden
+        name="sourceId"
+        className="-my-4"
+        value={quoteLine ? `${quote}:${quoteLine}` : ""}
+      />
+    </>
+  );
+}

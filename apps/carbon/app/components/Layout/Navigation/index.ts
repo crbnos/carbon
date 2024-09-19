@@ -3,7 +3,7 @@ import ContentSidebar from "./ContentSidebar";
 import DetailSidebar from "./DetailSidebar";
 import DetailsTopbar from "./DetailsTopbar";
 import GroupedContentSidebar from "./GroupedContentSidebar";
-import IconSidebar from "./IconSidebar";
+import PrimaryNavigation from "./PrimaryNavigation";
 
 export {
   CollapsibleSidebar,
@@ -11,5 +11,5 @@ export {
   DetailSidebar,
   DetailsTopbar,
   GroupedContentSidebar,
-  IconSidebar,
+  PrimaryNavigation,
 };
