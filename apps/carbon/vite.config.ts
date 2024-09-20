@@ -22,7 +22,8 @@ export default defineConfig({
     noExternal: [
       "@opentelemetry",
       "@trigger.dev",
-      "axios",
+
+      "crypto",
       "node:crypto",
       "react-tweet",
       "react-dropzone",
