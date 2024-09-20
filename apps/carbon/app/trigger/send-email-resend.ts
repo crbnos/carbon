@@ -40,7 +40,7 @@ export const sendEmailResendTask = task({
     console.info(integrationMetadata.data?.fromEmail ?? "No email found");
 
     if (!integrationMetadata.success || integration?.data?.active !== true) {
-      return { success: false, message: "Invalid or inactive integration" };
+      return { success: false, message: "🔴 Invalid or inactive integration" };
     }
 
     const resend = new Resend(integrationMetadata.data.apiKey);
