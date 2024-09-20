@@ -1,0 +1,30 @@
+name: Deploy Background Jobs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/carbon/app/trigger/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: 🚀 Deploy Trigger.dev
+        env:
+          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
+        run: |
+          cd apps/carbon
+          npx trigger.dev@latest deploy
