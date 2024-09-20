@@ -7,17 +7,17 @@ import {
   Switch,
   useLocalStorage,
 } from "@carbon/react";
-import { useRevalidator } from "@remix-run/react";
+import { useLoaderData, useRevalidator } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { HiOutlineAdjustmentsHorizontal } from "react-icons/hi2";
 import { LuListFilter, LuRefreshCcw } from "react-icons/lu";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { SearchFilter } from "~/components";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  return typedjson({
+  return json({
     columns: [
       {
         id: "1",
@@ -192,7 +192,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function KanbanView() {
-  const { columns, items } = useTypedLoaderData<typeof loader>();
+  const { columns, items } = useLoaderData<typeof loader>();
   const [kanbanSettings, setKanbanSettings] = useKanbanSettings();
   const revalidator = useRevalidator();
 

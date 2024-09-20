@@ -67,7 +67,6 @@
     "react-pdf": "^7.7.1",
     "react-use-measure": "^2.1.1",
     "remix-flat-routes": "^0.6.5",
-    "remix-typedjson": "^0.4.1",
     "resend": "^3.1.0",
     "spin-delay": "2.0.1",
     "tailwind-merge": "^2.2.1",

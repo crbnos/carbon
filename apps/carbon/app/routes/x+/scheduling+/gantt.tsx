@@ -6,9 +6,9 @@ import {
   cn,
   useDebounce,
 } from "@carbon/react";
-import type { Location } from "@remix-run/react";
+import { useLoaderData, type Location } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@remix-run/server-runtime";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { json } from "@vercel/remix";
 
 import type { GanttEvent } from "~/components/Gantt";
 import { Gantt } from "~/components/Gantt";
@@ -26,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const resizeSettings = await getResizableGanttSettings(request);
 
-  return typedjson({
+  return json({
     trace: {
       events: [
         {
@@ -312,7 +312,7 @@ function getSpanId(location: Location<any>): string | undefined {
 }
 
 export default function GanttView() {
-  const { trace, resizeSettings } = useTypedLoaderData<typeof loader>();
+  const { trace, resizeSettings } = useLoaderData<typeof loader>();
 
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);

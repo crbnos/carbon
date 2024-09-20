@@ -1,5 +1,4 @@
-import { type ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "remix-typedjson";
+import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { convertSalesRfqToQuote } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";

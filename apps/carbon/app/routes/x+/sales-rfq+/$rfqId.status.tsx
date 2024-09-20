@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "remix-typedjson";
+import { redirect } from "@vercel/remix";
 import { salesRFQStatusType, updateSalesRFQStatus } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
