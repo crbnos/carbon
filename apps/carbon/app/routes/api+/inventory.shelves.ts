@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { getShelvesList } from "~/modules/inventory";
+import { getShelvesListForLocation } from "~/modules/inventory";
 import { requirePermissions } from "~/services/auth/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -17,5 +17,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  return json(await getShelvesList(client, companyId));
+  return json(await getShelvesListForLocation(client, companyId, locationId));
 }

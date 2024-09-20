@@ -38,7 +38,7 @@ const InventoryShelves = ({
     },
     {
       accessorKey: "quantityOnHand",
-      header: "On Hand",
+      header: "Quantity On Hand",
       cell: (item) => item.getValue(),
     },
   ];

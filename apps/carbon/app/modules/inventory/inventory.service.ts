@@ -218,6 +218,20 @@ export async function getShelvesList(
     .order("name");
 }
 
+export async function getShelvesListForLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("shelf")
+    .select("id, name")
+    .eq("active", true)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .order("name");
+}
+
 export async function getShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethodId: string
