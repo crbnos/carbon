@@ -43,7 +43,7 @@ export const CollapsibleSidebar = ({
               onClick={sidebar.onToggle}
               icon={sidebar.isOpen ? <TbArrowBarLeft /> : <TbArrowBarRight />}
               aria-label="Toggle sidebar"
-              className="bg-popover inline-block border border-border border-l-0 absolute pl-2 top-[calc(100vh-135px)] text-muted-foreground right-[-31px] left-auto rounded-l-none z-[3] hover:bg-popover p-0"
+              className="bg-popover inline-block border border-border border-l-0 absolute pl-2 top-[calc(100vh-135px)] text-muted-foreground right-[-31px] left-auto rounded-l-none z-[3] hover:bg-popover p-0 shadow-none"
             />
           </TooltipTrigger>
 

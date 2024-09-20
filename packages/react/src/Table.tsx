@@ -87,7 +87,7 @@ const Td = forwardRef<
   <td
     ref={ref}
     className={cn(
-      "group-hover:bg-muted/30 text-foreground px-6 bg-card align-middle [&:has([role=checkbox])]:pr-0 h-11",
+      "group-hover:bg-muted/30 text-muted-foreground px-6 bg-card align-middle [&:has([role=checkbox])]:pr-0 h-11",
       className
     )}
     {...props}

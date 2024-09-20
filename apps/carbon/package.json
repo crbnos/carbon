@@ -26,10 +26,10 @@
     "@tailwindcss/typography": "^0.5.10",
     "@tanstack/react-table": "^8.9.3",
     "@tanstack/react-virtual": "^3.5.0",
-    "@trigger.dev/cli": "^3.0.5",
-    "@trigger.dev/react": "^3.0.5",
-    "@trigger.dev/remix": "^3.0.5",
-    "@trigger.dev/sdk": "^3.0.5",
+    "@trigger.dev/cli": "3.0.6",
+    "@trigger.dev/react": "3.0.6",
+    "@trigger.dev/remix": "3.0.6",
+    "@trigger.dev/sdk": "3.0.6",
     "@vercel/analytics": "^1.2.2",
     "@vercel/remix": "2.10.2",
     "@visx/axis": "3.3.0",
@@ -76,7 +76,7 @@
   "devDependencies": {
     "@carbon/tailwind": "*",
     "@carbon/tsconfig": "*",
-    "@trigger.dev/build": "^3.0.5",
+    "@trigger.dev/build": "3.0.6",
     "@types/nprogress": "^0.2.0",
     "@types/react": "^18.2.74",
     "@types/react-dom": "^18.2.24",
@@ -89,8 +89,7 @@
     "tailwindcss": "3.3.2",
     "typescript": "^5.2.2",
     "vite": "^5.3.3",
-    "vite-tsconfig-paths": "^4.3.2",
-    "wait-on": "7.2.0"
+    "vite-tsconfig-paths": "^4.3.2"
   },
   "engines": {
     "node": ">=20"
@@ -101,13 +100,10 @@
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "run-p dev:remix dev:trigger",
     "dev:remix": "PORT=3000 remix vite:dev",
-    "dev:trigger": "wait-on http://localhost:3000/healthcheck && npx trigger.dev@latest dev",
+    "dev:trigger": "npx --yes trigger.dev@3.0.6 dev",
     "lint": "TIMING=1 eslint \"app/**/*.ts*\"",
     "start": "remix-serve ./build/server/index.js",
     "types": "tsc"
   },
-  "sideEffects": false,
-  "trigger.dev": {
-    "endpointId": "carbon-erp-wzkF"
-  }
+  "sideEffects": false
 }
