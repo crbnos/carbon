@@ -6,6 +6,8 @@ import { flash } from "~/services/session.server";
 import type { autodeskUploadTask } from "~/trigger/autodesk-upload";
 import { error } from "~/utils/result";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts",

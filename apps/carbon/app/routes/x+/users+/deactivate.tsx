@@ -10,6 +10,8 @@ import type { userAdminTask } from "~/trigger/user-admin";
 import { safeRedirect } from "~/utils/http";
 import { error, success } from "~/utils/result";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
     delete: "users",

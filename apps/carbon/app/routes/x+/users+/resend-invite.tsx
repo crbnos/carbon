@@ -9,6 +9,8 @@ import { flash } from "~/services/session.server";
 import { userAdminTask } from "~/trigger/user-admin";
 import { error, success } from "~/utils/result";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
     delete: "users",

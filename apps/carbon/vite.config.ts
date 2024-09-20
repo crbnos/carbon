@@ -20,11 +20,6 @@ export default defineConfig({
   },
   ssr: {
     noExternal: [
-      "@opentelemetry",
-      "@trigger.dev",
-
-      "crypto",
-      "node:crypto",
       "react-tweet",
       "react-dropzone",
       "react-icons",

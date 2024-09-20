@@ -3,9 +3,11 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import type { postTransactionTask } from "~/trigger/post-transaction"; // Assuming this is where your task is defined
+import type { postTransactionTask } from "~/trigger/post-transaction";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
+
+export const config = { runtime: "nodejs" };
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
