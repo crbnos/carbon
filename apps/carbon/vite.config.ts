@@ -34,7 +34,7 @@ export default defineConfig({
     remix({
       presets: [vercelPreset()],
       future: {
-        unstable_singleFetch: true,
+        unstable_singleFetch: false,
       },
       ignoredRouteFiles: ["**/.*"],
       serverModuleFormat: "esm",
