@@ -28,6 +28,8 @@ import { useMode } from "./hooks/useMode";
 import { getSessionFlash } from "./services/session.server";
 import { modeValidator } from "./types/validators";
 
+export const config = { runtime: "edge" };
+
 export function links() {
   return [
     { rel: "stylesheet", href: Tailwind },

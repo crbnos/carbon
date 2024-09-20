@@ -24,6 +24,7 @@ export default defineConfig({
       "react-dropzone",
       "react-icons",
       "react-phone-number-input",
+      "tailwind-merge",
     ],
   },
   server: {
@@ -33,7 +34,7 @@ export default defineConfig({
     remix({
       presets: [vercelPreset()],
       future: {
-        unstable_singleFetch: true,
+        unstable_singleFetch: false,
       },
       ignoredRouteFiles: ["**/.*"],
       serverModuleFormat: "esm",
