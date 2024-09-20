@@ -51,22 +51,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const quoteLineId = createQuotationLine.data.id;
-  const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-    quoteId,
-    quoteLineId,
-    itemId: data.itemId,
-    companyId,
-    userId,
-  });
+  if (data.methodType === "Make") {
+    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
+      quoteId,
+      quoteLineId,
+      itemId: data.itemId,
+      companyId,
+      userId,
+    });
 
-  if (upsertMethod.error) {
-    throw redirect(
-      path.to.quoteLine(quoteId, quoteLineId),
-      await flash(
-        request,
-        error(upsertMethod.error, "Failed to create quote line method.")
-      )
-    );
+    if (upsertMethod.error) {
+      throw redirect(
+        path.to.quoteLine(quoteId, quoteLineId),
+        await flash(
+          request,
+          error(upsertMethod.error, "Failed to create quote line method.")
+        )
+      );
+    }
   }
 
   throw redirect(path.to.quoteLine(quoteId, quoteLineId));

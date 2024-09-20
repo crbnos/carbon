@@ -39,14 +39,14 @@ const QuoteBreadcrumbs = () => {
   const routeData = useRouteData<{
     quote: Quotation;
     lines: QuotationLine[];
-    methods: Tree<QuoteMethod>[];
+    methods: Promise<Tree<QuoteMethod>[]> | Tree<QuoteMethod>[];
   }>(path.to.quote(quoteId));
   const line = routeData?.lines.find((line) => line.id === lineId);
   const { pathname } = useLocation();
 
-  const methodTree = routeData?.methods.find(
-    (m) => m.data.quoteLineId === line?.id
-  );
+  const methodTree = Array.isArray(routeData?.methods)
+    ? routeData?.methods.find((m) => m.data.quoteLineId === line?.id)
+    : undefined;
   const hasMethods = methodTree?.children && methodTree.children.length > 0;
 
   const isGetMethodLoading =

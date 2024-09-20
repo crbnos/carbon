@@ -38,7 +38,11 @@ import DeleteQuoteLine from "./DeleteQuoteLine";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
 import QuoteLineForm from "./QuoteLineForm";
 
-export default function QuoteExplorer() {
+type QuoteExplorerProps = {
+  methods: Tree<QuoteMethod>[];
+};
+
+export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const quoteData = useRouteData<{ quote: Quotation; lines: QuotationLine[] }>(
@@ -98,6 +102,7 @@ export default function QuoteExplorer() {
                 isDisabled={isDisabled}
                 line={line}
                 onDelete={onDeleteLine}
+                methods={methods}
               />
             ))
           ) : (
@@ -154,9 +159,15 @@ type QuoteLineItemProps = {
   line: QuotationLine;
   isDisabled: boolean;
   onDelete: (line: QuotationLine) => void;
+  methods: Tree<QuoteMethod>[];
 };
 
-function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
+function QuoteLineItem({
+  line,
+  isDisabled,
+  onDelete,
+  methods,
+}: QuoteLineItemProps) {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const permissions = usePermissions();
@@ -170,14 +181,8 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
     }
   });
 
-  const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
-    path.to.quote(quoteId)
-  );
-
-  const methodTree = quoteData?.methods?.find(
-    (m) => m.data.quoteLineId === line.id
-  );
-  const methods = methodTree ? flattenTree(methodTree) : [];
+  const methodTree = methods.find((m) => m.data.quoteLineId === line.id);
+  const flattenedMethods = methodTree ? flattenTree(methodTree) : [];
 
   const isSelected = lineId === line.id;
   const onLineClick = (line: QuotationLine) => {
@@ -257,7 +262,7 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
         line.methodType === "Make" &&
         permissions.can("update", "sales") && (
           <VStack className="border-b border-border p-1">
-            <QuoteBoMExplorer methods={methods} />
+            <QuoteBoMExplorer methods={flattenedMethods} />
           </VStack>
         )}
     </VStack>

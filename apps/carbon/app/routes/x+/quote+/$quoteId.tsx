@@ -6,9 +6,11 @@ import {
   ScrollArea,
   VStack,
 } from "@carbon/react";
-import { Outlet, useParams } from "@remix-run/react";
+import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
+import { ExplorerSkeleton } from "~/components/Skeletons";
 import {
   getOpportunityByQuote,
   getOpportunityDocuments,
@@ -42,25 +44,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const [
-    quote,
-    shipment,
-    payment,
-    lines,
-    methods,
-    prices,
-    // shippingTerms,
-    opportunity,
-  ] = await Promise.all([
-    getQuote(client, quoteId),
-    getQuoteShipment(client, quoteId),
-    getQuotePayment(client, quoteId),
-    getQuoteLines(client, quoteId),
-    getQuoteMethodTrees(client, quoteId),
-    getQuoteLinePricesByQuoteId(client, quoteId),
-    // getShippingTermsList(client, companyId),
-    getOpportunityByQuote(client, quoteId),
-  ]);
+  const [quote, shipment, payment, lines, prices, opportunity] =
+    await Promise.all([
+      getQuote(client, quoteId),
+      getQuoteShipment(client, quoteId),
+      getQuotePayment(client, quoteId),
+      getQuoteLines(client, quoteId),
+      getQuoteLinePricesByQuoteId(client, quoteId),
+      getOpportunityByQuote(client, quoteId),
+    ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
   const files = await getOpportunityDocuments(
@@ -93,15 +85,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     quote: quote.data,
     lines: lines.data ?? [],
-    methods: methods.data ?? [],
+    methods: getQuoteMethodTrees(client, quoteId),
     files: files.data ?? [],
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,
-    // shippingTerms: shippingTerms.data ?? [],
     opportunity: opportunity.data,
   });
 }
@@ -110,6 +101,7 @@ export default function QuoteRoute() {
   const params = useParams();
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
+  const { methods } = useLoaderData<typeof loader>();
 
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
@@ -128,7 +120,33 @@ export default function QuoteRoute() {
                   >
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <div className="grid w-full h-full overflow-hidden">
-                        <QuoteExplorer />
+                        <Suspense
+                          fallback={
+                            <div className="p-2">
+                              <ExplorerSkeleton />
+                            </div>
+                          }
+                        >
+                          <Await
+                            resolve={methods}
+                            errorElement={
+                              <div className="p-2 text-red-500">
+                                Error loading quote tree.
+                              </div>
+                            }
+                          >
+                            {(resolvedMethods) => (
+                              <QuoteExplorer
+                                methods={
+                                  resolvedMethods.data &&
+                                  resolvedMethods.data.length > 0
+                                    ? resolvedMethods.data
+                                    : []
+                                }
+                              />
+                            )}
+                          </Await>
+                        </Suspense>
                       </div>
                     </ScrollArea>
                   </ResizablePanel>

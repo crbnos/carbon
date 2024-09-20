@@ -7,13 +7,16 @@ import {
   VStack,
 } from "@carbon/react";
 import {
-  json,
+  Await,
+  defer,
   Outlet,
   redirect,
   useLoaderData,
   useParams,
 } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
+import { Suspense } from "react";
+import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
 import {
   getJob,
@@ -23,7 +26,6 @@ import {
   JobHeader,
 } from "~/modules/production";
 import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
-import {} from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -43,6 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
+
   const job = await getJob(client, jobId);
 
   if (job.error) {
@@ -54,19 +57,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const files = await getJobDocuments(client, companyId, job.data);
 
-  const method = await getJobMethodTree(client, jobId);
+  const methodPromise = getJobMethodTree(client, jobId);
 
-  if (method.error) {
-    throw redirect(
-      path.to.jobs,
-      await flash(request, error(method.error, "Failed to load job method"))
-    );
-  }
-
-  return json({
+  return defer({
     job: job.data,
-    files: files,
-    method: method.data ?? [],
+    files,
+    method: methodPromise,
   });
 }
 
@@ -76,7 +72,6 @@ export default function JobRoute() {
   if (!jobId) throw new Error("Could not find jobId");
 
   const { method } = useLoaderData<typeof loader>();
-  const flattenedTree = method.length > 0 ? flattenTree(method[0]) : [];
 
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
@@ -95,7 +90,27 @@ export default function JobRoute() {
                   >
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <div className="grid w-full h-full overflow-hidden p-2">
-                        <JobBoMExplorer method={flattenedTree} />
+                        <Suspense fallback={<ExplorerSkeleton />}>
+                          <Await
+                            resolve={method}
+                            errorElement={
+                              <div className="p-2 text-red-500">
+                                Error loading job tree.
+                              </div>
+                            }
+                          >
+                            {(resolvedMethod) => (
+                              <JobBoMExplorer
+                                method={
+                                  resolvedMethod.data &&
+                                  resolvedMethod.data.length > 0
+                                    ? flattenTree(resolvedMethod.data[0])
+                                    : []
+                                }
+                              />
+                            )}
+                          </Await>
+                        </Suspense>
                       </div>
                     </ScrollArea>
                   </ResizablePanel>
