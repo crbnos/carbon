@@ -1,4 +1,3 @@
-import axios from "axios";
 import type { CurrencyCode } from "~/modules/accounting";
 
 type ExchangeClientOptions = {
@@ -49,9 +48,13 @@ export class ExchangeRatesClient {
   }
 
   async getExchangeRates(base?: CurrencyCode): Promise<Rates> {
-    const { data } = await axios.get<ExchangeRatesResponse>(
-      `${this.#apiUrl}?access_key=${this.#apiKey}`
-    );
+    const response = await fetch(`${this.#apiUrl}?access_key=${this.#apiKey}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: ExchangeRatesResponse = await response.json();
 
     if ("success" in data && data.success === true) {
       const baseRate = data.rates[base ?? this.#baseCurrency];

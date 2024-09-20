@@ -1,6 +1,4 @@
 import { redis } from "@carbon/kv";
-import axios from "axios";
-
 import { z } from "zod";
 import {
   AUTODESK_BUCKET_NAME,
@@ -77,13 +75,27 @@ export async function finalizeAutodeskUpload(
   let response;
 
   try {
-    response = await axios(url, {
+    response = await fetch(url, {
       method: autodeskAPI.finalizeAutodeskUpload.method,
-      data: body,
+      body: JSON.stringify(body),
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      data: {
+        urn: data.objectId as string,
+      },
+      error: null,
+    };
   } catch (err) {
     const message = (err as Error).message || "Something went wrong";
     console.error(message, err);
@@ -94,13 +106,6 @@ export async function finalizeAutodeskUpload(
       },
     };
   }
-
-  return {
-    data: {
-      urn: response?.data?.objectId as string,
-    },
-    error: null,
-  };
 }
 
 export async function getAutodeskSignedUrl(
@@ -123,6 +128,32 @@ export async function getAutodeskSignedUrl(
         Authorization: `Bearer ${token}`,
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseJson = await response.json();
+    const parsed = signedUrlSchema.safeParse(responseJson);
+
+    if (parsed.success === false) {
+      return {
+        data: null,
+        error: {
+          message: `Invalid response format: ${JSON.stringify(parsed.error)}`,
+        },
+      };
+    }
+
+    result = {
+      uploadKey: parsed.data.uploadKey,
+      url: parsed.data.urls?.[0] ?? "",
+    };
+
+    return {
+      data: result,
+      error: null,
+    };
   } catch (err) {
     const message = (err as Error).message || "Something went wrong";
     console.error(message, err);
@@ -133,28 +164,6 @@ export async function getAutodeskSignedUrl(
       },
     };
   }
-
-  const reponseJson = await response?.json();
-  const parsed = signedUrlSchema.safeParse(reponseJson);
-
-  if (parsed.success === false) {
-    return {
-      data: null,
-      error: {
-        message: `Invalid response format: ${JSON.stringify(parsed.error)}`,
-      },
-    };
-  }
-
-  result = {
-    uploadKey: parsed.data.uploadKey,
-    url: parsed.data.urls?.[0] ?? "",
-  };
-
-  return {
-    data: result,
-    error: null,
-  };
 }
 
 export async function getAutodeskToken(refresh = false, scope?: string) {
@@ -198,6 +207,11 @@ export async function getAutodeskToken(refresh = false, scope?: string) {
       },
       body: new URLSearchParams(postBody),
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const result = (await response.json()) as AutodeskTokenResponse;
     if (result?.access_token) {
       redis.set("autodesk_token", result.access_token);
@@ -251,6 +265,10 @@ export async function getManifest(
           Authorization: `Bearer ${token}`,
         },
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -368,6 +386,10 @@ export async function getTranslationStatus(urn: string, token: string) {
       },
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data = await response.json();
 
     return data.status;
@@ -407,13 +429,21 @@ export async function translateFile(urn: string, token: string) {
 
   let response;
   try {
-    response = await axios(url, {
+    response = await fetch(url, {
       method: autodeskAPI.translateFile.method,
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      data: body,
+      body: JSON.stringify(body),
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { data: { urn: data?.urn, token }, error: null };
   } catch (err) {
     const message = (err as Error).message || "Something went wrong";
     console.error(message, err);
@@ -424,24 +454,33 @@ export async function translateFile(urn: string, token: string) {
       },
     };
   }
-
-  const data = response?.data;
-  return { data: { urn: data?.urn, token }, error: null };
 }
 
 export async function uploadToAutodesk(url: string, file: File, token: string) {
   let response;
 
   try {
-    response = await axios(url, {
+    response = await fetch(url, {
       method: "PUT",
-      data: await file.arrayBuffer(),
+      body: await file.arrayBuffer(),
       headers: {
         "Content-Type": "application/octet-stream",
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // For PUT requests, there might not be a JSON response
+    // So we return a success message instead of parsing the response
+    return {
+      data: { message: "File uploaded successfully" },
+      error: null,
+    };
   } catch (err) {
     const message = (err as Error).message || "Something went wrong";
+    console.error("Error uploading to Autodesk:", message);
 
     return {
       data: null,
@@ -450,9 +489,4 @@ export async function uploadToAutodesk(url: string, file: File, token: string) {
       },
     };
   }
-
-  return {
-    data: response?.data,
-    error: null,
-  };
 }
