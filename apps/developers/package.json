@@ -12,7 +12,6 @@
     "@react-aria/i18n": "^3.11.0",
     "@remix-run/dev": "~2.10.2",
     "@remix-run/eslint-config": "~2.10.2",
-    "@remix-run/node": "~2.10.2",
     "@remix-run/react": "~2.10.2",
     "@remix-run/serve": "~2.10.2",
     "@supabase/functions-js": "2.1.5",
