@@ -52,6 +52,7 @@ const InventoryShelves = ({
           <Grid<ItemShelfQuantities>
             data={itemShelfQuantities}
             columns={columns}
+            contained={false}
           />
         </CardContent>
       </Card>
