@@ -16,7 +16,6 @@ const InventoryShelves = ({
   locations,
   shelves,
 }: InventoryShelvesProps) => {
-  console.log({ shelves });
   const columns: ColumnDef<ItemShelfQuantities>[] = [
     {
       accessorKey: "locationId",
