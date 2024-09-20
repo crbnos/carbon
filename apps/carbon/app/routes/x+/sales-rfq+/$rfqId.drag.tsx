@@ -1,16 +1,15 @@
+import { tasks } from "@trigger.dev/sdk/v3";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { nanoid } from "nanoid";
-import { triggerClient } from "~/lib/trigger.server";
 import { salesRfqDragValidator, upsertSalesRFQLine } from "~/modules/sales";
 import { upsertModelUpload } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { autodeskUploadTask } from "~/trigger/autodesk-upload"; // Assuming the task is defined in this file
 import { setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
-
-export const config = { runtime: "nodejs" };
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -128,18 +127,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error(move.error, "Failed to move file"))
       );
     }
-    await triggerClient.sendEvent({
-      name: "autodesk.upload",
-      payload: {
-        companyId,
-        fileId,
-        itemId: null,
-        modelPath: newPath,
-        name: fileName,
-        quoteLineId: null,
-        salesRfqLineId: targetLineId,
-        userId,
-      },
+
+    // Trigger the Autodesk upload task
+    await tasks.trigger<typeof autodeskUploadTask>("autodesk-upload", {
+      companyId,
+      fileId,
+      itemId: null,
+      modelPath: newPath,
+      name: fileName!,
+      quoteLineId: null,
+      salesRfqLineId: targetLineId,
     });
   } else {
     newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;

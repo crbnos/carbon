@@ -1,5 +1,4 @@
-import { eventTrigger } from "@trigger.dev/sdk";
-import { z } from "zod";
+import { task } from "@trigger.dev/sdk/v3";
 import {
   finalizeAutodeskUpload,
   getAutodeskSignedUrl,
@@ -7,31 +6,20 @@ import {
   translateFile,
   uploadToAutodesk,
 } from "~/lib/autodesk/autodesk.server";
-
 import { getSupabaseServiceRole } from "~/lib/supabase";
-import { triggerClient } from "~/lib/trigger.server";
+import { autodeskPollTask } from "./autodesk-poll";
 
-export const config = { runtime: "nodejs" };
-
-const supabaseClient = getSupabaseServiceRole();
-
-const job = triggerClient.defineJob({
+export const autodeskUploadTask = task({
   id: "autodesk-upload",
-  name: "Upload CAD Model to Autodesk",
-  version: "0.0.1",
-  trigger: eventTrigger({
-    name: "autodesk.upload",
-    schema: z.object({
-      name: z.string(),
-      modelPath: z.string(),
-      fileId: z.string(),
-      companyId: z.string(),
-      itemId: z.union([z.string(), z.null()]),
-      salesRfqLineId: z.union([z.string(), z.null()]),
-      quoteLineId: z.union([z.string(), z.null()]),
-    }),
-  }),
-  run: async (payload, io, ctx) => {
+  run: async (payload: {
+    name: string;
+    modelPath: string;
+    fileId: string;
+    companyId: string;
+    itemId: string | null;
+    salesRfqLineId: string | null;
+    quoteLineId: string | null;
+  }) => {
     const {
       companyId,
       modelPath,
@@ -42,10 +30,10 @@ const job = triggerClient.defineJob({
       quoteLineId,
     } = payload;
 
-    io.logger.info("Starting autodesk-upload job", { payload });
+    console.log("Starting autodesk-upload task", { payload });
 
     try {
-      io.logger.info("Getting Autodesk token");
+      console.log("Getting Autodesk token");
       const autodeskToken = await getAutodeskToken();
       if (autodeskToken.error) {
         throw new Error(
@@ -53,30 +41,31 @@ const job = triggerClient.defineJob({
         );
       }
       const token = autodeskToken.data?.token;
-      io.logger.info("Autodesk token obtained", {
+      console.log("Autodesk token obtained", {
         token: token?.slice(0, 10) + "...",
       });
 
       const encodedFilename = modelPath.split("/").pop() as string;
-      io.logger.info("Encoded filename", { encodedFilename });
+      console.log("Encoded filename", { encodedFilename });
 
-      io.logger.info("Getting signed URL and downloading blob");
+      console.log("Getting signed URL and downloading blob");
+      const supabaseClient = getSupabaseServiceRole();
       const [signedUrl, blob] = await Promise.all([
         getAutodeskSignedUrl(encodedFilename, token),
         supabaseClient.storage.from("private").download(modelPath),
       ]);
       if (signedUrl.error) {
-        io.logger.error("Filed to get signed URL");
-        io.logger.error(signedUrl.error.message);
+        console.error("Failed to get signed URL");
+        console.error(signedUrl.error.message);
         throw new Error("Failed to get signed URL: " + signedUrl.error.message);
       }
       if (blob.error) {
-        io.logger.error("Failed to download blob");
-        io.logger.error(blob.error.message);
+        console.error("Failed to download blob");
+        console.error(blob.error.message);
         throw new Error("Failed to download blob: " + blob.error.message);
       }
 
-      io.logger.info("Signed URL and blob obtained", {
+      console.log("Signed URL and blob obtained", {
         signedUrl: signedUrl.data?.url,
         blobSize: blob.data?.size,
       });
@@ -84,16 +73,16 @@ const job = triggerClient.defineJob({
       const file = new File([blob.data], encodedFilename);
       const { uploadKey, url } = signedUrl.data;
 
-      io.logger.info("Uploading to Autodesk", { url, uploadKey });
+      console.log("Uploading to Autodesk", { url, uploadKey });
       const initialUpload = await uploadToAutodesk(url, file, uploadKey);
       if (initialUpload.error) {
         throw new Error(
           "Failed to upload file: " + initialUpload.error.message
         );
       }
-      io.logger.info("Autodesk upload succeeded");
+      console.log("Autodesk upload succeeded");
 
-      io.logger.info("Finalizing Autodesk upload");
+      console.log("Finalizing Autodesk upload");
       const upload = await finalizeAutodeskUpload(
         encodedFilename,
         token,
@@ -105,47 +94,45 @@ const job = triggerClient.defineJob({
 
       const { urn } = upload.data;
       const autodeskUrn = Buffer.from(urn).toString("base64");
-      io.logger.info("Upload finalized", { urn, autodeskUrn });
+      console.log("Upload finalized", { urn, autodeskUrn });
 
-      io.logger.info("Translating file");
+      console.log("Translating file");
       const translation = await translateFile(autodeskUrn, token);
       if (translation.error) {
         throw new Error(
           "Failed to translate file: " + translation.error.message
         );
       }
-      io.logger.info("File translation initiated");
+      console.log("File translation initiated");
 
-      io.logger.info("Sending autodesk.poll event");
-      const event = await triggerClient.sendEvent({
-        name: "autodesk.poll",
-        payload: {
-          id: fileId,
-          size: file.size,
-          name,
-          autodeskUrn,
-          companyId,
-        },
+      console.log("Sending autodesk.poll event");
+      await autodeskPollTask.trigger({
+        id: fileId,
+        size: file.size,
+        name,
+        autodeskUrn,
+        companyId,
       });
 
-      io.logger.info("Event sent", { event });
+      console.log("Event sent");
+      return { success: true };
     } catch (err) {
-      io.logger.error("Error in autodesk-upload job", {
+      console.error("Error in autodesk-upload task", {
         error: JSON.stringify(err, null, 2),
       });
 
       const client = getSupabaseServiceRole();
-      io.logger.info("Resetting modelUploadId");
+      console.log("Resetting modelUploadId");
 
       if (itemId) {
-        io.logger.info("Resetting item modelUploadId", { itemId });
+        console.log("Resetting item modelUploadId", { itemId });
         await client
           .from("item")
           .update({ modelUploadId: null })
           .eq("id", itemId);
       }
       if (salesRfqLineId) {
-        io.logger.info("Resetting salesRfqLine modelUploadId", {
+        console.log("Resetting salesRfqLine modelUploadId", {
           salesRfqLineId,
         });
         await client
@@ -154,18 +141,17 @@ const job = triggerClient.defineJob({
           .eq("id", salesRfqLineId);
       }
       if (quoteLineId) {
-        io.logger.info("Resetting quoteLine modelUploadId", { quoteLineId });
+        console.log("Resetting quoteLine modelUploadId", { quoteLineId });
         await client
           .from("quoteLine")
           .update({ modelUploadId: null })
           .eq("id", quoteLineId);
       }
 
-      io.logger.error("Error uploading to Autodesk", {
+      console.error("Error uploading to Autodesk", {
         error: JSON.stringify(err, null, 2),
       });
+      throw err;
     }
   },
 });
-
-export default job;

@@ -1,9 +1,9 @@
 import type { OperatingSystemPlatform } from "@carbon/react";
 import { OperatingSystemContextProvider } from "@carbon/react";
 import { I18nProvider } from "@react-aria/i18n";
+import { createReadableStreamFromReadable } from "@remix-run/node"; // or cloudflare/deno
 import { RemixServer } from "@remix-run/react";
 import type { EntryContext, LoaderFunctionArgs } from "@vercel/remix";
-import { createReadableStreamFromReadable } from "@vercel/remix"; // or cloudflare/deno
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import isbot from "isbot";
 import { renderToPipeableStream } from "react-dom/server";

@@ -1,10 +1,9 @@
 import { validationError, validator } from "@carbon/form";
+import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import type { z } from "zod";
-import type { permissionsUpdateSchema } from "~/jobs/update-permissions.server";
+import type { updatePermissionsTask } from "~/trigger/update-permissions";
 
-import { triggerClient } from "~/lib/trigger.server";
 import {
   bulkPermissionsValidator,
   userPermissionsValidator,
@@ -14,8 +13,6 @@ import { flash } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
 import { getParams, path } from "~/utils/path";
 import { error, success } from "~/utils/result";
-
-export const config = { runtime: "nodejs" };
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -54,11 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const jobs = userIds.map<{
-    name: string;
-    payload: z.infer<typeof permissionsUpdateSchema>;
-  }>((id) => ({
-    name: `update.permissions`,
+  const batchPayload = userIds.map((id) => ({
     payload: {
       id,
       permissions,
@@ -67,7 +60,10 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   }));
 
-  await triggerClient.sendEvents(jobs);
+  await tasks.batchTrigger<typeof updatePermissionsTask>(
+    "update-permissions",
+    batchPayload
+  );
 
   throw redirect(
     `${path.to.employeeAccounts}?${getParams(request)}`,

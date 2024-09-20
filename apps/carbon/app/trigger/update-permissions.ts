@@ -1,11 +1,8 @@
-import { eventTrigger } from "@trigger.dev/sdk";
+import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
 import { getSupabaseServiceRole } from "~/lib/supabase";
-import { triggerClient } from "~/lib/trigger.server";
 import { updatePermissions } from "~/modules/users/users.server";
-
-export const config = { runtime: "nodejs" };
 
 const supabaseClient = getSupabaseServiceRole();
 export const permissionsUpdateSchema = z.object({
@@ -23,28 +20,19 @@ export const permissionsUpdateSchema = z.object({
   companyId: z.string(),
 });
 
-const job = triggerClient.defineJob({
+export const updatePermissionsTask = task({
   id: "update-permissions",
-  name: "Update Permissions",
-  version: "0.0.1",
-  trigger: eventTrigger({
-    name: "update.permissions",
-    schema: permissionsUpdateSchema,
-  }),
-  run: async (payload, io, ctx) => {
-    await io.logger.info(`🔰 Permission Update for ${payload.id}`);
+  run: async (payload: z.infer<typeof permissionsUpdateSchema>) => {
+    console.info(`🔰 Permission Update for ${payload.id}`);
     const { success, message } = await updatePermissions(
       supabaseClient,
       payload
     );
     if (success) {
-      await io.logger.info(`✅ Permission Update for ${payload.id}`);
+      console.info(`✅ Permission Update for ${payload.id}`);
     } else {
-      await io.logger.error(
-        `❌ Permission Update for ${payload.id}: ${message}`
-      );
+      console.error(`❌ Permission Update for ${payload.id}: ${message}`);
     }
+    return { success, message };
   },
 });
-
-export default job;

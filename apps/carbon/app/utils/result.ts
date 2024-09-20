@@ -1,8 +1,7 @@
-import logger from "~/lib/logger";
 import type { Result } from "~/types";
 
 export function error(error: any, message = "Request failed"): Result {
-  if (error) logger.error({ error, message });
+  if (error) console.error({ error, message });
 
   // Removed details because it can grow too large (larger than the cookie limit)
   // const details =

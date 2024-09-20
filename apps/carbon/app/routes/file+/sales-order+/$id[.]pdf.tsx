@@ -2,7 +2,6 @@ import { SalesOrderPDF } from "@carbon/documents";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@vercel/remix";
-import logger from "~/lib/logger";
 import {
   getSalesOrder,
   getSalesOrderCustomerDetails,
@@ -32,23 +31,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ]);
 
   if (company.error) {
-    logger.error(company.error);
+    console.error(company.error);
   }
 
   if (salesOrder.error) {
-    logger.error(salesOrder.error);
+    console.error(salesOrder.error);
   }
 
   if (salesOrderLines.error) {
-    logger.error(salesOrderLines.error);
+    console.error(salesOrderLines.error);
   }
 
   if (salesOrderLocations.error) {
-    logger.error(salesOrderLocations.error);
+    console.error(salesOrderLocations.error);
   }
 
   if (terms.error) {
-    logger.error(terms.error);
+    console.error(terms.error);
   }
 
   if (

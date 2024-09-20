@@ -1,12 +1,11 @@
+import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { triggerClient } from "~/lib/trigger.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { postTransactionTask } from "~/trigger/post-transaction";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
-
-export const config = { runtime: "nodejs" };
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -33,12 +32,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  triggerClient.sendEvent({
-    name: "post.transactions",
-    payload: {
-      type: "receipt",
-      documentId: receiptId,
-    },
+  await tasks.trigger<typeof postTransactionTask>("post-transactions", {
+    type: "receipt",
+    documentId: receiptId,
   });
 
   throw redirect(path.to.receipts);

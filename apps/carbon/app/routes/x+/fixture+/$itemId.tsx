@@ -1,6 +1,7 @@
-import { Outlet } from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { useRealtime } from "~/hooks";
 import {
   FixtureHeader,
   FixtureProperties,
@@ -54,6 +55,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function FixtureRoute() {
+  const { fixtureSummary } = useLoaderData<typeof loader>();
+
+  useRealtime("modelUpload", `modelPath=eq.${fixtureSummary.modelPath}`);
+
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <FixtureHeader />

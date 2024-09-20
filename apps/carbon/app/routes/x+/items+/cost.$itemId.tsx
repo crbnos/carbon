@@ -1,5 +1,4 @@
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import logger from "~/lib/logger";
 import { updateItemCost } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { assertIsPost } from "~/utils/http";
@@ -21,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     updatedBy: userId,
   });
   if (deletion.error) {
-    logger.error("Failed to update item cost", deletion.error);
+    console.error("Failed to update item cost", deletion.error);
     return json({
       error: "Failed to update item cost",
     });

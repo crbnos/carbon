@@ -15,7 +15,6 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { insertEmployeeJob } from "~/modules/people";
 import { getLocationsList, upsertLocation } from "~/modules/resources";
@@ -89,17 +88,17 @@ export async function action({ request }: ActionFunctionArgs) {
       }),
     ]);
     if (companyUpdate.error) {
-      logger.error(companyUpdate.error);
+      console.error(companyUpdate.error);
       throw new Error("Fatal: failed to update company");
     }
     if (locationUpdate.error) {
-      logger.error(locationUpdate.error);
+      console.error(locationUpdate.error);
       throw new Error("Fatal: failed to update location");
     }
   } else {
     const companyInsert = await insertCompany(supabaseClient, data);
     if (companyInsert.error) {
-      logger.error(companyInsert.error);
+      console.error(companyInsert.error);
       throw new Error("Fatal: failed to insert company");
     }
 
@@ -110,7 +109,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const seed = await seedCompany(supabaseClient, companyId, userId);
     if (seed.error) {
-      logger.error(seed.error);
+      console.error(seed.error);
       throw new Error("Fatal: failed to seed company");
     }
 
@@ -126,7 +125,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ]);
 
     if (locationInsert.error) {
-      logger.error(locationInsert.error);
+      console.error(locationInsert.error);
       throw new Error("Fatal: failed to insert location");
     }
 
@@ -144,7 +143,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ]);
 
     if (job.error) {
-      logger.error(job.error);
+      console.error(job.error);
       throw new Error("Fatal: failed to insert job");
     }
   }

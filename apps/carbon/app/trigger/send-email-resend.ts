@@ -1,40 +1,24 @@
-import { eventTrigger } from "@trigger.dev/sdk";
+import { task } from "@trigger.dev/sdk/v3";
 import { nanoid } from "nanoid";
 import { Resend } from "resend";
-import { z } from "zod";
 
 import { getSupabaseServiceRole } from "~/lib/supabase";
-import { triggerClient } from "~/lib/trigger.server";
 import { resendFormValidator } from "~/modules/settings";
-
-export const config = { runtime: "nodejs" };
 
 const supabaseClient = getSupabaseServiceRole();
 
-const job = triggerClient.defineJob({
+export const sendEmailResendTask = task({
   id: "send-email-resend",
-  name: "Send Email with Resend",
-  version: "0.0.1",
-  trigger: eventTrigger({
-    name: "resend.email",
-    schema: z.object({
-      to: z.union([z.string(), z.array(z.string())]),
-      cc: z.union([z.string(), z.array(z.string())]).optional(),
-      from: z.string().optional(),
-      subject: z.string(),
-      text: z.string(),
-      html: z.string(),
-      attachments: z
-        .object({
-          filename: z.string(),
-          content: z.any(),
-        })
-        .array()
-        .optional(),
-      companyId: z.string(),
-    }),
-  }),
-  run: async (payload, io, ctx) => {
+  run: async (payload: {
+    to: string | string[];
+    cc?: string | string[];
+    from?: string;
+    subject: string;
+    text: string;
+    html: string;
+    attachments?: Array<{ filename: string; content: any }>;
+    companyId: string;
+  }) => {
     const [company, integration] = await Promise.all([
       supabaseClient
         .from("company")
@@ -53,10 +37,11 @@ const job = triggerClient.defineJob({
       integration?.data?.metadata
     );
 
-    io.logger.info(integrationMetadata.data?.fromEmail ?? "no email found");
+    console.info(integrationMetadata.data?.fromEmail ?? "no email found");
 
-    if (!integrationMetadata.success || integration?.data?.active !== true)
-      return;
+    if (!integrationMetadata.success || integration?.data?.active !== true) {
+      return { success: false, message: "Invalid integration or inactive" };
+    }
 
     const resend = new Resend(integrationMetadata.data.apiKey);
 
@@ -75,9 +60,9 @@ const job = triggerClient.defineJob({
       },
     };
 
-    await io.logger.info(`📬 Resend Email Job`);
-    await resend.emails.send(email);
+    console.info(`📬 Resend Email Job`);
+    const result = await resend.emails.send(email);
+
+    return { success: true, result };
   },
 });
-
-export default job;

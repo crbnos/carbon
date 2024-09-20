@@ -2,7 +2,6 @@ import { PurchaseOrderPDF } from "@carbon/documents";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@vercel/remix";
-import logger from "~/lib/logger";
 import {
   getPurchaseOrder,
   getPurchaseOrderLines,
@@ -37,23 +36,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    logger.error(company.error);
+    console.log(company.error);
   }
 
   if (purchaseOrder.error) {
-    logger.error(purchaseOrder.error);
+    console.log(purchaseOrder.error);
   }
 
   if (purchaseOrderLines.error) {
-    logger.error(purchaseOrderLines.error);
+    console.log(purchaseOrderLines.error);
   }
 
   if (purchaseOrderLocations.error) {
-    logger.error(purchaseOrderLocations.error);
+    console.log(purchaseOrderLocations.error);
   }
 
   if (terms.error) {
-    logger.error(terms.error);
+    console.log(terms.error);
   }
 
   if (

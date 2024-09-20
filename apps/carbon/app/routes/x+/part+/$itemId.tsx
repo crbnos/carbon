@@ -1,6 +1,7 @@
-import { Outlet } from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { useRealtime } from "~/hooks";
 import {
   PartHeader,
   PartProperties,
@@ -55,6 +56,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function PartRoute() {
+  const { partSummary } = useLoaderData<typeof loader>();
+
+  useRealtime("modelUpload", `modelPath=eq.${partSummary.modelPath}`);
+
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
       <PartHeader />

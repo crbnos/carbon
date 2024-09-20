@@ -1,11 +1,10 @@
+import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { triggerClient } from "~/lib/trigger.server";
 import { upsertModelUpload } from "~/modules/shared";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { autodeskUploadTask } from "~/trigger/autodesk-upload";
 import { error } from "~/utils/result";
-
-export const config = { runtime: "nodejs" };
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -73,18 +72,14 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
-    await triggerClient.sendEvent({
-      name: "autodesk.upload",
-      payload: {
-        companyId,
-        fileId,
-        itemId,
-        modelPath,
-        name,
-        quoteLineId,
-        salesRfqLineId,
-        userId,
-      },
+    await tasks.trigger<typeof autodeskUploadTask>("autodesk-upload", {
+      companyId,
+      fileId,
+      itemId,
+      modelPath,
+      name,
+      quoteLineId,
+      salesRfqLineId,
     });
   } catch (err) {
     return json({}, await flash(request, error(err, "Failed to upload model")));

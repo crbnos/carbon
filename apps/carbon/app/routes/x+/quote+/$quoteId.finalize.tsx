@@ -1,8 +1,8 @@
 import { QuoteEmail } from "@carbon/documents";
 import { validationError, validator } from "@carbon/form";
 import { renderAsync } from "@react-email/components";
+import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { triggerClient } from "~/lib/trigger.server";
 import { upsertDocument } from "~/modules/documents";
 import {
   getCustomer,
@@ -16,6 +16,7 @@ import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have this task defined
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
@@ -139,7 +140,6 @@ export async function action(args: ActionFunctionArgs) {
           throw new Error("Failed to get customer contact");
         if (!user.data) throw new Error("Failed to get user");
 
-        // TODO: Update sender email
         const emailTemplate = QuoteEmail({
           company: company.data,
           // @ts-ignore
@@ -156,22 +156,22 @@ export async function action(args: ActionFunctionArgs) {
           },
         });
 
-        await triggerClient.sendEvent({
-          name: "resend.email",
-          payload: {
-            to: customerContact.data.contact!.email!,
-            from: user.data.email,
-            subject: `Quote ${quote.data.quoteId}`,
-            html: await renderAsync(emailTemplate),
-            text: await renderAsync(emailTemplate, { plainText: true }),
-            attachments: [
-              {
-                content: Buffer.from(file),
-                filename: fileName,
-              },
-            ],
-            companyId,
-          },
+        const html = await renderAsync(emailTemplate);
+        const text = await renderAsync(emailTemplate, { plainText: true });
+
+        await tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
+          to: customerContact.data.contact!.email!,
+          from: user.data.email,
+          subject: `Quote ${quote.data.quoteId}`,
+          html,
+          text,
+          attachments: [
+            {
+              content: Buffer.from(file).toString("base64"),
+              filename: fileName,
+            },
+          ],
+          companyId,
         });
       } catch (err) {
         throw redirect(

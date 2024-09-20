@@ -1,8 +1,8 @@
 import { PurchaseOrderEmail } from "@carbon/documents";
 import { validationError, validator } from "@carbon/form";
 import { renderAsync } from "@react-email/components";
+import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { triggerClient } from "~/lib/trigger.server";
 import { upsertDocument } from "~/modules/documents";
 import {
   getPurchaseOrder,
@@ -17,6 +17,7 @@ import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have a sendEmail task defined
 import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error, success } from "~/utils/result";
@@ -175,22 +176,22 @@ export async function action(args: ActionFunctionArgs) {
           },
         });
 
-        await triggerClient.sendEvent({
-          name: "resend.email",
-          payload: {
-            to: [buyer.data.email, supplier.data.contact.email],
-            from: buyer.data.email,
-            subject: `${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
-            html: await renderAsync(emailTemplate),
-            text: await renderAsync(emailTemplate, { plainText: true }),
-            attachments: [
-              {
-                content: Buffer.from(file),
-                filename: fileName,
-              },
-            ],
-            companyId,
-          },
+        const html = await renderAsync(emailTemplate);
+        const text = await renderAsync(emailTemplate, { plainText: true });
+
+        await tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
+          to: [buyer.data.email, supplier.data.contact.email],
+          from: buyer.data.email,
+          subject: `${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
+          html,
+          text,
+          attachments: [
+            {
+              content: Buffer.from(file).toString("base64"),
+              filename: fileName,
+            },
+          ],
+          companyId,
         });
       } catch (err) {
         throw redirect(

@@ -1,28 +1,20 @@
-import { eventTrigger } from "@trigger.dev/sdk";
+import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
 import { getSupabaseServiceRole } from "~/lib/supabase";
-import { triggerClient } from "~/lib/trigger.server";
 import type { Result } from "~/types";
 
-export const config = { runtime: "nodejs" };
-
 const supabaseClient = getSupabaseServiceRole();
-export const postTransactionSchema = z.object({
+
+const postTransactionSchema = z.object({
   documentId: z.string(),
   type: z.enum(["receipt", "purchase-invoice"]),
 });
 
-const job = triggerClient.defineJob({
+export const postTransactionTask = task({
   id: "post-transactions",
-  name: "Post Transactions",
-  version: "0.0.1",
-  trigger: eventTrigger({
-    name: "post.transactions",
-    schema: postTransactionSchema,
-  }),
-  run: async (payload, io, ctx) => {
-    await io.logger.info(
+  run: async (payload: z.infer<typeof postTransactionSchema>) => {
+    console.info(
       `🔰 User admin update ${payload.type} for ${payload.documentId}`
     );
 
@@ -30,7 +22,7 @@ const job = triggerClient.defineJob({
 
     switch (payload.type) {
       case "receipt":
-        await io.logger.info(`📫 Posting receipt ${payload.documentId}`);
+        console.info(`📫 Posting receipt ${payload.documentId}`);
         const postReceipt = await supabaseClient.functions.invoke(
           "post-receipt",
           {
@@ -41,15 +33,13 @@ const job = triggerClient.defineJob({
         );
 
         result = {
-          success: postReceipt.error === null ? true : false,
+          success: postReceipt.error === null,
           message: postReceipt.error?.message,
         };
 
         break;
       case "purchase-invoice":
-        await io.logger.info(
-          `📫 Posting purchase invoice ${payload.documentId}`
-        );
+        console.info(`📫 Posting purchase invoice ${payload.documentId}`);
         const postPurchaseInvoice = await supabaseClient.functions.invoke(
           "post-purchase-invoice",
           {
@@ -60,12 +50,12 @@ const job = triggerClient.defineJob({
         );
 
         result = {
-          success: postPurchaseInvoice.error === null ? true : false,
+          success: postPurchaseInvoice.error === null,
           message: postPurchaseInvoice.error?.message,
         };
 
         if (result.success) {
-          await io.logger.info(
+          console.info(
             `💵 Updating pricing from invoice ${payload.documentId}`
           );
           const priceUpdate = await supabaseClient.functions.invoke(
@@ -78,7 +68,7 @@ const job = triggerClient.defineJob({
           );
 
           result = {
-            success: priceUpdate.error === null ? true : false,
+            success: priceUpdate.error === null,
             message: priceUpdate.error?.message,
           };
         }
@@ -93,13 +83,13 @@ const job = triggerClient.defineJob({
     }
 
     if (result.success) {
-      await io.logger.info(`✅ Success ${payload.documentId}`);
+      console.info(`✅ Success ${payload.documentId}`);
     } else {
-      await io.logger.error(
+      console.error(
         `❌ Admin action ${payload.type} failed for ${payload.documentId}: ${result.message}`
       );
     }
+
+    return result;
   },
 });
-
-export default job;

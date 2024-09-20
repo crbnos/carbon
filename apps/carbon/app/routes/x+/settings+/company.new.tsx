@@ -3,7 +3,6 @@ import { redis } from "@carbon/kv";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { insertEmployeeJob } from "~/modules/people";
 import { upsertLocation } from "~/modules/resources";
@@ -33,7 +32,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const companyInsert = await insertCompany(client, validation.data);
   if (companyInsert.error) {
-    logger.error(companyInsert.error);
+    console.error(companyInsert.error);
     throw new Error("Fatal: failed to insert company");
   }
 
@@ -44,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const seed = await seedCompany(client, companyId, userId);
   if (seed.error) {
-    logger.error(seed.error);
+    console.error(seed.error);
     throw new Error("Fatal: failed to seed company");
   }
 
@@ -60,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
   ]);
 
   if (locationInsert.error) {
-    logger.error(locationInsert.error);
+    console.error(locationInsert.error);
     throw new Error("Fatal: failed to insert location");
   }
 
@@ -79,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
   ]);
 
   if (job.error) {
-    logger.error(job.error);
+    console.error(job.error);
     throw new Error("Fatal: failed to insert job");
   }
 

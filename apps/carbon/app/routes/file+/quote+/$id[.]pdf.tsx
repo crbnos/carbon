@@ -2,7 +2,6 @@ import { QuotePDF } from "@carbon/documents";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@vercel/remix";
-import logger from "~/lib/logger";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
 import {
@@ -53,23 +52,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    logger.error(company.error);
+    console.error(company.error);
   }
 
   if (quote.error) {
-    logger.error(quote.error);
+    console.error(quote.error);
   }
 
   if (quoteLines.error) {
-    logger.error(quoteLines.error);
+    console.error(quoteLines.error);
   }
 
   if (quoteLinePrices.error) {
-    logger.error(quoteLinePrices.error);
+    console.error(quoteLinePrices.error);
   }
 
   if (quoteLocations.error) {
-    logger.error(quoteLocations.error);
+    console.error(quoteLocations.error);
   }
 
   if (company.error || quote.error || quoteLocations.error) {

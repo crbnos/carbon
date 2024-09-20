@@ -8,3 +8,5 @@ build
 public/build
 api/index.js*
 api/_assets*
+
+.trigger

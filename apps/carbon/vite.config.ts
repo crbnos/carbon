@@ -7,7 +7,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   build: {
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       onwarn(warning, defaultHandler) {
         if (warning.code === "SOURCEMAP_ERROR") {
@@ -60,10 +60,6 @@ export default defineConfig({
       "@carbon/form": path.resolve(
         __dirname,
         "../../packages/form/src/index.tsx"
-      ),
-      "@carbon/logger": path.resolve(
-        __dirname,
-        "../../packages/logger/src/index.ts"
       ),
     },
   },

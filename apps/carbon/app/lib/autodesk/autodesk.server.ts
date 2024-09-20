@@ -7,7 +7,6 @@ import {
   AUTODESK_CLIENT_ID,
   AUTODESK_CLIENT_SECRET,
 } from "~/config/env";
-import logger from "../logger";
 import { getSupabaseServiceRole } from "../supabase";
 import type { AutodeskTokenResponse } from "./types";
 
@@ -262,7 +261,7 @@ export async function getManifest(
         if (thumbnail.data) {
           thumbnailPath = thumbnail.data;
         } else {
-          logger.error("Failed to get thumbnail for model", { urn });
+          console.log("Failed to get thumbnail for model", { urn });
         }
       }
     } catch (err) {
