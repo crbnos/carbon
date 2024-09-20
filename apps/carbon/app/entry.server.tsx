@@ -6,7 +6,6 @@ import type { EntryContext } from "@vercel/remix";
 import { handleRequest } from "@vercel/remix";
 
 import { parseAcceptLanguage } from "intl-parse-accept-language";
-
 export * from "~/jobs";
 
 export default async function (

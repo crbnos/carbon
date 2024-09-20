@@ -9,7 +9,6 @@ export default defineConfig({
   build: {
     sourcemap: true,
     rollupOptions: {
-      external: ["tailwind-merge"],
       onwarn(warning, defaultHandler) {
         if (warning.code === "SOURCEMAP_ERROR") {
           return;
@@ -25,6 +24,7 @@ export default defineConfig({
       "react-dropzone",
       "react-icons",
       "react-phone-number-input",
+      "tailwind-merge",
     ],
   },
   server: {
