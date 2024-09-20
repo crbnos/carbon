@@ -176,9 +176,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartInventoryRoute() {
-  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.partRoot
-  );
+  const sharedPartsData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.partRoot);
   const { partInventory, itemShelfQuantities, quantities } =
     useLoaderData<typeof loader>();
 
@@ -195,6 +196,7 @@ export default function PartInventoryRoute() {
         itemShelfQuantities={itemShelfQuantities}
         quantities={quantities}
         locations={sharedPartsData?.locations ?? []}
+        shelves={sharedPartsData?.shelves ?? []}
         type="Part"
       />
     </VStack>

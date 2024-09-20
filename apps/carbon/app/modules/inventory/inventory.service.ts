@@ -208,13 +208,13 @@ export async function getReceiptLines(
 
 export async function getShelvesList(
   client: SupabaseClient<Database>,
-  locationId: string
+  companyId: string
 ) {
   return client
     .from("shelf")
     .select("id, name")
     .eq("active", true)
-    .eq("locationId", locationId)
+    .eq("companyId", companyId)
     .order("name");
 }
 

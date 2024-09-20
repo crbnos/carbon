@@ -183,9 +183,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MaterialInventoryRoute() {
-  const sharedMaterialsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.materialRoot
-  );
+  const sharedMaterialsData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.materialRoot);
   const { materialInventory, itemShelfQuantities, quantities } =
     useLoaderData<typeof loader>();
 
@@ -201,6 +202,7 @@ export default function MaterialInventoryRoute() {
       itemShelfQuantities={itemShelfQuantities}
       quantities={quantities}
       locations={sharedMaterialsData?.locations ?? []}
+      shelves={sharedMaterialsData?.shelves ?? []}
       type="Material"
     />
   );

@@ -22,6 +22,7 @@ type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
   itemShelfQuantities: ItemShelfQuantities[];
   locations: ListItem[];
+  shelves: ListItem[];
   quantities: ItemQuantities;
   type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
 };
@@ -30,6 +31,7 @@ const PickMethodForm = ({
   initialValues,
   itemShelfQuantities,
   locations,
+  shelves,
   quantities,
   type,
 }: PickMethodFormProps) => {
@@ -67,8 +69,10 @@ const PickMethodForm = ({
       <CardContent>
         <InventoryDetails
           itemShelfQuantities={itemShelfQuantities}
+          locations={locations}
           pickMethod={initialValues}
           quantities={quantities}
+          shelves={shelves}
         />
       </CardContent>
     </Card>

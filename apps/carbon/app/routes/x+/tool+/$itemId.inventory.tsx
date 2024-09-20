@@ -175,9 +175,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ToolInventoryRoute() {
-  const sharedToolsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.toolRoot
-  );
+  const sharedToolsData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.toolRoot);
   const { toolInventory, itemShelfQuantities, quantities } =
     useLoaderData<typeof loader>();
 
@@ -193,6 +194,7 @@ export default function ToolInventoryRoute() {
       itemShelfQuantities={itemShelfQuantities}
       quantities={quantities}
       locations={sharedToolsData?.locations ?? []}
+      shelves={sharedToolsData?.shelves ?? []}
       type="Tool"
     />
   );

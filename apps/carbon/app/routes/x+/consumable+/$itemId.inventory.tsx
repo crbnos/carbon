@@ -186,9 +186,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ConsumableInventoryRoute() {
-  const sharedConsumablesData = useRouteData<{ locations: ListItem[] }>(
-    path.to.consumableRoot
-  );
+  const sharedConsumablesData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.consumableRoot);
   const { consumableInventory, itemShelfQuantities, quantities } =
     useLoaderData<typeof loader>();
 
@@ -204,6 +205,7 @@ export default function ConsumableInventoryRoute() {
       itemShelfQuantities={itemShelfQuantities}
       quantities={quantities}
       locations={sharedConsumablesData?.locations ?? []}
+      shelves={sharedConsumablesData?.shelves ?? []}
       type="Consumable"
     />
   );

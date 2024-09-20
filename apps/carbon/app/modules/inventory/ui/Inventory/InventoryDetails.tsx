@@ -36,14 +36,18 @@ import InventoryShelves from "./InventoryShelves";
 
 type InventoryDetailsProps = {
   itemShelfQuantities: ItemShelfQuantities[];
+  locations: ListItem[];
   pickMethod: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
+  shelves: ListItem[];
 };
 
 const InventoryDetails = ({
   itemShelfQuantities,
+  locations,
   pickMethod,
   quantities,
+  shelves,
 }: InventoryDetailsProps) => {
   const permissions = usePermissions();
   const adjustmentModal = useDisclosure();
@@ -94,7 +98,11 @@ const InventoryDetails = ({
           </CardHeader>
         </Card>
       </div>
-      <InventoryShelves itemShelfQuantities={itemShelfQuantities} />
+      <InventoryShelves
+        itemShelfQuantities={itemShelfQuantities}
+        locations={locations}
+        shelves={shelves}
+      />
 
       <Modal
         open={adjustmentModal.isOpen}

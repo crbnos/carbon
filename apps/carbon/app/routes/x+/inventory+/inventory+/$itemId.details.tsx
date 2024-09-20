@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import { useRouteData } from "~/hooks";
 import InventoryDetails from "~/modules/inventory/ui/Inventory/InventoryDetails";
 import {
   getItem,
@@ -13,6 +14,7 @@ import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { ListItem } from "~/types";
 import { notFound } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
@@ -142,14 +144,21 @@ export default function ItemInventoryRoute() {
   const { pickMethod, quantities, itemShelfQuantities } =
     useLoaderData<typeof loader>();
 
+  const routeData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.inventoryRoot);
+
   return (
     <InventoryDetails
       itemShelfQuantities={itemShelfQuantities}
+      locations={routeData?.locations ?? []}
       pickMethod={{
         ...pickMethod,
         defaultShelfId: pickMethod.defaultShelfId ?? undefined,
       }}
       quantities={quantities}
+      shelves={routeData?.shelves ?? []}
     />
   );
 }

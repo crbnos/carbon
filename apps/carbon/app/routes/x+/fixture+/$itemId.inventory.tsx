@@ -184,9 +184,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function FixtureInventoryRoute() {
-  const sharedFixturesData = useRouteData<{ locations: ListItem[] }>(
-    path.to.fixtureRoot
-  );
+  const sharedFixturesData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.fixtureRoot);
   const { fixtureInventory, itemShelfQuantities, quantities } =
     useLoaderData<typeof loader>();
 
@@ -203,6 +204,7 @@ export default function FixtureInventoryRoute() {
         itemShelfQuantities={itemShelfQuantities}
         quantities={quantities}
         locations={sharedFixturesData?.locations ?? []}
+        shelves={sharedFixturesData?.shelves ?? []}
         type="Fixture"
       />
     </VStack>
