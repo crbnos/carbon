@@ -10,19 +10,25 @@ import {
 import type { z } from "zod";
 import { usePermissions } from "~/hooks";
 import InventoryDetails from "~/modules/inventory/ui/Inventory/InventoryDetails";
-import type { ItemQuantities, pickMethodValidator } from "~/modules/items";
+import type {
+  ItemQuantities,
+  ItemShelfQuantities,
+  pickMethodValidator,
+} from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
-  quantities: ItemQuantities;
+  itemShelfQuantities: ItemShelfQuantities[];
   locations: ListItem[];
+  quantities: ItemQuantities;
   type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
 };
 
 const PickMethodForm = ({
   initialValues,
+  itemShelfQuantities,
   locations,
   quantities,
   type,
@@ -59,7 +65,11 @@ const PickMethodForm = ({
       </HStack>
 
       <CardContent>
-        <InventoryDetails pickMethod={initialValues} quantities={quantities} />
+        <InventoryDetails
+          itemShelfQuantities={itemShelfQuantities}
+          pickMethod={initialValues}
+          quantities={quantities}
+        />
       </CardContent>
     </Card>
   );

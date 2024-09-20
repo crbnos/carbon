@@ -6,6 +6,7 @@ import { useRouteData } from "~/hooks";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
@@ -117,8 +118,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load material quantities")
+      )
+    );
+  }
+
   return json({
     materialInventory: materialInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
   });
 }
@@ -168,7 +186,8 @@ export default function MaterialInventoryRoute() {
   const sharedMaterialsData = useRouteData<{ locations: ListItem[] }>(
     path.to.materialRoot
   );
-  const { materialInventory, quantities } = useLoaderData<typeof loader>();
+  const { materialInventory, itemShelfQuantities, quantities } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     ...materialInventory,
@@ -179,6 +198,7 @@ export default function MaterialInventoryRoute() {
     <PickMethodForm
       key={initialValues.itemId}
       initialValues={initialValues}
+      itemShelfQuantities={itemShelfQuantities}
       quantities={quantities}
       locations={sharedMaterialsData?.locations ?? []}
       type="Material"

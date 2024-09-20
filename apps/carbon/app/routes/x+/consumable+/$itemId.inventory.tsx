@@ -6,6 +6,7 @@ import { useRouteData } from "~/hooks";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
@@ -120,8 +121,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load consumable quantities")
+      )
+    );
+  }
+
   return json({
     consumableInventory: consumableInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
   });
 }
@@ -171,7 +189,8 @@ export default function ConsumableInventoryRoute() {
   const sharedConsumablesData = useRouteData<{ locations: ListItem[] }>(
     path.to.consumableRoot
   );
-  const { consumableInventory, quantities } = useLoaderData<typeof loader>();
+  const { consumableInventory, itemShelfQuantities, quantities } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     ...consumableInventory,
@@ -182,6 +201,7 @@ export default function ConsumableInventoryRoute() {
     <PickMethodForm
       key={initialValues.itemId}
       initialValues={initialValues}
+      itemShelfQuantities={itemShelfQuantities}
       quantities={quantities}
       locations={sharedConsumablesData?.locations ?? []}
       type="Consumable"

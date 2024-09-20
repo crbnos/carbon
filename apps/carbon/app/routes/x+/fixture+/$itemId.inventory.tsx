@@ -7,6 +7,7 @@ import { useRouteData } from "~/hooks";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
@@ -118,8 +119,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(quantities, "Failed to load fixture quantities")
+      )
+    );
+  }
+
   return json({
     fixtureInventory: fixtureInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
   });
 }
@@ -169,7 +187,8 @@ export default function FixtureInventoryRoute() {
   const sharedFixturesData = useRouteData<{ locations: ListItem[] }>(
     path.to.fixtureRoot
   );
-  const { fixtureInventory, quantities } = useLoaderData<typeof loader>();
+  const { fixtureInventory, itemShelfQuantities, quantities } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     ...fixtureInventory,
@@ -181,6 +200,7 @@ export default function FixtureInventoryRoute() {
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
+        itemShelfQuantities={itemShelfQuantities}
         quantities={quantities}
         locations={sharedFixturesData?.locations ?? []}
         type="Fixture"

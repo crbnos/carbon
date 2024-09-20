@@ -405,6 +405,20 @@ export async function getItemQuantities(
     .maybeSingle();
 }
 
+export async function getItemShelfQuantities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("itemInventory")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+}
+
 export async function getItemUnitSalePrice(
   client: SupabaseClient<Database>,
   id: string,

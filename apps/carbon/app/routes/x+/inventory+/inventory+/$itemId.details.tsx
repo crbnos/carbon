@@ -5,6 +5,7 @@ import InventoryDetails from "~/modules/inventory/ui/Inventory/InventoryDetails"
 import {
   getItem,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   upsertPickMethod,
 } from "~/modules/items";
@@ -113,18 +114,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.inventory,
+      await flash(
+        request,
+        error(itemShelfQuantities.error, "Failed to load item shelf quantities")
+      )
+    );
+  }
+
   return json({
     pickMethod: pickMethod.data,
     quantities: quantities.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     item: item.data,
   });
 }
 
 export default function ItemInventoryRoute() {
-  const { pickMethod, quantities } = useLoaderData<typeof loader>();
+  const { pickMethod, quantities, itemShelfQuantities } =
+    useLoaderData<typeof loader>();
 
   return (
     <InventoryDetails
+      itemShelfQuantities={itemShelfQuantities}
       pickMethod={{
         ...pickMethod,
         defaultShelfId: pickMethod.defaultShelfId ?? undefined,

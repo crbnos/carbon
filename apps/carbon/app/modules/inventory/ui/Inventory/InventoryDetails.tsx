@@ -25,16 +25,23 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { type ItemQuantities, type pickMethodValidator } from "~/modules/items";
+import type {
+  ItemQuantities,
+  ItemShelfQuantities,
+  pickMethodValidator,
+} from "~/modules/items";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
+import InventoryShelves from "./InventoryShelves";
 
 type InventoryDetailsProps = {
+  itemShelfQuantities: ItemShelfQuantities[];
   pickMethod: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
 };
 
 const InventoryDetails = ({
+  itemShelfQuantities,
   pickMethod,
   quantities,
 }: InventoryDetailsProps) => {
@@ -87,6 +94,7 @@ const InventoryDetails = ({
           </CardHeader>
         </Card>
       </div>
+      <InventoryShelves itemShelfQuantities={itemShelfQuantities} />
 
       <Modal
         open={adjustmentModal.isOpen}

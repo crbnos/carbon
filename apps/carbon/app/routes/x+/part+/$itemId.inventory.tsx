@@ -7,6 +7,7 @@ import { useRouteData } from "~/hooks";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
@@ -110,8 +111,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load part quantities")
+      )
+    );
+  }
+
   return json({
     partInventory: partInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
   });
 }
@@ -161,7 +179,8 @@ export default function PartInventoryRoute() {
   const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
     path.to.partRoot
   );
-  const { partInventory, quantities } = useLoaderData<typeof loader>();
+  const { partInventory, itemShelfQuantities, quantities } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     ...partInventory,
@@ -173,6 +192,7 @@ export default function PartInventoryRoute() {
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
+        itemShelfQuantities={itemShelfQuantities}
         quantities={quantities}
         locations={sharedPartsData?.locations ?? []}
         type="Part"

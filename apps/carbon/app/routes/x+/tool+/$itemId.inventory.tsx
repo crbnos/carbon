@@ -6,6 +6,7 @@ import { useRouteData } from "~/hooks";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
@@ -109,8 +110,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load tool quantities")
+      )
+    );
+  }
+
   return json({
     toolInventory: toolInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
   });
 }
@@ -160,7 +178,8 @@ export default function ToolInventoryRoute() {
   const sharedToolsData = useRouteData<{ locations: ListItem[] }>(
     path.to.toolRoot
   );
-  const { toolInventory, quantities } = useLoaderData<typeof loader>();
+  const { toolInventory, itemShelfQuantities, quantities } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     ...toolInventory,
@@ -171,6 +190,7 @@ export default function ToolInventoryRoute() {
     <PickMethodForm
       key={initialValues.itemId}
       initialValues={initialValues}
+      itemShelfQuantities={itemShelfQuantities}
       quantities={quantities}
       locations={sharedToolsData?.locations ?? []}
       type="Tool"
