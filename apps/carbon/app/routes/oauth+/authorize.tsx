@@ -5,6 +5,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
 import { requirePermissions } from "~/services/auth/auth.server";
 
+export const config = { runtime: "nodejs" };
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings",
