@@ -141,17 +141,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ItemInventoryRoute() {
-  const { pickMethod, quantities, itemShelfQuantities } =
+  const { pickMethod, quantities, itemShelfQuantities, item } =
     useLoaderData<typeof loader>();
 
   const routeData = useRouteData<{
     locations: ListItem[];
     shelves: ListItem[];
+    unitOfMeasures: ListItem[];
   }>(path.to.inventoryRoot);
 
   return (
     <InventoryDetails
       itemShelfQuantities={itemShelfQuantities}
+      itemUnitOfMeasureCode={item.unitOfMeasureCode}
       locations={routeData?.locations ?? []}
       pickMethod={{
         ...pickMethod,
@@ -159,6 +161,7 @@ export default function ItemInventoryRoute() {
       }}
       quantities={quantities}
       shelves={routeData?.shelves ?? []}
+      unitOfMeasures={routeData?.unitOfMeasures ?? []}
     />
   );
 }

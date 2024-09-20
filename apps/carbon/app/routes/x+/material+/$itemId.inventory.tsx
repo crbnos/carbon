@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
+import type { Material } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
@@ -138,6 +139,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     materialInventory: materialInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
+    itemId,
   });
 }
 
@@ -186,9 +188,18 @@ export default function MaterialInventoryRoute() {
   const sharedMaterialsData = useRouteData<{
     locations: ListItem[];
     shelves: ListItem[];
+    unitOfMeasures: ListItem[];
   }>(path.to.materialRoot);
-  const { materialInventory, itemShelfQuantities, quantities } =
+
+  const { materialInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
+
+  const materialData = useRouteData<{
+    materialSummary: Material;
+  }>(path.to.material(itemId));
+  if (!materialData) throw new Error("Could not find material data");
+  const itemUnitOfMeasureCode =
+    materialData?.materialSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...materialInventory,
@@ -200,10 +211,12 @@ export default function MaterialInventoryRoute() {
       key={initialValues.itemId}
       initialValues={initialValues}
       itemShelfQuantities={itemShelfQuantities}
+      itemUnitOfMeasureCode={itemUnitOfMeasureCode}
       quantities={quantities}
       locations={sharedMaterialsData?.locations ?? []}
       shelves={sharedMaterialsData?.shelves ?? []}
       type="Material"
+      unitOfMeasures={sharedMaterialsData?.unitOfMeasures ?? []}
     />
   );
 }

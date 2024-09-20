@@ -7,14 +7,18 @@ import type { ListItem } from "~/types";
 
 type InventoryShelvesProps = {
   itemShelfQuantities: ItemShelfQuantities[];
+  itemUnitOfMeasureCode: string;
   locations: ListItem[];
   shelves: ListItem[];
+  unitOfMeasures: ListItem[];
 };
 
 const InventoryShelves = ({
   itemShelfQuantities,
+  itemUnitOfMeasureCode,
   locations,
   shelves,
+  unitOfMeasures,
 }: InventoryShelvesProps) => {
   const columns: ColumnDef<ItemShelfQuantities>[] = [
     {
@@ -39,6 +43,16 @@ const InventoryShelves = ({
       accessorKey: "quantityOnHand",
       header: "Quantity On Hand",
       cell: (item) => item.getValue(),
+    },
+    {
+      accessorKey: "unitOfMeasureId",
+      header: "Unit of Measure",
+      cell: ({ row }) => {
+        const unitOfMeasure = unitOfMeasures.find(
+          (uom) => uom.code === itemUnitOfMeasureCode
+        );
+        return unitOfMeasure ? unitOfMeasure.name : itemUnitOfMeasureCode;
+      },
     },
   ];
   return (

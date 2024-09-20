@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
+import type { Consumable } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
@@ -141,6 +142,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     consumableInventory: consumableInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
+    itemId,
   });
 }
 
@@ -189,9 +191,18 @@ export default function ConsumableInventoryRoute() {
   const sharedConsumablesData = useRouteData<{
     locations: ListItem[];
     shelves: ListItem[];
+    unitOfMeasures: ListItem[];
   }>(path.to.consumableRoot);
-  const { consumableInventory, itemShelfQuantities, quantities } =
+
+  const { consumableInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
+
+  const consumableData = useRouteData<{
+    consumableSummary: Consumable;
+  }>(path.to.consumable(itemId));
+  if (!consumableData) throw new Error("Could not find consumable data");
+  const itemUnitOfMeasureCode =
+    consumableData?.consumableSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...consumableInventory,
@@ -203,10 +214,12 @@ export default function ConsumableInventoryRoute() {
       key={initialValues.itemId}
       initialValues={initialValues}
       itemShelfQuantities={itemShelfQuantities}
+      itemUnitOfMeasureCode={itemUnitOfMeasureCode}
       quantities={quantities}
       locations={sharedConsumablesData?.locations ?? []}
       shelves={sharedConsumablesData?.shelves ?? []}
       type="Consumable"
+      unitOfMeasures={sharedConsumablesData?.unitOfMeasures ?? []}
     />
   );
 }

@@ -4,6 +4,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
+import type { Fixture } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
@@ -139,6 +140,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     fixtureInventory: fixtureInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
+    itemId,
   });
 }
 
@@ -187,9 +189,17 @@ export default function FixtureInventoryRoute() {
   const sharedFixturesData = useRouteData<{
     locations: ListItem[];
     shelves: ListItem[];
+    unitOfMeasures: ListItem[];
   }>(path.to.fixtureRoot);
-  const { fixtureInventory, itemShelfQuantities, quantities } =
+
+  const { fixtureInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
+
+  const fixtureData = useRouteData<{
+    fixtureSummary: Fixture;
+  }>(path.to.fixture(itemId));
+  if (!fixtureData) throw new Error("Could not find fixture data");
+  const itemUnitOfMeasureCode = fixtureData?.fixtureSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...fixtureInventory,
@@ -202,10 +212,12 @@ export default function FixtureInventoryRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
         itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode}
         quantities={quantities}
         locations={sharedFixturesData?.locations ?? []}
         shelves={sharedFixturesData?.shelves ?? []}
         type="Fixture"
+        unitOfMeasures={sharedFixturesData?.unitOfMeasures ?? []}
       />
     </VStack>
   );

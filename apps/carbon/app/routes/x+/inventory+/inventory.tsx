@@ -99,9 +99,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function InventoryAllRoute() {
-  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.inventoryRoot
-  );
+  const sharedPartsData = useRouteData<{
+    locations: ListItem[];
+    unitOfMeasures: ListItem[];
+  }>(path.to.inventoryRoot);
   const { count, inventoryItems, locationId } = useLoaderData<typeof loader>();
 
   return (
@@ -118,6 +119,7 @@ export default function InventoryAllRoute() {
             count={count}
             locationId={locationId}
             locations={sharedPartsData?.locations ?? []}
+            unitOfMeasures={sharedPartsData?.unitOfMeasures ?? []}
           />
         </ResizablePanel>
         <Outlet />

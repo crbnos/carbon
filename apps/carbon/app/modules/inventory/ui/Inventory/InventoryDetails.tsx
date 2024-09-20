@@ -18,6 +18,7 @@ import { useLocale } from "@react-aria/i18n";
 import type { z } from "zod";
 import {
   Hidden,
+  Input,
   Location,
   Number,
   Select,
@@ -36,18 +37,22 @@ import InventoryShelves from "./InventoryShelves";
 
 type InventoryDetailsProps = {
   itemShelfQuantities: ItemShelfQuantities[];
+  itemUnitOfMeasureCode: string;
   locations: ListItem[];
   pickMethod: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
   shelves: ListItem[];
+  unitOfMeasures: ListItem[];
 };
 
 const InventoryDetails = ({
   itemShelfQuantities,
+  itemUnitOfMeasureCode,
   locations,
   pickMethod,
   quantities,
   shelves,
+  unitOfMeasures,
 }: InventoryDetailsProps) => {
   const permissions = usePermissions();
   const adjustmentModal = useDisclosure();
@@ -59,6 +64,10 @@ const InventoryDetails = ({
     useGrouping: true,
   });
 
+  const itemUnitOfMeasure = unitOfMeasures.find(
+    (unit) => unit.code === itemUnitOfMeasureCode
+  );
+
   return (
     <VStack>
       <Button onClick={adjustmentModal.onOpen} className="w-fit">
@@ -67,41 +76,71 @@ const InventoryDetails = ({
       <div className="w-full grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-8">
-            <CardDescription>Quantity on Hand</CardDescription>
+            <CardDescription>
+              <VStack>
+                Quantity on Hand
+                <span className="text-sm text-muted-foreground">
+                  ({itemUnitOfMeasure?.name ?? ""})
+                </span>
+              </VStack>
+            </CardDescription>
             <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityOnHand ?? 0)}
+              {`${formatter.format(quantities.quantityOnHand ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-8">
-            <CardDescription>Quantity on Purchase Order</CardDescription>
+            <CardDescription>
+              <VStack>
+                Quantity on Purchase Order
+                <span className="text-sm text-muted-foreground">
+                  ({itemUnitOfMeasure?.name ?? ""})
+                </span>
+              </VStack>
+            </CardDescription>
             <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityOnPurchaseOrder ?? 0)}
+              {`${formatter.format(quantities.quantityOnPurchaseOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-8">
-            <CardDescription>Quantity on Sales Order</CardDescription>
+            <CardDescription>
+              <VStack>
+                Quantity on Sales Order
+                <span className="text-sm text-muted-foreground">
+                  ({itemUnitOfMeasure?.name ?? ""})
+                </span>
+              </VStack>
+            </CardDescription>
             <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityOnSalesOrder ?? 0)}
+              {`${formatter.format(quantities.quantityOnSalesOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-8">
-            <CardDescription>Quantity on Production Order</CardDescription>
+            <CardDescription>
+              <VStack>
+                Quantity on Production Order
+                <span className="text-sm text-muted-foreground">
+                  ({itemUnitOfMeasure?.name ?? ""})
+                </span>
+              </VStack>
+            </CardDescription>
             <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityOnProdOrder ?? 0)}
+              {`${formatter.format(quantities.quantityOnProdOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
       </div>
       <InventoryShelves
         itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode}
         locations={locations}
         shelves={shelves}
+        unitOfMeasures={unitOfMeasures}
       />
 
       <Modal
@@ -148,6 +187,12 @@ const InventoryDetails = ({
                   ]}
                 />
                 <Number name="quantity" label="Quantity" minValue={0} />
+                <Input
+                  name="unitOfMeasure"
+                  label="Unit of Measure"
+                  value={itemUnitOfMeasure?.name ?? ""}
+                  isReadOnly
+                />
               </VStack>
             </ModalBody>
             <ModalFooter>

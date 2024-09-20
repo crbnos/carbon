@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
+import type { ToolSummary } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
@@ -130,6 +131,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     toolInventory: toolInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
+    itemId,
   });
 }
 
@@ -178,9 +180,17 @@ export default function ToolInventoryRoute() {
   const sharedToolsData = useRouteData<{
     locations: ListItem[];
     shelves: ListItem[];
+    unitOfMeasures: ListItem[];
   }>(path.to.toolRoot);
-  const { toolInventory, itemShelfQuantities, quantities } =
+
+  const { toolInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
+
+  const toolData = useRouteData<{
+    toolSummary: ToolSummary;
+  }>(path.to.tool(itemId));
+  if (!toolData) throw new Error("Could not find tool data");
+  const itemUnitOfMeasureCode = toolData?.toolSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...toolInventory,
@@ -192,10 +202,12 @@ export default function ToolInventoryRoute() {
       key={initialValues.itemId}
       initialValues={initialValues}
       itemShelfQuantities={itemShelfQuantities}
+      itemUnitOfMeasureCode={itemUnitOfMeasureCode}
       quantities={quantities}
       locations={sharedToolsData?.locations ?? []}
       shelves={sharedToolsData?.shelves ?? []}
       type="Tool"
+      unitOfMeasures={sharedToolsData?.unitOfMeasures ?? []}
     />
   );
 }

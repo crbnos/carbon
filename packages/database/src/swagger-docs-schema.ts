@@ -23421,6 +23421,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemQuantities.locationName",
           },
           {
+            $ref: "#/parameters/rowFilter.itemQuantities.unitOfMeasureCode",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -44942,6 +44945,10 @@ export default {
           format: "text",
           type: "string",
         },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -63076,6 +63083,13 @@ export default {
     },
     "rowFilter.itemQuantities.locationName": {
       name: "locationName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemQuantities.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
       required: false,
       format: "text",
       in: "query",

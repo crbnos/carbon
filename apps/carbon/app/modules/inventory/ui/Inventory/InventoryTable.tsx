@@ -21,10 +21,17 @@ type InventoryTableProps = {
   count: number;
   locationId: string;
   locations: ListItem[];
+  unitOfMeasures: ListItem[];
 };
 
 const InventoryTable = memo(
-  ({ data, count, locationId, locations }: InventoryTableProps) => {
+  ({
+    data,
+    count,
+    locationId,
+    locations,
+    unitOfMeasures,
+  }: InventoryTableProps) => {
     const { hasFilters } = useFilters();
     const [params] = useUrlParams();
 
@@ -84,6 +91,18 @@ const InventoryTable = memo(
           accessorKey: "locationName",
           header: "Location",
           cell: ({ row }) => <Enumerable value={row.original.locationName} />,
+        },
+        {
+          accessorKey: "unitOfMeasureCode",
+          header: "Unit of Measure",
+          cell: ({ row }) => {
+            const unitOfMeasure = unitOfMeasures.find(
+              (uom) => uom.code === row.original.unitOfMeasureCode
+            );
+            return unitOfMeasure
+              ? unitOfMeasure.name
+              : row.original.unitOfMeasureCode;
+          },
         },
         {
           accessorKey: "quantityOnHand",

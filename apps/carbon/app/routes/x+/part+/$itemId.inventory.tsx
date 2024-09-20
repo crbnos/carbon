@@ -4,6 +4,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
+import type { PartSummary } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
@@ -131,6 +132,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partInventory: partInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
+    itemId,
   });
 }
 
@@ -179,9 +181,17 @@ export default function PartInventoryRoute() {
   const sharedPartsData = useRouteData<{
     locations: ListItem[];
     shelves: ListItem[];
+    unitOfMeasures: ListItem[];
   }>(path.to.partRoot);
-  const { partInventory, itemShelfQuantities, quantities } =
+
+  const { partInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
+
+  const partData = useRouteData<{
+    partSummary: PartSummary;
+  }>(path.to.part(itemId));
+  if (!partData) throw new Error("Could not find part data");
+  const itemUnitOfMeasureCode = partData?.partSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...partInventory,
@@ -194,10 +204,12 @@ export default function PartInventoryRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
         itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode}
         quantities={quantities}
         locations={sharedPartsData?.locations ?? []}
         shelves={sharedPartsData?.shelves ?? []}
         type="Part"
+        unitOfMeasures={sharedPartsData?.unitOfMeasures ?? []}
       />
     </VStack>
   );

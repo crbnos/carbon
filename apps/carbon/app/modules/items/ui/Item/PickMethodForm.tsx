@@ -21,19 +21,23 @@ import { path } from "~/utils/path";
 type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
   itemShelfQuantities: ItemShelfQuantities[];
+  itemUnitOfMeasureCode: string;
   locations: ListItem[];
   shelves: ListItem[];
   quantities: ItemQuantities;
   type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
+  unitOfMeasures: ListItem[];
 };
 
 const PickMethodForm = ({
   initialValues,
   itemShelfQuantities,
+  itemUnitOfMeasureCode,
   locations,
   shelves,
   quantities,
   type,
+  unitOfMeasures,
 }: PickMethodFormProps) => {
   usePermissions();
 
@@ -69,10 +73,12 @@ const PickMethodForm = ({
       <CardContent>
         <InventoryDetails
           itemShelfQuantities={itemShelfQuantities}
+          itemUnitOfMeasureCode={itemUnitOfMeasureCode}
           locations={locations}
           pickMethod={initialValues}
           quantities={quantities}
           shelves={shelves}
+          unitOfMeasures={unitOfMeasures}
         />
       </CardContent>
     </Card>

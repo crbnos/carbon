@@ -359,7 +359,8 @@ SELECT
   i."active",
   i."itemTrackingType",
   m."thumbnailPath",
-  loc."name" AS "locationName"
+  loc."name" AS "locationName",
+  i."unitOfMeasureCode"
 FROM "item" i
 CROSS JOIN "location" loc
 LEFT JOIN "itemInventory" inv ON i."id" = inv."itemId" AND loc."id" = inv."locationId"
