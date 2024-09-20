@@ -20,6 +20,7 @@ export default defineConfig({
   },
   ssr: {
     noExternal: [
+      "crypto",
       "react-tweet",
       "react-dropzone",
       "react-icons",
