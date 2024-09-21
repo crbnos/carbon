@@ -23,7 +23,7 @@ const ProfileForm = ({ user }: ProfileFormProps) => {
       className="w-full"
     >
       <VStack spacing={4}>
-        <div className="grid grid-cols-2 gap-4 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
           <Input name="firstName" label="First Name" />
           <Input name="lastName" label="Last Name" />
         </div>

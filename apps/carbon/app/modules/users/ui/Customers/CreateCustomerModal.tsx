@@ -87,7 +87,7 @@ const CreateCustomerModal = () => {
                     <FormLabel>Email</FormLabel>
                     <Input isReadOnly value={contact?.email ?? ""} />
                   </FormControl>
-                  <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                     <FormControl>
                       <FormLabel>First Name</FormLabel>
                       <Input isReadOnly value={contact?.firstName ?? ""} />
