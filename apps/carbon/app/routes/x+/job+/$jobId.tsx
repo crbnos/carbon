@@ -57,12 +57,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const files = await getJobDocuments(client, companyId, job.data);
 
-  const methodPromise = getJobMethodTree(client, jobId);
-
   return defer({
     job: job.data,
     files,
-    method: methodPromise,
+    method: getJobMethodTree(client, jobId), // returns a promise
   });
 }
 

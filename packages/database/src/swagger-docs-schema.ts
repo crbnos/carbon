@@ -4498,6 +4498,15 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.operationQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -4644,6 +4653,15 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.operationQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -4742,6 +4760,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.operationQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
           },
           {
             $ref: "#/parameters/body.jobOperation",
@@ -9952,9 +9979,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.scrapQuantity",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterial.productionQuantity",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterial.unitOfMeasureCode",
           },
           {
@@ -9983,6 +10007,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.estimatedQuantity",
           },
           {
             $ref: "#/parameters/select",
@@ -10074,9 +10101,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.scrapQuantity",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterial.productionQuantity",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterial.unitOfMeasureCode",
           },
           {
@@ -10105,6 +10129,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.estimatedQuantity",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -10150,9 +10177,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.scrapQuantity",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterial.productionQuantity",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterial.unitOfMeasureCode",
           },
           {
@@ -10181,6 +10205,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.estimatedQuantity",
           },
           {
             $ref: "#/parameters/body.jobMaterial",
@@ -30601,9 +30628,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.scrapQuantity",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.productionQuantity",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.unitOfMeasureCode",
           },
           {
@@ -30632,6 +30656,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.estimatedQuantity",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.jobMaterialMakeMethodId",
@@ -36891,6 +36918,21 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        operationQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        quantityComplete: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        quantityScrapped: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -39332,10 +39374,6 @@ export default {
           format: "numeric",
           type: "number",
         },
-        productionQuantity: {
-          format: "numeric",
-          type: "number",
-        },
         unitOfMeasureCode: {
           format: "text",
           type: "string",
@@ -39386,6 +39424,11 @@ export default {
             "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
           format: "text",
           type: "string",
+        },
+        estimatedQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -48849,10 +48892,6 @@ export default {
           format: "numeric",
           type: "number",
         },
-        productionQuantity: {
-          format: "numeric",
-          type: "number",
-        },
         unitOfMeasureCode: {
           format: "text",
           type: "string",
@@ -48901,6 +48940,10 @@ export default {
             "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
           format: "text",
           type: "string",
+        },
+        estimatedQuantity: {
+          format: "numeric",
+          type: "number",
         },
         jobMaterialMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -52653,6 +52696,27 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.jobOperation.operationQuantity": {
+      name: "operationQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperation.quantityComplete": {
+      name: "quantityComplete",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperation.quantityScrapped": {
+      name: "quantityScrapped",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "body.journalLine": {
       name: "journalLine",
       description: "journalLine",
@@ -55806,13 +55870,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterial.productionQuantity": {
-      name: "productionQuantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.jobMaterial.unitOfMeasureCode": {
       name: "unitOfMeasureCode",
       required: false,
@@ -55880,6 +55937,13 @@ export default {
       name: "jobOperationId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterial.estimatedQuantity": {
+      name: "estimatedQuantity",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -68320,13 +68384,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterialWithMakeMethodId.productionQuantity": {
-      name: "productionQuantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.jobMaterialWithMakeMethodId.unitOfMeasureCode": {
       name: "unitOfMeasureCode",
       required: false,
@@ -68394,6 +68451,13 @@ export default {
       name: "jobOperationId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterialWithMakeMethodId.estimatedQuantity": {
+      name: "estimatedQuantity",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },

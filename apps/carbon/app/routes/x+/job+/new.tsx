@@ -6,6 +6,7 @@ import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   JobForm,
   jobValidator,
+  recalculateJobRequirements,
   upsertJob,
   upsertJobMethod,
 } from "~/modules/production";
@@ -88,6 +89,24 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(
         request,
         error(upsertMethod.error, "Failed to create job method.")
+      )
+    );
+  }
+
+  const calculateQuantities = await recalculateJobRequirements(serviceRole, {
+    id,
+    companyId,
+    userId,
+  });
+  if (calculateQuantities.error) {
+    throw redirect(
+      path.to.job(id),
+      await flash(
+        request,
+        error(
+          calculateQuantities.error,
+          "Failed to calculate job requirements."
+        )
       )
     );
   }

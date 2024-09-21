@@ -27,13 +27,13 @@ export default function MakeMethodRoute() {
     <VStack spacing={2} className="p-2">
       <MakeMethodBreadcrumbs itemId={itemId} type="Fixture" />
       <BillOfProcess
-        key={JSON.stringify(manufacturingRouteData?.methodOperations ?? [])}
+        key={JSON.stringify(manufacturingRouteData?.methodOperations)}
         makeMethodId={makeMethodId}
         // @ts-ignore
-        operations={manufacturingRouteData?.methodOperations ?? []}
+        operations={manufacturingRouteData?.methodOperations}
       />
       <BillOfMaterial
-        key={JSON.stringify(manufacturingRouteData?.methodMaterials ?? [])}
+        key={JSON.stringify(manufacturingRouteData?.methodMaterials)}
         makeMethodId={makeMethodId}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}
