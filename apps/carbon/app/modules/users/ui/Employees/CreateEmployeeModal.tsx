@@ -84,7 +84,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
               <Hidden name="intent" value="new" />
               <VStack spacing={4}>
                 <Input name="email" label="Email" />
-                <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <Input name="firstName" label="First Name" />
                   <Input name="lastName" label="Last Name" />
                 </div>
@@ -134,7 +134,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
                 <Hidden name="intent" value="new" />
                 <VStack spacing={4}>
                   <Input name="email" label="Email" />
-                  <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                     <Input name="firstName" label="First Name" />
                     <Input name="lastName" label="Last Name" />
                   </div>
@@ -181,7 +181,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
                       }
                     }}
                   />
-                  <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                     <InputControlled
                       name="firstName"
                       label="First Name"

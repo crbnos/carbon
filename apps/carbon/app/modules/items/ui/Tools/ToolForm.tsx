@@ -98,7 +98,9 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
-                  isEditing ? "grid-cols-1 md:grid-cols-3" : "grid-cols-2"
+                  isEditing
+                    ? "grid-cols-1 md:grid-cols-3"
+                    : "grid-cols-1 md:grid-cols-2"
                 )}
               >
                 {isEditing ? (
