@@ -1,4 +1,5 @@
 import { validationError, validator } from "@carbon/form";
+import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
@@ -6,13 +7,13 @@ import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   JobForm,
   jobValidator,
-  recalculateJobRequirements,
   upsertJob,
   upsertJobMethod,
 } from "~/modules/production";
 import { getNextSequence, rollbackNextSequence } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { recalculateTask } from "~/trigger/recalculate";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { assertIsPost } from "~/utils/http";
@@ -24,6 +25,8 @@ export const handle: Handle = {
   to: path.to.jobs,
   module: "production",
 };
+
+export const config = { runtime: "nodejs" };
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -93,23 +96,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const calculateQuantities = await recalculateJobRequirements(serviceRole, {
+  await tasks.trigger<typeof recalculateTask>("recalculate", {
+    type: "jobRequirements",
     id,
     companyId,
     userId,
   });
-  if (calculateQuantities.error) {
-    throw redirect(
-      path.to.job(id),
-      await flash(
-        request,
-        error(
-          calculateQuantities.error,
-          "Failed to calculate job requirements."
-        )
-      )
-    );
-  }
 
   throw redirect(path.to.job(id));
 }
