@@ -220,6 +220,22 @@ export async function getJobOperationsByMethodId(
     .order("order", { ascending: true });
 }
 
+export async function recalculateJobRequirements(
+  client: SupabaseClient<Database>,
+  params: {
+    id: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("recalculate", {
+    body: {
+      type: "jobRequirements",
+      ...params,
+    },
+  });
+}
+
 export async function updateJobMaterialOrder(
   client: SupabaseClient<Database>,
   updates: {

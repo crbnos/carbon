@@ -7476,6 +7476,7 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           description: string
+          estimatedQuantity: number | null
           id: string
           itemId: string
           itemReadableId: string
@@ -7485,7 +7486,6 @@ export type Database = {
           jobOperationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
-          productionQuantity: number | null
           quantity: number
           scrapQuantity: number
           unitCost: number
@@ -7499,6 +7499,7 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description: string
+          estimatedQuantity?: number | null
           id?: string
           itemId: string
           itemReadableId: string
@@ -7508,7 +7509,6 @@ export type Database = {
           jobOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
-          productionQuantity?: number | null
           quantity?: number
           scrapQuantity?: number
           unitCost?: number
@@ -7522,6 +7522,7 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           description?: string
+          estimatedQuantity?: number | null
           id?: string
           itemId?: string
           itemReadableId?: string
@@ -7531,7 +7532,6 @@ export type Database = {
           jobOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
-          productionQuantity?: number | null
           quantity?: number
           scrapQuantity?: number
           unitCost?: number
@@ -7722,12 +7722,15 @@ export type Database = {
           operationLeadTime: number
           operationMinimumCost: number
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
+          operationQuantity: number | null
           operationSupplierProcessId: string | null
           operationType: Database["public"]["Enums"]["operationType"]
           operationUnitCost: number
           order: number
           overheadRate: number
           processId: string
+          quantityComplete: number | null
+          quantityScrapped: number | null
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
           updatedAt: string | null
@@ -7753,12 +7756,15 @@ export type Database = {
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
+          operationQuantity?: number | null
           operationSupplierProcessId?: string | null
           operationType?: Database["public"]["Enums"]["operationType"]
           operationUnitCost?: number
           order?: number
           overheadRate?: number
           processId: string
+          quantityComplete?: number | null
+          quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
           updatedAt?: string | null
@@ -7784,12 +7790,15 @@ export type Database = {
           operationLeadTime?: number
           operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
+          operationQuantity?: number | null
           operationSupplierProcessId?: string | null
           operationType?: Database["public"]["Enums"]["operationType"]
           operationUnitCost?: number
           order?: number
           overheadRate?: number
           processId?: string
+          quantityComplete?: number | null
+          quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
           updatedAt?: string | null
@@ -23385,6 +23394,7 @@ export type Database = {
           createdBy: string | null
           customFields: Json | null
           description: string | null
+          estimatedQuantity: number | null
           id: string | null
           itemId: string | null
           itemReadableId: string | null
@@ -23395,7 +23405,6 @@ export type Database = {
           jobOperationId: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           order: number | null
-          productionQuantity: number | null
           quantity: number | null
           scrapQuantity: number | null
           unitCost: number | null
