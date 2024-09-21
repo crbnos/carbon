@@ -163,7 +163,7 @@ export default function SalesRFQRoute() {
                       order={1}
                       minSize={10}
                       defaultSize={20}
-                      className="bg-card h-full z-0"
+                      className="bg-card h-full z-0 shadow-lg"
                     >
                       <ScrollArea className="h-[calc(100vh-99px)]">
                         <div className="grid w-full h-full overflow-hidden">
