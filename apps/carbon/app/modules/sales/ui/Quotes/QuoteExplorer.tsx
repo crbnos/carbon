@@ -20,7 +20,7 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuChevronsUpDown, LuPlus, LuTrash } from "react-icons/lu";
+import { LuChevronDown, LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty, ItemThumbnail } from "~/components";
 import type { Tree } from "~/components/TreeView";
@@ -226,7 +226,8 @@ function QuoteLineItem({
           {line.methodType === "Make" && permissions.can("update", "sales") && (
             <IconButton
               aria-label={disclosure.isOpen ? "Hide" : "Show"}
-              icon={<LuChevronsUpDown />}
+              className={cn("animate", disclosure.isOpen && "-rotate-180")}
+              icon={<LuChevronDown />}
               size="sm"
               variant="ghost"
               onClick={(e) => {

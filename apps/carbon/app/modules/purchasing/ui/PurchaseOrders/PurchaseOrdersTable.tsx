@@ -88,7 +88,7 @@ const PurchaseOrdersTable = memo(
                   <input type="hidden" name="favorite" value="unfavorite" />
                   <button type="submit">
                     <LuPin
-                      className="cursor-pointer w-4 h-4 outline-yellow-400 fill-yellow-400 flex-shrink-0"
+                      className="cursor-pointer w-4 h-4 outline-foreground fill-foreground flex-shrink-0"
                       type="submit"
                     />
                   </button>

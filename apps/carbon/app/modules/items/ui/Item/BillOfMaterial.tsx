@@ -515,6 +515,7 @@ function MaterialForm({
             disabledItems={[params.itemId!]}
             name="itemId"
             label={itemType}
+            includeInactive
             type={itemType}
             onChange={(value) => {
               onItemChange(value?.value as string);

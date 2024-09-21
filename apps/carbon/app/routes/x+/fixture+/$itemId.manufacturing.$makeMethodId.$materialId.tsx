@@ -96,8 +96,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function MethodMaterialMakePage() {
-  const { item, methodMaterials, methodOperations } =
-    useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
+  const { item, methodMaterials, methodOperations } = loaderData;
 
   const { itemId, makeMethodId, materialId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -105,20 +105,20 @@ export default function MethodMaterialMakePage() {
   if (!materialId) throw new Error("Could not find materialId");
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={2} className="p-2" key={JSON.stringify(loaderData)}>
       <MakeMethodBreadcrumbs itemId={item.id} type="Fixture" />
       <ItemForm
-        key={JSON.stringify(item)}
+        key={`item:${itemId}:${makeMethodId}:${materialId}`}
         type={item.type}
         initialValues={item}
       />
       <BillOfProcess
-        key={JSON.stringify(methodOperations)}
+        key={`bop:${itemId}:${makeMethodId}:${materialId}`}
         makeMethodId={makeMethodId}
         operations={methodOperations}
       />
       <BillOfMaterial
-        key={JSON.stringify(methodMaterials)}
+        key={`bom:${itemId}:${makeMethodId}:${materialId}`}
         makeMethodId={makeMethodId}
         materials={methodMaterials}
         operations={methodOperations}

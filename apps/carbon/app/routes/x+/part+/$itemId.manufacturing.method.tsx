@@ -123,13 +123,13 @@ export default function MakeMethodRoute() {
         initialValues={manufacturingInitialValues}
       />
       <BillOfProcess
-        key={JSON.stringify(manufacturingRouteData?.methodOperations ?? [])}
+        key={itemId}
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
       />
       <BillOfMaterial
-        key={JSON.stringify(manufacturingRouteData?.methodMaterials ?? [])}
+        key={itemId}
         makeMethodId={makeMethodId}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}

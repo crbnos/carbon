@@ -1,7 +1,7 @@
-import { Badge, HStack, Heading, VStack } from "@carbon/react";
+import { HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { MethodItemTypeIcon } from "~/components";
+import { Copy, MethodItemTypeIcon } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import type { Consumable } from "~/modules/items";
@@ -22,11 +22,12 @@ const ConsumableHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.consumableDetails(itemId)}>
-            <Heading size="h2">{routeData?.consumableSummary?.id}</Heading>
+            <Heading size="h2" className="flex items-center gap-1">
+              <MethodItemTypeIcon type="Consumable" />
+              <span>{routeData?.consumableSummary?.id}</span>
+            </Heading>
           </Link>
-          <Badge variant="secondary">
-            <MethodItemTypeIcon type="Consumable" />
-          </Badge>
+          <Copy text={routeData?.consumableSummary?.id ?? ""} />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

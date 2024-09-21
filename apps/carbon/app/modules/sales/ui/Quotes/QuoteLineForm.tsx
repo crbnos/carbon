@@ -189,7 +189,7 @@ const QuoteLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard onClose={onClose}>
-          <ModalCardContent>
+          <ModalCardContent size="xlarge">
             <ValidatedForm
               defaultValues={initialValues}
               validator={quoteLineValidator}

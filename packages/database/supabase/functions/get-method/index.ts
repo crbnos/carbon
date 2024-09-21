@@ -13,10 +13,13 @@ import type { Database } from "../lib/types.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import {
   getJobMethodTree,
+  getQuoteMethodTree,
   getRatesFromSupplierProcesses,
   getRatesFromWorkCenters,
   JobMethodTreeItem,
+  QuoteMethodTreeItem,
   traverseJobMethod,
+  traverseQuoteMethod,
 } from "../lib/methods.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
@@ -958,46 +961,34 @@ serve(async (req: Request) => {
           throw new Error("Failed to get job make method");
         }
 
-        const [jobOperations, jobParentMakeMethod] = await Promise.all([
+        const [jobOperations] = await Promise.all([
           client
             .from("jobOperationsWithMakeMethods")
             .select("*")
             .eq("jobId", jobMakeMethod.data.jobId),
-          client
-            .from("jobMakeMethod")
-            .select("*")
-            .eq("jobId", jobMakeMethod.data.jobId)
-            .is("parentMaterialId", null)
-            .single(),
         ]);
 
         if (jobOperations.error) {
           throw new Error("Failed to get job operations");
         }
 
-        if (jobParentMakeMethod.error) {
-          throw new Error("Failed to get parent make method");
-        }
-
         const [jobMethodTrees] = await Promise.all([
-          getJobMethodTree(client, jobParentMakeMethod.data.id),
+          getJobMethodTree(
+            client,
+            jobMakeMethodId,
+            jobMakeMethod.data.parentMaterialId
+          ),
         ]);
 
         if (jobMethodTrees.error) {
           throw new Error("Failed to get method tree");
         }
 
-        const fullJobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
-        if (!fullJobMethodTree) throw new Error("Method tree not found");
+        if (jobMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
 
-        let jobMethodTree: JobMethodTreeItem | null = null;
-
-        traverseJobMethod(fullJobMethodTree, (node: JobMethodTreeItem) => {
-          if (node.data.jobMaterialMakeMethodId === jobMakeMethodId) {
-            jobMethodTree = node;
-            return;
-          }
-        });
+        const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
         if (!jobMethodTree) throw new Error("Job method tree not found");
 
         const madeItemIds: string[] = [];
@@ -1353,11 +1344,17 @@ serve(async (req: Request) => {
 
         const madeItemIds: string[] = [];
 
-        traverseQuoteMethod(quoteMethodTree, (node: QuoteMethodTreeItem) => {
-          if (node.data.itemId && node.data.methodType === "Make") {
-            madeItemIds.push(node.data.itemId);
+        await traverseQuoteMethod(
+          quoteMethodTree,
+          (node: QuoteMethodTreeItem) => {
+            if (node.data.itemId && node.data.methodType === "Make") {
+              console.log(`Adding item ID: ${node.data.itemId}`);
+              madeItemIds.push(node.data.itemId);
+            }
           }
-        });
+        );
+
+        console.log({ madeItemIds });
 
         const makeMethods = await client
           .from("makeMethod")
@@ -1379,28 +1376,31 @@ serve(async (req: Request) => {
           const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
             [];
 
-          traverseQuoteMethod(quoteMethodTree, (node: QuoteMethodTreeItem) => {
-            if (node.data.itemId && node.data.methodType === "Make") {
-              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
-            }
+          await traverseQuoteMethod(
+            quoteMethodTree,
+            (node: QuoteMethodTreeItem) => {
+              if (node.data.itemId && node.data.methodType === "Make") {
+                makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+              }
 
-            node.children.forEach((child) => {
-              materialInserts.push({
-                makeMethodId: makeMethodByItemId[node.data.itemId],
-                materialMakeMethodId: makeMethodByItemId[child.data.itemId],
-                itemId: child.data.itemId,
-                itemReadableId: child.data.itemReadableId,
-                itemType: child.data.itemType,
-                methodType: child.data.methodType,
-                order: child.data.order,
-                quantity: child.data.quantity,
-                unitOfMeasureCode: child.data.unitOfMeasureCode,
-                companyId,
-                createdBy: userId,
-                customFields: {},
+              node.children.forEach((child) => {
+                materialInserts.push({
+                  makeMethodId: makeMethodByItemId[node.data.itemId],
+                  materialMakeMethodId: makeMethodByItemId[child.data.itemId],
+                  itemId: child.data.itemId,
+                  itemReadableId: child.data.itemReadableId,
+                  itemType: child.data.itemType,
+                  methodType: child.data.methodType,
+                  order: child.data.order,
+                  quantity: child.data.quantity,
+                  unitOfMeasureCode: child.data.unitOfMeasureCode,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                });
               });
-            });
-          });
+            }
+          );
 
           if (makeMethodsToDelete.length > 0) {
             makeMethodsToDelete = makeMethodsToDelete.map((mm) =>
@@ -1685,51 +1685,36 @@ serve(async (req: Request) => {
           throw new Error("Failed to get quote make method");
         }
 
-        const [quoteOperations, quoteParentMakeMethod] = await Promise.all([
+        const [quoteOperations] = await Promise.all([
           client
             .from("quoteOperationsWithMakeMethods")
             .select("*")
             .eq("quoteLineId", quoteMakeMethod.data.quoteLineId),
-          client
-            .from("quoteMakeMethod")
-            .select("*")
-            .eq("quoteLineId", quoteMakeMethod.data.quoteLineId)
-            .is("parentMaterialId", null)
-            .single(),
         ]);
 
         if (quoteOperations.error) {
           throw new Error("Failed to get quote operations");
         }
 
-        if (quoteParentMakeMethod.error) {
-          throw new Error("Failed to get parent make method");
-        }
-
         const [quoteMethodTrees] = await Promise.all([
-          getQuoteMethodTree(client, quoteParentMakeMethod.data.id),
+          getQuoteMethodTree(
+            client,
+            quoteMakeMethodId,
+            quoteMakeMethod.data.parentMaterialId
+          ),
         ]);
 
         if (quoteMethodTrees.error) {
           throw new Error("Failed to get method tree");
         }
 
-        const fullQuoteMethodTree = quoteMethodTrees
+        if (quoteMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const quoteMethodTree = quoteMethodTrees
           .data?.[0] as QuoteMethodTreeItem;
-        if (!fullQuoteMethodTree) throw new Error("Method tree not found");
-
-        let quoteMethodTree: QuoteMethodTreeItem | null = null;
-
-        traverseQuoteMethod(
-          fullQuoteMethodTree,
-          (node: QuoteMethodTreeItem) => {
-            if (node.data.quoteMaterialMakeMethodId === quoteMakeMethodId) {
-              quoteMethodTree = node;
-              return;
-            }
-          }
-        );
-        if (!quoteMethodTree) throw new Error("Quote method tree not found");
+        if (!quoteMethodTree) throw new Error("Job method tree not found");
 
         const madeItemIds: string[] = [];
 
@@ -1759,28 +1744,31 @@ serve(async (req: Request) => {
           const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
             [];
 
-          traverseQuoteMethod(quoteMethodTree!, (node: QuoteMethodTreeItem) => {
-            if (node.data.itemId && node.data.methodType === "Make") {
-              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
-            }
+          await traverseQuoteMethod(
+            quoteMethodTree!,
+            (node: QuoteMethodTreeItem) => {
+              if (node.data.itemId && node.data.methodType === "Make") {
+                makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+              }
 
-            node.children.forEach((child) => {
-              materialInserts.push({
-                makeMethodId: makeMethodByItemId[node.data.itemId],
-                materialMakeMethodId: makeMethodByItemId[child.data.itemId],
-                itemId: child.data.itemId,
-                itemReadableId: child.data.itemReadableId,
-                itemType: child.data.itemType,
-                methodType: child.data.methodType,
-                order: child.data.order,
-                quantity: child.data.quantity,
-                unitOfMeasureCode: child.data.unitOfMeasureCode,
-                companyId,
-                createdBy: userId,
-                customFields: {},
+              node.children.forEach((child) => {
+                materialInserts.push({
+                  makeMethodId: makeMethodByItemId[node.data.itemId],
+                  materialMakeMethodId: makeMethodByItemId[child.data.itemId],
+                  itemId: child.data.itemId,
+                  itemReadableId: child.data.itemReadableId,
+                  itemType: child.data.itemType,
+                  methodType: child.data.methodType,
+                  order: child.data.order,
+                  quantity: child.data.quantity,
+                  unitOfMeasureCode: child.data.unitOfMeasureCode,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                });
               });
-            });
-          });
+            }
+          );
 
           if (makeMethodsToDelete.length > 0) {
             makeMethodsToDelete = makeMethodsToDelete.map((mm) =>
@@ -1953,90 +1941,4 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   }
 
   return rootItems.map((item) => traverseAndRenameIds(item));
-}
-
-type QuoteMethod = NonNullable<
-  Awaited<ReturnType<typeof getQuoteMethodTreeArray>>["data"]
->[number];
-type QuoteMethodTreeItem = {
-  id: string;
-  data: QuoteMethod;
-  children: QuoteMethodTreeItem[];
-};
-
-export async function getQuoteMethodTree(
-  client: SupabaseClient<Database>,
-  methodId: string
-) {
-  const items = await getQuoteMethodTreeArray(client, methodId);
-  if (items.error) return items;
-
-  const tree = getQuoteMethodTreeArrayToTree(items.data);
-
-  return {
-    data: tree,
-    error: null,
-  };
-}
-
-export function getQuoteMethodTreeArray(
-  client: SupabaseClient<Database>,
-  methodId: string
-) {
-  return client.rpc("get_quote_methods_by_method_id", {
-    mid: methodId,
-  });
-}
-
-function getQuoteMethodTreeArrayToTree(
-  items: QuoteMethod[]
-): QuoteMethodTreeItem[] {
-  // function traverseAndRenameIds(node: QuoteMethodTreeItem) {
-  //   const clone = structuredClone(node);
-  //   clone.id = `node-${Math.random().toString(16).slice(2)}`;
-  //   clone.children = clone.children.map((n) => traverseAndRenameIds(n));
-  //   return clone;
-  // }
-
-  const rootItems: QuoteMethodTreeItem[] = [];
-  const lookup: { [id: string]: QuoteMethodTreeItem } = {};
-
-  for (const item of items) {
-    const itemId = item.methodMaterialId;
-    const parentId = item.parentMaterialId;
-
-    if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
-      // @ts-ignore - we don't add data here
-      lookup[itemId] = { id: itemId, children: [] };
-    }
-
-    lookup[itemId]["data"] = item;
-
-    const treeItem = lookup[itemId];
-
-    if (parentId === null || parentId === undefined) {
-      rootItems.push(treeItem);
-    } else {
-      if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
-        // @ts-ignore - we don't add data here
-        lookup[parentId] = { id: parentId, children: [] };
-      }
-
-      lookup[parentId]["children"].push(treeItem);
-    }
-  }
-  return rootItems;
-}
-
-async function traverseQuoteMethod(
-  node: QuoteMethodTreeItem,
-  callback: (node: QuoteMethodTreeItem) => void | Promise<void>
-) {
-  await callback(node);
-
-  if (node.children) {
-    for await (const child of node.children) {
-      traverseQuoteMethod(child, callback);
-    }
-  }
 }

@@ -1,4 +1,4 @@
-import { Badge, Button, HStack, Heading } from "@carbon/react";
+import { Button, HStack, Heading } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
 import { LuEye, LuFile, LuTruck, LuXCircle } from "react-icons/lu";
@@ -32,19 +32,17 @@ const SalesOrderHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
         <HStack className="w-full justify-between">
           <HStack>
             <Link to={path.to.salesOrderDetails(orderId)}>
-              <Heading size="h2">{routeData?.salesOrder?.salesOrderId}</Heading>
-            </Link>
-            <Badge variant="secondary">
-              <Badge variant="secondary">
+              <Heading size="h2" className="flex items-center gap-1">
                 <RiProgress8Line />
-              </Badge>
-            </Badge>
-            <SalesStatus status={routeData?.salesOrder?.status} />
+                <span>{routeData?.salesOrder?.salesOrderId}</span>
+              </Heading>
+            </Link>
             <Copy text={routeData?.salesOrder?.salesOrderId ?? ""} />
+            <SalesStatus status={routeData?.salesOrder?.status} />
           </HStack>
           <HStack>
             <Assignee

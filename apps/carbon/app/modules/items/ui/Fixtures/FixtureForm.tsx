@@ -172,7 +172,7 @@ const FixtureForm = ({
                 />
 
                 <Customer name="customerId" label="Customer" />
-                {!isEditing && (
+                {!isEditing && replenishmentSystem !== "Make" && (
                   <Number
                     name="unitCost"
                     label="Unit Cost"

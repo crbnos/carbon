@@ -24,16 +24,20 @@ export default function MakeMethodRoute() {
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack
+      spacing={2}
+      className="p-2"
+      key={JSON.stringify(manufacturingRouteData)}
+    >
       <MakeMethodBreadcrumbs itemId={itemId} type="Fixture" />
       <BillOfProcess
-        key={JSON.stringify(manufacturingRouteData?.methodOperations)}
+        key={itemId}
         makeMethodId={makeMethodId}
         // @ts-ignore
-        operations={manufacturingRouteData?.methodOperations}
+        operations={manufacturingRouteData?.methodOperations ?? []}
       />
       <BillOfMaterial
-        key={JSON.stringify(manufacturingRouteData?.methodMaterials)}
+        key={itemId}
         makeMethodId={makeMethodId}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}

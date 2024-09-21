@@ -90,6 +90,89 @@ export function traverseJobMethod(
   }
 }
 
+export type QuoteMethod = NonNullable<
+  Awaited<ReturnType<typeof getQuoteMethodTreeArray>>["data"]
+>[number];
+export type QuoteMethodTreeItem = {
+  id: string;
+  data: QuoteMethod;
+  children: QuoteMethodTreeItem[];
+};
+
+export async function getQuoteMethodTree(
+  client: SupabaseClient<Database>,
+  methodId: string,
+  parentMaterialId: string | null = null
+) {
+  const items = await getQuoteMethodTreeArray(client, methodId);
+  if (items.error) return items;
+
+  const tree = getQuoteMethodTreeArrayToTree(items.data, parentMaterialId);
+
+  return {
+    data: tree,
+    error: null,
+  };
+}
+
+export function getQuoteMethodTreeArray(
+  client: SupabaseClient<Database>,
+  methodId: string
+) {
+  return client.rpc("get_quote_methods_by_method_id", {
+    mid: methodId,
+  });
+}
+
+function getQuoteMethodTreeArrayToTree(
+  items: QuoteMethod[],
+  parentMaterialId: string | null = null
+): QuoteMethodTreeItem[] {
+  const rootItems: QuoteMethodTreeItem[] = [];
+  const lookup: { [id: string]: QuoteMethodTreeItem } = {};
+
+  for (const item of items) {
+    const itemId = item.methodMaterialId;
+    const parentId = item.parentMaterialId;
+
+    if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
+      lookup[itemId] = { id: itemId, children: [], data: item };
+    } else {
+      lookup[itemId].data = item;
+    }
+
+    const treeItem = lookup[itemId];
+
+    if (parentId === parentMaterialId || parentId === undefined) {
+      rootItems.push(treeItem);
+    } else {
+      if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
+        lookup[parentId] = {
+          id: parentId,
+          children: [],
+          data: {} as QuoteMethod,
+        };
+      }
+
+      lookup[parentId].children.push(treeItem);
+    }
+  }
+  return rootItems;
+}
+
+export async function traverseQuoteMethod(
+  node: QuoteMethodTreeItem,
+  callback: (node: QuoteMethodTreeItem) => void | Promise<void>
+) {
+  await callback(node);
+
+  if (node.children) {
+    for await (const child of node.children) {
+      traverseQuoteMethod(child, callback);
+    }
+  }
+}
+
 export const getRatesFromWorkCenters =
   (workCenters: Database["public"]["Views"]["workCenters"]["Row"][] | null) =>
   (
