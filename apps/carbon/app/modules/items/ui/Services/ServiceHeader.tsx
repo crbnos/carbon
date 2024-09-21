@@ -1,7 +1,7 @@
-import { Badge, HStack, Heading, VStack } from "@carbon/react";
+import { HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { MethodItemTypeIcon } from "~/components";
+import { Copy, MethodItemTypeIcon } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import type { Service } from "~/modules/items";
@@ -23,11 +23,12 @@ const ServiceHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.serviceDetails(itemId)}>
-            <Heading size="h2">{routeData?.service?.id}</Heading>
+            <Heading size="h2" className="flex items-center gap-1">
+              <MethodItemTypeIcon type="Service" />
+              <span>{routeData?.service?.id}</span>
+            </Heading>
           </Link>
-          <Badge variant="secondary">
-            <MethodItemTypeIcon type="Service" />
-          </Badge>
+          <Copy text={routeData?.service?.id ?? ""} />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

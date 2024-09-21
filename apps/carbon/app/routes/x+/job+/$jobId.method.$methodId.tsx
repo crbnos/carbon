@@ -71,21 +71,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobMakeMethodRoute() {
-  const { jobId, methodId } = useParams();
-  if (!jobId) throw new Error("Could not find jobId");
+  const { methodId } = useParams();
   if (!methodId) throw new Error("Could not find methodId");
 
-  const { materials, operations } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
+  const { materials, operations } = loaderData;
 
   return (
-    <VStack spacing={2}>
-      <JobBillOfProcess
-        jobMakeMethodId={methodId}
-        operations={operations}
-        key={JSON.stringify(operations)}
-      />
+    <VStack spacing={2} key={JSON.stringify(loaderData)}>
+      <JobBillOfProcess jobMakeMethodId={methodId} operations={operations} />
       <JobBillOfMaterial
-        key={JSON.stringify(materials)}
         jobMakeMethodId={methodId}
         materials={materials}
         operations={operations}

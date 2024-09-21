@@ -1,4 +1,4 @@
-import { Badge, Button, HStack, Heading, useDisclosure } from "@carbon/react";
+import { Button, HStack, Heading, useDisclosure } from "@carbon/react";
 
 import { Form, Link, useParams } from "@remix-run/react";
 import {
@@ -44,19 +44,17 @@ const QuoteHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
         <HStack className="w-full justify-between">
           <HStack>
             <Link to={path.to.quoteDetails(quoteId)}>
-              <Heading size="h2">{routeData?.quote?.quoteId}</Heading>
-            </Link>
-            <Badge variant="secondary">
-              <Badge variant="secondary">
+              <Heading size="h2" className="flex items-center gap-1">
                 <RiProgress4Line />
-              </Badge>
-            </Badge>
-            <QuoteStatus status={routeData?.quote?.status} />
+                <span>{routeData?.quote?.quoteId}</span>
+              </Heading>
+            </Link>
             <Copy text={routeData?.quote?.quoteId ?? ""} />
+            <QuoteStatus status={routeData?.quote?.status} />
           </HStack>
           <HStack>
             <Assignee

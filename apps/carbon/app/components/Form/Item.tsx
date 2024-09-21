@@ -158,6 +158,7 @@ const Item = ({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
+                  type="button"
                   aria-label="Change Type"
                   className="bg-transparent flex-shrink-0 h-10 rounded-l-none border-l-0 shadow-sm"
                   disabled={props.isReadOnly}

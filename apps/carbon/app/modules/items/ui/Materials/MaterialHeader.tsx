@@ -1,7 +1,7 @@
-import { Badge, HStack, Heading, VStack } from "@carbon/react";
+import { HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { MethodItemTypeIcon } from "~/components";
+import { Copy, MethodItemTypeIcon } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import type { Material } from "~/modules/items";
@@ -22,11 +22,12 @@ const MaterialHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.materialDetails(itemId)}>
-            <Heading size="h2">{routeData?.materialSummary?.id}</Heading>
+            <Heading size="h2" className="flex items-center gap-1">
+              <MethodItemTypeIcon type="Material" />
+              <span>{routeData?.materialSummary?.id}</span>
+            </Heading>
           </Link>
-          <Badge variant="secondary">
-            <MethodItemTypeIcon type="Material" />
-          </Badge>
+          <Copy text={routeData?.materialSummary?.id ?? ""} />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

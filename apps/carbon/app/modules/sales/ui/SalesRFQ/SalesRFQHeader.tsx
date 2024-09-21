@@ -2,7 +2,6 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-  Badge,
   Button,
   HStack,
   Heading,
@@ -55,17 +54,17 @@ const SalesRFQHeader = () => {
   const status = routeData?.rfqSummary?.status ?? "Draft";
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
+    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
       <HStack className="w-full justify-between">
         <HStack>
           <Link to={path.to.salesRfqDetails(rfqId)}>
-            <Heading size="h2">{routeData?.rfqSummary?.rfqId}</Heading>
+            <Heading size="h2" className="flex items-center gap-1">
+              <RiProgress2Line />
+              <span>{routeData?.rfqSummary?.rfqId}</span>
+            </Heading>
           </Link>
-          <Badge variant="secondary">
-            <RiProgress2Line />
-          </Badge>
-          <SalesRFQStatus status={routeData?.rfqSummary?.status} />
           <Copy text={routeData?.rfqSummary?.rfqId ?? ""} />
+          <SalesRFQStatus status={routeData?.rfqSummary?.status} />
         </HStack>
         <HStack>
           <Assignee
