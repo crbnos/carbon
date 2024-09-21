@@ -223,7 +223,7 @@ export async function getJobOperationsByMethodId(
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
   params: {
-    id: string;
+    id: string; // job id
     companyId: string;
     userId: string;
   }
@@ -231,6 +231,22 @@ export async function recalculateJobRequirements(
   return client.functions.invoke("recalculate", {
     body: {
       type: "jobRequirements",
+      ...params,
+    },
+  });
+}
+
+export async function recalculateJobMakeMethodRequirements(
+  client: SupabaseClient<Database>,
+  params: {
+    id: string; // job make method id
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("recalculate", {
+    body: {
+      type: "jobMakeMethodRequirements",
       ...params,
     },
   });

@@ -28,10 +28,12 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import {
   LuAlertTriangle,
+  LuComponent,
   LuDownload,
   LuHardHat,
   LuUpload,
 } from "react-icons/lu";
+import { RiProgress4Line } from "react-icons/ri";
 import { BreadcrumbItem, Breadcrumbs } from "~/components";
 import {
   Hidden,
@@ -151,8 +153,13 @@ const JobBreadcrumbs = () => {
                 <Tabs defaultValue="item" className="w-full">
                   {isJobMethod && (
                     <TabsList className="grid w-full grid-cols-2 my-4">
-                      <TabsTrigger value="item">Item</TabsTrigger>
-                      <TabsTrigger value="quote">Quote</TabsTrigger>
+                      <TabsTrigger value="item">
+                        <LuComponent className="mr-2" /> Item
+                      </TabsTrigger>
+                      <TabsTrigger value="quote">
+                        <RiProgress4Line className="mr-2" />
+                        Quote
+                      </TabsTrigger>
                     </TabsList>
                   )}
                   <TabsContent value="item">

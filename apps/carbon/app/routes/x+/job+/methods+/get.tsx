@@ -3,6 +3,7 @@ import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   getJobMethodValidator,
+  recalculateJobRequirements,
   upsertJobMaterialMakeMethod,
   upsertJobMethod,
 } from "~/modules/production";
@@ -34,6 +35,18 @@ export async function action({ request }: ActionFunctionArgs) {
         userId,
       }
     );
+
+    const calculateQuantities = await recalculateJobRequirements(serviceRole, {
+      id: validation.data.targetId,
+      companyId: companyId,
+      userId: userId,
+    });
+
+    if (calculateQuantities.error) {
+      return json({
+        error: "Failed to calculate job quantities",
+      });
+    }
 
     return json({
       error: jobMethod.error ? "Failed to get job method" : null,

@@ -7,7 +7,7 @@ import {
 } from "@carbon/react";
 import { motion } from "framer-motion";
 import { useMemo, type PropsWithChildren } from "react";
-import { TbArrowBarLeft, TbArrowBarRight } from "react-icons/tb";
+import { LuArrowLeftFromLine, LuArrowRightFromLine } from "react-icons/lu";
 
 export const CollapsibleSidebar = ({
   children,
@@ -41,7 +41,13 @@ export const CollapsibleSidebar = ({
           <TooltipTrigger asChild>
             <IconButton
               onClick={sidebar.onToggle}
-              icon={sidebar.isOpen ? <TbArrowBarLeft /> : <TbArrowBarRight />}
+              icon={
+                sidebar.isOpen ? (
+                  <LuArrowLeftFromLine />
+                ) : (
+                  <LuArrowRightFromLine />
+                )
+              }
               aria-label="Toggle sidebar"
               className="bg-popover inline-block border border-border border-l-0 absolute pl-2 top-[calc(100vh-135px)] text-muted-foreground right-[-31px] left-auto rounded-l-none z-[3] hover:bg-popover p-0 shadow-none"
             />

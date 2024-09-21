@@ -15,3 +15,5 @@ ALTER TABLE "jobOperation"
   ADD COLUMN "operationQuantity" NUMERIC(10,4) DEFAULT 0,
   ADD COLUMN "quantityComplete" NUMERIC(10,4) DEFAULT 0,
   ADD COLUMN "quantityScrapped" NUMERIC(10,4) DEFAULT 0;
+
+
