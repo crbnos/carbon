@@ -84,7 +84,7 @@ export default function JobRoute() {
                     order={1}
                     minSize={10}
                     defaultSize={20}
-                    className="bg-card h-full"
+                    className="bg-card h-full shadow-lg"
                   >
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <div className="grid w-full h-full overflow-hidden p-2">

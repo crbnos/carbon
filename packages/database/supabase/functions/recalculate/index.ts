@@ -123,7 +123,7 @@ serve(async (req: Request) => {
         }
 
         await db.transaction().execute(async (trx) => {
-          await updateQuantities(trx, jobMethodTree, parentQuantity);
+          await updateJobQuantities(trx, jobMethodTree, parentQuantity);
         });
 
         break;
@@ -162,7 +162,7 @@ serve(async (req: Request) => {
         }
 
         await db.transaction().execute(async (trx) => {
-          await updateQuantities(trx, jobMethodTree, job.data?.quantity);
+          await updateJobQuantities(trx, jobMethodTree, job.data?.quantity);
         });
 
         break;
@@ -190,7 +190,7 @@ serve(async (req: Request) => {
   }
 });
 
-const updateQuantities = async (
+const updateJobQuantities = async (
   trx: Transaction<DB>,
   tree: JobMethodTreeItem,
   parentQuantity: number = 1
@@ -214,7 +214,7 @@ const updateQuantities = async (
   // Recursively update children
   if (tree.children) {
     for (const child of tree.children) {
-      await updateQuantities(trx, child, currentQuantity);
+      await updateJobQuantities(trx, child, currentQuantity);
     }
   }
 };
