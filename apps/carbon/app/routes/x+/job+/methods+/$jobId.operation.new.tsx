@@ -1,7 +1,9 @@
 import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
+import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   jobOperationValidator,
+  recalculateJobMakeMethodRequirements,
   upsertJobOperation,
 } from "~/modules/production";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -12,10 +14,11 @@ import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production",
   });
 
+  const serviceRole = getSupabaseServiceRole();
   const { jobId } = params;
   if (!jobId) {
     throw new Error("jobId not found");
@@ -30,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const insertJobOperation = await upsertJobOperation(client, {
+  const insertJobOperation = await upsertJobOperation(serviceRole, {
     ...data,
     jobId,
     companyId,
@@ -58,6 +61,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(insertJobOperation, "Failed to insert job operation")
+      )
+    );
+  }
+
+  const recalculateResult = await recalculateJobMakeMethodRequirements(
+    serviceRole,
+    {
+      id: validation.data.jobMakeMethodId,
+      companyId,
+      userId,
+    }
+  );
+
+  if (recalculateResult.error) {
+    return json(
+      { id: jobOperationId },
+      await flash(
+        request,
+        error(
+          recalculateResult.error,
+          "Failed to recalculate job make method requirements"
+        )
       )
     );
   }

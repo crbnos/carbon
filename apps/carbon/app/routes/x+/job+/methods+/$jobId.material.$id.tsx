@@ -1,7 +1,11 @@
 import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { getSupabaseServiceRole } from "~/lib/supabase";
-import { jobMaterialValidator, upsertJobMaterial } from "~/modules/production";
+import {
+  jobMaterialValidator,
+  recalculateJobMakeMethodRequirements,
+  upsertJobMaterial,
+} from "~/modules/production";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
@@ -60,6 +64,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(updateJobMaterial, "Failed to update job material")
+      )
+    );
+  }
+
+  const recalculateResult = await recalculateJobMakeMethodRequirements(
+    serviceRole,
+    {
+      id: validation.data.jobMakeMethodId,
+      companyId,
+      userId,
+    }
+  );
+
+  if (recalculateResult.error) {
+    return json(
+      { id: jobMaterialId },
+      await flash(
+        request,
+        error(
+          recalculateResult.error,
+          "Failed to recalculate job make method requirements"
+        )
       )
     );
   }

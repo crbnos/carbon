@@ -3,6 +3,7 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   jobMaterialValidator,
+  recalculateJobMakeMethodRequirements,
   upsertJobMaterial,
   upsertJobMaterialMakeMethod,
 } from "~/modules/production";
@@ -84,6 +85,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
+  }
+
+  const recalculateResult = await recalculateJobMakeMethodRequirements(
+    serviceRole,
+    {
+      id: validation.data.jobMakeMethodId,
+      companyId,
+      userId,
+    }
+  );
+
+  if (recalculateResult.error) {
+    return json(
+      { id: jobMaterialId },
+      await flash(
+        request,
+        error(
+          recalculateResult.error,
+          "Failed to recalculate job make method requirements"
+        )
+      )
+    );
   }
 
   return json({ id: jobMaterialId });

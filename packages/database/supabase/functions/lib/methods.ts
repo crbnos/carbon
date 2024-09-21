@@ -13,12 +13,13 @@ export type JobMethodTreeItem = {
 
 export async function getJobMethodTree(
   client: SupabaseClient<Database>,
-  methodId: string
+  methodId: string,
+  parentMaterialId: string | null = null
 ) {
   const items = await getJobMethodTreeArray(client, methodId);
   if (items.error) return items;
 
-  const tree = getJobMethodTreeArrayToTree(items.data);
+  const tree = getJobMethodTreeArrayToTree(items.data, parentMaterialId);
 
   return {
     data: tree,
@@ -35,7 +36,10 @@ export function getJobMethodTreeArray(
   });
 }
 
-function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
+function getJobMethodTreeArrayToTree(
+  items: JobMethod[],
+  parentMaterialId: string | null = null
+): JobMethodTreeItem[] {
   // function traverseAndRenameIds(node: JobMethodTreeItem) {
   //   const clone = structuredClone(node);
   //   clone.id = `node-${Math.random().toString(16).slice(2)}`;
@@ -59,7 +63,7 @@ function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
 
     const treeItem = lookup[itemId];
 
-    if (parentId === null || parentId === undefined) {
+    if (parentId === parentMaterialId || parentId === undefined) {
       rootItems.push(treeItem);
     } else {
       if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {

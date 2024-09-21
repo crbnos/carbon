@@ -227,6 +227,7 @@ function QuoteLineItem({
             <IconButton
               aria-label={disclosure.isOpen ? "Hide" : "Show"}
               icon={<LuChevronsUpDown />}
+              size="sm"
               variant="ghost"
               onClick={(e) => {
                 e.stopPropagation();
@@ -239,6 +240,7 @@ function QuoteLineItem({
               <IconButton
                 aria-label="More"
                 icon={<MdMoreVert />}
+                size="sm"
                 variant="ghost"
                 onClick={(e) => e.stopPropagation()}
               />

@@ -29,5 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // TODO: if it is a make method -- we should get the tree from the jobMakeMethod with parentMaterialId = id, and delete everything that comes back
+
   return json({});
 }

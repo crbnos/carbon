@@ -3,6 +3,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
+import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
@@ -11,7 +12,7 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.object({
-  type: z.enum(["jobRequirements"]),
+  type: z.enum(["jobMakeMethodRequirements", "jobRequirements"]),
   id: z.string(),
   companyId: z.string(),
   userId: z.string(),
@@ -37,6 +38,96 @@ serve(async (req: Request) => {
     const client = getSupabaseServiceRole(req.headers.get("Authorization"));
 
     switch (type) {
+      case "jobMakeMethodRequirements": {
+        const jobMakeMethodId = id;
+
+        const [jobMakeMethod] = await Promise.all([
+          client
+            .from("jobMakeMethod")
+            .select("*")
+            .eq("id", jobMakeMethodId)
+            .single(),
+        ]);
+
+        if (jobMakeMethod.error) {
+          throw new Error(
+            `Failed to get job makeMethod: ${jobMakeMethod.error.message}`
+          );
+        }
+
+        let parentQuantity = 1;
+        if (jobMakeMethod.data.parentMaterialId) {
+          const jobMaterial = await client
+            .from("jobMaterial")
+            .select("*")
+            .eq("id", jobMakeMethod.data.parentMaterialId)
+            .single();
+          if (jobMaterial.data?.methodType !== "Make") {
+            return new Response(JSON.stringify({ success: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          }
+
+          if (jobMaterial.error) {
+            throw new Error(
+              `Failed to get job material: ${jobMaterial.error.message}`
+            );
+          }
+
+          if (!jobMaterial.data) {
+            throw new Error(
+              `Job material not found for id: ${jobMakeMethod.data.parentMaterialId}`
+            );
+          }
+
+          if (jobMaterial.data.methodType !== "Make") {
+            console.log(
+              `Job material ${jobMakeMethod.data.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
+            );
+            return new Response(JSON.stringify({ success: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          }
+
+          parentQuantity =
+            jobMaterial.data.estimatedQuantity ?? jobMaterial.data.quantity;
+        } else {
+          const job = await client
+            .from("job")
+            .select("*")
+            .eq("id", jobMakeMethod.data.jobId)
+            .single();
+          if (job.error) {
+            throw new Error(`Failed to get job: ${job.error.message}`);
+          }
+          parentQuantity = job.data.productionQuantity ?? 1;
+        }
+
+        const jobMethodTrees = await getJobMethodTree(
+          client,
+          jobMakeMethod.data.id,
+          jobMakeMethod.data.parentMaterialId
+        );
+
+        if (jobMethodTrees.error) {
+          throw new Error(
+            `Failed to get method tree: ${jobMethodTrees.error.message}`
+          );
+        }
+
+        const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
+        if (!jobMethodTree) {
+          throw new Error("Method tree not found");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          await updateQuantities(trx, jobMethodTree, parentQuantity);
+        });
+
+        break;
+      }
       case "jobRequirements": {
         const jobId = id;
         const [job, jobMakeMethod] = await Promise.all([
@@ -71,35 +162,7 @@ serve(async (req: Request) => {
         }
 
         await db.transaction().execute(async (trx) => {
-          const updateQuantities = async (
-            tree: JobMethodTreeItem,
-            parentQuantity: number = 1
-          ) => {
-            const currentQuantity = tree.data.quantity * parentQuantity;
-
-            // Update jobMaterial
-            await trx
-              .updateTable("jobMaterial")
-              .set({ estimatedQuantity: currentQuantity })
-              .where("id", "=", tree.id)
-              .execute();
-
-            // Update jobOperation
-            await trx
-              .updateTable("jobOperation")
-              .set({ operationQuantity: currentQuantity })
-              .where("jobMakeMethodId", "=", tree.data.jobMakeMethodId)
-              .execute();
-
-            // Recursively update children
-            if (tree.children) {
-              for (const child of tree.children) {
-                await updateQuantities(child, currentQuantity);
-              }
-            }
-          };
-
-          await updateQuantities(jobMethodTree, job.data?.quantity);
+          await updateQuantities(trx, jobMethodTree, job.data?.quantity);
         });
 
         break;
@@ -126,3 +189,32 @@ serve(async (req: Request) => {
     });
   }
 });
+
+const updateQuantities = async (
+  trx: Transaction<DB>,
+  tree: JobMethodTreeItem,
+  parentQuantity: number = 1
+) => {
+  const currentQuantity = tree.data.quantity * parentQuantity;
+
+  // Update jobMaterial
+  await trx
+    .updateTable("jobMaterial")
+    .set({ estimatedQuantity: currentQuantity })
+    .where("id", "=", tree.id)
+    .execute();
+
+  // Update jobOperation
+  await trx
+    .updateTable("jobOperation")
+    .set({ operationQuantity: parentQuantity })
+    .where("jobMakeMethodId", "=", tree.data.jobMakeMethodId)
+    .execute();
+
+  // Recursively update children
+  if (tree.children) {
+    for (const child of tree.children) {
+      await updateQuantities(trx, child, currentQuantity);
+    }
+  }
+};
