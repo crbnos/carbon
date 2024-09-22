@@ -1545,6 +1545,9 @@ serve(async (req: Request) => {
           .data?.[0] as QuoteMethodTreeItem;
         if (!quoteMethodTree) throw new Error("Method tree not found");
 
+        const quoteMaterialIdToJobMaterialId: Record<string, string> = {};
+        const quoteMakeMethodIdToJobMakeMethodId: Record<string, string> = {};
+
         await db.transaction().execute(async (trx) => {
           // Delete existing jobMakeMethods, jobMaterials, and jobOperations for this job
           await Promise.all([
@@ -1568,10 +1571,15 @@ serve(async (req: Request) => {
                 [];
               const jobMakeMethodInserts: Database["public"]["Tables"]["jobMakeMethod"]["Insert"][] =
                 [];
+              const jobOperationInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
+                [];
 
               for await (const child of node.children) {
+                const newMaterialId = nanoid();
+                quoteMaterialIdToJobMaterialId[child.id] = newMaterialId;
+
                 jobMaterialInserts.push({
-                  id: child.id,
+                  id: newMaterialId,
                   jobId,
                   itemId: child.data.itemId,
                   itemReadableId: child.data.itemReadableId,
@@ -1582,7 +1590,9 @@ serve(async (req: Request) => {
                   jobMakeMethodId:
                     child.data.quoteMakeMethodId === quoteMakeMethod.data.id
                       ? jobMakeMethod.data.id
-                      : child.data.quoteMakeMethodId,
+                      : quoteMakeMethodIdToJobMakeMethodId[
+                          child.data.quoteMakeMethodId
+                        ],
                   quantity: child.data.quantity,
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   companyId,
@@ -1591,10 +1601,14 @@ serve(async (req: Request) => {
                 });
 
                 if (child.data.quoteMaterialMakeMethodId) {
+                  const newMakeMethodId = nanoid();
+                  quoteMakeMethodIdToJobMakeMethodId[
+                    child.data.quoteMaterialMakeMethodId
+                  ] = newMakeMethodId;
                   jobMakeMethodInserts.push({
-                    id: child.data.quoteMaterialMakeMethodId,
+                    id: newMakeMethodId,
                     jobId,
-                    parentMaterialId: child.id,
+                    parentMaterialId: quoteMaterialIdToJobMaterialId[child.id],
                     itemId: child.data.itemId,
                     quantityPerParent: child.data.quantity,
                     companyId,
@@ -1611,8 +1625,6 @@ serve(async (req: Request) => {
               }
 
               if (jobMakeMethodInserts.length > 0) {
-                // we use an update instead of an insert because
-                // the trigger is creating a record automatically
                 for await (const insert of jobMakeMethodInserts) {
                   await trx
                     .updateTable("jobMakeMethod")
@@ -1625,41 +1637,49 @@ serve(async (req: Request) => {
                     .execute();
                 }
               }
+
+              // Add job operations for the current node
+              const nodeOperations = quoteOperations.data.filter(
+                (op) => op.quoteMakeMethodId === node.data.quoteMakeMethodId
+              );
+
+              jobOperationInserts.push(
+                ...nodeOperations.map((op) => ({
+                  jobId,
+                  jobMakeMethodId:
+                    op.quoteMakeMethodId === quoteMakeMethod.data.id
+                      ? jobMakeMethod.data.id
+                      : quoteMakeMethodIdToJobMakeMethodId[
+                          op.quoteMakeMethodId!
+                        ],
+                  processId: op.processId,
+                  workCenterId: op.workCenterId,
+                  description: op.description,
+                  setupTime: op.setupTime,
+                  setupUnit: op.setupUnit,
+                  laborTime: op.laborTime,
+                  laborUnit: op.laborUnit,
+                  machineTime: op.machineTime,
+                  machineUnit: op.machineUnit,
+                  order: op.order,
+                  operationOrder: op.operationOrder,
+                  operationType: op.operationType,
+                  operationSupplierProcessId: op.operationSupplierProcessId,
+                  workInstruction: op.workInstruction,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                }))
+              );
+
+              if (jobOperationInserts.length > 0) {
+                await trx
+                  .insertInto("jobOperation")
+                  .values(jobOperationInserts)
+                  .execute();
+              }
             }
           );
-
-          const jobOperationInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
-            quoteOperations.data.map((op) => ({
-              jobId,
-              jobMakeMethodId:
-                op.quoteMakeMethodId === quoteMakeMethod.data.id
-                  ? jobMakeMethod.data.id
-                  : op.quoteMakeMethodId,
-              processId: op.processId,
-              workCenterId: op.workCenterId,
-              description: op.description,
-              setupTime: op.setupTime,
-              setupUnit: op.setupUnit,
-              laborTime: op.laborTime,
-              laborUnit: op.laborUnit,
-              machineTime: op.machineTime,
-              machineUnit: op.machineUnit,
-              order: op.order,
-              operationOrder: op.operationOrder,
-              operationType: op.operationType,
-              operationSupplierProcessId: op.operationSupplierProcessId,
-              workInstruction: op.workInstruction,
-              companyId,
-              createdBy: userId,
-              customFields: {},
-            }));
-
-          if (jobOperationInserts.length > 0) {
-            await trx
-              .insertInto("jobOperation")
-              .values(jobOperationInserts)
-              .execute();
-          }
         });
 
         break;
