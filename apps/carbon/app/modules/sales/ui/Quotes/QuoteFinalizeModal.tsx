@@ -10,6 +10,7 @@ import {
   ModalTitle,
   VStack,
 } from "@carbon/react";
+import type { FetcherWithComponents } from "@remix-run/react";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import { CustomerContact, SelectControlled } from "~/components/Form";
@@ -21,11 +22,13 @@ import type { Quotation } from "../../types";
 type QuotationReleaseModalProps = {
   onClose: () => void;
   quote?: Quotation;
+  fetcher: FetcherWithComponents<{}>;
 };
 
 const QuotationReleaseModal = ({
   quote,
   onClose,
+  fetcher,
 }: QuotationReleaseModalProps) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
@@ -56,6 +59,7 @@ const QuotationReleaseModal = ({
             notification: notificationType as "Email" | "None",
             customerContact: quote?.customerContactId ?? undefined,
           }}
+          fetcher={fetcher}
         >
           <ModalHeader>
             <ModalTitle>{`Release ${quote?.quoteId}`}</ModalTitle>
