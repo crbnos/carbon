@@ -100,7 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getItemQuantities(client, itemId, companyId, locationId),
     getItem(client, itemId),
   ]);
-  if (quantities.error || !quantities.data) {
+  if (quantities.error) {
     throw redirect(
       path.to.inventory,
       await flash(request, error(quantities, "Failed to load part quantities"))

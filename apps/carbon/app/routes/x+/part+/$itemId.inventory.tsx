@@ -106,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId,
     locationId
   );
-  if (quantities.error || !quantities.data) {
+  if (quantities.error) {
     throw redirect(
       path.to.items,
       await flash(request, error(quantities, "Failed to load part quantities"))
@@ -204,7 +204,6 @@ export default function PartInventoryRoute() {
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
-        quantities={quantities}
         locations={sharedPartsData?.locations ?? []}
         shelves={sharedPartsData?.shelves ?? []}
         type="Part"

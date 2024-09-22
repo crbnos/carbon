@@ -21,7 +21,7 @@ type InventoryDetailsProps = {
   itemUnitOfMeasureCode: string;
   locations: ListItem[];
   pickMethod: z.infer<typeof pickMethodValidator>;
-  quantities: ItemQuantities;
+  quantities: ItemQuantities | null;
   shelves: ListItem[];
   unitOfMeasures: UnitOfMeasureListItem[];
 };
@@ -51,7 +51,7 @@ const InventoryDetails = ({
               <VStack>Quantity on Hand</VStack>
             </CardDescription>
             <CardTitle className="text-4xl">
-              {`${formatter.format(quantities.quantityOnHand ?? 0)}`}
+              {`${formatter.format(quantities?.quantityOnHand ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -61,7 +61,7 @@ const InventoryDetails = ({
               <VStack>Quantity on Purchase Order</VStack>
             </CardDescription>
             <CardTitle className="text-4xl">
-              {`${formatter.format(quantities.quantityOnPurchaseOrder ?? 0)}`}
+              {`${formatter.format(quantities?.quantityOnPurchaseOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -71,7 +71,7 @@ const InventoryDetails = ({
               <VStack>Quantity on Sales Order</VStack>
             </CardDescription>
             <CardTitle className="text-4xl">
-              {`${formatter.format(quantities.quantityOnSalesOrder ?? 0)}`}
+              {`${formatter.format(quantities?.quantityOnSalesOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -81,7 +81,7 @@ const InventoryDetails = ({
               <VStack>Quantity on Production Order</VStack>
             </CardDescription>
             <CardTitle className="text-4xl">
-              {`${formatter.format(quantities.quantityOnProdOrder ?? 0)}`}
+              {`${formatter.format(quantities?.quantityOnProdOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>

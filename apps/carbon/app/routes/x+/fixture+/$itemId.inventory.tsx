@@ -111,7 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId,
     locationId
   );
-  if (quantities.error || !quantities.data) {
+  if (quantities.error) {
     throw redirect(
       path.to.items,
       await flash(
@@ -212,7 +212,6 @@ export default function FixtureInventoryRoute() {
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
-        quantities={quantities}
         locations={sharedFixturesData?.locations ?? []}
         shelves={sharedFixturesData?.shelves ?? []}
         type="Fixture"

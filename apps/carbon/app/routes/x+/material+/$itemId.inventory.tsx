@@ -111,7 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId,
     locationId
   );
-  if (quantities.error || !quantities.data) {
+  if (quantities.error) {
     throw redirect(
       path.to.items,
       await flash(
@@ -213,7 +213,6 @@ export default function MaterialInventoryRoute() {
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
-        quantities={quantities}
         locations={sharedMaterialsData?.locations ?? []}
         shelves={sharedMaterialsData?.shelves ?? []}
         type="Part"

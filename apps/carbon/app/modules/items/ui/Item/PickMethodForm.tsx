@@ -17,14 +17,12 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { ItemQuantities } from "~/modules/items";
 import { pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
-  quantities: ItemQuantities;
   locations: ListItem[];
   shelves: ListItem[];
   type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
@@ -33,7 +31,6 @@ type PickMethodFormProps = {
 const PickMethodForm = ({
   initialValues,
   locations,
-  quantities,
   shelves,
   type,
 }: PickMethodFormProps) => {
@@ -53,7 +50,7 @@ const PickMethodForm = ({
       <ValidatedForm
         method="post"
         validator={pickMethodValidator}
-        defaultValues={{ ...quantities, ...initialValues }}
+        defaultValues={initialValues}
       >
         <HStack className="w-full justify-between items-start">
           <CardHeader>
