@@ -1,6 +1,6 @@
 import { Button, HStack, Heading, useDisclosure } from "@carbon/react";
 
-import { Form, Link, useParams } from "@remix-run/react";
+import { Form, Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
   LuEye,
@@ -41,6 +41,8 @@ const QuoteHeader = () => {
     optimisticAssignment !== undefined
       ? optimisticAssignment
       : routeData?.quote?.assignee;
+
+  const finalizeFetcher = useFetcher<{}>();
 
   return (
     <>
@@ -88,7 +90,9 @@ const QuoteHeader = () => {
                 </Form>
                 <Button
                   onClick={finalizeModal.onOpen}
+                  isLoading={finalizeFetcher.state !== "idle"}
                   isDisabled={
+                    finalizeFetcher.state !== "idle" ||
                     !permissions.can("update", "sales") ||
                     !routeData?.lines?.length
                   }
@@ -187,6 +191,7 @@ const QuoteHeader = () => {
         <QuoteFinalizeModal
           quote={routeData?.quote}
           onClose={finalizeModal.onClose}
+          fetcher={finalizeFetcher}
         />
       )}
       {/* we use isOpen so we don't lose state */}
