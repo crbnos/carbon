@@ -5,9 +5,13 @@ import type { ItemLedger } from "../../types";
 const getActivityText = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.entryType) {
     case "Positive Adjmt.":
-      return `made a positive adjustment of ${ledgerRecord.quantity}`;
+      return `made a positive adjustment of ${ledgerRecord.quantity}${
+        ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf?.name}` : ""
+      }`;
     case "Negative Adjmt.":
-      return `made a negative adjustment of ${ledgerRecord.quantity}`;
+      return `made a negative adjustment of ${ledgerRecord.quantity}${
+        ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf.name}` : ""
+      }`;
     default:
       return "";
   }

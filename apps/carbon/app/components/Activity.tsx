@@ -30,12 +30,12 @@ const Activity = ({
       </div>
       <div className="flex items-center space-x-4">
         <div className="flex-grow">
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold">
+          <p>
+            <span className="font-semibold mr-2">
               {person?.name ?? "Deactivated user"}
             </span>
             <span className="text-gray-400">{activityMessage}</span>
-          </div>
+          </p>
           <div className="text-sm text-gray-400 mt-1">
             {formatTimeAgo(activityTime)}
           </div>

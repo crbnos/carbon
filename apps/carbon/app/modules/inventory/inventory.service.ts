@@ -85,7 +85,7 @@ export async function getItemLedger(
 
   let query = client
     .from("itemLedger")
-    .select("*", { count: "exact" })
+    .select("*, shelf(name)", { count: "exact" })
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .eq("locationId", locationId)
