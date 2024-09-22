@@ -1,5 +1,4 @@
 import { validationError, validator } from "@carbon/form";
-import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import {
@@ -9,7 +8,7 @@ import {
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { assertIsPost } from "~/utils/http";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -27,7 +26,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   if (validation.error) {
-    console.log(validation.error);
     return validationError(validation.error);
   }
   const { ...data } = validation.data;
@@ -50,13 +48,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.inventoryItem(itemId));
-}
-
-export default function ItemInventoryAdjustmentRoute() {
-  const { itemId } = useParams();
-
-  if (!itemId) throw new Error("itemId not found");
-
-  return <></>;
+  throw redirect(requestReferrer(request) ?? path.to.inventoryItem(itemId));
 }

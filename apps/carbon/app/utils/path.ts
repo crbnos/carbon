@@ -352,13 +352,13 @@ export const path = {
     integration: (name: string) =>
       generatePath(`${x}/settings/integrations/${name}`),
     integrations: `${x}/settings/integrations`,
-    inventory: `${x}/inventory/inventory`,
+    inventory: `${x}/inventory/quantities`,
     inventoryItem: (id: string) =>
-      generatePath(`${x}/inventory/inventory/${id}/details`),
+      generatePath(`${x}/inventory/quantities/${id}/details`),
     inventoryItemActivity: (id: string) =>
-      generatePath(`${x}/inventory/inventory/${id}/activity`),
+      generatePath(`${x}/inventory/quantities/${id}/activity`),
     inventoryItemAdjustment: (id: string) =>
-      generatePath(`${x}/inventory/inventory/${id}/adjustment`),
+      generatePath(`${x}/inventory/quantities/${id}/adjustment`),
     inventoryRoot: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
     items: `${x}/items`,

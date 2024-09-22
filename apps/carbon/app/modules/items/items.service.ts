@@ -397,12 +397,23 @@ export async function getItemQuantities(
   locationId: string
 ) {
   return client
+    .rpc("get_item_quantities", { location_id: locationId })
+    .eq("itemId", itemId)
+    .maybeSingle();
+}
+
+export async function getItemShelfQuantities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
     .from("itemInventory")
     .select("*")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .maybeSingle();
+    .eq("locationId", locationId);
 }
 
 export async function getItemUnitSalePrice(

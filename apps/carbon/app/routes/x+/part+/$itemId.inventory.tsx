@@ -4,9 +4,12 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
+import { InventoryDetails } from "~/modules/inventory";
+import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
@@ -110,9 +113,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load part quantities")
+      )
+    );
+  }
+
   return json({
     partInventory: partInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
+    itemId,
   });
 }
 
@@ -158,10 +179,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartInventoryRoute() {
-  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.partRoot
-  );
-  const { partInventory, quantities } = useLoaderData<typeof loader>();
+  const sharedPartsData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.partRoot);
+
+  const { partInventory, itemShelfQuantities, quantities, itemId } =
+    useLoaderData<typeof loader>();
+
+  const partData = useRouteData<{
+    partSummary: PartSummary;
+  }>(path.to.part(itemId));
+  if (!partData) throw new Error("Could not find part data");
+  const itemUnitOfMeasureCode = partData?.partSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...partInventory,
@@ -175,7 +206,17 @@ export default function PartInventoryRoute() {
         initialValues={initialValues}
         quantities={quantities}
         locations={sharedPartsData?.locations ?? []}
+        shelves={sharedPartsData?.shelves ?? []}
         type="Part"
+      />
+      <InventoryDetails
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
+        locations={sharedPartsData?.locations ?? []}
+        pickMethod={initialValues}
+        quantities={quantities}
+        shelves={sharedPartsData?.shelves ?? []}
+        unitOfMeasures={sharedPartsData?.unitOfMeasures ?? []}
       />
     </VStack>
   );

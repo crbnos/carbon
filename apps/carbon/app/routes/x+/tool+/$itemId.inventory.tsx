@@ -1,11 +1,15 @@
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
+import { InventoryDetails } from "~/modules/inventory";
+import type { ToolSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
@@ -109,9 +113,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load tool quantities")
+      )
+    );
+  }
+
   return json({
     toolInventory: toolInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
+    itemId,
   });
 }
 
@@ -157,10 +179,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ToolInventoryRoute() {
-  const sharedToolsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.toolRoot
-  );
-  const { toolInventory, quantities } = useLoaderData<typeof loader>();
+  const sharedToolsData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.toolRoot);
+
+  const { toolInventory, itemShelfQuantities, quantities, itemId } =
+    useLoaderData<typeof loader>();
+
+  const toolData = useRouteData<{
+    toolSummary: ToolSummary;
+  }>(path.to.tool(itemId));
+  if (!toolData) throw new Error("Could not find tool data");
+  const itemUnitOfMeasureCode = toolData?.toolSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...toolInventory,
@@ -168,12 +200,24 @@ export default function ToolInventoryRoute() {
     ...getCustomFields(toolInventory.customFields ?? {}),
   };
   return (
-    <PickMethodForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-      quantities={quantities}
-      locations={sharedToolsData?.locations ?? []}
-      type="Tool"
-    />
+    <VStack spacing={2}>
+      <PickMethodForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        quantities={quantities}
+        locations={sharedToolsData?.locations ?? []}
+        shelves={sharedToolsData?.shelves ?? []}
+        type="Part"
+      />
+      <InventoryDetails
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
+        locations={sharedToolsData?.locations ?? []}
+        pickMethod={initialValues}
+        quantities={quantities}
+        shelves={sharedToolsData?.shelves ?? []}
+        unitOfMeasures={sharedToolsData?.unitOfMeasures ?? []}
+      />
+    </VStack>
   );
 }

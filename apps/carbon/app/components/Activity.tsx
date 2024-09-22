@@ -1,5 +1,6 @@
 import { formatTimeAgo } from "@carbon/utils";
-import EmployeeAvatar from "./EmployeeAvatar";
+import { usePeople } from "~/stores";
+import Avatar from "./Avatar";
 
 type ActivityProps = {
   employeeId: string;
@@ -14,19 +15,34 @@ const Activity = ({
   activityTime,
   activityIcon,
 }: ActivityProps) => {
+  const [people] = usePeople();
+  if (!employeeId) return null;
+
+  const person = people.find((p) => p.id === employeeId);
+
   return (
-    <div className="flex items-start space-x-4 p-2">
-      <EmployeeAvatar employeeId={employeeId} />
-      <div className="flex-grow">
-        <div className="flex items-start justify-between">
-          <span className="text-gray-500">{activityMessage}</span>
-          {activityIcon && <div className="mt-1 ml-4">{activityIcon}</div>}
-        </div>
-        <div className="text-sm text-gray-400 mt-1">
-          {formatTimeAgo(activityTime)}
-        </div>
+    <li className="relative pl-14 pb-10 flex-grow w-full">
+      <div className="absolute left-0 top-0 flex items-center justify-center w-10 h-10">
+        <Avatar
+          path={person?.avatarUrl ?? undefined}
+          name={person?.name ?? ""}
+        />
       </div>
-    </div>
+      <div className="flex items-center space-x-4">
+        <div className="flex-grow">
+          <div className="flex items-center space-x-2">
+            <span className="font-semibold">
+              {person?.name ?? "Deactivated user"}
+            </span>
+            <span className="text-gray-400">{activityMessage}</span>
+          </div>
+          <div className="text-sm text-gray-400 mt-1">
+            {formatTimeAgo(activityTime)}
+          </div>
+        </div>
+        <div className="flex-shrink-0">{activityIcon}</div>
+      </div>
+    </li>
   );
 };
 

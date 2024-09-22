@@ -11,6 +11,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
+import type { UnitOfMeasureListItem } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { itemTypes } from "../../inventory.models";
@@ -21,10 +22,21 @@ type InventoryTableProps = {
   count: number;
   locationId: string;
   locations: ListItem[];
+  forms: ListItem[];
+  substances: ListItem[];
+  unitOfMeasures: UnitOfMeasureListItem[];
 };
 
 const InventoryTable = memo(
-  ({ data, count, locationId, locations }: InventoryTableProps) => {
+  ({
+    data,
+    count,
+    locationId,
+    locations,
+    unitOfMeasures,
+    forms,
+    substances,
+  }: InventoryTableProps) => {
     const { hasFilters } = useFilters();
     const [params] = useUrlParams();
 
@@ -86,6 +98,56 @@ const InventoryTable = memo(
           cell: ({ row }) => <Enumerable value={row.original.locationName} />,
         },
         {
+          accessorKey: "unitOfMeasureCode",
+          header: "Unit of Measure",
+          cell: ({ row }) => {
+            const unitOfMeasure = unitOfMeasures.find(
+              (uom) => uom.code === row.original.unitOfMeasureCode
+            );
+            return unitOfMeasure
+              ? unitOfMeasure.name
+              : row.original.unitOfMeasureCode;
+          },
+        },
+        {
+          accessorKey: "materialFormId",
+          header: "Form",
+          cell: ({ row }) => {
+            const form = forms.find(
+              (f) => f.id === row.original.materialFormId
+            );
+            return <Enumerable value={form?.name ?? null} />;
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: forms.map((form) => ({
+                label: <Enumerable value={form.name} />,
+                value: form.id,
+              })),
+            },
+          },
+        },
+        {
+          accessorKey: "materialSubstanceId",
+          header: "Substance",
+          cell: ({ row }) => {
+            const substance = substances.find(
+              (s) => s.id === row.original.materialSubstanceId
+            );
+            return <Enumerable value={substance?.name ?? null} />;
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: substances.map((substance) => ({
+                label: <Enumerable value={substance.name ?? null} />,
+                value: substance.id,
+              })),
+            },
+          },
+        },
+        {
           accessorKey: "quantityOnHand",
           header: "On Hand",
           cell: ({ row }) => row.original.quantityOnHand,
@@ -107,7 +169,7 @@ const InventoryTable = memo(
           cell: ({ row }) => row.original.quantityOnSalesOrder,
         },
       ];
-    }, [params]);
+    }, [forms, params, substances, unitOfMeasures]);
 
     const actions = useMemo(() => {
       return [];

@@ -1,11 +1,15 @@
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
+import { InventoryDetails } from "~/modules/inventory";
+import type { Material, UnitOfMeasureListItem } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
@@ -117,9 +121,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load material quantities")
+      )
+    );
+  }
+
   return json({
     materialInventory: materialInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
+    itemId,
   });
 }
 
@@ -165,10 +187,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MaterialInventoryRoute() {
-  const sharedMaterialsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.materialRoot
-  );
-  const { materialInventory, quantities } = useLoaderData<typeof loader>();
+  const sharedMaterialsData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.materialRoot);
+
+  const { materialInventory, itemShelfQuantities, quantities, itemId } =
+    useLoaderData<typeof loader>();
+
+  const materialData = useRouteData<{
+    materialSummary: Material;
+  }>(path.to.material(itemId));
+  if (!materialData) throw new Error("Could not find material data");
+  const itemUnitOfMeasureCode =
+    materialData?.materialSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...materialInventory,
@@ -176,12 +209,24 @@ export default function MaterialInventoryRoute() {
     ...getCustomFields(materialInventory.customFields ?? {}),
   };
   return (
-    <PickMethodForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-      quantities={quantities}
-      locations={sharedMaterialsData?.locations ?? []}
-      type="Material"
-    />
+    <VStack spacing={2}>
+      <PickMethodForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        quantities={quantities}
+        locations={sharedMaterialsData?.locations ?? []}
+        shelves={sharedMaterialsData?.shelves ?? []}
+        type="Part"
+      />
+      <InventoryDetails
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
+        locations={sharedMaterialsData?.locations ?? []}
+        pickMethod={initialValues}
+        quantities={quantities}
+        shelves={sharedMaterialsData?.shelves ?? []}
+        unitOfMeasures={sharedMaterialsData?.unitOfMeasures ?? []}
+      />
+    </VStack>
   );
 }

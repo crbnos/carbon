@@ -1,68 +1,40 @@
-import { ValidatedForm } from "@carbon/form";
 import {
-  Badge,
-  Button,
   Card,
-  CardAction,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
-  Combobox,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  useDisclosure,
   VStack,
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
 import type { z } from "zod";
-import { MethodItemTypeIcon } from "~/components";
-import {
-  Hidden,
-  Location,
-  Number,
-  Select,
-  Shelf,
-  Submit,
-} from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
-import { type ItemQuantities, type pickMethodValidator } from "~/modules/items";
+import type {
+  ItemQuantities,
+  ItemShelfQuantities,
+  pickMethodValidator,
+  UnitOfMeasureListItem,
+} from "~/modules/items";
 import type { ListItem } from "~/types";
-import { path } from "~/utils/path";
-import { inventoryAdjustmentValidator } from "../../inventory.models";
+import InventoryShelves from "./InventoryShelves";
 
 type InventoryDetailsProps = {
-  partInventory: z.infer<typeof pickMethodValidator>;
+  itemShelfQuantities: ItemShelfQuantities[];
+  itemUnitOfMeasureCode: string;
+  locations: ListItem[];
+  pickMethod: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
-  itemReadableId: string;
-  itemName: string;
-  itemType: string;
+  shelves: ListItem[];
+  unitOfMeasures: UnitOfMeasureListItem[];
 };
 
 const InventoryDetails = ({
-  partInventory,
+  itemShelfQuantities,
+  itemUnitOfMeasureCode,
+  locations,
+  pickMethod,
   quantities,
-  itemReadableId,
-  itemName,
-  itemType,
+  shelves,
+  unitOfMeasures,
 }: InventoryDetailsProps) => {
-  const permissions = usePermissions();
-  const adjustmentModal = useDisclosure();
-
-  const routeData = useRouteData<{ locations: ListItem[] }>(
-    path.to.inventoryRoot
-  );
-
-  const locationOptions =
-    routeData?.locations?.map((location) => ({
-      value: location.id,
-      label: location.name,
-    })) ?? [];
-
   const { locale } = useLocale();
   const formatter = Intl.NumberFormat(locale, {
     minimumFractionDigits: 0,
@@ -71,132 +43,58 @@ const InventoryDetails = ({
   });
 
   return (
-    <>
-      <div className="w-full grid gap-2 grid-cols-1">
-        <Card>
-          <div className="relative">
-            <CardHeader className="pb-3">
-              <CardTitle>
-                {itemReadableId}{" "}
-                <Badge className="ml-2" variant="secondary">
-                  <MethodItemTypeIcon type={itemType} />
-                </Badge>
-              </CardTitle>
-              <CardDescription className="max-w-lg text-balance leading-relaxed">
-                {itemName}
-              </CardDescription>
-            </CardHeader>
-            <CardAction className="absolute right-0 top-2">
-              <Combobox
-                size="sm"
-                value={partInventory.locationId}
-                options={locationOptions}
-                onChange={(selected) => {
-                  // hard refresh because initialValues update has no effect otherwise
-                  window.location.href = `${path.to.inventoryItem(
-                    partInventory.itemId!
-                  )}?location=${partInventory.locationId}`;
-                }}
-                className="w-64"
-              />
-            </CardAction>
-          </div>
-          <CardFooter>
-            <Button onClick={adjustmentModal.onOpen}>Update Inventory</Button>
-          </CardFooter>
-        </Card>
+    <VStack>
+      <div className="w-full grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-8">
-            <CardDescription>Quantity on Hand</CardDescription>
+            <CardDescription>
+              <VStack>Quantity on Hand</VStack>
+            </CardDescription>
             <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityOnHand ?? 0)}
+              {`${formatter.format(quantities.quantityOnHand ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-8">
-            <CardDescription>Quantity on Purchase Order</CardDescription>
+            <CardDescription>
+              <VStack>Quantity on Purchase Order</VStack>
+            </CardDescription>
             <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityOnPurchaseOrder ?? 0)}
+              {`${formatter.format(quantities.quantityOnPurchaseOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-8">
-            <CardDescription>Quantity on Sales Order</CardDescription>
+            <CardDescription>
+              <VStack>Quantity on Sales Order</VStack>
+            </CardDescription>
             <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityOnSalesOrder ?? 0)}
+              {`${formatter.format(quantities.quantityOnSalesOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-8">
-            <CardDescription>Quantity on Production Order</CardDescription>
+            <CardDescription>
+              <VStack>Quantity on Production Order</VStack>
+            </CardDescription>
             <CardTitle className="text-4xl">
-              {formatter.format(quantities.quantityOnProdOrder ?? 0)}
+              {`${formatter.format(quantities.quantityOnProdOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
       </div>
-
-      <Modal
-        open={adjustmentModal.isOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            adjustmentModal.onClose();
-          }
-        }}
-      >
-        <ModalContent>
-          <ValidatedForm
-            method="post"
-            validator={inventoryAdjustmentValidator}
-            action={path.to.inventoryItemAdjustment(partInventory.itemId)}
-            defaultValues={{
-              itemId: partInventory.itemId,
-              locationId: partInventory.locationId,
-              shelfId: partInventory.defaultShelfId,
-              adjustmentType: "Set Quantity",
-            }}
-            onSubmit={adjustmentModal.onClose}
-          >
-            <ModalHeader>
-              <ModalTitle>Inventory Adjustment</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <Hidden name="itemId" />
-
-              <VStack spacing={2}>
-                <Location name="locationId" label="Location" isReadOnly />
-                <Shelf
-                  name="shelfId"
-                  locationId={partInventory.locationId}
-                  label="Shelf"
-                />
-                <Select
-                  name="adjustmentType"
-                  label="Adjustment Type"
-                  options={[
-                    { label: "Set Quantity", value: "Set Quantity" },
-                    { label: "Positive Adjustment", value: "Positive Adjmt." },
-                    { label: "Negative Adjustment", value: "Negative Adjmt." },
-                  ]}
-                />
-                <Number name="quantity" label="Quantity" minValue={0} />
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button onClick={adjustmentModal.onClose} variant="secondary">
-                Cancel
-              </Button>
-              <Submit isDisabled={!permissions.can("update", "inventory")}>
-                Save
-              </Submit>
-            </ModalFooter>
-          </ValidatedForm>
-        </ModalContent>
-      </Modal>
-    </>
+      <InventoryShelves
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode}
+        locations={locations}
+        pickMethod={pickMethod}
+        shelves={shelves}
+        unitOfMeasures={unitOfMeasures}
+      />
+    </VStack>
   );
 };
 

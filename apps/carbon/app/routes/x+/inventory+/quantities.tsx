@@ -1,4 +1,9 @@
-import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
+import {
+  ClientOnly,
+  ResizablePanel,
+  ResizablePanelGroup,
+  VStack,
+} from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -6,6 +11,11 @@ import { useRouteData } from "~/hooks";
 import type { InventoryItem } from "~/modules/inventory";
 import { getInventoryItems } from "~/modules/inventory";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
+import {
+  getMaterialFormsList,
+  getMaterialSubstancesList,
+  type UnitOfMeasureListItem,
+} from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -23,12 +33,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const filter = searchParams.get("q");
-
-  const createdBy = filter === "my" ? userId : undefined;
-  const favorite = filter === "starred" ? true : undefined;
-  const recent = filter === "recent" ? true : undefined;
-  const active = filter === "trash" ? false : true;
 
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
@@ -64,22 +68,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const inventoryItems = await getInventoryItems(
-    client,
-    companyId,
-    locationId,
-    {
+  const [inventoryItems, items, forms, substances] = await Promise.all([
+    getInventoryItems(client, locationId, {
       search,
-      favorite,
-      recent,
-      createdBy,
-      active,
       limit,
       offset,
       sorts,
       filters,
-    }
-  );
+    }),
+    client
+      .from("item")
+      .select("id", { count: "exact" })
+      .eq("itemTrackingType", "Inventory"),
+    getMaterialFormsList(client, companyId),
+    getMaterialSubstancesList(client, companyId),
+  ]);
 
   if (inventoryItems.error) {
     redirect(
@@ -91,37 +94,55 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  if (items.error) {
+    throw redirect(
+      path.to.authenticatedRoot,
+      await flash(request, error(items.error, "Failed to fetch item count"))
+    );
+  }
+
   return json({
-    count: inventoryItems.count ?? 0,
+    count: items.count ?? 0,
     inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
     locationId,
+    forms: forms.data ?? [],
+    substances: substances.data ?? [],
   });
 }
 
-export default function InventoryAllRoute() {
-  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.inventoryRoot
-  );
-  const { count, inventoryItems, locationId } = useLoaderData<typeof loader>();
+export default function QuantitiesRoute() {
+  const sharedData = useRouteData<{
+    locations: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.inventoryRoot);
+  const { count, inventoryItems, locationId, forms, substances } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel
-          defaultSize={50}
-          maxSize={70}
-          minSize={25}
-          className="bg-background"
-        >
-          <InventoryTable
-            data={inventoryItems}
-            count={count}
-            locationId={locationId}
-            locations={sharedPartsData?.locations ?? []}
-          />
-        </ResizablePanel>
-        <Outlet />
-      </ResizablePanelGroup>
+      <ClientOnly>
+        {() => (
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel
+              defaultSize={50}
+              maxSize={70}
+              minSize={25}
+              className="bg-background"
+            >
+              <InventoryTable
+                data={inventoryItems}
+                count={count}
+                locationId={locationId}
+                locations={sharedData?.locations ?? []}
+                unitOfMeasures={sharedData?.unitOfMeasures ?? []}
+                forms={forms}
+                substances={substances}
+              />
+            </ResizablePanel>
+            <Outlet />
+          </ResizablePanelGroup>
+        )}
+      </ClientOnly>
     </VStack>
   );
 }

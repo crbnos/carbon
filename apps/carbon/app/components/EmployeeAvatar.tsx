@@ -6,11 +6,13 @@ import Avatar from "./Avatar";
 type EmployeeAvatarProps = AvatarProps & {
   employeeId: string | null;
   className?: string;
+  withName: boolean;
 };
 
 const EmployeeAvatar = ({
   employeeId,
   size,
+  withName = true,
   className,
   ...props
 }: EmployeeAvatarProps) => {
@@ -23,7 +25,9 @@ const EmployeeAvatar = ({
     return (
       <HStack>
         <Avatar size={"xs"} {...props} />
-        <span className="text-muted-foreground">Deactivated user</span>
+        {withName && (
+          <span className="text-muted-foreground">Deactivated user</span>
+        )}
       </HStack>
     );
   }
@@ -39,7 +43,7 @@ const EmployeeAvatar = ({
         path={person.avatarUrl ?? undefined}
         name={person?.name ?? ""}
       />
-      <span className={className}>{person.name}</span>
+      {withName && <span className={className}>{person.name}</span>}
     </HStack>
   );
 };

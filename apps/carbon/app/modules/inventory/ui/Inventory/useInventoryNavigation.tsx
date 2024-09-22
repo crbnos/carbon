@@ -5,7 +5,7 @@ import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 
 export function useInventoryNavigation() {
-  const permissions = usePermissions();
+  usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
@@ -22,7 +22,7 @@ export function useInventoryNavigation() {
       to: path.to.inventoryItemActivity(itemId),
       role: ["employee"],
       icon: LuFileBarChart,
-      shortcut: "Command+Shift+t",
+      shortcut: "Command+Shift+a",
     },
   ];
 }

@@ -1,10 +1,13 @@
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import InventoryDetails from "~/modules/inventory/ui/Inventory/InventoryDetails";
+import { useRouteData } from "~/hooks";
+import { InventoryDetails } from "~/modules/inventory";
+import type { UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItem,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
   upsertPickMethod,
 } from "~/modules/items";
@@ -12,6 +15,7 @@ import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { ListItem } from "~/types";
 import { notFound } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
@@ -57,11 +61,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [partInventory] = await Promise.all([
+  let [pickMethod] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
   ]);
 
-  if (partInventory.error || !partInventory.data) {
+  if (pickMethod.error || !pickMethod.data) {
     const insertPickMethod = await upsertPickMethod(client, {
       itemId,
       companyId,
@@ -80,13 +84,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    partInventory = await getPickMethod(client, itemId, companyId, locationId);
-    if (partInventory.error || !partInventory.data) {
+    pickMethod = await getPickMethod(client, itemId, companyId, locationId);
+    if (pickMethod.error || !pickMethod.data) {
       throw redirect(
         path.to.inventory,
         await flash(
           request,
-          error(partInventory.error, "Failed to load part inventory")
+          error(pickMethod.error, "Failed to load part inventory")
         )
       );
     }
@@ -110,26 +114,52 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.inventory,
+      await flash(
+        request,
+        error(itemShelfQuantities.error, "Failed to load item shelf quantities")
+      )
+    );
+  }
+
   return json({
-    partInventory: partInventory.data,
+    pickMethod: pickMethod.data,
     quantities: quantities.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     item: item.data,
   });
 }
 
 export default function ItemInventoryRoute() {
-  const { partInventory, quantities, item } = useLoaderData<typeof loader>();
+  const { pickMethod, quantities, itemShelfQuantities, item } =
+    useLoaderData<typeof loader>();
+
+  const routeData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.inventoryRoot);
 
   return (
     <InventoryDetails
-      partInventory={{
-        ...partInventory,
-        defaultShelfId: partInventory.defaultShelfId ?? undefined,
+      itemShelfQuantities={itemShelfQuantities}
+      itemUnitOfMeasureCode={item.unitOfMeasureCode ?? "EA"}
+      locations={routeData?.locations ?? []}
+      pickMethod={{
+        ...pickMethod,
+        defaultShelfId: pickMethod.defaultShelfId ?? undefined,
       }}
       quantities={quantities}
-      itemReadableId={item.readableId}
-      itemName={item.name}
-      itemType={item.type}
+      shelves={routeData?.shelves ?? []}
+      unitOfMeasures={routeData?.unitOfMeasures ?? []}
     />
   );
 }

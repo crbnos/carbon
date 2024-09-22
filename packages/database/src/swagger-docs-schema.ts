@@ -8536,6 +8536,9 @@ export default {
             $ref: "#/parameters/rowFilter.fixtures.itemTrackingType",
           },
           {
+            $ref: "#/parameters/rowFilter.fixtures.unitOfMeasureCode",
+          },
+          {
             $ref: "#/parameters/rowFilter.fixtures.active",
           },
           {
@@ -23898,93 +23901,6 @@ export default {
         tags: ["workCenterProcess"],
       },
     },
-    "/itemQuantities": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.quantityOnHand",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.quantityOnPurchaseOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.quantityOnSalesOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.quantityOnProdOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.quantityAvailable",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.readableId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.type",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.itemTrackingType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.thumbnailPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemQuantities.locationName",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/itemQuantities",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["itemQuantities"],
-      },
-    },
     "/partners": {
       get: {
         parameters: [
@@ -34943,6 +34859,63 @@ export default {
         tags: ["(rpc) get_my_claim"],
       },
     },
+    "/rpc/get_item_quantities": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_item_quantities"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                location_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["location_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_item_quantities"],
+      },
+    },
     "/rpc/get_method_tree": {
       get: {
         parameters: [
@@ -38945,6 +38918,10 @@ export default {
         itemTrackingType: {
           enum: ["Inventory", "Non-Inventory"],
           format: 'public."itemTrackingType"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
           type: "string",
         },
         active: {
@@ -45938,89 +45915,11 @@ export default {
       },
       type: "object",
     },
-    itemQuantities: {
-      properties: {
-        itemId: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        locationId: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        quantityOnHand: {
-          format: "numeric",
-          type: "number",
-        },
-        quantityOnPurchaseOrder: {
-          format: "numeric",
-          type: "number",
-        },
-        quantityOnSalesOrder: {
-          format: "numeric",
-          type: "number",
-        },
-        quantityOnProdOrder: {
-          format: "numeric",
-          type: "number",
-        },
-        quantityAvailable: {
-          format: "numeric",
-          type: "number",
-        },
-        readableId: {
-          format: "text",
-          type: "string",
-        },
-        type: {
-          enum: [
-            "Part",
-            "Material",
-            "Tool",
-            "Service",
-            "Consumable",
-            "Fixture",
-          ],
-          format: 'public."itemType"',
-          type: "string",
-        },
-        name: {
-          format: "text",
-          type: "string",
-        },
-        active: {
-          format: "boolean",
-          type: "boolean",
-        },
-        itemTrackingType: {
-          enum: ["Inventory", "Non-Inventory"],
-          format: 'public."itemTrackingType"',
-          type: "string",
-        },
-        thumbnailPath: {
-          format: "text",
-          type: "string",
-        },
-        locationName: {
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
     partners: {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -46069,7 +45968,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -55336,6 +55235,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.fixtures.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.fixtures.active": {
       name: "active",
       required: false,
@@ -64543,120 +64449,6 @@ export default {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "body.itemQuantities": {
-      name: "itemQuantities",
-      description: "itemQuantities",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/itemQuantities",
-      },
-    },
-    "rowFilter.itemQuantities.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.locationId": {
-      name: "locationId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.quantityOnHand": {
-      name: "quantityOnHand",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.quantityOnPurchaseOrder": {
-      name: "quantityOnPurchaseOrder",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.quantityOnSalesOrder": {
-      name: "quantityOnSalesOrder",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.quantityOnProdOrder": {
-      name: "quantityOnProdOrder",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.quantityAvailable": {
-      name: "quantityAvailable",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.readableId": {
-      name: "readableId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.type": {
-      name: "type",
-      required: false,
-      format: 'public."itemType"',
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.name": {
-      name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.active": {
-      name: "active",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.itemTrackingType": {
-      name: "itemTrackingType",
-      required: false,
-      format: 'public."itemTrackingType"',
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.thumbnailPath": {
-      name: "thumbnailPath",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemQuantities.locationName": {
-      name: "locationName",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },

@@ -61,10 +61,12 @@ export default function InfiniteScroll<T extends { id: string }>({
 
   return (
     <div className="w-full">
-      {items.map((item) => (
-        <Component key={item.id} item={item} />
-      ))}
-      <div ref={ref}>{hasMore && <LoadingSkeleton />}</div>
+      <ul className="relative h-full overflow-y-auto ">
+        {items.map((item) => (
+          <Component key={item.id} item={item} />
+        ))}
+        <div ref={ref}>{hasMore && <LoadingSkeleton />}</div>
+      </ul>
     </div>
   );
 }

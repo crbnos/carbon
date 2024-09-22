@@ -18,7 +18,7 @@ const FixtureHeader = () => {
   );
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
+    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.fixtureDetails(itemId)}>

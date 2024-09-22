@@ -337,44 +337,69 @@ ALTER TABLE "itemInventory" ADD CONSTRAINT "itemInventory_shelfId_fkey" FOREIGN 
 
 
 
--- Drop the existing view
 DROP VIEW IF EXISTS "itemQuantities";
 
--- Create the new view
-CREATE OR REPLACE VIEW "itemQuantities" AS 
-SELECT 
-  i."id" AS "itemId",
-  i."companyId",
-  loc."id" AS "locationId",
-  COALESCE(SUM(inv."quantityOnHand"), 0) AS "quantityOnHand",
-  COALESCE(SUM(inv."quantityOnPurchase"), 0) AS "quantityOnPurchaseOrder",
-  COALESCE(SUM(inv."quantityOnSalesOrder"), 0) AS "quantityOnSalesOrder",
-  COALESCE(SUM(inv."quantityOnProductionOrder"), 0) AS "quantityOnProdOrder",
-  COALESCE(SUM(inv."quantityOnHand"), 0) - 
-    COALESCE(SUM(inv."quantityOnSalesOrder"), 0) - 
-    COALESCE(SUM(inv."quantityOnProductionOrder"), 0) AS "quantityAvailable",
-  i."readableId",
-  i."type",
-  i."name",
-  i."active",
-  i."itemTrackingType",
-  m."thumbnailPath",
-  loc."name" AS "locationName"
-FROM "item" i
-CROSS JOIN "location" loc
-LEFT JOIN "itemInventory" inv ON i."id" = inv."itemId" AND loc."id" = inv."locationId"
-LEFT JOIN "modelUpload" m ON m."id" = i."modelUploadId"
-GROUP BY 
-  i."id",
-  i."companyId",
-  loc."id",
-  i."readableId",
-  i."type",
-  i."name",
-  i."active",
-  i."itemTrackingType",
-  m."thumbnailPath",
-  loc."name";
+CREATE INDEX IF NOT EXISTS "item_itemTrackingType_idx" ON "item" ("itemTrackingType");
+
+CREATE OR REPLACE FUNCTION get_item_quantities(location_id TEXT)
+RETURNS TABLE (
+  "itemId" TEXT,
+  "companyId" TEXT,
+  "locationId" TEXT,
+  "quantityOnHand" NUMERIC,
+  "quantityOnPurchaseOrder" NUMERIC,
+  "quantityOnSalesOrder" NUMERIC,
+  "quantityOnProdOrder" NUMERIC,
+  "quantityAvailable" NUMERIC,
+  "materialSubstanceId" TEXT,
+  "materialFormId" TEXT,
+  "grade" TEXT,
+  "dimensions" TEXT,
+  "finish" TEXT,
+  "readableId" TEXT,
+  "type" "itemType",
+  "name" TEXT,
+  "active" BOOLEAN,
+  "itemTrackingType" "itemTrackingType",
+  "thumbnailPath" TEXT,
+  "locationName" TEXT,
+  "unitOfMeasureCode" TEXT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    i."id" AS "itemId",
+    i."companyId",
+    loc."id" AS "locationId",
+    COALESCE(inv."quantityOnHand", 0) AS "quantityOnHand",
+    COALESCE(inv."quantityOnPurchase", 0) AS "quantityOnPurchaseOrder",
+    COALESCE(inv."quantityOnSalesOrder", 0) AS "quantityOnSalesOrder",
+    COALESCE(inv."quantityOnProductionOrder", 0) AS "quantityOnProdOrder",
+    COALESCE(inv."quantityOnHand", 0) - 
+      COALESCE(inv."quantityOnSalesOrder", 0) - 
+      COALESCE(inv."quantityOnProductionOrder", 0) AS "quantityAvailable",
+    mat."materialSubstanceId",
+    mat."materialFormId",
+    mat."grade",
+    mat."dimensions",
+    mat."finish",
+    i."readableId",
+    i."type",
+    i."name",
+    i."active",
+    i."itemTrackingType",
+    m."thumbnailPath",
+    loc."name" AS "locationName",
+    i."unitOfMeasureCode"
+  FROM "item" i
+  CROSS JOIN (SELECT * FROM "location" WHERE "id" = location_id) loc
+  LEFT JOIN "itemInventory" inv ON i."id" = inv."itemId" AND loc."id" = inv."locationId"
+  LEFT JOIN "material" mat ON i."id" = mat."itemId"
+  LEFT JOIN "modelUpload" m ON m."id" = i."modelUploadId"
+  WHERE i."itemTrackingType" = 'Inventory';
+END;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
+
 
 ALTER TABLE "itemLedger" ADD COLUMN "createdBy" TEXT REFERENCES "user"("id");
 -- Set default value for createdBy column to 'system' for existing rows

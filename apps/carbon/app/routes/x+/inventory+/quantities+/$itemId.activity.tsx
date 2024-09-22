@@ -4,8 +4,7 @@ import { json, redirect } from "@vercel/remix";
 import { useCallback, useState } from "react";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import { useSupabase } from "~/lib/supabase";
-import { getItemLedger } from "~/modules/inventory";
-import InventoryActivity from "~/modules/inventory/ui/Inventory/InventoryActivity";
+import { getItemLedger, InventoryActivity } from "~/modules/inventory";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -95,7 +94,7 @@ export default function ItemInventoryActivityRoute() {
     if (isLoading || !hasMore) return;
 
     setIsLoading(true);
-    console.log("loadMoreItemLedgers", page);
+
     const newItemLedgers = await getItemLedger(
       supabase!,
       itemId,
@@ -120,16 +119,15 @@ export default function ItemInventoryActivityRoute() {
 
   return (
     <>
-      <div className="space-y-4 pt-6 px-4 ">
+      <div className="w-full space-y-4 pt-6 px-4">
         <h2 className="text-2xl font-semibold mb-4">Activity</h2>
-        <div className="h-full overflow-y-auto ">
-          <InfiniteScroll
-            component={InventoryActivity}
-            items={itemLedgers}
-            loadMore={loadMoreItemLedgers}
-            hasMore={hasMore}
-          />
-        </div>
+
+        <InfiniteScroll
+          component={InventoryActivity}
+          items={itemLedgers}
+          loadMore={loadMoreItemLedgers}
+          hasMore={hasMore}
+        />
       </div>
     </>
   );

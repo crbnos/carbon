@@ -11,10 +11,9 @@ import {
 } from "@carbon/react";
 import type { z } from "zod";
 import {
+  CreatableCombobox,
   CustomFormFields,
   Hidden,
-  Number,
-  Shelf,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -27,6 +26,7 @@ type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities;
   locations: ListItem[];
+  shelves: ListItem[];
   type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
 };
 
@@ -34,10 +34,15 @@ const PickMethodForm = ({
   initialValues,
   locations,
   quantities,
+  shelves,
   type,
 }: PickMethodFormProps) => {
   const permissions = usePermissions();
 
+  const shelfOptions = shelves.map((shelf) => ({
+    value: shelf.id,
+    label: shelf.name,
+  }));
   const locationOptions = locations.map((location) => ({
     label: location.name,
     value: location.id,
@@ -76,31 +81,13 @@ const PickMethodForm = ({
           <Hidden name="itemId" />
           <Hidden name="locationId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <Shelf
+            <CreatableCombobox
               name="defaultShelfId"
               label="Default Shelf"
-              locationId={initialValues.locationId}
+              options={shelfOptions}
               className="w-full"
             />
 
-            <Number name="quantityOnHand" label="Quantity On Hand" isReadOnly />
-
-            <Number
-              name="quantityOnPurchaseOrder"
-              label="Quantity On Purchase Order"
-              isReadOnly
-            />
-
-            <Number
-              name="quantityOnProdOrder"
-              label="Quantity On Prod Order"
-              isReadOnly
-            />
-            <Number
-              name="quantityOnSalesOrder"
-              label="Quantity On Sales Order"
-              isReadOnly
-            />
             <CustomFormFields table="partInventory" />
           </div>
         </CardContent>
