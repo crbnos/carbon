@@ -115,7 +115,7 @@ export default function AccountProfile() {
   const { user } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={4}>
+    <VStack spacing={2}>
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>

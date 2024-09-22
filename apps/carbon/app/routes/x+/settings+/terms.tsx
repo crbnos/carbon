@@ -109,7 +109,7 @@ export default function Terms() {
   };
 
   return (
-    <VStack spacing={4} className="p-4 h-full">
+    <VStack spacing={2} className="p-2 h-full">
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
