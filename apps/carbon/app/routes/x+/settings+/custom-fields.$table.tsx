@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useNavigate } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { useRouteData, useUrlParams } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { CustomFieldsTableDetail, getCustomFields } from "~/modules/settings";

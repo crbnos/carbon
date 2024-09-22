@@ -25,7 +25,7 @@ export function useSort() {
 
     if (!existingSort.includes(sortAsc)) {
       setParams({
-        sort: existingSort.filter((s) => s !== sortDesc).concat(sortAsc),
+        sort: [sortAsc, ...existingSort.filter((s) => s !== sortDesc)],
       });
     } else {
       setParams({
@@ -41,7 +41,7 @@ export function useSort() {
 
     if (!existingSort.includes(sortDesc)) {
       setParams({
-        sort: existingSort.filter((s) => s !== sortAsc).concat(sortDesc),
+        sort: [sortDesc, ...existingSort.filter((s) => s !== sortAsc)],
       });
     } else {
       setParams({

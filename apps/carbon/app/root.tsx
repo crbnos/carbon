@@ -1,11 +1,5 @@
 import { validator } from "@carbon/form";
 import { Button, Heading, toast } from "@carbon/react";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
-import { json } from "@remix-run/node";
 import {
   Links,
   Meta,
@@ -17,6 +11,12 @@ import {
   useRouteError,
 } from "@remix-run/react";
 import { Analytics } from "@vercel/analytics/react";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@vercel/remix";
+import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
 import { getBrowserEnv } from "~/config/env";
 import { getMode, setMode } from "~/services/mode.server";
@@ -27,6 +27,8 @@ import { error } from "~/utils/result";
 import { useMode } from "./hooks/useMode";
 import { getSessionFlash } from "./services/session.server";
 import { modeValidator } from "./types/validators";
+
+export const config = { runtime: "edge" };
 
 export function links() {
   return [
@@ -109,7 +111,7 @@ function Document({
         <title>{title}</title>
         <Links />
       </head>
-      <body className="h-full bg-background antialiased selection:bg-[#00cc9937] selection:text-[#007763fd] dark:selection:bg-[#00fff61d] dark:selection:text-[#67ffded2]">
+      <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
         {children}
 
         <ScrollRestoration />

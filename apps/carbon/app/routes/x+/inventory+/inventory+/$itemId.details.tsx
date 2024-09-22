@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import InventoryDetails from "~/modules/inventory/ui/Inventory/InventoryDetails";
 import {
   getItem,
@@ -92,12 +92,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const quantities = await getItemQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const [quantities, item] = await Promise.all([
+    getItemQuantities(client, itemId, companyId, locationId),
+    getItem(client, itemId),
+  ]);
   if (quantities.error || !quantities.data) {
     throw redirect(
       path.to.inventory,
@@ -105,7 +103,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const item = await getItem(client, itemId);
   if (item.error || !item.data) {
     throw redirect(
       path.to.inventory,

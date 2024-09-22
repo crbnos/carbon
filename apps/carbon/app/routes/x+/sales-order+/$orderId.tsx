@@ -6,9 +6,9 @@ import {
   ScrollArea,
   VStack,
 } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Outlet, useParams } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import {
   getOpportunityBySalesOrder,
   getOpportunityDocuments,
@@ -84,7 +84,7 @@ export default function SalesOrderRoute() {
                     order={1}
                     minSize={10}
                     defaultSize={20}
-                    className="bg-card h-full"
+                    className="bg-card h-full shadow-lg"
                   >
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <div className="grid w-full h-full overflow-hidden">

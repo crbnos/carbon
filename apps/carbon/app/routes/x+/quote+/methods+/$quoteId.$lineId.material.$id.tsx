@@ -1,5 +1,5 @@
 import { validationError, validator } from "@carbon/form";
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { quoteMaterialValidator, upsertQuoteMaterial } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";

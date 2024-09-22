@@ -1,7 +1,7 @@
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 
 import {
   BillOfMaterial,
@@ -98,6 +98,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function MethodMaterialMakePage() {
   const loaderData = useLoaderData<typeof loader>();
   const { item, methodMaterials, methodOperations } = loaderData;
+
   const { itemId, makeMethodId, materialId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
   if (!makeMethodId) throw new Error("Could not find makeMethodId");

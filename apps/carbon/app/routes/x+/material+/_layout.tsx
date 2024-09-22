@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList,

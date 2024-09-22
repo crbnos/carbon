@@ -5,7 +5,7 @@ import {
   DetailSidebar,
   DetailsTopbar,
   GroupedContentSidebar,
-  IconSidebar,
+  PrimaryNavigation,
 } from "./Navigation";
 
 import Topbar from "./Topbar";
@@ -17,6 +17,6 @@ export {
   DetailSidebar,
   DetailsTopbar,
   GroupedContentSidebar,
-  IconSidebar,
+  PrimaryNavigation,
   Topbar,
 };

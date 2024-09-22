@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@vercel/remix";
 import { requirePermissions } from "~/services/auth/auth.server";
 
 const supportedFileTypes: Record<string, string> = {

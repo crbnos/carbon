@@ -667,42 +667,67 @@ const Table = <T extends object>({
                             width: header.getSize(),
                           }}
                         >
-                          {header.isPlaceholder ? null : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <div className="flex justify-start items-center text-xs text-muted-foreground">
-                                  {flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                                </div>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start">
-                                <DropdownMenuRadioGroup
-                                  value={sorted?.toString()}
-                                >
-                                  <DropdownMenuRadioItem
-                                    onClick={() =>
-                                      toggleSortByAscending(accessorKey!)
-                                    }
-                                    value="1"
+                          {!header.isPlaceholder &&
+                            (sortable ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <div className="flex justify-start items-center text-xs text-foreground">
+                                    {flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
+                                    <span className="pl-2">
+                                      {sorted ? (
+                                        sorted === -1 ? (
+                                          <LuArrowUp
+                                            aria-label="sorted descending"
+                                            className="text-primary"
+                                          />
+                                        ) : (
+                                          <LuArrowDown
+                                            aria-label="sorted ascending"
+                                            className="text-primary"
+                                          />
+                                        )
+                                      ) : null}
+                                    </span>
+                                  </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                  <DropdownMenuRadioGroup
+                                    value={sorted?.toString()}
                                   >
-                                    <DropdownMenuIcon icon={<LuArrowUp />} />
-                                    Sort Ascending
-                                  </DropdownMenuRadioItem>
-                                  <DropdownMenuRadioItem
-                                    onClick={() =>
-                                      toggleSortByDescending(accessorKey!)
-                                    }
-                                    value="-1"
-                                  >
-                                    <DropdownMenuIcon icon={<LuArrowDown />} />
-                                    Sort Descending
-                                  </DropdownMenuRadioItem>
-                                </DropdownMenuRadioGroup>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                                    <DropdownMenuRadioItem
+                                      onClick={() =>
+                                        toggleSortByAscending(accessorKey!)
+                                      }
+                                      value="1"
+                                    >
+                                      <DropdownMenuIcon icon={<LuArrowUp />} />
+                                      Sort Ascending
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem
+                                      onClick={() =>
+                                        toggleSortByDescending(accessorKey!)
+                                      }
+                                      value="-1"
+                                    >
+                                      <DropdownMenuIcon
+                                        icon={<LuArrowDown />}
+                                      />
+                                      Sort Descending
+                                    </DropdownMenuRadioItem>
+                                  </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <div className="flex justify-start items-center text-xs text-foreground">
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                              </div>
+                            ))}
                         </Th>
                       );
                     })}

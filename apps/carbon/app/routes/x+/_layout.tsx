@@ -1,12 +1,12 @@
 import { Toaster, TooltipProvider } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
 import { useEffect } from "react";
 
 import { RealtimeDataProvider } from "~/components";
-import { IconSidebar, Topbar } from "~/components/Layout";
+import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { AutodeskProvider } from "~/lib/autodesk";
 import { SupabaseProvider, getSupabase } from "~/lib/supabase";
 import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
@@ -25,6 +25,7 @@ import { path } from "~/utils/path";
 
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { getAutodeskToken } from "~/lib/autodesk/autodesk.server";
+import { parseVercelId } from "~/utils/http";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -52,6 +53,15 @@ export function links() {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
     await requireAuthSession(request, { verify: true });
+
+  const { computeRegion, proxyRegion } = parseVercelId(
+    request.headers.get("x-vercel-id")
+  );
+
+  console.log({
+    computeRegion,
+    proxyRegion,
+  });
 
   // share a client between requests
   const client = getSupabase(accessToken);
@@ -133,7 +143,7 @@ export default function AuthenticatedRoute() {
               <div className="flex-none" />
               <div className="h-screen min-h-[0px] basis-0 flex-1">
                 <div className="flex h-full">
-                  <IconSidebar />
+                  <PrimaryNavigation />
                   <div className="flex w-full h-full">
                     <div className="w-full h-full flex-1 overflow-hidden">
                       <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-x-hidden bg-muted">

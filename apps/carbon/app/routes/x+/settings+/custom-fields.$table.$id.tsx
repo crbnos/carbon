@@ -16,7 +16,7 @@ import { DataType } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { upsertCustomField } from "~/modules/settings/settings.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";

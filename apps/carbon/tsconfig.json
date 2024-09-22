@@ -3,7 +3,8 @@
     "env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "app/modules/documents/documents.service.ts"
+    "app/modules/documents/documents.service.ts",
+    "trigger.config.ts"
   ],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "ESNext"],

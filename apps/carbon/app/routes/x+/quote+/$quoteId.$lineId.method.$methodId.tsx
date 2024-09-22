@@ -10,7 +10,7 @@ import {
 } from "~/modules/sales";
 import { path } from "~/utils/path";
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { error } from "~/utils/result";

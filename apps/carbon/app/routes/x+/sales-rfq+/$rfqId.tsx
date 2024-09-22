@@ -10,10 +10,10 @@ import {
 } from "@carbon/react";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Outlet, useFetcher, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { useCallback, useEffect } from "react";
 import { supportedFileTypes } from "~/components/CadModel";
 import type { SalesRFQLine } from "~/modules/sales";
@@ -163,7 +163,7 @@ export default function SalesRFQRoute() {
                       order={1}
                       minSize={10}
                       defaultSize={20}
-                      className="bg-card h-full z-0"
+                      className="bg-card h-full z-0 shadow-lg"
                     >
                       <ScrollArea className="h-[calc(100vh-99px)]">
                         <div className="grid w-full h-full overflow-hidden">

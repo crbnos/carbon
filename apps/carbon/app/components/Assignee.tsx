@@ -85,7 +85,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
         <PopoverTrigger asChild>
           <button
             className={cn(
-              "rounded-md px-2.5 py-0.5 text-sm transition-colors cursor-pointer bg-background hover:bg-accent hover:text-accent-foreground border border-input font-normal",
+              "rounded-md px-2.5 py-0.5 text-sm transition-colors cursor-pointer hover:bg-accent hover:text-accent-foreground border border-input bg-card font-normal",
               className
             )}
             role="combobox"

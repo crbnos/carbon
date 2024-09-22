@@ -6,13 +6,13 @@ import {
   Button,
   VStack,
 } from "@carbon/react";
+import { Link, useActionData } from "@remix-run/react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Link, useActionData } from "@remix-run/react";
+} from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { LuAlertCircle, LuCheckCircle } from "react-icons/lu";
 
 import { Input, Submit } from "~/components/Form";

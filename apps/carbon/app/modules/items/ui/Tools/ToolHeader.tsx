@@ -1,7 +1,7 @@
-import { Badge, HStack, Heading, VStack } from "@carbon/react";
+import { HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { MethodItemTypeIcon } from "~/components";
+import { Copy, MethodItemTypeIcon } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import type { Tool } from "~/modules/items";
@@ -16,15 +16,16 @@ const ToolHeader = () => {
   const routeData = useRouteData<{ toolSummary: Tool }>(path.to.tool(itemId));
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
+    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.toolDetails(itemId)}>
-            <Heading size="h2">{routeData?.toolSummary?.id}</Heading>
+            <Heading size="h2" className="flex items-center gap-1">
+              <MethodItemTypeIcon type="Tool" />
+              <span>{routeData?.toolSummary?.id}</span>
+            </Heading>
           </Link>
-          <Badge variant="secondary">
-            <MethodItemTypeIcon type="Tool" />
-          </Badge>
+          <Copy text={routeData?.toolSummary?.id ?? ""} />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

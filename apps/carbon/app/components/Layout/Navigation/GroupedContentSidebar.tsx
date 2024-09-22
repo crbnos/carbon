@@ -34,6 +34,7 @@ const GroupedContentSidebar = ({
                     asChild
                     leftIcon={route.icon}
                     variant={isActive ? "active" : "ghost"}
+                    size="sm"
                     className="w-full justify-start"
                   >
                     <Link

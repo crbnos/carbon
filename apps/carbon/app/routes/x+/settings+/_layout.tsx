@@ -1,6 +1,6 @@
 import { VStack } from "@carbon/react";
-import type { MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import type { MetaFunction } from "@vercel/remix";
 import { LuKey } from "react-icons/lu";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";

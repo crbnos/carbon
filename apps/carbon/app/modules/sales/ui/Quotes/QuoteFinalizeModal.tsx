@@ -15,7 +15,7 @@ import { useState } from "react";
 import { CustomerContact, SelectControlled } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
-import { quoteFinalizeValidator } from "../../sales.models";
+import { quoteReleaseValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
 
 type QuotationReleaseModalProps = {
@@ -49,8 +49,8 @@ const QuotationReleaseModal = ({
       <ModalContent>
         <ValidatedForm
           method="post"
-          validator={quoteFinalizeValidator}
-          action={path.to.quoteFinalize(quoteId)}
+          validator={quoteReleaseValidator}
+          action={path.to.quoteRelease(quoteId)}
           onSubmit={onClose}
           defaultValues={{
             notification: notificationType as "Email" | "None",

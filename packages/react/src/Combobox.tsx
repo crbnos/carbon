@@ -73,7 +73,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
           </PopoverTrigger>
           <PopoverContent
             align="start"
-            className="min-w-[260px] w-[--radix-popover-trigger-width] p-0"
+            className="min-w-[260px] w-[--radix-popover-trigger-width] p-1"
           >
             <VirtualizedCommand
               options={options}
@@ -148,9 +148,9 @@ function VirtualizedCommand({
       />
       <div
         ref={parentRef}
-        className="overflow-auto"
+        className="overflow-auto pt-1"
         style={{
-          height: `${Math.min(filteredOptions.length, 6) * itemHeight}px`,
+          height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`,
         }}
       >
         <CommandGroup

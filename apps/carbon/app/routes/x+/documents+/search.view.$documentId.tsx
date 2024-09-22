@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { getDocument } from "~/modules/documents";
 import DocumentView from "~/modules/documents/ui/Documents/DocumentView";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -8,6 +8,8 @@ import { flash } from "~/services/session.server";
 import { notFound } from "~/utils/http";
 import { path } from "~/utils/path";
 import { error } from "~/utils/result";
+
+export const config = { runtime: "nodejs" };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

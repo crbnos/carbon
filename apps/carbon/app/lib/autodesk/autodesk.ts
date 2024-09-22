@@ -1,4 +1,3 @@
-import axios from "axios";
 import { path } from "~/utils/path";
 import type { AutodeskToken } from "./types";
 
@@ -76,12 +75,18 @@ const autodesk = {
 
   _renewToken() {
     this._setAndBroadcastIsRenewing(true);
-    return axios.get(path.to.api.autodeskToken).then((response) => {
-      const token = response.data;
-      this.setAutodeskToken(token);
-      this._setAndBroadcastIsRenewing(false);
-      return token;
-    });
+    return fetch(path.to.api.autodeskToken)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((token) => {
+        this.setAutodeskToken(token);
+        this._setAndBroadcastIsRenewing(false);
+        return token;
+      });
   },
 
   _setAndBroadcastIsRenewing(value: boolean) {

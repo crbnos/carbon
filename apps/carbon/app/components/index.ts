@@ -3,8 +3,11 @@ import Avatar from "./Avatar";
 import { BreadcrumbItem, BreadcrumbLink, Breadcrumbs } from "./Breadcrumb";
 import CadModel from "./CadModel";
 import Contact from "./Contact";
+import Copy from "./Copy";
 import CustomerAvatar from "./CustomerAvatar";
+import { DirectionAwareTabs } from "./DirectionAwareTabs";
 import DocumentPreview from "./DocumentPreview";
+import Documents from "./Documents";
 import EmployeeAvatar from "./EmployeeAvatar";
 import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
 import Empty from "./Empty";
@@ -35,8 +38,11 @@ export {
   Breadcrumbs,
   CadModel,
   Contact,
+  Copy,
   CustomerAvatar,
+  DirectionAwareTabs,
   DocumentPreview,
+  Documents,
   EmployeeAvatar,
   EmployeeAvatarGroup,
   Empty,

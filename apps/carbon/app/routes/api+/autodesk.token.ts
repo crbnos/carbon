@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { getAutodeskToken } from "~/lib/autodesk/autodesk.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 

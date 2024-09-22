@@ -1,9 +1,8 @@
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
-import { redirect } from "@remix-run/node";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { redirect } from "@vercel/remix";
 import crypto from "crypto";
-import logger from "~/lib/logger";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import { getSupplierContact } from "~/modules/purchasing";
 import { getCustomerContact } from "~/modules/sales";
@@ -446,7 +445,7 @@ export async function getUserClaims(userId: string, companyId: string) {
         companyId
       );
       if (rawClaims.error || rawClaims.data === null) {
-        logger.error(rawClaims);
+        console.error(rawClaims);
         throw new Error("Failed to get claims");
       }
 

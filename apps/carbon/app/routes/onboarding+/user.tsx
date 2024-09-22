@@ -9,8 +9,8 @@ import {
   HStack,
   VStack,
 } from "@carbon/react";
-import { redirect, type ActionFunctionArgs } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import type { z } from "zod";
 import { Hidden, Input, Password, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";

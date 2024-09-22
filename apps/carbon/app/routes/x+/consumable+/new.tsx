@@ -1,6 +1,6 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import {
   ConsumableForm,
   consumableValidator,
@@ -76,6 +76,7 @@ export default function ConsumablesNewRoute() {
     replenishmentSystem: "Buy" as const,
     defaultMethodType: "Buy" as const,
     unitOfMeasureCode: "EA",
+    unitCost: 0,
     active: true,
   };
 

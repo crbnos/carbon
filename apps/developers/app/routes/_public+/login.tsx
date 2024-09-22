@@ -1,12 +1,12 @@
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import { Alert, AlertTitle, Button, VStack } from "@carbon/react";
+import { Link, useActionData, useSearchParams } from "@remix-run/react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Link, useActionData, useSearchParams } from "@remix-run/react";
+} from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import posthog from "posthog-js";
 import { LuAlertCircle } from "react-icons/lu";
 

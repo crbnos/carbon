@@ -1,6 +1,6 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   quoteLineValidator,
@@ -51,22 +51,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const quoteLineId = createQuotationLine.data.id;
-  const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-    quoteId,
-    quoteLineId,
-    itemId: data.itemId,
-    companyId,
-    userId,
-  });
+  if (data.methodType === "Make") {
+    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
+      quoteId,
+      quoteLineId,
+      itemId: data.itemId,
+      companyId,
+      userId,
+    });
 
-  if (upsertMethod.error) {
-    throw redirect(
-      path.to.quoteLine(quoteId, quoteLineId),
-      await flash(
-        request,
-        error(upsertMethod.error, "Failed to create quote line method.")
-      )
-    );
+    if (upsertMethod.error) {
+      throw redirect(
+        path.to.quoteLine(quoteId, quoteLineId),
+        await flash(
+          request,
+          error(upsertMethod.error, "Failed to create quote line method.")
+        )
+      );
+    }
   }
 
   throw redirect(path.to.quoteLine(quoteId, quoteLineId));

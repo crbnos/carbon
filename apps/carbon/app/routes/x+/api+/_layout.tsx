@@ -1,7 +1,7 @@
 import { swaggerDocsSchema } from "@carbon/database";
 import { Button } from "@carbon/react";
-import type { MetaFunction } from "@remix-run/node";
 import { Outlet, useLocation, useNavigate } from "@remix-run/react";
+import type { MetaFunction } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
 import type { ValidLang } from "~/modules/api";
 import { useSelectedLang } from "~/modules/api";

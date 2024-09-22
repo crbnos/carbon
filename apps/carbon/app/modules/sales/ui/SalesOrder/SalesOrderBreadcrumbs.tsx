@@ -1,6 +1,6 @@
 import { Button, HStack, Menubar } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
-import { RiProgress4Line } from "react-icons/ri";
+import { RiProgress8Line } from "react-icons/ri";
 import { BreadcrumbItem, Breadcrumbs } from "~/components";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -21,7 +21,7 @@ const SalesOrderBreadcrumbs = () => {
       <HStack className="w-full justify-between">
         <Breadcrumbs>
           <BreadcrumbItem>
-            <Button leftIcon={<RiProgress4Line />} variant="ghost" asChild>
+            <Button leftIcon={<RiProgress8Line />} variant="ghost" asChild>
               <Link to={path.to.salesOrderDetails(orderId)}>
                 {routeData?.salesOrder?.salesOrderId}
               </Link>

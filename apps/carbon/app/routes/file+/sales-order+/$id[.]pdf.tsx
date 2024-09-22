@@ -1,8 +1,7 @@
 import { SalesOrderPDF } from "@carbon/documents";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
-import { type LoaderFunctionArgs } from "@remix-run/node";
-import logger from "~/lib/logger";
+import { type LoaderFunctionArgs } from "@vercel/remix";
 import {
   getSalesOrder,
   getSalesOrderCustomerDetails,
@@ -11,6 +10,8 @@ import {
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
+
+export const config = { runtime: "nodejs" };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -30,23 +31,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ]);
 
   if (company.error) {
-    logger.error(company.error);
+    console.error(company.error);
   }
 
   if (salesOrder.error) {
-    logger.error(salesOrder.error);
+    console.error(salesOrder.error);
   }
 
   if (salesOrderLines.error) {
-    logger.error(salesOrderLines.error);
+    console.error(salesOrderLines.error);
   }
 
   if (salesOrderLocations.error) {
-    logger.error(salesOrderLocations.error);
+    console.error(salesOrderLocations.error);
   }
 
   if (terms.error) {
-    logger.error(terms.error);
+    console.error(terms.error);
   }
 
   if (

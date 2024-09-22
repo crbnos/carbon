@@ -2,7 +2,6 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-  Badge,
   Button,
   HStack,
   Heading,
@@ -25,7 +24,7 @@ import {
   LuXCircle,
 } from "react-icons/lu";
 import { RiProgress2Line, RiProgress4Line } from "react-icons/ri";
-import { Assignee, useOptimisticAssignment } from "~/components";
+import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -55,15 +54,16 @@ const SalesRFQHeader = () => {
   const status = routeData?.rfqSummary?.status ?? "Draft";
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
+    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
       <HStack className="w-full justify-between">
         <HStack>
           <Link to={path.to.salesRfqDetails(rfqId)}>
-            <Heading size="h2">{routeData?.rfqSummary?.rfqId}</Heading>
+            <Heading size="h2" className="flex items-center gap-1">
+              <RiProgress2Line />
+              <span>{routeData?.rfqSummary?.rfqId}</span>
+            </Heading>
           </Link>
-          <Badge variant="secondary">
-            <RiProgress2Line />
-          </Badge>
+          <Copy text={routeData?.rfqSummary?.rfqId ?? ""} />
           <SalesRFQStatus status={routeData?.rfqSummary?.status} />
         </HStack>
         <HStack>

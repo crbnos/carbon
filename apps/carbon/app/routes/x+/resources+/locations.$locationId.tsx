@@ -1,8 +1,8 @@
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone } from "@internationalized/date";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import {
   LocationForm,
   getLocation,

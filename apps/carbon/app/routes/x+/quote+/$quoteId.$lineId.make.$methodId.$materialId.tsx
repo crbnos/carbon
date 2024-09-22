@@ -2,7 +2,7 @@ import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import {
   getQuoteMaterial,
   getQuoteMaterialsByMethodId,

@@ -1,11 +1,19 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import { tasks } from "@trigger.dev/sdk/v3";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
-import { JobForm, jobValidator, upsertJob } from "~/modules/production";
+import { getSupabaseServiceRole } from "~/lib/supabase";
+import {
+  JobForm,
+  jobValidator,
+  upsertJob,
+  upsertJobMethod,
+} from "~/modules/production";
 import { getNextSequence, rollbackNextSequence } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import type { recalculateTask } from "~/trigger/recalculate";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { assertIsPost } from "~/utils/http";
@@ -18,11 +26,14 @@ export const handle: Handle = {
   module: "production",
 };
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production",
   });
+  const serviceRole = getSupabaseServiceRole();
 
   const formData = await request.formData();
   const validation = await validator(jobValidator).validate(formData);
@@ -34,7 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let jobId = validation.data.jobId;
   const useNextSequence = !jobId;
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(client, "job", companyId);
+    const nextSequence = await getNextSequence(serviceRole, "job", companyId);
     if (nextSequence.error) {
       throw redirect(
         path.to.newJob,
@@ -48,9 +59,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (!jobId) throw new Error("jobId is not defined");
-  const { id, ...data } = validation.data;
+  const { id: _id, ...data } = validation.data;
 
-  const createJob = await upsertJob(client, {
+  const createJob = await upsertJob(serviceRole, {
     ...data,
     jobId,
     companyId,
@@ -58,17 +69,41 @@ export async function action({ request }: ActionFunctionArgs) {
     customFields: setCustomFields(formData),
   });
 
-  if (createJob.error || !createJob.data) {
+  const id = createJob.data?.id!;
+  if (createJob.error || !jobId) {
     // TODO: this should be done as a transaction
-    await rollbackNextSequence(client, "job", companyId);
+    await rollbackNextSequence(serviceRole, "job", companyId);
     throw redirect(
       path.to.jobs,
       await flash(request, error(createJob.error, "Failed to insert job"))
     );
   }
 
-  console.log("redirecting to " + path.to.job(createJob.data?.id!));
-  throw redirect(path.to.job(createJob.data?.id!));
+  const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
+    sourceId: data.itemId,
+    targetId: id,
+    companyId,
+    userId,
+  });
+
+  if (upsertMethod.error) {
+    throw redirect(
+      path.to.job(id),
+      await flash(
+        request,
+        error(upsertMethod.error, "Failed to create job method.")
+      )
+    );
+  }
+
+  await tasks.trigger<typeof recalculateTask>("recalculate", {
+    type: "jobRequirements",
+    id,
+    companyId,
+    userId,
+  });
+
+  throw redirect(path.to.job(id));
 }
 
 export default function JobNewRoute() {

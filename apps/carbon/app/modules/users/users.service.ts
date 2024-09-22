@@ -1,6 +1,5 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import logger from "~/lib/logger";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { capitalize } from "~/utils/string";
@@ -31,7 +30,7 @@ export async function getCompaniesForUser(
     .eq("userId", userId);
 
   if (error) {
-    logger.error(error, `Failed to get companies for user ${userId}`);
+    console.log(`Failed to get companies for user ${userId}`, error);
     return [];
   }
 

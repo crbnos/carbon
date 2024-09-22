@@ -13,10 +13,10 @@ import {
   VStack,
 } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";

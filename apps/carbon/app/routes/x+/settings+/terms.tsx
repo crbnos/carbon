@@ -14,8 +14,8 @@ import {
   VStack,
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect, useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
 import { LuCheckCircle } from "react-icons/lu";
 import { usePermissions, useUser } from "~/hooks";
@@ -113,7 +113,7 @@ export default function Terms() {
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>Terms &amp; Conditions (Purchasing)</CardTitle>
+            <CardTitle>Purchasing Terms &amp; Conditions</CardTitle>
             <CardDescription>
               Define the terms and conditions for purchase orders
             </CardDescription>
@@ -146,7 +146,7 @@ export default function Terms() {
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>Terms &amp; Conditions (Sales)</CardTitle>
+            <CardTitle>Sales Terms &amp; Conditions</CardTitle>
             <CardDescription>
               Define the terms and conditions for quotes and sales orders
             </CardDescription>

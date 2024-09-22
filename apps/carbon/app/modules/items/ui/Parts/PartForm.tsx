@@ -22,6 +22,7 @@ import {
   Hidden,
   Input,
   InputControlled,
+  Number,
   Select,
   Submit,
   TextArea,
@@ -108,7 +109,9 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
-                  isEditing ? "grid-cols-1 md:grid-cols-3" : "grid-cols-2"
+                  isEditing
+                    ? "grid-cols-1 md:grid-cols-3"
+                    : "grid-cols-1 md:grid-cols-2"
                 )}
               >
                 {isEditing ? (
@@ -167,8 +170,18 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   label="Unit of Measure"
                 />
 
+                {!isEditing && replenishmentSystem !== "Make" && (
+                  <Number
+                    name="unitCost"
+                    label="Unit Cost"
+                    formatOptions={{
+                      style: "currency",
+                      currency: "USD",
+                    }}
+                    minValue={0}
+                  />
+                )}
                 <Boolean name="active" label="Active" />
-
                 <CustomFormFields table="part" />
               </div>
             </ModalCardBody>

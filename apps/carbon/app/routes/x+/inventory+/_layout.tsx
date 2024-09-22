@@ -1,6 +1,6 @@
 import { VStack } from "@carbon/react";
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { useInventorySubmodules } from "~/modules/inventory";
 import { getUnitOfMeasuresList } from "~/modules/items";

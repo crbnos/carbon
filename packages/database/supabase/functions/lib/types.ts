@@ -7373,6 +7373,254 @@ export type Database = {
           },
         ]
       }
+      jobFavorite: {
+        Row: {
+          jobId: string
+          userId: string
+        }
+        Insert: {
+          jobId: string
+          userId: string
+        }
+        Update: {
+          jobId?: string
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobFavorites_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobFavorites_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobFavorites_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobFavorites_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobFavorites_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobFavorites_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobFavorites_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      jobMakeMethod: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          id: string
+          itemId: string
+          jobId: string
+          parentMaterialId: string | null
+          quantityPerParent: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          id?: string
+          itemId: string
+          jobId: string
+          parentMaterialId?: string | null
+          quantityPerParent?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          id?: string
+          itemId?: string
+          jobId?: string
+          parentMaterialId?: string | null
+          quantityPerParent?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobMakeMethod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_parentMaterialId_fkey"
+            columns: ["parentMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterial"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_parentMaterialId_fkey"
+            columns: ["parentMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       jobMaterial: {
         Row: {
           companyId: string
@@ -7380,15 +7628,18 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           description: string
+          estimatedQuantity: number | null
           id: string
           itemId: string
           itemReadableId: string
           itemType: string
           jobId: string
+          jobMakeMethodId: string
           jobOperationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
           quantity: number
+          scrapQuantity: number
           unitCost: number
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -7400,15 +7651,18 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description: string
+          estimatedQuantity?: number | null
           id?: string
           itemId: string
           itemReadableId: string
           itemType?: string
           jobId: string
+          jobMakeMethodId: string
           jobOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity?: number
+          scrapQuantity?: number
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -7420,15 +7674,18 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           description?: string
+          estimatedQuantity?: number | null
           id?: string
           itemId?: string
           itemReadableId?: string
           itemType?: string
           jobId?: string
+          jobMakeMethodId?: string
           jobOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity?: number
+          scrapQuantity?: number
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -7527,10 +7784,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "jobMaterial_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMakeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["jobMaterialMakeMethodId"]
+          },
+          {
             foreignKeyName: "jobMaterial_jobOperationId_fkey"
             columns: ["jobOperationId"]
             isOneToOne: false
             referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["id"]
           },
           {
@@ -7586,16 +7864,25 @@ export type Database = {
           description: string | null
           id: string
           jobId: string
+          jobMakeMethodId: string | null
           laborRate: number
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
+          machineRate: number | null
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
+          operationLeadTime: number
+          operationMinimumCost: number
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
+          operationQuantity: number | null
+          operationSupplierProcessId: string | null
+          operationType: Database["public"]["Enums"]["operationType"]
+          operationUnitCost: number
           order: number
           overheadRate: number
           processId: string
-          quotingRate: number
+          quantityComplete: number | null
+          quantityScrapped: number | null
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
           updatedAt: string | null
@@ -7611,16 +7898,25 @@ export type Database = {
           description?: string | null
           id?: string
           jobId: string
+          jobMakeMethodId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
+          machineRate?: number | null
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
+          operationLeadTime?: number
+          operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
+          operationQuantity?: number | null
+          operationSupplierProcessId?: string | null
+          operationType?: Database["public"]["Enums"]["operationType"]
+          operationUnitCost?: number
           order?: number
           overheadRate?: number
           processId: string
-          quotingRate?: number
+          quantityComplete?: number | null
+          quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
           updatedAt?: string | null
@@ -7636,16 +7932,25 @@ export type Database = {
           description?: string | null
           id?: string
           jobId?: string
+          jobMakeMethodId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
+          machineRate?: number | null
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
+          operationLeadTime?: number
+          operationMinimumCost?: number
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
+          operationQuantity?: number | null
+          operationSupplierProcessId?: string | null
+          operationType?: Database["public"]["Enums"]["operationType"]
+          operationUnitCost?: number
           order?: number
           overheadRate?: number
           processId?: string
-          quotingRate?: number
+          quantityComplete?: number | null
+          quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
           updatedAt?: string | null
@@ -7730,6 +8035,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMakeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["jobMaterialMakeMethodId"]
           },
           {
             foreignKeyName: "jobOperation_processId_fkey"
@@ -8862,6 +9181,13 @@ export type Database = {
             foreignKeyName: "methodMaterial_materialMakeMethodId_fkey"
             columns: ["materialMakeMethodId"]
             isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["makeMethodId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_materialMakeMethodId_fkey"
+            columns: ["materialMakeMethodId"]
+            isOneToOne: false
             referencedRelation: "makeMethod"
             referencedColumns: ["id"]
           },
@@ -8870,6 +9196,13 @@ export type Database = {
             columns: ["materialMakeMethodId"]
             isOneToOne: false
             referencedRelation: "quoteOperationsWithMakeMethods"
+            referencedColumns: ["makeMethodId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_methodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["makeMethodId"]
           },
           {
@@ -9073,6 +9406,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodOperation_methodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["makeMethodId"]
           },
           {
             foreignKeyName: "methodOperation_methodId_fkey"
@@ -14688,7 +15028,6 @@ export type Database = {
           quoteId: string
           quoteLineId: string
           quoteMakeMethodId: string | null
-          quotingRate: number
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
           updatedAt: string | null
@@ -14721,7 +15060,6 @@ export type Database = {
           quoteId: string
           quoteLineId: string
           quoteMakeMethodId?: string | null
-          quotingRate?: number
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
           updatedAt?: string | null
@@ -14754,7 +15092,6 @@ export type Database = {
           quoteId?: string
           quoteLineId?: string
           quoteMakeMethodId?: string | null
-          quotingRate?: number
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
           updatedAt?: string | null
@@ -23214,6 +23551,387 @@ export type Database = {
           },
         ]
       }
+      jobMaterialWithMakeMethodId: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          description: string | null
+          estimatedQuantity: number | null
+          id: string | null
+          itemId: string | null
+          itemReadableId: string | null
+          itemType: string | null
+          jobId: string | null
+          jobMakeMethodId: string | null
+          jobMaterialMakeMethodId: string | null
+          jobOperationId: string | null
+          methodType: Database["public"]["Enums"]["methodType"] | null
+          order: number | null
+          quantity: number | null
+          scrapQuantity: number | null
+          unitCost: number | null
+          unitOfMeasureCode: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "itemQuantities"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMakeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["jobMaterialMakeMethodId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      jobOperationsWithMakeMethods: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          description: string | null
+          id: string | null
+          jobId: string | null
+          jobMakeMethodId: string | null
+          laborRate: number | null
+          laborTime: number | null
+          laborUnit: Database["public"]["Enums"]["factor"] | null
+          machineRate: number | null
+          machineTime: number | null
+          machineUnit: Database["public"]["Enums"]["factor"] | null
+          makeMethodId: string | null
+          operationLeadTime: number | null
+          operationMinimumCost: number | null
+          operationOrder:
+            | Database["public"]["Enums"]["methodOperationOrder"]
+            | null
+          operationSupplierProcessId: string | null
+          operationType: Database["public"]["Enums"]["operationType"] | null
+          operationUnitCost: number | null
+          order: number | null
+          overheadRate: number | null
+          processId: string | null
+          setupTime: number | null
+          setupUnit: Database["public"]["Enums"]["factor"] | null
+          updatedAt: string | null
+          updatedBy: string | null
+          workCenterId: string | null
+          workInstruction: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMakeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["jobMaterialMakeMethodId"]
+          },
+          {
+            foreignKeyName: "jobOperation_processId_fkey"
+            columns: ["processId"]
+            isOneToOne: false
+            referencedRelation: "process"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_processId_fkey"
+            columns: ["processId"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperation_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           active: boolean | null
@@ -23871,14 +24589,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -24750,14 +25468,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -25522,7 +26240,6 @@ export type Database = {
           quoteId: string | null
           quoteLineId: string | null
           quoteMakeMethodId: string | null
-          quotingRate: number | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
           updatedAt: string | null
@@ -28448,6 +29165,48 @@ export type Database = {
           tbl: string
         }
         Returns: string
+      }
+      get_job_method: {
+        Args: {
+          jid: string
+        }
+        Returns: {
+          jobId: string
+          methodMaterialId: string
+          jobMakeMethodId: string
+          jobMaterialMakeMethodId: string
+          itemId: string
+          itemReadableId: string
+          itemType: string
+          quantity: number
+          unitCost: number
+          methodType: Database["public"]["Enums"]["methodType"]
+          parentMaterialId: string
+          order: number
+          isRoot: boolean
+        }[]
+      }
+      get_job_methods_by_method_id: {
+        Args: {
+          mid: string
+        }
+        Returns: {
+          jobId: string
+          methodMaterialId: string
+          jobMakeMethodId: string
+          jobMaterialMakeMethodId: string
+          itemId: string
+          itemReadableId: string
+          description: string
+          unitOfMeasureCode: string
+          itemType: string
+          quantity: number
+          unitCost: number
+          methodType: Database["public"]["Enums"]["methodType"]
+          parentMaterialId: string
+          order: number
+          isRoot: boolean
+        }[]
       }
       get_method_tree: {
         Args: {

@@ -1,6 +1,6 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { PartForm, partValidator, upsertPart } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -66,6 +66,7 @@ export default function PartsNewRoute() {
     replenishmentSystem: "Buy" as "Buy",
     defaultMethodType: "Buy" as "Buy",
     unitOfMeasureCode: "EA",
+    unitCost: 0,
     active: true,
   };
 

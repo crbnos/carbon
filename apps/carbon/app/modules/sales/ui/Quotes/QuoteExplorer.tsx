@@ -20,7 +20,7 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuChevronsUpDown, LuPlus, LuTrash } from "react-icons/lu";
+import { LuChevronDown, LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty, ItemThumbnail } from "~/components";
 import type { Tree } from "~/components/TreeView";
@@ -38,7 +38,11 @@ import DeleteQuoteLine from "./DeleteQuoteLine";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
 import QuoteLineForm from "./QuoteLineForm";
 
-export default function QuoteExplorer() {
+type QuoteExplorerProps = {
+  methods: Tree<QuoteMethod>[];
+};
+
+export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   const { defaults } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -100,6 +104,7 @@ export default function QuoteExplorer() {
                 isDisabled={isDisabled}
                 line={line}
                 onDelete={onDeleteLine}
+                methods={methods}
               />
             ))
           ) : (
@@ -156,9 +161,15 @@ type QuoteLineItemProps = {
   line: QuotationLine;
   isDisabled: boolean;
   onDelete: (line: QuotationLine) => void;
+  methods: Tree<QuoteMethod>[];
 };
 
-function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
+function QuoteLineItem({
+  line,
+  isDisabled,
+  onDelete,
+  methods,
+}: QuoteLineItemProps) {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const permissions = usePermissions();
@@ -172,14 +183,8 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
     }
   });
 
-  const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
-    path.to.quote(quoteId)
-  );
-
-  const methodTree = quoteData?.methods?.find(
-    (m) => m.data.quoteLineId === line.id
-  );
-  const methods = methodTree ? flattenTree(methodTree) : [];
+  const methodTree = methods.find((m) => m.data.quoteLineId === line.id);
+  const flattenedMethods = methodTree ? flattenTree(methodTree) : [];
 
   const isSelected = lineId === line.id;
   const onLineClick = (line: QuotationLine) => {
@@ -223,7 +228,9 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
           {line.methodType === "Make" && permissions.can("update", "sales") && (
             <IconButton
               aria-label={disclosure.isOpen ? "Hide" : "Show"}
-              icon={<LuChevronsUpDown />}
+              className={cn("animate", disclosure.isOpen && "-rotate-180")}
+              icon={<LuChevronDown />}
+              size="sm"
               variant="ghost"
               onClick={(e) => {
                 e.stopPropagation();
@@ -236,6 +243,7 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
               <IconButton
                 aria-label="More"
                 icon={<MdMoreVert />}
+                size="sm"
                 variant="ghost"
                 onClick={(e) => e.stopPropagation()}
               />
@@ -258,8 +266,8 @@ function QuoteLineItem({ line, isDisabled, onDelete }: QuoteLineItemProps) {
       {disclosure.isOpen &&
         line.methodType === "Make" &&
         permissions.can("update", "sales") && (
-          <VStack className="border-b border-border">
-            <QuoteBoMExplorer methods={methods} />
+          <VStack className="border-b border-border p-1">
+            <QuoteBoMExplorer methods={flattenedMethods} />
           </VStack>
         )}
     </VStack>

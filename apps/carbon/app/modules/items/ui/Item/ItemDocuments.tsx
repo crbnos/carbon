@@ -24,7 +24,7 @@ import { LuAxis3D, LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import type { ItemFile, ModelUpload } from "~/modules/items";
+import type { ItemFile } from "~/modules/items";
 import type { MethodItemType } from "~/modules/shared";
 
 import { useNavigate, useRevalidator, useSubmit } from "@remix-run/react";
@@ -33,6 +33,7 @@ import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
+import type { ModelUpload } from "~/types";
 import { path } from "~/utils/path";
 
 type ItemDocumentsProps = {

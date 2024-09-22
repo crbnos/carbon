@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { deleteUserAttributeValue } from "~/modules/account";
 import { getAttribute } from "~/modules/people";
 import { getUserClaims } from "~/modules/users/users.server";

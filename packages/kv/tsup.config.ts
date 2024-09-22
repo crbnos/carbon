@@ -1,6 +1,6 @@
 import { defineConfig } from "tsup";
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.VERCEL_ENV === "production";
 
 export default defineConfig({
   clean: true,

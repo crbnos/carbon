@@ -6,10 +6,26 @@ import {
   ScrollArea,
   VStack,
 } from "@carbon/react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, Outlet, redirect, useParams } from "@remix-run/react";
-import { getJob, getJobDocuments, JobHeader } from "~/modules/production";
-import {} from "~/modules/sales";
+import {
+  Await,
+  defer,
+  Outlet,
+  redirect,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { Suspense } from "react";
+import { ExplorerSkeleton } from "~/components/Skeletons";
+import { flattenTree } from "~/components/TreeView";
+import {
+  getJob,
+  getJobDocuments,
+  getJobMethodTree,
+  JobBoMExplorer,
+  JobHeader,
+} from "~/modules/production";
+import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -29,6 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
+
   const job = await getJob(client, jobId);
 
   if (job.error) {
@@ -40,19 +57,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const files = await getJobDocuments(client, companyId, job.data);
 
-  // const methods = await getJobMethodTrees(client, jobId);
-
-  // if (methods.error) {
-  //   throw redirect(
-  //     path.to.jobs,
-  //     await flash(request, error(methods.error, "Failed to load job method"))
-  //   );
-  // }
-
-  return json({
+  return defer({
     job: job.data,
-    files: files,
-    // methods: methods.data ?? [],
+    files,
+    method: getJobMethodTree(client, jobId), // returns a promise
   });
 }
 
@@ -60,6 +68,8 @@ export default function JobRoute() {
   const params = useParams();
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
+
+  const { method } = useLoaderData<typeof loader>();
 
   return (
     <div className="flex flex-col h-[calc(100vh-49px)] w-full">
@@ -74,11 +84,31 @@ export default function JobRoute() {
                     order={1}
                     minSize={10}
                     defaultSize={20}
-                    className="bg-card h-full"
+                    className="bg-card h-full shadow-lg"
                   >
                     <ScrollArea className="h-[calc(100vh-99px)]">
-                      <div className="grid w-full h-full overflow-hidden">
-                        {/* <JobExplorer /> */}
+                      <div className="grid w-full h-full overflow-hidden p-2">
+                        <Suspense fallback={<ExplorerSkeleton />}>
+                          <Await
+                            resolve={method}
+                            errorElement={
+                              <div className="p-2 text-red-500">
+                                Error loading job tree.
+                              </div>
+                            }
+                          >
+                            {(resolvedMethod) => (
+                              <JobBoMExplorer
+                                method={
+                                  resolvedMethod.data &&
+                                  resolvedMethod.data.length > 0
+                                    ? flattenTree(resolvedMethod.data[0])
+                                    : []
+                                }
+                              />
+                            )}
+                          </Await>
+                        </Suspense>
                       </div>
                     </ScrollArea>
                   </ResizablePanel>
@@ -86,6 +116,7 @@ export default function JobRoute() {
                   <ResizablePanel order={2}>
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <VStack spacing={2} className="p-2">
+                        <JobBreadcrumbs />
                         <Outlet />
                       </VStack>
                     </ScrollArea>

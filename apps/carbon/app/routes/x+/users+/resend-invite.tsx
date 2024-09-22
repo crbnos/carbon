@@ -1,14 +1,15 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import type { z } from "zod";
-import type { userAdminSchema } from "~/jobs/user-admin.server";
-import { triggerClient } from "~/lib/trigger.server";
+import { tasks } from "@trigger.dev/sdk/v3";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { resendInviteValidator } from "~/modules/users";
 import { resendInvite } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
+import { userAdminTask } from "~/trigger/user-admin";
 import { error, success } from "~/utils/result";
+
+export const config = { runtime: "nodejs" };
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -31,19 +32,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
     return json({}, await flash(request, result));
   } else {
-    const jobs = users.map<{
-      name: string;
-      payload: z.infer<typeof userAdminSchema>;
-    }>((id) => ({
-      name: "user.admin",
-      payload: {
-        id,
-        type: "resend",
-      },
-    }));
-
     try {
-      await triggerClient.sendEvents(jobs);
+      await tasks.batchTrigger(
+        userAdminTask.id,
+        users.map((id) => ({
+          payload: {
+            id,
+            type: "resend",
+          },
+        }))
+      );
       return json(
         {},
         await flash(request, success("Successfully added invites to queue"))

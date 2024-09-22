@@ -1,6 +1,6 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { ToolForm, toolValidator, upsertTool } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -66,6 +66,7 @@ export default function ToolsNewRoute() {
     defaultMethodType: "Buy" as const,
     itemTrackingType: "Inventory" as "Inventory",
     unitOfMeasureCode: "EA",
+    unitCost: 0,
     active: true,
   };
 

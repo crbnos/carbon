@@ -1,5 +1,5 @@
 import { Button } from "@carbon/react";
-import type { MetaFunction } from "@remix-run/node";
+import type { MetaFunction } from "@vercel/remix";
 import { VERCEL_URL } from "~/config/env";
 import { removeSubdomain } from "~/utils/path";
 

@@ -1,5 +1,5 @@
-import { redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
+import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { getLocationsList } from "~/modules/resources";
 import { getCompany } from "~/modules/settings";
 import { requirePermissions } from "~/services/auth/auth.server";

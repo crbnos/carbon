@@ -172,7 +172,7 @@ const DocumentsTable = memo(
             <HStack>
               {row.original.favorite ? (
                 <LuPin
-                  className="cursor-pointer w-4 h-4 outline-yellow-400 fill-yellow-400 flex-shrink-0"
+                  className="cursor-pointer w-4 h-4 outline-foreground fill-foreground flex-shrink-0"
                   onClick={() => onFavorite(row.original)}
                 />
               ) : (
@@ -656,6 +656,8 @@ function getDocumentLocation(
       return path.to.quote(sourceDocumentId);
     case "Request for Quote":
       return path.to.salesRfq(sourceDocumentId);
+    case "Job":
+      return path.to.job(sourceDocumentId);
     default:
       return "#";
   }

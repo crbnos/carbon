@@ -13,8 +13,6 @@ import {
   useKeyboardShortcuts,
 } from "@carbon/react";
 import { themes, type Theme } from "@carbon/utils";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import {
   Link,
   useFetcher,
@@ -22,6 +20,8 @@ import {
   useNavigation,
   useSubmit,
 } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { useEffect, useRef, useState } from "react";
 import { BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";

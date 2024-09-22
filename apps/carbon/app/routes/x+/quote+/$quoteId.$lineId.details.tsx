@@ -1,7 +1,7 @@
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { Fragment, useMemo } from "react";
 import { CadModel } from "~/components";
 import type { Tree } from "~/components/TreeView";
@@ -120,12 +120,15 @@ export default function QuoteLine() {
   useRealtime("quoteMaterial", `quoteLineId=eq.${lineId}`);
   useRealtime("quoteOperation", `quoteLineId=eq.${lineId}`);
 
-  const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
-    path.to.quote(quoteId)
-  );
+  const quoteData = useRouteData<{
+    methods: Promise<Tree<QuoteMethod>[]> | Tree<QuoteMethod>[];
+  }>(path.to.quote(quoteId));
 
   const methodTree = useMemo(
-    () => quoteData?.methods?.find((m) => m.data.quoteLineId === line.id),
+    () =>
+      Array.isArray(quoteData?.methods)
+        ? quoteData.methods.find((m) => m.data.quoteLineId === line.id)
+        : undefined,
     [quoteData, line.id]
   );
 

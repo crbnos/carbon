@@ -6,12 +6,25 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      onwarn(warning, defaultHandler) {
+        if (warning.code === "SOURCEMAP_ERROR") {
+          return;
+        }
+
+        defaultHandler(warning);
+      },
+    },
+  },
   ssr: {
     noExternal: [
       "react-tweet",
       "react-dropzone",
       "react-icons",
       "react-phone-number-input",
+      "tailwind-merge",
     ],
   },
   server: {
@@ -21,7 +34,7 @@ export default defineConfig({
     remix({
       presets: [vercelPreset()],
       future: {
-        unstable_singleFetch: true,
+        unstable_singleFetch: false,
       },
       ignoredRouteFiles: ["**/.*"],
       serverModuleFormat: "esm",

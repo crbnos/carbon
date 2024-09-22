@@ -1,6 +1,8 @@
 import { getThemeCode, themes } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import { getTheme } from "~/services/theme.server";
+
+export const config = { runtime: "nodejs" };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const theme = getTheme(request) as string;

@@ -13,7 +13,7 @@ export type InventoryItem = NonNullable<
 
 export type ItemLedger = NonNullable<
   Awaited<ReturnType<typeof getItemLedger>>["data"]
->;
+>[number];
 
 export type Receipt = NonNullable<
   Awaited<ReturnType<typeof getReceipts>>["data"]
