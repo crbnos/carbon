@@ -65,7 +65,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
             <div
               key={node.id}
               className={cn(
-                "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2",
+                "flex h-12 cursor-pointer items-center overflow-hidden rounded-sm pr-2",
                 getNodePath(node) === location.pathname
                   ? "bg-muted hover:bg-muted/90"
                   : "bg-transparent hover:bg-muted/90"
