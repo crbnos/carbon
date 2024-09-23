@@ -74,7 +74,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       createdBy: userId,
     });
 
-    if (insertPickMethod.error) {
+    if (
+      insertPickMethod.error &&
+      !insertPickMethod.error.message.includes("duplicate key value")
+    ) {
       throw redirect(
         path.to.inventory,
         await flash(

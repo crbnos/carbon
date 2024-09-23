@@ -9,15 +9,9 @@ import {
 } from "~/modules/production";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 import { error } from "~/utils/result";
-
-export const handle: Handle = {
-  breadcrumb: "Jobs",
-  to: path.to.jobs,
-};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

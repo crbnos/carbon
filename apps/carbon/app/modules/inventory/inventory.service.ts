@@ -36,6 +36,8 @@ export async function insertManualInventoryAdjustment(
 
   if (data.shelfId) {
     query.eq("shelfId", data.shelfId);
+  } else {
+    query.is("shelfId", null);
   }
 
   const { data: currentQuantity, error: quantityError } =
