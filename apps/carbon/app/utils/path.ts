@@ -361,6 +361,7 @@ export const path = {
     jobDetails: (id: string) => generatePath(`${x}/job/${id}/details`),
     jobMaterial: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/${id}`),
+    jobMaterials: (id: string) => generatePath(`${x}/job/${id}/materials`),
     jobMethod: (jobId: string, methodId: string) =>
       generatePath(`${x}/job/${jobId}/method/${methodId}`),
     jobMakeMethod: (jobId: string, makeMethodId: string, materialId: string) =>
@@ -379,7 +380,9 @@ export const path = {
     jobMethodSave: `${x}/job/methods/save`,
     jobOperation: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/${id}`),
+    jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsOrder: `${x}/job/methods/operation/order`,
+    jobTimecards: (id: string) => generatePath(`${x}/job/${id}/timecards`),
     jobs: `${x}/production/jobs`,
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,

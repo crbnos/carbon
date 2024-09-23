@@ -1,37 +1,151 @@
-import { HStack, Heading, VStack } from "@carbon/react";
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  HStack,
+  Heading,
+} from "@carbon/react";
 
-import { Link, useParams } from "@remix-run/react";
-import { LuHardHat } from "react-icons/lu";
-import { Copy } from "~/components";
-import { useRouteData } from "~/hooks";
+import { Link, useNavigate, useParams } from "@remix-run/react";
+import {
+  LuChevronDown,
+  LuClock,
+  LuHardHat,
+  LuPackage,
+  LuSettings,
+  LuTable,
+} from "react-icons/lu";
+import { Assignee, Copy, useOptimisticAssignment } from "~/components";
+import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Job } from "../../types";
 
 const JobHeader = () => {
-  // const links = useJobavigation();
+  const navigate = useNavigate();
+  const permissions = usePermissions();
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
+  const location = useOptimisticLocation();
+
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
+  const optimisticAssignment = useOptimisticAssignment({
+    id: jobId,
+    table: "job",
+  });
+  const assignee =
+    optimisticAssignment !== undefined
+      ? optimisticAssignment
+      : routeData?.job?.assignee;
+
+  const getExplorePath = (type: string) => {
+    switch (type) {
+      case "materials":
+        return path.to.jobMaterials(jobId);
+      case "operations":
+        return path.to.jobOperations(jobId);
+      case "timecards":
+        return path.to.jobTimecards(jobId);
+      default:
+        return path.to.jobDetails(jobId);
+    }
+  };
+
+  const getOptionFromPath = () => {
+    if (location.pathname.includes(path.to.jobMaterials(jobId)))
+      return "materials";
+    if (location.pathname.includes(path.to.jobOperations(jobId)))
+      return "operations";
+    if (location.pathname.includes(path.to.jobTimecards(jobId)))
+      return "timecards";
+    return "details";
+  };
+
+  const currentValue = getOptionFromPath();
 
   return (
     <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
-      <VStack spacing={0} className="flex-grow">
-        <HStack>
-          <Link to={path.to.jobDetails(jobId)}>
-            <Heading size="h2" className="flex items-center gap-1">
-              <LuHardHat />
-              <span>{routeData?.job?.jobId}</span>
-            </Heading>
-          </Link>
-          <Copy text={routeData?.job?.jobId ?? ""} />
-        </HStack>
-      </VStack>
-      <VStack spacing={0} className="flex-shrink justify-center items-end">
-        {/* <DetailsTopbar links={links} /> */}
-      </VStack>
+      <HStack>
+        <Link to={path.to.jobDetails(jobId)}>
+          <Heading size="h2" className="flex items-center gap-1">
+            <LuHardHat />
+            <span>{routeData?.job?.jobId}</span>
+          </Heading>
+        </Link>
+        <Copy text={routeData?.job?.jobId ?? ""} />
+      </HStack>
+
+      <HStack>
+        <Assignee
+          id={jobId}
+          table="job"
+          value={assignee ?? ""}
+          className="h-8"
+          isReadOnly={!permissions.can("update", "production")}
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              leftIcon={<LuTable />}
+              rightIcon={<LuChevronDown />}
+              variant="secondary"
+            >
+              {getExplorerLabel(currentValue)}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuRadioGroup
+              value={currentValue}
+              onValueChange={(option) => navigate(getExplorePath(option))}
+            >
+              <DropdownMenuRadioItem value="details">
+                <DropdownMenuIcon icon={getExplorerMenuIcon("details")} />
+                {getExplorerLabel("details")}
+              </DropdownMenuRadioItem>
+              <DropdownMenuSeparator />
+              {["materials", "operations", "timecards"].map((i) => (
+                <DropdownMenuRadioItem value={i} key={i}>
+                  <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                  {getExplorerLabel(i)}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </HStack>
     </div>
   );
 };
 
 export default JobHeader;
+
+function getExplorerLabel(type: string) {
+  switch (type) {
+    case "materials":
+      return "Materials";
+    case "operations":
+      return "Operations";
+    case "timecards":
+      return "Timecards";
+    default:
+      return "Job";
+  }
+}
+
+function getExplorerMenuIcon(type: string) {
+  switch (type) {
+    case "materials":
+      return <LuPackage />;
+    case "operations":
+      return <LuSettings />;
+    case "timecards":
+      return <LuClock />;
+    default:
+      return <LuHardHat />;
+  }
+}

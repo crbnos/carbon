@@ -104,6 +104,33 @@ export async function getJobsList(
     .order("jobId");
 }
 
+export async function getJobMaterials(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("jobMaterial")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("jobId", jobId);
+
+  if (args?.search) {
+    query = query.or(
+      `itemReadableId.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
 export async function getJobMethodTree(
   client: SupabaseClient<Database>,
   jobId: string
@@ -207,6 +234,31 @@ export async function getJobOperation(
     .select("*")
     .eq("id", jobOperationId)
     .single();
+}
+
+export async function getJobOperations(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("jobOperation")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("jobId", jobId);
+
+  if (args?.search) {
+    query = query.ilike("description", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: true },
+    ]);
+  }
+
+  return query;
 }
 
 export async function getJobOperationsByMethodId(

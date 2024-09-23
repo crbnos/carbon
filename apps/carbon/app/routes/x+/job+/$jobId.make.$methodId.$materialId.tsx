@@ -11,6 +11,7 @@ import {
   JobBillOfProcess,
   JobMaterialForm,
 } from "~/modules/production";
+import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -105,7 +106,8 @@ export default function JobMakeMethodRoute() {
   const { material, materials, operations } = loaderData;
 
   return (
-    <VStack spacing={2} key={JSON.stringify(loaderData)}>
+    <VStack spacing={2} key={JSON.stringify(loaderData)} className="p-2">
+      <JobBreadcrumbs />
       <JobMaterialForm initialValues={material} operations={operations} />
       <JobBillOfProcess jobMakeMethodId={methodId} operations={operations} />
       <JobBillOfMaterial

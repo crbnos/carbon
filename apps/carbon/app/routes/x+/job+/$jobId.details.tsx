@@ -1,16 +1,21 @@
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { useParams } from "@remix-run/react";
-import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { CadModel, Documents } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
+import { getSupabaseServiceRole } from "~/lib/supabase";
 import type { Job } from "~/modules/production";
-import { JobForm, jobValidator, upsertJob } from "~/modules/production";
+import {
+  JobForm,
+  jobValidator,
+  recalculateJobRequirements,
+  upsertJob,
+} from "~/modules/production";
+import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
-import type { recalculateTask } from "~/trigger/recalculate";
 import type { StorageItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { assertIsPost } from "~/utils/http";
@@ -52,13 +57,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // TODO: we really only want to do this if the quantity has changed
-  await tasks.trigger<typeof recalculateTask>("recalculate", {
-    type: "jobRequirements",
-    id,
-    companyId,
-    userId,
-  });
+  const recalculate = await recalculateJobRequirements(
+    getSupabaseServiceRole(),
+    {
+      id,
+      companyId,
+      userId,
+    }
+  );
+  if (recalculate.error) {
+    throw redirect(
+      path.to.job(id),
+      await flash(
+        request,
+        error(recalculate.error, "Failed to recalculate job requirements")
+      )
+    );
+  }
 
   throw redirect(path.to.job(id), await flash(request, success("Updated job")));
 }
@@ -74,7 +89,6 @@ export default function JobDetailsRoute() {
   }>(path.to.job(jobId));
 
   if (!jobData) throw new Error("Could not find job data");
-  // const permissions = usePermissions();
 
   useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
@@ -96,7 +110,8 @@ export default function JobDetailsRoute() {
   };
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={2} className="p-2">
+      <JobBreadcrumbs />
       <JobForm key={jobInitialValues.id} initialValues={jobInitialValues} />
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">

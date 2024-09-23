@@ -14,7 +14,7 @@ import { Link, useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import type { z } from "zod";
-import { MethodItemTypeIcon } from "~/components";
+import { Copy } from "~/components";
 import {
   Boolean,
   DefaultMethodType,
@@ -77,11 +77,9 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
       >
         <HStack className="w-full justify-between">
           <CardHeader>
-            <CardTitle>
-              <HStack spacing={2}>
-                <MethodItemTypeIcon type={type} />
-                <span>{getLabel(type)}</span>
-              </HStack>
+            <CardTitle className="flex items-center gap-2">
+              {initialValues.readableId}
+              <Copy text={initialValues.readableId ?? ""} />
             </CardTitle>
           </CardHeader>
           <CardAction>
