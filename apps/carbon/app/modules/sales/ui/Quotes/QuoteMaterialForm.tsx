@@ -17,6 +17,7 @@ import {
 import { ValidatedForm } from "@carbon/form";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
+import { Copy } from "~/components";
 import {
   DefaultMethodType,
   Hidden,
@@ -181,7 +182,9 @@ const QuoteMaterialForm = ({
         validator={quoteMaterialValidator}
       >
         <CardHeader>
-          <CardTitle>{itemData.itemReadableId}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {itemData.itemReadableId} <Copy text={itemData.itemReadableId} />
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="quoteMakeMethodId" />

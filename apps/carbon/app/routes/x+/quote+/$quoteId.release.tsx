@@ -7,6 +7,7 @@ import { upsertDocument } from "~/modules/documents";
 import {
   getCustomer,
   getCustomerContact,
+  getOpportunityByQuote,
   getQuote,
   quoteReleaseValidator,
   releaseQuote,
@@ -38,11 +39,23 @@ export async function action(args: ActionFunctionArgs) {
   let file: ArrayBuffer;
   let fileName: string;
 
-  const quote = await getQuote(client, quoteId);
+  const [quote, opportunity] = await Promise.all([
+    getQuote(client, quoteId),
+    getOpportunityByQuote(client, quoteId),
+  ]);
   if (quote.error) {
     throw redirect(
       path.to.quote(quoteId),
       await flash(request, error(quote.error, "Failed to get quote"))
+    );
+  }
+  if (opportunity.error) {
+    throw redirect(
+      path.to.quote(quoteId),
+      await flash(
+        request,
+        error(opportunity.error, "Failed to get opportunity")
+      )
     );
   }
 
@@ -56,7 +69,7 @@ export async function action(args: ActionFunctionArgs) {
       .toISOString()
       .slice(0, -5)}.pdf`;
 
-    const documentFilePath = `${companyId}/quote/${quoteId}/${fileName}`;
+    const documentFilePath = `${companyId}/opportunity/${opportunity.data.id}/${fileName}`;
 
     const documentFileUpload = await client.storage
       .from("private")
