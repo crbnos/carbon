@@ -23,7 +23,7 @@
 .dark .background:before {
   background: radial-gradient(
     circle,
-    hsl(var(--muted)) 0,
+    hsl(240 3.7 11%) 0,
     hsl(var(--background)) 100%
   );
 }

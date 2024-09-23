@@ -170,7 +170,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   label="Unit of Measure"
                 />
 
-                {!isEditing && replenishmentSystem !== "Make" && (
+                {!isEditing && (
                   <Number
                     name="unitCost"
                     label="Unit Cost"

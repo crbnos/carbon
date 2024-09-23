@@ -120,15 +120,12 @@ export default function QuoteLine() {
   useRealtime("quoteMaterial", `quoteLineId=eq.${lineId}`);
   useRealtime("quoteOperation", `quoteLineId=eq.${lineId}`);
 
-  const quoteData = useRouteData<{
-    methods: Promise<Tree<QuoteMethod>[]> | Tree<QuoteMethod>[];
-  }>(path.to.quote(quoteId));
+  const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
+    path.to.quote(quoteId)
+  );
 
   const methodTree = useMemo(
-    () =>
-      Array.isArray(quoteData?.methods)
-        ? quoteData.methods.find((m) => m.data.quoteLineId === line.id)
-        : undefined,
+    () => quoteData?.methods?.find((m) => m.data.quoteLineId === line.id),
     [quoteData, line.id]
   );
 

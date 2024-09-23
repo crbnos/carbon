@@ -28659,10 +28659,10 @@ export type Database = {
           dimensions: string
           finish: string
           readableId: string
-          type: string
+          type: Database["public"]["Enums"]["itemType"]
           name: string
           active: boolean
-          itemTrackingType: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           thumbnailPath: string
           locationName: string
           unitOfMeasureCode: string

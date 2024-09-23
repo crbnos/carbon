@@ -6,11 +6,9 @@ import {
   ScrollArea,
   VStack,
 } from "@carbon/react";
-import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
+import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { Suspense } from "react";
-import { ExplorerSkeleton } from "~/components/Skeletons";
 import {
   getOpportunityByQuote,
   getOpportunityDocuments,
@@ -44,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const [quote, shipment, payment, lines, prices, opportunity] =
+  const [quote, shipment, payment, lines, prices, opportunity, methods] =
     await Promise.all([
       getQuote(client, quoteId),
       getQuoteShipment(client, quoteId),
@@ -52,6 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getQuoteLines(client, quoteId),
       getQuoteLinePricesByQuoteId(client, quoteId),
       getOpportunityByQuote(client, quoteId),
+      getQuoteMethodTrees(client, quoteId),
     ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
@@ -88,7 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     quote: quote.data,
     lines: lines.data ?? [],
-    methods: getQuoteMethodTrees(client, quoteId),
+    methods: methods.data ?? [],
     files: files.data ?? [],
     prices: prices.data ?? [],
     shipment: shipment.data,
@@ -120,33 +119,7 @@ export default function QuoteRoute() {
                   >
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <div className="grid w-full h-full overflow-hidden">
-                        <Suspense
-                          fallback={
-                            <div className="p-2">
-                              <ExplorerSkeleton />
-                            </div>
-                          }
-                        >
-                          <Await
-                            resolve={methods}
-                            errorElement={
-                              <div className="p-2 text-red-500">
-                                Error loading quote tree.
-                              </div>
-                            }
-                          >
-                            {(resolvedMethods) => (
-                              <QuoteExplorer
-                                methods={
-                                  resolvedMethods.data &&
-                                  resolvedMethods.data.length > 0
-                                    ? resolvedMethods.data
-                                    : []
-                                }
-                              />
-                            )}
-                          </Await>
-                        </Suspense>
+                        <QuoteExplorer methods={methods} />
                       </div>
                     </ScrollArea>
                   </ResizablePanel>

@@ -39,6 +39,8 @@ export function useLineCosts({
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
+  console.log({ originalMethodTree });
+
   // TODO: instead of walking the tree twice (once for the quantities/operations and once for the effects)
   // we could do it all in one pass
 
@@ -49,7 +51,7 @@ export function useLineCosts({
 
     const tree = structuredClone(originalMethodTree);
 
-    function walkTree(tree: EnhancedTree, parentQuantity: number) {
+    function traverseTree(tree: EnhancedTree, parentQuantity: number) {
       // multiply quantity by parent quantity
       tree.data.quantity = tree.data.quantity * parentQuantity;
       tree.data.operations = operations.filter(
@@ -58,12 +60,12 @@ export function useLineCosts({
 
       if (tree.children) {
         for (const child of tree.children) {
-          walkTree(child, tree.data.quantity);
+          traverseTree(child, tree.data.quantity);
         }
       }
     }
 
-    walkTree(tree, 1);
+    traverseTree(tree, 1);
 
     return tree;
   }, [operations, originalMethodTree]);
