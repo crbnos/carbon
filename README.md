@@ -1,4 +1,5 @@
-# CarbonOS
+
+![CarbonOS](https://github.com/user-attachments/assets/664eb49a-f873-49f8-bb6f-95a94ba89f97)
 
 Carbon is the operating system for manufacturing. It allows customers, suppliers, and employees to share a common platform that's easy to integrate with.
 
