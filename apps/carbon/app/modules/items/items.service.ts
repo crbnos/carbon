@@ -397,12 +397,23 @@ export async function getItemQuantities(
   locationId: string
 ) {
   return client
-    .from("itemQuantities")
+    .rpc("get_item_quantities", { location_id: locationId })
+    .eq("itemId", itemId)
+    .maybeSingle();
+}
+
+export async function getItemShelfQuantities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("itemInventory")
     .select("*")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .maybeSingle();
+    .eq("locationId", locationId);
 }
 
 export async function getItemUnitSalePrice(
@@ -861,18 +872,6 @@ export async function getServicesList(
   return query;
 }
 
-export async function getShelvesList(
-  client: SupabaseClient<Database>,
-  locationId: string
-) {
-  return client
-    .from("shelf")
-    .select("id")
-    .eq("active", true)
-    .eq("locationId", locationId)
-    .order("id");
-}
-
 export async function getTool(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -996,41 +995,6 @@ export async function getModelUploadByUrn(
     .select("*")
     .eq("companyId", companyId)
     .eq("autodeskUrn", urn)
-    .single();
-}
-
-export async function insertShelf(
-  client: SupabaseClient<Database>,
-  shelfId: string,
-  locationId: string,
-  userId: string,
-  companyId: string
-) {
-  const shelfLookup = await client
-    .from("shelf")
-    .select("id")
-    .eq("id", shelfId)
-    .eq("locationId", locationId)
-    .maybeSingle();
-  if (shelfLookup.error) return shelfLookup;
-
-  // the shelf is inactive, so we can just reactivate it
-  if (shelfLookup.data) {
-    return client.from("shelf").update({ active: true }).eq("id", shelfId);
-  }
-
-  // otherwise we'll create a new shelf
-  return client
-    .from("shelf")
-    .insert([
-      {
-        id: shelfId,
-        companyId,
-        locationId,
-        createdBy: userId,
-      },
-    ])
-    .select("id")
     .single();
 }
 

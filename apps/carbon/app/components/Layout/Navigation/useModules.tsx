@@ -1,4 +1,5 @@
 import {
+  LuBox,
   LuComponent,
   LuCreditCard,
   LuCrown,
@@ -24,25 +25,13 @@ export function useModules() {
       to: path.to.parts,
       icon: LuComponent,
     },
-    // {
-    //   permission: "jobs",
-    //   name: "Jobs",
-    //   to: path.to.jobs,
-    //   icon: LuCalendarClock,
-    // },
-    // {
-    //   permission: "inventory",
-    //   name: "Inventory",
-    //   to: path.to.receipts,
-    //   icon: LuBox,
-    // },
 
-    // {
-    //   permission: "timecards",
-    //   name: "Timecards",
-    //   to: path.to.timecards,
-    //   icon: AiOutlineFieldTime,
-    // },
+    {
+      permission: "inventory",
+      name: "Inventory",
+      to: path.to.inventory,
+      icon: LuBox,
+    },
     {
       permission: "production",
       name: "Production",

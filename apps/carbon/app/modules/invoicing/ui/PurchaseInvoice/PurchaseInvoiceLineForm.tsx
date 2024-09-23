@@ -14,8 +14,8 @@ import {
 } from "@carbon/react";
 
 import { ValidatedForm } from "@carbon/form";
-import { useFetcher, useNavigate, useParams } from "@remix-run/react";
-import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "@remix-run/react";
+import { useState } from "react";
 import type { z } from "zod";
 import {
   Account,
@@ -26,6 +26,7 @@ import {
   Item,
   NumberControlled,
   Select,
+  Shelf,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
@@ -39,7 +40,6 @@ import {
   purchaseInvoiceLineType,
   purchaseInvoiceLineValidator,
 } from "~/modules/invoicing";
-import type { getShelvesList } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -98,24 +98,6 @@ const PurchaseInvoiceLineForm = ({
     shelfId: initialValues.shelfId ?? "",
     minimumOrderQuantity: undefined,
   });
-
-  const shelfFetcher = useFetcher<Awaited<ReturnType<typeof getShelvesList>>>();
-
-  useEffect(() => {
-    if (locationId) {
-      shelfFetcher.load(path.to.api.shelves(locationId));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationId]);
-
-  const shelfOptions = useMemo(
-    () =>
-      shelfFetcher.data?.data?.map((shelf) => ({
-        label: shelf.id,
-        value: shelf.id,
-      })) ?? [],
-    [shelfFetcher.data]
-  );
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = !isEditable
@@ -429,16 +411,16 @@ const PurchaseInvoiceLineForm = ({
                     "Consumable",
                     "Fixed Asset",
                   ].includes(type) && (
-                    <ComboboxControlled
+                    <Shelf
                       name="shelfId"
                       label="Shelf"
-                      options={shelfOptions}
-                      value={itemData.shelfId ?? ""}
+                      locationId={locationId}
+                      value={itemData.shelfId ?? undefined}
                       onChange={(newValue) => {
                         if (newValue) {
                           setItemData((d) => ({
                             ...d,
-                            shelfId: newValue.value,
+                            shelfId: newValue?.id,
                           }));
                         }
                       }}

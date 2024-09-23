@@ -486,6 +486,7 @@ export const salesOrderStatusType = [
   "Completed",
   "Invoiced",
   "Cancelled",
+  "Closed",
 ] as const;
 
 export const salesOrderValidator = z.object({
@@ -499,6 +500,7 @@ export const salesOrderValidator = z.object({
   customerContactId: zfd.text(z.string().optional()),
   customerReference: zfd.text(z.string().optional()),
   quoteId: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
 });
 
 export const salesOrderShipmentValidator = z
@@ -546,7 +548,7 @@ export const salesOrderLineValidator = z
     description: zfd.text(z.string().optional()),
     itemId: zfd.text(z.string().optional()),
     itemReadableId: zfd.text(z.string().optional()),
-    locationId: zfd.text(z.string().optional()),
+    locationId: z.string().min(0, { message: "Location is required" }),
     methodType: z
       .enum(methodType, {
         errorMap: () => ({ message: "Method is required" }),
@@ -627,6 +629,7 @@ export const salesOrderReleaseValidator = z
 export const salesRfqValidator = z.object({
   id: zfd.text(z.string().optional()),
   rfqId: zfd.text(z.string().optional()),
+  customerLocationId: zfd.text(z.string().optional()),
   customerContactId: zfd.text(z.string().optional()),
   customerId: z.string().min(36, { message: "Customer is required" }),
   customerReference: zfd.text(z.string().optional()),

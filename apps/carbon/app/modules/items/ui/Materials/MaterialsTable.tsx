@@ -1,6 +1,7 @@
 import {
   Badge,
   Checkbox,
+  HStack,
   MenuIcon,
   MenuItem,
   useDisclosure,
@@ -51,9 +52,11 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
         accessorKey: "id",
         header: "Material ID",
         cell: ({ row }) => (
-          <Hyperlink to={path.to.materialDetails(row.original.itemId!)}>
-            {row.original.id}
-          </Hyperlink>
+          <HStack className="py-1">
+            <Hyperlink to={path.to.materialDetails(row.original.itemId!)}>
+              {row.original.id}
+            </Hyperlink>
+          </HStack>
         ),
       },
       {

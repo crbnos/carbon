@@ -1,6 +1,67 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+export const itemTypes = [
+  "Part",
+  "Material",
+  "Tool",
+  "Fixture",
+  "Consumable",
+  "Service",
+] as const;
+
+export const itemLedgerTypes = [
+  "Purchase",
+  "Sale",
+  "Positive Adjmt.",
+  "Negative Adjmt.",
+  "Transfer",
+  "Consumption",
+  "Output",
+  "Assembly Consumption",
+  "Assembly Output",
+] as const;
+
+export const itemLedgerDocumentTypes = [
+  "Sales Shipment",
+  "Sales Invoice",
+  "Sales Return Receipt",
+  "Sales Credit Memo",
+  "Purchase Receipt",
+  "Purchase Invoice",
+  "Purchase Return Shipment",
+  "Purchase Credit Memo",
+  "Transfer Shipment",
+  "Transfer Receipt",
+  "Service Shipment",
+  "Service Invoice",
+  "Service Credit Memo",
+  "Posted Assembly",
+  "Inventory Receipt",
+  "Inventory Shipment",
+  "Direct Transfer",
+] as const;
+
+export const inventoryAdjustmentValidator = z.object({
+  itemId: z.string().min(1, { message: "Item ID is required" }),
+  locationId: z.string().min(20, { message: "Location is required" }),
+  shelfId: zfd.text(z.string().optional()),
+  adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
+  quantity: zfd.numeric(z.number()),
+});
+
+export const itemLedgerValidator = z.object({
+  postingDate: zfd.text(z.string().optional()),
+  entryType: z.enum(itemLedgerTypes),
+  documentType: z.union([z.enum(itemLedgerDocumentTypes), z.undefined()]),
+  documentId: z.string().optional(),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  itemReadableId: z.string().optional(),
+  locationId: z.string().optional(),
+  shelfId: z.string().optional(),
+  quantity: z.number(),
+});
+
 export const receiptSourceDocumentType = [
   // "Sales Order",
   // "Sales Invoice",
@@ -27,6 +88,12 @@ export const receiptValidator = z.object({
   externalDocumentId: zfd.text(z.string().optional()),
   sourceDocumentReadableId: zfd.text(z.string().optional()),
   supplierId: zfd.text(z.string().optional()),
+});
+
+export const shelfValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  locationId: z.string().min(1, { message: "Location ID is required" }),
 });
 
 export const shippingCarrierType = [

@@ -1,8 +1,15 @@
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  VStack,
+} from "@carbon/react";
+import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { CadModel, Documents } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import { getSupabaseServiceRole } from "~/lib/supabase";
@@ -83,7 +90,7 @@ export default function JobDetailsRoute() {
 
   const jobData = useRouteData<{
     job: Job;
-    files: StorageItem[];
+    files: Promise<StorageItem[]> | StorageItem[];
   }>(path.to.job(jobId));
 
   if (!jobData) throw new Error("Could not find job data");
@@ -122,14 +129,30 @@ export default function JobDetailsRoute() {
             uploadClassName="min-h-[360px]"
             viewerClassName="min-h-[360px]"
           />
-          <Documents
-            files={jobData.files}
-            modelUpload={{ ...jobData.job }}
-            sourceDocument="Job"
-            sourceDocumentId={jobData.job.id ?? ""}
-            writeBucket="job"
-            writeBucketPermission="production"
-          />
+
+          <Suspense
+            fallback={
+              <Card className="flex-grow">
+                <CardHeader>
+                  <CardTitle>Files</CardTitle>
+                </CardHeader>
+                <CardContent className=""></CardContent>
+              </Card>
+            }
+          >
+            <Await resolve={jobData.files}>
+              {(files) => (
+                <Documents
+                  files={files}
+                  modelUpload={{ ...jobData.job }}
+                  sourceDocument="Job"
+                  sourceDocumentId={jobData.job.id ?? ""}
+                  writeBucket="job"
+                  writeBucketPermission="production"
+                />
+              )}
+            </Await>
+          </Suspense>
         </div>
       )}
     </VStack>

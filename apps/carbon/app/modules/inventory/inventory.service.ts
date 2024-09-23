@@ -1,14 +1,111 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  inventoryAdjustmentValidator,
   receiptValidator,
+  shelfValidator,
   shippingMethodValidator,
 } from "./inventory.models";
+
+export async function insertManualInventoryAdjustment(
+  client: SupabaseClient<Database>,
+  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const { adjustmentType, ...rest } = inventoryAdjustment;
+  const data = {
+    ...rest,
+    entryType:
+      adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType, // This will be overwritten below
+  };
+
+  // Look up the current quantity for this itemId, locationId, and shelfId
+  const query = client
+    .from("itemInventory")
+    .select("quantityOnHand")
+    .eq("itemId", data.itemId)
+    .eq("locationId", data.locationId);
+
+  if (data.shelfId) {
+    query.eq("shelfId", data.shelfId);
+  }
+
+  const { data: currentQuantity, error: quantityError } =
+    await query.maybeSingle();
+  const currentQuantityOnHand = currentQuantity?.quantityOnHand ?? 0;
+
+  if (quantityError) {
+    return { error: "Failed to fetch current quantity" };
+  }
+
+  if (adjustmentType === "Set Quantity" && currentQuantity) {
+    const quantityDifference = data.quantity - currentQuantityOnHand;
+    if (quantityDifference > 0) {
+      data.entryType = "Positive Adjmt.";
+      data.quantity = quantityDifference;
+    } else if (quantityDifference < 0) {
+      data.entryType = "Negative Adjmt.";
+      data.quantity = Math.abs(quantityDifference);
+    } else {
+      // No change in quantity, we can return early
+      return { data: null };
+    }
+  }
+
+  // Check if it's a negative adjustment and if the quantity is sufficient
+  if (data.entryType === "Negative Adjmt.") {
+    if (data.quantity > currentQuantityOnHand) {
+      return {
+        error: "Insufficient quantity for negative adjustment",
+      };
+    }
+  }
+
+  return client.from("itemLedger").insert([data]).select("*").single();
+}
+
+export async function getItemLedger(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string,
+  sortDescending: boolean = false,
+  page: number = 1
+) {
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
+
+  let query = client
+    .from("itemLedger")
+    .select("*, shelf(name)", { count: "exact" })
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .order("createdAt", { ascending: !sortDescending })
+    .range(offset, offset + pageSize - 1);
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    return { error };
+  }
+
+  return {
+    data,
+    count,
+    page,
+    pageSize,
+    hasMore: count !== null && offset + pageSize < count,
+  };
+}
 
 export async function deleteReceipt(
   client: SupabaseClient<Database>,
@@ -25,6 +122,26 @@ export async function deleteShippingMethod(
     .from("shippingMethod")
     .update({ active: false })
     .eq("id", shippingMethodId);
+}
+
+export async function getInventoryItems(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client.rpc("get_item_quantities", { location_id: locationId });
+
+  if (args?.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args);
+
+  return query;
 }
 
 export async function getReceipts(
@@ -66,6 +183,32 @@ export async function getReceiptLines(
   receiptId: string
 ) {
   return client.from("receiptLine").select("*").eq("receiptId", receiptId);
+}
+
+export async function getShelvesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("shelf")
+    .select("id, name")
+    .eq("active", true)
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function getShelvesListForLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("shelf")
+    .select("id, name")
+    .eq("active", true)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .order("name");
 }
 
 export async function getShippingMethod(
@@ -156,6 +299,41 @@ export async function upsertReceipt(
       updatedAt: today(getLocalTimeZone()).toString(),
     })
     .eq("id", receipt.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertShelf(
+  client: SupabaseClient<Database>,
+  shelf:
+    | (Omit<z.infer<typeof shelfValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof shelfValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in shelf) {
+    return client
+      .from("shelf")
+      .insert({
+        ...shelf,
+        id: nanoid(),
+      })
+      .select("id")
+      .single();
+  }
+  return client
+    .from("shelf")
+    .update({
+      ...sanitize(shelf),
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("id", shelf.id)
     .select("id")
     .single();
 }

@@ -7,25 +7,30 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
     name: "Manage",
     routes: [
       {
-        name: "Receipts",
-        to: path.to.receipts,
+        name: "Inventory",
+        to: path.to.inventory,
+        role: "employee",
       },
+      // {
+      //   name: "Receipts",
+      //   to: path.to.receipts,
+      // },
       // {
       //   name: "Shipments",
       //   to: path.to.shipments,
       // },
     ],
   },
-  {
-    name: "Configure",
-    routes: [
-      {
-        name: "Shipping Methods",
-        to: path.to.shippingMethods,
-        role: "employee",
-      },
-    ],
-  },
+  // {
+  //   name: "Configure",
+  //   routes: [
+  //     {
+  //       name: "Shipping Methods",
+  //       to: path.to.shippingMethods,
+  //       role: "employee",
+  //     },
+  //   ],
+  // },
 ];
 
 export default function useAccountingSubmodules() {

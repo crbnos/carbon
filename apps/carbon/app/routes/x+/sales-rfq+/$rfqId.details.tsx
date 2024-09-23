@@ -93,6 +93,7 @@ export default function SalesRFQDetailsRoute() {
 
   const initialValues = {
     customerContactId: rfqData?.rfqSummary?.customerContactId ?? "",
+    customerLocationId: rfqData?.rfqSummary?.customerLocationId ?? "",
     customerId: rfqData?.rfqSummary?.customerId ?? "",
     customerReference: rfqData?.rfqSummary?.customerReference ?? "",
     expirationDate: rfqData?.rfqSummary?.expirationDate

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { months } from "~/modules/shared";
+import {
+  itemLedgerDocumentTypes,
+  itemLedgerTypes,
+} from "../inventory/inventory.models";
 
 export const accountTypes = [
   "Posting",
@@ -31,38 +35,6 @@ export const journalLineDocumentType = [
   "Credit Memo",
   "Blanket Order",
   "Return Order",
-] as const;
-
-const itemLedgerTypes = [
-  "Purchase",
-  "Sale",
-  "Positive Adjmt.",
-  "Negative Adjmt.",
-  "Transfer",
-  "Consumption",
-  "Output",
-  "Assembly Consumption",
-  "Assembly Output",
-] as const;
-
-const itemLedgerDocumentTypes = [
-  "Sales Shipment",
-  "Sales Invoice",
-  "Sales Return Receipt",
-  "Sales Credit Memo",
-  "Purchase Receipt",
-  "Purchase Invoice",
-  "Purchase Return Shipment",
-  "Purchase Credit Memo",
-  "Transfer Shipment",
-  "Transfer Receipt",
-  "Service Shipment",
-  "Service Invoice",
-  "Service Credit Memo",
-  "Posted Assembly",
-  "Inventory Receipt",
-  "Inventory Shipment",
-  "Direct Transfer",
 ] as const;
 
 export const incomeBalanceTypes = [
@@ -335,18 +307,6 @@ export const defaultIncomeAcountValidator = z.object({
   roundingAccount: z.string().min(1, {
     message: "Rounding account is required",
   }),
-});
-
-export const itemLedgerValidator = z.object({
-  postingDate: zfd.text(z.string().optional()),
-  entryType: z.enum(itemLedgerTypes),
-  documentType: z.union([z.enum(itemLedgerDocumentTypes), z.undefined()]),
-  documentId: z.string().optional(),
-  itemId: z.string().min(1, { message: "Item is required" }),
-  itemReadableId: z.string().optional(),
-  locationId: z.string().optional(),
-  shelfId: z.string().optional(),
-  quantity: z.number(),
 });
 
 export const paymentTermsCalculationMethod = [

@@ -9,6 +9,7 @@ const supabaseClient = getSupabaseServiceRole();
 const postTransactionSchema = z.object({
   documentId: z.string(),
   type: z.enum(["receipt", "purchase-invoice"]),
+  userId: z.string(),
 });
 
 export const postTransactionTask = task({
@@ -28,6 +29,7 @@ export const postTransactionTask = task({
           {
             body: {
               receiptId: payload.documentId,
+              userId: payload.userId,
             },
           }
         );
@@ -45,6 +47,7 @@ export const postTransactionTask = task({
           {
             body: {
               invoiceId: payload.documentId,
+              userId: payload.userId,
             },
           }
         );

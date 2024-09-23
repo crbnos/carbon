@@ -44,10 +44,11 @@ export const path = {
         ),
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
       services: `${api}/items/services`,
+
       shifts: (id: string) =>
         generatePath(`${api}/people/shifts?location=${id}`),
       shelves: (id: string) =>
-        generatePath(`${api}/items/shelf?locationId=${id}`),
+        generatePath(`${api}/inventory/shelves?locationId=${id}`),
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts?supplierId=${id}`),
       supplierLocations: (id: string) =>
@@ -351,7 +352,14 @@ export const path = {
     integration: (name: string) =>
       generatePath(`${x}/settings/integrations/${name}`),
     integrations: `${x}/settings/integrations`,
-    inventory: `${x}/inventory`,
+    inventory: `${x}/inventory/quantities`,
+    inventoryItem: (id: string) =>
+      generatePath(`${x}/inventory/quantities/${id}/details`),
+    inventoryItemActivity: (id: string) =>
+      generatePath(`${x}/inventory/quantities/${id}/activity`),
+    inventoryItemAdjustment: (id: string) =>
+      generatePath(`${x}/inventory/quantities/${id}/adjustment`),
+    inventoryRoot: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
     items: `${x}/items`,
     itemCostUpdate: (id: string) => generatePath(`${x}/items/cost/${id}`),
@@ -504,6 +512,7 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/new`),
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
+    newShelf: `${x}/inventory/shelves/new`,
     newShift: `${x}/people/shifts/new`,
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
     newService: `${x}/service/new`,
@@ -681,6 +690,8 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/payment`),
     salesOrderRelease: (id: string) =>
       generatePath(`${x}/sales-order/${id}/release`),
+    salesOrderStatus: (id: string) =>
+      generatePath(`${x}/sales-order/${id}/status`),
     salesOrders: `${x}/sales/orders`,
     salesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}`),
     salesRfqConvert: (id: string) =>
@@ -709,6 +720,7 @@ export const path = {
       generatePath(`${x}/service/${id}/suppliers`),
     settings: `${x}/settings`,
     sequences: `${x}/settings/sequences`,
+    shelf: (id: string) => generatePath(`${x}/inventory/shelves/${id}`),
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,
     shipments: `${x}/inventory/shipments`,

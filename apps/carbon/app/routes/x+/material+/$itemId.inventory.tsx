@@ -1,13 +1,16 @@
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
+import { InventoryDetails } from "~/modules/inventory";
+import type { Material, UnitOfMeasureListItem } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -62,9 +65,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [materialInventory, shelves] = await Promise.all([
+  let [materialInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (materialInventory.error || !materialInventory.data) {
@@ -103,20 +105,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
     companyId,
     locationId
   );
-  if (quantities.error || !quantities.data) {
+  if (quantities.error) {
     throw redirect(
       path.to.items,
       await flash(
@@ -126,10 +121,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load material quantities")
+      )
+    );
+  }
+
   return json({
     materialInventory: materialInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
+    itemId,
   });
 }
 
@@ -175,11 +187,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MaterialInventoryRoute() {
-  const sharedMaterialsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.materialRoot
-  );
-  const { materialInventory, quantities, shelves } =
+  const sharedMaterialsData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.materialRoot);
+
+  const { materialInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
+
+  const materialData = useRouteData<{
+    materialSummary: Material;
+  }>(path.to.material(itemId));
+  if (!materialData) throw new Error("Could not find material data");
+  const itemUnitOfMeasureCode =
+    materialData?.materialSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...materialInventory,
@@ -187,13 +209,23 @@ export default function MaterialInventoryRoute() {
     ...getCustomFields(materialInventory.customFields ?? {}),
   };
   return (
-    <PickMethodForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-      quantities={quantities}
-      locations={sharedMaterialsData?.locations ?? []}
-      shelves={shelves}
-      type="Material"
-    />
+    <VStack spacing={2}>
+      <PickMethodForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        locations={sharedMaterialsData?.locations ?? []}
+        shelves={sharedMaterialsData?.shelves ?? []}
+        type="Part"
+      />
+      <InventoryDetails
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
+        locations={sharedMaterialsData?.locations ?? []}
+        pickMethod={initialValues}
+        quantities={quantities}
+        shelves={sharedMaterialsData?.shelves ?? []}
+        unitOfMeasures={sharedMaterialsData?.unitOfMeasures ?? []}
+      />
+    </VStack>
   );
 }

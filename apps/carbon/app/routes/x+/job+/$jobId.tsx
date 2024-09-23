@@ -54,11 +54,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const files = await getJobDocuments(client, companyId, job.data);
-
   return defer({
     job: job.data,
-    files,
+    files: getJobDocuments(client, companyId, job.data),
     method: getJobMethodTree(client, jobId), // returns a promise
   });
 }

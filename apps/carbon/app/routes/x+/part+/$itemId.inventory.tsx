@@ -4,11 +4,13 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
+import { InventoryDetails } from "~/modules/inventory";
+import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -63,9 +65,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [partInventory, shelves] = await Promise.all([
+  let [partInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (partInventory.error || !partInventory.data) {
@@ -99,30 +100,40 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
     companyId,
     locationId
   );
-  if (quantities.error || !quantities.data) {
+  if (quantities.error) {
     throw redirect(
       path.to.items,
       await flash(request, error(quantities, "Failed to load part quantities"))
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load part quantities")
+      )
+    );
+  }
+
   return json({
     partInventory: partInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
+    itemId,
   });
 }
 
@@ -168,10 +179,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartInventoryRoute() {
-  const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
-    path.to.partRoot
-  );
-  const { partInventory, quantities, shelves } = useLoaderData<typeof loader>();
+  const sharedPartsData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.partRoot);
+
+  const { partInventory, itemShelfQuantities, quantities, itemId } =
+    useLoaderData<typeof loader>();
+
+  const partData = useRouteData<{
+    partSummary: PartSummary;
+  }>(path.to.part(itemId));
+  if (!partData) throw new Error("Could not find part data");
+  const itemUnitOfMeasureCode = partData?.partSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...partInventory,
@@ -183,10 +204,18 @@ export default function PartInventoryRoute() {
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
-        quantities={quantities}
         locations={sharedPartsData?.locations ?? []}
-        shelves={shelves}
+        shelves={sharedPartsData?.shelves ?? []}
         type="Part"
+      />
+      <InventoryDetails
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
+        locations={sharedPartsData?.locations ?? []}
+        pickMethod={initialValues}
+        quantities={quantities}
+        shelves={sharedPartsData?.shelves ?? []}
+        unitOfMeasures={sharedPartsData?.unitOfMeasures ?? []}
       />
     </VStack>
   );

@@ -1,7 +1,13 @@
 import { Button, HStack, Heading } from "@carbon/react";
 
-import { Link, useParams } from "@remix-run/react";
-import { LuEye, LuFile, LuTruck, LuXCircle } from "react-icons/lu";
+import { Form, Link, useParams } from "@remix-run/react";
+import {
+  LuCheckCheck,
+  LuEye,
+  LuFile,
+  LuTruck,
+  LuXCircle,
+} from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 
@@ -32,7 +38,7 @@ const SalesOrderHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
         <HStack className="w-full justify-between">
           <HStack>
             <Link to={path.to.salesOrderDetails(orderId)}>
@@ -61,13 +67,33 @@ const SalesOrderHeader = () => {
                 Preview
               </a>
             </Button>
-            <Button variant="secondary" isDisabled leftIcon={<LuTruck />}>
-              Ship
-            </Button>
+            {routeData?.salesOrder?.status === "Draft" && (
+              <>
+                <Form method="post" action={path.to.salesOrderStatus(orderId)}>
+                  <input type="hidden" name="status" value="Confirmed" />
+                  <Button
+                    isDisabled={!permissions.can("update", "sales")}
+                    leftIcon={<LuCheckCheck />}
+                    type="submit"
+                    variant="secondary"
+                  >
+                    Confirm
+                  </Button>
+                </Form>
+              </>
+            )}
+            {routeData?.salesOrder?.status !== "Draft" && (
+              <>
+                <Button variant="secondary" isDisabled leftIcon={<LuTruck />}>
+                  Ship
+                </Button>
 
-            <Button variant="secondary" isDisabled leftIcon={<LuFile />}>
-              Invoice
-            </Button>
+                <Button variant="secondary" isDisabled leftIcon={<LuFile />}>
+                  Invoice
+                </Button>
+              </>
+            )}
+
             <Button variant="secondary" isDisabled leftIcon={<LuXCircle />}>
               Cancel
             </Button>

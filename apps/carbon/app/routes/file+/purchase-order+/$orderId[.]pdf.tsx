@@ -36,23 +36,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    console.log(company.error);
+    console.error(company.error);
   }
 
   if (purchaseOrder.error) {
-    console.log(purchaseOrder.error);
+    console.error(purchaseOrder.error);
   }
 
   if (purchaseOrderLines.error) {
-    console.log(purchaseOrderLines.error);
+    console.error(purchaseOrderLines.error);
   }
 
   if (purchaseOrderLocations.error) {
-    console.log(purchaseOrderLocations.error);
+    console.error(purchaseOrderLocations.error);
   }
 
   if (terms.error) {
-    console.log(terms.error);
+    console.error(terms.error);
   }
 
   if (

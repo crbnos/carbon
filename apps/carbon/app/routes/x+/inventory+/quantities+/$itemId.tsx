@@ -1,0 +1,131 @@
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ScrollArea,
+  VStack,
+} from "@carbon/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
+import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
+import { getItem, getPickMethod, upsertPickMethod } from "~/modules/items";
+import { getLocationsList } from "~/modules/resources";
+import { getUserDefaults } from "~/modules/users/users.server";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import { notFound } from "~/utils/http";
+import { path } from "~/utils/path";
+import { error } from "~/utils/result";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId, userId } = await requirePermissions(request, {
+    view: "inventory",
+  });
+
+  const { itemId } = params;
+  if (!itemId) throw notFound("itemId not found");
+
+  const url = new URL(request.url);
+  const searchParams = new URLSearchParams(url.search);
+  let locationId = searchParams.get("location");
+
+  if (!locationId) {
+    const userDefaults = await getUserDefaults(client, userId, companyId);
+    if (userDefaults.error) {
+      throw redirect(
+        path.to.inventory,
+        await flash(
+          request,
+          error(userDefaults.error, "Failed to load default location")
+        )
+      );
+    }
+
+    locationId = userDefaults.data?.locationId ?? null;
+  }
+
+  if (!locationId) {
+    const locations = await getLocationsList(client, companyId);
+    if (locations.error || !locations.data?.length) {
+      throw redirect(
+        path.to.inventory,
+        await flash(
+          request,
+          error(locations.error, "Failed to load any locations")
+        )
+      );
+    }
+    locationId = locations.data?.[0].id as string;
+  }
+
+  let [pickMethod] = await Promise.all([
+    getPickMethod(client, itemId, companyId, locationId),
+  ]);
+
+  if (pickMethod.error || !pickMethod.data) {
+    const insertPickMethod = await upsertPickMethod(client, {
+      itemId,
+      companyId,
+      locationId,
+      customFields: {},
+      createdBy: userId,
+    });
+
+    if (insertPickMethod.error) {
+      throw redirect(
+        path.to.inventory,
+        await flash(
+          request,
+          error(insertPickMethod.error, "Failed to insert part inventory")
+        )
+      );
+    }
+
+    pickMethod = await getPickMethod(client, itemId, companyId, locationId);
+    if (pickMethod.error || !pickMethod.data) {
+      throw redirect(
+        path.to.inventory,
+        await flash(
+          request,
+          error(pickMethod.error, "Failed to load part inventory")
+        )
+      );
+    }
+  }
+
+  const item = await getItem(client, itemId);
+  if (item.error || !item.data) {
+    throw redirect(
+      path.to.inventory,
+      await flash(request, error(item.error, "Failed to load item"))
+    );
+  }
+
+  return json({
+    pickMethod: pickMethod.data,
+    item: item.data,
+  });
+}
+
+export default function ItemInventoryRoute() {
+  const { item } = useLoaderData<typeof loader>();
+
+  return (
+    <>
+      <ResizableHandle withHandle />
+      <ResizablePanel
+        defaultSize={50}
+        maxSize={70}
+        minSize={25}
+        className="bg-background"
+      >
+        <ScrollArea className="h-[calc(100vh-49px)]">
+          <InventoryItemHeader itemReadableId={item.readableId} />
+          <VStack className="p-2">
+            <Outlet />
+          </VStack>
+        </ScrollArea>
+      </ResizablePanel>
+    </>
+  );
+}

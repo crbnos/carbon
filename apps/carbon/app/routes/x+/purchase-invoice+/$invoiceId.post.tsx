@@ -10,7 +10,7 @@ import { error } from "~/utils/result";
 export const config = { runtime: "nodejs" };
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "invoicing",
   });
 
@@ -37,6 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   await tasks.trigger<typeof postTransactionTask>("post-transactions", {
     type: "purchase-invoice",
     documentId: invoiceId,
+    userId,
   });
 
   throw redirect(path.to.purchaseInvoices);

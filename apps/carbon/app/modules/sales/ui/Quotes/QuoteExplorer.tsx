@@ -43,6 +43,7 @@ type QuoteExplorerProps = {
 };
 
 export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
+  const { defaults } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const quoteData = useRouteData<{ quote: Quotation; lines: QuotationLine[] }>(
@@ -57,6 +58,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     estimatorId: userId,
     itemId: "",
     itemReadableId: "",
+    locationId: quoteData?.quote?.locationId ?? defaults.locationId ?? "",
     methodType: "Make" as const,
     status: "Draft" as const,
     quantity: [1],

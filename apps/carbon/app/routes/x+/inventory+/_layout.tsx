@@ -1,8 +1,11 @@
 import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
-import type { MetaFunction } from "@vercel/remix";
+import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { useInventorySubmodules } from "~/modules/inventory";
+import { getShelvesList, useInventorySubmodules } from "~/modules/inventory";
+import { getUnitOfMeasuresList } from "~/modules/items";
+import { getLocationsList } from "~/modules/resources";
+import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -12,11 +15,29 @@ export const meta: MetaFunction = () => {
 
 export const handle: Handle = {
   breadcrumb: "Inventory",
-  to: path.to.receipts,
+  to: path.to.inventory,
   module: "inventory",
 };
 
-export default function UsersRoute() {
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "parts",
+  });
+
+  const [unitOfMeasures, locations, shelves] = await Promise.all([
+    getUnitOfMeasuresList(client, companyId),
+    getLocationsList(client, companyId),
+    getShelvesList(client, companyId),
+  ]);
+
+  return {
+    locations: locations?.data ?? [],
+    shelves: shelves?.data ?? [],
+    unitOfMeasures: unitOfMeasures?.data ?? [],
+  };
+}
+
+export default function InventoryRoute() {
   const { groups } = useInventorySubmodules();
 
   return (

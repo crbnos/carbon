@@ -1,9 +1,15 @@
 import { AiOutlinePartition } from "react-icons/ai";
-import { CiFries } from "react-icons/ci";
-import { GiIBeam, GiWoodBeam } from "react-icons/gi";
-import { LuGrip, LuHammer, LuRuler, LuShapes } from "react-icons/lu";
+import { GiWoodBeam } from "react-icons/gi";
+import {
+  LuAtom,
+  LuGrip,
+  LuHammer,
+  LuHeadphones,
+  LuPizza,
+  LuRuler,
+  LuShapes,
+} from "react-icons/lu";
 import { PiPiggyBank } from "react-icons/pi";
-import { RiCustomerServiceLine } from "react-icons/ri";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -20,7 +26,7 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Materials",
         to: path.to.materials,
-        icon: <GiIBeam />,
+        icon: <LuAtom />,
       },
       {
         name: "Tools",
@@ -35,12 +41,12 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Consumables",
         to: path.to.consumables,
-        icon: <CiFries />,
+        icon: <LuPizza />,
       },
       {
         name: "Services",
         to: path.to.services,
-        icon: <RiCustomerServiceLine />,
+        icon: <LuHeadphones />,
       },
       // {
       //   name: "Routing",

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
+import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
@@ -15,21 +16,27 @@ import {
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
+const payloadValidator = z.object({
+  receiptId: z.string(),
+  userId: z.string(),
+});
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const { receiptId } = await req.json();
+  const payload = await req.json();
   const today = format(new Date(), "yyyy-MM-dd");
 
-  console.log({
-    function: "post-receipt",
-    receiptId,
-  });
-
   try {
-    if (!receiptId) throw new Error("Payload is missing receiptId");
+    const { receiptId, userId } = payloadValidator.parse(payload);
+
+    console.log({
+      function: "post-receipt",
+      receiptId,
+      userId,
+    });
 
     const client = getSupabaseServiceRole(req.headers.get("Authorization"));
 
@@ -612,6 +619,7 @@ serve(async (req: Request) => {
               documentType: "Purchase Receipt",
               documentId: receipt.data?.id ?? undefined,
               externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
+              createdBy: userId,
               companyId,
             });
           }
@@ -749,9 +757,12 @@ serve(async (req: Request) => {
     );
   } catch (err) {
     console.error(err);
-    if (receiptId) {
+    if ("receiptId" in payload) {
       const client = getSupabaseServiceRole(req.headers.get("Authorization"));
-      client.from("receipt").update({ status: "Draft" }).eq("id", receiptId);
+      await client
+        .from("receipt")
+        .update({ status: "Draft" })
+        .eq("id", payload.receiptId);
     }
     return new Response(JSON.stringify(err), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

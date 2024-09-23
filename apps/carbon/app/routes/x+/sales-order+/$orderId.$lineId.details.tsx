@@ -111,7 +111,7 @@ export default function EditSalesOrderLineRoute() {
     assetId: line?.assetId ?? "",
     description: line?.description ?? "",
     itemReadableId: line?.itemReadableId ?? "",
-    locationId: line?.locationId ?? undefined,
+    locationId: line?.locationId ?? "",
     methodType: line?.methodType ?? "Make",
     promisedDate: line?.promisedDate ?? undefined,
     saleQuantity: line?.saleQuantity ?? 1,

@@ -21,13 +21,12 @@ import {
 } from "@carbon/react";
 
 import { ValidatedForm } from "@carbon/form";
-import { useFetcher, useParams } from "@remix-run/react";
-import { useEffect, useMemo, useState } from "react";
+import { useParams } from "@remix-run/react";
+import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import {
-  ComboboxControlled,
   CustomFormFields,
   DatePicker,
   Hidden,
@@ -37,12 +36,13 @@ import {
   Number,
   NumberControlled,
   SelectControlled,
+  Shelf,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useSupabase } from "~/lib/supabase";
-import type { getShelvesList } from "~/modules/items";
+
 import type {
   SalesOrder,
   SalesOrderLine,
@@ -66,7 +66,7 @@ const SalesOrderLineForm = ({
 }: SalesOrderLineFormProps) => {
   const permissions = usePermissions();
   const { supabase } = useSupabase();
-  const { company, defaults } = useUser();
+  const { company } = useUser();
   const { orderId } = useParams();
 
   if (!orderId) throw new Error("orderId not found");
@@ -80,7 +80,7 @@ const SalesOrderLineForm = ({
   );
 
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
-  const [locationId, setLocationId] = useState(defaults.locationId ?? "");
+  const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId?: string;
@@ -100,24 +100,6 @@ const SalesOrderLineForm = ({
     shelfId: initialValues.shelfId ?? "",
     modelUploadId: initialValues.modelUploadId ?? null,
   });
-
-  const shelfFetcher = useFetcher<Awaited<ReturnType<typeof getShelvesList>>>();
-
-  useEffect(() => {
-    if (locationId) {
-      shelfFetcher.load(path.to.api.shelves(locationId));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationId]);
-
-  const shelfOptions = useMemo(
-    () =>
-      shelfFetcher.data?.data?.map((shelf) => ({
-        label: shelf.id,
-        value: shelf.id,
-      })) ?? [],
-    [shelfFetcher.data]
-  );
 
   const isEditing = initialValues.id !== undefined;
 
@@ -363,16 +345,16 @@ const SalesOrderLineForm = ({
                           "Fixture",
                           "Consumable",
                         ].includes(lineType) && (
-                          <ComboboxControlled
+                          <Shelf
                             name="shelfId"
                             label="Shelf"
-                            options={shelfOptions}
-                            value={itemData.shelfId}
+                            locationId={locationId}
+                            value={itemData.shelfId ?? undefined}
                             onChange={(newValue) => {
                               if (newValue) {
                                 setItemData((d) => ({
                                   ...d,
-                                  shelfId: newValue?.value as string,
+                                  shelfId: newValue?.id,
                                 }));
                               }
                             }}

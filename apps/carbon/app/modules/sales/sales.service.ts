@@ -26,6 +26,7 @@ import type {
   salesOrderLineValidator,
   salesOrderPaymentValidator,
   salesOrderShipmentValidator,
+  salesOrderStatusType,
   salesOrderValidator,
   salesRfqLineValidator,
   salesRFQStatusType,
@@ -1847,6 +1848,18 @@ export async function updateSalesOrderFavorite(
       .from("salesOrderFavorite")
       .insert({ salesOrderId: id, userId: userId });
   }
+}
+
+export async function updateSalesOrderStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof salesOrderStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  return client.from("salesOrder").update(update).eq("id", update.id);
 }
 
 export async function upsertSalesOrder(

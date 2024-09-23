@@ -4,11 +4,13 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
+import { InventoryDetails } from "~/modules/inventory";
+import type { Fixture, UnitOfMeasureListItem } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -63,9 +65,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [fixtureInventory, shelves] = await Promise.all([
+  let [fixtureInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (fixtureInventory.error || !fixtureInventory.data) {
@@ -104,20 +105,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
     companyId,
     locationId
   );
-  if (quantities.error || !quantities.data) {
+  if (quantities.error) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(quantities, "Failed to load fixture quantities")
+      )
+    );
+  }
+
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
     throw redirect(
       path.to.items,
       await flash(
@@ -129,8 +139,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     fixtureInventory: fixtureInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
+    itemId,
   });
 }
 
@@ -176,11 +187,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function FixtureInventoryRoute() {
-  const sharedFixturesData = useRouteData<{ locations: ListItem[] }>(
-    path.to.fixtureRoot
-  );
-  const { fixtureInventory, quantities, shelves } =
+  const sharedFixturesData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.fixtureRoot);
+
+  const { fixtureInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
+
+  const fixtureData = useRouteData<{
+    fixtureSummary: Fixture;
+  }>(path.to.fixture(itemId));
+  if (!fixtureData) throw new Error("Could not find fixture data");
+  const itemUnitOfMeasureCode = fixtureData?.fixtureSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...fixtureInventory,
@@ -192,10 +212,18 @@ export default function FixtureInventoryRoute() {
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
-        quantities={quantities}
         locations={sharedFixturesData?.locations ?? []}
-        shelves={shelves}
+        shelves={sharedFixturesData?.shelves ?? []}
         type="Fixture"
+      />
+      <InventoryDetails
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
+        locations={sharedFixturesData?.locations ?? []}
+        pickMethod={initialValues}
+        quantities={quantities}
+        shelves={sharedFixturesData?.shelves ?? []}
+        unitOfMeasures={sharedFixturesData?.unitOfMeasures ?? []}
       />
     </VStack>
   );

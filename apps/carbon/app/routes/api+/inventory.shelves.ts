@@ -1,10 +1,10 @@
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import { getShelvesList } from "~/modules/items";
+import { getShelvesListForLocation } from "~/modules/inventory";
 import { requirePermissions } from "~/services/auth/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "parts",
   });
 
@@ -17,5 +17,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  return json(await getShelvesList(client, locationId));
+  return json(await getShelvesListForLocation(client, companyId, locationId));
 }

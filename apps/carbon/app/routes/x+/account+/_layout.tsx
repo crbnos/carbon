@@ -22,7 +22,7 @@ export default function AccountRoute() {
   return (
     <div className="grid w-full h-full grid-cols-[auto_1fr]">
       <ContentSidebar links={links} />
-      <VStack spacing={0} className="h-full p-4">
+      <VStack spacing={0} className="h-full p-2">
         <Outlet />
       </VStack>
     </div>

@@ -679,12 +679,12 @@ const Table = <T extends object>({
                                     <span className="pl-2">
                                       {sorted ? (
                                         sorted === -1 ? (
-                                          <LuArrowUp
+                                          <LuArrowDown
                                             aria-label="sorted descending"
                                             className="text-primary"
                                           />
                                         ) : (
-                                          <LuArrowDown
+                                          <LuArrowUp
                                             aria-label="sorted ascending"
                                             className="text-primary"
                                           />

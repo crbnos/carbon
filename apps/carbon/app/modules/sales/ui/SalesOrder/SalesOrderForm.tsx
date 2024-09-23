@@ -19,6 +19,7 @@ import {
   DatePicker,
   Hidden,
   Input,
+  Location,
   Select,
   Submit,
 } from "~/components/Form";
@@ -107,7 +108,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                   isReadOnly={isCustomer}
                 />
               )}
-
+              <Location name="locationId" label="Sales Location" />
               <CustomFormFields table="salesOrder" />
             </div>
           </VStack>

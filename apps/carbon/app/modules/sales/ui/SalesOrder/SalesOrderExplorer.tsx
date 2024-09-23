@@ -28,6 +28,7 @@ import {
   usePermissions,
   useRealtime,
   useRouteData,
+  useUser,
 } from "~/hooks";
 import { path } from "~/utils/path";
 import type { SalesOrder, SalesOrderLine } from "../../types";
@@ -35,6 +36,7 @@ import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
 import SalesOrderLineForm from "./SalesOrderLineForm";
 
 export default function SalesOrderExplorer() {
+  const { defaults } = useUser();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
   const salesOrderData = useRouteData<{
@@ -49,6 +51,8 @@ export default function SalesOrderExplorer() {
     saleQuantity: 1,
     unitPrice: 0,
     addOnCost: 0,
+    locationId:
+      salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
   };
 
   const newSalesOrderLineDisclosure = useDisclosure();

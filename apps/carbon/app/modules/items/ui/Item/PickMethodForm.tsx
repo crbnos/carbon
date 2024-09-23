@@ -9,43 +9,37 @@ import {
   Combobox,
   HStack,
 } from "@carbon/react";
-import { useRevalidator } from "@remix-run/react";
 import type { z } from "zod";
 import {
   CreatableCombobox,
   CustomFormFields,
   Hidden,
-  Number,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
-import type { ItemQuantities } from "~/modules/items";
+import { usePermissions } from "~/hooks";
 import { pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
-  quantities: ItemQuantities;
   locations: ListItem[];
-  shelves: string[];
+  shelves: ListItem[];
   type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
 };
 
 const PickMethodForm = ({
   initialValues,
   locations,
-  quantities,
   shelves,
   type,
 }: PickMethodFormProps) => {
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
-  const user = useUser();
-  const revalidator = useRevalidator();
 
-  const shelfOptions = shelves.map((shelf) => ({ value: shelf, label: shelf }));
+  const shelfOptions = shelves.map((shelf) => ({
+    value: shelf.id,
+    label: shelf.name,
+  }));
   const locationOptions = locations.map((location) => ({
     label: location.name,
     value: location.id,
@@ -56,7 +50,7 @@ const PickMethodForm = ({
       <ValidatedForm
         method="post"
         validator={pickMethodValidator}
-        defaultValues={{ ...quantities, ...initialValues }}
+        defaultValues={initialValues}
       >
         <HStack className="w-full justify-between items-start">
           <CardHeader>
@@ -88,42 +82,9 @@ const PickMethodForm = ({
               name="defaultShelfId"
               label="Default Shelf"
               options={shelfOptions}
-              onCreateOption={async (option) => {
-                const response = await supabase?.from("shelf").insert({
-                  id: option,
-                  companyId: user.company.id,
-                  locationId: initialValues.locationId,
-                  createdBy: user.id,
-                });
-                if (response && response.error === null)
-                  revalidator.revalidate();
-              }}
               className="w-full"
             />
 
-            <Number name="quantityOnHand" label="Quantity On Hand" isReadOnly />
-
-            <Number
-              name="quantityAvailable"
-              label="Quantity Available"
-              isReadOnly
-            />
-            <Number
-              name="quantityOnPurchaseOrder"
-              label="Quantity On Purchase Order"
-              isReadOnly
-            />
-
-            <Number
-              name="quantityOnProdOrder"
-              label="Quantity On Prod Order"
-              isReadOnly
-            />
-            <Number
-              name="quantityOnSalesOrder"
-              label="Quantity On Sales Order"
-              isReadOnly
-            />
             <CustomFormFields table="partInventory" />
           </div>
         </CardContent>

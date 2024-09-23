@@ -29,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await updateQuoteStatus(client, {
     id,
     status,
-    assignee: ["Draft", "Sent"].includes(status) ? null : undefined,
+    assignee: ["Closed"].includes(status) ? null : undefined,
     updatedBy: userId,
   });
   if (update.error) {

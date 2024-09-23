@@ -189,11 +189,7 @@ const PartProperties = () => {
           <MethodBadge
             key={method.locationId}
             type="Pick"
-            text={
-              method.defaultShelfId ??
-              locations.find((l) => l.id === method.locationId)?.name ??
-              ""
-            }
+            text={locations.find((l) => l.id === method.locationId)?.name ?? ""}
             to={path.to.partInventoryLocation(itemId, method.locationId)}
           />
         ))}

@@ -1,13 +1,16 @@
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
+import { InventoryDetails } from "~/modules/inventory";
+import type { Consumable, UnitOfMeasureListItem } from "~/modules/items";
 import {
   PickMethodForm,
   getItemQuantities,
+  getItemShelfQuantities,
   getPickMethod,
-  getShelvesList,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
@@ -62,9 +65,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [consumableInventory, shelves] = await Promise.all([
+  let [consumableInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
-    getShelvesList(client, locationId),
   ]);
 
   if (consumableInventory.error || !consumableInventory.data) {
@@ -106,20 +108,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  if (shelves.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(shelves.error, "Failed to load shelves"))
-    );
-  }
-
   const quantities = await getItemQuantities(
     client,
     itemId,
     companyId,
     locationId
   );
-  if (quantities.error || !quantities.data) {
+  if (quantities.error) {
     throw redirect(
       path.to.items,
       await flash(
@@ -129,10 +124,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+  if (itemShelfQuantities.error || !itemShelfQuantities.data) {
+    throw redirect(
+      path.to.items,
+      await flash(
+        request,
+        error(itemShelfQuantities, "Failed to load consumable quantities")
+      )
+    );
+  }
+
   return json({
     consumableInventory: consumableInventory.data,
+    itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
-    shelves: shelves.data.map((s) => s.id),
+    itemId,
   });
 }
 
@@ -178,11 +190,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ConsumableInventoryRoute() {
-  const sharedConsumablesData = useRouteData<{ locations: ListItem[] }>(
-    path.to.consumableRoot
-  );
-  const { consumableInventory, quantities, shelves } =
+  const sharedConsumablesData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+    unitOfMeasures: UnitOfMeasureListItem[];
+  }>(path.to.consumableRoot);
+
+  const { consumableInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
+
+  const consumableData = useRouteData<{
+    consumableSummary: Consumable;
+  }>(path.to.consumable(itemId));
+  if (!consumableData) throw new Error("Could not find consumable data");
+  const itemUnitOfMeasureCode =
+    consumableData?.consumableSummary?.unitOfMeasureCode;
 
   const initialValues = {
     ...consumableInventory,
@@ -190,13 +212,23 @@ export default function ConsumableInventoryRoute() {
     ...getCustomFields(consumableInventory.customFields ?? {}),
   };
   return (
-    <PickMethodForm
-      key={initialValues.itemId}
-      initialValues={initialValues}
-      quantities={quantities}
-      locations={sharedConsumablesData?.locations ?? []}
-      shelves={shelves}
-      type="Consumable"
-    />
+    <VStack spacing={2}>
+      <PickMethodForm
+        key={initialValues.itemId}
+        initialValues={initialValues}
+        locations={sharedConsumablesData?.locations ?? []}
+        shelves={sharedConsumablesData?.shelves ?? []}
+        type="Part"
+      />
+      <InventoryDetails
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
+        locations={sharedConsumablesData?.locations ?? []}
+        pickMethod={initialValues}
+        quantities={quantities}
+        shelves={sharedConsumablesData?.shelves ?? []}
+        unitOfMeasures={sharedConsumablesData?.unitOfMeasures ?? []}
+      />
+    </VStack>
   );
 }

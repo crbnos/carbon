@@ -53,6 +53,7 @@ import RichText from "./RichText";
 import Sequence from "./Sequence";
 import SequenceOrCustomId from "./SequenceOrCustomId";
 import Service from "./Service";
+import Shelf from "./Shelf";
 import Shift from "./Shift";
 import ShippingMethod from "./ShippingMethod";
 import StandardFactor from "./StandardFactor";
@@ -120,6 +121,7 @@ export {
   Sequence,
   SequenceOrCustomId,
   Service,
+  Shelf,
   Shift,
   ShippingMethod,
   StandardFactor,

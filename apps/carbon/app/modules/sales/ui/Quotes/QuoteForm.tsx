@@ -88,7 +88,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
               />
               <Employee name="salesPersonId" label="Sales Person" />
               <Employee name="estimatorId" label="Estimator" />
-              <Location name="locationId" label="Location" />
+              <Location name="locationId" label="Quote Location" />
 
               <DatePicker
                 name="dueDate"

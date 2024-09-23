@@ -1348,13 +1348,10 @@ serve(async (req: Request) => {
           quoteMethodTree,
           (node: QuoteMethodTreeItem) => {
             if (node.data.itemId && node.data.methodType === "Make") {
-              console.log(`Adding item ID: ${node.data.itemId}`);
               madeItemIds.push(node.data.itemId);
             }
           }
         );
-
-        console.log({ madeItemIds });
 
         const makeMethods = await client
           .from("makeMethod")

@@ -2,7 +2,8 @@ import { validationError, validator } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import type { SalesOrderLineType } from "~/modules/sales";
+import { useRouteData, useUser } from "~/hooks";
+import type { SalesOrder, SalesOrderLineType } from "~/modules/sales";
 import {
   SalesOrderLineForm,
   salesOrderLineValidator,
@@ -58,9 +59,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function NewSalesOrderLineRoute() {
+  const { defaults } = useUser();
   const { orderId } = useParams();
-
-  if (!orderId) throw new Error("Could not find sales order id");
+  if (!orderId) throw new Error("Could not find orderId");
+  const salesOrderData = useRouteData<{
+    salesOrder: SalesOrder;
+  }>(path.to.salesOrder(orderId));
 
   const initialValues = {
     salesOrderId: orderId,
@@ -71,6 +75,8 @@ export default function NewSalesOrderLineRoute() {
     shelfId: "",
     unitOfMeasureCode: "",
     unitPrice: 0,
+    locationId:
+      salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
   };
 
   return <SalesOrderLineForm initialValues={initialValues} />;

@@ -146,12 +146,14 @@ export async function createEmployeeAccount(
     firstName,
     lastName,
     employeeType,
+    locationId,
     companyId,
   }: {
     email: string;
     firstName: string;
     lastName: string;
     employeeType: string;
+    locationId: string;
     companyId: string;
   }
 ): Promise<Result> {
@@ -208,6 +210,7 @@ export async function createEmployeeAccount(
       insertEmployeeJob(client, {
         id: userId,
         companyId,
+        locationId,
       }),
       addUserToCompany(client, { userId, companyId, role: "employee" }),
       setUserPermissions(supabaseAdmin, userId, permissions),

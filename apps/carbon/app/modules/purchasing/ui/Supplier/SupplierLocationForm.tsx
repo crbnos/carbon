@@ -1,12 +1,13 @@
 import {
   Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   HStack,
+  ModalDrawer,
+  ModalDrawerBody,
+  ModalDrawerContent,
+  ModalDrawerFooter,
+  ModalDrawerHeader,
+  ModalDrawerProvider,
+  ModalDrawerTitle,
   VStack,
   toast,
 } from "@carbon/react";
@@ -58,54 +59,58 @@ const SupplierLocationForm = ({
     : !permissions.can("create", "purchasing");
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) onClose?.();
-      }}
-    >
-      <DrawerContent>
-        <ValidatedForm
-          validator={supplierLocationValidator}
-          method="post"
-          action={
-            isEditing
-              ? path.to.supplierLocation(supplierId, initialValues.id!)
-              : path.to.newSupplierLocation(supplierId)
-          }
-          defaultValues={initialValues}
-          fetcher={fetcher}
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <DrawerTitle>{isEditing ? "Edit" : "New"} Location</DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            <Hidden name="id" />
-            <Hidden name="type" value={type} />
-            <Hidden name="addressId" />
-            <VStack spacing={4}>
-              <Input name="name" label="Name" />
-              <Input name="addressLine1" label="Address Line 1" />
-              <Input name="addressLine2" label="Address Line 2" />
-              <Input name="city" label="City" />
-              <Input name="state" label="State" />
-              <Input name="postalCode" label="Zip Code" />
-              {/* Country dropdown */}
-              <CustomFormFields table="supplierLocation" />
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <HStack>
-              <Submit isDisabled={isDisabled}>Save</Submit>
-              <Button size="md" variant="solid" onClick={onClose}>
-                Cancel
-              </Button>
-            </HStack>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+    <ModalDrawerProvider type={type}>
+      <ModalDrawer
+        open={open}
+        onOpenChange={(open) => {
+          if (!open) onClose?.();
+        }}
+      >
+        <ModalDrawerContent>
+          <ValidatedForm
+            validator={supplierLocationValidator}
+            method="post"
+            action={
+              isEditing
+                ? path.to.supplierLocation(supplierId, initialValues.id!)
+                : path.to.newSupplierLocation(supplierId)
+            }
+            defaultValues={initialValues}
+            fetcher={fetcher}
+            className="flex flex-col h-full"
+          >
+            <ModalDrawerHeader>
+              <ModalDrawerTitle>
+                {isEditing ? "Edit" : "New"} Location
+              </ModalDrawerTitle>
+            </ModalDrawerHeader>
+            <ModalDrawerBody>
+              <Hidden name="id" />
+              <Hidden name="type" value={type} />
+              <Hidden name="addressId" />
+              <VStack spacing={4}>
+                <Input name="name" label="Name" />
+                <Input name="addressLine1" label="Address Line 1" />
+                <Input name="addressLine2" label="Address Line 2" />
+                <Input name="city" label="City" />
+                <Input name="state" label="State" />
+                <Input name="postalCode" label="Zip Code" />
+                {/* Country dropdown */}
+                <CustomFormFields table="supplierLocation" />
+              </VStack>
+            </ModalDrawerBody>
+            <ModalDrawerFooter>
+              <HStack>
+                <Submit isDisabled={isDisabled}>Save</Submit>
+                <Button size="md" variant="solid" onClick={onClose}>
+                  Cancel
+                </Button>
+              </HStack>
+            </ModalDrawerFooter>
+          </ValidatedForm>
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
   );
 };
 

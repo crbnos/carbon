@@ -22,9 +22,11 @@ import {
   Hidden,
   Input,
   InputControlled,
+  Location,
   Select,
   Submit,
 } from "~/components/Form";
+import { useUser } from "~/hooks";
 import type { getEmployeeTypes, getInvitable } from "~/modules/users";
 import { createEmployeeValidator } from "~/modules/users";
 import type { Result } from "~/types";
@@ -35,6 +37,7 @@ type CreateEmployeeModalProps = {
 };
 
 const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
+  const { defaults } = useUser();
   const navigate = useNavigate();
   const formFetcher = useFetcher<Result>();
   const employeeTypeFetcher =
@@ -72,7 +75,9 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
             method="post"
             action={path.to.newEmployee}
             validator={createEmployeeValidator}
-            // @ts-ignore
+            defaultValues={{
+              locationId: defaults?.locationId ?? undefined,
+            }}
             fetcher={formFetcher}
             className="flex flex-col h-full"
           >
@@ -94,6 +99,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
                   options={employeeTypeOptions}
                   placeholder="Select Employee Type"
                 />
+                <Location name="locationId" label="Location" />
               </VStack>
               <ModalFooter>
                 <HStack>
