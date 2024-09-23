@@ -7,6 +7,7 @@ import {
   getJobOperationsByMethodId,
   JobMaterialForm,
 } from "~/modules/production";
+import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
@@ -71,7 +72,8 @@ export default function JobMaterialPickPage() {
   if (!materialId) throw new Error("Could not find materialId");
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={2} className="p-2">
+      <JobBreadcrumbs />
       <JobMaterialForm
         key={materialId}
         initialValues={material}

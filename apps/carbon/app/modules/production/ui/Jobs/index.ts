@@ -5,6 +5,8 @@ import JobBoMExplorer from "./JobBoMExplorer";
 import JobForm from "./JobForm";
 import JobHeader from "./JobHeader";
 import JobMaterialForm from "./JobMaterialForm";
+import JobMaterialsTable from "./JobMaterialsTable";
+
 import JobsTable from "./JobsTable";
 import JobStatus from "./JobStatus";
 
@@ -17,6 +19,7 @@ export {
   JobForm,
   JobHeader,
   JobMaterialForm,
+  JobMaterialsTable,
   JobsTable,
   JobStatus,
 };
