@@ -1568,8 +1568,6 @@ serve(async (req: Request) => {
                 [];
               const jobMakeMethodInserts: Database["public"]["Tables"]["jobMakeMethod"]["Insert"][] =
                 [];
-              const jobOperationInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
-                [];
 
               for await (const child of node.children) {
                 const newMaterialId = nanoid();
@@ -1634,49 +1632,41 @@ serve(async (req: Request) => {
                     .execute();
                 }
               }
-
-              // Add job operations for the current node
-              const nodeOperations = quoteOperations.data.filter(
-                (op) => op.quoteMakeMethodId === node.data.quoteMakeMethodId
-              );
-
-              jobOperationInserts.push(
-                ...nodeOperations.map((op) => ({
-                  jobId,
-                  jobMakeMethodId:
-                    op.quoteMakeMethodId === quoteMakeMethod.data.id
-                      ? jobMakeMethod.data.id
-                      : quoteMakeMethodIdToJobMakeMethodId[
-                          op.quoteMakeMethodId!
-                        ],
-                  processId: op.processId,
-                  workCenterId: op.workCenterId,
-                  description: op.description,
-                  setupTime: op.setupTime,
-                  setupUnit: op.setupUnit,
-                  laborTime: op.laborTime,
-                  laborUnit: op.laborUnit,
-                  machineTime: op.machineTime,
-                  machineUnit: op.machineUnit,
-                  order: op.order,
-                  operationOrder: op.operationOrder,
-                  operationType: op.operationType,
-                  operationSupplierProcessId: op.operationSupplierProcessId,
-                  workInstruction: op.workInstruction,
-                  companyId,
-                  createdBy: userId,
-                  customFields: {},
-                }))
-              );
-
-              if (jobOperationInserts.length > 0) {
-                await trx
-                  .insertInto("jobOperation")
-                  .values(jobOperationInserts)
-                  .execute();
-              }
             }
           );
+
+          const jobOperationInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
+            quoteOperations.data.map((op) => ({
+              jobId,
+              jobMakeMethodId:
+                op.quoteMakeMethodId === quoteMakeMethod.data.id
+                  ? jobMakeMethod.data.id
+                  : op.quoteMakeMethodId,
+              processId: op.processId,
+              workCenterId: op.workCenterId,
+              description: op.description,
+              setupTime: op.setupTime,
+              setupUnit: op.setupUnit,
+              laborTime: op.laborTime,
+              laborUnit: op.laborUnit,
+              machineTime: op.machineTime,
+              machineUnit: op.machineUnit,
+              order: op.order,
+              operationOrder: op.operationOrder,
+              operationType: op.operationType,
+              operationSupplierProcessId: op.operationSupplierProcessId,
+              workInstruction: op.workInstruction,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            }));
+
+          if (jobOperationInserts.length > 0) {
+            await trx
+              .insertInto("jobOperation")
+              .values(jobOperationInserts)
+              .execute();
+          }
         });
 
         break;

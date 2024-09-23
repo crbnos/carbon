@@ -168,7 +168,7 @@ export async function traverseQuoteMethod(
 
   if (node.children) {
     for await (const child of node.children) {
-      traverseQuoteMethod(child, callback);
+      await traverseQuoteMethod(child, callback);
     }
   }
 }
