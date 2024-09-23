@@ -16,6 +16,7 @@ import {
   LuChevronDown,
   LuClock,
   LuHardHat,
+  LuList,
   LuPackage,
   LuSettings,
   LuTable,
@@ -24,6 +25,7 @@ import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Job } from "../../types";
+import JobStatus from "./JobStatus";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -78,6 +80,7 @@ const JobHeader = () => {
           </Heading>
         </Link>
         <Copy text={routeData?.job?.jobId ?? ""} />
+        <JobStatus status={routeData?.job?.status} />
       </HStack>
 
       <HStack>
@@ -91,7 +94,7 @@ const JobHeader = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              leftIcon={<LuTable />}
+              leftIcon={currentValue === "details" ? <LuList /> : <LuTable />}
               rightIcon={<LuChevronDown />}
               variant="secondary"
             >

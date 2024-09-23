@@ -1,3 +1,5 @@
+"use client";
+
 import idb from "localforage";
 import { useEffect } from "react";
 import { useUser } from "~/hooks";
