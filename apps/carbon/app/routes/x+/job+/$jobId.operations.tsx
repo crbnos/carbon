@@ -70,7 +70,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function JobOperationsRoute() {
   const { count, operations } = useLoaderData<typeof loader>();
-  console.log({ operations });
 
   return (
     <VStack spacing={0} className="h-[calc(100vh-99px)]">
