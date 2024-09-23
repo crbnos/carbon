@@ -243,7 +243,7 @@ export async function getJobOperations(
 ) {
   let query = client
     .from("jobOperation")
-    .select("*", {
+    .select("*, jobMakeMethod(parentMaterialId, item(readableId))", {
       count: "exact",
     })
     .eq("jobId", jobId);
