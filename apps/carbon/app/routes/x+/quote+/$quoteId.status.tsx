@@ -35,12 +35,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (update.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.quote(id),
-      await flash(request, error(update.error, "Failed to update RFQ status"))
+      await flash(request, error(update.error, "Failed to update quote status"))
     );
   }
 
   throw redirect(
     requestReferrer(request) ?? path.to.quote(id),
-    await flash(request, success("Updated RFQ status"))
+    await flash(request, success("Updated quote status"))
   );
 }
