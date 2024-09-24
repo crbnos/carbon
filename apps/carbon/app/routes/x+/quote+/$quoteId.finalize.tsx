@@ -9,7 +9,7 @@ import {
   getCustomerContact,
   getOpportunityByQuote,
   getQuote,
-  quoteReleaseValidator,
+  quoteFinalizeValidator,
   releaseQuote,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
@@ -125,7 +125,7 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const validation = await validator(quoteReleaseValidator).validate(
+  const validation = await validator(quoteFinalizeValidator).validate(
     await request.formData()
   );
 

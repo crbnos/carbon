@@ -438,7 +438,7 @@ export const quoteOperationValidator = z
     }
   );
 
-export const quoteReleaseValidator = z
+export const quoteFinalizeValidator = z
   .object({
     notification: z.enum(["Email", "None"]).optional(),
     customerContact: zfd.text(z.string().optional()),
