@@ -25,6 +25,7 @@ import { LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty, ItemThumbnail } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
+import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { SalesRFQ, SalesRFQLine } from "../../types";
 import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
@@ -247,6 +248,7 @@ function SalesRFQLineItem({
             <ItemThumbnail
               modelId={line.modelId}
               thumbnailPath={line.thumbnailPath}
+              type={line.itemType as MethodItemType}
             />
 
             <VStack spacing={0}>

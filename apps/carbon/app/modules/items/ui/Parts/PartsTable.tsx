@@ -54,7 +54,10 @@ const PartsTable = memo(({ data, count }: PartsTableProps) => {
         header: "Part ID",
         cell: ({ row }) => (
           <HStack className="py-1">
-            <ItemThumbnail thumbnailPath={row.original.thumbnailPath} />
+            <ItemThumbnail
+              thumbnailPath={row.original.thumbnailPath}
+              type="Part"
+            />
             <Hyperlink to={path.to.partDetails(row.original.itemId!)}>
               {row.original.id}
             </Hyperlink>

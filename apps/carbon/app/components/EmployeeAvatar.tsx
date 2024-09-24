@@ -6,7 +6,7 @@ import Avatar from "./Avatar";
 type EmployeeAvatarProps = AvatarProps & {
   employeeId: string | null;
   className?: string;
-  withName: boolean;
+  withName?: boolean;
 };
 
 const EmployeeAvatar = ({
