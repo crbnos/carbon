@@ -41,6 +41,9 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     throw new Error("Failed to load file");
   }
 
-  const headers = new Headers({ "Content-Type": contentType });
+  const headers = new Headers({
+    "Content-Type": contentType,
+    "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+  });
   return new Response(result.data, { status: 200, headers });
 };
