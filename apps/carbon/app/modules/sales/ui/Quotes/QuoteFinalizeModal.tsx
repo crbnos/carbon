@@ -16,20 +16,20 @@ import { useState } from "react";
 import { CustomerContact, SelectControlled } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
-import { quoteReleaseValidator } from "../../sales.models";
+import { quoteFinalizeValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
 
-type QuotationReleaseModalProps = {
+type QuotationFinalizeModalProps = {
   onClose: () => void;
   quote?: Quotation;
   fetcher: FetcherWithComponents<{}>;
 };
 
-const QuotationReleaseModal = ({
+const QuotationFinalizeModal = ({
   quote,
   onClose,
   fetcher,
-}: QuotationReleaseModalProps) => {
+}: QuotationFinalizeModalProps) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
@@ -52,8 +52,8 @@ const QuotationReleaseModal = ({
       <ModalContent>
         <ValidatedForm
           method="post"
-          validator={quoteReleaseValidator}
-          action={path.to.quoteRelease(quoteId)}
+          validator={quoteFinalizeValidator}
+          action={path.to.quoteFinalize(quoteId)}
           onSubmit={onClose}
           defaultValues={{
             notification: notificationType as "Email" | "None",
@@ -62,7 +62,7 @@ const QuotationReleaseModal = ({
           fetcher={fetcher}
         >
           <ModalHeader>
-            <ModalTitle>{`Release ${quote?.quoteId}`}</ModalTitle>
+            <ModalTitle>{`Finalize ${quote?.quoteId}`}</ModalTitle>
             <ModalDescription>
               Are you sure you want to finalize the quote?
             </ModalDescription>
@@ -101,7 +101,7 @@ const QuotationReleaseModal = ({
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Release</Button>
+            <Button type="submit">Finalize</Button>
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
@@ -109,4 +109,4 @@ const QuotationReleaseModal = ({
   );
 };
 
-export default QuotationReleaseModal;
+export default QuotationFinalizeModal;
