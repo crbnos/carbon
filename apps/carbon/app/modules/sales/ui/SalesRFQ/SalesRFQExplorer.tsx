@@ -119,6 +119,7 @@ export default function SalesRFQExplorer() {
                 <Button
                   leftIcon={<LuPlus />}
                   isDisabled={isDisabled}
+                  variant="secondary"
                   onClick={newSalesRFQLineDisclosure.onOpen}
                 >
                   Add Line Item
@@ -153,6 +154,7 @@ export default function SalesRFQExplorer() {
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
                 leftIcon={<LuPlus />}
+                variant="secondary"
                 onClick={newSalesRFQLineDisclosure.onOpen}
               >
                 Add Line Item

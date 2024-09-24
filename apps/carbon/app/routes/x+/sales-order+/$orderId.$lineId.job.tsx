@@ -1,0 +1,125 @@
+import { validationError, validator } from "@carbon/form";
+import { tasks } from "@trigger.dev/sdk/v3";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
+import { getSupabaseServiceRole } from "~/lib/supabase";
+import {
+  salesOrderToJobValidator,
+  upsertJob,
+  upsertJobMethod,
+} from "~/modules/production";
+import { getNextSequence, rollbackNextSequence } from "~/modules/settings";
+import { requirePermissions } from "~/services/auth/auth.server";
+import { flash } from "~/services/session.server";
+import type { recalculateTask } from "~/trigger/recalculate";
+import { setCustomFields } from "~/utils/form";
+import { assertIsPost } from "~/utils/http";
+import { path } from "~/utils/path";
+import { error } from "~/utils/result";
+
+export const config = { runtime: "nodejs" };
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+
+  const { orderId, lineId } = params;
+  if (!orderId || !lineId) {
+    throw new Error("Invalid orderId or lineId");
+  }
+
+  const { companyId, userId } = await requirePermissions(request, {
+    create: "production",
+  });
+  const serviceRole = getSupabaseServiceRole();
+
+  const formData = await request.formData();
+  const validation = await validator(salesOrderToJobValidator).validate(
+    formData
+  );
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  let jobId = validation.data.jobId;
+  const useNextSequence = !jobId;
+  if (useNextSequence) {
+    const nextSequence = await getNextSequence(serviceRole, "job", companyId);
+    if (nextSequence.error) {
+      throw redirect(
+        path.to.newJob,
+        await flash(
+          request,
+          error(nextSequence.error, "Failed to get next sequence")
+        )
+      );
+    }
+    jobId = nextSequence.data;
+  }
+
+  if (!jobId) throw new Error("jobId is not defined");
+  const { id: _id, ...data } = validation.data;
+
+  const createJob = await upsertJob(serviceRole, {
+    ...data,
+    jobId,
+    companyId,
+    createdBy: userId,
+    customFields: setCustomFields(formData),
+  });
+
+  const id = createJob.data?.id!;
+  if (createJob.error || !jobId) {
+    // TODO: this should be done as a transaction
+    await rollbackNextSequence(serviceRole, "job", companyId);
+    throw redirect(
+      path.to.salesOrderLine(orderId, lineId),
+      await flash(request, error(createJob.error, "Failed to insert job"))
+    );
+  }
+
+  if (validation.data.quoteId && validation.data.quoteLineId) {
+    const upsertMethod = await upsertJobMethod(serviceRole, "quoteLineToJob", {
+      sourceId: `${data.quoteId}:${data.quoteLineId}`,
+      targetId: id,
+      companyId,
+      userId,
+    });
+
+    if (upsertMethod.error) {
+      throw redirect(
+        path.to.salesOrderLine(orderId, lineId),
+        await flash(
+          request,
+          error(upsertMethod.error, "Failed to create job method.")
+        )
+      );
+    }
+  } else {
+    const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
+      sourceId: data.itemId,
+      targetId: id,
+      companyId,
+      userId,
+    });
+
+    if (upsertMethod.error) {
+      throw redirect(
+        path.to.salesOrderLine(orderId, lineId),
+        await flash(
+          request,
+          error(upsertMethod.error, "Failed to create job method.")
+        )
+      );
+    }
+  }
+
+  await tasks.trigger<typeof recalculateTask>("recalculate", {
+    type: "jobRequirements",
+    id,
+    companyId,
+    userId,
+  });
+
+  throw redirect(path.to.salesOrderLine(orderId, lineId));
+}

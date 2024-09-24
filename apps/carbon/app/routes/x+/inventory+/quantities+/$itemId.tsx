@@ -117,7 +117,7 @@ export default function ItemInventoryRoute() {
         defaultSize={50}
         maxSize={70}
         minSize={25}
-        className="bg-background"
+        className="bg-muted"
       >
         <ScrollArea className="h-[calc(100vh-49px)]">
           <InventoryItemHeader itemReadableId={item.readableId} />

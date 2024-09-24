@@ -102,6 +102,7 @@ export default function SalesOrderExplorer() {
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuPlus />}
+                  variant="secondary"
                   onClick={newSalesOrderLineDisclosure.onOpen}
                 >
                   Add Line Item
@@ -118,6 +119,7 @@ export default function SalesOrderExplorer() {
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
                 leftIcon={<LuPlus />}
+                variant="secondary"
                 onClick={newSalesOrderLineDisclosure.onOpen}
               >
                 Add Line Item

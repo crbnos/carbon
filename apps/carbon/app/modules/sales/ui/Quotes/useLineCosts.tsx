@@ -39,8 +39,6 @@ export function useLineCosts({
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  console.log({ originalMethodTree });
-
   // TODO: instead of walking the tree twice (once for the quantities/operations and once for the effects)
   // we could do it all in one pass
 

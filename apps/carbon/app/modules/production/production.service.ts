@@ -93,6 +93,17 @@ export async function getJobs(
   return query;
 }
 
+export async function getJobsBySalesOrderLine(
+  client: SupabaseClient<Database>,
+  salesOrderLineId: string
+) {
+  return client
+    .from("jobs")
+    .select("*")
+    .eq("salesOrderLineId", salesOrderLineId)
+    .order("createdAt", { ascending: true });
+}
+
 export async function getJobsList(
   client: SupabaseClient<Database>,
   companyId: string
