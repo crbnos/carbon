@@ -35,12 +35,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (update.error) {
     throw redirect(
       path.to.salesRfq(id),
-      await flash(request, error(update.error, "Failed to update RFQ"))
+      await flash(request, error(update.error, "Failed to update RFQ status"))
     );
   }
 
   throw redirect(
     path.to.salesRfq(id),
-    await flash(request, success("Updated RFQ"))
+    await flash(request, success("Updated RFQ status"))
   );
 }
