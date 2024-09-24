@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.2 (a4e00ff)",
+    version: "12.0.1 (cd38da5)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -30502,6 +30502,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.additionalCharges",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.locationId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -30627,6 +30630,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.additionalCharges",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.locationId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -30704,6 +30710,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.additionalCharges",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.locationId",
           },
           {
             $ref: "#/parameters/body.quoteLine",
@@ -45919,7 +45928,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -45968,7 +45977,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -47491,8 +47500,7 @@ export default {
       ],
       properties: {
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
         },
@@ -47532,6 +47540,7 @@ export default {
           type: "boolean",
         },
         lotSize: {
+          default: 0,
           format: "integer",
           type: "integer",
         },
@@ -49080,6 +49089,12 @@ export default {
         },
         additionalCharges: {
           format: "jsonb",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -68572,6 +68587,13 @@ export default {
       name: "additionalCharges",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLine.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

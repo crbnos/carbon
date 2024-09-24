@@ -141,7 +141,7 @@ serve(async (req: Request) => {
                   description: line.description,
                   itemId: line.itemId,
                   itemReadableId: line.itemReadableId,
-                  locationId: quote.data.locationId,
+                  locationId: line.locationId ?? quote.data.locationId,
                   methodType: line.methodType,
                   saleQuantity: selectedLines![line.id!].quantity,
                   status: "Ordered",
