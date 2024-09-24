@@ -32,6 +32,7 @@ import {
   useRouteData,
   useUser,
 } from "~/hooks";
+import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
@@ -212,6 +213,7 @@ function QuoteLineItem({
           <ItemThumbnail
             modelId={line.modelId}
             thumbnailPath={line.thumbnailPath}
+            type={line.itemType as MethodItemType}
           />
 
           <VStack spacing={0}>

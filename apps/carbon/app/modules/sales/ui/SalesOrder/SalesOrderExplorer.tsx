@@ -190,6 +190,7 @@ function SalesOrderLineItem({
             <ItemThumbnail
               modelId={line.modelId}
               thumbnailPath={line.thumbnailPath}
+              type="Part" // TODO
             />
 
             <VStack spacing={0}>

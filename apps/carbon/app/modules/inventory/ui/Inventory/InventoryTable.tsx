@@ -52,7 +52,10 @@ const InventoryTable = memo(
           header: "Item ID",
           cell: ({ row }) => (
             <HStack className="py-1">
-              <ItemThumbnail thumbnailPath={row.original.thumbnailPath} />
+              <ItemThumbnail
+                thumbnailPath={row.original.thumbnailPath}
+                type={row.original.type}
+              />
               <Hyperlink
                 to={`${path.to.inventoryItem(row.original.itemId!)}/?${params}`}
                 className="max-w-[260px] truncate"
@@ -62,31 +65,7 @@ const InventoryTable = memo(
             </HStack>
           ),
         },
-        {
-          accessorKey: "type",
-          header: "Type",
-          cell: ({ row }) =>
-            row.original.type && (
-              <HStack>
-                <MethodItemTypeIcon type={row.original.type} />
-                <span>{row.original.type}</span>
-              </HStack>
-            ),
-          meta: {
-            filter: {
-              type: "static",
-              options: itemTypes.map((type) => ({
-                label: (
-                  <HStack spacing={2}>
-                    <MethodItemTypeIcon type={type} />
-                    <span>{type}</span>
-                  </HStack>
-                ),
-                value: type,
-              })),
-            },
-          },
-        },
+
         {
           accessorKey: "name",
           header: "Name",
@@ -97,18 +76,7 @@ const InventoryTable = memo(
           header: "Location",
           cell: ({ row }) => <Enumerable value={row.original.locationName} />,
         },
-        {
-          accessorKey: "unitOfMeasureCode",
-          header: "Unit of Measure",
-          cell: ({ row }) => {
-            const unitOfMeasure = unitOfMeasures.find(
-              (uom) => uom.code === row.original.unitOfMeasureCode
-            );
-            return unitOfMeasure
-              ? unitOfMeasure.name
-              : row.original.unitOfMeasureCode;
-          },
-        },
+
         {
           accessorKey: "materialFormId",
           header: "Form",
@@ -168,6 +136,43 @@ const InventoryTable = memo(
           header: "On Sales Order",
           cell: ({ row }) => row.original.quantityOnSalesOrder,
         },
+        {
+          accessorKey: "unitOfMeasureCode",
+          header: "Unit of Measure",
+          cell: ({ row }) => {
+            const unitOfMeasure = unitOfMeasures.find(
+              (uom) => uom.code === row.original.unitOfMeasureCode
+            );
+            return unitOfMeasure
+              ? unitOfMeasure.name
+              : row.original.unitOfMeasureCode;
+          },
+        },
+        {
+          accessorKey: "type",
+          header: "Type",
+          cell: ({ row }) =>
+            row.original.type && (
+              <HStack>
+                <MethodItemTypeIcon type={row.original.type} />
+                <span>{row.original.type}</span>
+              </HStack>
+            ),
+          meta: {
+            filter: {
+              type: "static",
+              options: itemTypes.map((type) => ({
+                label: (
+                  <HStack spacing={2}>
+                    <MethodItemTypeIcon type={type} />
+                    <span>{type}</span>
+                  </HStack>
+                ),
+                value: type,
+              })),
+            },
+          },
+        },
       ];
     }, [forms, params, substances, unitOfMeasures]);
 
@@ -176,10 +181,7 @@ const InventoryTable = memo(
     }, []);
 
     const defaultColumnVisibility = {
-      readableId: true,
-      type: true,
-      name: true,
-      description: true,
+      type: false,
     };
 
     return (
