@@ -47,6 +47,7 @@ import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { useRouteData } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { useSupabase } from "~/lib/supabase";
+import { getDocumentType } from "~/modules/documents";
 import { path } from "~/utils/path";
 import type {
   Quotation,
@@ -173,7 +174,7 @@ const QuoteToOrderDrawer = ({
   });
 
   const titles = [
-    "Upload Purchase Order",
+    "Upload Customer Purchase Order",
     "Select Quantities",
     "Confirm Details",
   ];
@@ -229,11 +230,36 @@ const QuoteToOrderDrawer = ({
         );
       case 1:
         return (
-          <LinePricingForm
-            lines={lines}
-            pricing={pricing}
-            setSelectedLines={setSelectedLines}
-          />
+          <HStack className="h-full">
+            {purchaseOrder && getDocumentType(purchaseOrder.name) === "PDF" ? (
+              <iframe
+                seamless
+                title={getPath(purchaseOrder)}
+                width="100%"
+                height="100%"
+                src={path.to.file.previewFile(
+                  `private/${getPath(purchaseOrder)}`
+                )}
+              />
+            ) : purchaseOrder &&
+              getDocumentType(purchaseOrder.name) === "Image" ? (
+              <iframe
+                seamless
+                title={getPath(purchaseOrder)}
+                width="100%"
+                height="100%"
+                src={path.to.file.previewImage(
+                  "private",
+                  getPath(purchaseOrder)
+                )}
+              />
+            ) : null}
+            <LinePricingForm
+              lines={lines}
+              pricing={pricing}
+              setSelectedLines={setSelectedLines}
+            />
+          </HStack>
         );
       case 2:
         return (
