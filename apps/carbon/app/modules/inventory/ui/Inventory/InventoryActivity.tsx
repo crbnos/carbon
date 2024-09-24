@@ -3,6 +3,46 @@ import Activity from "~/components/Activity";
 import type { ItemLedger } from "../../types";
 
 const getActivityText = (ledgerRecord: ItemLedger) => {
+  console.log({ ledgerRecord });
+  switch (ledgerRecord.documentType) {
+    case "Purchase Receipt":
+      return `received ${ledgerRecord.quantity} units`;
+    case "Purchase Invoice":
+      return `invoiced ${ledgerRecord.quantity} units`;
+    case "Sales Shipment":
+      return `shipped ${ledgerRecord.quantity} units`;
+    case "Sales Invoice":
+      return `invoiced ${ledgerRecord.quantity} units for sale`;
+    case "Transfer Shipment":
+      return `shipped ${ledgerRecord.quantity} units for transfer`;
+    case "Transfer Receipt":
+      return `received ${ledgerRecord.quantity} units from transfer`;
+    case "Direct Transfer":
+      return `directly transferred ${ledgerRecord.quantity} units`;
+    case "Inventory Receipt":
+      return `received ${ledgerRecord.quantity} units into inventory`;
+    case "Inventory Shipment":
+      return `shipped ${ledgerRecord.quantity} units from inventory`;
+    case "Posted Assembly":
+      return `assembled ${ledgerRecord.quantity} units`;
+    case "Purchase Credit Memo":
+      return `credited ${ledgerRecord.quantity} units for purchase`;
+    case "Purchase Return Shipment":
+      return `returned ${ledgerRecord.quantity} units to supplier`;
+    case "Sales Credit Memo":
+      return `credited ${ledgerRecord.quantity} units for sale`;
+    case "Sales Return Receipt":
+      return `received ${ledgerRecord.quantity} units as sales return`;
+    case "Service Credit Memo":
+      return `credited ${ledgerRecord.quantity} units for service`;
+    case "Service Invoice":
+      return `invoiced ${ledgerRecord.quantity} units for service`;
+    case "Service Shipment":
+      return `shipped ${ledgerRecord.quantity} units for service`;
+    default:
+      break;
+  }
+
   switch (ledgerRecord.entryType) {
     case "Positive Adjmt.":
       return `made a positive adjustment of ${ledgerRecord.quantity}${

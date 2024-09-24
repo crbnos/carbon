@@ -470,12 +470,16 @@ export async function getFiscalYearSettings(
 
 export async function getInventoryPostingGroup(
   client: SupabaseClient<Database>,
+  companyId: string,
   args: {
     itemPostingGroupId: string | null;
     locationId: string | null;
   }
 ) {
-  let query = client.from("postingGroupInventory").select("*");
+  let query = client
+    .from("postingGroupInventory")
+    .select("*")
+    .eq("companyId", companyId);
 
   if (args.itemPostingGroupId === null) {
     query = query.is("itemPostingGroupId", null);
@@ -560,12 +564,16 @@ export async function getPaymentTermsList(
 
 export async function getPurchasingPostingGroup(
   client: SupabaseClient<Database>,
+  companyId: string,
   args: {
     itemPostingGroupId: string | null;
     supplierTypeId: string | null;
   }
 ) {
-  let query = client.from("postingGroupInventory").select("*");
+  let query = client
+    .from("postingGroupInventory")
+    .select("*")
+    .eq("companyId", companyId);
 
   if (args.itemPostingGroupId === null) {
     query = query.is("itemPostingGroupId", null);
