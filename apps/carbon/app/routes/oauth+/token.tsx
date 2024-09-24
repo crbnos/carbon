@@ -3,7 +3,7 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
 import { getSupabaseServiceRole } from "~/lib/supabase";
 
-export const config = { runtime: "nodejs" };
+// export const config = { runtime: "nodejs" };
 
 const oauthTokenValidator = z.object({
   grant_type: z.enum(["authorization_code", "refresh_token"]),

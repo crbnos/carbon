@@ -85,7 +85,7 @@ const Th = forwardRef<
   <th
     ref={ref}
     className={cn(
-      "group-hover:bg-primary/5 h-11 px-6 text-left align-middle uppercase bg-card font-semibold tracking-tight text-foreground [&:has([role=checkbox])]:pr-0",
+      "group-hover:bg-primary/5 h-11 px-6 text-left align-middle uppercase bg-card font-semibold tracking-tight text-xs text-foreground [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}

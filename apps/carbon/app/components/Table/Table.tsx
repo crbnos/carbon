@@ -672,7 +672,7 @@ const Table = <T extends object>({
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div className="flex justify-start items-center text-xs text-foreground">
+                                  <div className="flex justify-start items-center">
                                     {flexRender(
                                       header.column.columnDef.header,
                                       header.getContext()

@@ -27,7 +27,7 @@ const GroupedContentSidebar = ({
                 {group.name}
               </h4>
               {group.routes.map((route) => {
-                const isActive = location.pathname === route.to;
+                const isActive = location.pathname.includes(route.to);
                 return (
                   <Button
                     key={route.name}
