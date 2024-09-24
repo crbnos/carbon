@@ -9,7 +9,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { InventoryItem } from "~/modules/inventory";
-import { getInventoryItems } from "~/modules/inventory";
+import { getInventoryItems, getInventoryItemsCount } from "~/modules/inventory";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
@@ -76,10 +76,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    client
-      .from("item")
-      .select("id", { count: "exact" })
-      .eq("itemTrackingType", "Inventory"),
+    getInventoryItemsCount(client, companyId, {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters,
+    }),
     getMaterialFormsList(client, companyId),
     getMaterialSubstancesList(client, companyId),
   ]);

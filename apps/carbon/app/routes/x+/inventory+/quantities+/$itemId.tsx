@@ -120,7 +120,10 @@ export default function ItemInventoryRoute() {
         className="bg-muted"
       >
         <ScrollArea className="h-[calc(100vh-49px)]">
-          <InventoryItemHeader itemReadableId={item.readableId} />
+          <InventoryItemHeader
+            itemReadableId={item.readableId}
+            itemType={item.type}
+          />
           <VStack className="p-2">
             <Outlet />
           </VStack>

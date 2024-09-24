@@ -84,7 +84,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
           </CardHeader>
           <CardAction>
             <Button isIcon asChild variant="ghost" size="lg">
-              <Link to={getLink(type, initialValues.id)}>
+              <Link to={getLinkToItemDetails(type, initialValues.id)}>
                 <LuExternalLink />
               </Link>
             </Button>
@@ -146,7 +146,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
 
 export default ItemForm;
 
-function getLink(type: MethodItemType, id: string) {
+export function getLinkToItemDetails(type: MethodItemType, id: string) {
   switch (type) {
     case "Part":
       return path.to.partDetails(id);

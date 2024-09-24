@@ -1,4 +1,4 @@
-import { Combobox, HStack, Heading, VStack } from "@carbon/react";
+import { Checkbox, Combobox, HStack, Heading, VStack } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
@@ -173,6 +173,21 @@ const InventoryTable = memo(
             },
           },
         },
+        {
+          accessorKey: "active",
+          header: "Active",
+          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          meta: {
+            filter: {
+              type: "static",
+              options: [
+                { value: "true", label: "Active" },
+                { value: "false", label: "Inactive" },
+              ],
+            },
+            pluralHeader: "Active Statuses",
+          },
+        },
       ];
     }, [forms, params, substances, unitOfMeasures]);
 
@@ -181,6 +196,7 @@ const InventoryTable = memo(
     }, []);
 
     const defaultColumnVisibility = {
+      active: false,
       type: false,
     };
 

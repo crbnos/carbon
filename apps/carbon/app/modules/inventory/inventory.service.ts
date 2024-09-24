@@ -141,7 +141,58 @@ export async function getInventoryItems(
     );
   }
 
+  const includeInactive = args?.filters?.some(
+    (filter) =>
+      (filter.column === "active" && filter.value === "false") ||
+      (filter.column === "active" && filter.operator === "in")
+  );
+  if (!includeInactive) {
+    query = query.eq("active", true);
+  }
+
   query = setGenericQueryFilters(query, args);
+
+  return query;
+}
+
+export async function getInventoryItemsCount(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("item")
+    .select("id, readableId", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("itemTrackingType", "Inventory");
+
+  if (args?.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
+    );
+  }
+
+  const includeInactive = args?.filters?.some(
+    (filter) =>
+      (filter.column === "active" && filter.value === "false") ||
+      (filter.column === "active" && filter.operator === "in")
+  );
+  if (!includeInactive) {
+    query = query.eq("active", true);
+  }
+
+  const filteredArgs = {
+    ...args,
+    filters: args.filters?.filter(
+      (filter) =>
+        filter.column !== "materialFormId" &&
+        filter.column !== "materialSubstanceId"
+    ),
+  };
+
+  query = setGenericQueryFilters(query, filteredArgs);
 
   return query;
 }
