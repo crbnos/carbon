@@ -139,7 +139,9 @@ const QuotePDF = ({
         />
         <View style={tw("flex flex-row mb-5")}>
           <View style={tw("flex flex-col gap-1 w-1/3 text-xs")}>
-            <Text style={tw("text-gray-500 font-bold text-xs")}>Customer</Text>
+            <Text style={tw("text-gray-500 font-bold text-xs")}>
+              Quote Submitted To
+            </Text>
             <Text>{customerName}</Text>
             {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
             {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
