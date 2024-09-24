@@ -3,8 +3,11 @@ import { forwardRef } from "react";
 
 import { cn } from "./utils/cn";
 
-const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
+const Table = forwardRef<
+  HTMLTableElement,
+  HTMLAttributes<HTMLTableElement> & { full?: boolean }
+>(({ className, full = false, ...props }, ref) =>
+  full ? (
     <div className="w-full">
       <table
         ref={ref}
@@ -14,6 +17,16 @@ const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
         )}
         {...props}
       />
+    </div>
+  ) : (
+    <div className="rounded-md border overflow-hidden">
+      <div className="relative w-full overflow-auto">
+        <table
+          ref={ref}
+          className={cn("w-full caption-bottom text-sm", className)}
+          {...props}
+        />
+      </div>
     </div>
   )
 );
@@ -56,7 +69,7 @@ const Tr = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElement>>(
     <tr
       ref={ref}
       className={cn(
-        "group border-b transition-colors data-[state=selected]:bg-muted",
+        "group transition-colors data-[state=selected]:bg-muted",
         className
       )}
       {...props}
@@ -72,7 +85,7 @@ const Th = forwardRef<
   <th
     ref={ref}
     className={cn(
-      "group-hover:bg-primary/5 h-11 px-6 text-left align-middle uppercase bg-card font-semibold tracking-tight text-muted-foreground [&:has([role=checkbox])]:pr-0",
+      "group-hover:bg-primary/5 h-11 px-6 text-left align-middle uppercase bg-card font-semibold tracking-tight text-foreground [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
@@ -87,7 +100,7 @@ const Td = forwardRef<
   <td
     ref={ref}
     className={cn(
-      "group-hover:bg-primary/5 text-muted-foreground px-6 bg-card align-middle [&:has([role=checkbox])]:pr-0 h-11",
+      "group-hover:bg-primary/5 text-foreground/80 px-6 bg-card align-middle [&:has([role=checkbox])]:pr-0 h-11",
       className
     )}
     {...props}

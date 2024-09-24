@@ -114,6 +114,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuPlus />}
+                  variant="secondary"
                   onClick={newQuoteLineDisclosure.onOpen}
                 >
                   Add Line Item
@@ -130,6 +131,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
                 leftIcon={<LuPlus />}
+                variant="secondary"
                 onClick={newQuoteLineDisclosure.onOpen}
               >
                 Add Line Item

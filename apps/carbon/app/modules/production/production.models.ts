@@ -24,23 +24,46 @@ export const jobStatus = [
   "Cancelled",
 ] as const;
 
-export const jobValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    jobId: zfd.text(z.string().optional()),
-    itemId: z.string().min(1, { message: "Item is required" }),
-    customerId: zfd.text(z.string().optional()),
-    dueDate: zfd.text(z.string().optional()),
-    deadlineType: z.enum(deadlineTypes, {
-      errorMap: () => ({ message: "Deadline type is required" }),
-    }),
-    locationId: z.string().min(1, { message: "Location is required" }),
-    quantity: zfd.numeric(z.number().min(0)),
-    scrapQuantity: zfd.numeric(z.number().min(0)),
-    unitOfMeasureCode: z
-      .string()
-      .min(1, { message: "Unit of measure is required" }),
-    modelUploadId: zfd.text(z.string().optional()),
+const baseJobValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  jobId: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  customerId: zfd.text(z.string().optional()),
+  dueDate: zfd.text(z.string().optional()),
+  deadlineType: z.enum(deadlineTypes, {
+    errorMap: () => ({ message: "Deadline type is required" }),
+  }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  quantity: zfd.numeric(z.number().min(0)),
+  scrapQuantity: zfd.numeric(z.number().min(0)),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of measure is required" }),
+  modelUploadId: zfd.text(z.string().optional()),
+});
+
+export const jobValidator = baseJobValidator.refine(
+  (data) => {
+    if (
+      ["Hard Deadline", "Soft Deadline"].includes(data.deadlineType) &&
+      !data.dueDate
+    ) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Due date is required",
+    path: ["dueDate"],
+  }
+);
+
+export const salesOrderToJobValidator = baseJobValidator
+  .extend({
+    quoteId: zfd.text(z.string().optional()),
+    quoteLineId: zfd.text(z.string().optional()),
+    salesOrderId: zfd.text(z.string()),
+    salesOrderLineId: zfd.text(z.string()),
   })
   .refine(
     (data) => {

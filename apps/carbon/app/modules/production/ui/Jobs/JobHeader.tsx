@@ -21,6 +21,7 @@ import {
   LuSettings,
   LuTable,
 } from "react-icons/lu";
+import { RiProgress8Line } from "react-icons/ri";
 import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -71,7 +72,6 @@ const JobHeader = () => {
   const currentValue = getOptionFromPath();
 
   return (
-
     <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
       <HStack>
         <Link to={path.to.jobDetails(jobId)}>
@@ -91,6 +91,19 @@ const JobHeader = () => {
           className="h-8"
           isReadOnly={!permissions.can("update", "production")}
         />
+        {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
+          <Button leftIcon={<RiProgress8Line />} variant="secondary" asChild>
+            <Link
+              to={path.to.salesOrderLine(
+                routeData?.job?.salesOrderId,
+                routeData?.job?.salesOrderLineId
+              )}
+            >
+              View Order
+            </Link>
+          </Button>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

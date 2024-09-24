@@ -9,6 +9,7 @@ import SalesOrderLineForm from "./SalesOrderLineForm";
 import SalesOrderLines from "./SalesOrderLines";
 import SalesOrderPaymentForm from "./SalesOrderPaymentForm";
 
+import { SalesOrderLineJobs } from "./SalesOrderLineJobs";
 import SalesStatus from "./SalesStatus";
 import { useSalesOrderTotals } from "./useSalesOrderTotals";
 
@@ -20,6 +21,7 @@ export {
   SalesOrderForm,
   SalesOrderHeader,
   SalesOrderLineForm,
+  SalesOrderLineJobs,
   SalesOrderLines,
   SalesOrderPaymentForm,
   SalesOrderShipmentForm,

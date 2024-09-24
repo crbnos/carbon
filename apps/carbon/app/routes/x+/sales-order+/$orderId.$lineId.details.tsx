@@ -1,13 +1,22 @@
 import { validationError, validator } from "@carbon/form";
-import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import { Card, CardHeader, CardTitle } from "@carbon/react";
+import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { CadModel } from "~/components";
-import { usePermissions } from "~/hooks";
-import type { SalesOrderLineType } from "~/modules/sales";
+import { usePermissions, useRouteData } from "~/hooks";
+import { getItemReplenishment } from "~/modules/items";
+import { getJobsBySalesOrderLine } from "~/modules/production";
+import type {
+  Opportunity,
+  SalesOrder,
+  SalesOrderLineType,
+} from "~/modules/sales";
 import {
   OpportunityLineDocuments,
   SalesOrderLineForm,
+  SalesOrderLineJobs,
   getOpportunityLineDocuments,
   getSalesOrderLine,
   salesOrderLineValidator,
@@ -26,17 +35,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     role: "employee",
   });
 
-  const { lineId } = params;
+  const { orderId, lineId } = params;
+  if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const [line, files] = await Promise.all([
+  const [line, jobs, files] = await Promise.all([
     getSalesOrderLine(client, lineId),
+    getJobsBySalesOrderLine(client, lineId),
     getOpportunityLineDocuments(client, companyId, lineId),
   ]);
 
-  return json({
+  if (line.error) {
+    throw redirect(
+      path.to.salesOrder(orderId),
+      await flash(request, error(line.error, "Failed to load sales order line"))
+    );
+  }
+
+  return defer({
     line: line?.data ?? null,
+    itemReplenishment:
+      line.data.itemId && line.data.methodType === "Make"
+        ? getItemReplenishment(client, line.data.itemId, companyId)
+        : Promise.resolve({ data: null }),
     files: files?.data ?? [],
+    jobs: jobs?.data ?? [],
   });
 }
 
@@ -94,11 +117,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditSalesOrderLineRoute() {
-  const { line, files } = useLoaderData<typeof loader>();
+  const { line, jobs, itemReplenishment, files } =
+    useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { orderId, lineId } = useParams();
   if (!orderId) throw new Error("orderId not found");
   if (!lineId) throw new Error("lineId not found");
+
+  const orderData = useRouteData<{
+    salesOrder: SalesOrder;
+    opportunity: Opportunity;
+  }>(path.to.salesOrder(orderId));
+
+  if (!orderData?.opportunity) throw new Error("Failed to load opportunity");
+  if (!orderData?.salesOrder) throw new Error("Failed to load sales order");
 
   const initialValues = {
     id: line?.id ?? undefined,
@@ -128,7 +160,37 @@ export default function EditSalesOrderLineRoute() {
         key={initialValues.id}
         initialValues={initialValues}
       />
-
+      {line.methodType === "Make" && (
+        <Suspense
+          fallback={
+            <Card className="min-h-[264px]">
+              <CardHeader>
+                <CardTitle>Jobs</CardTitle>
+              </CardHeader>
+            </Card>
+          }
+        >
+          <Await
+            resolve={itemReplenishment}
+            errorElement={<div>Error loading make method</div>}
+          >
+            {(resolvedItemReplenishment) => (
+              <SalesOrderLineJobs
+                salesOrder={orderData.salesOrder}
+                line={line}
+                opportunity={orderData.opportunity}
+                jobs={jobs}
+                itemReplenishment={
+                  resolvedItemReplenishment.data ?? {
+                    lotSize: 0,
+                    scrapPercentage: 0,
+                  }
+                }
+              />
+            )}
+          </Await>
+        </Suspense>
+      )}
       <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
         <CadModel
           autodeskUrn={line?.autodeskUrn ?? null}

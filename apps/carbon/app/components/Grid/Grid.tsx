@@ -330,7 +330,7 @@ const Grid = <T extends object>({
         ref={tableContainerRef}
         onKeyDown={onKeyDown}
       >
-        <Table className="absolute">
+        <Table full={contained} className="absolute border">
           <Thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id} className="h-10">
@@ -417,7 +417,7 @@ const Grid = <T extends object>({
             {onNewRow && (
               <Tr
                 onClick={onNewRow}
-                className="cursor-pointer h-10 hover:bg-muted/50"
+                className="cursor-pointer h-10 hover:bg-muted/50 border-t"
               >
                 <Td colSpan={24}>
                   <HStack className="items-start h-6">

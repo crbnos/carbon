@@ -580,7 +580,7 @@ const Table = <T extends object>({
           {rows.length === 0 ? (
             isLoading ? (
               <div className="flex h-full w-full items-start justify-center">
-                <TableBase className="w-full">
+                <TableBase full className="w-full">
                   <Thead>
                     <Tr>
                       {Array.from({ length: 7 }).map((_, colIndex) => (
@@ -635,6 +635,7 @@ const Table = <T extends object>({
           ) : (
             <TableBase
               ref={tableRef}
+              full
               className="relative border-collapse border-spacing-0"
             >
               <Thead className="sticky top-0 z-10">

@@ -117,13 +117,17 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
       {
         accessorKey: "salesOrderReadableId",
         header: "Sales Order",
-        cell: ({ row }) => (
-          <Hyperlink
-            to={path.to.salesOrderDetails(row.original.salesOrderLineId!)}
-          >
-            {row.original?.salesOrderReadableId}
-          </Hyperlink>
-        ),
+        cell: ({ row }) =>
+          row.original.salesOrderId && row.original.salesOrderLineId ? (
+            <Hyperlink
+              to={path.to.salesOrderLine(
+                row.original.salesOrderId,
+                row.original.salesOrderLineId!
+              )}
+            >
+              {row.original?.salesOrderReadableId}
+            </Hyperlink>
+          ) : null,
       },
       {
         accessorKey: "status",
