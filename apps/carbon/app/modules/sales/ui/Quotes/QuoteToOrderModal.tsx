@@ -14,6 +14,7 @@ import {
   NumberInput,
   RadioGroup,
   RadioGroupItem,
+  ScrollArea,
   Spinner,
   Table,
   Tbody,
@@ -178,6 +179,7 @@ const QuoteToOrderDrawer = ({
     "Select Quantities",
     "Confirm Details",
   ];
+  const hasPdf = purchaseOrder && getDocumentType(purchaseOrder.name) === "PDF";
   const renderStep = () => {
     switch (step) {
       case 0:
@@ -230,8 +232,8 @@ const QuoteToOrderDrawer = ({
         );
       case 1:
         return (
-          <HStack className="h-full">
-            {purchaseOrder && getDocumentType(purchaseOrder.name) === "PDF" ? (
+          <HStack className="h-full w-full">
+            {hasPdf ? (
               <iframe
                 seamless
                 title={getPath(purchaseOrder)}
@@ -254,11 +256,13 @@ const QuoteToOrderDrawer = ({
                 )}
               />
             ) : null}
-            <LinePricingForm
-              lines={lines}
-              pricing={pricing}
-              setSelectedLines={setSelectedLines}
-            />
+            <ScrollArea className="h-[calc(100vh-145px)] flex-grow w-full">
+              <LinePricingForm
+                lines={lines}
+                pricing={pricing}
+                setSelectedLines={setSelectedLines}
+              />
+            </ScrollArea>
           </HStack>
         );
       case 2:
@@ -286,7 +290,7 @@ const QuoteToOrderDrawer = ({
         }
       }}
     >
-      <DrawerContent size={step === 1 ? "xl" : "md"}>
+      <DrawerContent size={step === 1 ? (hasPdf ? "full" : "xl") : "md"}>
         <input type="hidden" name="quoteId" value={quote.id!} />
 
         <DrawerHeader>
