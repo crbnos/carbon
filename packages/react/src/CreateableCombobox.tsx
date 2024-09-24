@@ -82,6 +82,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             className="min-w-[260px] w-[--radix-popover-trigger-width] p-1"
           >
             <VirtualizedCommand
+              label={label}
               options={options}
               selected={selected}
               value={value}
@@ -113,6 +114,7 @@ type VirtualizedCommandProps = {
   options: CreatableComboboxProps["options"];
   selected?: string[];
   value?: string;
+  label?: string;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
   itemHeight: number;
@@ -121,6 +123,7 @@ type VirtualizedCommandProps = {
 
 function VirtualizedCommand({
   options,
+  label,
   selected,
   value,
   onChange,
@@ -140,21 +143,21 @@ function VirtualizedCommand({
         })
       : options;
 
-    if (
-      !options.some((option) =>
-        [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
-          search.toLowerCase()
-        )
-      ) &&
-      search.trim() !== ""
-    ) {
-      filtered.push({
-        label: `Create "${search}"`,
-        value: "create",
-      });
-    }
+    const isExactMatch = options.some((option) =>
+      [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
+        search.toLowerCase()
+      )
+    );
 
-    return filtered;
+    return isExactMatch
+      ? filtered
+      : [
+          ...filtered,
+          {
+            label: `Create`,
+            value: "create",
+          },
+        ];
   }, [options, search]);
 
   const virtualizer = useVirtualizer({
@@ -225,7 +228,7 @@ function VirtualizedCommand({
                   <>
                     <span>Create</span>
                     <span className="ml-1 font-bold line-clamp-1">
-                      {search}
+                      {search.trim() === "" ? label : search}
                     </span>
                   </>
                 ) : item.helper ? (

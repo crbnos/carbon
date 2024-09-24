@@ -130,6 +130,7 @@ const CreatableMultiSelect = forwardRef<
               onCreateOption={onCreateOption}
               itemHeight={itemHeight}
               setOpen={setOpen}
+              label={label}
             />
           </PopoverContent>
         </Popover>
@@ -157,6 +158,7 @@ type VirtualizedCommandProps = {
   onCreateOption?: (inputValue: string) => void;
   itemHeight: number;
   setOpen: (open: boolean) => void;
+  label?: string;
 };
 
 function VirtualizedCommand({
@@ -166,6 +168,7 @@ function VirtualizedCommand({
   onCreateOption,
   itemHeight,
   setOpen,
+  label,
 }: VirtualizedCommandProps) {
   const [search, setSearch] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
@@ -179,21 +182,21 @@ function VirtualizedCommand({
         })
       : options;
 
-    if (
-      !options.some((option) =>
-        [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
-          search.toLowerCase()
-        )
-      ) &&
-      search.trim() !== ""
-    ) {
-      filtered.push({
-        label: `Create "${search}"`,
-        value: "create",
-      });
-    }
+    const isExactMatch = options.some((option) =>
+      [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
+        search.toLowerCase()
+      )
+    );
 
-    return filtered;
+    return isExactMatch
+      ? filtered
+      : [
+          ...filtered,
+          {
+            label: `Create`,
+            value: "create",
+          },
+        ];
   }, [options, search]);
 
   const virtualizer = useVirtualizer({
@@ -268,7 +271,7 @@ function VirtualizedCommand({
                   <>
                     <span>Create</span>
                     <span className="ml-1 font-bold line-clamp-1">
-                      {search}
+                      {search.trim() === "" ? label : search}
                     </span>
                   </>
                 ) : item.helper ? (
