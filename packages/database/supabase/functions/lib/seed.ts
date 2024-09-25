@@ -2035,7 +2035,7 @@ export const sequences = [
   {
     table: "job",
     name: "Job",
-    prefix: "WO",
+    prefix: "J",
     suffix: null,
     next: 0,
     size: 6,
