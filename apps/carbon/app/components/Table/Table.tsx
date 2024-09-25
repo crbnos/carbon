@@ -10,7 +10,6 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-  Heading,
   Menu,
   Table as TableBase,
   Tbody,
@@ -620,7 +619,9 @@ const Table = <T extends object>({
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
                   <LuAlertTriangle className="h-6 w-6" />
                 </div>
-                <Heading size="h3">No results found</Heading>
+                <span className="text-xs font-mono font-light text-foreground uppercase">
+                  No results found
+                </span>
                 <Button onClick={clearFilters}>Remove Filters</Button>
               </div>
             ) : (
@@ -628,7 +629,9 @@ const Table = <T extends object>({
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
                   <LuAlertTriangle className="h-6 w-6" />
                 </div>
-                <Heading size="h3">No data exists</Heading>
+                <span className="text-xs font-mono font-light text-foreground uppercase">
+                  No data exists
+                </span>
                 {primaryAction}
               </div>
             )
