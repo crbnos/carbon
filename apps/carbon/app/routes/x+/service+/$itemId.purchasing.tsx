@@ -1,12 +1,12 @@
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getBuyMethods } from "~/modules/items";
 import BuyMethods from "~/modules/items/ui/Item/BuyMethods/BuyMethods";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

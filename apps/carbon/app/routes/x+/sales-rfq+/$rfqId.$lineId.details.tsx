@@ -1,3 +1,6 @@
+import { assertIsPost, error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
@@ -14,12 +17,8 @@ import {
   salesRfqLineValidator,
   upsertSalesRFQLine,
 } from "~/modules/sales";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import { setCustomFields } from "~/utils/form";
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { client, companyId } = await requirePermissions(request, {

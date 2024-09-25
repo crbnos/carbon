@@ -1,3 +1,6 @@
+import { assertIsPost, error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
@@ -9,11 +12,7 @@ import {
   getIntegration,
   upsertIntegration,
 } from "~/modules/settings";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 
 const defaultValue = {
   apiKey: "",

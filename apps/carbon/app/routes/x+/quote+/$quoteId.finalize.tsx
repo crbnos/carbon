@@ -1,3 +1,6 @@
+import { assertIsPost, error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents";
 import { validationError, validator } from "@carbon/form";
 import { renderAsync } from "@react-email/components";
@@ -15,12 +18,8 @@ import {
 import { getCompany } from "~/modules/settings";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have this task defined
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 
 // export const config = { runtime: "nodejs" };
 

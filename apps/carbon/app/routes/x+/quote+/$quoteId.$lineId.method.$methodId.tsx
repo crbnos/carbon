@@ -10,10 +10,10 @@ import {
 } from "~/modules/sales";
 import { path } from "~/utils/path";
 
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
-import { error } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

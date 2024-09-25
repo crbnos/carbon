@@ -10,10 +10,10 @@ import { useLoaderData, type Location } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@remix-run/server-runtime";
 import { json } from "@vercel/remix";
 
+import { requirePermissions } from "@carbon/auth/auth.server";
 import type { GanttEvent } from "~/components/Gantt";
 import { Gantt } from "~/components/Gantt";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
-import { requirePermissions } from "~/services/auth/auth.server";
 import {
   getResizableGanttSettings,
   setResizableGanttSettings,

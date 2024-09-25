@@ -1,10 +1,10 @@
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { arrayToTree } from "performant-array-to-tree";
 import type { Group } from "~/modules/users";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
-import { error } from "~/utils/result";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

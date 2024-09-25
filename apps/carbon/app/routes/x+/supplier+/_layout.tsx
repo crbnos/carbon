@@ -1,10 +1,10 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { getShippingTermsList } from "~/modules/inventory";
 import { getSupplierStatuses, getSupplierTypes } from "~/modules/purchasing";
-import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

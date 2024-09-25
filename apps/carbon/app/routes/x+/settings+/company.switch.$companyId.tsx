@@ -1,13 +1,13 @@
-import { redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { getCompanies } from "~/modules/settings";
-import { requirePermissions } from "~/services/auth/auth.server";
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   destroyAuthSession,
   flash,
   updateCompanySession,
-} from "~/services/session.server";
+} from "@carbon/auth/session.server";
+import { redirect, type ActionFunctionArgs } from "@vercel/remix";
+import { getCompanies } from "~/modules/settings";
 import { path, requestReferrer } from "~/utils/path";
-import { error } from "~/utils/result";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});

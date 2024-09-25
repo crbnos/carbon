@@ -1,3 +1,4 @@
+import { assertIsPost } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
@@ -5,7 +6,6 @@ import { json } from "@vercel/remix";
 import { ThemeForm, themeValidator } from "~/modules/settings";
 import { getTheme, setTheme } from "~/services/theme.server";
 import type { Handle } from "~/utils/handle";
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {

@@ -1,6 +1,6 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
-import { requirePermissions } from "~/services/auth/auth.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

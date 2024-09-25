@@ -1,3 +1,6 @@
+import { error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
@@ -12,10 +15,7 @@ import {
   getTrainingStatus,
   upsertEmployeeAbility,
 } from "~/modules/resources";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

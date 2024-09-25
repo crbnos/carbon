@@ -1,8 +1,8 @@
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { assign } from "~/modules/shared/shared.server";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
-import { error } from "~/utils/result";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {});

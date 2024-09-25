@@ -1,10 +1,10 @@
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import { ProfileForm, getAccount } from "~/modules/account";

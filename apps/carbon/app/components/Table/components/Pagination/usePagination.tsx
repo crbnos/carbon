@@ -1,8 +1,8 @@
+import { parseNumberFromUrlParam } from "@carbon/auth";
 import type { RowSelectionState } from "@tanstack/react-table";
 import type { Dispatch, SetStateAction } from "react";
 import { flushSync } from "react-dom";
 import { useUrlParams } from "~/hooks";
-import { parseNumberFromUrlParam } from "~/utils/http";
 
 export function usePagination(
   count: number,

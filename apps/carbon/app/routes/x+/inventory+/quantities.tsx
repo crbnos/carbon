@@ -1,3 +1,6 @@
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import {
   ClientOnly,
   ResizablePanel,
@@ -18,12 +21,9 @@ import {
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-import { error } from "~/utils/result";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
