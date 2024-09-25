@@ -137,7 +137,6 @@ export default function App() {
     }
   }, [result]);
 
-  /* Dark/Light Mode */
   const mode = useMode();
 
   return (
