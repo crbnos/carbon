@@ -68,7 +68,7 @@ const InventoryTable = memo(
 
         {
           accessorKey: "name",
-          header: "Name",
+          header: "Short Desc",
           cell: ({ row }) => row.original.name,
         },
         {
