@@ -1,9 +1,9 @@
+import { useCarbon } from "@carbon/auth";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useCallback, useState } from "react";
 import InfiniteScroll from "~/components/InfiniteScroll";
-import { useSupabase } from "~/lib/supabase";
 import { getItemLedger, InventoryActivity } from "~/modules/inventory";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -83,7 +83,7 @@ export default function ItemInventoryActivityRoute() {
   const { initialItemLedgers, itemId, companyId, locationId } =
     useLoaderData<typeof loader>();
 
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   const [itemLedgers, setItemLedgers] = useState<any[]>(initialItemLedgers);
   const [page, setPage] = useState(1);
@@ -96,7 +96,7 @@ export default function ItemInventoryActivityRoute() {
     setIsLoading(true);
 
     const newItemLedgers = await getItemLedger(
-      supabase!,
+      carbon!,
       itemId,
       companyId,
       locationId,
@@ -115,7 +115,7 @@ export default function ItemInventoryActivityRoute() {
     }
 
     setIsLoading(false);
-  }, [page, supabase, companyId, locationId, itemId, isLoading, hasMore]);
+  }, [page, carbon, companyId, locationId, itemId, isLoading, hasMore]);
 
   return (
     <>

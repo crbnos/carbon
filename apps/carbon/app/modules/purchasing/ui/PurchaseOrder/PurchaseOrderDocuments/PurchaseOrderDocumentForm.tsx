@@ -1,9 +1,9 @@
+import { useCarbon } from "@carbon/auth";
 import { File, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { LuUpload } from "react-icons/lu";
 import { useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 
 type PurchaseOrderDocumentFormProps = {
@@ -17,16 +17,16 @@ const PurchaseOrderDocumentForm = ({
 }: PurchaseOrderDocumentFormProps) => {
   const submit = useSubmit();
   const { company } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && supabase && company) {
+    if (e.target.files && carbon && company) {
       const file = e.target.files[0];
       const fileName = `${company.id}/purchasing/${
         isExternal ? "external" : "internal"
       }/${orderId}/${file.name}`;
 
-      const fileUpload = await supabase.storage
+      const fileUpload = await carbon.storage
         .from("private")
         .upload(fileName, file, {
           cacheControl: `${12 * 60 * 60}`,

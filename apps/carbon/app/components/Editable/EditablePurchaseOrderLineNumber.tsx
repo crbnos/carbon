@@ -44,7 +44,7 @@ const EditablePurchaseOrderLineNumber =
             }));
 
     const onAccountChange = async (accountNumber: string) => {
-      if (!client) throw new Error("Supabase client not found");
+      if (!client) throw new Error("Carbon client not found");
       if (!row.companyId) throw new Error("Company ID not found");
       if (!row.id) throw new Error("Purchase order line ID not found");
 
@@ -82,7 +82,7 @@ const EditablePurchaseOrderLineNumber =
     };
 
     const onItemChange = async (itemId: string) => {
-      if (!client) throw new Error("Supabase client not found");
+      if (!client) throw new Error("Carbon client not found");
       if (!row.companyId) throw new Error("Company ID not found");
       if (!row.id) throw new Error("Purchase order line ID not found");
 

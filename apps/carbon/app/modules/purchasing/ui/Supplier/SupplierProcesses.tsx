@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Card,
   CardAction,
@@ -22,7 +23,6 @@ import { EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { useSupabase } from "~/lib/supabase";
 import type { SupplierProcess } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
@@ -40,12 +40,12 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
 
   const canEdit = permissions.can("update", "purchasing");
   const canDelete = permissions.can("delete", "purchasing");
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: SupplierProcess) => {
-      if (!supabase) throw new Error("Supabase client not found");
-      return await supabase
+      if (!carbon) throw new Error("Carbon client not found");
+      return await carbon
         .from("supplierProcess")
         .update({
           [id]: value,
@@ -53,7 +53,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
         })
         .eq("id", row.id!);
     },
-    [supabase, userId]
+    [carbon, userId]
   );
 
   const customColumns = useCustomColumns<SupplierProcess>("supplierProcess");

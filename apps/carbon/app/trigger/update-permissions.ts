@@ -1,10 +1,10 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
-import { getSupabaseServiceRole } from "~/lib/supabase";
+import { getCarbonServiceRole } from "@carbon/auth";
 import { updatePermissions } from "~/modules/users/users.server";
 
-const supabaseClient = getSupabaseServiceRole();
+const serviceRole = getCarbonServiceRole();
 export const permissionsUpdateSchema = z.object({
   id: z.string(),
   addOnly: z.boolean(),
@@ -24,10 +24,7 @@ export const updatePermissionsTask = task({
   id: "update-permissions",
   run: async (payload: z.infer<typeof permissionsUpdateSchema>) => {
     console.info(`🔰 Permission Update for ${payload.id}`);
-    const { success, message } = await updatePermissions(
-      supabaseClient,
-      payload
-    );
+    const { success, message } = await updatePermissions(serviceRole, payload);
     if (success) {
       console.info(`✅ Permission Update for ${payload.id}`);
     } else {

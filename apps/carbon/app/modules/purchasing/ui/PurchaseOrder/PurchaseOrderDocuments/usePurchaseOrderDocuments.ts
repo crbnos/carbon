@@ -1,8 +1,8 @@
+import { useCarbon } from "@carbon/auth";
 import { toast } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useCallback } from "react";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { PurchaseOrderAttachment } from "~/modules/purchasing/types";
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
 export const usePurchaseOrderDocuments = ({ isExternal, orderId }: Props) => {
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const { company } = useUser();
 
   const canDelete = permissions.can("delete", "purchasing"); // TODO: or is document owner
@@ -34,7 +34,7 @@ export const usePurchaseOrderDocuments = ({ isExternal, orderId }: Props) => {
 
   const deleteAttachment = useCallback(
     async (attachment: PurchaseOrderAttachment) => {
-      const fileDelete = await supabase?.storage
+      const fileDelete = await carbon?.storage
         .from("private")
         .remove([getPath(attachment)]);
 
@@ -46,12 +46,12 @@ export const usePurchaseOrderDocuments = ({ isExternal, orderId }: Props) => {
       toast.success("File deleted successfully");
       refresh();
     },
-    [supabase, getPath, refresh]
+    [carbon, getPath, refresh]
   );
 
   const download = useCallback(
     async (attachment: PurchaseOrderAttachment) => {
-      const result = await supabase?.storage
+      const result = await carbon?.storage
         .from("private")
         .download(getPath(attachment));
 
@@ -72,7 +72,7 @@ export const usePurchaseOrderDocuments = ({ isExternal, orderId }: Props) => {
         document.body.removeChild(a);
       }, 0);
     },
-    [supabase?.storage, getPath]
+    [carbon?.storage, getPath]
   );
 
   return {

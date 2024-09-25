@@ -1,8 +1,8 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   SupplierContactForm,
   insertSupplierContact,
@@ -22,7 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   // RLS doesn't work for selecting a contact with no supplier
-  const client = getSupabaseServiceRole();
+  const client = getCarbonServiceRole();
 
   const { supplierId } = params;
   if (!supplierId) throw notFound("supplierId not found");

@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -19,7 +20,6 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type {
   Opportunity,
   SalesRFQ,
@@ -131,7 +131,7 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
     id: userId,
     company: { id: companyId },
   } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   const onUploadImage = async (file: File) => {
@@ -140,9 +140,7 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
       salesRfq.id
     }/${nanoid()}.${fileType}`;
 
-    const result = await supabase?.storage
-      .from("private")
-      .upload(fileName, file);
+    const result = await carbon?.storage.from("private").upload(fileName, file);
 
     if (result?.error) {
       toast.error("Failed to upload image");
@@ -157,7 +155,7 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
   };
 
   const onUpdateExternalNotes = useThrottle(async (content: JSONContent) => {
-    await supabase
+    await carbon
       ?.from("salesRfq")
       .update({
         externalNotes: content,
@@ -168,7 +166,7 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
   }, 2500);
 
   const onUpdateInternalNotes = useThrottle(async (content: JSONContent) => {
-    await supabase
+    await carbon
       ?.from("salesRfq")
       .update({
         internalNotes: content,

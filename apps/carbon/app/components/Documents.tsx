@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Card,
   CardAction,
@@ -27,7 +28,6 @@ import { LuAxis3D, LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { ModelUpload, StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -54,7 +54,7 @@ const Documents = ({
 }: DocumentsProps) => {
   const permissions = usePermissions();
   const revalidator = useRevalidator();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const { company } = useUser();
   const submit = useSubmit();
   const navigate = useNavigate();
@@ -80,7 +80,7 @@ const Documents = ({
 
   const deleteFile = useCallback(
     async (file: StorageItem) => {
-      const fileDelete = await supabase?.storage
+      const fileDelete = await carbon?.storage
         .from("private")
         .remove([getReadPath(file)]);
 
@@ -92,14 +92,14 @@ const Documents = ({
       toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getReadPath, supabase?.storage, revalidator]
+    [getReadPath, carbon?.storage, revalidator]
   );
 
   const deleteModel = useCallback(async () => {
-    if (!supabase) return;
+    if (!carbon) return;
 
     if (sourceDocument === "Job") {
-      const result = await supabase
+      const result = await carbon
         .from("job")
         .update({ modelUploadId: null })
         .eq("id", sourceDocumentId);
@@ -117,11 +117,11 @@ const Documents = ({
 
     toast.success(`Model removed from ${sourceDocument}`);
     revalidator.revalidate();
-  }, [supabase, sourceDocument, sourceDocumentId, revalidator]);
+  }, [carbon, sourceDocument, sourceDocumentId, revalidator]);
 
   const download = useCallback(
     async (file: StorageItem) => {
-      const result = await supabase?.storage
+      const result = await carbon?.storage
         .from("private")
         .download(getReadPath(file));
 
@@ -142,7 +142,7 @@ const Documents = ({
         document.body.removeChild(a);
       }, 0);
     },
-    [supabase?.storage, getReadPath]
+    [carbon?.storage, getReadPath]
   );
 
   const viewModel = useCallback(
@@ -158,15 +158,15 @@ const Documents = ({
 
   const upload = useCallback(
     async (files: File[]) => {
-      if (!supabase) {
-        toast.error("Supabase client not available");
+      if (!carbon) {
+        toast.error("Carbon client not available");
         return;
       }
 
       for (const file of files) {
         const fileName = getWritePath({ name: file.name });
 
-        const fileUpload = await supabase.storage
+        const fileUpload = await carbon.storage
           .from("private")
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
@@ -194,7 +194,7 @@ const Documents = ({
     },
     [
       getWritePath,
-      supabase,
+      carbon,
       revalidator,
       submit,
       sourceDocument,
@@ -220,7 +220,7 @@ const Documents = ({
             isDisabled={!canUpdate}
             leftIcon={<LuUpload />}
             onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-              if (e.target.files && supabase && company) {
+              if (e.target.files && carbon && company) {
                 upload(Array.from(e.target.files));
               }
             }}

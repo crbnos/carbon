@@ -1,10 +1,10 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
-import { getSupabaseServiceRole } from "~/lib/supabase";
+import { getCarbonServiceRole } from "@carbon/auth";
 import type { Result } from "~/types";
 
-const supabaseClient = getSupabaseServiceRole();
+const serviceRole = getCarbonServiceRole();
 
 const postTransactionSchema = z.object({
   documentId: z.string(),
@@ -24,15 +24,12 @@ export const postTransactionTask = task({
     switch (payload.type) {
       case "receipt":
         console.info(`📫 Posting receipt ${payload.documentId}`);
-        const postReceipt = await supabaseClient.functions.invoke(
-          "post-receipt",
-          {
-            body: {
-              receiptId: payload.documentId,
-              userId: payload.userId,
-            },
-          }
-        );
+        const postReceipt = await serviceRole.functions.invoke("post-receipt", {
+          body: {
+            receiptId: payload.documentId,
+            userId: payload.userId,
+          },
+        });
 
         result = {
           success: postReceipt.error === null,
@@ -42,7 +39,7 @@ export const postTransactionTask = task({
         break;
       case "purchase-invoice":
         console.info(`📫 Posting purchase invoice ${payload.documentId}`);
-        const postPurchaseInvoice = await supabaseClient.functions.invoke(
+        const postPurchaseInvoice = await serviceRole.functions.invoke(
           "post-purchase-invoice",
           {
             body: {
@@ -61,7 +58,7 @@ export const postTransactionTask = task({
           console.info(
             `💵 Updating pricing from invoice ${payload.documentId}`
           );
-          const priceUpdate = await supabaseClient.functions.invoke(
+          const priceUpdate = await serviceRole.functions.invoke(
             "update-purchased-prices",
             {
               body: {

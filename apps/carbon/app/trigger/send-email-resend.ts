@@ -2,10 +2,10 @@ import { task } from "@trigger.dev/sdk/v3";
 import { nanoid } from "nanoid";
 import { Resend } from "resend";
 
-import { getSupabaseServiceRole } from "~/lib/supabase";
+import { getCarbonServiceRole } from "@carbon/auth";
 import { resendFormValidator } from "~/modules/settings";
 
-const supabaseClient = getSupabaseServiceRole();
+const serviceRole = getCarbonServiceRole();
 
 export const sendEmailResendTask = task({
   id: "send-email-resend",
@@ -20,12 +20,12 @@ export const sendEmailResendTask = task({
     companyId: string;
   }) => {
     const [company, integration] = await Promise.all([
-      supabaseClient
+      serviceRole
         .from("company")
         .select("name")
         .eq("id", payload.companyId)
         .single(),
-      supabaseClient
+      serviceRole
         .from("companyIntegration")
         .select("active, metadata")
         .eq("companyId", payload.companyId)

@@ -1,9 +1,9 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import type { Json } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import type { CompanyPermission } from "~/modules/users";
 import {
   EmployeePermissionsForm,
@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { employeeId } = params;
   if (!employeeId) throw notFound("employeeId not found");
 
-  const client = getSupabaseServiceRole();
+  const client = getCarbonServiceRole();
   const [rawClaims, employee, employeeTypes] = await Promise.all([
     getClaims(client, employeeId, companyId),
     getEmployee(client, employeeId, companyId),

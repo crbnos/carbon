@@ -56,7 +56,7 @@ const PurchaseInvoiceLines = () => {
   const { defaults, id: userId } = useUser();
   const [items] = useItems();
   const unitOfMeasureOptions = useUnitOfMeasure();
-  const { canEdit, canDelete, supabase, accountOptions, onCellEdit } =
+  const { canEdit, canDelete, carbon, accountOptions, onCellEdit } =
     usePurchaseInvoiceLines();
   const [, setPurchaseInvoiceTotals] = usePurchaseInvoiceTotals();
 
@@ -262,7 +262,7 @@ const PurchaseInvoiceLines = () => {
       quantity: EditableNumber(onCellEdit),
       unitPrice: EditableNumber(onCellEdit),
       itemId: EditablePurchaseInvoiceLineNumber(onCellEdit, {
-        client: supabase,
+        client: carbon,
         items: items,
         accounts: accountOptions,
         defaultLocationId: defaults.locationId,
@@ -274,7 +274,7 @@ const PurchaseInvoiceLines = () => {
     }),
     [
       onCellEdit,
-      supabase,
+      carbon,
       items,
       accountOptions,
       defaults.locationId,

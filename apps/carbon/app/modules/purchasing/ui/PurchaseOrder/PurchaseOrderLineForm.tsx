@@ -13,6 +13,7 @@ import {
   VStack,
 } from "@carbon/react";
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
@@ -31,7 +32,6 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type {
   PurchaseOrder,
   PurchaseOrderLineType,
@@ -52,7 +52,7 @@ const PurchaseOrderLineForm = ({
   initialValues,
 }: PurchaseOrderLineFormProps) => {
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const navigate = useNavigate();
   const { company, defaults } = useUser();
   const { orderId } = useParams();
@@ -131,7 +131,7 @@ const PurchaseOrderLineForm = ({
   };
 
   const onItemChange = async (itemId: string) => {
-    if (!supabase) throw new Error("Supabase client not found");
+    if (!carbon) throw new Error("Carbon client not found");
     switch (type) {
       case "Consumable":
       case "Material":
@@ -139,7 +139,7 @@ const PurchaseOrderLineForm = ({
       case "Tool":
       case "Fixture":
         const [item, buyMethod, inventory] = await Promise.all([
-          supabase
+          carbon
             .from("item")
             .select(
               "name, readableId, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
@@ -147,14 +147,14 @@ const PurchaseOrderLineForm = ({
             .eq("id", itemId)
             .eq("companyId", company.id)
             .single(),
-          supabase
+          carbon
             .from("buyMethod")
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", company.id)
             .eq("supplierId", routeData?.purchaseOrder.supplierId!)
             .maybeSingle(),
-          supabase
+          carbon
             .from("pickMethod")
             .select("defaultShelfId")
             .eq("itemId", itemId)
@@ -184,7 +184,7 @@ const PurchaseOrderLineForm = ({
 
         break;
       case "Service":
-        const service = await supabase
+        const service = await carbon
           .from("item")
           .select("readableId, name")
           .eq("id", itemId)
@@ -213,13 +213,13 @@ const PurchaseOrderLineForm = ({
   };
 
   const onLocationChange = async (newLocation: { value: string } | null) => {
-    if (!supabase) throw new Error("supabase is not defined");
+    if (!carbon) throw new Error("carbon is not defined");
     if (typeof newLocation?.value !== "string")
       throw new Error("locationId is not a string");
 
     setLocationId(newLocation.value);
     if (!itemData.itemId) return;
-    const shelf = await supabase
+    const shelf = await carbon
       .from("pickMethod")
       .select("defaultShelfId")
       .eq("itemId", itemData.itemId)
@@ -348,7 +348,9 @@ const PurchaseOrderLineForm = ({
                     }
                   />
 
-                  {["Part", "Material", "Consumable", "Tool"] && (
+                  {["Part", "Material", "Consumable", "Tool"].includes(
+                    type
+                  ) && (
                     <>
                       <UnitOfMeasure
                         name="purchaseUnitOfMeasureCode"

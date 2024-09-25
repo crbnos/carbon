@@ -1,6 +1,6 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { copyMakeMethod, getMethodValidator } from "~/modules/items";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -10,7 +10,7 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "parts",
   });
 
-  const serviceRole = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
 
   const validation = await validator(getMethodValidator).validate(
     await request.formData()

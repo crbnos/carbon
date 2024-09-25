@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -15,7 +16,6 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { insertEmployeeJob } from "~/modules/people";
 import { getLocationsList, upsertLocation } from "~/modules/resources";
 import {
@@ -63,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const supabaseClient = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
   const { next, ...data } = validation.data;
 
   let companyId: string | undefined;
@@ -76,11 +76,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (company && location) {
     const [companyUpdate, locationUpdate] = await Promise.all([
-      updateCompany(supabaseClient, company.id!, {
+      updateCompany(serviceRole, company.id!, {
         ...data,
         updatedBy: userId,
       }),
-      upsertLocation(supabaseClient, {
+      upsertLocation(serviceRole, {
         ...location,
         ...data,
         timezone: getLocalTimeZone(),
@@ -96,7 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to update location");
     }
   } else {
-    const companyInsert = await insertCompany(supabaseClient, data);
+    const companyInsert = await insertCompany(serviceRole, data);
     if (companyInsert.error) {
       console.error(companyInsert.error);
       throw new Error("Fatal: failed to insert company");
@@ -107,7 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    const seed = await seedCompany(supabaseClient, companyId, userId);
+    const seed = await seedCompany(serviceRole, companyId, userId);
     if (seed.error) {
       console.error(seed.error);
       throw new Error("Fatal: failed to seed company");
@@ -115,7 +115,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // TODO: move all of this to transaction
     const [locationInsert] = await Promise.all([
-      upsertLocation(supabaseClient, {
+      upsertLocation(serviceRole, {
         ...data,
         name: "Headquarters",
         companyId,
@@ -135,7 +135,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const [job] = await Promise.all([
-      insertEmployeeJob(supabaseClient, {
+      insertEmployeeJob(serviceRole, {
         id: userId,
         companyId,
         locationId,

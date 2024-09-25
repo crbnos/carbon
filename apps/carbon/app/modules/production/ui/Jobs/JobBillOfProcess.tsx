@@ -1,4 +1,5 @@
 "use client";
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -44,7 +45,6 @@ import {
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { methodOperationOrders, operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { jobOperationValidator } from "../../production.models";
@@ -124,7 +124,7 @@ const JobBillOfProcess = ({
   jobMakeMethodId,
   operations,
 }: JobBillOfProcessProps) => {
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
   const permissions = usePermissions();
   const {
@@ -187,7 +187,7 @@ const JobBillOfProcess = ({
 
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
 
-    const response = await supabase?.from("jobOperation").delete().eq("id", id);
+    const response = await carbon?.from("jobOperation").delete().eq("id", id);
     if (response?.error) {
       // add the item back to the list if there was an error
       setItems((prevItems) => {
@@ -256,7 +256,7 @@ const JobBillOfProcess = ({
       )
     );
     if (selectedItemId !== null && !isTemporaryId(selectedItemId))
-      await supabase
+      await carbon
         ?.from("jobOperation")
         .update({
           workInstruction: content,
@@ -269,7 +269,7 @@ const JobBillOfProcess = ({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const result = await supabase?.storage
+    const result = await carbon?.storage
       .from("private")
       .upload(fileName, file, { upsert: true });
 
@@ -526,7 +526,7 @@ function OperationForm({
   if (!jobId) throw new Error("jobId not found");
 
   const fetcher = useFetcher<{ id: string }>();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   useEffect(() => {
     // replace the temporary id with the actual id
@@ -549,8 +549,8 @@ function OperationForm({
       });
 
       // save the work instructions
-      if (isTemporaryId(item.id) && supabase) {
-        supabase
+      if (isTemporaryId(item.id) && carbon) {
+        carbon
           .from("jobOperation")
           .update({
             workInstruction: item.data.workInstruction,
@@ -571,7 +571,7 @@ function OperationForm({
     setItems,
     setSelectedItemId,
     item.data.workInstruction,
-    supabase,
+    carbon,
     userId,
   ]);
 
@@ -627,15 +627,15 @@ function OperationForm({
   });
 
   const onProcessChange = async (processId: string) => {
-    if (!supabase || !processId) return;
+    if (!carbon || !processId) return;
     const [process, workCenters, supplierProcesses] = await Promise.all([
-      supabase.from("process").select("*").eq("id", processId).single(),
-      supabase
+      carbon.from("process").select("*").eq("id", processId).single(),
+      carbon
         .from("workCenterProcess")
         .select("workCenter(*)")
         .eq("processId", processId)
         .eq("workCenter.active", true),
-      supabase.from("supplierProcess").select("*").eq("processId", processId),
+      carbon.from("supplierProcess").select("*").eq("processId", processId),
     ]);
 
     const activeWorkCenters =
@@ -695,14 +695,14 @@ function OperationForm({
   };
 
   const onWorkCenterChange = async (workCenterId: string | null) => {
-    if (!supabase) return;
+    if (!carbon) return;
     if (!workCenterId) {
       // get the average costs
       await onProcessChange(processData.processId);
       return;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await carbon
       .from("workCenter")
       .select("*")
       .eq("id", workCenterId)
@@ -723,8 +723,8 @@ function OperationForm({
   };
 
   const onSupplierProcessChange = async (supplierProcessId: string) => {
-    if (!supabase) return;
-    const { data, error } = await supabase
+    if (!carbon) return;
+    const { data, error } = await carbon
       .from("supplierProcess")
       .select("*")
       .eq("id", supplierProcessId)

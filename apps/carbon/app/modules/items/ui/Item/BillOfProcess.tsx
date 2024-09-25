@@ -1,4 +1,5 @@
 "use client";
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -44,7 +45,6 @@ import {
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { methodOperationOrders, operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
@@ -116,7 +116,7 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order"> = {
 
 const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
   const {
     id: userId,
@@ -171,7 +171,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
 
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
 
-    const response = await supabase
+    const response = await carbon
       ?.from("methodOperation")
       .delete()
       .eq("id", id);
@@ -244,7 +244,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
     );
 
     if (selectedItemId !== null && !isTemporaryId(selectedItemId))
-      await supabase
+      await carbon
         ?.from("methodOperation")
         .update({
           workInstruction: content,
@@ -257,7 +257,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const result = await supabase?.storage
+    const result = await carbon?.storage
       .from("private")
       .upload(fileName, file, {
         upsert: true,
@@ -510,7 +510,7 @@ function OperationForm({
 }) {
   const methodOperationFetcher = useFetcher<{ id: string }>();
   const { id: userId } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   useEffect(() => {
@@ -533,8 +533,8 @@ function OperationForm({
         );
       });
       // save the work instructions
-      if (isTemporaryId(item.id) && supabase) {
-        supabase
+      if (isTemporaryId(item.id) && carbon) {
+        carbon
           .from("methodOperation")
           .update({
             workInstruction: item.data.workInstruction,
@@ -555,7 +555,7 @@ function OperationForm({
     methodOperationFetcher.data,
     setItems,
     setSelectedItemId,
-    supabase,
+    carbon,
     userId,
   ]);
 
@@ -597,8 +597,8 @@ function OperationForm({
   });
 
   const onProcessChange = async (processId: string) => {
-    if (!supabase || !processId) return;
-    const { data, error } = await supabase
+    if (!carbon || !processId) return;
+    const { data, error } = await carbon
       .from("process")
       .select("*")
       .eq("id", processId)
@@ -619,8 +619,8 @@ function OperationForm({
   };
 
   const onWorkCenterChange = async (workCenterId: string) => {
-    if (!supabase || !workCenterId) return;
-    const { data, error } = await supabase
+    if (!carbon || !workCenterId) return;
+    const { data, error } = await carbon
       .from("workCenter")
       .select("*")
       .eq("id", workCenterId)

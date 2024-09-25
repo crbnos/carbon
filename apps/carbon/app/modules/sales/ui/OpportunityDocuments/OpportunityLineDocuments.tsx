@@ -30,9 +30,9 @@ import type { ItemFile } from "~/modules/items";
 import { useNavigate, useRevalidator, useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 
+import { useCarbon } from "@carbon/auth";
 import { useCallback } from "react";
 import type { ModelUpload } from "~/types";
 
@@ -48,7 +48,7 @@ const useOpportunityLineDocuments = ({
   const navigate = useNavigate();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const { company } = useUser();
   const submit = useSubmit();
 
@@ -64,7 +64,7 @@ const useOpportunityLineDocuments = ({
 
   const deleteFile = useCallback(
     async (file: ItemFile) => {
-      const fileDelete = await supabase?.storage
+      const fileDelete = await carbon?.storage
         .from("private")
         .remove([getPath(file)]);
 
@@ -76,24 +76,24 @@ const useOpportunityLineDocuments = ({
       toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, supabase?.storage, revalidator]
+    [getPath, carbon?.storage, revalidator]
   );
 
   const deleteModel = useCallback(
     async (lineId: string) => {
-      if (!lineId || !supabase) return;
+      if (!lineId || !carbon) return;
 
       const [salesRfqLineResult, quoteLineResult, salesOrderLineResult] =
         await Promise.all([
-          supabase
+          carbon
             .from("salesRfqLine")
             .update({ modelUploadId: null })
             .eq("id", lineId),
-          supabase
+          carbon
             .from("quoteLine")
             .update({ modelUploadId: null })
             .eq("id", lineId),
-          supabase
+          carbon
             .from("salesOrderLine")
             .update({ modelUploadId: null })
             .eq("id", lineId),
@@ -116,12 +116,12 @@ const useOpportunityLineDocuments = ({
       toast.success("Model removed from line");
       revalidator.revalidate();
     },
-    [supabase, revalidator]
+    [carbon, revalidator]
   );
 
   const download = useCallback(
     async (file: ItemFile) => {
-      const result = await supabase?.storage
+      const result = await carbon?.storage
         .from("private")
         .download(getPath(file));
 
@@ -142,7 +142,7 @@ const useOpportunityLineDocuments = ({
         document.body.removeChild(a);
       }, 0);
     },
-    [supabase?.storage, getPath]
+    [carbon?.storage, getPath]
   );
 
   const viewModel = useCallback(
@@ -183,15 +183,15 @@ const useOpportunityLineDocuments = ({
 
   const upload = useCallback(
     async (files: File[]) => {
-      if (!supabase) {
-        toast.error("Supabase client not available");
+      if (!carbon) {
+        toast.error("Carbon client not available");
         return;
       }
 
       for (const file of files) {
         const fileName = getPath(file);
 
-        const fileUpload = await supabase.storage
+        const fileUpload = await carbon.storage
           .from("private")
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
@@ -210,7 +210,7 @@ const useOpportunityLineDocuments = ({
       }
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, supabase, revalidator]
+    [getPath, createDocumentRecord, carbon, revalidator]
   );
 
   return {

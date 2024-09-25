@@ -44,7 +44,7 @@ const EditablePurchaseInvoiceLineNumber =
             }));
 
     const onAccountChange = async (accountNumber: string) => {
-      if (!client) throw new Error("Supabase client not found");
+      if (!client) throw new Error("Carbon client not found");
 
       const account = await client
         .from("account")
@@ -80,7 +80,7 @@ const EditablePurchaseInvoiceLineNumber =
     };
 
     const onItemChange = async (itemId: string) => {
-      if (!client) throw new Error("Supabase client not found");
+      if (!client) throw new Error("Carbon client not found");
       switch (row.invoiceLineType) {
         case "Material":
         case "Part":

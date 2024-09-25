@@ -1,7 +1,7 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 
 // export const config = { runtime: "nodejs" };
 
@@ -15,7 +15,7 @@ const oauthTokenValidator = z.object({
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-  const client = getSupabaseServiceRole();
+  const client = getCarbonServiceRole();
   const validation = await validator(oauthTokenValidator).validate(
     await request.formData()
   );

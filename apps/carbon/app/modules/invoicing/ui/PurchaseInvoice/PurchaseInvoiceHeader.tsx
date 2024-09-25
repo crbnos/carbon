@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Card,
   CardAttribute,
@@ -18,7 +19,6 @@ import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import { Assignee, useOptimisticAssignment } from "~/components";
 import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import {
   PurchaseInvoicingStatus,
@@ -33,7 +33,7 @@ const PurchaseInvoiceHeader = () => {
   const { invoiceId } = useParams();
   const postingModal = useDisclosure();
 
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const [linesNotAssociatedWithPO, setLinesNotAssociatedWithPO] = useState<
     { itemId: string | null; itemReadableId: string | null; quantity: number }[]
   >([]);
@@ -54,8 +54,8 @@ const PurchaseInvoiceHeader = () => {
   const formatter = useCurrencyFormatter();
   const showPostModal = async () => {
     // check if there are any lines that are not associated with a PO
-    if (!supabase) throw new Error("supabase not found");
-    const { data, error } = await supabase
+    if (!carbon) throw new Error("carbon not found");
+    const { data, error } = await carbon
       .from("purchaseInvoiceLine")
       .select("itemId, itemReadableId, quantity, conversionFactor")
       .eq("invoiceId", invoiceId)

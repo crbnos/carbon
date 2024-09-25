@@ -1,3 +1,4 @@
+import { getBrowserEnv } from "@carbon/auth";
 import { validator } from "@carbon/form";
 import { Button, Heading, toast } from "@carbon/react";
 import {
@@ -18,7 +19,6 @@ import type {
 } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
-import { getBrowserEnv } from "~/config/env";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";

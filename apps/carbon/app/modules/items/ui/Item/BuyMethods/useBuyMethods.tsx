@@ -1,10 +1,10 @@
+import { useCarbon } from "@carbon/auth";
 import { useCallback } from "react";
 import { usePermissions } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { BuyMethod } from "~/modules/items";
 
 export default function useBuyMethods() {
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   const canEdit = permissions.can("update", "parts");
@@ -12,21 +12,21 @@ export default function useBuyMethods() {
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: BuyMethod) => {
-      if (!supabase) throw new Error("Supabase client not found");
-      return await supabase
+      if (!carbon) throw new Error("Carbon client not found");
+      return await carbon
         .from("buyMethod")
         .update({
           [id]: value,
         })
         .eq("id", row.id);
     },
-    [supabase]
+    [carbon]
   );
 
   return {
     canDelete,
     canEdit,
-    supabase,
+    carbon,
     onCellEdit,
   };
 }

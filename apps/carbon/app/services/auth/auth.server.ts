@@ -1,11 +1,15 @@
+import {
+  REFRESH_ACCESS_TOKEN_THRESHOLD,
+  VERCEL_URL,
+  getCarbon,
+  getCarbonServiceRole,
+} from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient,
 } from "@supabase/supabase-js";
 import { redirect } from "@vercel/remix";
-import { REFRESH_ACCESS_TOKEN_THRESHOLD, VERCEL_URL } from "~/config/env";
-import { getSupabase, getSupabaseServiceRole } from "~/lib/supabase";
 import { getCompaniesForUser } from "~/modules/users";
 import { getUserClaims } from "~/modules/users/users.server";
 import { flash, requireAuthSession } from "~/services/session.server";
@@ -18,7 +22,7 @@ export async function createEmailAuthAccount(
   password: string,
   meta?: Record<string, unknown>
 ) {
-  const { data, error } = await getSupabaseServiceRole().auth.admin.createUser({
+  const { data, error } = await getCarbonServiceRole().auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -33,9 +37,7 @@ export async function createEmailAuthAccount(
 }
 
 export async function deleteAuthAccount(userId: string) {
-  const { error } = await getSupabaseServiceRole().auth.admin.deleteUser(
-    userId
-  );
+  const { error } = await getCarbonServiceRole().auth.admin.deleteUser(userId);
 
   if (error) return null;
 
@@ -43,7 +45,7 @@ export async function deleteAuthAccount(userId: string) {
 }
 
 export async function getAuthAccountByAccessToken(accessToken: string) {
-  const { data, error } = await getSupabaseServiceRole().auth.getUser(
+  const { data, error } = await getCarbonServiceRole().auth.getUser(
     accessToken
   );
 
@@ -53,26 +55,24 @@ export async function getAuthAccountByAccessToken(accessToken: string) {
 }
 
 function makeAuthSession(
-  supabaseSession: SupabaseAuthSession | null,
+  session: SupabaseAuthSession | null,
   companyId: string
 ): AuthSession | null {
-  if (!supabaseSession) return null;
+  if (!session) return null;
 
-  if (!supabaseSession.refresh_token)
+  if (!session.refresh_token)
     throw new Error("User should have a refresh token");
 
-  if (!supabaseSession.user?.email)
-    throw new Error("User should have an email");
+  if (!session.user?.email) throw new Error("User should have an email");
 
   return {
-    accessToken: supabaseSession.access_token,
+    accessToken: session.access_token,
     companyId,
-    refreshToken: supabaseSession.refresh_token,
-    userId: supabaseSession.user.id,
-    email: supabaseSession.user.email,
-    expiresIn:
-      (supabaseSession.expires_in ?? 3000) - REFRESH_ACCESS_TOKEN_THRESHOLD,
-    expiresAt: supabaseSession.expires_at ?? -1,
+    refreshToken: session.refresh_token,
+    userId: session.user.id,
+    email: session.user.email,
+    expiresIn: (session.expires_in ?? 3000) - REFRESH_ACCESS_TOKEN_THRESHOLD,
+    expiresAt: session.expires_at ?? -1,
   };
 }
 
@@ -95,7 +95,7 @@ export async function requirePermissions(
     request
   );
 
-  const client = getSupabase(accessToken);
+  const client = getCarbon(accessToken);
   // early exit if no requiredPermissions are required
   if (Object.keys(requiredPermissions).length === 0)
     return { client, companyId, email, userId };
@@ -148,7 +148,7 @@ export async function requirePermissions(
 }
 
 export async function resetPassword(accessToken: string, password: string) {
-  const { error } = await getSupabase(accessToken).auth.updateUser({
+  const { error } = await getCarbon(accessToken).auth.updateUser({
     password,
   });
 
@@ -161,14 +161,14 @@ export async function sendInviteByEmail(
   email: string,
   data?: Record<string, unknown>
 ) {
-  return getSupabaseServiceRole().auth.admin.inviteUserByEmail(email, {
+  return getCarbonServiceRole().auth.admin.inviteUserByEmail(email, {
     redirectTo: `${VERCEL_URL}/callback`,
     data,
   });
 }
 
 export async function sendMagicLink(email: string) {
-  return getSupabaseServiceRole().auth.signInWithOtp({
+  return getCarbonServiceRole().auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: `${VERCEL_URL}/callback`,
@@ -177,7 +177,7 @@ export async function sendMagicLink(email: string) {
 }
 
 export async function signInWithEmail(email: string, password: string) {
-  const client = getSupabaseServiceRole();
+  const client = getCarbonServiceRole();
   const { data, error } = await client.auth.signInWithPassword({
     email,
     password,
@@ -195,7 +195,7 @@ export async function refreshAccessToken(
 ): Promise<AuthSession | null> {
   if (!refreshToken) return null;
 
-  const client = getSupabaseServiceRole();
+  const client = getCarbonServiceRole();
 
   const { data, error } = await client.auth.refreshSession({
     refresh_token: refreshToken,

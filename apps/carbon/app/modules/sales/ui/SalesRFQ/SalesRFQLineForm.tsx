@@ -20,6 +20,7 @@ import {
   VStack,
 } from "@carbon/react";
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
@@ -36,7 +37,6 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { DeleteSalesRFQLine, salesRfqLineValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -54,7 +54,7 @@ const SalesRFQLineForm = ({
 }: SalesRFQLineFormProps) => {
   const permissions = usePermissions();
   const { company } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   const { rfqId } = useParams();
 
@@ -87,9 +87,9 @@ const SalesRFQLineForm = ({
   });
 
   const onCustomerPartChange = async (customerPartId: string) => {
-    if (!supabase || !routeData?.rfqSummary?.customerId) return;
+    if (!carbon || !routeData?.rfqSummary?.customerId) return;
 
-    const customerPart = await supabase
+    const customerPart = await carbon
       .from("customerPartToItem")
       .select("itemId")
       .eq("customerPartId", customerPartId)
@@ -109,13 +109,13 @@ const SalesRFQLineForm = ({
 
   const onCustomerPartRevisionChange = async (customerPartRevision: string) => {
     if (
-      !supabase ||
+      !carbon ||
       !routeData?.rfqSummary?.customerId ||
       !itemData.customerPartId
     )
       return;
 
-    const customerPart = await supabase
+    const customerPart = await carbon
       .from("customerPartToItem")
       .select("itemId")
       .eq("customerPartId", itemData.customerPartId)
@@ -134,16 +134,16 @@ const SalesRFQLineForm = ({
   };
 
   const onItemChange = async (itemId: string) => {
-    if (!supabase) return;
+    if (!carbon) return;
 
     const [item, customerPart] = await Promise.all([
-      supabase
+      carbon
         .from("item")
         .select("name, unitOfMeasureCode, modelUploadId")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
-      supabase
+      carbon
         .from("customerPartToItem")
         .select("customerPartId, customerPartRevision")
         .eq("itemId", itemId)

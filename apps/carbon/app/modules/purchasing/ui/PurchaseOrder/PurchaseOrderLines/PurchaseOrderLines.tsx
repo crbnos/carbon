@@ -57,7 +57,7 @@ const PurchaseOrderLines = () => {
   const { defaults, id: userId } = useUser();
   const unitOfMeasureOptions = useUnitOfMeasure();
 
-  const { canEdit, canDelete, supabase, accountOptions, onCellEdit } =
+  const { canEdit, canDelete, carbon, accountOptions, onCellEdit } =
     usePurchaseOrderLines();
   const [, setPurchaseOrderTotals] = usePurchaseOrderTotals();
 
@@ -327,7 +327,7 @@ const PurchaseOrderLines = () => {
       purchaseQuantity: EditableNumber(onCellEdit),
       unitPrice: EditableNumber(onCellEdit),
       itemId: EditablePurchaseOrderLineNumber(onCellEdit, {
-        client: supabase,
+        client: carbon,
         items: items,
         accounts: accountOptions,
         defaultLocationId: defaults.locationId,
@@ -339,7 +339,7 @@ const PurchaseOrderLines = () => {
     }),
     [
       onCellEdit,
-      supabase,
+      carbon,
       items,
       accountOptions,
       defaults.locationId,

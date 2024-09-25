@@ -1,10 +1,9 @@
+import { carbonClient, getCarbonServiceRole } from "@carbon/auth";
 import { validator } from "@carbon/form";
 import { useFetcher } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useEffect, useRef } from "react";
-import { getSupabaseServiceRole } from "~/lib/supabase";
-import { supabaseClient } from "~/lib/supabase/client";
 import { getUserByEmail } from "~/modules/users/users.server";
 import { callbackValidator } from "~/services/auth/auth.models";
 import { refreshAccessToken } from "~/services/auth/auth.server";
@@ -41,8 +40,8 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   }
 
   const { refreshToken, userId } = validation.data;
-  const supabaseServiceClient = getSupabaseServiceRole();
-  const companies = await supabaseServiceClient
+  const serviceRole = getCarbonServiceRole();
+  const companies = await serviceRole
     .from("userToCompany")
     .select("companyId")
     .eq("userId", userId);
@@ -86,7 +85,7 @@ export default function AuthCallback() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((event, supabaseSession) => {
+    } = carbonClient.auth.onAuthStateChange((event, session) => {
       if (
         ["SIGNED_IN", "INITIAL_SESSION"].includes(event) &&
         !isAuthenticating.current
@@ -100,8 +99,8 @@ export default function AuthCallback() {
 
         // we should not trust what's happen client side
         // so, we only pick the refresh token, and let's back-end getting user session from it
-        const refreshToken = supabaseSession?.refresh_token;
-        const userId = supabaseSession?.user.id;
+        const refreshToken = session?.refresh_token;
+        const userId = session?.user.id;
 
         if (!refreshToken || !userId) return;
 

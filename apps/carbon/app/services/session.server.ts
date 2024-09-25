@@ -9,7 +9,7 @@ import {
   SESSION_MAX_AGE,
   SESSION_SECRET,
   VERCEL_ENV,
-} from "~/config/env";
+} from "@carbon/auth";
 
 import { redis } from "@carbon/kv";
 import { getPermissionCacheKey } from "~/modules/users/users.server";

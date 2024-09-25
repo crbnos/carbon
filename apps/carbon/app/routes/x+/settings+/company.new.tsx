@@ -1,9 +1,9 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { insertEmployeeJob } from "~/modules/people";
 import { upsertLocation } from "~/modules/resources";
 import {
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const client = getSupabaseServiceRole();
+  const client = getCarbonServiceRole();
 
   const companyInsert = await insertCompany(client, validation.data);
   if (companyInsert.error) {

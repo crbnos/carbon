@@ -1,5 +1,5 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import type { ReceiptSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const defaults = await getUserDefaults(client, userId, companyId);
 
-  const serviceRole = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
   switch (sourceDocument) {
     case "Purchase Order":
       const purchaseOrderReceipt = await serviceRole.functions.invoke<{

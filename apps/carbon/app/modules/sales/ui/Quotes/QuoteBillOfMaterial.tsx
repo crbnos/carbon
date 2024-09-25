@@ -1,4 +1,5 @@
 "use client";
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -39,7 +40,6 @@ import type {
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
@@ -410,7 +410,7 @@ function MaterialForm({
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
 
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const methodMaterialFetcher = useFetcher<{ id: string }>();
   const params = useParams();
   const { company } = useUser();
@@ -471,24 +471,20 @@ function MaterialForm({
   };
 
   const onItemChange = async (itemId: string) => {
-    if (!supabase) return;
+    if (!carbon) return;
     if (itemId === params.itemId) {
       toast.error("An item cannot be added to itself.");
       return;
     }
 
     const [item, itemCost] = await await Promise.all([
-      supabase
+      carbon
         .from("item")
         .select("name, readableId, unitOfMeasureCode, defaultMethodType")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
-      supabase
-        .from("itemCost")
-        .select("unitCost")
-        .eq("itemId", itemId)
-        .single(),
+      carbon.from("itemCost").select("unitCost").eq("itemId", itemId).single(),
     ]);
 
     if (item.error) {

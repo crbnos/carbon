@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import {
   Card,
@@ -12,7 +13,6 @@ import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { CadModel, Documents } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import type { Job } from "~/modules/production";
 import {
   JobForm,
@@ -62,14 +62,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculate = await recalculateJobRequirements(
-    getSupabaseServiceRole(),
-    {
-      id,
-      companyId,
-      userId,
-    }
-  );
+  const recalculate = await recalculateJobRequirements(getCarbonServiceRole(), {
+    id,
+    companyId,
+    userId,
+  });
   if (recalculate.error) {
     throw redirect(
       path.to.job(id),

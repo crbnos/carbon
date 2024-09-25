@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -19,7 +20,6 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
 import { LuCheckCircle } from "react-icons/lu";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { getTerms } from "~/modules/settings";
 
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function Terms() {
   const { terms } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const {
     id: userId,
     company: { id: companyId },
@@ -72,8 +72,8 @@ export default function Terms() {
     onUpdatePurchasingTerms(content);
   };
   const onUpdatePurchasingTerms = useThrottle(async (content: JSONContent) => {
-    if (!supabase) return;
-    const { error } = await supabase
+    if (!carbon) return;
+    const { error } = await carbon
       .from("terms")
       .update({
         purchasingTerms: content,
@@ -90,7 +90,7 @@ export default function Terms() {
   };
   const onUpdateSalesTerms = useThrottle(async (content: JSONContent) => {
     setSalesTermsStatus("draft");
-    await supabase
+    await carbon
       ?.from("terms")
       .update({
         salesTerms: content,

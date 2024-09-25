@@ -1,8 +1,8 @@
+import { SUPABASE_API_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
-import { SUPABASE_API_URL } from "~/config/env";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";

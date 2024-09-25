@@ -1,11 +1,11 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
-import { getSupabaseServiceRole } from "~/lib/supabase";
+import { getCarbonServiceRole } from "@carbon/auth";
 import { deactivateUser, resendInvite } from "~/modules/users/users.server";
 import type { Result } from "~/types";
 
-const supabaseClient = getSupabaseServiceRole();
+const serviceRole = getCarbonServiceRole();
 export const userAdminSchema = z.object({
   id: z.string(),
   type: z.enum(["resend", "deactivate"]),
@@ -21,11 +21,11 @@ export const userAdminTask = task({
     switch (payload.type) {
       case "resend":
         console.log(`📫 Resending invite for ${payload.id}`);
-        result = await resendInvite(supabaseClient, payload.id);
+        result = await resendInvite(serviceRole, payload.id);
         break;
       case "deactivate":
         console.log(`🚭 Deactivating ${payload.id}`);
-        result = await deactivateUser(supabaseClient, payload.id);
+        result = await deactivateUser(serviceRole, payload.id);
         break;
       default:
         result = {

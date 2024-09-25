@@ -1,6 +1,6 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   getLineMethodValidator,
   getMethodValidator,
@@ -18,7 +18,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const type = formData.get("type") as string;
 
-  const serviceRole = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
   if (type === "line") {
     const validation = await validator(getLineMethodValidator).validate(
       formData

@@ -1,8 +1,8 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   salesOrderToJobValidator,
   upsertJob,
@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {
     create: "production",
   });
-  const serviceRole = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
 
   const formData = await request.formData();
   const validation = await validator(salesOrderToJobValidator).validate(

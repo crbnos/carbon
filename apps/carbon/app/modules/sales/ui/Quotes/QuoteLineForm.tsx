@@ -20,6 +20,7 @@ import {
   VStack,
 } from "@carbon/react";
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
@@ -37,7 +38,6 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { Quotation, QuotationLine } from "~/modules/sales";
 import {
   DeleteQuoteLine,
@@ -60,7 +60,7 @@ const QuoteLineForm = ({
 }: QuoteLineFormProps) => {
   const permissions = usePermissions();
   const { company } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   const { quoteId } = useParams();
 
@@ -97,9 +97,9 @@ const QuoteLineForm = ({
   });
 
   const onCustomerPartChange = async (customerPartId: string) => {
-    if (!supabase || !routeData?.quote?.customerId) return;
+    if (!carbon || !routeData?.quote?.customerId) return;
 
-    const customerPart = await supabase
+    const customerPart = await carbon
       .from("customerPartToItem")
       .select("itemId")
       .eq("customerPartId", customerPartId)
@@ -118,10 +118,10 @@ const QuoteLineForm = ({
   };
 
   const onCustomerPartRevisionChange = async (customerPartRevision: string) => {
-    if (!supabase || !routeData?.quote?.customerId || !itemData.customerPartId)
+    if (!carbon || !routeData?.quote?.customerId || !itemData.customerPartId)
       return;
 
-    const customerPart = await supabase
+    const customerPart = await carbon
       .from("customerPartToItem")
       .select("itemId")
       .eq("customerPartId", itemData.customerPartId)
@@ -140,10 +140,10 @@ const QuoteLineForm = ({
   };
 
   const onItemChange = async (itemId: string) => {
-    if (!supabase) return;
+    if (!carbon) return;
 
     const [item, customerPart] = await Promise.all([
-      supabase
+      carbon
         .from("item")
         .select(
           "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
@@ -151,7 +151,7 @@ const QuoteLineForm = ({
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
-      supabase
+      carbon
         .from("customerPartToItem")
         .select("customerPartId, customerPartRevision")
         .eq("itemId", itemId)

@@ -41,8 +41,8 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 
+import { useCarbon } from "@carbon/auth";
 import type {
   SalesOrder,
   SalesOrderLine,
@@ -65,7 +65,7 @@ const SalesOrderLineForm = ({
   onClose,
 }: SalesOrderLineFormProps) => {
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const { company } = useUser();
   const { orderId } = useParams();
 
@@ -120,9 +120,9 @@ const SalesOrderLineForm = ({
 
   const onChange = async (itemId: string) => {
     if (!itemId) return;
-    if (!supabase || !company.id) return;
+    if (!carbon || !company.id) return;
     const [item, shelf, price] = await Promise.all([
-      supabase
+      carbon
         .from("item")
         .select(
           "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
@@ -130,14 +130,14 @@ const SalesOrderLineForm = ({
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
-      supabase
+      carbon
         .from("pickMethod")
         .select("defaultShelfId")
         .eq("itemId", itemId)
         .eq("companyId", company.id)
         .eq("locationId", locationId)
         .maybeSingle(),
-      supabase
+      carbon
         .from("itemUnitSalePrice")
         .select("unitSalePrice")
         .eq("itemId", itemId)
@@ -158,13 +158,13 @@ const SalesOrderLineForm = ({
   };
 
   const onLocationChange = async (newLocation: { value: string } | null) => {
-    if (!supabase) throw new Error("supabase is not defined");
+    if (!carbon) throw new Error("carbon is not defined");
     if (typeof newLocation?.value !== "string")
       throw new Error("locationId is not a string");
 
     setLocationId(newLocation.value);
     if (!itemData.itemId) return;
-    const shelf = await supabase
+    const shelf = await carbon
       .from("pickMethod")
       .select("defaultShelfId")
       .eq("itemId", itemData.itemId)

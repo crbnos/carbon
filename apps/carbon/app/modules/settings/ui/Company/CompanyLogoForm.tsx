@@ -1,7 +1,7 @@
+import { useCarbon } from "@carbon/auth";
 import { Avatar, Button, File, VStack, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import { type ChangeEvent } from "react";
-import { useSupabase } from "~/lib/supabase";
 import type { Company } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -10,7 +10,7 @@ type CompanyLogoFormProps = {
 };
 
 const CompanyLogoForm = ({ company }: CompanyLogoFormProps) => {
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const submit = useSubmit();
 
   const logoPath = company?.logo
@@ -18,11 +18,11 @@ const CompanyLogoForm = ({ company }: CompanyLogoFormProps) => {
     : null;
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && supabase) {
+    if (e.target.files && carbon) {
       const logo = e.target.files[0];
       const fileExtension = logo.name.substring(logo.name.lastIndexOf(".") + 1);
 
-      const imageUpload = await supabase.storage
+      const imageUpload = await carbon.storage
         .from("public")
         .upload(`${company.id}/logo.${fileExtension}`, logo, {
           cacheControl: "0",
@@ -40,8 +40,8 @@ const CompanyLogoForm = ({ company }: CompanyLogoFormProps) => {
   };
 
   const deleteImage = async () => {
-    if (supabase && logoPath) {
-      const imageDelete = await supabase.storage
+    if (carbon && logoPath) {
+      const imageDelete = await carbon.storage
         .from("public")
         .remove([logoPath]);
 

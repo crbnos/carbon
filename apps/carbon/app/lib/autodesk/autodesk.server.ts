@@ -1,11 +1,11 @@
-import { redis } from "@carbon/kv";
-import { z } from "zod";
 import {
   AUTODESK_BUCKET_NAME,
   AUTODESK_CLIENT_ID,
   AUTODESK_CLIENT_SECRET,
-} from "~/config/env";
-import { getSupabaseServiceRole } from "../supabase";
+  getCarbonServiceRole,
+} from "@carbon/auth";
+import { redis } from "@carbon/kv";
+import { z } from "zod";
 import type { AutodeskTokenResponse } from "./types";
 
 const SIGNED_URL_EXPIRATION = 15;
@@ -317,7 +317,7 @@ export async function getThumbnail(
   token: string,
   companyId: string
 ) {
-  const supabase = getSupabaseServiceRole();
+  const carbon = getCarbonServiceRole();
   const url = autodeskAPI.getThumbnail.url(urn);
 
   let response;
@@ -334,11 +334,11 @@ export async function getThumbnail(
       // the response is a binary stream of the thumbnail
       // of type image/png
       // we convert it to an ArrayBuffer and then upload it
-      // to supabase storage
+      // to carbon storage
       const data = await response.arrayBuffer();
       const fileName = `${companyId}/models/${urn}.png`;
 
-      const fileUpload = await supabase.storage
+      const fileUpload = await carbon.storage
         .from("private")
         .upload(fileName, data, {
           cacheControl: `${365 * 24 * 60 * 60}`,
