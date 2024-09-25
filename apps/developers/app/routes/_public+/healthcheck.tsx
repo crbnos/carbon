@@ -1,8 +1,8 @@
-import { getSupabaseServiceRole } from "~/lib/supabase";
+import { getCarbonServiceRole } from "@carbon/auth";
 
 export async function loader() {
   try {
-    const client = getSupabaseServiceRole();
+    const client = getCarbonServiceRole();
     const test = await client.from("attributeDataType").select("*");
     if (test.error !== null) throw test.error;
     return new Response("OK");

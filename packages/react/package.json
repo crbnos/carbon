@@ -75,7 +75,7 @@
     "eslint": "^8.23.1",
     "eslint-config-carbon": "*",
     "jest": "^26.6.3",
-    "react": "^18.2.0",
+    "react": "^18.3.1",
     "tsup": "^6.5.0",
     "typescript": "^5.2.2"
   },
@@ -88,7 +88,7 @@
   "peerDependencies": {
     "@internationalized/date": "^3.5.2",
     "framer-motion": "^11.1.7",
-    "react": "^18.2.0",
+    "react": "^18.3.1",
     "react-icons": "^5.2.1"
   },
   "private": true,

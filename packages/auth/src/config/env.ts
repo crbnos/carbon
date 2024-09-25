@@ -14,6 +14,9 @@ declare global {
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      AUTODESK_BUCKET_NAME?: string;
+      AUTODESK_CLIENT_ID?: string;
+      AUTODESK_CLIENT_SECRET?: string;
       DOMAIN: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
@@ -53,18 +56,27 @@ export function getEnv(
 /**
  * Server env
  */
-export const DOMAIN = getEnv("DOMAIN", { isRequired: false });
+export const AUTODESK_BUCKET_NAME = getEnv("AUTODESK_BUCKET_NAME", {
+  isRequired: false,
+});
+export const AUTODESK_CLIENT_ID = getEnv("AUTODESK_CLIENT_ID", {
+  isRequired: false,
+});
+export const AUTODESK_CLIENT_SECRET = getEnv("AUTODESK_CLIENT_SECRET", {
+  isRequired: false,
+});
+export const DOMAIN = getEnv("DOMAIN", { isRequired: false }); // preview environments need no domain
 export const SUPABASE_SERVICE_ROLE = getEnv("SUPABASE_SERVICE_ROLE");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
 export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before token expires
+export const VERCEL_URL = getEnv("VERCEL_URL");
 
 /**
  * Shared envs
  */
-export const VERCEL_URL = getEnv("VERCEL_URL", { isSecret: false });
 export const VERCEL_ENV = getEnv("VERCEL_ENV", {
   isSecret: false,
   isRequired: false,
@@ -86,7 +98,6 @@ export function getBrowserEnv() {
     SUPABASE_ANON_PUBLIC,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
-    VERCEL_URL,
   };
 }
 

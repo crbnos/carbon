@@ -1,3 +1,12 @@
+import type { Result } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  loginValidator,
+  safeRedirect,
+} from "@carbon/auth";
+import { signInWithEmail, verifyAuthSession } from "@carbon/auth/auth.server";
+import { commitAuthSession, getAuthSession } from "@carbon/auth/session.server";
 import {
   Hidden,
   Input,
@@ -18,16 +27,7 @@ import { json, redirect } from "@vercel/remix";
 import posthog from "posthog-js";
 import { LuAlertCircle } from "react-icons/lu";
 
-import { loginValidator } from "~/services/auth";
-import {
-  signInWithEmail,
-  verifyAuthSession,
-} from "~/services/auth/auth.server";
-import { commitAuthSession, getAuthSession } from "~/services/session.server";
-import type { Result } from "~/types";
-import { assertIsPost, safeRedirect } from "~/utils/http";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon Developers | Login" }];

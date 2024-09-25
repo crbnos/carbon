@@ -1,6 +1,5 @@
+import { redis } from "@carbon/kv";
 import { createCookieSessionStorage, redirect } from "@vercel/remix";
-
-import { getCurrentPath, isGet, makeRedirectToFromHere } from "~/utils/http";
 
 import {
   DOMAIN,
@@ -9,14 +8,12 @@ import {
   SESSION_MAX_AGE,
   SESSION_SECRET,
   VERCEL_ENV,
-} from "~/config/env";
-
-import { redis } from "@carbon/kv";
-
-import type { Result } from "~/types";
-import { path } from "~/utils/path";
-import { refreshAccessToken, verifyAuthSession } from "./auth/auth.server";
-import type { AuthSession } from "./auth/types";
+} from "../config/env";
+import type { AuthSession, Result } from "../types";
+import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
+import { path } from "../utils/path";
+import { refreshAccessToken, verifyAuthSession } from "./auth.server";
+import { getPermissionCacheKey } from "./users";
 
 async function assertAuthSession(
   request: Request,
@@ -41,7 +38,7 @@ const sessionStorage = createCookieSessionStorage({
     sameSite: "lax",
     secrets: [SESSION_SECRET],
     secure: VERCEL_ENV === "production",
-    domain: VERCEL_ENV === "production" ? DOMAIN : undefined,
+    domain: VERCEL_ENV === "production" ? DOMAIN : undefined, // eg. carbonos.dev
   },
 });
 
@@ -55,8 +52,6 @@ export async function commitAuthSession(
 ) {
   const session = await getSession(request);
 
-  // allow user session to be null.
-  // useful you want to clear session and display a message explaining why
   if (authSession !== undefined) {
     session.set(SESSION_KEY, authSession);
   }
@@ -67,7 +62,6 @@ export async function commitAuthSession(
 export async function destroyAuthSession(request: Request) {
   const session = await getSession(request);
 
-  // when we change to throw redirect, or callback stops working
   return redirect(path.to.login, {
     headers: {
       "Set-Cookie": await sessionStorage.destroySession(session),
@@ -107,10 +101,6 @@ export async function getSessionFlash(request: Request) {
   const headers = { "Set-Cookie": await sessionStorage.commitSession(session) };
 
   return { result, headers };
-}
-
-function getPermissionCacheKey(userId: string) {
-  return `permissions:${userId}`;
 }
 
 async function getSession(request: Request) {
@@ -158,8 +148,6 @@ export async function refreshAuthSession(
   if (!refreshedAuthSession) {
     const redirectUrl = `${path.to.login}?${makeRedirectToFromHere(request)}`;
 
-    // here we throw instead of return because this function promise a AuthSession and not a response object
-    // https://remix.run/docs/en/v1/guides/constraints#higher-order-functions
     throw redirect(redirectUrl, {
       headers: {
         "Set-Cookie": await commitAuthSession(request, {
@@ -169,10 +157,7 @@ export async function refreshAuthSession(
     });
   }
 
-  // refresh is ok and we can redirect
   if (isGet(request)) {
-    // here we throw instead of return because this function promise a UserSession and not a response object
-    // https://remix.run/docs/en/v1/guides/constraints#higher-order-functions
     throw redirect(getCurrentPath(request), {
       headers: {
         "Set-Cookie": await commitAuthSession(request, {
@@ -182,7 +167,6 @@ export async function refreshAuthSession(
     });
   }
 
-  // we can't redirect because we are in an action, so, deal with it and don't forget to handle session commit 👮‍♀️
   return refreshedAuthSession;
 }
 
@@ -193,8 +177,6 @@ export async function updateCompanySession(
   const session = await getSession(request);
   const authSession = await getAuthSession(request);
 
-  // allow user session to be null.
-  // useful you want to clear session and display a message explaining why
   if (authSession !== undefined) {
     await redis.del(getPermissionCacheKey(authSession?.userId!));
     session.set(SESSION_KEY, {

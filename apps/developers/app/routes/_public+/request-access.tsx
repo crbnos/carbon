@@ -1,11 +1,10 @@
+import { VERCEL_URL } from "@carbon/auth";
 import { Button } from "@carbon/react";
 import type { MetaFunction } from "@vercel/remix";
-import { VERCEL_URL } from "~/config/env";
-import { removeSubdomain } from "~/utils/path";
 
 export const APP_URL = VERCEL_URL?.includes("localhost")
   ? "http://localhost:3000"
-  : `https://app.${removeSubdomain(VERCEL_URL)}`;
+  : `https://app.carbonos.dev`;
 
 export const meta: MetaFunction = () => {
   return [

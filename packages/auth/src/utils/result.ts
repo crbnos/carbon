@@ -1,4 +1,4 @@
-import type { Result } from "~/types";
+import type { Result } from "../types";
 
 export function error(error: any, message = "Request failed"): Result {
   if (error) console.error({ error, message });
