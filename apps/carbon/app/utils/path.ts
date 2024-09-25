@@ -605,6 +605,7 @@ export const path = {
       generatePath(`${x}/purchase-order/${id}/payment`),
     purchaseOrderRelease: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/release`),
+    purchaseOrderRoot: `${x}/purchase-order`,
     purchaseOrders: `${x}/purchasing/orders`,
     purchasing: `${x}/purchasing`,
     quote: (id: string) => generatePath(`${x}/quote/${id}`),

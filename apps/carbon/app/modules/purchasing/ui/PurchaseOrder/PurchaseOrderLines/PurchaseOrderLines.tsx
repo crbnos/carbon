@@ -44,13 +44,16 @@ const PurchaseOrderLines = () => {
 
   const navigate = useNavigate();
 
-  const routeData = useRouteData<{
-    purchaseOrderLines: PurchaseOrderLine[];
+  const sharedPurchasingData = useRouteData<{
     locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.purchaseOrderRoot);
+
+  const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
+    purchaseOrderLines: PurchaseOrderLine[];
   }>(path.to.purchaseOrder(orderId));
 
-  const locations = routeData?.locations ?? [];
   const { defaults, id: userId } = useUser();
   const unitOfMeasureOptions = useUnitOfMeasure();
 
@@ -208,7 +211,11 @@ const PurchaseOrderLines = () => {
             case "Consumable":
               return (
                 <span>
-                  {locations.find((l) => l.id == row.original.locationId)?.name}
+                  {
+                    sharedPurchasingData?.locations?.find(
+                      (l) => l.id == row.original.locationId
+                    )?.name
+                  }
                 </span>
               );
             default:
@@ -224,7 +231,15 @@ const PurchaseOrderLines = () => {
             case "Comment":
               return null;
             default:
-              return <span>{row.original.shelfId}</span>;
+              return (
+                <span>
+                  {
+                    sharedPurchasingData?.shelves?.find(
+                      (s) => s.id === row.original.shelfId
+                    )?.name
+                  }
+                </span>
+              );
           }
         },
       },
@@ -294,8 +309,15 @@ const PurchaseOrderLines = () => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, customColumns]);
+  }, [
+    customColumns,
+    isEditable,
+    canEdit,
+    canDelete,
+    navigate,
+    sharedPurchasingData?.locations,
+    sharedPurchasingData?.shelves,
+  ]);
 
   const [items] = useItems();
 

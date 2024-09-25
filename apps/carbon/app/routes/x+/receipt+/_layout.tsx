@@ -1,6 +1,7 @@
 import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
+import { getShelvesList } from "~/modules/inventory";
 import { getUnitOfMeasuresList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
@@ -22,14 +23,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "inventory",
   });
 
-  const [unitOfMeasures, locations] = await Promise.all([
+  const [unitOfMeasures, locations, shelves] = await Promise.all([
     getUnitOfMeasuresList(client, companyId),
     getLocationsList(client, companyId),
+    getShelvesList(client, companyId),
   ]);
 
   return {
     locations: locations?.data ?? [],
     unitOfMeasures: unitOfMeasures?.data ?? [],
+    shelves: shelves?.data ?? [],
   };
 }
 

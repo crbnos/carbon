@@ -113,7 +113,7 @@ const EditablePurchaseInvoiceLineNumber =
           ]);
 
           const itemCost = item?.data?.itemCost?.[0];
-          const itemReplenishment = item?.data?.itemReplenishment?.[0];
+          const itemReplenishment = item?.data?.itemReplenishment;
 
           if (item.error || buyMethod.error || inventory.error) {
             onError();

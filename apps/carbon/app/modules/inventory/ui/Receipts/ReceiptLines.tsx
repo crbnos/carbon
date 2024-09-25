@@ -23,11 +23,14 @@ const ReceiptLines = () => {
 
   const { supabase } = useSupabase();
   useRealtime("receiptLine", `receiptId=eq.${receiptId}`);
+  const sharedReceiptData = useRouteData<{
+    locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.receiptRoot);
 
   const routeData = useRouteData<{
     receipt: Receipt;
     receiptLines: ReceiptLine[];
-    locations: ListItem[];
   }>(path.to.receipt(receiptId));
 
   const [items] = useItems();
@@ -73,17 +76,23 @@ const ReceiptLines = () => {
         accessorKey: "locationId",
         header: "Location",
         cell: ({ row }) =>
-          (routeData?.locations ?? []).find(
+          sharedReceiptData?.locations?.find(
             (l) => l.id === row.original.locationId
           )?.name ?? null,
       },
       {
         accessorKey: "shelfId",
         header: "Shelf",
-        cell: (item) => item.getValue(),
+        cell: ({ row }) => {
+          return (
+            sharedReceiptData?.shelves?.find(
+              (s) => s.id === row.original.shelfId
+            )?.name ?? null
+          );
+        },
       },
     ];
-  }, [routeData?.locations, items]);
+  }, [items, sharedReceiptData?.locations, sharedReceiptData?.shelves]);
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: ReceiptLine) => {

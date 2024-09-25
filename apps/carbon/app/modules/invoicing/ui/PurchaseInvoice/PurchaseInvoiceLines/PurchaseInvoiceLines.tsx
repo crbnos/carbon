@@ -43,10 +43,14 @@ const PurchaseInvoiceLines = () => {
 
   const navigate = useNavigate();
 
-  const routeData = useRouteData<{
-    purchaseInvoiceLines: PurchaseInvoiceLine[];
+  const sharedInvoicingData = useRouteData<{
     locations: ListItem[];
+    shelves: ListItem[];
+  }>(path.to.purchaseInvoiceRoot);
+
+  const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
+    purchaseInvoiceLines: PurchaseInvoiceLine[];
   }>(path.to.purchaseInvoice(invoiceId));
 
   const { defaults, id: userId } = useUser();
@@ -191,7 +195,7 @@ const PurchaseInvoiceLines = () => {
               return (
                 <span>
                   {
-                    routeData?.locations.find(
+                    sharedInvoicingData?.locations.find(
                       (l) => l.id == row.original.locationId
                     )?.name
                   }
@@ -205,7 +209,22 @@ const PurchaseInvoiceLines = () => {
       {
         accessorKey: "shelfId",
         header: "Shelf",
-        cell: (item) => item.getValue(),
+        cell: ({ row }) => {
+          switch (row.original.invoiceLineType) {
+            case "Comment":
+              return null;
+            default:
+              return (
+                <span>
+                  {
+                    sharedInvoicingData?.shelves.find(
+                      (s) => s.id === row.original.shelfId
+                    )?.name
+                  }
+                </span>
+              );
+          }
+        },
       },
       {
         id: "totalPrice",
@@ -227,8 +246,15 @@ const PurchaseInvoiceLines = () => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, customColumns]);
+  }, [
+    customColumns,
+    isEditable,
+    canEdit,
+    canDelete,
+    navigate,
+    sharedInvoicingData?.locations,
+    sharedInvoicingData?.shelves,
+  ]);
 
   const editableComponents = useMemo(
     () => ({

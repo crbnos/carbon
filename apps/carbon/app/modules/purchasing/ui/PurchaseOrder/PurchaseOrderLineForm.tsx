@@ -58,13 +58,15 @@ const PurchaseOrderLineForm = ({
   const { orderId } = useParams();
 
   if (!orderId) throw new Error("orderId not found");
+  const sharedPurchasingData = useRouteData<{
+    locations: ListItem[];
+  }>(path.to.purchaseOrderRoot);
 
   const routeData = useRouteData<{
-    locations: ListItem[];
     purchaseOrder: PurchaseOrder;
   }>(path.to.purchaseOrder(orderId));
 
-  const locations = routeData?.locations ?? [];
+  const locations = sharedPurchasingData?.locations ?? [];
   const locationOptions = locations.map((location) => ({
     label: location.name,
     value: location.id,
@@ -162,7 +164,7 @@ const PurchaseOrderLineForm = ({
         ]);
 
         const itemCost = item?.data?.itemCost?.[0];
-        const itemReplenishment = item?.data?.itemReplenishment?.[0];
+        const itemReplenishment = item?.data?.itemReplenishment;
 
         setItemData({
           itemId: itemId,

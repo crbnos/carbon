@@ -9,7 +9,6 @@ import {
   getPurchaseInvoiceLines,
   usePurchaseInvoiceTotals,
 } from "~/modules/invoicing";
-import { getLocationsList } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -22,17 +21,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "parts",
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const [purchaseInvoice, purchaseInvoiceLines, locations] = await Promise.all([
+  const [purchaseInvoice, purchaseInvoiceLines] = await Promise.all([
     getPurchaseInvoice(client, invoiceId),
     getPurchaseInvoiceLines(client, invoiceId),
-    getLocationsList(client, companyId),
   ]);
 
   if (purchaseInvoice.error) {
@@ -46,7 +44,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return json({
-    locations: locations.data ?? [],
     purchaseInvoice: purchaseInvoice.data,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
   });

@@ -57,13 +57,15 @@ const PurchaseInvoiceLineForm = ({
   const { invoiceId } = useParams();
 
   if (!invoiceId) throw new Error("invoiceId not found");
+  const sharedInvoicingData = useRouteData<{
+    locations: ListItem[];
+  }>(path.to.purchaseInvoiceRoot);
 
   const routeData = useRouteData<{
-    locations: ListItem[];
     purchaseInvoice: PurchaseInvoice;
   }>(path.to.purchaseInvoice(invoiceId));
 
-  const locations = routeData?.locations ?? [];
+  const locations = sharedInvoicingData?.locations ?? [];
   const locationOptions = locations.map((location) => ({
     label: location.name,
     value: location.id,
@@ -165,7 +167,8 @@ const PurchaseInvoiceLineForm = ({
         ]);
 
         const itemCost = item?.data?.itemCost?.[0];
-        const itemReplenishment = item?.data?.itemReplenishment?.[0];
+
+        const itemReplenishment = item?.data?.itemReplenishment;
 
         setItemData({
           itemId: itemId,

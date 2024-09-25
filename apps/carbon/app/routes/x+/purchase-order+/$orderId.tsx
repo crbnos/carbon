@@ -11,7 +11,6 @@ import {
   getPurchaseOrderLines,
   usePurchaseOrderTotals,
 } from "~/modules/purchasing";
-import { getLocationsList } from "~/modules/resources";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
@@ -36,13 +35,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     purchaseOrderLines,
     externalDocuments,
     internalDocuments,
-    locations,
   ] = await Promise.all([
     getPurchaseOrder(client, orderId),
     getPurchaseOrderLines(client, orderId),
     getPurchaseOrderExternalDocuments(client, companyId, orderId),
     getPurchaseOrderInternalDocuments(client, companyId, orderId),
-    getLocationsList(client, companyId),
   ]);
 
   if (purchaseOrder.error) {
@@ -60,7 +57,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     purchaseOrderLines: purchaseOrderLines.data ?? [],
     externalDocuments: externalDocuments.data ?? [],
     internalDocuments: internalDocuments.data ?? [],
-    locations: locations.data ?? [],
   });
 }
 

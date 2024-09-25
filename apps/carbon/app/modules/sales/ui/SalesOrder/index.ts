@@ -6,7 +6,7 @@ import SalesOrderExplorer from "./SalesOrderExplorer";
 import SalesOrderForm from "./SalesOrderForm";
 import SalesOrderHeader from "./SalesOrderHeader";
 import SalesOrderLineForm from "./SalesOrderLineForm";
-import SalesOrderLines from "./SalesOrderLines";
+
 import SalesOrderPaymentForm from "./SalesOrderPaymentForm";
 
 import { SalesOrderLineJobs } from "./SalesOrderLineJobs";
@@ -22,7 +22,6 @@ export {
   SalesOrderHeader,
   SalesOrderLineForm,
   SalesOrderLineJobs,
-  SalesOrderLines,
   SalesOrderPaymentForm,
   SalesOrderShipmentForm,
   SalesStatus,
