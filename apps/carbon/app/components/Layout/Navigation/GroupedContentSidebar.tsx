@@ -7,9 +7,11 @@ import { CollapsibleSidebar } from "./CollapsibleSidebar";
 const GroupedContentSidebar = ({
   groups,
   width,
+  exactMatch = false,
 }: {
   groups: RouteGroup[];
   width?: number;
+  exactMatch?: boolean;
 }) => {
   const location = useOptimisticLocation();
 
@@ -27,7 +29,9 @@ const GroupedContentSidebar = ({
                 {group.name}
               </h4>
               {group.routes.map((route) => {
-                const isActive = location.pathname.includes(route.to);
+                const isActive = exactMatch
+                  ? location.pathname === route.to
+                  : location.pathname.includes(route.to);
                 return (
                   <Button
                     key={route.name}

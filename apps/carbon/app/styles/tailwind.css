@@ -1,53 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap&display=swap");
-
-@font-face {
-  font-family: "Triangle";
-  font-style: normal;
-  font-weight: 200;
-  src: url("/fonts/Geist-UltraLight.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Triangle";
-  font-style: normal;
-  font-weight: 300;
-  src: url("/fonts/Geist-Light.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Triangle";
-  font-style: normal;
-  font-weight: 500;
-  src: url("/fonts/Geist-Medium.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Triangle";
-  font-style: normal;
-  font-weight: 600;
-  src: url("/fonts/Geist-SemiBold.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Triangle";
-  font-style: normal;
-  font-weight: 700;
-  src: url("/fonts/Geist-Bold.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Triangle";
-  font-style: normal;
-  font-weight: 800;
-  src: url("/fonts/Geist-Black.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Triangle";
-  font-style: normal;
-  font-weight: 900;
-  src: url("/fonts/Geist-UltraBlack.woff2") format("woff2");
-}
+@import url("non.geist");
+@import url("non.geist/mono");
 
 @tailwind base;
 @tailwind components;

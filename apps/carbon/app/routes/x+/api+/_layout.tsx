@@ -67,7 +67,7 @@ export default function ApiDocsRoute() {
           Bash
         </Button>
       </div>
-      <GroupedContentSidebar groups={groups} width={270} />
+      <GroupedContentSidebar groups={groups} width={270} exactMatch />
       <div className="Docs Docs--api-page w-full h-full overflow-y-auto">
         <div className="Docs--inner-wrapper pt-4">
           <Outlet />

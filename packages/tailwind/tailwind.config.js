@@ -65,8 +65,8 @@ module.exports = {
         xxs: "0.675rem",
       },
       fontFamily: {
-        sans: ["Triangle", ...fontFamily.sans],
-        mono: ["Roboto Mono", ...fontFamily.mono],
+        sans: ["Geist Variable", ...fontFamily.sans],
+        mono: ["Geist Mono Variable", ...fontFamily.mono],
       },
       keyframes: {
         "accordion-down": {
