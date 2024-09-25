@@ -5,27 +5,31 @@ import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
 import { useEffect } from "react";
 
-import { Topbar } from "~/components/Layout";
-import { PrimaryNavigation } from "~/components/Navigation";
-import { VERCEL_URL } from "~/config/env";
-import { SupabaseProvider, getSupabase } from "~/lib/supabase";
-import { getCompanies, getUser } from "~/services/auth/auth.server";
+import {
+  CarbonProvider,
+  getCarbon,
+  getCompanies,
+  getUser,
+  VERCEL_URL,
+} from "@carbon/auth";
 import {
   destroyAuthSession,
   requireAuthSession,
-} from "~/services/session.server";
-import { path, removeSubdomain } from "~/utils/path";
+} from "@carbon/auth/session.server";
+import { PrimaryNavigation, Topbar } from "~/components";
+
+import { path } from "~/utils/path";
 
 export const APP_URL = VERCEL_URL?.includes("localhost")
   ? "http://localhost:3000"
-  : `https://app.${removeSubdomain(VERCEL_URL)}`;
+  : `https://app.carbonos.dev`;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
     await requireAuthSession(request, { verify: true });
 
   // share a client between requests
-  const client = getSupabase(accessToken);
+  const client = getCarbon(accessToken);
 
   // parallelize the requests
   const [companies, user] = await Promise.all([
@@ -76,7 +80,7 @@ export default function AuthenticatedRoute() {
   }, [transition.state]);
 
   return (
-    <SupabaseProvider session={session}>
+    <CarbonProvider session={session}>
       <TooltipProvider>
         <div className="min-h-full flex flex-col">
           <div className="flex-none" />
@@ -98,6 +102,6 @@ export default function AuthenticatedRoute() {
         </div>
         <Toaster position="bottom-right" />
       </TooltipProvider>
-    </SupabaseProvider>
+    </CarbonProvider>
   );
 }

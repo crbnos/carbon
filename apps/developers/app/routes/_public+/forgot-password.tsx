@@ -1,3 +1,13 @@
+import type { Result } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  forgotPasswordValidator,
+  success,
+} from "@carbon/auth";
+import { sendMagicLink } from "@carbon/auth/auth.server";
+import { getAuthSession } from "@carbon/auth/session.server";
+import { getUserByEmail } from "@carbon/auth/users.server";
 import {
   Input,
   Submit,
@@ -21,13 +31,7 @@ import type {
 import { json, redirect } from "@vercel/remix";
 import { LuAlertCircle, LuCheckCircle } from "react-icons/lu";
 
-import { forgotPasswordValidator } from "~/services/auth";
-import { getUserByEmail, sendMagicLink } from "~/services/auth/auth.server";
-import { getAuthSession } from "~/services/session.server";
-import type { Result } from "~/types";
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 
 export const meta: MetaFunction = () => {
   return [

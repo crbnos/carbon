@@ -1,6 +1,6 @@
 import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
-import { Background } from "~/components/Layout";
+import { Background } from "~/components";
 
 export default function PublicRoute() {
   return (

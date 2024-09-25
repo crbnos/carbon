@@ -1,4 +1,4 @@
-import { SUPABASE_API_URL } from "~/config/env";
+import { SUPABASE_API_URL } from "@carbon/auth";
 
 const x = "/x"; // from ~/routes/x+ folder
 

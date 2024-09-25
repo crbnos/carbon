@@ -13,16 +13,16 @@ import {
   useState,
 } from "react";
 
-import type { AuthSession } from "~/services/auth";
-import { path } from "~/utils/path";
-import { getSupabase } from "./client";
+import type { AuthSession } from "../../types";
+import { path } from "../../utils/path";
+import { getCarbon } from "./client";
 
-const SupabaseContext = createContext<{
-  supabase: SupabaseClient<Database> | undefined;
+const CarbonContext = createContext<{
+  carbon: SupabaseClient<Database> | undefined;
   accessToken: string | undefined;
-}>({ supabase: undefined, accessToken: undefined });
+}>({ carbon: undefined, accessToken: undefined });
 
-export const SupabaseProvider = ({
+export const CarbonProvider = ({
   children,
   session,
 }: PropsWithChildren<{
@@ -33,11 +33,11 @@ export const SupabaseProvider = ({
     number | undefined
   >();
   const initialLoad = useRef(true);
-  const [supabase, setSupabaseClient] = useState<SupabaseClient | undefined>(
+  const [carbon, setCarbon] = useState<SupabaseClient<Database> | undefined>(
     () => {
       // prevents server side initial state
       // init a default anonymous client in browser until we have an auth token
-      if (isBrowser) return getSupabase();
+      if (isBrowser) return getCarbon();
     }
   );
   const refresh = useFetcher<{}>();
@@ -54,37 +54,32 @@ export const SupabaseProvider = ({
   }, expiresIn);
 
   if (isBrowser && expiresAt !== browserSessionExpiresAt && accessToken) {
-    // recreate a supabase client to force provider's consumer to rerender
-    setSupabaseClient(getSupabase(accessToken));
+    // recreate a carbon client to force provider's consumer to rerender
+    setCarbon(getCarbon(accessToken));
     setBrowserSessionExpiresAt(expiresAt);
   }
 
   useEffect(() => {
-    if (!supabase || !accessToken || !refreshToken) return;
+    if (!carbon || !accessToken || !refreshToken) return;
 
-    supabase.auth.setSession({
+    carbon.auth.setSession({
       access_token: accessToken,
       refresh_token: refreshToken,
     });
-  }, [accessToken, refreshToken, supabase]);
+  }, [accessToken, refreshToken, carbon]);
 
-  const value = useMemo(
-    () => ({ supabase, accessToken }),
-    [supabase, accessToken]
-  );
+  const value = useMemo(() => ({ carbon, accessToken }), [carbon, accessToken]);
 
   return (
-    <SupabaseContext.Provider value={value}>
-      {children}
-    </SupabaseContext.Provider>
+    <CarbonContext.Provider value={value}>{children}</CarbonContext.Provider>
   );
 };
 
-export const useSupabase = () => {
-  const context = useContext(SupabaseContext);
+export const useCarbon = () => {
+  const context = useContext(CarbonContext);
 
   if (isBrowser && context === undefined) {
-    throw new Error(`useSupabase must be used within a SupabaseProvider.`);
+    throw new Error(`useCarbon must be used within a CarbonProvider.`);
   }
 
   return context;

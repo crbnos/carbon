@@ -1,0 +1,51 @@
+{
+  "name": "@carbon/auth",
+  "dependencies": {},
+  "devDependencies": {
+    "@carbon/tsconfig": "*",
+    "@carbon/utils": "*",
+    "@types/jest": "^26.0.22",
+    "@types/react": "^18.2.74",
+    "eslint": "^8.23.1",
+    "eslint-config-carbon": "*",
+    "jest": "^26.6.3",
+    "tsup": "^6.5.0",
+    "typescript": "^5.2.2"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth.server": "./src/services/auth.server.ts",
+    "./session.server": "./src/services/session.server.ts",
+    "./users.server": "./src/services/users.server.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "jest": {
+    "preset": "@carbon/jest/node"
+  },
+  "peerDependencies": {
+    "@carbon/database": "*",
+    "@carbon/react": "*",
+    "@carbon/kv": "*",
+    "@carbon/utils": "*",
+    "@remix-run/dev": "~2.10.2",
+    "@remix-run/eslint-config": "~2.10.2",
+    "@remix-run/react": "~2.10.2",
+    "@remix-run/serve": "~2.10.2",
+    "@supabase/functions-js": "2.1.5",
+    "@supabase/supabase-js": "^2.40.0",
+    "@vercel/analytics": "^1.2.2",
+    "@vercel/remix": "2.10.2",
+    "react": "^18.3.1",
+    "zod": "^3.23.8",
+    "zod-form-data": "*"
+  },
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .turbo node_modules",
+    "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
+    "test": "jest"
+  },
+  "sideEffects": false,
+  "version": "*"
+}

@@ -1,22 +1,24 @@
-import { validator } from "@carbon/form";
-import { useFetcher } from "@remix-run/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
-import { useEffect, useRef } from "react";
-import { getSupabaseServiceRole } from "~/lib/supabase";
-import { supabaseClient } from "~/lib/supabase/client";
-import { callbackValidator } from "~/services/auth/auth.models";
-import { refreshAccessToken } from "~/services/auth/auth.server";
+import {
+  assertIsPost,
+  callbackValidator,
+  carbonClient,
+  error,
+  getCarbonServiceRole,
+} from "@carbon/auth";
+import { refreshAccessToken } from "@carbon/auth/auth.server";
 import {
   commitAuthSession,
   destroyAuthSession,
   flash,
   getAuthSession,
-} from "~/services/session.server";
+} from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { useFetcher } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
+import { useEffect, useRef } from "react";
 
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -40,8 +42,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { refreshToken, userId } = validation.data;
-  const supabaseServiceClient = getSupabaseServiceRole();
-  const companies = await supabaseServiceClient
+  const carbonServiceClient = getCarbonServiceRole();
+  const companies = await carbonServiceClient
     .from("userToCompany")
     .select("companyId")
     .eq("userId", userId);
@@ -77,22 +79,22 @@ export default function AuthCallback() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((event, supabaseSession) => {
+    } = carbonClient.auth.onAuthStateChange((event, carbonSession) => {
       if (
         ["SIGNED_IN", "INITIAL_SESSION"].includes(event) &&
         !isAuthenticating.current
       ) {
         isAuthenticating.current = true;
 
-        // supabase sdk has ability to read url fragment that contains your token after third party provider redirects you here
+        // carbon sdk has ability to read url fragment that contains your token after third party provider redirects you here
         // this fragment url looks like https://.....#access_token=evxxxxxxxx&refresh_token=xxxxxx, and it's not readable server-side (Oauth security)
-        // supabase auth listener gives us a user session, based on what it founds in this fragment url
+        // carbon auth listener gives us a user session, based on what it founds in this fragment url
         // we can't use it directly, client-side, because we can't access sessionStorage from here
 
         // we should not trust what's happen client side
         // so, we only pick the refresh token, and let's back-end getting user session from it
-        const refreshToken = supabaseSession?.refresh_token;
-        const userId = supabaseSession?.user.id;
+        const refreshToken = carbonSession?.refresh_token;
+        const userId = carbonSession?.user.id;
 
         if (!refreshToken || !userId) return;
 
