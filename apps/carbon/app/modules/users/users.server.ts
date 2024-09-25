@@ -1,9 +1,9 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "@vercel/remix";
 import crypto from "crypto";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { getSupplierContact } from "~/modules/purchasing";
 import { getCustomerContact } from "~/modules/sales";
 import type {
@@ -94,7 +94,7 @@ export async function createCustomerAccount(
       return error(insertUser, "No data returned from create user");
 
     const permissions = makeCustomerPermissions(companyId);
-    const supabaseAdmin = getSupabaseServiceRole();
+    const serviceRole = getCarbonServiceRole();
 
     const [
       updateContact,
@@ -109,7 +109,7 @@ export async function createCustomerAccount(
         companyId,
       }),
       addUserToCompany(client, { userId, companyId, role: "customer" }),
-      setUserPermissions(supabaseAdmin, userId, permissions),
+      setUserPermissions(serviceRole, userId, permissions),
     ]);
 
     if (updateContact.error) {
@@ -168,7 +168,7 @@ export async function createEmployeeAccount(
     );
 
   const permissions = makePermissionsFromEmployeeType(employeeTypePermissions);
-  const supabaseAdmin = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
 
   const user = await getUserByEmail(email);
   let userExists = false;
@@ -213,7 +213,7 @@ export async function createEmployeeAccount(
         locationId,
       }),
       addUserToCompany(client, { userId, companyId, role: "employee" }),
-      setUserPermissions(supabaseAdmin, userId, permissions),
+      setUserPermissions(serviceRole, userId, permissions),
     ]);
 
   if (employeeInsert.error) {
@@ -295,7 +295,7 @@ export async function createSupplierAccount(
     if (!insertUser.data)
       return error(insertUser, "No data returned from create user");
 
-    const supabaseAdmin = getSupabaseServiceRole();
+    const serviceRole = getCarbonServiceRole();
     const permissions = makeSupplierPermissions(companyId);
 
     const [
@@ -311,7 +311,7 @@ export async function createSupplierAccount(
         companyId,
       }),
       addUserToCompany(client, { userId, companyId, role: "supplier" }),
-      setUserPermissions(supabaseAdmin, userId, permissions),
+      setUserPermissions(serviceRole, userId, permissions),
     ]);
 
     if (updateContact.error) {
@@ -418,7 +418,7 @@ export async function getUser(client: SupabaseClient<Database>, id: string) {
 }
 
 export async function getUserByEmail(email: string) {
-  return getSupabaseServiceRole()
+  return getCarbonServiceRole()
     .from("user")
     .select("*")
     .eq("email", email)
@@ -440,7 +440,7 @@ export async function getUserClaims(userId: string, companyId: string) {
     if (!claims) {
       // TODO: remove service role from here, and move it up a level
       const rawClaims = await getClaims(
-        getSupabaseServiceRole(),
+        getCarbonServiceRole(),
         userId,
         companyId
       );
@@ -782,7 +782,7 @@ export async function resendInvite(
 }
 
 export async function resetPassword(userId: string, password: string) {
-  return getSupabaseServiceRole().auth.admin.updateUserById(userId, {
+  return getCarbonServiceRole().auth.admin.updateUserById(userId, {
     password,
   });
 }
@@ -970,7 +970,7 @@ export async function updatePermissions(
       });
     }
 
-    const permissionsUpdate = await getSupabaseServiceRole()
+    const permissionsUpdate = await getCarbonServiceRole()
       .from("userPermission")
       .update({ permissions: updatedPermissions })
       .eq("id", id);

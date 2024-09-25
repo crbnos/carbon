@@ -1,6 +1,6 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   jobMaterialValidator,
   recalculateJobMakeMethodRequirements,
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const serviceRole = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
   const insertJobMaterial = await upsertJobMaterial(serviceRole, {
     ...data,
     jobId,

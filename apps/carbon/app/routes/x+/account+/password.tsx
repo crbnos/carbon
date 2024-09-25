@@ -1,7 +1,7 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { PasswordForm, accountPasswordValidator } from "~/modules/account";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -29,11 +29,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { currentPassword, password } = validation.data;
 
-  const confirmPassword =
-    await getSupabaseServiceRole().auth.signInWithPassword({
-      email,
-      password: currentPassword,
-    });
+  const confirmPassword = await getCarbonServiceRole().auth.signInWithPassword({
+    email,
+    password: currentPassword,
+  });
 
   if (confirmPassword.error || !("user" in confirmPassword.data)) {
     return json(
@@ -42,10 +41,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const updatePassword =
-    await getSupabaseServiceRole().auth.admin.updateUserById(userId, {
+  const updatePassword = await getCarbonServiceRole().auth.admin.updateUserById(
+    userId,
+    {
       password,
-    });
+    }
+  );
 
   if (updatePassword.error) {
     return json(

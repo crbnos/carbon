@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Card,
   CardContent,
@@ -11,7 +12,6 @@ import { useCallback, useMemo } from "react";
 import { EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { useRealtime, useRouteData } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
@@ -21,7 +21,7 @@ const ReceiptLines = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   useRealtime("receiptLine", `receiptId=eq.${receiptId}`);
   const sharedReceiptData = useRouteData<{
     locations: ListItem[];
@@ -96,15 +96,15 @@ const ReceiptLines = () => {
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: ReceiptLine) => {
-      if (!supabase) throw new Error("Supabase client not found");
-      return await supabase
+      if (!carbon) throw new Error("Carbon client not found");
+      return await carbon
         .from("receiptLine")
         .update({
           [id]: value,
         })
         .eq("id", row.id);
     },
-    [supabase]
+    [carbon]
   );
 
   const receiptLineEditableComponents = useMemo(

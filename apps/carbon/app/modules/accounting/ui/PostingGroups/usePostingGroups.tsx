@@ -1,6 +1,6 @@
+import { useCarbon } from "@carbon/auth";
 import { useCallback } from "react";
 import { usePermissions } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type {
   InventoryPostingGroup,
   PurchasingPostingGroup,
@@ -8,7 +8,7 @@ import type {
 } from "~/modules/accounting";
 
 export default function usePostingGroups(table: string) {
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   const canEdit = permissions.can("update", "accounting");
@@ -20,8 +20,8 @@ export default function usePostingGroups(table: string) {
       value: unknown,
       row: PurchasingPostingGroup | SalesPostingGroup | InventoryPostingGroup
     ) => {
-      if (!supabase) throw new Error("Supabase client not found");
-      return await supabase
+      if (!carbon) throw new Error("Carbon client not found");
+      return await carbon
         // @ts-ignore
         .from(table)
         .update({
@@ -29,13 +29,13 @@ export default function usePostingGroups(table: string) {
         })
         .eq("id", row.id);
     },
-    [supabase, table]
+    [carbon, table]
   );
 
   return {
     canDelete,
     canEdit,
-    supabase,
+    carbon,
     onCellEdit,
   };
 }

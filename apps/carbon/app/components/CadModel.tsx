@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   AutodeskViewer,
   CardHeader,
@@ -15,7 +16,7 @@ import { useDropzone } from "react-dropzone";
 import { LuUploadCloud } from "react-icons/lu";
 import { useUser } from "~/hooks";
 import { useAutodeskToken } from "~/lib/autodesk";
-import { useSupabase } from "~/lib/supabase";
+
 import { path } from "~/utils/path";
 
 const fileSizeLimitMb = 50;
@@ -49,7 +50,7 @@ const CadModel = ({
     company: { id: companyId },
   } = useUser();
 
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   const { autodeskToken } = useAutodeskToken();
   const fetcher = useFetcher<{}>();
@@ -63,12 +64,12 @@ const CadModel = ({
   const onFileChange = async (file: File | null) => {
     setFile(file);
     if (file) {
-      if (!supabase) throw new Error("Failed to initialize supabase client");
+      if (!carbon) throw new Error("Failed to initialize carbon client");
       const fileId = nanoid();
       const fileExtension = file.name.split(".").pop();
       const fileName = `${companyId}/models/${fileId}.${fileExtension}`;
 
-      const modelUpload = await supabase.storage
+      const modelUpload = await carbon.storage
         .from("private")
         .upload(fileName, file, {
           upsert: true,

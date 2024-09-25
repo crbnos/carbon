@@ -1,8 +1,8 @@
+import { useCarbon } from "@carbon/auth";
 import { Button, File, VStack, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { Avatar } from "~/components";
-import { useSupabase } from "~/lib/supabase";
 import type { Account } from "~/modules/account";
 import { path } from "~/utils/path";
 
@@ -11,17 +11,17 @@ type ProfilePhotoFormProps = {
 };
 
 const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const submit = useSubmit();
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && supabase) {
+    if (e.target.files && carbon) {
       const avatarFile = e.target.files[0];
       const fileExtension = avatarFile.name.substring(
         avatarFile.name.lastIndexOf(".") + 1
       );
 
-      const imageUpload = await supabase.storage
+      const imageUpload = await carbon.storage
         .from("avatars")
         .upload(`${user.id}.${fileExtension}`, avatarFile, {
           cacheControl: "0",
@@ -40,8 +40,8 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
   };
 
   const deleteImage = async () => {
-    if (supabase && user?.avatarUrl) {
-      const imageDelete = await supabase.storage
+    if (carbon && user?.avatarUrl) {
+      const imageDelete = await carbon.storage
         .from("avatars")
         .remove([user.avatarUrl]);
 

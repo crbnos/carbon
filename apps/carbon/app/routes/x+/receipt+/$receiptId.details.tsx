@@ -1,9 +1,9 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import {
   ReceiptForm,
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
     currentReceipt.data.locationId !== data.locationId;
 
   if (receiptDataHasChanged) {
-    const serviceRole = getSupabaseServiceRole();
+    const serviceRole = getCarbonServiceRole();
     switch (data.sourceDocument) {
       case "Purchase Order":
         const purchaseOrderReceipt = await serviceRole.functions.invoke<{

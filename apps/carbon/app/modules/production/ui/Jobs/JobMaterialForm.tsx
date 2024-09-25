@@ -14,6 +14,7 @@ import {
   useParams,
 } from "@remix-run/react";
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
@@ -30,7 +31,6 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { jobOperationValidator } from "~/modules/production";
 import { jobMaterialValidator } from "~/modules/production";
 import type { MethodItemType, MethodType } from "~/modules/shared";
@@ -48,7 +48,7 @@ const JobMaterialForm = ({
   operations,
 }: JobMaterialFormProps) => {
   const fetcher = useFetcher<{ id: string; methodType: MethodType }>();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const permissions = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,19 +92,15 @@ const JobMaterialForm = ({
   };
 
   const onItemChange = async (itemId: string) => {
-    if (!supabase) return;
+    if (!carbon) return;
 
     const [item, itemCost] = await await Promise.all([
-      supabase
+      carbon
         .from("item")
         .select("name, readableId, unitOfMeasureCode, defaultMethodType")
         .eq("id", itemId)
         .single(),
-      supabase
-        .from("itemCost")
-        .select("unitCost")
-        .eq("itemId", itemId)
-        .single(),
+      carbon.from("itemCost").select("unitCost").eq("itemId", itemId).single(),
     ]);
 
     if (item.error) {

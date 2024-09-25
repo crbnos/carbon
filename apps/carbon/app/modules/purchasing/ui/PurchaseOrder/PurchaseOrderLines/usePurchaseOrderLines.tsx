@@ -1,15 +1,15 @@
+import { useCarbon } from "@carbon/auth";
 import { useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useCallback, useMemo } from "react";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { getAccountsList } from "~/modules/accounting";
 import type { PurchaseOrderLine } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
 export default function usePurchaseOrderLines() {
   const { id: userId } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   const canEdit = permissions.can("update", "purchasing");
@@ -35,8 +35,8 @@ export default function usePurchaseOrderLines() {
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: PurchaseOrderLine) => {
-      if (!supabase) throw new Error("Supabase client not found");
-      return await supabase
+      if (!carbon) throw new Error("Carbon client not found");
+      return await carbon
         .from("purchaseOrderLine")
         .update({
           [id]: value,
@@ -44,14 +44,14 @@ export default function usePurchaseOrderLines() {
         })
         .eq("id", row.id!);
     },
-    [supabase, userId]
+    [carbon, userId]
   );
 
   return {
     accountOptions,
     canDelete,
     canEdit,
-    supabase,
+    carbon,
     onCellEdit,
   };
 }

@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -27,7 +28,6 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { jobStatus } from "~/modules/production";
 import { deadlineTypes, jobValidator } from "~/modules/production";
 import { type MethodItemType } from "~/modules/shared";
@@ -45,7 +45,7 @@ type JobFormProps = {
 const JobForm = ({ initialValues }: JobFormProps) => {
   const permissions = usePermissions();
   const { company } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const [type, setType] = useState<MethodItemType>(
     initialValues.itemType ?? "Part"
   );
@@ -89,9 +89,9 @@ const JobForm = ({ initialValues }: JobFormProps) => {
 
   const onItemChange = async (itemId: string) => {
     if (!itemId) return;
-    if (!supabase || !company.id) return;
+    if (!carbon || !company.id) return;
     const [item, manufacturing] = await Promise.all([
-      supabase
+      carbon
         .from("item")
         .select(
           "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
@@ -99,7 +99,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
-      supabase
+      carbon
         .from("itemReplenishment")
         .select("lotSize, scrapPercentage")
         .eq("itemId", itemId)

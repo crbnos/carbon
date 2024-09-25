@@ -1,5 +1,5 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { convertQuoteToOrder, selectedLinesValidator } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -40,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const selectedLines = parseResult.data;
 
-  const serviceRole = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
   const convert = await convertQuoteToOrder(serviceRole, {
     id: quoteId,
     companyId,

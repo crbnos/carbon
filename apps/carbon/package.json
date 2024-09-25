@@ -2,6 +2,7 @@
   "name": "carbon",
   "type": "module",
   "dependencies": {
+    "@carbon/auth": "*",
     "@carbon/database": "*",
     "@carbon/documents": "*",
     "@carbon/form": "*",

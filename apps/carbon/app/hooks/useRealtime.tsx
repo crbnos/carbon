@@ -1,18 +1,18 @@
+import { useCarbon } from "@carbon/auth";
 import { useRevalidator } from "@remix-run/react";
 import { useEffect } from "react";
-import { useSupabase } from "~/lib/supabase";
 import { useUser } from "./useUser";
 
 export function useRealtime(table: string, filter?: string) {
   const { company } = useUser();
-  const { accessToken, supabase } = useSupabase();
+  const { accessToken, carbon } = useCarbon();
   const revalidator = useRevalidator();
 
   useEffect(() => {
-    if (!supabase || !accessToken || !table) return;
-    supabase.realtime.setAuth(accessToken);
+    if (!carbon || !accessToken || !table) return;
+    carbon.realtime.setAuth(accessToken);
 
-    const channel = supabase
+    const channel = carbon
       .channel(`postgres_changes:${table}}`)
       .on(
         "postgres_changes",
@@ -35,9 +35,9 @@ export function useRealtime(table: string, filter?: string) {
       .subscribe();
 
     return () => {
-      if (channel) supabase?.removeChannel(channel);
+      if (channel) carbon?.removeChannel(channel);
     };
     // Don't put the revalidator in the deps array
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, table, filter, accessToken, company.id]);
+  }, [carbon, table, filter, accessToken, company.id]);
 }

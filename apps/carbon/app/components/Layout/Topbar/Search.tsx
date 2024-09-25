@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type { ShortcutDefinition } from "@carbon/react";
 import {
@@ -37,7 +38,6 @@ import {
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { useModules } from "~/components/Layout/Navigation/useModules";
 import { useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { useAccountSubmodules } from "~/modules/account";
 import { useAccountingSubmodules } from "~/modules/accounting";
 import { useDocumentsSubmodules } from "~/modules/documents";
@@ -75,7 +75,7 @@ const SearchModal = ({
   onClose: () => void;
 }) => {
   const { company } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -110,7 +110,7 @@ const SearchModal = ({
 
   const getSearchResults = useCallback(
     async (q: string) => {
-      if (!supabase || !company.id) return;
+      if (!carbon || !company.id) return;
 
       setLoading(true);
       const tokens = q.split(" ");
@@ -119,7 +119,7 @@ const SearchModal = ({
           ? tokens.map((token) => `"${token}"`).join(" <-> ")
           : q;
 
-      const result = await supabase
+      const result = await carbon
         ?.from("search")
         .select()
         .textSearch("fts", `*${search}:*`)
@@ -133,7 +133,7 @@ const SearchModal = ({
       }
       setLoading(false);
     },
-    [company.id, supabase]
+    [company.id, carbon]
   );
 
   const onInputChange = (value: string) => {

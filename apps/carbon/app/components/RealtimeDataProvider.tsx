@@ -1,9 +1,9 @@
 "use client";
 
+import { useCarbon } from "@carbon/auth";
 import idb from "localforage";
 import { useEffect } from "react";
 import { useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
 import type { Item } from "~/stores/items";
 import type { ListItem } from "~/types";
@@ -12,7 +12,7 @@ let hydratedFromIdb = false;
 let hydratedFromServer = false;
 
 const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const { supabase, accessToken } = useSupabase();
+  const { carbon, accessToken } = useCarbon();
   const {
     company: { id: companyId },
   } = useUser();
@@ -41,25 +41,25 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
 
-    if (!supabase || !accessToken) return;
+    if (!carbon || !accessToken) return;
 
     const [items, suppliers, customers, people] = await Promise.all([
-      supabase
+      carbon
         .from("item")
         .select("id, readableId, name, type, replenishmentSystem, active")
         .eq("companyId", companyId)
         .order("readableId"),
-      supabase
+      carbon
         .from("supplier")
         .select("id, name")
         .eq("companyId", companyId)
         .order("name"),
-      supabase
+      carbon
         .from("customer")
         .select("id, name")
         .eq("companyId", companyId)
         .order("name"),
-      supabase
+      carbon
         .from("employees")
         .select("id, name, avatarUrl")
         .eq("companyId", companyId)
@@ -93,9 +93,9 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     if (!companyId) return;
     hydrate();
 
-    if (!supabase || !accessToken) return;
-    supabase.realtime.setAuth(accessToken);
-    const channel = supabase
+    if (!carbon || !accessToken) return;
+    carbon.realtime.setAuth(accessToken);
+    const channel = carbon
       .channel("realtime:core")
       .on(
         "postgres_changes",
@@ -271,7 +271,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           // TODO: there's a cleaner way of doing this, but since customers and suppliers
           // are also in the users table, we can't automatically add/update/delete them
           // from our list of employees. So for now we just refetch.
-          const { data } = await supabase
+          const { data } = await carbon
             .from("employees")
             .select("id, name, avatarUrl")
             .eq("companyId", companyId)
@@ -285,10 +285,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       .subscribe();
 
     return () => {
-      if (channel) supabase?.removeChannel(channel);
+      if (channel) carbon?.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, accessToken, companyId]);
+  }, [carbon, accessToken, companyId]);
 
   return <>{children}</>;
 };

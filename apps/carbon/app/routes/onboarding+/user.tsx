@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -14,7 +15,6 @@ import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import type { z } from "zod";
 import { Hidden, Input, Password, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   onboardingUserValidator,
   updatePublicAccount,
@@ -53,11 +53,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { firstName, lastName, email, password, next } = validation.data;
 
-  const updatePassword =
-    await getSupabaseServiceRole().auth.admin.updateUserById(userId, {
+  const updatePassword = await getCarbonServiceRole().auth.admin.updateUserById(
+    userId,
+    {
       email,
       password,
-    });
+    }
+  );
 
   if (updatePassword.error) {
     console.error(updatePassword.error);

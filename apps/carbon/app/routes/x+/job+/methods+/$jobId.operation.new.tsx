@@ -1,6 +1,6 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import {
   jobOperationValidator,
   recalculateJobMakeMethodRequirements,
@@ -18,7 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "production",
   });
 
-  const serviceRole = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
   const { jobId } = params;
   if (!jobId) {
     throw new Error("jobId not found");

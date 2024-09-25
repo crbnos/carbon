@@ -5,10 +5,10 @@ import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
 import { useEffect } from "react";
 
+import { CarbonProvider, getCarbon } from "@carbon/auth";
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { AutodeskProvider } from "~/lib/autodesk";
-import { SupabaseProvider, getSupabase } from "~/lib/supabase";
 import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
 import {
@@ -63,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // });
 
   // share a client between requests
-  const client = getSupabase(accessToken);
+  const client = getCarbon(accessToken);
 
   // parallelize the requests
   const [
@@ -134,7 +134,7 @@ export default function AuthenticatedRoute() {
   }, [transition.state]);
 
   return (
-    <SupabaseProvider session={session}>
+    <CarbonProvider session={session}>
       <RealtimeDataProvider>
         <AutodeskProvider token={autodesk}>
           <TooltipProvider>
@@ -160,6 +160,6 @@ export default function AuthenticatedRoute() {
           </TooltipProvider>
         </AutodeskProvider>
       </RealtimeDataProvider>
-    </SupabaseProvider>
+    </CarbonProvider>
   );
 }

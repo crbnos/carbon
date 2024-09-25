@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -12,7 +13,6 @@ import {
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { SalesRFQLine } from "~/modules/sales";
 
 const SalesRFQLineNotes = ({ line }: { line: SalesRFQLine }) => {
@@ -21,16 +21,14 @@ const SalesRFQLineNotes = ({ line }: { line: SalesRFQLine }) => {
     company: { id: companyId },
   } = useUser();
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/opportunity-line/${
       line.id
     }/${nanoid()}.${fileType}`;
-    const result = await supabase?.storage
-      .from("private")
-      .upload(fileName, file);
+    const result = await carbon?.storage.from("private").upload(fileName, file);
 
     if (result?.error) {
       toast.error("Failed to upload image");
@@ -45,7 +43,7 @@ const SalesRFQLineNotes = ({ line }: { line: SalesRFQLine }) => {
   };
 
   const onUpdateInternalNotes = useThrottle(async (content: JSONContent) => {
-    await supabase
+    await carbon
       ?.from("salesRfqLine")
       .update({
         internalNotes: content,

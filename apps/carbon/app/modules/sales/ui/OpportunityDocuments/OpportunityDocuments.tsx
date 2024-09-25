@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Badge,
   Card,
@@ -35,7 +36,6 @@ import {
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import { path } from "~/utils/path";
 import type { Opportunity } from "../../types";
@@ -219,7 +219,7 @@ export const useOpportunityDocuments = ({
 }: OpportunityDocumentFormProps) => {
   const permissions = usePermissions();
   const { company } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const revalidator = useRevalidator();
   const submit = useSubmit();
 
@@ -234,7 +234,7 @@ export const useOpportunityDocuments = ({
 
   const deleteAttachment = useCallback(
     async (attachment: FileObject) => {
-      const result = await supabase?.storage
+      const result = await carbon?.storage
         .from("private")
         .remove([getPath(attachment)]);
 
@@ -246,12 +246,12 @@ export const useOpportunityDocuments = ({
       toast.success(`${attachment.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [supabase?.storage, getPath, revalidator]
+    [carbon?.storage, getPath, revalidator]
   );
 
   const download = useCallback(
     async (attachment: FileObject) => {
-      const result = await supabase?.storage
+      const result = await carbon?.storage
         .from("private")
         .download(getPath(attachment));
 
@@ -272,7 +272,7 @@ export const useOpportunityDocuments = ({
         document.body.removeChild(a);
       }, 0);
     },
-    [supabase?.storage, getPath]
+    [carbon?.storage, getPath]
   );
 
   const createDocumentRecord = useCallback(
@@ -302,15 +302,15 @@ export const useOpportunityDocuments = ({
 
   const upload = useCallback(
     async (files: File[]) => {
-      if (!supabase) {
-        toast.error("Supabase client not available");
+      if (!carbon) {
+        toast.error("Carbon client not available");
         return;
       }
 
       for (const file of files) {
         const fileName = getPath(file);
 
-        const fileUpload = await supabase.storage
+        const fileUpload = await carbon.storage
           .from("private")
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
@@ -330,7 +330,7 @@ export const useOpportunityDocuments = ({
       }
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, supabase, revalidator]
+    [getPath, createDocumentRecord, carbon, revalidator]
   );
 
   return {
@@ -344,13 +344,13 @@ export const useOpportunityDocuments = ({
 
 const OpportunityDocumentForm = (props: OpportunityDocumentFormProps) => {
   const { company } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   const { upload } = useOpportunityDocuments(props);
 
   const uploadFiles = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && supabase && company) {
+    if (e.target.files && carbon && company) {
       upload(Array.from(e.target.files));
     }
   };

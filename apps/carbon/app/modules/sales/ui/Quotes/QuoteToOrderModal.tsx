@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Button,
   cn,
@@ -47,7 +48,6 @@ import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { useRouteData } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import { useSupabase } from "~/lib/supabase";
 import { getDocumentType } from "~/modules/documents";
 import { path } from "~/utils/path";
 import type {
@@ -87,7 +87,7 @@ const QuoteToOrderDrawer = ({
     >
   >({});
 
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
 
@@ -103,8 +103,8 @@ const QuoteToOrderDrawer = ({
   const [uploading, setUploading] = useState(false);
 
   const onDrop = async (acceptedFiles: File[]) => {
-    if (!supabase) {
-      toast.error("Supabase client not available");
+    if (!carbon) {
+      toast.error("Carbon client not available");
       return;
     }
 
@@ -120,7 +120,7 @@ const QuoteToOrderDrawer = ({
       if (file) upload([file]);
 
       const purchaseOrderDocumentPath = getPath(file);
-      const { error } = await supabase
+      const { error } = await carbon
         .from("opportunity")
         .update({
           purchaseOrderDocumentPath,
@@ -140,15 +140,15 @@ const QuoteToOrderDrawer = ({
   };
 
   const removePurchaseOrder = async () => {
-    if (!supabase) {
-      toast.error("Failed to initialize Supabase client");
+    if (!carbon) {
+      toast.error("Failed to initialize Carbon client");
       return;
     }
 
     setUploading(true);
 
     const [opportunityDelete] = await Promise.all([
-      supabase
+      carbon
         .from("opportunity")
         .update({
           purchaseOrderDocumentPath: null,

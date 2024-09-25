@@ -1,11 +1,11 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { task, wait } from "@trigger.dev/sdk/v3";
 import type { ExchangeRatesClient, Rates } from "~/lib/exchange-rates.server";
 import { getExchangeRatesClient } from "~/lib/exchange-rates.server";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import type { CurrencyCode } from "~/modules/accounting";
 import { exchangeRatesFormValidator } from "~/modules/settings";
 
-const supabaseClient = getSupabaseServiceRole();
+const serviceRole = getCarbonServiceRole();
 
 export const updateExchangeRates = task({
   id: "update-exchange-rates",
@@ -14,7 +14,7 @@ export const updateExchangeRates = task({
     let hasRates = false;
     let exchangeRatesClient: ExchangeRatesClient | undefined;
 
-    const integrations = await supabaseClient
+    const integrations = await serviceRole
       .from("companyIntegration")
       .select("active, metadata, companyId")
       .eq("id", "exchange-rates-v1");
@@ -50,7 +50,7 @@ export const updateExchangeRates = task({
 
         const updatedAt = new Date().toISOString();
 
-        const { data } = await supabaseClient
+        const { data } = await serviceRole
           .from("currency")
           .select("*")
           .eq("companyId", integration.companyId);
@@ -71,7 +71,7 @@ export const updateExchangeRates = task({
 
         if (updates?.length === 0) continue;
 
-        const { error } = await supabaseClient.from("currency").upsert(updates);
+        const { error } = await serviceRole.from("currency").upsert(updates);
         if (error) {
           console.error(JSON.stringify(error));
           continue;

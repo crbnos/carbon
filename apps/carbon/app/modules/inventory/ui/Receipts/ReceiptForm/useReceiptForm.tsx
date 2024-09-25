@@ -1,7 +1,7 @@
+import { useCarbon } from "@carbon/auth";
 import { useParams } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import { useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type { Receipt, ReceiptSourceDocument } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -18,7 +18,7 @@ export default function useReceiptForm() {
 
   const user = useUser();
   const [error, setError] = useState<string | null>(null);
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
 
   const routeData = useRouteData<{
     locations: ListItem[];
@@ -37,11 +37,11 @@ export default function useReceiptForm() {
   );
 
   const fetchSourceDocuments = useCallback(() => {
-    if (!supabase || !user.company.id) return;
+    if (!carbon || !user.company.id) return;
 
     switch (sourceDocument) {
       case "Purchase Order":
-        supabase
+        carbon
           ?.from("purchaseOrder")
           .select("id, purchaseOrderId")
           .eq("companyId", user.company.id)
@@ -62,7 +62,7 @@ export default function useReceiptForm() {
       default:
         setSourceDocuments([]);
     }
-  }, [sourceDocument, supabase, user.company.id]);
+  }, [sourceDocument, carbon, user.company.id]);
 
   useEffect(() => {
     fetchSourceDocuments();

@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Button,
   Card,
@@ -42,7 +43,6 @@ import {
   useRouteData,
   useUser,
 } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 import { quoteLineAdditionalChargesValidator } from "../../sales.models";
 import type {
@@ -82,7 +82,7 @@ const QuoteLinePricing = ({
     permissions.can("update", "sales") &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
 
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const fetcher = useFetcher<{ id?: string; error: string | null }>();
   useEffect(() => {
     if (fetcher.data?.error) {
@@ -220,7 +220,7 @@ const QuoteLinePricing = ({
     quantity: number,
     value: number
   ) => {
-    if (!supabase) return;
+    if (!carbon) return;
     const hasPrice = prices[quantity];
     const oldPrices = { ...prices };
     const newPrices = { ...oldPrices };
@@ -240,7 +240,7 @@ const QuoteLinePricing = ({
     setPrices(newPrices);
 
     if (hasPrice) {
-      const { error } = await supabase
+      const { error } = await carbon
         .from("quoteLinePrice")
         .update({ [key]: value })
         .eq("quoteLineId", lineId)
@@ -249,7 +249,7 @@ const QuoteLinePricing = ({
         setPrices(oldPrices);
       }
     } else {
-      const { error } = await supabase.from("quoteLinePrice").insert([
+      const { error } = await carbon.from("quoteLinePrice").insert([
         {
           ...newPrices[quantity],
         },

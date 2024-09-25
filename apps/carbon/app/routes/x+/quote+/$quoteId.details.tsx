@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -18,7 +19,6 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type {
   Opportunity,
   Quotation,
@@ -151,15 +151,13 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
     id: userId,
     company: { id: companyId },
   } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/quote/${quote.id}/${nanoid()}.${fileType}`;
-    const result = await supabase?.storage
-      .from("private")
-      .upload(fileName, file);
+    const result = await carbon?.storage.from("private").upload(fileName, file);
 
     if (result?.error) {
       toast.error("Failed to upload image");
@@ -174,7 +172,7 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
   };
 
   const onUpdateExternalNotes = useThrottle(async (content: JSONContent) => {
-    await supabase
+    await carbon
       ?.from("quote")
       .update({
         externalNotes: content,
@@ -185,7 +183,7 @@ const QuoteNotes = ({ quote }: { quote: Quotation }) => {
   }, 2500);
 
   const onUpdateInternalNotes = useThrottle(async (content: JSONContent) => {
-    await supabase
+    await carbon
       ?.from("quote")
       .update({
         internalNotes: content,

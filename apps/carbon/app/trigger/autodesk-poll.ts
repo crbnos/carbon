@@ -1,9 +1,9 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { task } from "@trigger.dev/sdk/v3";
 import { getAutodeskToken, getManifest } from "~/lib/autodesk/autodesk.server";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { upsertModelUpload } from "~/modules/shared";
 
-const supabaseClient = getSupabaseServiceRole();
+const serviceRole = getCarbonServiceRole();
 
 export const autodeskPollTask = task({
   id: "autodesk-poll",
@@ -32,7 +32,7 @@ export const autodeskPollTask = task({
       throw new Error("Failed to get manifest: " + manifest.error.message);
     }
 
-    const modelRecord = await upsertModelUpload(supabaseClient, {
+    const modelRecord = await upsertModelUpload(serviceRole, {
       id,
       name,
       size,

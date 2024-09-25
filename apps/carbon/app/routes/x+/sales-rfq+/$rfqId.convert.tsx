@@ -1,5 +1,5 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { convertSalesRfqToQuote } from "~/modules/sales";
 import { requirePermissions } from "~/services/auth/auth.server";
 import { flash } from "~/services/session.server";
@@ -16,7 +16,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId: id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const serviceRole = getSupabaseServiceRole();
+  const serviceRole = getCarbonServiceRole();
   const convert = await convertSalesRfqToQuote(serviceRole, {
     id,
     companyId,

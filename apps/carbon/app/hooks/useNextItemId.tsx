@@ -1,22 +1,22 @@
+import { useCarbon } from "@carbon/auth";
 import { useState } from "react";
-import { useSupabase } from "~/lib/supabase";
 import { useUser } from "./useUser";
 
 export function useNextItemId(
   table: "Part" | "Service" | "Tool" | "Material" | "Consumable" | "Fixture"
 ) {
   const { company } = useUser();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const [loading, setLoading] = useState<boolean>(false);
   const [id, setId] = useState<string>("");
 
   const onIdChange = async (newItemId: string) => {
-    if (newItemId.endsWith("...") && supabase) {
+    if (newItemId.endsWith("...") && carbon) {
       setLoading(true);
 
       const prefix = newItemId.slice(0, -3);
       try {
-        const { data } = await supabase
+        const { data } = await carbon
           ?.from("item")
           .select("readableId")
           .eq("companyId", company.id)

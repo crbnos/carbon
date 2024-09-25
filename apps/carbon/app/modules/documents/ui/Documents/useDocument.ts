@@ -1,8 +1,8 @@
+import { useCarbon } from "@carbon/auth";
 import { toast } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import { useCallback } from "react";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import type {
   DocumentTransactionType,
   Document as DocumentType,
@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 export const useDocument = () => {
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const [params, setParams] = useUrlParams();
   const user = useUser();
 
@@ -43,13 +43,13 @@ export const useDocument = () => {
       if (user?.id === undefined) throw new Error("User is undefined");
       if (!document.id) throw new Error("Document id is undefined");
 
-      return supabase?.from("documentTransaction").insert({
+      return carbon?.from("documentTransaction").insert({
         documentId: document.id,
         type,
         userId: user.id,
       });
     },
-    [supabase, user?.id]
+    [carbon, user?.id]
   );
 
   const deleteLabel = useCallback(
@@ -57,21 +57,21 @@ export const useDocument = () => {
       if (!document.id) throw new Error("Document id is undefined");
       if (user?.id === undefined) throw new Error("User is undefined");
 
-      return supabase
+      return carbon
         ?.from("documentLabel")
         .delete()
         .eq("documentId", document.id)
         .eq("userId", user.id)
         .eq("label", label);
     },
-    [supabase, user?.id]
+    [carbon, user?.id]
   );
 
   const download = useCallback(
     async (doc: DocumentType) => {
       if (!doc.path) throw new Error("Document path is undefined");
 
-      const result = await supabase?.storage.from("private").download(doc.path);
+      const result = await carbon?.storage.from("private").download(doc.path);
 
       if (!result || result.error) {
         toast.error(result?.error?.message || "Error downloading file");
@@ -92,7 +92,7 @@ export const useDocument = () => {
 
       await insertTransaction(doc, "Download");
     },
-    [supabase, insertTransaction]
+    [carbon, insertTransaction]
   );
 
   const view = useCallback(
@@ -111,20 +111,20 @@ export const useDocument = () => {
   const favorite = useCallback(
     async (document: DocumentType) => {
       if (document.favorite) {
-        await supabase
+        await carbon
           ?.from("documentFavorite")
           .delete()
           .eq("documentId", document.id!)
           .eq("userId", user?.id);
         return insertTransaction(document, "Unfavorite");
       } else {
-        await supabase
+        await carbon
           ?.from("documentFavorite")
           .insert({ documentId: document.id!, userId: user?.id });
         return insertTransaction(document, "Favorite");
       }
     },
-    [insertTransaction, supabase, user?.id]
+    [insertTransaction, carbon, user?.id]
   );
 
   const isImage = useCallback((fileType: string) => {
@@ -140,13 +140,13 @@ export const useDocument = () => {
   const label = useCallback(
     async (document: DocumentType, labels: string[]) => {
       if (user?.id === undefined) throw new Error("User is undefined");
-      await supabase
+      await carbon
         ?.from("documentLabel")
         .delete()
         .eq("documentId", document.id!)
         .eq("userId", user.id)
         .then(() => {
-          return supabase?.from("documentLabel").insert(
+          return carbon?.from("documentLabel").insert(
             labels.map((label) => ({
               documentId: document.id!,
               label,
@@ -157,13 +157,13 @@ export const useDocument = () => {
 
       return insertTransaction(document, "Label");
     },
-    [insertTransaction, supabase, user.id]
+    [insertTransaction, carbon, user.id]
   );
 
   const makePreview = useCallback(
     async (doc: DocumentType) => {
       if (!doc.path) throw new Error("Document path is undefined");
-      const result = await supabase?.storage.from("private").download(doc.path);
+      const result = await carbon?.storage.from("private").download(doc.path);
 
       if (!result || result.error) {
         toast.error(result?.error?.message || "Error previewing file");
@@ -172,19 +172,19 @@ export const useDocument = () => {
 
       return window.URL.createObjectURL(result.data);
     },
-    [supabase]
+    [carbon]
   );
 
   const removeLabel = useCallback(
     (document: DocumentType, label: string) => {
-      return supabase
+      return carbon
         ?.from("documentLabel")
         .delete()
         .eq("documentId", document.id!)
         .eq("userId", user?.id)
         .eq("label", label);
     },
-    [supabase, user?.id]
+    [carbon, user?.id]
   );
 
   const setLabel = useCallback(

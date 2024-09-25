@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { task } from "@trigger.dev/sdk/v3";
 import {
   finalizeAutodeskUpload,
@@ -6,7 +7,6 @@ import {
   translateFile,
   uploadToAutodesk,
 } from "~/lib/autodesk/autodesk.server";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import { autodeskPollTask } from "./autodesk-poll";
 
 export const autodeskUploadTask = task({
@@ -49,10 +49,10 @@ export const autodeskUploadTask = task({
       console.log("Encoded filename", { encodedFilename });
 
       console.log("Getting signed URL and downloading blob");
-      const supabaseClient = getSupabaseServiceRole();
+      const serviceRole = getCarbonServiceRole();
       const [signedUrl, blob] = await Promise.all([
         getAutodeskSignedUrl(encodedFilename, token),
-        supabaseClient.storage.from("private").download(modelPath),
+        serviceRole.storage.from("private").download(modelPath),
       ]);
       if (signedUrl.error) {
         console.error("Failed to get signed URL");
@@ -121,7 +121,7 @@ export const autodeskUploadTask = task({
         error: JSON.stringify(err, null, 2),
       });
 
-      const client = getSupabaseServiceRole();
+      const client = getCarbonServiceRole();
       console.log("Resetting modelUploadId");
 
       if (itemId) {

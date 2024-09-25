@@ -1,7 +1,7 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { getSupabaseServiceRole } from "~/lib/supabase";
 import type { Result } from "~/types";
 import {
   recalculateJobMakeMethodRequirements,
@@ -20,7 +20,7 @@ export const recalculateTask = task({
   run: async (payload: z.infer<typeof recalculateSchema>) => {
     console.info(`🔰 Type: ${payload.type}, id: ${payload.id}`);
 
-    const serviceRole = getSupabaseServiceRole();
+    const serviceRole = getCarbonServiceRole();
     let result: Result;
     let calculateQuantities: FunctionsResponse<{ success: boolean }>;
 

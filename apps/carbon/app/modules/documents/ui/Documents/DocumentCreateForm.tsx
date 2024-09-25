@@ -1,24 +1,24 @@
+import { useCarbon } from "@carbon/auth";
 import { File, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import { LuUpload } from "react-icons/lu";
 import { useUser } from "~/hooks";
-import { useSupabase } from "~/lib/supabase";
 import { path } from "~/utils/path";
 
 const DocumentCreateForm = () => {
   const submit = useSubmit();
-  const { supabase } = useSupabase();
+  const { carbon } = useCarbon();
   const user = useUser();
 
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && supabase) {
+    if (e.target.files && carbon) {
       const file = e.target.files[0];
       const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const fileName = `${user.id}/${nanoid()}.${fileExtension}`;
 
-      const fileUpload = await supabase.storage
+      const fileUpload = await carbon.storage
         .from("private")
         .upload(fileName, file, {
           cacheControl: `${12 * 60 * 60}`,
