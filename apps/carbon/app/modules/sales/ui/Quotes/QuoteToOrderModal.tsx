@@ -281,6 +281,9 @@ const QuoteToOrderDrawer = ({
   const navigation = useNavigation();
   const isSubmitting = navigation.state !== "idle";
 
+  const isNextButtonDisabled =
+    step === 1 && Object.keys(selectedLines).length === 0;
+
   return (
     <Drawer
       open={isOpen}
@@ -304,7 +307,12 @@ const QuoteToOrderDrawer = ({
             </Button>
           )}
           {step < 2 ? (
-            <Button onClick={() => setStep(step + 1)}>Next</Button>
+            <Button
+              onClick={() => setStep(step + 1)}
+              isDisabled={isNextButtonDisabled}
+            >
+              Next
+            </Button>
           ) : (
             <Form action={path.to.convertQuoteToOrder(quote.id!)} method="post">
               <Button
@@ -606,6 +614,11 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    formatOptions={{
+                      style: "unit",
+                      unit: "day",
+                      unitDisplay: "long",
+                    }}
                     value={overridePricing.leadTime}
                     onChange={(leadTime) =>
                       setOverridePricing((v) => ({
