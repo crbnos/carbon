@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import {
@@ -6,7 +7,6 @@ import {
   upsertMakeMethodFromJob,
   upsertMakeMethodFromJobMethod,
 } from "~/modules/production";
-import { requirePermissions } from "~/services/auth/auth.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

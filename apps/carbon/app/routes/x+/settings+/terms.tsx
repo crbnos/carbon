@@ -1,4 +1,4 @@
-import { useCarbon } from "@carbon/auth";
+import { useCarbon , error } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -22,11 +22,10 @@ import { LuCheckCircle } from "react-icons/lu";
 import { usePermissions, useUser } from "~/hooks";
 import { getTerms } from "~/modules/settings";
 
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
 
 export const handle: Handle = {
   breadcrumb: "Terms",

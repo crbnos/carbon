@@ -3,6 +3,9 @@ import { VStack } from "@carbon/react";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import {
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
@@ -10,10 +13,7 @@ import {
   JobBillOfProcess,
 } from "~/modules/production";
 import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

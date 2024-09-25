@@ -1,10 +1,10 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { AutodeskViewer } from "@carbon/react";
 import { useLoaderData, useParams } from "@remix-run/react";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { AutodeskProvider, useAutodeskToken } from "~/lib/autodesk";
 import { getAutodeskToken } from "~/lib/autodesk/autodesk.server";
 import { getModelUploadByUrn } from "~/modules/items";
-import { requirePermissions } from "~/services/auth/auth.server";
 
 export function links() {
   return [

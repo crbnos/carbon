@@ -1,3 +1,4 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { SalesOrderPDF } from "@carbon/documents";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -9,7 +10,6 @@ import {
   getSalesTerms,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
-import { requirePermissions } from "~/services/auth/auth.server";
 
 // export const config = { runtime: "nodejs" };
 

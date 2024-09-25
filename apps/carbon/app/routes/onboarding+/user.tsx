@@ -1,4 +1,6 @@
-import { getCarbonServiceRole } from "@carbon/auth";
+import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { destroyAuthSession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -20,9 +22,6 @@ import {
   updatePublicAccount,
 } from "~/modules/account";
 import { getUser } from "~/modules/users/users.server";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { destroyAuthSession } from "~/services/session.server";
-import { assertIsPost } from "~/utils/http";
 
 export async function loader({ request }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {

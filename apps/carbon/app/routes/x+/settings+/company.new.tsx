@@ -1,4 +1,6 @@
-import { getCarbonServiceRole } from "@carbon/auth";
+import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { updateCompanySession } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLocalTimeZone } from "@internationalized/date";
@@ -12,9 +14,6 @@ import {
   seedCompany,
 } from "~/modules/settings";
 import { getPermissionCacheKey } from "~/modules/users/users.server";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { updateCompanySession } from "~/services/session.server";
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

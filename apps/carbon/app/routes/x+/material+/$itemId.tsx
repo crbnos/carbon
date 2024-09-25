@@ -1,3 +1,6 @@
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
@@ -10,11 +13,8 @@ import {
   getMaterial,
   getPickMethods,
 } from "~/modules/items";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { error } from "~/utils/result";
 
 export const handle: Handle = {
   breadcrumb: "Materials",

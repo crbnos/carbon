@@ -1,3 +1,6 @@
+import { error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   HStack,
@@ -29,11 +32,8 @@ import {
   getAbility,
   updateAbility,
 } from "~/modules/resources";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 
 export const handle: Handle = {
   breadcrumb: "Abilities",

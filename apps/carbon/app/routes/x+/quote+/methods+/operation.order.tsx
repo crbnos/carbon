@@ -1,10 +1,9 @@
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 
+import { assertIsPost, error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { updateQuoteOperationOrder } from "~/modules/sales";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
-import { assertIsPost } from "~/utils/http";
-import { error } from "~/utils/result";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

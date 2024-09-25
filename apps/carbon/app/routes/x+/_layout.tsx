@@ -6,6 +6,10 @@ import NProgress from "nprogress";
 import { useEffect } from "react";
 
 import { CarbonProvider, getCarbon } from "@carbon/auth";
+import {
+  destroyAuthSession,
+  requireAuthSession,
+} from "@carbon/auth/session.server";
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { AutodeskProvider } from "~/lib/autodesk";
@@ -17,10 +21,6 @@ import {
   getUserDefaults,
   getUserGroups,
 } from "~/modules/users/users.server";
-import {
-  destroyAuthSession,
-  requireAuthSession,
-} from "~/services/session.server";
 import { path } from "~/utils/path";
 
 import type { ShouldRevalidateFunction } from "@remix-run/react";

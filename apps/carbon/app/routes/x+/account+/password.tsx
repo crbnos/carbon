@@ -1,14 +1,17 @@
-import { getCarbonServiceRole } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  success,
+} from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { PasswordForm, accountPasswordValidator } from "~/modules/account";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 
 export const handle: Handle = {
   breadcrumb: "Password",

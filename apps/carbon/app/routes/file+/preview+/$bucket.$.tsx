@@ -1,5 +1,5 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { type LoaderFunctionArgs } from "@vercel/remix";
-import { requirePermissions } from "~/services/auth/auth.server";
 
 const supportedFileTypes: Record<string, string> = {
   pdf: "application/pdf",

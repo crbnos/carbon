@@ -1,8 +1,8 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { Outlet } from "@remix-run/react";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { getLocationsList } from "~/modules/resources";
 import { getCompany } from "~/modules/settings";
-import { requirePermissions } from "~/services/auth/auth.server";
 import { onboardingSequence, path } from "~/utils/path";
 
 import { VStack } from "@carbon/react";

@@ -1,3 +1,6 @@
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
@@ -7,12 +10,9 @@ import {
   getAbilitiesList,
   getPartners,
 } from "~/modules/resources";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-import { error } from "~/utils/result";
 
 export const handle: Handle = {
   breadcrumb: "Partners",

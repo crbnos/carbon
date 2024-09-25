@@ -1,4 +1,10 @@
-import { getCarbonServiceRole } from "@carbon/auth";
+import { error, getCarbonServiceRole, success } from "@carbon/auth";
+import {
+  deleteAuthAccount,
+  sendInviteByEmail,
+  sendMagicLink,
+} from "@carbon/auth/auth.server";
+import { flash, requireAuthSession } from "@carbon/auth/session.server";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -15,15 +21,8 @@ import type {
   User,
 } from "~/modules/users";
 import { getPermissionsByEmployeeType } from "~/modules/users";
-import {
-  deleteAuthAccount,
-  sendInviteByEmail,
-  sendMagicLink,
-} from "~/services/auth/auth.server";
-import { flash, requireAuthSession } from "~/services/session.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 import { insertEmployeeJob } from "../people/people.service";
 
 export async function addUserToCompany(

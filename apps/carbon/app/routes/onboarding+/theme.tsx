@@ -1,3 +1,4 @@
+import { assertIsPost } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -31,7 +32,6 @@ import { themeValidator, type Theme as ThemeValue } from "~/modules/settings";
 import type { action as modeAction } from "~/root";
 import { getTheme, setTheme } from "~/services/theme.server";
 import type { Handle } from "~/utils/handle";
-import { assertIsPost } from "~/utils/http";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {

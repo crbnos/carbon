@@ -1,10 +1,10 @@
+import { error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { deleteCustomField } from "~/modules/settings/settings.server";
-import { requirePermissions } from "~/services/auth/auth.server";
-import { flash } from "~/services/session.server";
 import { path } from "~/utils/path";
-import { error, success } from "~/utils/result";
 
 export async function action({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
