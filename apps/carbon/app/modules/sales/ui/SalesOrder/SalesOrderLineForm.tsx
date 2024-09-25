@@ -266,11 +266,9 @@ const SalesOrderLineForm = ({
 
                     <InputControlled
                       name="description"
-                      label="Description"
+                      label="Short Description"
                       value={itemData.description}
-                      onChange={(newValue) =>
-                        setItemData((d) => ({ ...d, description: newValue }))
-                      }
+                      isReadOnly
                     />
 
                     {lineType !== "Comment" && (

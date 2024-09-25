@@ -191,7 +191,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
 
               <InputControlled
                 name="description"
-                label="Description"
+                label="Short Description"
                 value={itemData.description}
                 isReadOnly
                 className="col-span-2"
