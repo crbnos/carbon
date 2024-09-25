@@ -42,7 +42,7 @@ export function links() {
 export const meta: MetaFunction = () => {
   return [
     {
-      title: "CarbonOS Developers",
+      title: "CarbonOS | Developers",
     },
   ];
 };

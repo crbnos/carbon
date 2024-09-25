@@ -1,4 +1,12 @@
-import { ValidatedForm, validationError, validator } from "@carbon/form";
+import {
+  Hidden,
+  Input,
+  Password,
+  Submit,
+  ValidatedForm,
+  validationError,
+  validator,
+} from "@carbon/form";
 import { Alert, AlertTitle, Button, VStack } from "@carbon/react";
 import { Link, useActionData, useSearchParams } from "@remix-run/react";
 import type {
@@ -10,7 +18,6 @@ import { json, redirect } from "@vercel/remix";
 import posthog from "posthog-js";
 import { LuAlertCircle } from "react-icons/lu";
 
-import { Hidden, Input, Password, Submit } from "~/components/Form";
 import { loginValidator } from "~/services/auth";
 import {
   signInWithEmail,

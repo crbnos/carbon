@@ -24,7 +24,7 @@ const ServiceHeader = () => {
         <HStack>
           <Link to={path.to.serviceDetails(itemId)}>
             <Heading size="h2" className="flex items-center gap-1">
-              <MethodItemTypeIcon type="Service" />
+              <MethodItemTypeIcon type="Service" className="text-primary" />
               <span>{routeData?.service?.id}</span>
             </Heading>
           </Link>

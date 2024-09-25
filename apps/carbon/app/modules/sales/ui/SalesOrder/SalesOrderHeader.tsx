@@ -43,7 +43,7 @@ const SalesOrderHeader = () => {
           <HStack>
             <Link to={path.to.salesOrderDetails(orderId)}>
               <Heading size="h2" className="flex items-center gap-1">
-                <RiProgress8Line />
+                <RiProgress8Line className="text-primary" />
                 <span>{routeData?.salesOrder?.salesOrderId}</span>
               </Heading>
             </Link>

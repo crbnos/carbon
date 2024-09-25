@@ -76,7 +76,7 @@ const JobHeader = () => {
       <HStack>
         <Link to={path.to.jobDetails(jobId)}>
           <Heading size="h2" className="flex items-center gap-1">
-            <LuHardHat />
+            <LuHardHat className="text-primary" />
             <span>{routeData?.job?.jobId}</span>
           </Heading>
         </Link>

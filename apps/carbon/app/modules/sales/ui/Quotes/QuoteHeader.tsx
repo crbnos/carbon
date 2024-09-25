@@ -51,7 +51,7 @@ const QuoteHeader = () => {
           <HStack>
             <Link to={path.to.quoteDetails(quoteId)}>
               <Heading size="h2" className="flex items-center gap-1">
-                <RiProgress4Line />
+                <RiProgress4Line className="text-primary" />
                 <span>{routeData?.quote?.quoteId}</span>
               </Heading>
             </Link>

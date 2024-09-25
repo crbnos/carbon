@@ -1,4 +1,10 @@
-import { ValidatedForm, validationError, validator } from "@carbon/form";
+import {
+  Input,
+  Submit,
+  ValidatedForm,
+  validationError,
+  validator,
+} from "@carbon/form";
 import {
   Alert,
   AlertDescription,
@@ -15,7 +21,6 @@ import type {
 import { json, redirect } from "@vercel/remix";
 import { LuAlertCircle, LuCheckCircle } from "react-icons/lu";
 
-import { Input, Submit } from "~/components/Form";
 import { forgotPasswordValidator } from "~/services/auth";
 import { getUserByEmail, sendMagicLink } from "~/services/auth/auth.server";
 import { getAuthSession } from "~/services/session.server";

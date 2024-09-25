@@ -23,7 +23,7 @@ const FixtureHeader = () => {
         <HStack>
           <Link to={path.to.fixtureDetails(itemId)}>
             <Heading size="h2" className="flex items-center gap-1">
-              <MethodItemTypeIcon type="Fixture" />
+              <MethodItemTypeIcon type="Fixture" className="text-primary" />
               <span>{routeData?.fixtureSummary?.id}</span>
             </Heading>
           </Link>

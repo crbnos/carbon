@@ -21,7 +21,7 @@ const ToolHeader = () => {
         <HStack>
           <Link to={path.to.toolDetails(itemId)}>
             <Heading size="h2" className="flex items-center gap-1">
-              <MethodItemTypeIcon type="Tool" />
+              <MethodItemTypeIcon type="Tool" className="text-primary" />
               <span>{routeData?.toolSummary?.id}</span>
             </Heading>
           </Link>

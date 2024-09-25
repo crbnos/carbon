@@ -23,7 +23,7 @@ const MaterialHeader = () => {
         <HStack>
           <Link to={path.to.materialDetails(itemId)}>
             <Heading size="h2" className="flex items-center gap-1">
-              <MethodItemTypeIcon type="Material" />
+              <MethodItemTypeIcon type="Material" className="text-primary" />
               <span>{routeData?.materialSummary?.id}</span>
             </Heading>
           </Link>

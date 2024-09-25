@@ -59,7 +59,7 @@ const SalesRFQHeader = () => {
         <HStack>
           <Link to={path.to.salesRfqDetails(rfqId)}>
             <Heading size="h2" className="flex items-center gap-1">
-              <RiProgress2Line />
+              <RiProgress2Line className="text-primary" />
               <span>{routeData?.rfqSummary?.rfqId}</span>
             </Heading>
           </Link>

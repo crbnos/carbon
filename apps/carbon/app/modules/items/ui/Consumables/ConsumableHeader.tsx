@@ -23,7 +23,7 @@ const ConsumableHeader = () => {
         <HStack>
           <Link to={path.to.consumableDetails(itemId)}>
             <Heading size="h2" className="flex items-center gap-1">
-              <MethodItemTypeIcon type="Consumable" />
+              <MethodItemTypeIcon type="Consumable" className="text-primary" />
               <span>{routeData?.consumableSummary?.id}</span>
             </Heading>
           </Link>

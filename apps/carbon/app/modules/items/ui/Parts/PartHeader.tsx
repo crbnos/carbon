@@ -23,7 +23,7 @@ const PartHeader = () => {
         <HStack>
           <Link to={path.to.partDetails(itemId)}>
             <Heading size="h2" className="flex items-center gap-1">
-              <MethodItemTypeIcon type="Part" />
+              <MethodItemTypeIcon type="Part" className="text-primary" />
               <span>{routeData?.partSummary?.id}</span>
             </Heading>
           </Link>
