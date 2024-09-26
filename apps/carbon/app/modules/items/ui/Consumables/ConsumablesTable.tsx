@@ -58,7 +58,7 @@ const ConsumablesTable = memo(
         },
         {
           accessorKey: "name",
-          header: "Name",
+          header: "Short Description",
           cell: (item) => item.getValue(),
         },
         {
