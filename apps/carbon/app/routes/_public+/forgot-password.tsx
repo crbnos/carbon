@@ -101,7 +101,9 @@ export default function ForgotPasswordRoute() {
         <div className="rounded-lg bg-card border border-border shadow-lg p-8 w-[380px]">
           <ValidatedForm validator={forgotPasswordValidator} method="post">
             <VStack spacing={4}>
-              <p>Please enter your email address to search for your account.</p>
+              <p className="w-full px-8 text-center text-sm text-muted-foreground">
+                Please enter your email address to search for your account.{" "}
+              </p>
               {actionData?.success === false && (
                 <Alert variant="destructive">
                   <LuAlertCircle className="w-4 h-4" />
