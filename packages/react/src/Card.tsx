@@ -61,7 +61,7 @@ const CardAction = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("flex flex-col space-y-1.5 p-4", className)}
+      className={cn("flex flex-col space-y-1.5 py-4 px-6", className)}
       {...props}
     />
   )
@@ -151,7 +151,7 @@ const CardTitle = forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-2xl font-semibold leading-none tracking-tight text-foreground",
+      "text-xl font-semibold leading-none tracking-tight text-foreground",
       className
     )}
     {...props}
