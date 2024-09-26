@@ -16,9 +16,7 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import { PrimaryNavigation, Topbar } from "~/components";
-
-import { path } from "~/utils/path";
+import { PrimaryNavigation } from "~/components";
 
 export const ERP_URL = VERCEL_URL?.includes("localhost")
   ? "http://localhost:3000"
@@ -39,10 +37,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (user.error || !user.data) {
     await destroyAuthSession(request);
-  }
-
-  if (!user.data?.developer) {
-    throw redirect(path.to.requestAccess);
   }
 
   const company = companies.data?.find((c) => c.companyId === companyId);
@@ -90,7 +84,6 @@ export default function AuthenticatedRoute() {
               <div className="flex w-full h-full">
                 <div className="w-full h-full flex-1 overflow-hidden">
                   <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-x-hidden bg-muted">
-                    <Topbar />
                     <main className="flex-1 overflow-y-auto max-h-[calc(100vh-49px)]">
                       <Outlet />
                     </main>
