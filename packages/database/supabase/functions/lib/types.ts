@@ -24388,14 +24388,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -25592,6 +25592,7 @@ export type Database = {
           itemId: string | null
           itemReadableId: string | null
           itemType: string | null
+          locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           modelId: string | null
           modelName: string | null
@@ -25714,6 +25715,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "item"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "quoteLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "quoteLine_quoteId_fkey"
@@ -26987,14 +27009,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -29505,7 +29527,7 @@ export type Database = {
         | "Reject"
         | "Request Approval"
       purchaseOrderType: "Purchase" | "Return"
-      quoteLineStatus: "Draft" | "In Progress" | "Complete"
+      quoteLineStatus: "Not Started" | "In Progress" | "Complete" | "No Quote"
       quoteStatus:
         | "Draft"
         | "Sent"
