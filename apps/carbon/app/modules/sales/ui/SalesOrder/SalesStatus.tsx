@@ -10,6 +10,7 @@ const SalesStatus = ({ status }: SalesOrderStatusProps) => {
     case "Draft":
       return <Status color="gray">{status}</Status>;
     case "Cancelled":
+    case "Closed":
       return <Status color="red">{status}</Status>;
     case "Confirmed":
       return <Status color="blue">{status}</Status>;

@@ -24,7 +24,12 @@ import {
   LuXCircle,
 } from "react-icons/lu";
 import { RiProgress2Line, RiProgress4Line } from "react-icons/ri";
-import { Assignee, Copy, useOptimisticAssignment } from "~/components";
+import {
+  Assignee,
+  Copy,
+  ModuleIcon,
+  useOptimisticAssignment,
+} from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -58,8 +63,8 @@ const SalesRFQHeader = () => {
       <HStack className="w-full justify-between">
         <HStack>
           <Link to={path.to.salesRfqDetails(rfqId)}>
-            <Heading size="h2" className="flex items-center gap-1">
-              <RiProgress2Line className="text-primary" />
+            <Heading size="h3" className="flex items-center gap-2">
+              <ModuleIcon icon={<RiProgress2Line />} />
               <span>{routeData?.rfqSummary?.rfqId}</span>
             </Heading>
           </Link>
