@@ -122,7 +122,7 @@ export default function LoginRoute() {
         </VStack>
       </ValidatedForm>
       <p className="px-10 text-center text-sm text-muted-foreground">
-        By clicking continue, you agree to our{" "}
+        By clicking sign in, you agree to our{" "}
         <Link
           to="/terms"
           className="underline underline-offset-4 hover:text-primary"
