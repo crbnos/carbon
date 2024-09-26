@@ -31,7 +31,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!bucket) throw new Error("Bucket not found");
   if (!path) throw new Error("Path not found");
 
-  const fileType = path.split(".").pop();
+  const fileType = path.split(".").pop()?.toLowerCase();
   if (!fileType || !(fileType in supportedFileTypes))
     throw new Error("File type not supported");
   const contentType = supportedFileTypes[fileType];
