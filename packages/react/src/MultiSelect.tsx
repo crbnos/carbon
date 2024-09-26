@@ -1,7 +1,8 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useId, useMemo, useRef, useState } from "react";
-import { RxCheck, RxMagnifyingGlass } from "react-icons/rx";
+import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
+import { RxMagnifyingGlass } from "react-icons/rx";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { Button } from "./Button";
 import {
@@ -216,13 +217,14 @@ function VirtualizedCommand({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                <RxCheck
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    isSelected ? "opacity-100" : "opacity-0"
+                <div className="flex items-center justify-start gap-2">
+                  {isSelected ? (
+                    <FaSquareCheck className="mr-1.5 text-primary" />
+                  ) : (
+                    <FaRegSquare className="mr-1.5 text-muted-foreground" />
                   )}
-                />
-                {option.label}
+                  {option.label}
+                </div>
               </CommandItem>
             );
           })}
