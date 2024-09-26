@@ -13048,6 +13048,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLines.additionalCharges",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLines.locationId",
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteLines.modelId",
           },
           {
@@ -41142,7 +41145,7 @@ export default {
           type: "integer",
         },
         status: {
-          enum: ["Draft", "In Progress", "Complete"],
+          enum: ["Not Started", "In Progress", "Complete", "No Quote"],
           format: 'public."quoteLineStatus"',
           type: "string",
         },
@@ -41228,6 +41231,12 @@ export default {
         },
         additionalCharges: {
           format: "jsonb",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
         },
         modelId: {
           format: "text",
@@ -49129,8 +49138,8 @@ export default {
           type: "integer",
         },
         status: {
-          default: "Draft",
-          enum: ["Draft", "In Progress", "Complete"],
+          default: "Not Started",
+          enum: ["Not Started", "In Progress", "Complete", "No Quote"],
           format: 'public."quoteLineStatus"',
           type: "string",
         },
@@ -58326,6 +58335,13 @@ export default {
       name: "additionalCharges",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

@@ -83,9 +83,10 @@ export const getMethodValidator = z.object({
 });
 
 export const quoteLineStatusType = [
-  "Draft",
+  "Not Started",
   "In Progress",
   "Complete",
+  "No Quote",
 ] as const;
 
 export const quoteStatusType = [
