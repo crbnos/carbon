@@ -1,8 +1,8 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
+import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
 import { MdClose } from "react-icons/md";
-import { RxCheck } from "react-icons/rx";
 import {
   Command,
   CommandGroup,
@@ -186,22 +186,23 @@ function VirtualizedCommand({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                {item.helper ? (
-                  <div className="flex flex-col">
-                    <p>{item.label}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.helper}
-                    </p>
-                  </div>
-                ) : (
-                  item.label
-                )}
-                <RxCheck
-                  className={cn(
-                    "ml-auto h-4 w-4",
-                    item.value === value ? "opacity-100" : "opacity-0"
+                <div className="flex justify-start items-center gap-1 px-2">
+                  {item.value === value ? (
+                    <FaSquareCheck className="mr-1.5 text-primary" />
+                  ) : (
+                    <FaRegSquare className="mr-1.5 text-muted-foreground" />
                   )}
-                />
+                  {item.helper ? (
+                    <div className="flex flex-col">
+                      <p>{item.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.helper}
+                      </p>
+                    </div>
+                  ) : (
+                    item.label
+                  )}
+                </div>
               </CommandItem>
             );
           })}

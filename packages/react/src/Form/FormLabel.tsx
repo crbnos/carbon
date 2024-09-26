@@ -23,13 +23,13 @@ export const FormLabel = forwardRef<
       className="flex items-center justify-between"
       {...props}
     >
-      <span className={cn("text-xs text-muted-foreground", className)}>
+      <span
+        className={cn("text-xs font-medium text-muted-foreground", className)}
+      >
         {children}
       </span>
       {isOptional && (
-        <span className="text-muted-foreground font-light text-xxs">
-          Optional
-        </span>
+        <span className="text-muted-foreground text-xxs">Optional</span>
       )}
     </ReactAria.Label>
   );

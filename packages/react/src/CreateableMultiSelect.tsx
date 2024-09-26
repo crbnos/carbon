@@ -2,8 +2,10 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { CommandEmpty } from "cmdk";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useId, useMemo, useRef, useState } from "react";
+import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
+import { LuPlus } from "react-icons/lu";
 import { MdClose } from "react-icons/md";
-import { RxCheck, RxMagnifyingGlass } from "react-icons/rx";
+import { RxMagnifyingGlass } from "react-icons/rx";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { Button } from "./Button";
 import {
@@ -267,31 +269,35 @@ function VirtualizedCommand({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                {isCreateOption ? (
-                  <>
-                    <span>Create</span>
-                    <span className="ml-1 font-bold line-clamp-1">
-                      {search.trim() === "" ? label : search}
-                    </span>
-                  </>
-                ) : item.helper ? (
-                  <div className="flex flex-col">
-                    <p>{item.label}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.helper}
-                    </p>
-                  </div>
-                ) : (
-                  item.label
-                )}
-                {!isCreateOption && (
-                  <RxCheck
-                    className={cn(
-                      "ml-auto h-4 w-4",
-                      isSelected ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                )}
+                <div className="flex justify-start items-center gap-1 px-2">
+                  {isCreateOption ? (
+                    <>
+                      <LuPlus className="mr-1.5" />
+                      <span>Create</span>
+                      <span className="font-bold line-clamp-1">
+                        {search.trim() === "" ? label : search}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      {isSelected ? (
+                        <FaSquareCheck className="mr-1.5 text-primary" />
+                      ) : (
+                        <FaRegSquare className="mr-1.5 text-muted-foreground" />
+                      )}
+                      {item.helper ? (
+                        <div className="flex flex-col">
+                          <p>{item.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.helper}
+                          </p>
+                        </div>
+                      ) : (
+                        item.label
+                      )}
+                    </>
+                  )}
+                </div>
               </CommandItem>
             );
           })}
