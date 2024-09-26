@@ -11,8 +11,7 @@ import {
 } from "@carbon/react";
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { Reorder } from "framer-motion";
-import { BsEyeFill, BsEyeSlash, BsPin, BsPinFill } from "react-icons/bs";
-import { LuColumns } from "react-icons/lu";
+import { LuColumns, LuEye, LuEyeOff, LuPin, LuPinOff } from "react-icons/lu";
 import { MdOutlineDragIndicator } from "react-icons/md";
 
 type ColumnsProps<T> = {
@@ -72,7 +71,7 @@ const Columns = <T extends object>({
                       </span>
                       <IconButton
                         aria-label="Toggle column"
-                        icon={column.getIsPinned() ? <BsPinFill /> : <BsPin />}
+                        icon={column.getIsPinned() ? <LuPin /> : <LuPinOff />}
                         onClick={(e) => {
                           if (column.getIsPinned()) {
                             column.pin(false);
@@ -88,9 +87,7 @@ const Columns = <T extends object>({
                       />
                       <IconButton
                         aria-label="Toggle column"
-                        icon={
-                          column.getIsVisible() ? <BsEyeFill /> : <BsEyeSlash />
-                        }
+                        icon={column.getIsVisible() ? <LuEye /> : <LuEyeOff />}
                         onClick={column.getToggleVisibilityHandler()}
                         variant="ghost"
                       />

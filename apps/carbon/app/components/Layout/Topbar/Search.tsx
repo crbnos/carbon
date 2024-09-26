@@ -25,10 +25,15 @@ import idb from "localforage";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useState } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
-import { BsCartDash } from "react-icons/bs";
-import { CgProfile } from "react-icons/cg";
 import { HiOutlineDocumentDuplicate } from "react-icons/hi";
-import { LuHardHat, LuSearch, LuUserSquare } from "react-icons/lu";
+import {
+  LuHardHat,
+  LuSearch,
+  LuShoppingCart,
+  LuUser,
+  LuUserSquare,
+  LuWrench,
+} from "react-icons/lu";
 import { PiShareNetworkFill } from "react-icons/pi";
 import {
   RiProgress2Line,
@@ -258,11 +263,11 @@ function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
     case "Part":
       return <AiOutlinePartition className="w-4 h-4 mr-2" />;
     case "Person":
-      return <CgProfile className="w-4 h-4 mr-2" />;
+      return <LuUser className="w-4 h-4 mr-2" />;
     case "Resource":
-      return <CgProfile className="w-4 h-4 mr-2" />;
+      return <LuWrench className="w-4 h-4 mr-2" />;
     case "Purchase Order":
-      return <BsCartDash className="w-4 h-4 mr-2" />;
+      return <LuShoppingCart className="w-4 h-4 mr-2" />;
     case "Opportunity":
     case "Lead":
     case "Sales RFQ":
