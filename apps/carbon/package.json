@@ -101,7 +101,7 @@
     "build": "remix vite:build",
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "run-p dev:remix dev:trigger",
-    "dev:remix": "PORT=3000 remix vite:dev",
+    "dev:remix": "remix vite:dev",
     "dev:trigger": "npx --yes trigger.dev@3.0.6 dev",
     "lint": "TIMING=1 eslint \"app/**/*.ts*\"",
     "start": "remix-serve ./build/server/index.js",

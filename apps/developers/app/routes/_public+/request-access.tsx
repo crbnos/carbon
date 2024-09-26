@@ -2,7 +2,7 @@ import { VERCEL_URL } from "@carbon/auth";
 import { Button } from "@carbon/react";
 import type { MetaFunction } from "@vercel/remix";
 
-export const APP_URL = VERCEL_URL?.includes("localhost")
+export const ERP_URL = VERCEL_URL?.includes("localhost")
   ? "http://localhost:3000"
   : `https://app.carbonos.dev`;
 
@@ -37,7 +37,7 @@ export default function RequestAccessRoute() {
           Request access to the developer portal by emailing rob@carbonos.dev
         </p>
         <Button size="lg" asChild>
-          <a href={APP_URL}>Return to App</a>
+          <a href={ERP_URL}>Return to App</a>
         </Button>
       </div>
     </>
