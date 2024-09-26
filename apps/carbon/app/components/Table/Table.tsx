@@ -622,7 +622,9 @@ const Table = <T extends object>({
                 <span className="text-xs font-mono font-light text-foreground uppercase">
                   No results found
                 </span>
-                <Button onClick={clearFilters}>Remove Filters</Button>
+                <Button variant="secondary" onClick={clearFilters}>
+                  Remove Filters
+                </Button>
               </div>
             ) : (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">

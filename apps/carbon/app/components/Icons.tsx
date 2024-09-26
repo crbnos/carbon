@@ -19,8 +19,17 @@ import { TbTargetArrow, TbTargetOff } from "react-icons/tb";
 
 import { getColor } from "@carbon/utils";
 import { Link } from "@remix-run/react";
+import type { ReactNode } from "react";
 import { useMode } from "~/hooks/useMode";
 import type { MethodType } from "~/modules/shared";
+
+export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
+  return (
+    <div className="h-6 w-6 rounded-lg border border-primary/30 bg-gradient-to-tr from-primary/20 to-primary/10 flex items-center justify-center text-primary text-sm">
+      {icon}
+    </div>
+  );
+};
 
 export const TrackingTypeIcon = ({
   type,

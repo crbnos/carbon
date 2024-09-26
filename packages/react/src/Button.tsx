@@ -47,7 +47,7 @@ export const buttonVariants = cva(
     },
     compoundVariants: [
       {
-        size: "md",
+        size: "sm",
         isIcon: true,
         class: "w-6 p-1",
       },

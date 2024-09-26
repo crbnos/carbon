@@ -1,7 +1,7 @@
 import { HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { Copy, MethodItemTypeIcon } from "~/components";
+import { Copy, MethodItemTypeIcon, ModuleIcon } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
@@ -22,8 +22,8 @@ const PartHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.partDetails(itemId)}>
-            <Heading size="h2" className="flex items-center gap-1">
-              <MethodItemTypeIcon type="Part" className="text-primary" />
+            <Heading size="h3" className="flex items-center gap-2">
+              <ModuleIcon icon={<MethodItemTypeIcon type="Part" />} />
               <span>{routeData?.partSummary?.id}</span>
             </Heading>
           </Link>

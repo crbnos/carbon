@@ -17,6 +17,7 @@ import {
   MethodBadge,
   MethodIcon,
   MethodItemTypeIcon,
+  ModuleIcon,
   TimeTypeIcon,
   TrackingTypeIcon,
 } from "./Icons";
@@ -53,6 +54,7 @@ export {
   MethodBadge,
   MethodIcon,
   MethodItemTypeIcon,
+  ModuleIcon,
   New,
   RealtimeDataProvider,
   RichText,
