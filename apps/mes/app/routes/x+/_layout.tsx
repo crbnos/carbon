@@ -1,9 +1,28 @@
-import { Toaster, TooltipProvider } from "@carbon/react";
-import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
+import {
+  Avatar,
+  Button,
+  ClientOnly,
+  cn,
+  IconButton,
+  Modal,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ModalTrigger,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+  Separator,
+  Toaster,
+  TooltipProvider,
+} from "@carbon/react";
+import { Form, Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import {
   CarbonProvider,
@@ -16,7 +35,9 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import { PrimaryNavigation } from "~/components";
+import { LuLogOut } from "react-icons/lu";
+import { defaultLayout } from "~/utils/layout";
+import { path } from "~/utils/path";
 
 export const ERP_URL = VERCEL_URL?.includes("localhost")
   ? "http://localhost:3000"
@@ -57,7 +78,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session } = useLoaderData<typeof loader>();
+  const { session, company, companies, user } = useLoaderData<typeof loader>();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const transition = useNavigation();
 
@@ -75,26 +97,105 @@ export default function AuthenticatedRoute() {
 
   return (
     <CarbonProvider session={session}>
-      <TooltipProvider>
-        <div className="min-h-full flex flex-col">
-          <div className="flex-none" />
-          <div className="h-screen min-h-[0px] basis-0 flex-1">
-            <div className="flex h-full">
-              <PrimaryNavigation />
-              <div className="flex w-full h-full">
-                <div className="w-full h-full flex-1 overflow-hidden">
-                  <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-x-hidden bg-muted">
-                    <main className="flex-1 overflow-y-auto max-h-[calc(100vh-49px)]">
-                      <Outlet />
-                    </main>
-                  </main>
+      <TooltipProvider delayDuration={0}>
+        <ClientOnly fallback={null}>
+          {() => (
+            <ResizablePanelGroup
+              direction="horizontal"
+              className="h-full items-stretch"
+            >
+              <ResizablePanel
+                defaultSize={defaultLayout[0]}
+                collapsedSize={4}
+                collapsible={true}
+                minSize={15}
+                maxSize={20}
+                onCollapse={() => {
+                  setIsCollapsed(true);
+                }}
+                onExpand={() => {
+                  setIsCollapsed(false);
+                }}
+                className={cn(
+                  isCollapsed &&
+                    "min-w-[50px] transition-all duration-300 ease-in-out"
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex h-[52px] items-center justify-start bg-background",
+                    isCollapsed ? "h-[52px]" : "px-2"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex items-center space-x-2 w-full",
+                      isCollapsed ? "justify-center" : "justify-start"
+                    )}
+                  >
+                    <Avatar
+                      size="sm"
+                      src={user?.avatarUrl ?? undefined}
+                      name={user?.fullName ?? ""}
+                    />
+                    {!isCollapsed && (
+                      <span className="text-sm truncate">{user?.fullName}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <Toaster position="bottom-right" />
+                <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto">
+                  <div className="flex flex-col">
+                    <Separator />
+                  </div>
+                  <div
+                    className={cn(
+                      "flex flex-col p-2 w-full",
+                      isCollapsed && "items-center justify-center "
+                    )}
+                  >
+                    <Modal>
+                      <ModalTrigger asChild>
+                        {isCollapsed ? (
+                          <IconButton
+                            type="submit"
+                            aria-label="Sign out"
+                            icon={<LuLogOut />}
+                          />
+                        ) : (
+                          <Button size="lg" type="submit" className="w-full">
+                            Sign out
+                          </Button>
+                        )}
+                      </ModalTrigger>
+                      <ModalContent size="small">
+                        <ModalHeader>
+                          <ModalTitle>Are you sure?</ModalTitle>
+                          <ModalDescription>
+                            You will be logged out
+                          </ModalDescription>
+                        </ModalHeader>
+
+                        <ModalFooter>
+                          <Form
+                            method="post"
+                            action={path.to.logout}
+                            className="w-full"
+                          >
+                            <Button type="submit">Sign Out</Button>
+                          </Form>
+                        </ModalFooter>
+                      </ModalContent>
+                    </Modal>
+                  </div>
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <Outlet />
+            </ResizablePanelGroup>
+          )}
+        </ClientOnly>
       </TooltipProvider>
+      <Toaster position="bottom-right" />
     </CarbonProvider>
   );
 }

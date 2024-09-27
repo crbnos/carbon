@@ -23,6 +23,7 @@
     "@tailwindcss/typography": "^0.5.10",
     "@vercel/analytics": "^1.2.2",
     "@vercel/remix": "2.10.2",
+    "cookie": "0.6.0",
     "framer-motion": "^11.1.7",
     "isbot": "3.6.13",
     "non.geist": "~1.0.3",
@@ -36,8 +37,7 @@
     "tailwind-scrollbar": "^3.0.5",
     "tailwind-scrollbar-hide": "^1.1.7",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.8",
-    "zod": "3.23.8"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@carbon/tailwind": "*",

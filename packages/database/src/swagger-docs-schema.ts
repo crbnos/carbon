@@ -34925,6 +34925,74 @@ export default {
         tags: ["(rpc) get_item_quantities"],
       },
     },
+    "/rpc/get_job_operations_by_work_center": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "work_center_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_job_operations_by_work_center"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                location_id: {
+                  format: "text",
+                  type: "string",
+                },
+                work_center_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["work_center_id", "location_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_job_operations_by_work_center"],
+      },
+    },
     "/rpc/get_method_tree": {
       get: {
         parameters: [
