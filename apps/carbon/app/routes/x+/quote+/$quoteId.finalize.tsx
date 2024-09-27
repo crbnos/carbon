@@ -8,12 +8,12 @@ import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { upsertDocument } from "~/modules/documents";
 import {
+  finalizeQuote,
   getCustomer,
   getCustomerContact,
   getOpportunityByQuote,
   getQuote,
   quoteFinalizeValidator,
-  releaseQuote,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
 import { getUser } from "~/modules/users/users.server";
@@ -110,17 +110,17 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const release = await releaseQuote(client, quoteId, userId);
-    if (release.error) {
+    const finalize = await finalizeQuote(client, quoteId, userId);
+    if (finalize.error) {
       throw redirect(
         path.to.quote(quoteId),
-        await flash(request, error(release.error, "Failed to release quote"))
+        await flash(request, error(finalize.error, "Failed to finalize quote"))
       );
     }
   } catch (err) {
     throw redirect(
       path.to.quote(quoteId),
-      await flash(request, error(err, "Failed to release quote"))
+      await flash(request, error(err, "Failed to finalize quote"))
     );
   }
 
