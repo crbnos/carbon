@@ -321,7 +321,7 @@ serve(async (req: Request) => {
                 locationId: salesRfq.data?.locationId,
                 expirationDate: salesRfq.data?.expirationDate,
                 salesPersonId: salesRfq.data?.createdBy,
-                status: "Draft",
+                status: "Not Started",
                 externalNotes: salesRfq.data?.externalNotes,
                 internalNotes: salesRfq.data?.internalNotes,
                 companyId,

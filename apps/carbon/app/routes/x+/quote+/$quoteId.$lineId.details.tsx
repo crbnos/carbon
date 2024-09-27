@@ -146,7 +146,7 @@ export default function QuoteLine() {
     itemReadableId: line.itemReadableId ?? "",
     methodType: line.methodType ?? "Make",
     modelUploadId: line.modelUploadId ?? undefined,
-    status: line.status ?? "Draft",
+    status: line.status ?? "Not Started",
     quantity: line.quantity ?? [1],
     unitOfMeasureCode: line.unitOfMeasureCode ?? "",
   };
@@ -174,17 +174,19 @@ export default function QuoteLine() {
         />
       </div>
       <QuoteLineNotes line={line} />
-      {line.methodType === "Make" && (
+      {line.methodType === "Make" && line.status !== "No Quote" && (
         <QuoteLineCosting
           quantities={line.quantity ?? [1]}
           getLineCosts={getLineCosts}
         />
       )}
-      <QuoteLinePricing
-        line={line}
-        pricesByQuantity={pricesByQuantity}
-        getLineCosts={getLineCosts}
-      />
+      {line.status !== "No Quote" && (
+        <QuoteLinePricing
+          line={line}
+          pricesByQuantity={pricesByQuantity}
+          getLineCosts={getLineCosts}
+        />
+      )}
       <Outlet />
     </Fragment>
   );

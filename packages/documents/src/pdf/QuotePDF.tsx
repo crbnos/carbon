@@ -211,65 +211,83 @@ const QuotePDF = ({
                     </View>
                   )}
 
-                  {Object.keys(additionalCharges).length > 0 && (
-                    <View style={tw("mt-2.5")}>
-                      <Text style={tw("text-[9px] font-bold")}>
-                        Additional Charges
-                      </Text>
-                      {Object.values(additionalCharges)
-                        .sort((a, b) =>
-                          a.description.localeCompare(b.description)
-                        )
-                        .map((charge) => {
-                          return charge.description ? (
-                            <Text
-                              key={charge.description}
-                              style={tw("text-[9px] opacity-80")}
-                            >
-                              - {charge.description}
-                            </Text>
-                          ) : null;
-                        })}
-                    </View>
-                  )}
+                  {line.status !== "No Quote" &&
+                    Object.keys(additionalCharges).length > 0 && (
+                      <View style={tw("mt-2.5")}>
+                        <Text style={tw("text-[9px] font-bold")}>
+                          Additional Charges
+                        </Text>
+                        {Object.values(additionalCharges)
+                          .sort((a, b) =>
+                            a.description.localeCompare(b.description)
+                          )
+                          .map((charge) => {
+                            return charge.description ? (
+                              <Text
+                                key={charge.description}
+                                style={tw("text-[9px] opacity-80")}
+                              >
+                                - {charge.description}
+                              </Text>
+                            ) : null;
+                          })}
+                      </View>
+                    )}
                 </View>
                 <View style={tw("flex flex-col w-3/5 gap-2")}>
-                  {line.quantity.map((quantity, index) => {
-                    const prices = pricesByLine[line.id] ?? [];
-                    const price = prices.find(
-                      (price) => price.quantity === quantity
-                    );
-                    const netPrice =
-                      price?.unitPrice *
-                      (1 - (price?.discountPercent ?? 0) / 100);
+                  {line.status !== "No Quote" ? (
+                    line.quantity.map((quantity, index) => {
+                      const prices = pricesByLine[line.id] ?? [];
+                      const price = prices.find(
+                        (price) => price.quantity === quantity
+                      );
+                      const netPrice =
+                        price?.unitPrice *
+                        (1 - (price?.discountPercent ?? 0) / 100);
 
-                    const additionalCharge =
-                      additionalChargesByQuantity[index] ?? 0;
+                      const additionalCharge =
+                        additionalChargesByQuantity[index] ?? 0;
 
-                    return (
-                      <View key={quantity} style={tw("flex flex-row")}>
-                        <Text style={tw("w-1/5 text-right")}>{quantity}</Text>
-                        <Text style={tw("w-1/5 text-right")}>
-                          {netPrice ? formatter.format(netPrice) : "-"}
+                      return (
+                        <View key={quantity} style={tw("flex flex-row")}>
+                          <Text style={tw("w-1/5 text-right")}>{quantity}</Text>
+                          <Text style={tw("w-1/5 text-right")}>
+                            {netPrice ? formatter.format(netPrice) : "-"}
+                          </Text>
+                          <Text style={tw("w-1/5 text-right")}>
+                            {additionalCharge
+                              ? formatter.format(additionalCharge)
+                              : "-"}
+                          </Text>
+                          <Text style={tw("w-1/5 text-right")}>
+                            {price ? `${price.leadTime} days` : "-"}
+                          </Text>
+                          <Text style={tw("w-1/5 text-right")}>
+                            {netPrice
+                              ? formatter.format(
+                                  netPrice * quantity + additionalCharge
+                                )
+                              : "-"}
+                          </Text>
+                        </View>
+                      );
+                    })
+                  ) : (
+                    <View>
+                      <View style={tw("flex flex-row")}>
+                        <Text style={tw("w-1/5 text-right font-bold")}>
+                          No Quote
                         </Text>
-                        <Text style={tw("w-1/5 text-right")}>
-                          {additionalCharge
-                            ? formatter.format(additionalCharge)
-                            : "-"}
-                        </Text>
-                        <Text style={tw("w-1/5 text-right")}>
-                          {price ? `${price.leadTime} days` : "-"}
-                        </Text>
-                        <Text style={tw("w-1/5 text-right")}>
-                          {netPrice
-                            ? formatter.format(
-                                netPrice * quantity + additionalCharge
-                              )
-                            : "-"}
-                        </Text>
+                        <View style={tw("w-3/5 ml-auto")}>
+                          {line.noQuoteReason && (
+                            <Text style={tw("text-sm")}>
+                              {line.noQuoteReason}
+                            </Text>
+                          )}
+                        </View>
                       </View>
-                    );
-                  })}
+                    </View>
+                  )}
                 </View>
               </View>
             );
