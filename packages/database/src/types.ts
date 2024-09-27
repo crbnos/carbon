@@ -11503,7 +11503,8 @@ export type Database = {
           startTime: string
           type: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt: string | null
-          updatedBy: string
+          updatedBy: string | null
+          workCenterId: string | null
         }
         Insert: {
           companyId: string
@@ -11514,10 +11515,11 @@ export type Database = {
           endTime?: string | null
           id?: string
           jobOperationId: string
-          startTime: string
+          startTime?: string
           type?: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt?: string | null
-          updatedBy: string
+          updatedBy?: string | null
+          workCenterId?: string | null
         }
         Update: {
           companyId?: string
@@ -11531,7 +11533,8 @@ export type Database = {
           startTime?: string
           type?: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt?: string | null
-          updatedBy?: string
+          updatedBy?: string | null
+          workCenterId?: string | null
         }
         Relationships: [
           {
@@ -11680,6 +11683,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "productionEvent_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -14147,6 +14164,7 @@ export type Database = {
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
+          noQuoteReason: string | null
           notes: Json | null
           quantity: number[] | null
           quoteId: string
@@ -14172,6 +14190,7 @@ export type Database = {
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          noQuoteReason?: string | null
           notes?: Json | null
           quantity?: number[] | null
           quoteId: string
@@ -14197,6 +14216,7 @@ export type Database = {
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          noQuoteReason?: string | null
           notes?: Json | null
           quantity?: number[] | null
           quoteId?: string
@@ -23586,6 +23606,7 @@ export type Database = {
           overheadRate: number | null
           processId: string | null
           quantityComplete: number | null
+          quantityReworked: number | null
           quantityScrapped: number | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -25253,14 +25274,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -25599,6 +25620,7 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           modelUploadId: string | null
+          noQuoteReason: string | null
           notes: Json | null
           quantity: number[] | null
           quoteId: string | null

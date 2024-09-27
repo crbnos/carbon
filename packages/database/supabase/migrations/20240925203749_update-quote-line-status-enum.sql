@@ -40,6 +40,9 @@ ALTER TYPE "newQuoteLineStatus" RENAME TO "quoteLineStatus";
 ALTER TABLE "quoteLine" 
   ALTER COLUMN "status" SET DEFAULT 'Not Started';
 
+-- Update the quoteLine table to add the noQuoteReason column
+ALTER TABLE "quoteLine" ADD COLUMN "noQuoteReason" TEXT;
+
 -- Recreate the quoteLines view
 CREATE OR REPLACE VIEW "quoteLines" WITH(SECURITY_INVOKER=true) AS (
   SELECT

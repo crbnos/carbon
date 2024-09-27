@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.2 (a4e00ff)",
+    version: "12.0.1 (cd38da5)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -4678,6 +4678,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityReworked",
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperation.status",
           },
           {
@@ -4836,6 +4839,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityReworked",
+          },
+          {
             $ref: "#/parameters/rowFilter.jobOperation.status",
           },
           {
@@ -4946,6 +4952,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.quantityReworked",
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.status",
@@ -6530,6 +6539,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.quantityScrapped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.quantityReworked",
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.status",
@@ -13049,6 +13061,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.noQuoteReason",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.modelId",
@@ -30529,6 +30544,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.noQuoteReason",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -30657,6 +30675,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.noQuoteReason",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -30737,6 +30758,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.noQuoteReason",
           },
           {
             $ref: "#/parameters/body.quoteLine",
@@ -31075,6 +31099,213 @@ export default {
           },
         },
         tags: ["currency"],
+      },
+    },
+    "/productionEvent": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.startTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.endTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.duration",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.employeeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/productionEvent",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["productionEvent"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.productionEvent",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["productionEvent"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.startTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.endTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.duration",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.employeeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["productionEvent"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.startTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.endTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.duration",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.employeeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.productionEvent",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["productionEvent"],
       },
     },
     "/accounts": {
@@ -33822,6 +34053,63 @@ export default {
         tags: ["(rpc) has_any_company_permission"],
       },
     },
+    "/rpc/get_job_operation_by_id": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "operation_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_job_operation_by_id"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                operation_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["operation_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_job_operation_by_id"],
+      },
+    },
     "/rpc/_xid_machine_id": {
       get: {
         produces: [
@@ -33978,6 +34266,74 @@ export default {
           },
         },
         tags: ["(rpc) xid_encode"],
+      },
+    },
+    "/rpc/get_active_job_operations_by_employee": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "employee_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_active_job_operations_by_employee"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                employee_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["employee_id", "company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_active_job_operations_by_employee"],
       },
     },
     "/rpc/groups_query": {
@@ -35074,6 +35430,74 @@ export default {
         tags: ["(rpc) get_method_tree"],
       },
     },
+    "/rpc/get_active_job_count": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "employee_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_active_job_count"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                employee_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["employee_id", "company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_active_job_count"],
+      },
+    },
     "/rpc/users_for_groups": {
       get: {
         parameters: [
@@ -35132,6 +35556,74 @@ export default {
           },
         },
         tags: ["(rpc) users_for_groups"],
+      },
+    },
+    "/rpc/get_recent_job_operations_by_employee": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "employee_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_recent_job_operations_by_employee"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                employee_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["employee_id", "company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_recent_job_operations_by_employee"],
       },
     },
   },
@@ -37284,6 +37776,11 @@ export default {
           format: "numeric",
           type: "number",
         },
+        quantityReworked: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
         status: {
           default: "Todo",
           enum: [
@@ -38135,6 +38632,10 @@ export default {
           type: "number",
         },
         quantityScrapped: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityReworked: {
           format: "numeric",
           type: "number",
         },
@@ -41235,6 +41736,10 @@ export default {
         locationId: {
           description:
             "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        noQuoteReason: {
           format: "text",
           type: "string",
         },
@@ -49234,6 +49739,10 @@ export default {
           format: "text",
           type: "string",
         },
+        noQuoteReason: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -49425,6 +49934,88 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+      },
+      type: "object",
+    },
+    productionEvent: {
+      required: [
+        "id",
+        "jobOperationId",
+        "startTime",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        type: {
+          enum: ["Setup", "Labor", "Machine"],
+          format: 'public."productionEventType"',
+          type: "string",
+        },
+        startTime: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        endTime: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        duration: {
+          format: "integer",
+          type: "integer",
+        },
+        employeeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -53184,6 +53775,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.jobOperation.quantityReworked": {
+      name: "quantityReworked",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.jobOperation.status": {
       name: "status",
       required: false,
@@ -54268,6 +54866,13 @@ export default {
     },
     "rowFilter.jobOperationsWithMakeMethods.quantityScrapped": {
       name: "quantityScrapped",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.quantityReworked": {
+      name: "quantityReworked",
       required: false,
       format: "numeric",
       in: "query",
@@ -58340,6 +58945,13 @@ export default {
     },
     "rowFilter.quoteLines.locationId": {
       name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.noQuoteReason": {
+      name: "noQuoteReason",
       required: false,
       format: "text",
       in: "query",
@@ -68777,6 +69389,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.quoteLine.noQuoteReason": {
+      name: "noQuoteReason",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.jobMaterialWithMakeMethodId": {
       name: "jobMaterialWithMakeMethodId",
       description: "jobMaterialWithMakeMethodId",
@@ -69044,6 +69663,106 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "body.productionEvent": {
+      name: "productionEvent",
+      description: "productionEvent",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/productionEvent",
+      },
+    },
+    "rowFilter.productionEvent.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.type": {
+      name: "type",
+      required: false,
+      format: 'public."productionEventType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.startTime": {
+      name: "startTime",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.endTime": {
+      name: "endTime",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.duration": {
+      name: "duration",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.employeeId": {
+      name: "employeeId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

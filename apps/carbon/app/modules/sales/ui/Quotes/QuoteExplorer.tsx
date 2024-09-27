@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   cn,
   DropdownMenu,
@@ -61,7 +62,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     itemReadableId: "",
     locationId: quoteData?.quote?.locationId ?? defaults.locationId ?? "",
     methodType: "Make" as const,
-    status: "Draft" as const,
+    status: "Not Started" as const,
     quantity: [1],
     unitOfMeasureCode: "",
   };
@@ -228,6 +229,19 @@ function QuoteLineItem({
             </span>
           </VStack>
         </HStack>
+        <Badge
+          className={cn(
+            "text-xs bg-white border-2 px-2 py-1 w-[90px] text-center flex items-center justify-center ml-auto disabled:pointer-events-none",
+            line.status === "Not Started" &&
+              "text-orange-500 border-orange-500",
+            line.status === "In Progress" &&
+              "text-yellow-500 border-yellow-500",
+            line.status === "Complete" && "text-green-500 border-green-500",
+            line.status === "No Quote" && "text-red-500 border-red-500"
+          )}
+        >
+          {line.status}
+        </Badge>
         <HStack spacing={0}>
           {line.methodType === "Make" && permissions.can("update", "sales") && (
             <IconButton
@@ -269,7 +283,8 @@ function QuoteLineItem({
       </HStack>
       {disclosure.isOpen &&
         line.methodType === "Make" &&
-        permissions.can("update", "sales") && (
+        permissions.can("update", "sales") &&
+        line.status !== "No Quote" && (
           <VStack className="border-b border-border p-1">
             <QuoteBoMExplorer methods={flattenedMethods} />
           </VStack>
