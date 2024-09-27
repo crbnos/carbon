@@ -35,6 +35,10 @@ const QuoteHeader = () => {
     prices: QuotationPrice[];
   }>(path.to.quote(quoteId));
 
+  const eligibleLines = routeData?.lines.filter(
+    (line) => line.status !== "No Quote"
+  );
+
   const finalizeModal = useDisclosure();
   const convertToOrderModal = useDisclosure();
 
@@ -99,7 +103,7 @@ const QuoteHeader = () => {
                   isDisabled={
                     finalizeFetcher.state !== "idle" ||
                     !permissions.can("update", "sales") ||
-                    !routeData?.lines?.length
+                    !eligibleLines?.length
                   }
                   leftIcon={<LuCheckCheck />}
                 >
@@ -204,7 +208,7 @@ const QuoteHeader = () => {
         isOpen={convertToOrderModal.isOpen}
         onClose={convertToOrderModal.onClose}
         quote={routeData?.quote!}
-        lines={routeData?.lines ?? []}
+        lines={eligibleLines ?? []}
         pricing={routeData?.prices ?? []}
       />
     </>
