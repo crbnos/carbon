@@ -28734,6 +28734,33 @@ export type Database = {
           isRoot: boolean
         }[]
       }
+      get_job_operations_by_work_center: {
+        Args: {
+          work_center_id: string
+          location_id: string
+        }
+        Returns: {
+          jobOperationId: string
+          jobId: string
+          operationOrder: number
+          processId: string
+          workCenterId: string
+          description: string
+          setupTime: number
+          setupUnit: Database["public"]["Enums"]["factor"]
+          laborTime: number
+          laborUnit: Database["public"]["Enums"]["factor"]
+          machineTime: number
+          machineUnit: Database["public"]["Enums"]["factor"]
+          operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+          jobNumber: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          jobPriority: number
+          jobDueDate: string
+          parentMaterialId: string
+          parentMaterialReadableId: string
+        }[]
+      }
       get_method_tree: {
         Args: {
           uid: string

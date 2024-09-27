@@ -8,6 +8,7 @@ export const path = {
     callback: "/callback",
     forgotPassword: "/forgot-password",
     healthcheck: "/healthcheck",
+    jobs: `${x}/jobs`,
     login: "/login",
     logout: "/logout",
     refreshSession: "/refresh-session",
