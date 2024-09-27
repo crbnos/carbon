@@ -1,5 +1,6 @@
 import Assignee, { useOptimisticAssignment } from "./Assignee";
 import Avatar from "./Avatar";
+import AvatarMenu from "./AvatarMenu";
 import { BreadcrumbItem, BreadcrumbLink, Breadcrumbs } from "./Breadcrumb";
 import CadModel from "./CadModel";
 import Contact from "./Contact";
@@ -34,6 +35,7 @@ import Table from "./Table";
 export {
   Assignee,
   Avatar,
+  AvatarMenu,
   BreadcrumbItem,
   BreadcrumbLink,
   Breadcrumbs,

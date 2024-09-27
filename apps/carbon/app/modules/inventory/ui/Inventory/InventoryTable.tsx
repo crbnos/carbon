@@ -1,11 +1,12 @@
-import { Checkbox, Combobox, HStack, Heading, VStack } from "@carbon/react";
+import { Button, Checkbox, Combobox, HStack } from "@carbon/react";
+import { Link } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
+import { LuAlertTriangle, LuPlus } from "react-icons/lu";
 import {
   Hyperlink,
   ItemThumbnail,
   MethodItemTypeIcon,
-  New,
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -203,17 +204,17 @@ const InventoryTable = memo(
     return (
       <>
         {count === 0 && !hasFilters ? (
-          <HStack className="w-full h-screen flex items-start justify-center">
-            <VStack className="border rounded-md shadow-md w-96 mt-20">
-              <div className="w-full flex flex-col gap-4 items-center justify-center py-8 bg-gradient-to-bl from-card to-background rounded-lg text-center group ring-4 ring-transparent hover:ring-white/10">
-                <Heading size="h2">No Items Yet</Heading>
-                <p className="text-muted-foreground text-base font-light">
-                  Start by creating your first part
-                </p>
-                <New label="Part" to={path.to.newPart} />
-              </div>
-            </VStack>
-          </HStack>
+          <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+            <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+              <LuAlertTriangle className="h-6 w-6" />
+            </div>
+            <span className="text-xs font-mono font-light text-foreground uppercase">
+              No inventory items exists
+            </span>
+            <Button leftIcon={<LuPlus />} asChild>
+              <Link to={path.to.newPart}>New Part</Link>
+            </Button>
+          </div>
         ) : (
           <>
             <Table<InventoryItem>

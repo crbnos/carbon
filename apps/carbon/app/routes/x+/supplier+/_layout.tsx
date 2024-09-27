@@ -42,8 +42,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function SupplierRoute() {
   return (
-    <VStack spacing={4} className="h-full p-2">
-      <Outlet />
-    </VStack>
+    <div className="flex h-full w-full justify-center">
+      <VStack spacing={4} className="h-full p-2 w-full max-w-[80rem]">
+        <Outlet />
+      </VStack>
+    </div>
   );
 }

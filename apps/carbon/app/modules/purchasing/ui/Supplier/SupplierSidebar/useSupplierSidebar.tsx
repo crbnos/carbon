@@ -26,7 +26,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
     {
       name: "Details",
       to: path.to.supplierDetails(supplierId),
-      icon: LuBuilding,
+      icon: <LuBuilding />,
       shortcut: "Command+Shift+d",
     },
     {
@@ -34,7 +34,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       to: path.to.supplierContacts(supplierId),
       role: ["employee"],
       count: contacts,
-      icon: LuContact,
+      icon: <LuContact />,
       shortcut: "Command+Shift+c",
     },
     {
@@ -42,35 +42,35 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       to: path.to.supplierLocations(supplierId),
       role: ["employee", "supplier"],
       count: locations,
-      icon: LuMapPin,
+      icon: <LuMapPin />,
       shortcut: "Command+Shift+l",
     },
     {
       name: "Payments",
       to: path.to.supplierPayment(supplierId),
       role: ["employee"],
-      icon: LuCreditCard,
+      icon: <LuCreditCard />,
       shortcut: "Command+Shift+p",
     },
     {
       name: "Processes",
       to: path.to.supplierProcesses(supplierId),
       role: ["employee"],
-      icon: TbRoute,
+      icon: <TbRoute />,
       shortcut: "Command+Shift+r",
     },
     {
       name: "Shipping",
       to: path.to.supplierShipping(supplierId),
       role: ["employee"],
-      icon: LuTruck,
+      icon: <LuTruck />,
       shortcut: "Command+Shift+s",
     },
     {
       name: "Accounting",
       to: path.to.supplierAccounting(supplierId),
       role: ["employee"],
-      icon: LuLandmark,
+      icon: <LuLandmark />,
       shortcut: "Command+Shift+a",
     },
   ].filter(

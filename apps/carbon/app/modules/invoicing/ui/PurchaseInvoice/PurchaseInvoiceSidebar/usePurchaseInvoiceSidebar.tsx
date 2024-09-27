@@ -12,7 +12,7 @@ export function usePurchaseInvoiceSidebar({ lines = 0 }: Props) {
     {
       name: "Summary",
       to: "details",
-      icon: LuFileText,
+      icon: <LuFileText />,
       shortcut: "Command+Shift+s",
       role: ["employee"],
     },
@@ -20,7 +20,7 @@ export function usePurchaseInvoiceSidebar({ lines = 0 }: Props) {
       name: "Lines",
       to: "lines",
       count: lines,
-      icon: LuList,
+      icon: <LuList />,
       shortcut: "Command+Shift+l",
       role: ["employee"],
     },
@@ -28,7 +28,7 @@ export function usePurchaseInvoiceSidebar({ lines = 0 }: Props) {
     //   name: "Payment",
     //   to: "payment",
     //   role: ["employee"],
-    //   icon: BsCreditCard,
+    //   icon: <BsCreditCard />,
     //   shortcut: "Command+Shift+p",
     // },
   ].filter(

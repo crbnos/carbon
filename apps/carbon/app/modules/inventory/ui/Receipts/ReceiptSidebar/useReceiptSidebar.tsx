@@ -17,7 +17,7 @@ export function useReceiptSidebar(
     {
       name: "Details",
       to: "details",
-      icon: LuFileText,
+      icon: <LuFileText />,
       shortcut: "Command+Shift+d",
     },
     {
@@ -25,7 +25,7 @@ export function useReceiptSidebar(
       to: "lines",
       role: ["employee"],
       count: lines.length,
-      icon: LuList,
+      icon: <LuList />,
       shortcut: "Command+Shift+l",
     },
 
@@ -34,7 +34,7 @@ export function useReceiptSidebar(
       to: "notes",
       role: ["employee"],
       count: notes.length,
-      icon: LuStickyNote,
+      icon: <LuStickyNote />,
       shortcut: "Command+Shift+n",
     },
   ].filter(
