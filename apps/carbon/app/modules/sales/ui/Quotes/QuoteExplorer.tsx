@@ -1,5 +1,4 @@
 import {
-  Badge,
   Button,
   cn,
   DropdownMenu,
@@ -21,7 +20,15 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuChevronDown, LuPlus, LuTrash } from "react-icons/lu";
+import {
+  LuCheckCircle,
+  LuChevronDown,
+  LuCircle,
+  LuClock3,
+  LuPlus,
+  LuTrash,
+  LuXCircle,
+} from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty, ItemThumbnail } from "~/components";
 import type { Tree } from "~/components/TreeView";
@@ -35,6 +42,7 @@ import {
 } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import type { quoteLineStatusType } from "../../sales.models";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
@@ -202,6 +210,21 @@ function QuoteLineItem({
     }
   };
 
+  function getStatusIcon(status: (typeof quoteLineStatusType)[number]) {
+    switch (status) {
+      case "Not Started":
+        return <LuCircle className="text-blue-600" />;
+      case "No Quote":
+        return <LuXCircle className="text-red-600" />;
+      case "Complete":
+        return <LuCheckCircle className="text-green-600" />;
+      case "In Progress":
+        return <LuClock3 className="text-yellow-600" />;
+      default:
+        return null;
+    }
+  }
+
   return (
     <VStack spacing={0}>
       <HStack
@@ -220,42 +243,36 @@ function QuoteLineItem({
           />
 
           <VStack spacing={0}>
-            <span className="font-semibold line-clamp-1">
-              {line.itemReadableId}
-            </span>
+            <HStack>
+              <span className="font-semibold line-clamp-1">
+                {line.itemReadableId}
+              </span>
+              <div className="ml-auto">
+                {getStatusIcon(line.status ?? "Not Started")}
+              </div>
+            </HStack>
             <span className="font-mono text-muted-foreground text-xs line-clamp-1">
               {line.customerPartId}
               {line.customerPartRevision && ` (${line.customerPartRevision})`}
             </span>
           </VStack>
         </HStack>
-        <Badge
-          className={cn(
-            "text-xs bg-white border-2 px-2 py-1 w-[90px] text-center flex items-center justify-center ml-auto disabled:pointer-events-none",
-            line.status === "Not Started" &&
-              "text-orange-500 border-orange-500",
-            line.status === "In Progress" &&
-              "text-yellow-500 border-yellow-500",
-            line.status === "Complete" && "text-green-500 border-green-500",
-            line.status === "No Quote" && "text-red-500 border-red-500"
-          )}
-        >
-          {line.status}
-        </Badge>
         <HStack spacing={0}>
-          {line.methodType === "Make" && permissions.can("update", "sales") && (
-            <IconButton
-              aria-label={disclosure.isOpen ? "Hide" : "Show"}
-              className={cn("animate", disclosure.isOpen && "-rotate-180")}
-              icon={<LuChevronDown />}
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                disclosure.onToggle();
-              }}
-            />
-          )}
+          {line.methodType === "Make" &&
+            permissions.can("update", "sales") &&
+            line.status !== "No Quote" && (
+              <IconButton
+                aria-label={disclosure.isOpen ? "Hide" : "Show"}
+                className={cn("animate", disclosure.isOpen && "-rotate-180")}
+                icon={<LuChevronDown />}
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  disclosure.onToggle();
+                }}
+              />
+            )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
