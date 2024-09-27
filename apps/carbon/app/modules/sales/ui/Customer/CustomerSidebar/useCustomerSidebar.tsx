@@ -24,7 +24,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     {
       name: "Details",
       to: path.to.customerDetails(customerId),
-      icon: LuBuilding,
+      icon: <LuBuilding />,
       shortcut: "Command+Shift+d",
     },
     {
@@ -32,7 +32,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       to: path.to.customerContacts(customerId),
       role: ["employee"],
       count: contacts,
-      icon: LuContact,
+      icon: <LuContact />,
       shortcut: "Command+Shift+c",
     },
     {
@@ -40,28 +40,28 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       to: path.to.customerLocations(customerId),
       role: ["employee", "customer"],
       count: locations,
-      icon: LuMapPin,
+      icon: <LuMapPin />,
       shortcut: "Command+Shift+l",
     },
     {
       name: "Payments",
       to: path.to.customerPayment(customerId),
       role: ["employee"],
-      icon: LuCreditCard,
+      icon: <LuCreditCard />,
       shortcut: "Command+Shift+p",
     },
     {
       name: "Shipping",
       to: path.to.customerShipping(customerId),
       role: ["employee"],
-      icon: LuTruck,
+      icon: <LuTruck />,
       shortcut: "Command+Shift+s",
     },
     {
       name: "Accounting",
       to: path.to.customerAccounting(customerId),
       role: ["employee"],
-      icon: LuLandmark,
+      icon: <LuLandmark />,
       shortcut: "Command+Shift+a",
     },
   ].filter(

@@ -6,13 +6,11 @@ import {
   CommandInput,
   CommandItem,
   HStack,
-  Heading,
   MenuIcon,
   MenuItem,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  VStack,
   cn,
   useDisclosure,
 } from "@carbon/react";
@@ -33,7 +31,6 @@ import { RxCheck } from "react-icons/rx";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Document, DocumentLabel } from "~/modules/documents";
 import {
@@ -59,7 +56,7 @@ const DocumentsTable = memo(
     const revalidator = useRevalidator();
     const [params] = useUrlParams();
     const filter = params.get("q");
-    const search = params.get("search");
+
     // put rows in state for use with optimistic ui updates
     const [rows, setRows] = useState<Document[]>(data);
     // we have to do this useEffect silliness since we're putitng rows
@@ -79,8 +76,6 @@ const DocumentsTable = memo(
       label,
       setLabel,
     } = useDocument();
-
-    const { hasFilters } = useFilters();
 
     const [people] = usePeople();
     const moveDocumentModal = useDisclosure();
@@ -478,31 +473,17 @@ const DocumentsTable = memo(
 
     return (
       <>
-        {count === 0 && !hasFilters && !search ? (
-          <HStack className="w-full h-screen flex items-start justify-center">
-            <VStack className="border rounded-md shadow-md w-96 mt-20">
-              <div className="w-full flex flex-col gap-4 items-center justify-center py-8 bg-gradient-to-bl from-card to-background rounded-lg text-center group ring-4 ring-transparent hover:ring-white/10">
-                <Heading size="h2">No Files Yet</Heading>
-                <p className="text-muted-foreground text-base font-light">
-                  Start by uploading your first file
-                </p>
-                <DocumentCreateForm />
-              </div>
-            </VStack>
-          </HStack>
-        ) : (
-          <Table<Document>
-            actions={actions}
-            count={count}
-            columns={columns}
-            data={rows}
-            defaultColumnVisibility={defaultColumnVisibility}
-            primaryAction={
-              permissions.can("create", "documents") && <DocumentCreateForm />
-            }
-            renderContextMenu={renderContextMenu}
-          />
-        )}
+        <Table<Document>
+          actions={actions}
+          count={count}
+          columns={columns}
+          data={rows}
+          defaultColumnVisibility={defaultColumnVisibility}
+          primaryAction={
+            permissions.can("create", "documents") && <DocumentCreateForm />
+          }
+          renderContextMenu={renderContextMenu}
+        />
 
         {selectedDocument && selectedDocument.id && (
           <>

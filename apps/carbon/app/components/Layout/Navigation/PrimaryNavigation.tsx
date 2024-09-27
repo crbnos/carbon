@@ -42,7 +42,10 @@ const PrimaryNavigation = () => {
         onMouseEnter={navigationPanel.onOpen}
         onMouseLeave={navigationPanel.onClose}
       >
-        <VStack spacing={1} className="flex flex-col justify-start h-full px-2">
+        <VStack
+          spacing={1}
+          className="flex flex-col justify-between h-full px-2"
+        >
           <VStack spacing={1}>
             <Button isIcon asChild variant="ghost" size="lg">
               <Link to="/">

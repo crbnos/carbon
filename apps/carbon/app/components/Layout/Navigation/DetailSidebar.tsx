@@ -10,14 +10,14 @@ import {
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useNavigate } from "@remix-run/react";
-import type { IconType } from "react-icons";
+import type { ReactNode } from "react";
 import { useOptimisticLocation } from "~/hooks";
 
 type DetailSidebarProps = {
   links: {
     name: string;
     to: string;
-    icon?: IconType;
+    icon?: ReactNode;
     count?: number;
     shortcut?: string;
   }[];
@@ -49,8 +49,12 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
                 variant={isActive ? "active" : "ghost"}
                 className="w-full justify-start"
               >
-                <Link to={route.to} prefetch="intent">
-                  {route.icon && <route.icon className="mr-2" />}
+                <Link
+                  to={route.to}
+                  prefetch="intent"
+                  className="flex items-center justify-start gap-2"
+                >
+                  {route.icon}
                   <span>{route.name}</span>
                   {route.count !== undefined && (
                     <Count count={route.count} className="ml-auto" />

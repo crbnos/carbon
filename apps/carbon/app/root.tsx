@@ -25,6 +25,7 @@ import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 import { useMode } from "./hooks/useMode";
+import { getTheme } from "./services/theme.server";
 import { modeValidator } from "./types/validators";
 
 // export const config = { runtime: "edge" };
@@ -65,6 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         SUPABASE_ANON_PUBLIC,
       },
       mode: getMode(request),
+      theme: getTheme(request),
       result: sessionFlash?.result,
     },
     {

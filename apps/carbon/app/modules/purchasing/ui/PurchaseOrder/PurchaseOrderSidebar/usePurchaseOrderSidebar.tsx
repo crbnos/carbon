@@ -28,28 +28,28 @@ export function usePurchaseOrderSidebar({
     {
       name: "Summary",
       to: path.to.purchaseOrderDetails(orderId),
-      icon: LuFileText,
+      icon: <LuFileText />,
       shortcut: "Command+Shift+s",
     },
     {
       name: "Lines",
       to: path.to.purchaseOrderLines(orderId),
       count: lines,
-      icon: LuList,
+      icon: <LuList />,
       shortcut: "Command+Shift+l",
     },
     {
       name: "Delivery",
       to: path.to.purchaseOrderDelivery(orderId),
       role: ["employee", "supplier"],
-      icon: BsTruck,
+      icon: <BsTruck />,
       shortcut: "Command+Shift+d",
     },
     {
       name: "Payment",
       to: path.to.purchaseOrderPayment(orderId),
       role: ["employee"],
-      icon: BsCreditCard,
+      icon: <BsCreditCard />,
       shortcut: "Command+Shift+p",
     },
     {
@@ -57,7 +57,7 @@ export function usePurchaseOrderSidebar({
       to: path.to.purchaseOrderInternalDocuments(orderId),
       role: ["employee"],
       count: internalDocuments,
-      icon: HiOutlineDocumentArrowDown,
+      icon: <HiOutlineDocumentArrowDown />,
       shortcut: "Command+Shift+i",
     },
     {
@@ -65,7 +65,7 @@ export function usePurchaseOrderSidebar({
       to: path.to.purchaseOrderExternalDocuments(orderId),
       role: ["employee", "supplier"],
       count: externalDocuments,
-      icon: HiOutlineDocumentArrowUp,
+      icon: <HiOutlineDocumentArrowUp />,
       shortcut: "Command+Shift+e",
     },
   ].filter(

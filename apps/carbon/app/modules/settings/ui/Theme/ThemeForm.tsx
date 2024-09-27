@@ -1,10 +1,8 @@
-import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
   VStack,
@@ -12,13 +10,12 @@ import {
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { themes } from "@carbon/utils";
-import { useEffect, useState } from "react";
+import { useFetcher } from "@remix-run/react";
 import { RxCheck } from "react-icons/rx";
 import type { z } from "zod";
-import { Hidden, Submit } from "~/components/Form";
 import { useMode } from "~/hooks/useMode";
-import type { Theme as ThemeValue } from "~/modules/settings";
-import { themeValidator } from "~/modules/settings";
+import type { themeValidator } from "~/modules/settings";
+import type { Action } from "~/types";
 import { path } from "~/utils/path";
 
 type ThemeFormProps = {
@@ -26,12 +23,10 @@ type ThemeFormProps = {
 };
 
 const ThemeForm = ({ theme: defaultValues }: ThemeFormProps) => {
-  const [theme, setTheme] = useState<ThemeValue>(defaultValues.theme);
   const mode = useMode();
+  const fetcher = useFetcher<Action>();
 
   const onThemeChange = (t: Theme) => {
-    setTheme(t.name);
-
     const variables = mode === "dark" ? t.cssVars.dark : t.cssVars.light;
 
     Object.entries(variables).forEach(([key, value]) => {
@@ -39,40 +34,34 @@ const ThemeForm = ({ theme: defaultValues }: ThemeFormProps) => {
     });
   };
 
-  useEffect(() => {
-    const t = themes.find((t) => t.name === theme);
-    if (t) {
-      onThemeChange(t);
-    }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  const optimisticTheme =
+    fetcher?.formData?.get("theme") ?? defaultValues.theme;
 
   return (
     <Card>
-      <ValidatedForm
-        method="post"
-        action={path.to.theme}
-        validator={themeValidator}
-        defaultValues={defaultValues}
-      >
-        <CardHeader>
-          <CardTitle>Theme</CardTitle>
-          <CardDescription>
-            This updates the theme for all users of the application
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <VStack spacing={4} className="max-w-[520px]">
-            <Hidden name="theme" value={theme} />
-            <div className="grid grid-cols-3 gap-4">
-              {themes.map((t) => {
-                const isActive = theme === t.name;
-                return (
+      <CardHeader>
+        <CardTitle>Theme</CardTitle>
+        <CardDescription>
+          This updates the theme for all users of the application
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <VStack spacing={4} className="max-w-[520px]">
+          <div className="grid grid-cols-3 gap-4">
+            {themes.map((t) => {
+              const isActive = optimisticTheme === t.name;
+              return (
+                <fetcher.Form
+                  key={t.name}
+                  action={path.to.theme}
+                  method="post"
+                  onSubmit={() => onThemeChange(t)}
+                >
+                  <input type="hidden" name="theme" value={t.name} />
                   <Button
                     key={t.name}
                     variant="secondary"
-                    onClick={() => onThemeChange(t)}
+                    type="submit"
                     className={cn(
                       "justify-start",
                       isActive && "border-2 border-primary"
@@ -94,15 +83,12 @@ const ThemeForm = ({ theme: defaultValues }: ThemeFormProps) => {
                     </span>
                     {t.label}
                   </Button>
-                );
-              })}
-            </div>
-          </VStack>
-        </CardContent>
-        <CardFooter>
-          <Submit>Save</Submit>
-        </CardFooter>
-      </ValidatedForm>
+                </fetcher.Form>
+              );
+            })}
+          </div>
+        </VStack>
+      </CardContent>
     </Card>
   );
 };

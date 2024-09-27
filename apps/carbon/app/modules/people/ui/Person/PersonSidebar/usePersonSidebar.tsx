@@ -1,23 +1,21 @@
-import { BiSolidUserDetail } from "react-icons/bi";
-import { CgProfile } from "react-icons/cg";
-import { MdNote } from "react-icons/md";
+import { LuHardHat, LuStickyNote, LuUser } from "react-icons/lu";
 
 export function usePersonSidebar() {
   return [
     {
       name: "Profile",
       to: "details",
-      icon: CgProfile,
+      icon: <LuUser />,
     },
     {
       name: "Job",
       to: "job",
-      icon: BiSolidUserDetail,
+      icon: <LuHardHat />,
     },
     {
       name: "Notes",
       to: "notes",
-      icon: MdNote,
+      icon: <LuStickyNote />,
     },
   ];
 }

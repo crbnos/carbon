@@ -61,6 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function JobsRoute() {
   const payload = useLoaderData<typeof loader>();
+
   return (
     <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
       <Tabs defaultValue="current">
