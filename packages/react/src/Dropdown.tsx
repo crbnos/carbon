@@ -8,8 +8,7 @@ import type {
   ReactElement,
 } from "react";
 import { cloneElement, forwardRef } from "react";
-import { LuCheckCircle2, LuChevronRight } from "react-icons/lu";
-import { RxCheck } from "react-icons/rx";
+import { LuCheck, LuChevronRight } from "react-icons/lu";
 
 import { cn } from "./utils/cn";
 
@@ -128,7 +127,7 @@ const DropdownMenuCheckboxItem = forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <RxCheck className="h-4 w-4" />
+        <LuCheck className="h-4 w-4" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -152,7 +151,7 @@ const DropdownMenuRadioItem = forwardRef<
     {children}
     <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <LuCheckCircle2 className="h-4 w-4 text-green-500" />
+        <LuCheck className="h-4 w-4 " />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
   </DropdownMenuPrimitive.RadioItem>

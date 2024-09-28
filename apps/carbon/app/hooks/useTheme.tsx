@@ -6,7 +6,7 @@ import { useRouteData } from "./useRouteData";
 
 export function useOptimisticTheme() {
   const fetchers = useFetchers();
-  const themeFetcher = fetchers.find((f) => f.formAction === "/");
+  const themeFetcher = fetchers.find((f) => f.formAction === path.to.theme);
 
   if (themeFetcher && themeFetcher.formData) {
     const theme = { theme: themeFetcher.formData.get("theme") };

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { Checkbox, HStack, cn } from "@carbon/react";
+import { flushSync } from "react-dom";
 import { LuTrash } from "react-icons/lu";
 
 export interface Item {
@@ -50,7 +51,7 @@ function SortableListItem<T>({
   const dragControls = useDragControls();
 
   const handleDragStart = (event: any) => {
-    setIsDragging(true);
+    flushSync(() => setIsDragging(true));
     dragControls.start(event, { snapToCursor: true });
     handleDrag();
   };
@@ -117,24 +118,31 @@ function SortableListItem<T>({
                     key={`${item.checked}`}
                     className="px-1 flex flex-grow truncate cursor-pointer"
                     role="button"
-                    onClick={(e) => {
-                      if (!isDragging) {
-                        onSelectItem(item.id);
-                      }
-                    }}
                   >
                     <HStack className="w-full justify-between">
                       {typeof item.title === "string" ? (
-                        <h4
+                        <span
                           className={cn(
-                            "flex text-base md:text-lg truncate",
+                            "flex font-semibold text-sm md:text-base truncate hover:underline",
                             item.checked ? "text-red-400" : "text-foreground"
                           )}
+                          onClick={(e) => {
+                            if (!isDragging) {
+                              onSelectItem(item.id);
+                            }
+                          }}
                         >
                           {item.title}
-                        </h4>
+                        </span>
                       ) : (
-                        <div className={item.checked ? "text-red-400" : ""}>
+                        <div
+                          onClick={(e) => {
+                            if (!isDragging) {
+                              onSelectItem(item.id);
+                            }
+                          }}
+                          className={item.checked ? "text-red-400" : ""}
+                        >
                           {item.title}
                         </div>
                       )}

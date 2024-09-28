@@ -1,4 +1,4 @@
-import { Button, VStack } from "@carbon/react";
+import { Button, cn, VStack } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { useOptimisticLocation } from "~/hooks";
 import type { RouteGroup } from "~/types";
@@ -39,7 +39,11 @@ const GroupedContentSidebar = ({
                     leftIcon={route.icon}
                     variant={isActive ? "active" : "ghost"}
                     size="sm"
-                    className="w-full justify-start"
+                    className={cn(
+                      "w-full justify-start",
+                      !isActive &&
+                        "hover:bg-active hover:text-active-foreground"
+                    )}
                   >
                     <Link
                       to={route.to + (route.q ? `?q=${route.q}` : "")}

@@ -1,16 +1,6 @@
 import {
-  Avatar,
-  Button,
   ClientOnly,
   cn,
-  IconButton,
-  Modal,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  ModalTrigger,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -18,30 +8,25 @@ import {
   Toaster,
   TooltipProvider,
 } from "@carbon/react";
-import { Form, Outlet, useLoaderData, useNavigation } from "@remix-run/react";
+import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
 import { useEffect, useState } from "react";
 
-import {
-  CarbonProvider,
-  getCarbon,
-  getCompanies,
-  getUser,
-  VERCEL_URL,
-} from "@carbon/auth";
+import { CarbonProvider, getCarbon, getCompanies, getUser } from "@carbon/auth";
 import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import { LuLogOut } from "react-icons/lu";
+import AvatarMenu from "~/components/AvatarMenu";
+import { getLocationsByCompany } from "~/services/jobs";
+import {
+  getLocationAndWorkCenter,
+  setLocationAndWorkCenter,
+} from "~/services/location.server";
 import { defaultLayout } from "~/utils/layout";
 import { path } from "~/utils/path";
-
-export const ERP_URL = VERCEL_URL?.includes("localhost")
-  ? "http://localhost:3000"
-  : `https://app.carbonos.dev`;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
@@ -62,23 +47,42 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const company = companies.data?.find((c) => c.companyId === companyId);
   if (!company) {
-    throw redirect(ERP_URL);
+    throw redirect(path.to.accountSettings);
   }
 
-  return json({
-    session: {
-      accessToken,
-      expiresIn,
-      expiresAt,
+  const [[location, workCenter, updated], locations] = await Promise.all([
+    getLocationAndWorkCenter(request, client, {
+      companyId,
+      userId,
+    }),
+    getLocationsByCompany(client, companyId),
+  ]);
+
+  return json(
+    {
+      session: {
+        accessToken,
+        expiresIn,
+        expiresAt,
+      },
+      company,
+      companies: companies.data ?? [],
+      location,
+      locations: locations.data ?? [],
+      user: user.data,
     },
-    company,
-    companies: companies.data ?? [],
-    user: user.data,
-  });
+    updated
+      ? {
+          headers: {
+            "Set-Cookie": setLocationAndWorkCenter(location, workCenter),
+          },
+        }
+      : undefined
+  );
 }
 
 export default function AuthenticatedRoute() {
-  const { session, company, companies, user } = useLoaderData<typeof loader>();
+  const { session, location, locations } = useLoaderData<typeof loader>();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const transition = useNavigation();
@@ -124,23 +128,22 @@ export default function AuthenticatedRoute() {
                 <div
                   className={cn(
                     "flex h-[52px] items-center justify-start bg-background",
-                    isCollapsed ? "h-[52px]" : "px-2"
+                    isCollapsed ? "h-[52px]" : "px-4"
                   )}
                 >
                   <div
                     className={cn(
-                      "flex items-center space-x-2 w-full",
+                      "flex items-center w-full",
                       isCollapsed ? "justify-center" : "justify-start"
                     )}
                   >
-                    <Avatar
-                      size="sm"
-                      src={user?.avatarUrl ?? undefined}
-                      name={user?.fullName ?? ""}
+                    <AvatarMenu
+                      // company={company}
+                      // companies={companies}
+                      isCollapsed={isCollapsed}
+                      location={location}
+                      locations={locations}
                     />
-                    {!isCollapsed && (
-                      <span className="text-sm truncate">{user?.fullName}</span>
-                    )}
                   </div>
                 </div>
                 <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto">
@@ -152,41 +155,7 @@ export default function AuthenticatedRoute() {
                       "flex flex-col p-2 w-full",
                       isCollapsed && "items-center justify-center "
                     )}
-                  >
-                    <Modal>
-                      <ModalTrigger asChild>
-                        {isCollapsed ? (
-                          <IconButton
-                            type="submit"
-                            aria-label="Sign out"
-                            icon={<LuLogOut />}
-                          />
-                        ) : (
-                          <Button size="lg" type="submit" className="w-full">
-                            Sign out
-                          </Button>
-                        )}
-                      </ModalTrigger>
-                      <ModalContent size="small">
-                        <ModalHeader>
-                          <ModalTitle>Are you sure?</ModalTitle>
-                          <ModalDescription>
-                            You will be logged out
-                          </ModalDescription>
-                        </ModalHeader>
-
-                        <ModalFooter>
-                          <Form
-                            method="post"
-                            action={path.to.logout}
-                            className="w-full"
-                          >
-                            <Button type="submit">Sign Out</Button>
-                          </Form>
-                        </ModalFooter>
-                      </ModalContent>
-                    </Modal>
-                  </div>
+                  ></div>
                 </div>
               </ResizablePanel>
               <ResizableHandle withHandle />

@@ -7759,6 +7759,7 @@ export type Database = {
           quantityScrapped: number | null
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
+          status: Database["public"]["Enums"]["jobOperationStatus"]
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
@@ -7793,6 +7794,7 @@ export type Database = {
           quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
+          status?: Database["public"]["Enums"]["jobOperationStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
@@ -7827,6 +7829,7 @@ export type Database = {
           quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
+          status?: Database["public"]["Enums"]["jobOperationStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
@@ -23379,14 +23382,18 @@ export type Database = {
           operationOrder:
             | Database["public"]["Enums"]["methodOperationOrder"]
             | null
+          operationQuantity: number | null
           operationSupplierProcessId: string | null
           operationType: Database["public"]["Enums"]["operationType"] | null
           operationUnitCost: number | null
           order: number | null
           overheadRate: number | null
           processId: string | null
+          quantityComplete: number | null
+          quantityScrapped: number | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
+          status: Database["public"]["Enums"]["jobOperationStatus"] | null
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
@@ -25050,14 +25057,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -26784,14 +26791,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["id"]
@@ -28740,7 +28747,7 @@ export type Database = {
           location_id: string
         }
         Returns: {
-          jobOperationId: string
+          id: string
           jobId: string
           operationOrder: number
           processId: string
@@ -28753,12 +28760,16 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
-          jobNumber: string
+          jobReadableId: string
           jobStatus: Database["public"]["Enums"]["jobStatus"]
-          jobPriority: number
           jobDueDate: string
+          jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
           parentMaterialId: string
-          parentMaterialReadableId: string
+          itemReadableId: string
+          operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationQuantity: number
+          quantityComplete: number
+          quantityScrapped: number
         }[]
       }
       get_method_tree: {
@@ -29091,6 +29102,14 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
+      jobOperationStatus:
+        | "Canceled"
+        | "Done"
+        | "In Progress"
+        | "Paused"
+        | "Ready"
+        | "Todo"
+        | "Waiting"
       jobStatus:
         | "Draft"
         | "Ready"

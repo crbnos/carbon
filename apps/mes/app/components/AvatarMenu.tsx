@@ -13,31 +13,29 @@ import {
   DropdownMenuTrigger,
   Switch,
 } from "@carbon/react";
-import { themes } from "@carbon/utils";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { BsHexagon } from "react-icons/bs";
-import {
-  LuFileText,
-  LuLogOut,
-  LuMoon,
-  LuPalette,
-  LuSun,
-  LuUser,
-} from "react-icons/lu";
+import { LuLogOut, LuMapPin, LuMoon, LuSun, LuUser } from "react-icons/lu";
 import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
-import { useTheme } from "~/hooks/useTheme";
-import type { action } from "~/root";
+import type { action } from "~/routes/x+/location";
+import type { Location } from "~/services/jobs";
 import { path } from "~/utils/path";
 
-const AvatarMenu = () => {
+const AvatarMenu = ({
+  isCollapsed,
+  location,
+  locations,
+}: {
+  isCollapsed: boolean;
+  location: string;
+  locations: Location[];
+}) => {
   const user = useUser();
   const name = `${user.firstName} ${user.lastName}`;
 
   const mode = useMode();
-  const theme = useTheme();
 
   const nextMode = mode === "dark" ? "light" : "dark";
   const modeSubmitRef = useRef<HTMLButtonElement>(null);
@@ -45,46 +43,60 @@ const AvatarMenu = () => {
   const fetcher = useFetcher<typeof action>();
   const [isOpen, setIsOpen] = useState(false);
 
-  const onThemeChange = (t: string) => {
-    const newTheme = themes.find((theme) => theme.name === t);
-    if (!newTheme) return;
-    const variables =
-      mode === "dark" ? newTheme.cssVars.dark : newTheme.cssVars.light;
-
+  const updateLocation = (value: string) => {
     const formData = new FormData();
-    formData.append("theme", t);
-    fetcher.submit(formData, { method: "post", action: path.to.theme });
-
-    Object.entries(variables).forEach(([key, value]) => {
-      document.body.style.setProperty(`--${key}`, value);
-    });
+    formData.append("location", value);
+    fetcher.submit(formData, { method: "POST", action: path.to.location });
   };
 
-  const optimisticTheme =
-    (fetcher?.formData?.get("theme") as string | null) ?? theme;
+  const optimisticLocation =
+    (fetcher.formData?.get("location") as string | undefined) ?? location;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger className="outline-none focus-visible:outline-none">
-        <Avatar path={user.avatarUrl} name={name} />
+      <DropdownMenuTrigger className="flex items-center justify-start gap-2 outline-none focus-visible:outline-none">
+        <Avatar size="sm" src={user?.avatarUrl ?? undefined} name={name} />
+        {!isCollapsed && (
+          <span className="text-sm font-medium truncate">{name}</span>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuLabel>Signed in as {name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to={path.to.authenticatedRoot}>
-            <DropdownMenuIcon icon={<BsHexagon />} />
-            Dashboard
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to={path.to.profile}>
+          <Link to={path.to.accountSettings}>
             <DropdownMenuIcon icon={<LuUser />} />
             Account Settings
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        {locations.length > 1 ? (
+          <>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <DropdownMenuIcon icon={<LuMapPin />} />
+                Location
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup value={optimisticLocation}>
+                  {locations.map((loc) => (
+                    <DropdownMenuRadioItem
+                      key={loc.id}
+                      value={loc.id}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        updateLocation(loc.id);
+                      }}
+                    >
+                      {loc.name}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center justify-start">
@@ -111,45 +123,6 @@ const AvatarMenu = () => {
               </fetcher.Form>
             </div>
           </div>
-        </DropdownMenuItem>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <DropdownMenuIcon icon={<LuPalette />} />
-            Theme Color
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup
-              value={optimisticTheme}
-              onValueChange={onThemeChange}
-            >
-              {themes.map((t) => (
-                <DropdownMenuRadioItem
-                  key={t.name}
-                  value={t.name}
-                  onSelect={(e) => e.preventDefault()}
-                  style={
-                    {
-                      "--theme-primary": `hsl(${
-                        t?.activeColor[mode === "dark" ? "dark" : "light"]
-                      })`,
-                    } as React.CSSProperties
-                  }
-                >
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 rounded-full mr-2 bg-[--theme-primary]" />
-                    {t.label}
-                  </div>
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to={path.to.apiIntroduction}>
-            <DropdownMenuIcon icon={<LuFileText />} />
-            API Documentation
-          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>

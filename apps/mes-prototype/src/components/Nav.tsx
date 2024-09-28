@@ -6,7 +6,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  cn,
 } from "@carbon/react";
 import { Link } from "react-router-dom";
 
@@ -16,7 +15,7 @@ interface NavProps {
     title: string;
     label?: string;
     icon: IconType;
-    variant: "primary" | "ghost";
+    variant: "active" | "ghost";
   }[];
 }
 
@@ -51,26 +50,11 @@ export function Nav({ links, isCollapsed }: NavProps) {
               key={index}
               leftIcon={<link.icon />}
               variant={link.variant}
-              className={cn(
-                link.variant === "primary" &&
-                  "dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white",
-                "justify-start"
-              )}
               asChild
             >
               <Link to="#">
                 {link.title}
-                {link.label && (
-                  <span
-                    className={cn(
-                      "ml-auto",
-                      link.variant === "primary" &&
-                        "text-background dark:text-white"
-                    )}
-                  >
-                    {link.label}
-                  </span>
-                )}
+                {link.label && <span className="ml-auto">{link.label}</span>}
               </Link>
             </Button>
           )

@@ -63,7 +63,7 @@ const ThemeForm = ({ theme: defaultValues }: ThemeFormProps) => {
                     variant="secondary"
                     type="submit"
                     className={cn(
-                      "justify-start",
+                      "justify-start w-full",
                       isActive && "border-2 border-primary"
                     )}
                     style={

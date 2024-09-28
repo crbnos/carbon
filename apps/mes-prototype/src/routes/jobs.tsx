@@ -142,7 +142,7 @@ export function Jobs({
               )}
             </div>
           </div>
-          <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto">
+          <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto bg-background">
             <div className="flex flex-col">
               <Separator />
               <Nav
@@ -152,7 +152,7 @@ export function Jobs({
                     title: "Jobs",
                     label: "128",
                     icon: LuCalendarClock,
-                    variant: "primary",
+                    variant: "active",
                   },
                   {
                     title: "Active",

@@ -4678,6 +4678,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.status",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -4833,6 +4836,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.status",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -4940,6 +4946,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.quantityScrapped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.status",
           },
           {
             $ref: "#/parameters/body.jobOperation",
@@ -6512,6 +6521,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.operationQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.quantityScrapped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.status",
           },
           {
             $ref: "#/parameters/select",
@@ -37055,6 +37076,7 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "status",
       ],
       properties: {
         id: {
@@ -37258,6 +37280,20 @@ export default {
           default: 0,
           format: "numeric",
           type: "number",
+        },
+        status: {
+          default: "Todo",
+          enum: [
+            "Canceled",
+            "Done",
+            "In Progress",
+            "Paused",
+            "Ready",
+            "Todo",
+            "Waiting",
+          ],
+          format: 'public."jobOperationStatus"',
+          type: "string",
         },
       },
       type: "object",
@@ -38086,6 +38122,31 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        operationQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityComplete: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityScrapped: {
+          format: "numeric",
+          type: "number",
+        },
+        status: {
+          enum: [
+            "Canceled",
+            "Done",
+            "In Progress",
+            "Paused",
+            "Ready",
+            "Todo",
+            "Waiting",
+          ],
+          format: 'public."jobOperationStatus"',
+          type: "string",
         },
       },
       type: "object",
@@ -53114,6 +53175,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.jobOperation.status": {
+      name: "status",
+      required: false,
+      format: 'public."jobOperationStatus"',
+      in: "query",
+      type: "string",
+    },
     "body.journalLine": {
       name: "journalLine",
       description: "journalLine",
@@ -54172,6 +54240,34 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.operationQuantity": {
+      name: "operationQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.quantityComplete": {
+      name: "quantityComplete",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.quantityScrapped": {
+      name: "quantityScrapped",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.status": {
+      name: "status",
+      required: false,
+      format: 'public."jobOperationStatus"',
       in: "query",
       type: "string",
     },
