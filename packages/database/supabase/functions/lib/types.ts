@@ -1520,7 +1520,7 @@ export type Database = {
           addressLine2: string | null
           city: string | null
           companyId: string
-          countryCode: number | null
+          countryCode: string | null
           fax: string | null
           id: string
           phone: string | null
@@ -1532,7 +1532,7 @@ export type Database = {
           addressLine2?: string | null
           city?: string | null
           companyId: string
-          countryCode?: number | null
+          countryCode?: string | null
           fax?: string | null
           id?: string
           phone?: string | null
@@ -1544,7 +1544,7 @@ export type Database = {
           addressLine2?: string | null
           city?: string | null
           companyId?: string
-          countryCode?: number | null
+          countryCode?: string | null
           fax?: string | null
           id?: string
           phone?: string | null
@@ -1585,7 +1585,7 @@ export type Database = {
             columns: ["countryCode"]
             isOneToOne: false
             referencedRelation: "country"
-            referencedColumns: ["id"]
+            referencedColumns: ["alpha2"]
           },
         ]
       }
@@ -2636,18 +2636,18 @@ export type Database = {
       }
       country: {
         Row: {
-          code: string
-          id: number
+          alpha2: string
+          alpha3: string
           name: string
         }
         Insert: {
-          code: string
-          id?: number
+          alpha2: string
+          alpha3: string
           name: string
         }
         Update: {
-          code?: string
-          id?: number
+          alpha2?: string
+          alpha3?: string
           name?: string
         }
         Relationships: []
@@ -11503,7 +11503,8 @@ export type Database = {
           startTime: string
           type: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt: string | null
-          updatedBy: string
+          updatedBy: string | null
+          workCenterId: string | null
         }
         Insert: {
           companyId: string
@@ -11514,10 +11515,11 @@ export type Database = {
           endTime?: string | null
           id?: string
           jobOperationId: string
-          startTime: string
+          startTime?: string
           type?: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt?: string | null
-          updatedBy: string
+          updatedBy?: string | null
+          workCenterId?: string | null
         }
         Update: {
           companyId?: string
@@ -11531,7 +11533,8 @@ export type Database = {
           startTime?: string
           type?: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt?: string | null
-          updatedBy?: string
+          updatedBy?: string | null
+          workCenterId?: string | null
         }
         Relationships: [
           {
@@ -11680,6 +11683,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "productionEvent_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -23586,6 +23603,7 @@ export type Database = {
           overheadRate: number | null
           processId: string | null
           quantityComplete: number | null
+          quantityReworked: number | null
           quantityScrapped: number | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -25229,7 +25247,7 @@ export type Database = {
           customerAddressLine1: string | null
           customerAddressLine2: string | null
           customerCity: string | null
-          customerCountryCode: number | null
+          customerCountryCode: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerState: string | null
@@ -25245,7 +25263,7 @@ export type Database = {
           supplierAddressLine1: string | null
           supplierAddressLine2: string | null
           supplierCity: string | null
-          supplierCountryCode: number | null
+          supplierCountryCode: string | null
           supplierName: string | null
           supplierPostalCode: string | null
           supplierState: string | null
@@ -25253,17 +25271,17 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
-            referencedColumns: ["id"]
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["supplierCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
           },
         ]
       }
@@ -25561,7 +25579,7 @@ export type Database = {
           customerAddressLine1: string | null
           customerAddressLine2: string | null
           customerCity: string | null
-          customerCountryCode: number | null
+          customerCountryCode: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerState: string | null
@@ -25573,7 +25591,7 @@ export type Database = {
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
-            referencedColumns: ["id"]
+            referencedColumns: ["alpha2"]
           },
         ]
       }
@@ -26971,7 +26989,7 @@ export type Database = {
           customerAddressLine1: string | null
           customerAddressLine2: string | null
           customerCity: string | null
-          customerCountryCode: number | null
+          customerCountryCode: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerState: string | null
@@ -26979,7 +26997,7 @@ export type Database = {
           paymentAddressLine1: string | null
           paymentAddressLine2: string | null
           paymentCity: string | null
-          paymentCountryCode: number | null
+          paymentCountryCode: string | null
           paymentCustomerName: string | null
           paymentPostalCode: string | null
           paymentState: string | null
@@ -26990,14 +27008,14 @@ export type Database = {
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
-            referencedColumns: ["id"]
+            referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
-            referencedColumns: ["id"]
+            referencedColumns: ["alpha2"]
           },
         ]
       }

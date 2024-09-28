@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import {
   Body,
   Column,
@@ -21,7 +22,6 @@ import {
   getLineTotal,
   getTotal,
 } from "../utils/sales-order";
-import { formatAddress } from "../utils/shared";
 
 interface SalesOrderEmailProps extends Email {
   salesOrder: Database["public"]["Views"]["salesOrders"]["Row"];
@@ -146,7 +146,7 @@ const SalesOrderEmail = ({
                   {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
                   {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
                   <Text>
-                    {formatAddress(
+                    {formatCityStatePostalCode(
                       customerCity,
                       customerState,
                       customerPostalCode

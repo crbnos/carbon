@@ -17,6 +17,7 @@ import { getLocalTimeZone } from "@internationalized/date";
 import { Link, useLoaderData } from "@remix-run/react";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { Hidden, Input, Submit } from "~/components/Form";
+import Country from "~/components/Form/Country";
 import { useOnboarding } from "~/hooks";
 import { insertEmployeeJob } from "~/modules/people";
 import { getLocationsList, upsertLocation } from "~/modules/resources";
@@ -164,6 +165,7 @@ export default function OnboardingCompany() {
     city: company?.city ?? "",
     state: company?.state ?? "",
     postalCode: company?.postalCode ?? "",
+    countryCode: company?.countryCode ?? "",
   };
 
   return (
@@ -174,7 +176,7 @@ export default function OnboardingCompany() {
         method="post"
       >
         <CardHeader>
-          <CardTitle>Now let's setup your company</CardTitle>
+          <CardTitle>Now let's set up your company</CardTitle>
           <CardDescription>You can always change this later</CardDescription>
         </CardHeader>
         <CardContent>
@@ -185,6 +187,7 @@ export default function OnboardingCompany() {
             <Input name="city" label="City" />
             <Input name="state" label="State" />
             <Input name="postalCode" label="Zip Code" />
+            <Country />
           </VStack>
         </CardContent>
 

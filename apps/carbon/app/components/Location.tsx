@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   VStack,
 } from "@carbon/react";
-import { formatAddressLines, formatCityStateZipCountry } from "@carbon/utils";
+import { formatAddressLines, formatCityStatePostalCode } from "@carbon/utils";
 import { LuMapPin } from "react-icons/lu";
 import type { Action } from "~/types";
 
@@ -17,6 +17,10 @@ type LocationProps = {
       city: string | null;
       state: string | null;
       postalCode: string | null;
+      country: {
+        alpha2: string;
+        name: string;
+      } | null;
     } | null;
   };
   actions: Action[];
@@ -32,7 +36,7 @@ const Location = ({ location, actions }: LocationProps) => {
     location.address.addressLine1,
     location.address.addressLine2
   );
-  const cityStateZipCountry = formatCityStateZipCountry(
+  const cityStatePostalCode = formatCityStatePostalCode(
     location.address.city,
     location.address.state,
     location.address.postalCode
@@ -46,8 +50,13 @@ const Location = ({ location, actions }: LocationProps) => {
           {addressLines}
         </p>
         <p className="text-sm text-muted-foreground line-clamp-1">
-          {cityStateZipCountry}
+          {cityStatePostalCode}
         </p>
+        {location.address.country && (
+          <p className="text-sm text-muted-foreground line-clamp-1">
+            {location.address.country.name}
+          </p>
+        )}
       </VStack>
       {actions.length > 0 && (
         <ActionMenu>

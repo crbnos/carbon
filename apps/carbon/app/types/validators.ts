@@ -17,7 +17,7 @@ export const address = {
   city: zfd.text(z.string().optional()),
   state: zfd.text(z.string().optional()),
   postalCode: zfd.text(z.string().optional()),
-  countryId: zfd.numeric(z.number().optional()),
+  countryCode: zfd.text(z.string().optional()),
   phone: zfd.text(z.string().optional()),
   fax: zfd.text(z.string().optional()),
 };

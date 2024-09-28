@@ -283,7 +283,7 @@ export async function getSupplierLocations(
   return client
     .from("supplierLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, state, country(id, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, state, country(alpha2, name), postalCode)"
     )
     .eq("supplierId", supplierId);
 }
@@ -295,7 +295,7 @@ export async function getSupplierLocation(
   return client
     .from("supplierLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, state, country(id, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, state, country(alpha2, name), postalCode)"
     )
     .eq("id", supplierContactId)
     .single();

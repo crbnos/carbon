@@ -3,6 +3,7 @@ import { Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
 import type { JSONContent } from "@carbon/react";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import type { PDF } from "../types";
 import {
   getLineDescription,
@@ -10,7 +11,6 @@ import {
   getLineTotal,
   getTotal,
 } from "../utils/sales-order";
-import { formatAddress } from "../utils/shared";
 import { Header, Note, Summary, Template } from "./components";
 
 interface SalesOrderPDFProps extends PDF {
@@ -103,7 +103,11 @@ const SalesOrderPDF = ({
               <Text style={tw("text-sm")}>{customerAddressLine2}</Text>
             )}
             <Text style={tw("text-sm")}>
-              {formatAddress(customerCity, customerState, customerPostalCode)}
+              {formatCityStatePostalCode(
+                customerCity,
+                customerState,
+                customerPostalCode
+              )}
             </Text>
             <Text style={tw("text-sm")}>{customerCountryCode}</Text>
           </View>
@@ -117,7 +121,11 @@ const SalesOrderPDF = ({
               <Text style={tw("text-sm")}>{paymentAddressLine2}</Text>
             )}
             <Text style={tw("text-sm")}>
-              {formatAddress(paymentCity, paymentState, paymentPostalCode)}
+              {formatCityStatePostalCode(
+                paymentCity,
+                paymentState,
+                paymentPostalCode
+              )}
             </Text>
             <Text style={tw("text-sm")}>{paymentCountryCode}</Text>
           </View>

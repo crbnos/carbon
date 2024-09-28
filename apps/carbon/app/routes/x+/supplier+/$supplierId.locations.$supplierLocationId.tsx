@@ -108,6 +108,7 @@ export default function EditSupplierLocationRoute() {
     city: location?.address?.city ?? "",
     state: location?.address?.state ?? "",
     postalCode: location?.address?.postalCode ?? "",
+    countryCode: location?.address?.country?.alpha2 ?? "",
     ...getCustomFields(location?.customFields),
   };
 

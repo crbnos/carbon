@@ -18,6 +18,7 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
+import Country from "~/components/Form/Country";
 import { usePermissions } from "~/hooks";
 import { supplierLocationValidator } from "~/modules/purchasing";
 import { path } from "~/utils/path";
@@ -95,7 +96,7 @@ const SupplierLocationForm = ({
                 <Input name="city" label="City" />
                 <Input name="state" label="State" />
                 <Input name="postalCode" label="Zip Code" />
-                {/* Country dropdown */}
+                <Country />
                 <CustomFormFields table="supplierLocation" />
               </VStack>
             </ModalDrawerBody>

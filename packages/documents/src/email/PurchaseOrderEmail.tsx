@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import {
   Body,
   Column,
@@ -20,7 +21,6 @@ import {
   getLineDescriptionDetails,
   getTotal,
 } from "../utils/purchase-order";
-import { formatAddress } from "../utils/shared";
 
 interface PurchaseOrderEmailProps extends Email {
   purchaseOrder: Database["public"]["Views"]["purchaseOrders"]["Row"];
@@ -147,7 +147,7 @@ const PurchaseOrderEmail = ({
                         <Text>{customerAddressLine2}</Text>
                       )}
                       <Text>
-                        {formatAddress(
+                        {formatCityStatePostalCode(
                           customerCity,
                           customerState,
                           customerPostalCode
@@ -166,7 +166,7 @@ const PurchaseOrderEmail = ({
                         <Text>{deliveryAddressLine2}</Text>
                       )}
                       <Text>
-                        {formatAddress(
+                        {formatCityStatePostalCode(
                           deliveryCity,
                           deliveryState,
                           deliveryPostalCode

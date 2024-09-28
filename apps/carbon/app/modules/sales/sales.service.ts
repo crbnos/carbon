@@ -224,7 +224,7 @@ export async function getCustomerLocation(
   return client
     .from("customerLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, state, country(id, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, state, country(alpha2, name), postalCode)"
     )
     .eq("id", customerContactId)
     .single();
@@ -237,7 +237,7 @@ export async function getCustomerLocations(
   return client
     .from("customerLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, state, country(id, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, state, country(alpha2, name), postalCode)"
     )
     .eq("customerId", customerId);
 }

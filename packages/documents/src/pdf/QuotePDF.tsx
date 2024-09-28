@@ -4,9 +4,9 @@ import { Image, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
 import type { JSONContent } from "@carbon/react";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import type { PDF } from "../types";
 import { getLineDescription, getLineDescriptionDetails } from "../utils/quote";
-import { formatAddress } from "../utils/shared";
 import { Header, Note, Summary, Template } from "./components";
 
 interface QuotePDFProps extends PDF {
@@ -146,7 +146,11 @@ const QuotePDF = ({
             {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
             {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
             <Text>
-              {formatAddress(customerCity, customerState, customerPostalCode)}
+              {formatCityStatePostalCode(
+                customerCity,
+                customerState,
+                customerPostalCode
+              )}
             </Text>
             <Text>{customerCountryCode}</Text>
           </View>
