@@ -108,7 +108,7 @@ export function Jobs({
           collapsedSize={navCollapsedSize}
           collapsible={true}
           minSize={15}
-          maxSize={20}
+          maxSize={25}
           onCollapse={() => {
             setIsCollapsed(true);
           }}
