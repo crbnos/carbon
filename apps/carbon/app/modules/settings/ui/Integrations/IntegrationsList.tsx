@@ -25,7 +25,7 @@ const IntegrationsList = ({ integrations }: IntegrationsListProps) => {
             onClick={() => navigate(integration.id!)}
           >
             <CardHeader>
-              <CardTitle className="text-base md:text-lg">
+              <CardTitle className="text-sm md:text-base">
                 {integration.title}
               </CardTitle>
               <CardDescription>{integration.description}</CardDescription>

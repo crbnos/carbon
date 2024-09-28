@@ -6,11 +6,11 @@ import { cva } from "class-variance-authority";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
 import {
-  RxCaretSort,
-  RxCheck,
-  RxChevronDown,
-  RxChevronUp,
-} from "react-icons/rx";
+  LuCheck,
+  LuChevronDown,
+  LuChevronsUpDown,
+  LuChevronUp,
+} from "react-icons/lu";
 
 import { cn } from "./utils/cn";
 
@@ -56,7 +56,7 @@ const SelectTrigger = forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <RxCaretSort className="h-4 w-4 opacity-50" />
+      <LuChevronsUpDown className="h-4 w-4 opacity-50" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -74,7 +74,7 @@ const SelectScrollUpButton = forwardRef<
     )}
     {...props}
   >
-    <RxChevronUp />
+    <LuChevronUp />
   </SelectPrimitive.ScrollUpButton>
 ));
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
@@ -91,7 +91,7 @@ const SelectScrollDownButton = forwardRef<
     )}
     {...props}
   >
-    <RxChevronDown />
+    <LuChevronDown />
   </SelectPrimitive.ScrollDownButton>
 ));
 SelectScrollDownButton.displayName =
@@ -155,7 +155,7 @@ const SelectItem = forwardRef<
   >
     <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <RxCheck className="h-4 w-4" />
+        <LuCheck className="h-4 w-4" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

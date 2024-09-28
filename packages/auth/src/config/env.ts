@@ -7,6 +7,7 @@ declare global {
       SUPABASE_ANON_PUBLIC: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
+      VERCEL_URL: string;
     };
   }
 }
@@ -72,7 +73,7 @@ export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
 export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before token expires
-export const VERCEL_URL = getEnv("VERCEL_URL");
+export const VERCEL_URL = getEnv("VERCEL_URL", { isSecret: false });
 
 /**
  * Shared envs

@@ -1,9 +1,36 @@
+
+
+CREATE TYPE "jobOperationStatus" AS ENUM (
+  'Canceled',
+  'Done',
+  'In Progress',
+  'Paused',
+  'Ready',
+  'Todo',
+  'Waiting'
+);
+
+ALTER TABLE "jobOperation"
+ADD COLUMN "status" "jobOperationStatus" NOT NULL DEFAULT 'Todo';
+
+CREATE OR REPLACE VIEW "jobOperationsWithMakeMethods" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+    mm.id AS "makeMethodId",
+    jo.*
+  FROM "jobOperation" jo
+  INNER JOIN "jobMakeMethod" jmm 
+    ON jo."jobMakeMethodId" = jmm.id
+  LEFT JOIN "makeMethod" mm 
+    ON jmm."itemId" = mm."itemId";
+
+CREATE INDEX idx_job_status_location ON "job" ("status", "locationId");
+
 CREATE OR REPLACE FUNCTION get_job_operations_by_work_center(
   work_center_id TEXT,
   location_id TEXT
 )
 RETURNS TABLE (
-  "jobOperationId" TEXT,
+  "id" TEXT,
   "jobId" TEXT,
   "operationOrder" DOUBLE PRECISION,
   "processId" TEXT,
@@ -16,46 +43,58 @@ RETURNS TABLE (
   "machineTime" NUMERIC(10,2),
   "machineUnit" factor,
   "operationOrderType" "methodOperationOrder",
-  "jobNumber" TEXT,
+  "jobReadableId" TEXT,
   "jobStatus" "jobStatus",
-  "jobPriority" INTEGER,
   "jobDueDate" DATE,
+  "jobDeadlineType" "deadlineType",
   "parentMaterialId" TEXT,
-  "parentMaterialReadableId" TEXT
+  "itemReadableId" TEXT,
+  "operationStatus" "jobOperationStatus",
+  "operationQuantity" NUMERIC(10,2),
+  "quantityComplete" NUMERIC(10,2),
+  "quantityScrapped" NUMERIC(10,2)
 )
 SECURITY INVOKER
 AS $$
 BEGIN
   RETURN QUERY
-  WITH relevant_job_operations AS (
-    SELECT jo.*
-    FROM "jobOperation" jo
-    WHERE jo."workCenterId" = work_center_id
+  WITH relevant_jobs AS (
+    SELECT *
+    FROM "job"
+    WHERE "locationId" = location_id
+    AND ("status" = 'Ready' OR "status" = 'In Progress' OR "status" = 'Paused')
   )
   SELECT
-    rjo."id" AS "jobOperationId",
-    rjo."jobId",
-    rjo."order" AS "operationOrder",
-    rjo."processId",
-    rjo."workCenterId",
-    rjo."description",
-    rjo."setupTime",
-    rjo."setupUnit",
-    rjo."laborTime",
-    rjo."laborUnit",
-    rjo."machineTime",
-    rjo."machineUnit",
-    rjo."operationOrder" AS "operationOrderType",
-    j."jobId" AS "jobNumber",
-    j."status" AS "jobStatus",
-    j."priority" AS "jobPriority",
-    j."dueDate" AS "jobDueDate",
+    jo."id",
+    jo."jobId",
+    jo."order" AS "operationOrder",
+    jo."processId",
+    jo."workCenterId",
+    jo."description",
+    jo."setupTime",
+    jo."setupUnit",
+    jo."laborTime",
+    jo."laborUnit",
+    jo."machineTime",
+    jo."machineUnit",
+    jo."operationOrder" AS "operationOrderType",
+    rj."jobId" AS "jobReadableId",
+    rj."status" AS "jobStatus",
+    rj."dueDate" AS "jobDueDate",
+    rj."deadlineType" AS "jobDeadlineType",
     jmm."parentMaterialId",
-    i."readableId" AS "parentMaterialReadableId"
-  FROM relevant_job_operations rjo
-  JOIN "job" j ON j."id" = rjo."jobId"
-  LEFT JOIN "jobMakeMethod" jmm ON j."id" = jmm."jobId"
-  LEFT JOIN "item" i ON jmm."parentMaterialId" = i."id"
-  WHERE j."locationId" = location_id;
+    i."readableId" as "itemReadableId",
+    CASE
+      WHEN rj."status" = 'Paused' THEN 'Paused'
+      ELSE jo."status"
+    END AS "operationStatus",
+    jo."operationQuantity",
+    jo."quantityComplete",
+    jo."quantityScrapped"
+  FROM "jobOperation" jo
+  JOIN relevant_jobs rj ON rj.id = jo."jobId"
+  LEFT JOIN "jobMakeMethod" jmm ON jo."jobMakeMethodId" = jmm.id
+  LEFT JOIN "item" i ON jmm."itemId" = i.id
+  WHERE jo."workCenterId" = work_center_id;
 END;
 $$ LANGUAGE plpgsql;
