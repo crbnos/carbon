@@ -186,7 +186,7 @@ export default function OnboardingCompany() {
             <Input name="addressLine1" label="Address" />
             <Input name="city" label="City" />
             <Input name="state" label="State" />
-            <Input name="postalCode" label="Zip Code" />
+            <Input name="postalCode" label="Postal Code" />
             <Country />
           </VStack>
         </CardContent>

@@ -95,7 +95,7 @@ const SupplierLocationForm = ({
                 <Input name="addressLine2" label="Address Line 2" />
                 <Input name="city" label="City" />
                 <Input name="state" label="State" />
-                <Input name="postalCode" label="Zip Code" />
+                <Input name="postalCode" label="Postal Code" />
                 <Country />
                 <CustomFormFields table="supplierLocation" />
               </VStack>
