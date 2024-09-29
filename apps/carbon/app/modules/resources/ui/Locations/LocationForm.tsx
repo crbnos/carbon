@@ -23,6 +23,7 @@ import {
   Submit,
   Timezone,
 } from "~/components/Form";
+import Country from "~/components/Form/Country";
 import { usePermissions } from "~/hooks";
 import { locationValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
@@ -95,7 +96,7 @@ const LocationForm = ({
                 <Input name="city" label="City" />
                 <Input name="state" label="State" />
                 <Input name="postalCode" label="Postal Code" />
-                {/* <Country name="country" label="Country" /> */}
+                <Country />
                 <Timezone name="timezone" label="Timezone" />
                 {/* <Number name="latitude" label="Latitude" minValue={-90} maxValue={90} />
               <Number name="longitude" label="Longitude" minVale={-180} maxValue={180} /> */}

@@ -45,6 +45,7 @@ const Location = (props: LocationSelectProps) => {
             city: "",
             state: "",
             postalCode: "",
+            countryCode: "",
           }}
         />
       )}
