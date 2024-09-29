@@ -39,7 +39,7 @@ export function OperationsList({
   emptyMessage = "No scheduled jobs",
 }: OperationsListProps) {
   const { operationId } = useParams();
-  console.log({ operations });
+
   return operations.length > 0 ? (
     <ScrollArea className="h-[calc(100vh-120px)]">
       <div className="flex flex-col gap-2">
