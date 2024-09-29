@@ -186,25 +186,22 @@ function VirtualizedCommand({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                <div className="flex justify-start items-center gap-1 px-2">
-                  {item.helper ? (
-                    <div className="flex flex-col">
-                      <p>{item.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.helper}
-                      </p>
-                    </div>
-                  ) : (
-                    item.label
+                {item.helper ? (
+                  <div className="flex flex-col">
+                    <p>{item.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.helper}
+                    </p>
+                  </div>
+                ) : (
+                  item.label
+                )}
+                <LuCheck
+                  className={cn(
+                    "ml-auto h-4 w-4",
+                    item.value === value ? "opacity-100" : "opacity-0"
                   )}
-
-                  <LuCheck
-                    className={cn(
-                      "ml-auto h-4 w-4 opacity-0",
-                      item.value === value && "opacity-100"
-                    )}
-                  />
-                </div>
+                />
               </CommandItem>
             );
           })}
