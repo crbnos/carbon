@@ -530,7 +530,7 @@ const Table = <T extends object>({
       right: isPinned === "right" ? column.getAfter("right") : undefined,
       position: isPinned ? "sticky" : "relative",
       zIndex: isPinned ? 1 : 0,
-      backgroundColor: isPinned ? "hsl(var(--card))" : undefined,
+      // backgroundColor: isPinned ? "hsl(var(--card))" : undefined,
       boxShadow: isPinned
         ? isPinned === "left"
           ? "4px 0 6px -2px rgba(0, 0, 0, 0.1)"

@@ -55,7 +55,7 @@ export async function getLocationAndWorkCenter(
     userId: string;
     companyId: string;
   }
-): Promise<[string, string, boolean]> {
+) {
   const { userId, companyId } = args;
   let location = getLocation(request);
   let workCenter = getWorkCenter(request);
@@ -102,5 +102,5 @@ export async function getLocationAndWorkCenter(
 
   if (!workCenter) throw new Error("Failed to get a valid work center");
 
-  return [location, workCenter, updated];
+  return { location, workCenter, updated };
 }

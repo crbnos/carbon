@@ -30,6 +30,45 @@ export type Location = NonNullable<
   Awaited<ReturnType<typeof getLocationsByCompany>>["data"]
 >[number];
 
+export async function getRecentJobOperationsByEmployee(
+  client: SupabaseClient<Database>,
+  args: {
+    employeeId: string;
+    companyId: string;
+  }
+) {
+  return client.rpc("get_recent_job_operations_by_employee", {
+    employee_id: args.employeeId,
+    company_id: args.companyId,
+  });
+}
+
+export async function getActiveJobOperationsByEmployee(
+  client: SupabaseClient<Database>,
+  args: {
+    employeeId: string;
+    companyId: string;
+  }
+) {
+  return client.rpc("get_active_job_operations_by_employee", {
+    employee_id: args.employeeId,
+    company_id: args.companyId,
+  });
+}
+
+export async function getActiveJobCount(
+  client: SupabaseClient<Database>,
+  args: {
+    employeeId: string;
+    companyId: string;
+  }
+) {
+  return client.rpc("get_active_job_count", {
+    employee_id: args.employeeId,
+    company_id: args.companyId,
+  });
+}
+
 export async function getJobOperationsByWorkCenter(
   client: SupabaseClient<Database>,
   { locationId, workCenterId }: { locationId: string; workCenterId: string }
@@ -38,6 +77,17 @@ export async function getJobOperationsByWorkCenter(
     location_id: locationId,
     work_center_id: workCenterId,
   });
+}
+
+export async function getLocationsByCompany(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("location")
+    .select("*")
+    .eq("companyId", companyId)
+    .order("name", { ascending: true });
 }
 
 export async function getWorkCentersByLocation(
@@ -51,12 +101,12 @@ export async function getWorkCentersByLocation(
     .order("name", { ascending: true });
 }
 
-export async function getLocationsByCompany(
+export async function getWorkCentersByCompany(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   return client
-    .from("location")
+    .from("workCenter")
     .select("*")
     .eq("companyId", companyId)
     .order("name", { ascending: true });

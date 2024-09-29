@@ -19,8 +19,9 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import AvatarMenu from "~/components/AvatarMenu";
-import { getLocationsByCompany } from "~/services/jobs";
+import { LuActivity, LuClock, LuInbox } from "react-icons/lu";
+import { AvatarMenu, Nav } from "~/components";
+import { getActiveJobCount, getLocationsByCompany } from "~/services/jobs";
 import {
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
@@ -50,12 +51,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.accountSettings);
   }
 
-  const [[location, workCenter, updated], locations] = await Promise.all([
+  const [storedLocations, locations, activeEvents] = await Promise.all([
     getLocationAndWorkCenter(request, client, {
       companyId,
       userId,
     }),
     getLocationsByCompany(client, companyId),
+    getActiveJobCount(client, {
+      employeeId: userId,
+      companyId,
+    }),
   ]);
 
   return json(
@@ -65,16 +70,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
         expiresIn,
         expiresAt,
       },
+      activeEvents: activeEvents.data ?? 0,
       company,
       companies: companies.data ?? [],
-      location,
+      location: storedLocations.location,
       locations: locations.data ?? [],
       user: user.data,
     },
-    updated
+    storedLocations.updated
       ? {
           headers: {
-            "Set-Cookie": setLocationAndWorkCenter(location, workCenter),
+            "Set-Cookie": setLocationAndWorkCenter(
+              storedLocations.location,
+              storedLocations.workCenter
+            ),
           },
         }
       : undefined
@@ -82,7 +91,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session, location, locations } = useLoaderData<typeof loader>();
+  const { session, activeEvents, location, locations } =
+    useLoaderData<typeof loader>();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const transition = useNavigation();
@@ -113,7 +123,7 @@ export default function AuthenticatedRoute() {
                 collapsedSize={4}
                 collapsible={true}
                 minSize={15}
-                maxSize={20}
+                maxSize={25}
                 onCollapse={() => {
                   setIsCollapsed(true);
                 }}
@@ -128,14 +138,11 @@ export default function AuthenticatedRoute() {
                 <div
                   className={cn(
                     "flex h-[52px] items-center justify-start bg-background",
-                    isCollapsed ? "h-[52px]" : "px-4"
+                    isCollapsed ? "h-[52px]" : "px-2"
                   )}
                 >
                   <div
-                    className={cn(
-                      "flex items-center w-full",
-                      isCollapsed ? "justify-center" : "justify-start"
-                    )}
+                    className={cn("flex w-full items-center justify-center")}
                   >
                     <AvatarMenu
                       // company={company}
@@ -146,16 +153,31 @@ export default function AuthenticatedRoute() {
                     />
                   </div>
                 </div>
-                <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto">
+                <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto bg-background">
                   <div className="flex flex-col">
                     <Separator />
+                    <Nav
+                      isCollapsed={isCollapsed}
+                      links={[
+                        {
+                          title: "Jobs",
+                          icon: LuInbox,
+                          to: path.to.jobs,
+                        },
+                        {
+                          title: "Active",
+                          icon: LuActivity,
+                          label: (activeEvents ?? 0).toString(),
+                          to: path.to.active,
+                        },
+                        {
+                          title: "Recent",
+                          icon: LuClock,
+                          to: path.to.recent,
+                        },
+                      ]}
+                    />
                   </div>
-                  <div
-                    className={cn(
-                      "flex flex-col p-2 w-full",
-                      isCollapsed && "items-center justify-center "
-                    )}
-                  ></div>
                 </div>
               </ResizablePanel>
               <ResizableHandle withHandle />

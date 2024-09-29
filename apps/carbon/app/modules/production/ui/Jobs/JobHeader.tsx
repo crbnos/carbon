@@ -57,8 +57,8 @@ const JobHeader = () => {
         return path.to.jobMaterials(jobId);
       case "operations":
         return path.to.jobOperations(jobId);
-      case "timecards":
-        return path.to.jobTimecards(jobId);
+      case "events":
+        return path.to.jobProductionEvents(jobId);
       default:
         return path.to.jobDetails(jobId);
     }
@@ -69,8 +69,8 @@ const JobHeader = () => {
       return "materials";
     if (location.pathname.includes(path.to.jobOperations(jobId)))
       return "operations";
-    if (location.pathname.includes(path.to.jobTimecards(jobId)))
-      return "timecards";
+    if (location.pathname.includes(path.to.jobProductionEvents(jobId)))
+      return "events";
     return "details";
   };
 
@@ -129,7 +129,7 @@ const JobHeader = () => {
                 {getExplorerLabel("details")}
               </DropdownMenuRadioItem>
               <DropdownMenuSeparator />
-              {["materials", "operations", "timecards"].map((i) => (
+              {["materials", "operations", "events"].map((i) => (
                 <DropdownMenuRadioItem value={i} key={i}>
                   <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
                   {getExplorerLabel(i)}
@@ -151,8 +151,8 @@ function getExplorerLabel(type: string) {
       return "Materials";
     case "operations":
       return "Operations";
-    case "timecards":
-      return "Timecards";
+    case "events":
+      return "Production Events";
     default:
       return "Job";
   }
@@ -164,7 +164,7 @@ function getExplorerMenuIcon(type: string) {
       return <LuPackage />;
     case "operations":
       return <LuSettings />;
-    case "timecards":
+    case "events":
       return <LuClock />;
     default:
       return <LuHardHat />;

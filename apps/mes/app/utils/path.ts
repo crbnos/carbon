@@ -11,17 +11,20 @@ const x = "/x"; // from ~/routes/x+ folder
 export const path = {
   to: {
     accountSettings: `${ERP_URL}/x/account`,
+    active: `${x}/active`,
     authenticatedRoot: x,
     callback: "/callback",
     forgotPassword: "/forgot-password",
     healthcheck: "/healthcheck",
-    jobs: (workCenter: string) => generatePath(`${x}/jobs/${workCenter}`),
+    jobs: `${x}/jobs`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",
+    recent: `${x}/recent`,
     refreshSession: "/refresh-session",
     requestAccess: "/request-access",
     root: "/",
+    workCenter: (workCenter: string) => generatePath(`${x}/jobs/${workCenter}`),
   },
 } as const;
 
