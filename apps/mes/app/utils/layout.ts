@@ -1,1 +1,1 @@
-export const defaultLayout = [25, 75, 100];
+export const defaultLayout = [25, 75, 175];

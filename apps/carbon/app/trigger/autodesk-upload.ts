@@ -1,12 +1,12 @@
 import { getCarbonServiceRole } from "@carbon/auth";
-import { task } from "@trigger.dev/sdk/v3";
 import {
   finalizeAutodeskUpload,
   getAutodeskSignedUrl,
   getAutodeskToken,
   translateFile,
   uploadToAutodesk,
-} from "~/lib/autodesk/autodesk.server";
+} from "@carbon/auth/autodesk.server";
+import { task } from "@trigger.dev/sdk/v3";
 import { autodeskPollTask } from "./autodesk-poll";
 
 export const autodeskUploadTask = task({

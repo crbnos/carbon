@@ -6,8 +6,8 @@ import { useMemo, useState } from "react";
 
 import { LuSearch } from "react-icons/lu";
 import { OperationsList } from "~/components";
-import { getRecentJobOperationsByEmployee } from "~/services/jobs";
-import { makeDurationsAndProgress } from "~/utils/jobs";
+import { getRecentJobOperationsByEmployee } from "~/services/jobs.service";
+import { makeDurations } from "~/utils/jobs";
 
 import { defaultLayout } from "~/utils/layout";
 
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   return json({
-    operations: operations?.data?.map(makeDurationsAndProgress) ?? [],
+    operations: operations?.data?.map(makeDurations) ?? [],
   });
 }
 

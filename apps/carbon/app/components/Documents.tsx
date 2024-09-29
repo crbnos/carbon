@@ -44,7 +44,6 @@ type DocumentsProps = {
 
 const Documents = ({
   files,
-
   modelUpload,
   sourceDocument,
   sourceDocumentId,

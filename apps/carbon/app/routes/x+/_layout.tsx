@@ -1,4 +1,4 @@
-import { Toaster, TooltipProvider } from "@carbon/react";
+import { AutodeskProvider, Toaster, TooltipProvider } from "@carbon/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -12,7 +12,6 @@ import {
 } from "@carbon/auth/session.server";
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
-import { AutodeskProvider } from "~/lib/autodesk";
 import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
 import {
@@ -24,7 +23,6 @@ import {
 import { path } from "~/utils/path";
 
 import type { ShouldRevalidateFunction } from "@remix-run/react";
-import { getAutodeskToken } from "~/lib/autodesk/autodesk.server";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -74,7 +72,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     claims,
     groups,
     defaults,
-    autodesk,
   ] = await Promise.all([
     getCompanies(client, userId),
     getCustomFieldsSchemas(client, { companyId }),
@@ -83,7 +80,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    getAutodeskToken(),
   ]);
 
   if (!claims || user.error || !user.data || !groups.data) {
@@ -103,7 +99,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       expiresIn,
       expiresAt,
     },
-    autodesk: autodesk.data,
     company,
     companies: companies.data ?? [],
     customFields: customFields.data ?? [],
@@ -117,7 +112,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { autodesk, session } = useLoaderData<typeof loader>();
+  const { session } = useLoaderData<typeof loader>();
 
   const transition = useNavigation();
 
@@ -136,7 +131,7 @@ export default function AuthenticatedRoute() {
   return (
     <CarbonProvider session={session}>
       <RealtimeDataProvider>
-        <AutodeskProvider token={autodesk}>
+        <AutodeskProvider tokenEndpoint={path.to.api.autodeskToken}>
           <TooltipProvider>
             <div className="min-h-full flex flex-col">
               <div className="flex-none" />

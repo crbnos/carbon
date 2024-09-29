@@ -23,7 +23,7 @@ const Progress = forwardRef<
     <ProgressPrimitive.Root
       ref={ref}
       className={cn(
-        "relative h-4 w-full overflow-hidden rounded-full bg-secondary min-w-[120px]",
+        "relative h-4 w-full overflow-hidden rounded-full bg-muted min-w-[120px]",
         className
       )}
       {...props}
@@ -36,7 +36,7 @@ const Progress = forwardRef<
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />
       {numerator !== undefined && denominator !== undefined && (
-        <span className="absolute text-[9px] text-foreground right-2 top-[-2px]">
+        <span className="absolute text-[9px] text-foreground right-2 top-1/2 transform -translate-y-1/2">
           {numerator} of {denominator}
         </span>
       )}

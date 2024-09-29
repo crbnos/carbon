@@ -15,7 +15,6 @@ import { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuUploadCloud } from "react-icons/lu";
 import { useUser } from "~/hooks";
-import { useAutodeskToken } from "~/lib/autodesk";
 
 import { path } from "~/utils/path";
 
@@ -52,7 +51,6 @@ const CadModel = ({
 
   const { carbon } = useCarbon();
 
-  const { autodeskToken } = useAutodeskToken();
   const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
   const loading = (!!file && !autodeskUrn) || (!!modelPath && !autodeskUrn);
@@ -117,9 +115,8 @@ const CadModel = ({
       }
     >
       {() => {
-        return autodeskUrn && autodeskToken ? (
+        return autodeskUrn ? (
           <AutodeskViewer
-            accessToken={autodeskToken}
             className={viewerClassName}
             showDefaultToolbar
             urn={autodeskUrn}

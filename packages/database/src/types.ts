@@ -7756,6 +7756,7 @@ export type Database = {
           overheadRate: number
           processId: string
           quantityComplete: number | null
+          quantityReworked: number | null
           quantityScrapped: number | null
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
@@ -7791,6 +7792,7 @@ export type Database = {
           overheadRate?: number
           processId: string
           quantityComplete?: number | null
+          quantityReworked?: number | null
           quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
@@ -7826,6 +7828,7 @@ export type Database = {
           overheadRate?: number
           processId?: string
           quantityComplete?: number | null
+          quantityReworked?: number | null
           quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
@@ -28970,6 +28973,42 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
+        }[]
+      }
+      get_job_operation_by_id: {
+        Args: {
+          operation_id: string
+        }
+        Returns: {
+          id: string
+          jobId: string
+          jobMakeMethodId: string
+          operationOrder: number
+          processId: string
+          workCenterId: string
+          description: string
+          setupTime: number
+          setupUnit: Database["public"]["Enums"]["factor"]
+          laborTime: number
+          laborUnit: Database["public"]["Enums"]["factor"]
+          machineTime: number
+          machineUnit: Database["public"]["Enums"]["factor"]
+          operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          jobDueDate: string
+          jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          parentMaterialId: string
+          itemReadableId: string
+          itemDescription: string
+          itemUnitOfMeasure: string
+          itemAutodeskUrn: string
+          operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationQuantity: number
+          quantityComplete: number
+          quantityReworked: number
+          quantityScrapped: number
+          workInstruction: Json
         }[]
       }
       get_job_operations_by_work_center: {
