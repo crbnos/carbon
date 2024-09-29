@@ -2,11 +2,16 @@ import { HStack } from "@carbon/react";
 import { useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
+import { LuCheckCircle, LuXCircle } from "react-icons/lu";
+import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
+import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
+import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useRouteData } from "~/hooks";
 import { operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
-import type { JobOperation } from "../../types";
+import type { Job, JobOperation } from "../../types";
 
 type JobOperationsTableProps = {
   data: JobOperation[];
@@ -17,6 +22,9 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Job ID is required");
 
+  const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
+  const isPaused = routeData?.job?.status === "Paused";
+
   const columns = useMemo<ColumnDef<JobOperation>[]>(() => {
     return [
       {
@@ -24,6 +32,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         header: "Description",
         cell: ({ row }) => (
           <HStack className="py-1">
+            {getStatusIcon(isPaused ? "Paused" : row.original.status)}
             <Hyperlink
               to={path.to.jobMakeMethod(
                 jobId,
@@ -89,7 +98,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         cell: (item) => item.getValue(),
       },
     ];
-  }, [jobId]);
+  }, [isPaused, jobId]);
 
   return <Table<JobOperation> count={count} columns={columns} data={data} />;
 });
@@ -97,3 +106,23 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
 JobOperationsTable.displayName = "JobOperationsTable";
 
 export default JobOperationsTable;
+
+// TODO: this might be in a shared location since it is used in the MES too
+export function getStatusIcon(status: JobOperation["status"]) {
+  switch (status) {
+    case "Ready":
+    case "Todo":
+      return <TodoStatusIcon className="text-foreground" />;
+    case "Waiting":
+    case "Canceled":
+      return <LuXCircle className="text-muted-foreground" />;
+    case "Done":
+      return <LuCheckCircle className="text-blue-600" />;
+    case "In Progress":
+      return <AlmostDoneIcon />;
+    case "Paused":
+      return <InProgressStatusIcon />;
+    default:
+      return null;
+  }
+}

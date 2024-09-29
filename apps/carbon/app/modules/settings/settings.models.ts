@@ -13,8 +13,6 @@ export const modulesType = [
   "Purchasing",
   "Resources",
   "Sales",
-  // "Scheduling",
-  // "Timecards",
   "Users",
 ] as const;
 

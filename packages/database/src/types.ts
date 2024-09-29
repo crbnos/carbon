@@ -11487,6 +11487,199 @@ export type Database = {
           },
         ]
       }
+      productionEvent: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          duration: number | null
+          employeeId: string | null
+          endTime: string | null
+          id: string
+          jobOperationId: string
+          startTime: string
+          type: Database["public"]["Enums"]["productionEventType"] | null
+          updatedAt: string | null
+          updatedBy: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          duration?: number | null
+          employeeId?: string | null
+          endTime?: string | null
+          id?: string
+          jobOperationId: string
+          startTime: string
+          type?: Database["public"]["Enums"]["productionEventType"] | null
+          updatedAt?: string | null
+          updatedBy: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          duration?: number | null
+          employeeId?: string | null
+          endTime?: string | null
+          id?: string
+          jobOperationId?: string
+          startTime?: string
+          type?: Database["public"]["Enums"]["productionEventType"] | null
+          updatedAt?: string | null
+          updatedBy?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "productionEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "productionEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "productionEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "productionEvent_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "productionEvent_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       purchaseInvoice: {
         Row: {
           assignee: string | null
@@ -28653,6 +28846,44 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_active_job_count: {
+        Args: {
+          employee_id: string
+          company_id: string
+        }
+        Returns: number
+      }
+      get_active_job_operations_by_employee: {
+        Args: {
+          employee_id: string
+          company_id: string
+        }
+        Returns: {
+          id: string
+          jobId: string
+          operationOrder: number
+          processId: string
+          workCenterId: string
+          description: string
+          setupTime: number
+          setupUnit: Database["public"]["Enums"]["factor"]
+          laborTime: number
+          laborUnit: Database["public"]["Enums"]["factor"]
+          machineTime: number
+          machineUnit: Database["public"]["Enums"]["factor"]
+          operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          jobDueDate: string
+          jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          parentMaterialId: string
+          itemReadableId: string
+          operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationQuantity: number
+          quantityComplete: number
+          quantityScrapped: number
+        }[]
+      }
       get_claims: {
         Args: {
           uid: string
@@ -28854,6 +29085,37 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
+        }[]
+      }
+      get_recent_job_operations_by_employee: {
+        Args: {
+          employee_id: string
+          company_id: string
+        }
+        Returns: {
+          id: string
+          jobId: string
+          operationOrder: number
+          processId: string
+          workCenterId: string
+          description: string
+          setupTime: number
+          setupUnit: Database["public"]["Enums"]["factor"]
+          laborTime: number
+          laborUnit: Database["public"]["Enums"]["factor"]
+          machineTime: number
+          machineUnit: Database["public"]["Enums"]["factor"]
+          operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          jobDueDate: string
+          jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          parentMaterialId: string
+          itemReadableId: string
+          operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationQuantity: number
+          quantityComplete: number
+          quantityScrapped: number
         }[]
       }
       groups_for_user: {
@@ -29166,6 +29428,7 @@ export type Database = {
         | "Fixture"
       paymentTermCalculationMethod: "Net" | "End of Month" | "Day of Month"
       processType: "Inside" | "Outside" | "Inside and Outside"
+      productionEventType: "Setup" | "Labor" | "Machine"
       purchaseInvoiceStatus:
         | "Draft"
         | "Pending"

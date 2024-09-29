@@ -10,7 +10,6 @@ const modules = [
   "Resources",
   "Sales",
   "Settings",
-  "Timecards",
   "Users",
 ] as const;
 

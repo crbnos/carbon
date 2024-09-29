@@ -1,4 +1,6 @@
 import {
+  Button,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -11,11 +13,19 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  HStack,
   Switch,
 } from "@carbon/react";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuLogOut, LuMapPin, LuMoon, LuSun, LuUser } from "react-icons/lu";
+import {
+  LuChevronsUpDown,
+  LuLogOut,
+  LuMapPin,
+  LuMoon,
+  LuSun,
+  LuUser,
+} from "react-icons/lu";
 import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
@@ -54,10 +64,25 @@ const AvatarMenu = ({
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger className="flex items-center justify-start gap-2 outline-none focus-visible:outline-none">
-        <Avatar size="sm" src={user?.avatarUrl ?? undefined} name={name} />
-        {!isCollapsed && (
-          <span className="text-sm font-medium truncate">{name}</span>
+      <DropdownMenuTrigger className={cn(!isCollapsed && "w-full")}>
+        {isCollapsed ? (
+          <Avatar size="sm" src={user?.avatarUrl ?? undefined} name={name} />
+        ) : (
+          <Button
+            className="w-full justify-between"
+            size="lg"
+            variant="secondary"
+          >
+            <HStack spacing={2}>
+              <Avatar
+                size="xs"
+                src={user?.avatarUrl ?? undefined}
+                name={name}
+              />
+              <span>{name}</span>
+            </HStack>
+            <LuChevronsUpDown />
+          </Button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
@@ -83,8 +108,7 @@ const AvatarMenu = ({
                     <DropdownMenuRadioItem
                       key={loc.id}
                       value={loc.id}
-                      onSelect={(e) => {
-                        e.preventDefault();
+                      onSelect={() => {
                         updateLocation(loc.id);
                       }}
                     >

@@ -83,7 +83,6 @@ import {
 import {
   Drawer,
   DrawerBody,
-  DrawerCloseButton,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -352,7 +351,6 @@ export {
   DateTimePicker,
   Drawer,
   DrawerBody,
-  DrawerCloseButton,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,

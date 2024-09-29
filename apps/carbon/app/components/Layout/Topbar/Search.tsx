@@ -314,8 +314,6 @@ function useGroupedSubmodules() {
   const items = useItemsSubmodules();
   const production = useProductionSubmodules();
   const inventory = useInventorySubmodules();
-  // const scheduling = useSchedulingSidebar();
-  // const timecards = useTimecardsSidebar();
   const sales = useSalesSubmodules();
   const purchasing = usePurchasingSubmodules();
   const documents = useDocumentsSubmodules();
