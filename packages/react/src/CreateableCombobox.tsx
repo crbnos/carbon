@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
-import { LuCheck, LuPlus } from "react-icons/lu";
+import { LuCheck } from "react-icons/lu";
 import { MdClose } from "react-icons/md";
 import {
   Command,
@@ -224,36 +224,33 @@ function VirtualizedCommand({
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                <div className="flex justify-start items-center gap-1 px-2">
-                  {isCreateOption ? (
-                    <>
-                      <LuPlus className="mr-1.5" />
-                      <span>Create</span>
-                      <span className="font-bold line-clamp-1">
-                        {search.trim() === "" ? label : search}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      {item.helper ? (
-                        <div className="flex flex-col">
-                          <p>{item.label}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.helper}
-                          </p>
-                        </div>
-                      ) : (
-                        item.label
-                      )}
-                      <LuCheck
-                        className={cn(
-                          "ml-auto h-4 w-4 opacity-0",
-                          item.value === value && "opacity-100"
-                        )}
-                      />
-                    </>
-                  )}
-                </div>
+                {isCreateOption ? (
+                  <>
+                    <span>Create</span>
+                    <span className="ml-1 font-bold line-clamp-1">
+                      {search.trim() === "" ? label : search}
+                    </span>
+                  </>
+                ) : item.helper ? (
+                  <div className="flex flex-col">
+                    <p>{item.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.helper}
+                    </p>
+                  </div>
+                ) : (
+                  item.label
+                )}
+                {!isCreateOption && (
+                  <LuCheck
+                    className={cn(
+                      "ml-auto h-4 w-4",
+                      isSelected || item.value === value
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
+                )}
               </CommandItem>
             );
           })}
