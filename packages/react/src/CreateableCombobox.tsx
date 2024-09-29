@@ -1,8 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
-import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
-import { LuPlus } from "react-icons/lu";
+import { LuCheck, LuPlus } from "react-icons/lu";
 import { MdClose } from "react-icons/md";
 import {
   Command,
@@ -236,11 +235,6 @@ function VirtualizedCommand({
                     </>
                   ) : (
                     <>
-                      {isSelected || item.value === value ? (
-                        <FaSquareCheck className="mr-1.5 text-primary" />
-                      ) : (
-                        <FaRegSquare className="mr-1.5 text-muted-foreground" />
-                      )}
                       {item.helper ? (
                         <div className="flex flex-col">
                           <p>{item.label}</p>
@@ -251,6 +245,12 @@ function VirtualizedCommand({
                       ) : (
                         item.label
                       )}
+                      <LuCheck
+                        className={cn(
+                          "ml-auto h-4 w-4 opacity-0",
+                          item.value === value && "opacity-100"
+                        )}
+                      />
                     </>
                   )}
                 </div>

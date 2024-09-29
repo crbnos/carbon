@@ -1,6 +1,13 @@
-import type { BaseOperation, Operation } from "~/services/jobs";
+import type {
+  BaseOperation,
+  BaseOperationWithDetails,
+  Operation,
+  OperationWithDetails,
+} from "~/services/jobs.service";
 
-export function makeDurationsAndProgress(operation: BaseOperation): Operation {
+export function makeDurations<
+  T extends BaseOperation | BaseOperationWithDetails
+>(operation: T): T extends BaseOperation ? Operation : OperationWithDetails {
   let setupDuration = 0;
   let laborDuration = 0;
   let machineDuration = 0;
@@ -129,11 +136,12 @@ export function makeDurationsAndProgress(operation: BaseOperation): Operation {
 
   const totalDuration = setupDuration + laborDuration + machineDuration;
 
+  // @ts-ignore
   return {
     ...operation,
     duration: totalDuration,
     setupDuration,
     laborDuration,
     machineDuration,
-  };
+  } as T extends BaseOperation ? Operation : OperationWithDetails;
 }

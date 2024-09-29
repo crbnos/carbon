@@ -7,7 +7,11 @@ import {
 } from "./Accordion";
 import { ActionMenu } from "./ActionMenu";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
-import { AutodeskViewer } from "./AutodeskViewer";
+import {
+  AutodeskProvider,
+  AutodeskViewer,
+  useAutodesk,
+} from "./AutodeskViewer";
 import type { AvatarProps } from "./Avatar";
 import {
   Avatar,
@@ -291,6 +295,7 @@ export {
   Alert,
   AlertDescription,
   AlertTitle,
+  AutodeskProvider,
   AutodeskViewer,
   Avatar,
   AvatarGroup,
@@ -511,6 +516,7 @@ export {
   reactNodeToString,
   shortcutKeyVariants,
   toast,
+  useAutodesk,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

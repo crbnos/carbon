@@ -6,7 +6,11 @@ import {
 } from "@carbon/auth";
 import { redis } from "@carbon/kv";
 import { z } from "zod";
-import type { AutodeskTokenResponse } from "./types";
+
+export type AutodeskTokenResponse = {
+  access_token?: string;
+  expires_in: number;
+};
 
 const SIGNED_URL_EXPIRATION = 15;
 

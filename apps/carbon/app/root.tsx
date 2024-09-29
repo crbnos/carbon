@@ -111,6 +111,10 @@ function Document({
         <Meta />
         <title>{title}</title>
         <Links />
+        <script
+          defer
+          src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"
+        ></script>
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
         {children}
@@ -118,7 +122,6 @@ function Document({
         <ScrollRestoration />
         <Scripts />
         <Analytics />
-        <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"></script>
       </body>
     </html>
   );

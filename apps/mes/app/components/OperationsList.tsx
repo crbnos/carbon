@@ -16,7 +16,7 @@ import {
 } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import { LuAlertTriangle, LuClipboardCheck, LuTimer } from "react-icons/lu";
-import type { Operation, OperationSettings } from "~/services/jobs";
+import type { Operation, OperationSettings } from "~/services/jobs.service";
 import { DeadlineIcon, StatusIcon } from "./Icons";
 
 type OperationsListProps = {

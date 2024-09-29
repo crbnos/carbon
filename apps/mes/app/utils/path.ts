@@ -6,10 +6,20 @@ export const ERP_URL =
     ? "http://localhost:3000"
     : `https://app.carbonos.dev`;
 
-const x = "/x"; // from ~/routes/x+ folder
+const x = "/x";
+const api = "/api";
+const file = `/file`;
 
 export const path = {
   to: {
+    api: {
+      autodeskToken: `${api}/autodesk/token`,
+    },
+    file: {
+      previewImage: (bucket: string, path: string) =>
+        generatePath(`${file}/preview/image?file=${bucket}/${path}`),
+      previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
+    },
     accountSettings: `${ERP_URL}/x/account`,
     active: `${x}/active`,
     authenticatedRoot: x,

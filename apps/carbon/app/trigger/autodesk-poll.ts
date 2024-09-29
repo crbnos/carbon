@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth";
+import { getAutodeskToken, getManifest } from "@carbon/auth/autodesk.server";
 import { task } from "@trigger.dev/sdk/v3";
-import { getAutodeskToken, getManifest } from "~/lib/autodesk/autodesk.server";
 import { upsertModelUpload } from "~/modules/shared";
 
 const serviceRole = getCarbonServiceRole();

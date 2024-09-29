@@ -30,12 +30,12 @@ import { OperationsList } from "~/components";
 import {
   getJobOperationsByWorkCenter,
   getWorkCentersByLocation,
-} from "~/services/jobs";
+} from "~/services/jobs.service";
 import {
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
 } from "~/services/location.server";
-import { makeDurationsAndProgress } from "~/utils/jobs";
+import { makeDurations } from "~/utils/jobs";
 import { path } from "~/utils/path";
 
 // TODO: it's possible that the location cookie and the work cell become out of sync.
@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   const payload = {
-    operations: operations.data?.map(makeDurationsAndProgress) ?? [],
+    operations: operations.data?.map(makeDurations) ?? [],
     workCenters: workCenters.data ?? [],
   };
 

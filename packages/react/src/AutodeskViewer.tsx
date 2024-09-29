@@ -1,37 +1,67 @@
-import React, { useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useMount } from "./hooks";
 import { cn } from "./utils/cn";
 
-// Define Autodesk namespace and types
-declare namespace Autodesk {
-  namespace Viewing {
-    class GuiViewer3D {
-      constructor(container: HTMLElement, config?: object);
-      start(): void;
-      setTheme(theme: string): void;
-      resize(): void;
-      loadDocumentNode(doc: Document, node: any): Promise<void>;
-      loadExtension(extension: string): Promise<void>;
-      toolbar: { setVisible(visible: boolean): void };
-      setLightPreset(preset: number): void;
-      finish(): void;
-    }
-    class Document {
-      static load(
-        urn: string,
-        onSuccess: (doc: Document) => void,
-        onFailure: (errorCode: number, errorMsg: string, errors: any) => void
-      ): void;
-      getRoot(): { getDefaultGeometry(): any };
-    }
-    function Initializer(options: any, callback: () => void): void;
-    function shutdown(): void;
-  }
+export type AutodeskToken = {
+  token: string;
+  expiresAt: number;
+};
+
+interface AutodeskContextType {
+  token: string | null;
+  getToken: () => Promise<string>;
 }
 
-interface ForgeViewerProps {
+const AutodeskContext = createContext<AutodeskContextType | null>(null);
+
+interface AutodeskProviderProps {
+  children: React.ReactNode;
+  tokenEndpoint: string;
+}
+
+function AutodeskProvider({ children, tokenEndpoint }: AutodeskProviderProps) {
+  const [token, setToken] = useState<string | null>(null);
+
+  useMount(() => {
+    getToken().then(setToken);
+  });
+
+  const getToken = useCallback(async () => {
+    try {
+      const newToken = await getAccessToken(tokenEndpoint);
+      setToken(newToken);
+      return newToken;
+    } catch (error) {
+      console.error("Failed to refresh Autodesk token:", error);
+      return null;
+    }
+  }, [tokenEndpoint]);
+
+  return (
+    <AutodeskContext.Provider value={{ token, getToken }}>
+      {children}
+    </AutodeskContext.Provider>
+  );
+}
+
+function useAutodesk() {
+  const context = useContext(AutodeskContext);
+  if (!context) {
+    throw new Error("useAutodesk must be used within an AutodeskProvider");
+  }
+  return context;
+}
+
+interface AutodeskViewerProps {
   className?: string;
   urn: string;
-  accessToken: string;
   registerExtensionsCallback?: (viewer: Autodesk.Viewing.GuiViewer3D) => void;
   loadAutodeskExtensions?: string[];
   loadCustomExtensions?: string[];
@@ -42,9 +72,8 @@ interface ForgeViewerProps {
   showDefaultToolbar?: boolean;
 }
 
-const AutodeskViewer: React.FC<ForgeViewerProps> = ({
+const AutodeskViewer: React.FC<AutodeskViewerProps> = ({
   urn,
-  accessToken,
   registerExtensionsCallback,
   loadAutodeskExtensions,
   loadCustomExtensions,
@@ -56,11 +85,12 @@ const AutodeskViewer: React.FC<ForgeViewerProps> = ({
     null
   );
   const viewerRef = useRef<HTMLDivElement | null>(null);
+  const { token, getToken } = useAutodesk();
 
   useEffect(() => {
     if (
       !urn ||
-      !accessToken ||
+      !token ||
       !viewerRef.current ||
       typeof Autodesk === "undefined"
     ) {
@@ -70,7 +100,9 @@ const AutodeskViewer: React.FC<ForgeViewerProps> = ({
     const options = {
       env: "AutodeskProduction",
       getAccessToken: (callback: (token: string, expires: number) => void) => {
-        callback(accessToken, 3600);
+        getToken().then((token) => {
+          callback(token, 3600);
+        });
       },
     };
 
@@ -135,7 +167,17 @@ const AutodeskViewer: React.FC<ForgeViewerProps> = ({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urn, accessToken]);
+  }, [
+    token,
+    urn,
+    // showDefaultToolbar,
+    // theme,
+    // getToken,
+    // loadAutodeskExtensions,
+    // registerExtensionsCallback,
+    // loadCustomExtensions,
+    // viewer,
+  ]);
 
   return typeof Autodesk === "undefined" ? (
     <div>Please include viewer3D.min.js to the index.html </div>
@@ -144,4 +186,25 @@ const AutodeskViewer: React.FC<ForgeViewerProps> = ({
   );
 };
 
-export { AutodeskViewer };
+export async function getAccessToken(endpoint: string): Promise<string> {
+  try {
+    const response = await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.token;
+  } catch (error) {
+    console.error("Error getting Autodesk access token:", error);
+    throw error;
+  }
+}
+
+export { AutodeskProvider, AutodeskViewer, useAutodesk };
