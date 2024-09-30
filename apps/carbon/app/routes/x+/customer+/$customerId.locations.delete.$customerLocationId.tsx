@@ -28,12 +28,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customerLocationId
   );
   if (deleteCustomerLocationError) {
+    const errorMessage =
+      deleteCustomerLocationError.code === "23503"
+        ? "Customer location is used elsewhere, cannot delete"
+        : "Failed to delete customer location";
+
     throw redirect(
       path.to.customerLocations(customerId),
-      await flash(
-        request,
-        error(deleteCustomerLocationError, "Failed to delete customer location")
-      )
+      await flash(request, error(deleteCustomerLocationError, errorMessage))
     );
   }
 

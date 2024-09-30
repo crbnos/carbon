@@ -101,11 +101,23 @@ export async function deleteCustomerLocation(
   customerId: string,
   customerLocationId: string
 ) {
-  return client
+  const { data: customerLocation } = await client
     .from("customerLocation")
-    .delete()
+    .select("addressId")
     .eq("customerId", customerId)
-    .eq("id", customerLocationId);
+    .eq("id", customerLocationId)
+    .single();
+
+  if (customerLocation?.addressId) {
+    return client.from("address").delete().eq("id", customerLocation.addressId);
+  } else {
+    // The customerLocation should always have an addressId, but just in case
+    return client
+      .from("customerLocation")
+      .delete()
+      .eq("customerId", customerId)
+      .eq("id", customerLocationId);
+  }
 }
 
 export async function deleteCustomerStatus(

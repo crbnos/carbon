@@ -72,11 +72,23 @@ export async function deleteSupplierLocation(
   supplierId: string,
   supplierLocationId: string
 ) {
-  return client
+  const { data: supplierLocation } = await client
     .from("supplierLocation")
-    .delete()
+    .select("addressId")
     .eq("supplierId", supplierId)
-    .eq("id", supplierLocationId);
+    .eq("id", supplierLocationId)
+    .single();
+
+  if (supplierLocation?.addressId) {
+    return client.from("address").delete().eq("id", supplierLocation.addressId);
+  } else {
+    // The supplierLocation should always have an addressId, but just in case
+    return client
+      .from("supplierLocation")
+      .delete()
+      .eq("supplierId", supplierId)
+      .eq("id", supplierLocationId);
+  }
 }
 
 export async function deleteSupplierProcess(
