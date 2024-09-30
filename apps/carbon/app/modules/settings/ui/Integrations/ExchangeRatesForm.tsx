@@ -12,7 +12,7 @@ import {
   VStack,
 } from "@carbon/react";
 import type { z } from "zod";
-import { Boolean, Input, Submit } from "~/components/Form";
+import { Boolean, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { exchangeRatesFormValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
@@ -54,7 +54,6 @@ const ExchangeRatesForm = ({
           <DrawerBody>
             <VStack spacing={4}>
               <Boolean name="active" label="Active" />
-              <Input name="apiKey" label="API Key" />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

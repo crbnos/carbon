@@ -2,7 +2,7 @@ import type { CurrencyCode } from "~/modules/accounting";
 
 type ExchangeClientOptions = {
   apiKey?: string;
-  apiUrl?: string;
+  apiUrl: string;
   baseCurrency: CurrencyCode;
 };
 
@@ -34,7 +34,7 @@ export class ExchangeRatesClient {
 
   constructor(options: ExchangeClientOptions) {
     if (!options.apiKey) throw new Error("EXCHANGE_RATES_API_KEY not set");
-    if (!options.apiUrl) throw new Error("EXCHANGE_RATES_API_URL not set");
+
     this.#apiKey = options.apiKey;
     this.#apiUrl = options.apiUrl;
     this.#baseCurrency = options.baseCurrency ?? "USD";
@@ -48,7 +48,9 @@ export class ExchangeRatesClient {
   }
 
   async getExchangeRates(base?: CurrencyCode): Promise<Rates> {
-    const response = await fetch(`${this.#apiUrl}?access_key=${this.#apiKey}`);
+    const url = `${this.#apiUrl}?access_key=${this.#apiKey}`;
+    console.log(url);
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -81,7 +83,7 @@ export class ExchangeRatesClient {
 
 export const getExchangeRatesClient = (
   apiKey?: string,
-  apiUrl: string = "http://api.exchangeratesapi.io/v1/latest",
+  apiUrl: string = "https://api.exchangeratesapi.io/v1/latest",
   baseCurrency: CurrencyCode = "USD"
 ) => {
   return typeof apiKey === "string"
