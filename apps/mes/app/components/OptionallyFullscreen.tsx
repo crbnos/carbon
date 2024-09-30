@@ -4,18 +4,19 @@ import {
   ResizableHandle,
   ResizablePanel,
 } from "@carbon/react";
-import type { ReactNode } from "react";
+import type { PropsWithChildren } from "react";
 import { defaultLayout } from "~/utils/layout";
+
+interface OptionallyFullscreenProps {
+  isFullScreen: boolean;
+  onClose: () => void;
+}
 
 export const OptionallyFullscreen = ({
   children,
   isFullScreen,
   onClose,
-}: {
-  children: ReactNode;
-  isFullScreen: boolean;
-  onClose: () => void;
-}) => {
+}: PropsWithChildren<OptionallyFullscreenProps>) => {
   return (
     <>
       <ResizableHandle withHandle />
