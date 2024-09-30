@@ -43,7 +43,7 @@ const PurchaseOrderEmail = ({
     deliveryCity,
     deliveryStateProvince,
     deliveryPostalCode,
-    deliveryCountryCode,
+    deliveryCountryName,
     dropShipment,
     customerName,
     customerAddressLine1,
@@ -51,7 +51,7 @@ const PurchaseOrderEmail = ({
     customerCity,
     customerStateProvince,
     customerPostalCode,
-    customerCountryCode,
+    customerCountryName,
   } = purchaseOrderLocations;
 
   const reSubject = `Re: ${purchaseOrder.purchaseOrderId} from ${company.name}`;
@@ -153,7 +153,7 @@ const PurchaseOrderEmail = ({
                           customerPostalCode
                         )}
                       </Text>
-                      <Text>{customerCountryCode}</Text>
+                      <Text>{customerCountryName}</Text>
                     </>
                   ) : (
                     <>
@@ -172,7 +172,7 @@ const PurchaseOrderEmail = ({
                           deliveryPostalCode
                         )}
                       </Text>
-                      <Text>{deliveryCountryCode}</Text>
+                      <Text>{deliveryCountryName}</Text>
                     </>
                   )}
                 </Column>

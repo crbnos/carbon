@@ -49,14 +49,14 @@ const SalesOrderEmail = ({
     customerCity,
     customerStateProvince,
     customerPostalCode,
-    customerCountryCode,
+    customerCountryName,
     // paymentCustomerName,
     // paymentAddressLine1,
     // paymentAddressLine2,
     // paymentCity,
     // paymentStateProvince,
     // paymentPostalCode,
-    // paymentCountryCode,
+    // paymentCountryName,
   } = salesOrderLocations;
 
   const reSubject = `Re: ${salesOrder.salesOrderId} from ${company.name}`;
@@ -152,7 +152,7 @@ const SalesOrderEmail = ({
                       customerPostalCode
                     )}
                   </Text>
-                  <Text>{customerCountryCode}</Text>
+                  <Text>{customerCountryName}</Text>
                 </Column>
               </Row>
             </Section>

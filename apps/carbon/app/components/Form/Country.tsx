@@ -1,17 +1,16 @@
+import type { ComboboxProps } from "@carbon/form";
 import { useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
-import { Select } from "~/components/Form";
+import { Combobox } from "~/components/Form";
 import type { getCountries } from "~/modules/shared";
 import { path } from "~/utils/path";
 
-const Country = () => {
+type CountrySelectProps = Omit<ComboboxProps, "options">;
+
+const Country = (props: CountrySelectProps) => {
   const options = useCountry();
 
-  return (
-    <>
-      <Select name="countryCode" options={options} label="Country" />
-    </>
-  );
+  return <Combobox options={options} label="Country" {...props} />;
 };
 
 Country.displayName = "Country";

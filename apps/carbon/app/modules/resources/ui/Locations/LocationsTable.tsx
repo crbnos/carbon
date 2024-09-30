@@ -60,11 +60,11 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
         header: "Country",
         cell: (item) => item.getValue(),
       },
-      {
-        accessorKey: "timezone",
-        header: "Timezone",
-        cell: (item) => item.getValue(),
-      },
+      // {
+      //   accessorKey: "timezone",
+      //   header: "Timezone",
+      //   cell: (item) => item.getValue(),
+      // },
       {
         id: "createdBy",
         header: "Created By",

@@ -8212,7 +8212,7 @@ export default {
             $ref: "#/parameters/rowFilter.companies.city",
           },
           {
-            $ref: "#/parameters/rowFilter.companies.state",
+            $ref: "#/parameters/rowFilter.companies.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.companies.postalCode",
@@ -12907,6 +12907,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierCountryCode",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierCountryName",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryName",
           },
           {
@@ -12926,6 +12929,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryCountryName",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.dropShipment",
@@ -12950,6 +12956,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerCountryName",
           },
           {
             $ref: "#/parameters/select",
@@ -19460,6 +19469,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerCountryName",
           },
           {
             $ref: "#/parameters/select",
@@ -28711,6 +28723,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLocations.customerCountryCode",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerCountryName",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCustomerName",
           },
           {
@@ -28730,6 +28745,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCountryName",
           },
           {
             $ref: "#/parameters/select",
@@ -39345,7 +39363,7 @@ export default {
           format: "text",
           type: "string",
         },
-        state: {
+        stateProvince: {
           format: "text",
           type: "string",
         },
@@ -41550,6 +41568,10 @@ export default {
           format: "text",
           type: "string",
         },
+        supplierCountryName: {
+          format: "text",
+          type: "string",
+        },
         deliveryName: {
           format: "text",
           type: "string",
@@ -41575,6 +41597,10 @@ export default {
           type: "string",
         },
         deliveryCountryCode: {
+          format: "text",
+          type: "string",
+        },
+        deliveryCountryName: {
           format: "text",
           type: "string",
         },
@@ -41609,6 +41635,10 @@ export default {
         customerCountryCode: {
           description:
             "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        customerCountryName: {
           format: "text",
           type: "string",
         },
@@ -44569,6 +44599,10 @@ export default {
           format: "text",
           type: "string",
         },
+        customerCountryName: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -46548,7 +46582,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -46597,7 +46631,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -48511,6 +48545,10 @@ export default {
           format: "text",
           type: "string",
         },
+        customerCountryName: {
+          format: "text",
+          type: "string",
+        },
         paymentCustomerName: {
           format: "text",
           type: "string",
@@ -48538,6 +48576,10 @@ export default {
         paymentCountryCode: {
           description:
             "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        paymentCountryName: {
           format: "text",
           type: "string",
         },
@@ -55738,8 +55780,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.companies.state": {
-      name: "state",
+    "rowFilter.companies.stateProvince": {
+      name: "stateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -58648,6 +58690,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrderLocations.supplierCountryName": {
+      name: "supplierCountryName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseOrderLocations.deliveryName": {
       name: "deliveryName",
       required: false,
@@ -58692,6 +58741,13 @@ export default {
     },
     "rowFilter.purchaseOrderLocations.deliveryCountryCode": {
       name: "deliveryCountryCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLocations.deliveryCountryName": {
+      name: "deliveryCountryName",
       required: false,
       format: "text",
       in: "query",
@@ -58748,6 +58804,13 @@ export default {
     },
     "rowFilter.purchaseOrderLocations.customerCountryCode": {
       name: "customerCountryCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLocations.customerCountryName": {
+      name: "customerCountryName",
       required: false,
       format: "text",
       in: "query",
@@ -62595,6 +62658,13 @@ export default {
     },
     "rowFilter.quoteCustomerDetails.customerCountryCode": {
       name: "customerCountryCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteCustomerDetails.customerCountryName": {
+      name: "customerCountryName",
       required: false,
       format: "text",
       in: "query",
@@ -67740,6 +67810,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderLocations.customerCountryName": {
+      name: "customerCountryName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrderLocations.paymentCustomerName": {
       name: "paymentCustomerName",
       required: false,
@@ -67784,6 +67861,13 @@ export default {
     },
     "rowFilter.salesOrderLocations.paymentCountryCode": {
       name: "paymentCountryCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentCountryName": {
+      name: "paymentCountryName",
       required: false,
       format: "text",
       in: "query",

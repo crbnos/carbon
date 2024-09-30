@@ -4,7 +4,7 @@
 DROP VIEW IF EXISTS "purchaseOrderLocations";
 DROP VIEW IF EXISTS "quoteCustomerDetails";
 DROP VIEW IF EXISTS "salesOrderLocations";
-
+DROP VIEW IF EXISTS "companies";
 -- Remove the 'code' column
 ALTER TABLE "country" DROP COLUMN IF EXISTS "code";
 
@@ -41,6 +41,7 @@ CREATE OR REPLACE VIEW "purchaseOrderLocations" WITH(SECURITY_INVOKER=true) AS
     sa."stateProvince" AS "supplierStateProvince",
     sa."postalCode" AS "supplierPostalCode",
     sa."countryCode" AS "supplierCountryCode",
+    sc."name" AS "supplierCountryName",
     dl.name AS "deliveryName",
     dl."addressLine1" AS "deliveryAddressLine1",
     dl."addressLine2" AS "deliveryAddressLine2",
@@ -48,6 +49,7 @@ CREATE OR REPLACE VIEW "purchaseOrderLocations" WITH(SECURITY_INVOKER=true) AS
     dl."stateProvince" AS "deliveryStateProvince",
     dl."postalCode" AS "deliveryPostalCode",
     dl."countryCode" AS "deliveryCountryCode",
+    dc."name" AS "deliveryCountryName",
     pod."dropShipment",
     c.name AS "customerName",
     ca."addressLine1" AS "customerAddressLine1",
@@ -55,7 +57,8 @@ CREATE OR REPLACE VIEW "purchaseOrderLocations" WITH(SECURITY_INVOKER=true) AS
     ca."city" AS "customerCity",
     ca."stateProvince" AS "customerStateProvince",
     ca."postalCode" AS "customerPostalCode",
-    ca."countryCode" AS "customerCountryCode"
+    ca."countryCode" AS "customerCountryCode",
+    cc."name" AS "customerCountryName"
   FROM "purchaseOrder" po 
   LEFT OUTER JOIN "supplier" s 
     ON s.id = po."supplierId"
@@ -63,16 +66,22 @@ CREATE OR REPLACE VIEW "purchaseOrderLocations" WITH(SECURITY_INVOKER=true) AS
     ON sl.id = po."supplierLocationId"
   LEFT OUTER JOIN "address" sa
     ON sa.id = sl."addressId"
+  LEFT OUTER JOIN "country" sc
+    ON sc.alpha2 = sa."countryCode"
   INNER JOIN "purchaseOrderDelivery" pod 
     ON pod.id = po.id 
   LEFT OUTER JOIN "location" dl
     ON dl.id = pod."locationId"
+  LEFT OUTER JOIN "country" dc
+    ON dc.alpha2 = dl."countryCode"
   LEFT OUTER JOIN "customer" c
     ON c.id = pod."customerId"
   LEFT OUTER JOIN "customerLocation" cl
     ON cl.id = pod."customerLocationId"
   LEFT OUTER JOIN "address" ca
-    ON ca.id = cl."addressId";
+    ON ca.id = cl."addressId"
+  LEFT OUTER JOIN "country" cc
+    ON cc.alpha2 = ca."countryCode";
 
 -- Recreate the quoteCustomerDetails view
 CREATE OR REPLACE VIEW "quoteCustomerDetails" WITH(SECURITY_INVOKER=true) AS
@@ -84,12 +93,14 @@ SELECT
   ca."city" AS "customerCity",
   ca."stateProvince" AS "customerStateProvince",
   ca."postalCode" AS "customerPostalCode",
-  ca."countryCode" AS "customerCountryCode"
+  ca."countryCode" AS "customerCountryCode",
+  cc."name" AS "customerCountryName"
 FROM
   "quote" q
   LEFT OUTER JOIN "customer" c ON c.id = q."customerId"
   LEFT OUTER JOIN "customerLocation" cl on cl.id = q."customerLocationId"
-  LEFT OUTER JOIN "address" ca ON ca.id = cl."addressId";
+  LEFT OUTER JOIN "address" ca ON ca.id = cl."addressId"
+  LEFT OUTER JOIN "country" cc ON cc.alpha2 = ca."countryCode";
 
   -- Recreate the salesOrderLocations view
   CREATE OR REPLACE VIEW "salesOrderLocations" WITH(SECURITY_INVOKER=true) AS
@@ -102,13 +113,15 @@ FROM
     ca."stateProvince" AS "customerStateProvince",
     ca."postalCode" AS "customerPostalCode",
     ca."countryCode" AS "customerCountryCode",
+    cc."name" AS "customerCountryName",
     pc.name AS "paymentCustomerName",
     pa."addressLine1" AS "paymentAddressLine1",
     pa."addressLine2" AS "paymentAddressLine2",
     pa."city" AS "paymentCity",
     pa."stateProvince" AS "paymentStateProvince",
     pa."postalCode" AS "paymentPostalCode",
-    pa."countryCode" AS "paymentCountryCode"
+    pa."countryCode" AS "paymentCountryCode",
+    pn."name" AS "paymentCountryName"
   FROM "salesOrder" so 
   INNER JOIN "customer" c 
     ON c.id = so."customerId"
@@ -116,6 +129,8 @@ FROM
     ON cl.id = so."customerLocationId"
   LEFT OUTER JOIN "address" ca
     ON ca.id = cl."addressId"
+  LEFT OUTER JOIN "country" cc
+    ON cc.alpha2 = ca."countryCode"
   LEFT OUTER JOIN "salesOrderPayment" sop
     ON sop.id = so.id
   LEFT OUTER JOIN "customer" pc
@@ -123,7 +138,22 @@ FROM
   LEFT OUTER JOIN "customerLocation" pl
     ON pl.id = sop."invoiceCustomerLocationId"
   LEFT OUTER JOIN "address" pa
-    ON pa.id = pl."addressId";
+    ON pa.id = pl."addressId"
+  LEFT OUTER JOIN "country" pn
+    ON pn.alpha2 = pa."countryCode";
+
+CREATE OR REPLACE VIEW "companies" WITH(SECURITY_INVOKER=true) AS
+  SELECT DISTINCT
+    c.*,
+    uc.*,
+    et.name AS "employeeType"
+    FROM "userToCompany" uc
+    INNER JOIN "company" c
+      ON c.id = uc."companyId"
+    LEFT JOIN "employee" e
+      ON e.id = uc."userId" AND e."companyId" = uc."companyId"
+    LEFT JOIN "employeeType" et
+      ON et.id = e."employeeTypeId";
 
 -- Insert the country code data
 INSERT INTO "country" ("name", "alpha2", "alpha3") VALUES

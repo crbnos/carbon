@@ -96,7 +96,7 @@ const SupplierLocationForm = ({
                 <Input name="city" label="City" />
                 <Input name="stateProvince" label="State / Province" />
                 <Input name="postalCode" label="Postal Code" />
-                <Country />
+                <Country name="countryCode" />
                 <CustomFormFields table="supplierLocation" />
               </VStack>
             </ModalDrawerBody>

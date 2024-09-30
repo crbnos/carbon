@@ -22149,7 +22149,7 @@ export type Database = {
           phone: string | null
           postalCode: string | null
           role: Database["public"]["Enums"]["role"] | null
-          state: string | null
+          stateProvince: string | null
           taxId: string | null
           updatedBy: string | null
           userId: string | null
@@ -25248,6 +25248,7 @@ export type Database = {
           customerAddressLine2: string | null
           customerCity: string | null
           customerCountryCode: string | null
+          customerCountryName: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -25255,6 +25256,7 @@ export type Database = {
           deliveryAddressLine2: string | null
           deliveryCity: string | null
           deliveryCountryCode: string | null
+          deliveryCountryName: string | null
           deliveryName: string | null
           deliveryPostalCode: string | null
           deliveryStateProvince: string | null
@@ -25264,6 +25266,7 @@ export type Database = {
           supplierAddressLine2: string | null
           supplierCity: string | null
           supplierCountryCode: string | null
+          supplierCountryName: string | null
           supplierName: string | null
           supplierPostalCode: string | null
           supplierStateProvince: string | null
@@ -25580,6 +25583,7 @@ export type Database = {
           customerAddressLine2: string | null
           customerCity: string | null
           customerCountryCode: string | null
+          customerCountryName: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -26990,6 +26994,7 @@ export type Database = {
           customerAddressLine2: string | null
           customerCity: string | null
           customerCountryCode: string | null
+          customerCountryName: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -26998,6 +27003,7 @@ export type Database = {
           paymentAddressLine2: string | null
           paymentCity: string | null
           paymentCountryCode: string | null
+          paymentCountryName: string | null
           paymentCustomerName: string | null
           paymentPostalCode: string | null
           paymentStateProvince: string | null
@@ -27005,14 +27011,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

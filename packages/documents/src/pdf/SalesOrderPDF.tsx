@@ -58,14 +58,14 @@ const SalesOrderPDF = ({
     customerCity,
     customerStateProvince,
     customerPostalCode,
-    customerCountryCode,
+    customerCountryName,
     paymentCustomerName,
     paymentAddressLine1,
     paymentAddressLine2,
     paymentCity,
     paymentStateProvince,
     paymentPostalCode,
-    paymentCountryCode,
+    paymentCountryName,
   } = salesOrderLocations;
 
   return (
@@ -109,7 +109,7 @@ const SalesOrderPDF = ({
                 customerPostalCode
               )}
             </Text>
-            <Text style={tw("text-sm")}>{customerCountryCode}</Text>
+            <Text style={tw("text-sm")}>{customerCountryName}</Text>
           </View>
           <View style={tw("flex flex-col gap-1 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Bill To</Text>
@@ -127,7 +127,7 @@ const SalesOrderPDF = ({
                 paymentPostalCode
               )}
             </Text>
-            <Text style={tw("text-sm")}>{paymentCountryCode}</Text>
+            <Text style={tw("text-sm")}>{paymentCountryName}</Text>
           </View>
         </View>
         <View style={tw("flex flex-row justify-between mb-5")}>

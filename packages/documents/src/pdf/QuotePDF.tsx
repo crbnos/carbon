@@ -65,7 +65,7 @@ const QuotePDF = ({
     customerCity,
     customerStateProvince,
     customerPostalCode,
-    customerCountryCode,
+    customerCountryName,
   } = quoteCustomerDetails;
 
   const pricesByLine = quoteLinePrices.reduce<
@@ -152,7 +152,7 @@ const QuotePDF = ({
                 customerPostalCode
               )}
             </Text>
-            <Text>{customerCountryCode}</Text>
+            <Text>{customerCountryName}</Text>
           </View>
         </View>
 

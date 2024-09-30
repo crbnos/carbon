@@ -6,6 +6,7 @@ import { getLocalTimeZone } from "@internationalized/date";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { useUser } from "~/hooks";
 import {
   LocationForm,
   locationValidator,
@@ -60,6 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewLocationRoute() {
   const navigate = useNavigate();
+  const { company } = useUser();
   const onClose = () => navigate(path.to.locations);
 
   const initialValues = {
@@ -70,6 +72,7 @@ export default function NewLocationRoute() {
     city: "",
     stateProvince: "",
     postalCode: "",
+    countryCode: company?.countryCode ?? "",
   };
 
   return <LocationForm initialValues={initialValues} onClose={onClose} />;

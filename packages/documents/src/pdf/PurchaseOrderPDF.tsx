@@ -58,14 +58,14 @@ const PurchaseOrderPDF = ({
     supplierCity,
     supplierStateProvince,
     supplierPostalCode,
-    supplierCountryCode,
+    supplierCountryName,
     deliveryName,
     deliveryAddressLine1,
     deliveryAddressLine2,
     deliveryCity,
     deliveryStateProvince,
     deliveryPostalCode,
-    deliveryCountryCode,
+    deliveryCountryName,
     dropShipment,
     customerName,
     customerAddressLine1,
@@ -73,7 +73,7 @@ const PurchaseOrderPDF = ({
     customerCity,
     customerStateProvince,
     customerPostalCode,
-    customerCountryCode,
+    customerCountryName,
   } = purchaseOrderLocations;
 
   return (
@@ -113,7 +113,7 @@ const PurchaseOrderPDF = ({
                 supplierPostalCode
               )}
             </Text>
-            <Text>{supplierCountryCode}</Text>
+            <Text>{supplierCountryName}</Text>
           </View>
           {dropShipment ? (
             <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
@@ -128,7 +128,7 @@ const PurchaseOrderPDF = ({
                   customerPostalCode
                 )}
               </Text>
-              <Text>{customerCountryCode}</Text>
+              <Text>{customerCountryName}</Text>
             </View>
           ) : (
             <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
@@ -143,7 +143,7 @@ const PurchaseOrderPDF = ({
                   deliveryPostalCode
                 )}
               </Text>
-              <Text>{deliveryCountryCode}</Text>
+              <Text>{deliveryCountryName}</Text>
             </View>
           )}
         </View>
