@@ -23,9 +23,9 @@ const GroupedContentSidebar = ({
             <VStack
               key={group.name}
               className="border-b border-border p-2"
-              spacing={1}
+              spacing={0}
             >
-              <h4 className="text-xs text-muted-foreground font-mono pl-2 py-1 uppercase">
+              <h4 className="text-xs text-muted-foreground font-mono pl-4 py-1 uppercase">
                 {group.name}
               </h4>
               {group.routes.map((route) => {
@@ -38,7 +38,6 @@ const GroupedContentSidebar = ({
                     asChild
                     leftIcon={route.icon}
                     variant={isActive ? "active" : "ghost"}
-                    size="sm"
                     className={cn(
                       "w-full justify-start",
                       !isActive &&
