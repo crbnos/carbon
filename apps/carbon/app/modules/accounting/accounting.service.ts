@@ -305,11 +305,24 @@ export async function getBaseCurrency(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
+  const { data: company, error } = await client
+    .from("company")
+    .select("baseCurrencyCode")
+    .eq("id", companyId)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to get company: ${error.message}`);
+  }
+
+  if (!company || !company.baseCurrencyCode) {
+    throw new Error("Company or base currency code not found");
+  }
+
   return client
     .from("currency")
     .select("*")
-    .eq("companyId", companyId)
-    .eq("isBaseCurrency", true)
+    .eq("code", company.baseCurrencyCode)
     .single();
 }
 
@@ -393,7 +406,7 @@ export async function getCurrency(
   client: SupabaseClient<Database>,
   currencyId: string
 ) {
-  return client.from("currency").select("*").eq("id", currencyId).single();
+  return client.from("currencies").select("*").eq("id", currencyId).single();
 }
 
 export async function getCurrencies(
@@ -404,7 +417,7 @@ export async function getCurrencies(
   }
 ) {
   let query = client
-    .from("currency")
+    .from("currencies")
     .select("*", {
       count: "exact",
     })
@@ -415,16 +428,10 @@ export async function getCurrencies(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "isBaseCurrency", ascending: false },
-  ]);
   return query;
 }
 
-export async function getCurrenciesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
+export async function getCurrenciesList(client: SupabaseClient<Database>) {
   return client
     .from("currencyCode")
     .select("code, name")
@@ -785,14 +792,6 @@ export async function upsertCurrency(
         customFields?: Json;
       })
 ) {
-  if (currency.isBaseCurrency) {
-    await client
-      .from("currency")
-      .update({ isBaseCurrency: false })
-      .eq("isBaseCurrency", true)
-      .eq("companyId", currency.companyId);
-  }
-
   if ("createdBy" in currency) {
     return client.from("currency").insert([currency]).select("*").single();
   }

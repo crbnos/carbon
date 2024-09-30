@@ -71,7 +71,6 @@ export default function NewCurrencyRoute() {
     code: "",
     symbol: "",
     exchangeRate: 1,
-    isBaseCurrency: false,
     decimalPlaces: 2,
   };
 

@@ -7740,6 +7740,87 @@ export default {
         tags: ["purchaseInvoicePriceChange"],
       },
     },
+    "/currencies": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencies.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.decimalPlaces",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencies.symbol",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/currencies",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["currencies"],
+      },
+    },
     "/shift": {
       get: {
         parameters: [
@@ -31048,9 +31129,6 @@ export default {
             $ref: "#/parameters/rowFilter.currency.decimalPlaces",
           },
           {
-            $ref: "#/parameters/rowFilter.currency.isBaseCurrency",
-          },
-          {
             $ref: "#/parameters/rowFilter.currency.active",
           },
           {
@@ -31143,9 +31221,6 @@ export default {
             $ref: "#/parameters/rowFilter.currency.decimalPlaces",
           },
           {
-            $ref: "#/parameters/rowFilter.currency.isBaseCurrency",
-          },
-          {
             $ref: "#/parameters/rowFilter.currency.active",
           },
           {
@@ -31190,9 +31265,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.currency.decimalPlaces",
-          },
-          {
-            $ref: "#/parameters/rowFilter.currency.isBaseCurrency",
           },
           {
             $ref: "#/parameters/rowFilter.currency.active",
@@ -39151,6 +39223,69 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    currencies: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        code: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        decimalPlaces: {
+          format: "integer",
+          type: "integer",
+        },
+        active: {
+          format: "boolean",
+          type: "boolean",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdBy: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        symbol: {
           format: "text",
           type: "string",
         },
@@ -50047,7 +50182,6 @@ export default {
         "code",
         "exchangeRate",
         "decimalPlaces",
-        "isBaseCurrency",
         "active",
         "companyId",
         "createdBy",
@@ -50075,11 +50209,6 @@ export default {
           default: 2,
           format: "integer",
           type: "integer",
-        },
-        isBaseCurrency: {
-          default: false,
-          format: "boolean",
-          type: "boolean",
         },
         active: {
           default: true,
@@ -55525,6 +55654,106 @@ export default {
     },
     "rowFilter.purchaseInvoicePriceChange.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.currencies": {
+      name: "currencies",
+      description: "currencies",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/currencies",
+      },
+    },
+    "rowFilter.currencies.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.code": {
+      name: "code",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.decimalPlaces": {
+      name: "decimalPlaces",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencies.symbol": {
+      name: "symbol",
       required: false,
       format: "text",
       in: "query",
@@ -69858,13 +70087,6 @@ export default {
       name: "decimalPlaces",
       required: false,
       format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.currency.isBaseCurrency": {
-      name: "isBaseCurrency",
-      required: false,
-      format: "boolean",
       in: "query",
       type: "string",
     },

@@ -81,7 +81,6 @@ export default function EditCurrencysRoute() {
     symbol: currency?.symbol ?? "",
     exchangeRate: currency?.exchangeRate ?? 1,
     decimalPlaces: currency?.decimalPlaces ?? 2,
-    isBaseCurrency: currency?.isBaseCurrency ?? false,
     ...getCustomFields(currency?.customFields),
   };
 

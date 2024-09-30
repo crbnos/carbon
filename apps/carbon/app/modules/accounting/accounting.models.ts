@@ -185,7 +185,6 @@ export const currencyValidator = z.object({
   symbol: z.string().min(1, { message: "Symbol is required" }),
   decimalPlaces: zfd.numeric(z.number().min(0).max(4)),
   exchangeRate: zfd.numeric(z.number().min(0, { message: "Rate is required" })),
-  isBaseCurrency: zfd.checkbox(),
 });
 
 export const defaultBalanceSheetAccountValidator = z.object({

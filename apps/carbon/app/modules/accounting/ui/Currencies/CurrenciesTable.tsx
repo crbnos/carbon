@@ -1,4 +1,4 @@
-import { Checkbox, MenuIcon, MenuItem } from "@carbon/react";
+import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -45,11 +45,6 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
         header: "Exchange Rate",
         cell: (item) => item.getValue(),
       },
-      {
-        accessorKey: "isBaseCurrency",
-        header: "Default Currency",
-        cell: ({ row }) => <Checkbox isChecked={row.original.isBaseCurrency} />,
-      },
     ];
     return [...defaultColumns, ...customColumns];
   }, [customColumns]);
@@ -61,7 +56,9 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
           <MenuItem
             disabled={!permissions.can("update", "accounting")}
             onClick={() => {
-              navigate(`${path.to.currency(row.id)}?${params.toString()}`);
+              navigate(
+                `${path.to.currency(row.id as string)}?${params.toString()}`
+              );
             }}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -71,7 +68,9 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
             disabled={!permissions.can("delete", "accounting")}
             onClick={() => {
               navigate(
-                `${path.to.deleteCurrency(row.id)}?${params.toString()}`
+                `${path.to.deleteCurrency(
+                  row.id as string
+                )}?${params.toString()}`
               );
             }}
           >

@@ -14,15 +14,13 @@ import { useNavigate } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
-  Boolean,
   CustomFormFields,
   Hidden,
   Input,
   Number,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
-import type { Currency } from "~/modules/accounting";
+import { usePermissions, useUser } from "~/hooks";
 import { currencyValidator } from "~/modules/accounting";
 import { path } from "~/utils/path";
 
@@ -38,15 +36,12 @@ const CurrencyForm = ({ initialValues }: CurrencyFormProps) => {
     initialValues.decimalPlaces ?? 2
   );
 
-  const routeData = useRouteData<{ baseCurrency?: Currency }>(
-    path.to.accountingRoot
-  );
-  const [name, setName] = useState(initialValues.name);
+  const { company } = useUser();
 
-  const isBaseCurrency = routeData?.baseCurrency?.id === initialValues.id;
-  const exchnageRateHelperText = isBaseCurrency
+  const isBaseCurrency = company?.baseCurrencyCode === initialValues.code;
+  const exchangeRateHelperText = isBaseCurrency
     ? "This is the base currency. Exchange rate is always 1."
-    : `One ${name} is equal to how many ${routeData?.baseCurrency?.name}?`;
+    : `One ${initialValues.code} is equal to how many ${company?.baseCurrencyCode}?`;
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -77,13 +72,9 @@ const CurrencyForm = ({ initialValues }: CurrencyFormProps) => {
           <DrawerBody>
             <Hidden name="id" />
             <VStack spacing={4}>
-              <Input
-                name="name"
-                label="Name"
-                onChange={(e) => setName(e.target.value)}
-              />
-              <Input name="code" label="Code" isReadOnly={isEditing} />
-              <Input name="symbol" label="Symbol" />
+              <Input name="name" label="Name" isReadOnly />
+              <Input name="code" label="Code" isReadOnly />
+              <Input name="symbol" label="Symbol" isReadOnly />
               <Number
                 name="decimalPlaces"
                 label="Decimal Places"
@@ -99,9 +90,9 @@ const CurrencyForm = ({ initialValues }: CurrencyFormProps) => {
                 formatOptions={{
                   minimumFractionDigits: decimalPlaces ?? 0,
                 }}
-                helperText={exchnageRateHelperText}
+                helperText={exchangeRateHelperText}
               />
-              <Boolean name="isBaseCurrency" label="Base Currency" />
+
               <CustomFormFields table="currency" />
             </VStack>
           </DrawerBody>

@@ -2673,7 +2673,6 @@ export type Database = {
           decimalPlaces: number
           exchangeRate: number
           id: string
-          isBaseCurrency: boolean
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -2687,7 +2686,6 @@ export type Database = {
           decimalPlaces?: number
           exchangeRate?: number
           id?: string
-          isBaseCurrency?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2701,7 +2699,6 @@ export type Database = {
           decimalPlaces?: number
           exchangeRate?: number
           id?: string
-          isBaseCurrency?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -3430,6 +3427,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerPayment_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "customerPayment_currencyCode_fkey"
@@ -6878,6 +6882,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itemUnitSalePrice_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "itemUnitSalePrice_currencyCode_fkey"
@@ -11920,6 +11931,13 @@ export type Database = {
             foreignKeyName: "purchaseInvoice_currencyCode_fkey"
             columns: ["currencyCode", "companyId"]
             isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
             referencedRelation: "currency"
             referencedColumns: ["code", "companyId"]
           },
@@ -12216,6 +12234,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLines_currencyCode_fkey"
@@ -13336,6 +13361,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderPayment_currencyCode_fkey"
             columns: ["currencyCode", "companyId"]
             isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderPayment_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
             referencedRelation: "currency"
             referencedColumns: ["code", "companyId"]
           },
@@ -13689,6 +13721,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchasePayment_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "purchasePayment_currencyCode_fkey"
@@ -15402,6 +15441,13 @@ export type Database = {
             foreignKeyName: "quotePayment_currencyCode_fkey"
             columns: ["currencyCode", "companyId"]
             isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "quotePayment_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
             referencedRelation: "currency"
             referencedColumns: ["code", "companyId"]
           },
@@ -16273,6 +16319,13 @@ export type Database = {
             foreignKeyName: "salesOrder_currencyCode_fkey"
             columns: ["currencyCode", "companyId"]
             isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "salesOrder_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
             referencedRelation: "currency"
             referencedColumns: ["code", "companyId"]
           },
@@ -16741,6 +16794,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesOrderPayment_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "salesOrderPayment_currencyCode_fkey"
@@ -19483,6 +19543,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "supplierPayment_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "supplierPayment_currencyCode_fkey"
@@ -22553,6 +22620,95 @@ export type Database = {
           },
         ]
       }
+      currencies: {
+        Row: {
+          active: boolean | null
+          code: string | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          decimalPlaces: number | null
+          exchangeRate: number | null
+          id: string | null
+          name: string | null
+          symbol: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "currency_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currency_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currency_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currency_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currency_currencyCode_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "currency_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currency_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currency_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currency_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currency_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       customers: {
         Row: {
           accountManagerId: string | null
@@ -24960,6 +25116,13 @@ export type Database = {
             referencedColumns: ["code", "companyId"]
           },
           {
+            foreignKeyName: "purchaseInvoice_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
             foreignKeyName: "purchaseInvoice_invoiceSupplierId_fkey"
             columns: ["invoiceSupplierId"]
             isOneToOne: false
@@ -27074,14 +27237,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27266,6 +27429,13 @@ export type Database = {
             columns: ["currencyCode", "companyId"]
             isOneToOne: false
             referencedRelation: "currency"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "salesOrder_currencyCode_fkey"
+            columns: ["currencyCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencies"
             referencedColumns: ["code", "companyId"]
           },
           {
