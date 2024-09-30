@@ -3480,6 +3480,123 @@ export default {
         tags: ["supplierPayment"],
       },
     },
+    "/currencyCode": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.symbol",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/currencyCode",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["currencyCode"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.currencyCode",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["currencyCode"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.symbol",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["currencyCode"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currencyCode.symbol",
+          },
+          {
+            $ref: "#/parameters/body.currencyCode",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["currencyCode"],
+      },
+    },
     "/methodMaterial": {
       get: {
         parameters: [
@@ -31117,13 +31234,7 @@ export default {
             $ref: "#/parameters/rowFilter.currency.id",
           },
           {
-            $ref: "#/parameters/rowFilter.currency.name",
-          },
-          {
             $ref: "#/parameters/rowFilter.currency.code",
-          },
-          {
-            $ref: "#/parameters/rowFilter.currency.symbol",
           },
           {
             $ref: "#/parameters/rowFilter.currency.exchangeRate",
@@ -31218,13 +31329,7 @@ export default {
             $ref: "#/parameters/rowFilter.currency.id",
           },
           {
-            $ref: "#/parameters/rowFilter.currency.name",
-          },
-          {
             $ref: "#/parameters/rowFilter.currency.code",
-          },
-          {
-            $ref: "#/parameters/rowFilter.currency.symbol",
           },
           {
             $ref: "#/parameters/rowFilter.currency.exchangeRate",
@@ -31273,13 +31378,7 @@ export default {
             $ref: "#/parameters/rowFilter.currency.id",
           },
           {
-            $ref: "#/parameters/rowFilter.currency.name",
-          },
-          {
             $ref: "#/parameters/rowFilter.currency.code",
-          },
-          {
-            $ref: "#/parameters/rowFilter.currency.symbol",
           },
           {
             $ref: "#/parameters/rowFilter.currency.exchangeRate",
@@ -37148,6 +37247,25 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+      },
+      type: "object",
+    },
+    currencyCode: {
+      required: ["code", "name", "symbol"],
+      properties: {
+        code: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        symbol: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -50189,7 +50307,6 @@ export default {
     currency: {
       required: [
         "id",
-        "name",
         "code",
         "exchangeRate",
         "decimalPlaces",
@@ -50206,15 +50323,9 @@ export default {
           format: "text",
           type: "string",
         },
-        name: {
-          format: "text",
-          type: "string",
-        },
         code: {
-          format: "text",
-          type: "string",
-        },
-        symbol: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
           type: "string",
         },
@@ -53060,6 +53171,36 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "body.currencyCode": {
+      name: "currencyCode",
+      description: "currencyCode",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/currencyCode",
+      },
+    },
+    "rowFilter.currencyCode.code": {
+      name: "code",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencyCode.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currencyCode.symbol": {
+      name: "symbol",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -70048,22 +70189,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.currency.name": {
-      name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.currency.code": {
       name: "code",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.currency.symbol": {
-      name: "symbol",
       required: false,
       format: "text",
       in: "query",
