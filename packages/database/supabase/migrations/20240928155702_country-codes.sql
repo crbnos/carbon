@@ -25,6 +25,11 @@ ALTER TABLE "address" ADD CONSTRAINT "address_countryCode_fkey" FOREIGN KEY ("co
 ALTER TABLE "country" ALTER COLUMN "alpha3" SET NOT NULL;
 ALTER TABLE "country" ADD CONSTRAINT "country_alpha3_unique" UNIQUE ("alpha3");
 
+-- Rename the 'state' column to 'stateProvince'
+ALTER TABLE "address" RENAME COLUMN "state" TO "stateProvince";
+ALTER TABLE "location" RENAME COLUMN "state" TO "stateProvince";
+ALTER TABLE "company" RENAME COLUMN "state" TO "stateProvince";
+
 -- Recreate the purchaseOrderLocations view
 CREATE OR REPLACE VIEW "purchaseOrderLocations" WITH(SECURITY_INVOKER=true) AS
   SELECT 
@@ -33,14 +38,14 @@ CREATE OR REPLACE VIEW "purchaseOrderLocations" WITH(SECURITY_INVOKER=true) AS
     sa."addressLine1" AS "supplierAddressLine1",
     sa."addressLine2" AS "supplierAddressLine2",
     sa."city" AS "supplierCity",
-    sa."state" AS "supplierState",
+    sa."stateProvince" AS "supplierStateProvince",
     sa."postalCode" AS "supplierPostalCode",
     sa."countryCode" AS "supplierCountryCode",
     dl.name AS "deliveryName",
     dl."addressLine1" AS "deliveryAddressLine1",
     dl."addressLine2" AS "deliveryAddressLine2",
     dl."city" AS "deliveryCity",
-    dl."state" AS "deliveryState",
+    dl."stateProvince" AS "deliveryStateProvince",
     dl."postalCode" AS "deliveryPostalCode",
     dl."countryCode" AS "deliveryCountryCode",
     pod."dropShipment",
@@ -48,7 +53,7 @@ CREATE OR REPLACE VIEW "purchaseOrderLocations" WITH(SECURITY_INVOKER=true) AS
     ca."addressLine1" AS "customerAddressLine1",
     ca."addressLine2" AS "customerAddressLine2",
     ca."city" AS "customerCity",
-    ca."state" AS "customerState",
+    ca."stateProvince" AS "customerStateProvince",
     ca."postalCode" AS "customerPostalCode",
     ca."countryCode" AS "customerCountryCode"
   FROM "purchaseOrder" po 
@@ -77,7 +82,7 @@ SELECT
   ca."addressLine1" AS "customerAddressLine1",
   ca."addressLine2" AS "customerAddressLine2",
   ca."city" AS "customerCity",
-  ca."state" AS "customerState",
+  ca."stateProvince" AS "customerStateProvince",
   ca."postalCode" AS "customerPostalCode",
   ca."countryCode" AS "customerCountryCode"
 FROM
@@ -94,14 +99,14 @@ FROM
     ca."addressLine1" AS "customerAddressLine1",
     ca."addressLine2" AS "customerAddressLine2",
     ca."city" AS "customerCity",
-    ca."state" AS "customerState",
+    ca."stateProvince" AS "customerStateProvince",
     ca."postalCode" AS "customerPostalCode",
     ca."countryCode" AS "customerCountryCode",
     pc.name AS "paymentCustomerName",
     pa."addressLine1" AS "paymentAddressLine1",
     pa."addressLine2" AS "paymentAddressLine2",
     pa."city" AS "paymentCity",
-    pa."state" AS "paymentState",
+    pa."stateProvince" AS "paymentStateProvince",
     pa."postalCode" AS "paymentPostalCode",
     pa."countryCode" AS "paymentCountryCode"
   FROM "salesOrder" so 

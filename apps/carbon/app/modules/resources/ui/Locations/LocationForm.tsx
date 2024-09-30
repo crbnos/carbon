@@ -94,7 +94,7 @@ const LocationForm = ({
                 <Input name="addressLine1" label="Address Line 1" />
                 <Input name="addressLine2" label="Address Line 2" />
                 <Input name="city" label="City" />
-                <Input name="state" label="State" />
+                <Input name="stateProvince" label="State / Province" />
                 <Input name="postalCode" label="Postal Code" />
                 <Country />
                 <Timezone name="timezone" label="Timezone" />

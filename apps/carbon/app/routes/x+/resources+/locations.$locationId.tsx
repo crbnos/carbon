@@ -87,7 +87,7 @@ export default function LocationRoute() {
     addressLine1: location.addressLine1 ?? undefined,
     addressLine2: location.addressLine2 ?? undefined,
     city: location.city ?? undefined,
-    state: location.state ?? undefined,
+    stateProvince: location.stateProvince ?? undefined,
     postalCode: location.postalCode ?? undefined,
     countryCode: location.countryCode ?? undefined,
     timezone: location.timezone ?? getLocalTimeZone(),

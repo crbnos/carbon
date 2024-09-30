@@ -1525,7 +1525,7 @@ export type Database = {
           id: string
           phone: string | null
           postalCode: string | null
-          state: string | null
+          stateProvince: string | null
         }
         Insert: {
           addressLine1?: string | null
@@ -1537,7 +1537,7 @@ export type Database = {
           id?: string
           phone?: string | null
           postalCode?: string | null
-          state?: string | null
+          stateProvince?: string | null
         }
         Update: {
           addressLine1?: string | null
@@ -1549,7 +1549,7 @@ export type Database = {
           id?: string
           phone?: string | null
           postalCode?: string | null
-          state?: string | null
+          stateProvince?: string | null
         }
         Relationships: [
           {
@@ -1921,7 +1921,7 @@ export type Database = {
           name: string
           phone: string | null
           postalCode: string | null
-          state: string | null
+          stateProvince: string | null
           taxId: string | null
           updatedBy: string | null
           website: string | null
@@ -1938,7 +1938,7 @@ export type Database = {
           name: string
           phone?: string | null
           postalCode?: string | null
-          state?: string | null
+          stateProvince?: string | null
           taxId?: string | null
           updatedBy?: string | null
           website?: string | null
@@ -1955,7 +1955,7 @@ export type Database = {
           name?: string
           phone?: string | null
           postalCode?: string | null
-          state?: string | null
+          stateProvince?: string | null
           taxId?: string | null
           updatedBy?: string | null
           website?: string | null
@@ -8179,7 +8179,7 @@ export type Database = {
           longitude: number | null
           name: string
           postalCode: string
-          state: string
+          stateProvince: string
           timezone: string
           updatedAt: string | null
           updatedBy: string | null
@@ -8198,7 +8198,7 @@ export type Database = {
           longitude?: number | null
           name: string
           postalCode: string
-          state: string
+          stateProvince: string
           timezone: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8217,7 +8217,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           postalCode?: string
-          state?: string
+          stateProvince?: string
           timezone?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -25250,14 +25250,14 @@ export type Database = {
           customerCountryCode: string | null
           customerName: string | null
           customerPostalCode: string | null
-          customerState: string | null
+          customerStateProvince: string | null
           deliveryAddressLine1: string | null
           deliveryAddressLine2: string | null
           deliveryCity: string | null
           deliveryCountryCode: string | null
           deliveryName: string | null
           deliveryPostalCode: string | null
-          deliveryState: string | null
+          deliveryStateProvince: string | null
           dropShipment: boolean | null
           id: string | null
           supplierAddressLine1: string | null
@@ -25266,7 +25266,7 @@ export type Database = {
           supplierCountryCode: string | null
           supplierName: string | null
           supplierPostalCode: string | null
-          supplierState: string | null
+          supplierStateProvince: string | null
         }
         Relationships: [
           {
@@ -25582,7 +25582,7 @@ export type Database = {
           customerCountryCode: string | null
           customerName: string | null
           customerPostalCode: string | null
-          customerState: string | null
+          customerStateProvince: string | null
           quoteId: string | null
         }
         Relationships: [
@@ -26992,7 +26992,7 @@ export type Database = {
           customerCountryCode: string | null
           customerName: string | null
           customerPostalCode: string | null
-          customerState: string | null
+          customerStateProvince: string | null
           id: string | null
           paymentAddressLine1: string | null
           paymentAddressLine2: string | null
@@ -27000,7 +27000,7 @@ export type Database = {
           paymentCountryCode: string | null
           paymentCustomerName: string | null
           paymentPostalCode: string | null
-          paymentState: string | null
+          paymentStateProvince: string | null
         }
         Relationships: [
           {

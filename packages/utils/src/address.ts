@@ -15,7 +15,7 @@ export function formatAddressLines(
 
 export function formatCityStatePostalCode(
   city?: string | null,
-  state?: string | null,
+  stateProvince?: string | null,
   postalCode?: string | null
 ): string {
   // Create an array to hold the different parts of the address
@@ -25,9 +25,11 @@ export function formatCityStatePostalCode(
   if (city) parts.push(city);
 
   // Combine state and postalCode without a comma if both are provided
-  if (state) {
-    const statepostalCode = postalCode ? `${state} ${postalCode}` : state;
-    parts.push(statepostalCode);
+  if (stateProvince) {
+    const stateProvincePostalCode = postalCode
+      ? `${stateProvince} ${postalCode}`
+      : stateProvince;
+    parts.push(stateProvincePostalCode);
   } else if (postalCode) {
     parts.push(postalCode);
   }
@@ -40,7 +42,7 @@ export function formatAddress(
   addressLine1?: string | null,
   addressLine2?: string | null,
   city?: string | null,
-  state?: string | null,
+  stateProvince?: string | null,
   postalCode?: string | null,
   country?: string | null
 ): string {
@@ -52,7 +54,7 @@ export function formatAddress(
 
   const formattedCityStatePostalCode = formatCityStatePostalCode(
     city,
-    state,
+    stateProvince,
     postalCode
   );
   if (formattedCityStatePostalCode) parts.push(formattedCityStatePostalCode);

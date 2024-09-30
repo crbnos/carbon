@@ -283,7 +283,7 @@ export async function getSupplierLocations(
   return client
     .from("supplierLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, state, country(alpha2, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
     )
     .eq("supplierId", supplierId);
 }
@@ -295,7 +295,7 @@ export async function getSupplierLocation(
   return client
     .from("supplierLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, state, country(alpha2, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
     )
     .eq("id", supplierContactId)
     .single();
@@ -540,9 +540,9 @@ export async function insertSupplierLocation(
       addressLine1?: string;
       addressLine2?: string;
       city?: string;
-      state?: string;
+      stateProvince?: string;
       postalCode?: string;
-      // countryId: string;
+      countryCode?: string;
     };
     customFields?: Json;
   }
@@ -722,8 +722,8 @@ export async function updateSupplierLocation(
       addressLine1?: string;
       addressLine2?: string;
       city?: string;
-      state?: string;
-      // countryId: string;
+      stateProvince?: string;
+      countryCode?: string;
       postalCode?: string;
     };
     customFields?: Json;

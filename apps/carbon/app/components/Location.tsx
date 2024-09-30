@@ -15,7 +15,7 @@ type LocationProps = {
       addressLine1: string | null;
       addressLine2: string | null;
       city: string | null;
-      state: string | null;
+      stateProvince: string | null;
       postalCode: string | null;
       country: {
         alpha2: string;
@@ -38,7 +38,7 @@ const Location = ({ location, actions }: LocationProps) => {
   );
   const cityStatePostalCode = formatCityStatePostalCode(
     location.address.city,
-    location.address.state,
+    location.address.stateProvince,
     location.address.postalCode
   );
   return (

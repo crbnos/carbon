@@ -8704,7 +8704,7 @@ export default {
             $ref: "#/parameters/rowFilter.company.city",
           },
           {
-            $ref: "#/parameters/rowFilter.company.state",
+            $ref: "#/parameters/rowFilter.company.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.company.postalCode",
@@ -8808,7 +8808,7 @@ export default {
             $ref: "#/parameters/rowFilter.company.city",
           },
           {
-            $ref: "#/parameters/rowFilter.company.state",
+            $ref: "#/parameters/rowFilter.company.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.company.postalCode",
@@ -8866,7 +8866,7 @@ export default {
             $ref: "#/parameters/rowFilter.company.city",
           },
           {
-            $ref: "#/parameters/rowFilter.company.state",
+            $ref: "#/parameters/rowFilter.company.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.company.postalCode",
@@ -12898,7 +12898,7 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierCity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierState",
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierPostalCode",
@@ -12919,7 +12919,7 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryCity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryState",
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryPostalCode",
@@ -12943,7 +12943,7 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerCity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerState",
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerPostalCode",
@@ -19453,7 +19453,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerCity",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerState",
+            $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerPostalCode",
@@ -24223,7 +24223,7 @@ export default {
             $ref: "#/parameters/rowFilter.location.city",
           },
           {
-            $ref: "#/parameters/rowFilter.location.state",
+            $ref: "#/parameters/rowFilter.location.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.location.postalCode",
@@ -24333,7 +24333,7 @@ export default {
             $ref: "#/parameters/rowFilter.location.city",
           },
           {
-            $ref: "#/parameters/rowFilter.location.state",
+            $ref: "#/parameters/rowFilter.location.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.location.postalCode",
@@ -24397,7 +24397,7 @@ export default {
             $ref: "#/parameters/rowFilter.location.city",
           },
           {
-            $ref: "#/parameters/rowFilter.location.state",
+            $ref: "#/parameters/rowFilter.location.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.location.postalCode",
@@ -26884,7 +26884,7 @@ export default {
             $ref: "#/parameters/rowFilter.address.city",
           },
           {
-            $ref: "#/parameters/rowFilter.address.state",
+            $ref: "#/parameters/rowFilter.address.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.address.postalCode",
@@ -26973,7 +26973,7 @@ export default {
             $ref: "#/parameters/rowFilter.address.city",
           },
           {
-            $ref: "#/parameters/rowFilter.address.state",
+            $ref: "#/parameters/rowFilter.address.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.address.postalCode",
@@ -27016,7 +27016,7 @@ export default {
             $ref: "#/parameters/rowFilter.address.city",
           },
           {
-            $ref: "#/parameters/rowFilter.address.state",
+            $ref: "#/parameters/rowFilter.address.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.address.postalCode",
@@ -28702,7 +28702,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLocations.customerCity",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLocations.customerState",
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLocations.customerPostalCode",
@@ -28723,7 +28723,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCity",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentState",
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentPostalCode",
@@ -39699,7 +39699,7 @@ export default {
           format: "text",
           type: "string",
         },
-        state: {
+        stateProvince: {
           format: "text",
           type: "string",
         },
@@ -41536,7 +41536,7 @@ export default {
           format: "text",
           type: "string",
         },
-        supplierState: {
+        supplierStateProvince: {
           format: "text",
           type: "string",
         },
@@ -41566,7 +41566,7 @@ export default {
           format: "text",
           type: "string",
         },
-        deliveryState: {
+        deliveryStateProvince: {
           format: "text",
           type: "string",
         },
@@ -41598,7 +41598,7 @@ export default {
           format: "text",
           type: "string",
         },
-        customerState: {
+        customerStateProvince: {
           format: "text",
           type: "string",
         },
@@ -44555,7 +44555,7 @@ export default {
           format: "text",
           type: "string",
         },
-        customerState: {
+        customerStateProvince: {
           format: "text",
           type: "string",
         },
@@ -46689,7 +46689,7 @@ export default {
         "name",
         "addressLine1",
         "city",
-        "state",
+        "stateProvince",
         "postalCode",
         "timezone",
         "companyId",
@@ -46719,7 +46719,7 @@ export default {
           format: "text",
           type: "string",
         },
-        state: {
+        stateProvince: {
           format: "text",
           type: "string",
         },
@@ -47791,7 +47791,7 @@ export default {
           format: "text",
           type: "string",
         },
-        state: {
+        stateProvince: {
           format: "text",
           type: "string",
         },
@@ -48497,7 +48497,7 @@ export default {
           format: "text",
           type: "string",
         },
-        customerState: {
+        customerStateProvince: {
           format: "text",
           type: "string",
         },
@@ -48527,7 +48527,7 @@ export default {
           format: "text",
           type: "string",
         },
-        paymentState: {
+        paymentStateProvince: {
           format: "text",
           type: "string",
         },
@@ -56227,8 +56227,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.company.state": {
-      name: "state",
+    "rowFilter.company.stateProvince": {
+      name: "stateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -58627,8 +58627,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLocations.supplierState": {
-      name: "supplierState",
+    "rowFilter.purchaseOrderLocations.supplierStateProvince": {
+      name: "supplierStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -58676,8 +58676,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLocations.deliveryState": {
-      name: "deliveryState",
+    "rowFilter.purchaseOrderLocations.deliveryStateProvince": {
+      name: "deliveryStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -58732,8 +58732,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLocations.customerState": {
-      name: "customerState",
+    "rowFilter.purchaseOrderLocations.customerStateProvince": {
+      name: "customerStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -62579,8 +62579,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteCustomerDetails.customerState": {
-      name: "customerState",
+    "rowFilter.quoteCustomerDetails.customerStateProvince": {
+      name: "customerStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -65462,8 +65462,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.location.state": {
-      name: "state",
+    "rowFilter.location.stateProvince": {
+      name: "stateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -66808,8 +66808,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.address.state": {
-      name: "state",
+    "rowFilter.address.stateProvince": {
+      name: "stateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -67719,8 +67719,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLocations.customerState": {
-      name: "customerState",
+    "rowFilter.salesOrderLocations.customerStateProvince": {
+      name: "customerStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -67768,8 +67768,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLocations.paymentState": {
-      name: "paymentState",
+    "rowFilter.salesOrderLocations.paymentStateProvince": {
+      name: "paymentStateProvince",
       required: false,
       format: "text",
       in: "query",

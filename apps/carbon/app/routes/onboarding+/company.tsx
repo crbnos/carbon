@@ -163,7 +163,7 @@ export default function OnboardingCompany() {
     name: company?.name ?? "",
     addressLine1: company?.addressLine1 ?? "",
     city: company?.city ?? "",
-    state: company?.state ?? "",
+    stateProvince: company?.stateProvince ?? "",
     postalCode: company?.postalCode ?? "",
     countryCode: company?.countryCode ?? "",
   };
@@ -185,7 +185,7 @@ export default function OnboardingCompany() {
             <Input autoFocus name="name" label="Company Name" />
             <Input name="addressLine1" label="Address" />
             <Input name="city" label="City" />
-            <Input name="state" label="State" />
+            <Input name="stateProvince" label="State / Province" />
             <Input name="postalCode" label="Postal Code" />
             <Country />
           </VStack>

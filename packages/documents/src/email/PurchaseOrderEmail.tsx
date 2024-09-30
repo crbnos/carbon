@@ -41,7 +41,7 @@ const PurchaseOrderEmail = ({
     deliveryAddressLine1,
     deliveryAddressLine2,
     deliveryCity,
-    deliveryState,
+    deliveryStateProvince,
     deliveryPostalCode,
     deliveryCountryCode,
     dropShipment,
@@ -49,7 +49,7 @@ const PurchaseOrderEmail = ({
     customerAddressLine1,
     customerAddressLine2,
     customerCity,
-    customerState,
+    customerStateProvince,
     customerPostalCode,
     customerCountryCode,
   } = purchaseOrderLocations;
@@ -149,7 +149,7 @@ const PurchaseOrderEmail = ({
                       <Text>
                         {formatCityStatePostalCode(
                           customerCity,
-                          customerState,
+                          customerStateProvince,
                           customerPostalCode
                         )}
                       </Text>
@@ -168,7 +168,7 @@ const PurchaseOrderEmail = ({
                       <Text>
                         {formatCityStatePostalCode(
                           deliveryCity,
-                          deliveryState,
+                          deliveryStateProvince,
                           deliveryPostalCode
                         )}
                       </Text>

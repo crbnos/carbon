@@ -63,7 +63,7 @@ const QuotePDF = ({
     customerAddressLine1,
     customerAddressLine2,
     customerCity,
-    customerState,
+    customerStateProvince,
     customerPostalCode,
     customerCountryCode,
   } = quoteCustomerDetails;
@@ -148,7 +148,7 @@ const QuotePDF = ({
             <Text>
               {formatCityStatePostalCode(
                 customerCity,
-                customerState,
+                customerStateProvince,
                 customerPostalCode
               )}
             </Text>

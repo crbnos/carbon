@@ -43,7 +43,7 @@ const Location = (props: LocationSelectProps) => {
             addressLine1: "",
             addressLine2: "",
             city: "",
-            state: "",
+            stateProvince: "",
             postalCode: "",
             countryCode: "",
           }}

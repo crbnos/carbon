@@ -47,14 +47,14 @@ const SalesOrderEmail = ({
     customerAddressLine1,
     customerAddressLine2,
     customerCity,
-    customerState,
+    customerStateProvince,
     customerPostalCode,
     customerCountryCode,
     // paymentCustomerName,
     // paymentAddressLine1,
     // paymentAddressLine2,
     // paymentCity,
-    // paymentState,
+    // paymentStateProvince,
     // paymentPostalCode,
     // paymentCountryCode,
   } = salesOrderLocations;
@@ -148,7 +148,7 @@ const SalesOrderEmail = ({
                   <Text>
                     {formatCityStatePostalCode(
                       customerCity,
-                      customerState,
+                      customerStateProvince,
                       customerPostalCode
                     )}
                   </Text>

@@ -68,7 +68,7 @@ export default function NewLocationRoute() {
     addressLine1: "",
     addressLine2: "",
     city: "",
-    state: "",
+    stateProvince: "",
     postalCode: "",
   };
 

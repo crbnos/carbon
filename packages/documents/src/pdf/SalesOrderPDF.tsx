@@ -56,14 +56,14 @@ const SalesOrderPDF = ({
     customerAddressLine1,
     customerAddressLine2,
     customerCity,
-    customerState,
+    customerStateProvince,
     customerPostalCode,
     customerCountryCode,
     paymentCustomerName,
     paymentAddressLine1,
     paymentAddressLine2,
     paymentCity,
-    paymentState,
+    paymentStateProvince,
     paymentPostalCode,
     paymentCountryCode,
   } = salesOrderLocations;
@@ -105,7 +105,7 @@ const SalesOrderPDF = ({
             <Text style={tw("text-sm")}>
               {formatCityStatePostalCode(
                 customerCity,
-                customerState,
+                customerStateProvince,
                 customerPostalCode
               )}
             </Text>
@@ -123,7 +123,7 @@ const SalesOrderPDF = ({
             <Text style={tw("text-sm")}>
               {formatCityStatePostalCode(
                 paymentCity,
-                paymentState,
+                paymentStateProvince,
                 paymentPostalCode
               )}
             </Text>

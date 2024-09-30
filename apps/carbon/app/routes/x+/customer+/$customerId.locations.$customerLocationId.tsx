@@ -106,7 +106,7 @@ export default function EditCustomerLocationRoute() {
     addressLine1: location?.address?.addressLine1 ?? "",
     addressLine2: location?.address?.addressLine2 ?? "",
     city: location?.address?.city ?? "",
-    state: location?.address?.state ?? "",
+    stateProvince: location?.address?.stateProvince ?? "",
     postalCode: location?.address?.postalCode ?? "",
     countryCode: location?.address?.country?.alpha2 ?? "",
     ...getCustomFields(location?.customFields),

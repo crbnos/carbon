@@ -193,7 +193,7 @@ function CompanyBreadcrumb() {
                     <Input autoFocus name="name" label="Company Name" />
                     <Input name="addressLine1" label="Address" />
                     <Input name="city" label="City" />
-                    <Input name="state" label="State" />
+                    <Input name="stateProvince" label="State / Province" />
                     <Input name="postalCode" label="Postal Code" />
                   </VStack>
                 </ModalBody>
