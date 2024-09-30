@@ -133,9 +133,10 @@ ALTER TABLE "currency" ADD CONSTRAINT "currency_currencyCode_fkey"
   FOREIGN KEY ("code") REFERENCES "currencyCode"("code") 
   ON DELETE SET NULL ON UPDATE CASCADE;
 
--- Drop the name and symbol columns from the currency table
+-- Drop the name, symbol, and isBaseCurrency columns from the currency table
 ALTER TABLE "currency" DROP COLUMN "name";
 ALTER TABLE "currency" DROP COLUMN "symbol";
+ALTER TABLE "currency" DROP COLUMN "isBaseCurrency";
 
 -- Base currency code
 -- Add a baseCurrencyCode column to the company table
@@ -166,3 +167,10 @@ CREATE OR REPLACE VIEW "companies" WITH(SECURITY_INVOKER=true) AS
       ON e.id = uc."userId" AND e."companyId" = uc."companyId"
     LEFT JOIN "employeeType" et
       ON et.id = e."employeeTypeId";
+
+-- Create a currencies view with all of the columns from the currency table, joined with the currencyCode table
+CREATE OR REPLACE VIEW "currencies" WITH(SECURITY_INVOKER=true) AS
+  SELECT c.*, cc."name", cc."symbol"
+  FROM "currency" c
+  INNER JOIN "currencyCode" cc
+    ON cc."code" = c."code";

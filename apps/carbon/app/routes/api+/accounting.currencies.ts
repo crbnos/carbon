@@ -4,7 +4,7 @@ import { json } from "@vercel/remix";
 import { getCurrenciesList } from "~/modules/accounting";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client } = await requirePermissions(request, {});
 
-  return json(await getCurrenciesList(client, companyId));
+  return json(await getCurrenciesList(client));
 }
