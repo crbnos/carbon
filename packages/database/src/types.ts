@@ -1912,6 +1912,7 @@ export type Database = {
         Row: {
           addressLine1: string | null
           addressLine2: string | null
+          baseCurrencyCode: string
           city: string | null
           countryCode: string | null
           email: string | null
@@ -1929,6 +1930,7 @@ export type Database = {
         Insert: {
           addressLine1?: string | null
           addressLine2?: string | null
+          baseCurrencyCode: string
           city?: string | null
           countryCode?: string | null
           email?: string | null
@@ -1946,6 +1948,7 @@ export type Database = {
         Update: {
           addressLine1?: string | null
           addressLine2?: string | null
+          baseCurrencyCode?: string
           city?: string | null
           countryCode?: string | null
           email?: string | null
@@ -1995,6 +1998,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "company_baseCurrencyCode_fkey"
+            columns: ["baseCurrencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -22271,6 +22281,7 @@ export type Database = {
         Row: {
           addressLine1: string | null
           addressLine2: string | null
+          baseCurrencyCode: string | null
           city: string | null
           companyId: string | null
           countryCode: string | null
@@ -22324,6 +22335,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "company_baseCurrencyCode_fkey"
+            columns: ["baseCurrencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "userToCompany_companyId_fkey"
@@ -25408,14 +25426,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27168,14 +27186,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

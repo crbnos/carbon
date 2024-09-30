@@ -107,6 +107,7 @@ export default function Company() {
     stateProvince: company.stateProvince ?? "",
     postalCode: company.postalCode ?? "",
     countryCode: company.countryCode ?? "",
+    baseCurrencyCode: company.baseCurrencyCode ?? undefined,
     phone: company.phone ?? undefined,
     email: company.email ?? undefined,
     website: company.website ?? undefined,

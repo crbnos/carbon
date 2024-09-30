@@ -34,7 +34,7 @@ import {
   Breadcrumbs as BreadcrumbsBase,
 } from "~/components";
 
-import { Input, Submit } from "~/components/Form";
+import { Currency, Input, Submit } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { useRouteData, useUser } from "~/hooks";
 import { companyValidator, type Company } from "~/modules/settings";
@@ -197,6 +197,7 @@ function CompanyBreadcrumb() {
                     <Input name="stateProvince" label="State / Province" />
                     <Input name="postalCode" label="Postal Code" />
                     <Country name="countryCode" />
+                    <Currency name="baseCurrencyCode" label="Base Currency" />
                   </VStack>
                 </ModalBody>
                 <ModalFooter>

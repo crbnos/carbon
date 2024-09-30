@@ -16,7 +16,7 @@ import {
 import { getLocalTimeZone } from "@internationalized/date";
 import { Link, useLoaderData } from "@remix-run/react";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { Hidden, Input, Submit } from "~/components/Form";
+import { Currency, Hidden, Input, Submit } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { useOnboarding } from "~/hooks";
 import { insertEmployeeJob } from "~/modules/people";
@@ -113,10 +113,12 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to seed company");
     }
 
+    const { baseCurrencyCode, ...locationData } = data;
+
     // TODO: move all of this to transaction
     const [locationInsert] = await Promise.all([
       upsertLocation(serviceRole, {
-        ...data,
+        ...locationData,
         name: "Headquarters",
         companyId,
         timezone: getLocalTimeZone(),
@@ -188,6 +190,7 @@ export default function OnboardingCompany() {
             <Input name="stateProvince" label="State / Province" />
             <Input name="postalCode" label="Postal Code" />
             <Country name="countryCode" />
+            <Currency name="baseCurrencyCode" label="Base Currency" />
           </VStack>
         </CardContent>
 

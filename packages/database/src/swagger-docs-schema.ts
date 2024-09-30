@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.2 (a4e00ff)",
+    version: "12.0.1 (cd38da5)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -8353,6 +8353,9 @@ export default {
             $ref: "#/parameters/rowFilter.companies.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.companies.baseCurrencyCode",
+          },
+          {
             $ref: "#/parameters/rowFilter.companies.userId",
           },
           {
@@ -8845,6 +8848,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.company.baseCurrencyCode",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8949,6 +8955,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.company.baseCurrencyCode",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -9005,6 +9014,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.company.baseCurrencyCode",
           },
           {
             $ref: "#/parameters/body.company",
@@ -39737,6 +39749,12 @@ export default {
           format: "text",
           type: "string",
         },
+        baseCurrencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
         userId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -40025,7 +40043,7 @@ export default {
       type: "object",
     },
     company: {
-      required: ["id", "name"],
+      required: ["id", "name", "baseCurrencyCode"],
       properties: {
         id: {
           default: "public.xid()",
@@ -40088,6 +40106,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        baseCurrencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
           type: "string",
         },
@@ -46932,7 +46956,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -46981,7 +47005,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -56293,6 +56317,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.companies.baseCurrencyCode": {
+      name: "baseCurrencyCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.companies.userId": {
       name: "userId",
       required: false,
@@ -56777,6 +56808,13 @@ export default {
     },
     "rowFilter.company.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.company.baseCurrencyCode": {
+      name: "baseCurrencyCode",
       required: false,
       format: "text",
       in: "query",
