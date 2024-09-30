@@ -252,6 +252,13 @@ export async function getRecentJobOperationsByEmployee(
   });
 }
 
+export async function getWorkCenter(
+  client: SupabaseClient<Database>,
+  workCenterId: string
+) {
+  return client.from("workCenter").select("*").eq("id", workCenterId).single();
+}
+
 export async function getWorkCentersByLocation(
   client: SupabaseClient<Database>,
   locationId: string

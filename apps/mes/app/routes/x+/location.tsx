@@ -11,15 +11,18 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {});
   const formData = await request.formData();
 
-  const location = formData.get("location");
-  if (!location || typeof location !== "string") {
+  const currentLocation = formData.get("location");
+  if (!currentLocation || typeof currentLocation !== "string") {
     return null;
   }
 
-  const workCenters = await getWorkCentersByLocation(client, location);
+  const workCenters = await getWorkCentersByLocation(client, currentLocation);
   const workCenter = workCenters?.data?.[0]?.id ?? "";
 
+  console.log(`location.tsx: ${currentLocation}`);
   throw redirect(path.to.authenticatedRoot, {
-    headers: { "Set-Cookie": setLocationAndWorkCenter(location, workCenter) },
+    headers: {
+      "Set-Cookie": setLocationAndWorkCenter(currentLocation, workCenter),
+    },
   });
 }

@@ -16,19 +16,21 @@ import {
 import { LuSearch } from "react-icons/lu";
 import { defaultLayout } from "~/utils/layout";
 
-import { notFound } from "@carbon/auth";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import {
   Outlet,
   useLoaderData,
   useNavigate,
   useParams,
 } from "@remix-run/react";
-import { json, type LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { useMemo, useState } from "react";
 import { OperationsList } from "~/components";
 import {
   getJobOperationsByWorkCenter,
+  getWorkCenter,
   getWorkCentersByLocation,
 } from "~/services/jobs.service";
 import {
@@ -46,21 +48,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { workCenterId } = params;
   if (!workCenterId) throw notFound("workCenterId not found");
-  const { location, workCenter } = await getLocationAndWorkCenter(
-    request,
-    client,
-    {
+  const { location: currentLocation, workCenter: currentWorkCenter } =
+    await getLocationAndWorkCenter(request, client, {
       companyId,
       userId,
-    }
-  );
+    });
+
+  const workCenter = await getWorkCenter(client, workCenterId);
+  if (workCenter.error) {
+    throw redirect(
+      path.to.jobs,
+      await flash(
+        request,
+        error(workCenter.error, "Failed to fetch work center")
+      )
+    );
+  }
 
   const [operations, workCenters] = await Promise.all([
     getJobOperationsByWorkCenter(client, {
-      locationId: location,
+      locationId: workCenter.data.locationId!,
       workCenterId: workCenterId,
     }),
-    getWorkCentersByLocation(client, location),
+    getWorkCentersByLocation(client, workCenter.data.locationId!),
   ]);
 
   const payload = {
@@ -68,13 +78,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     workCenters: workCenters.data ?? [],
   };
 
-  if (workCenter !== workCenterId) {
-    const locationId =
-      workCenters.data?.find((wc) => wc.id === workCenterId)?.locationId ??
-      location;
+  if (
+    currentWorkCenter !== workCenterId ||
+    currentLocation !== workCenter.data?.locationId
+  ) {
     return json(payload, {
       headers: {
-        "Set-Cookie": setLocationAndWorkCenter(locationId, workCenterId),
+        "Set-Cookie": setLocationAndWorkCenter(
+          workCenter.data.locationId! ?? currentLocation,
+          workCenter.data.id
+        ),
       },
     });
   }

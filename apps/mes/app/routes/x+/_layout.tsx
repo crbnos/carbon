@@ -76,6 +76,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }),
   ]);
 
+  if (storedLocations.updated) {
+    console.log(`_layout.tsx`, storedLocations.location);
+  }
+
   return json(
     {
       session: {

@@ -35,9 +35,12 @@ export function setWorkCenter(workCenter: string) {
   });
 }
 
-export function setLocationAndWorkCenter(location: string, workCenter: string) {
+export function setLocationAndWorkCenter(
+  currentLocation: string,
+  workCenter: string
+) {
   return [
-    cookie.serialize(locationCookieName, location, {
+    cookie.serialize(locationCookieName, currentLocation, {
       path: "/",
       maxAge: 31536000,
     }),

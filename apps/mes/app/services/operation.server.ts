@@ -17,7 +17,7 @@ import {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {});
 
-  const { operationId, workCenterId } = params;
+  const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
   const [events, job, operation] = await Promise.all([
@@ -31,14 +31,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (job.error) {
     throw redirect(
-      path.to.workCenter(workCenterId!),
+      path.to.jobs,
       await flash(request, error(job.error, "Failed to fetch job"))
     );
   }
 
   if (operation.error) {
     throw redirect(
-      path.to.workCenter(workCenterId!),
+      path.to.jobs,
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
   }
