@@ -1088,7 +1088,7 @@ export async function insertSalesOrderLines(
   return client.from("salesOrderLine").insert(salesOrderLines).select("id");
 }
 
-export async function releaseQuote(
+export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
   userId: string
@@ -1113,6 +1113,7 @@ export async function releaseQuote(
       updatedAt: today(getLocalTimeZone()).toString(),
       updatedBy: userId,
     })
+    .neq("status", "No Quote")
     .eq("quoteId", quoteId);
 }
 

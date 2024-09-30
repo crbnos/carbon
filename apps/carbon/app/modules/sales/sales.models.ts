@@ -83,9 +83,10 @@ export const getMethodValidator = z.object({
 });
 
 export const quoteLineStatusType = [
-  "Draft",
+  "Not Started",
   "In Progress",
   "Complete",
+  "No Quote",
 ] as const;
 
 export const quoteStatusType = [
@@ -143,6 +144,7 @@ export const quoteLineValidator = z.object({
     zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
   ),
   modelUploadId: zfd.text(z.string().optional()),
+  noQuoteReason: zfd.text(z.string().optional()),
 });
 
 export const quoteMaterialValidator = z

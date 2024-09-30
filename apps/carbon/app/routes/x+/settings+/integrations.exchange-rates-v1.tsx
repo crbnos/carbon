@@ -15,7 +15,6 @@ import {
 import { path } from "~/utils/path";
 
 const defaultValue = {
-  apiKey: "",
   active: false,
 };
 
@@ -65,14 +64,10 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { active, ...data } = validation.data;
-
   const update = await upsertIntegration(client, {
     id: "exchange-rates-v1",
-    active,
-    metadata: {
-      ...data,
-    },
+    active: validation.data.active,
+    metadata: {},
     companyId,
     updatedBy: userId,
   });

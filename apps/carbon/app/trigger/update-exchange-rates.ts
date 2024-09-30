@@ -1,64 +1,92 @@
-import { getCarbonServiceRole } from "@carbon/auth";
-import { schedules, wait } from "@trigger.dev/sdk/v3";
-import type { ExchangeRatesClient, Rates } from "~/lib/exchange-rates.server";
+import { EXCHANGE_RATES_API_KEY, getCarbonServiceRole } from "@carbon/auth";
+import { schedules } from "@trigger.dev/sdk/v3";
+import type { Rates } from "~/lib/exchange-rates.server";
 import { getExchangeRatesClient } from "~/lib/exchange-rates.server";
 import type { CurrencyCode } from "~/modules/accounting";
-import { exchangeRatesFormValidator } from "~/modules/settings";
 
 const serviceRole = getCarbonServiceRole();
 
 export const updateExchangeRates = schedules.task({
   id: "update-exchange-rates",
-  cron: "0 */8 * * *",
+  cron: "0 0 * * *",
   run: async () => {
     let rates: Rates;
-    let hasRates = false;
-    let exchangeRatesClient: ExchangeRatesClient | undefined;
 
+    console.log(`💵 Exchange Rates Task Started: ${new Date().toISOString()}`);
     const integrations = await serviceRole
       .from("companyIntegration")
-      .select("active, metadata, companyId")
-      .eq("id", "exchange-rates-v1");
+      .select("active, companyId")
+      .eq("id", "exchange-rates-v1")
+      .eq("active", true);
 
     if (integrations.error) {
-      console.error(JSON.stringify(integrations.error));
+      console.error(
+        `Error fetching integrations: ${JSON.stringify(integrations.error)}`
+      );
       return;
     }
 
-    console.log(`💵 Exchange Rates Task: ${new Date().toISOString()}`);
-    for (const integration of integrations.data) {
-      const integrationMetadata = exchangeRatesFormValidator.safeParse(
-        integration?.metadata
+    if (integrations.data?.length === 0) {
+      console.log("No active exchange rate integrations found. Exiting task.");
+      return;
+    }
+
+    console.log(`Found ${integrations.data.length} active integrations`);
+
+    const exchangeRatesClient = getExchangeRatesClient(EXCHANGE_RATES_API_KEY);
+    if (!exchangeRatesClient) {
+      console.error(
+        "Exchange rates client is undefined. Check API key configuration."
       );
+      return;
+    }
 
-      if (!integrationMetadata.success || integration?.active !== true)
-        continue;
+    try {
+      rates = await exchangeRatesClient.getExchangeRates();
+      if (!rates) throw new Error("No rates returned from exchange rates API");
+      console.log(
+        `Successfully fetched exchange rates for ${
+          Object.keys(rates).length
+        } currencies`
+      );
+    } catch (error) {
+      console.error(
+        `Error fetching exchange rates: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return;
+    }
 
+    const updatedAt = new Date().toISOString();
+
+    for (const integration of integrations.data) {
+      console.log(
+        `Processing integration for company ID: ${integration.companyId}`
+      );
       try {
-        if (!hasRates) {
-          exchangeRatesClient = getExchangeRatesClient(
-            integrationMetadata.data.apiKey
-          );
-
-          if (!exchangeRatesClient) continue;
-          console.log(JSON.stringify(exchangeRatesClient.getMetaData()));
-          rates = await exchangeRatesClient.getExchangeRates();
-          console.log(JSON.stringify(rates));
-          hasRates = true;
-        }
-        // @ts-expect-error
-        if (!rates) throw new Error("No rates found");
-
-        const updatedAt = new Date().toISOString();
-
-        const { data } = await serviceRole
+        const { data, error } = await serviceRole
           .from("currency")
           .select("*")
           .eq("companyId", integration.companyId);
-        if (!data) continue;
+
+        if (error) {
+          console.error(
+            `Error fetching currencies for company ${
+              integration.companyId
+            }: ${JSON.stringify(error)}`
+          );
+          continue;
+        }
+
+        if (!data || data.length === 0) {
+          console.log(
+            `No currencies found for company ${integration.companyId}`
+          );
+          continue;
+        }
 
         const updates = data
-          // eslint-disable-next-line no-loop-func
           .map((currency) => ({
             ...currency,
             exchangeRate: Number(
@@ -70,21 +98,41 @@ export const updateExchangeRates = schedules.task({
           }))
           .filter((currency) => currency.exchangeRate);
 
-        if (updates?.length === 0) continue;
-
-        const { error } = await serviceRole.from("currency").upsert(updates);
-        if (error) {
-          console.error(JSON.stringify(error));
+        if (updates.length === 0) {
+          console.log(
+            `No currency updates needed for company ${integration.companyId}`
+          );
           continue;
         }
+
+        console.log(
+          `Updating ${updates.length} currencies for company ${integration.companyId}`
+        );
+        const { error: upsertError } = await serviceRole
+          .from("currency")
+          .upsert(updates);
+        if (upsertError) {
+          console.error(
+            `Error updating currencies for company ${
+              integration.companyId
+            }: ${JSON.stringify(upsertError)}`
+          );
+        } else {
+          console.log(
+            `Successfully updated currencies for company ${integration.companyId}`
+          );
+        }
       } catch (err) {
-        // TODO: notify someone
-        console.error(JSON.stringify(err));
+        console.error(
+          `Unexpected error processing company ${integration.companyId}: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
       }
     }
-    console.log("Success");
 
-    // Wait for 8 hours before the next run
-    await wait.for({ hours: 8 });
+    console.log(
+      `💵 Exchange Rates Task Completed: ${new Date().toISOString()}`
+    );
   },
 });

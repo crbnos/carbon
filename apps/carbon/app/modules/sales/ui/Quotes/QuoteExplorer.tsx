@@ -20,7 +20,15 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuChevronDown, LuPlus, LuTrash } from "react-icons/lu";
+import {
+  LuCheckCircle,
+  LuChevronDown,
+  LuCircle,
+  LuClock3,
+  LuPlus,
+  LuTrash,
+  LuXCircle,
+} from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty, ItemThumbnail } from "~/components";
 import type { Tree } from "~/components/TreeView";
@@ -34,6 +42,7 @@ import {
 } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import type { quoteLineStatusType } from "../../sales.models";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
@@ -61,7 +70,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     itemReadableId: "",
     locationId: quoteData?.quote?.locationId ?? defaults.locationId ?? "",
     methodType: "Make" as const,
-    status: "Draft" as const,
+    status: "Not Started" as const,
     quantity: [1],
     unitOfMeasureCode: "",
   };
@@ -201,6 +210,21 @@ function QuoteLineItem({
     }
   };
 
+  function getStatusIcon(status: (typeof quoteLineStatusType)[number]) {
+    switch (status) {
+      case "Not Started":
+        return <LuCircle className="text-blue-600" />;
+      case "No Quote":
+        return <LuXCircle className="text-red-600" />;
+      case "Complete":
+        return <LuCheckCircle className="text-green-600" />;
+      case "In Progress":
+        return <LuClock3 className="text-yellow-600" />;
+      default:
+        return null;
+    }
+  }
+
   return (
     <VStack spacing={0}>
       <HStack
@@ -219,9 +243,14 @@ function QuoteLineItem({
           />
 
           <VStack spacing={0}>
-            <span className="font-semibold line-clamp-1">
-              {line.itemReadableId}
-            </span>
+            <HStack>
+              <span className="font-semibold line-clamp-1">
+                {line.itemReadableId}
+              </span>
+              <div className="ml-auto">
+                {getStatusIcon(line.status ?? "Not Started")}
+              </div>
+            </HStack>
             <span className="font-mono text-muted-foreground text-xs line-clamp-1">
               {line.customerPartId}
               {line.customerPartRevision && ` (${line.customerPartRevision})`}
@@ -229,19 +258,21 @@ function QuoteLineItem({
           </VStack>
         </HStack>
         <HStack spacing={0}>
-          {line.methodType === "Make" && permissions.can("update", "sales") && (
-            <IconButton
-              aria-label={disclosure.isOpen ? "Hide" : "Show"}
-              className={cn("animate", disclosure.isOpen && "-rotate-180")}
-              icon={<LuChevronDown />}
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                disclosure.onToggle();
-              }}
-            />
-          )}
+          {line.methodType === "Make" &&
+            permissions.can("update", "sales") &&
+            line.status !== "No Quote" && (
+              <IconButton
+                aria-label={disclosure.isOpen ? "Hide" : "Show"}
+                className={cn("animate", disclosure.isOpen && "-rotate-180")}
+                icon={<LuChevronDown />}
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  disclosure.onToggle();
+                }}
+              />
+            )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -269,7 +300,8 @@ function QuoteLineItem({
       </HStack>
       {disclosure.isOpen &&
         line.methodType === "Make" &&
-        permissions.can("update", "sales") && (
+        permissions.can("update", "sales") &&
+        line.status !== "No Quote" && (
           <VStack className="border-b border-border p-1">
             <QuoteBoMExplorer methods={flattenedMethods} />
           </VStack>

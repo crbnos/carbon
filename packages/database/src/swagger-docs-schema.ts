@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.1 (cd38da5)",
+    version: "12.0.2 (a4e00ff)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -13067,6 +13067,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.additionalCharges",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.noQuoteReason",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.modelId",
@@ -30556,6 +30562,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.noQuoteReason",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -30684,6 +30693,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.noQuoteReason",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -30764,6 +30776,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.noQuoteReason",
           },
           {
             $ref: "#/parameters/body.quoteLine",
@@ -41663,7 +41678,7 @@ export default {
           type: "integer",
         },
         status: {
-          enum: ["Draft", "In Progress", "Complete"],
+          enum: ["Not Started", "In Progress", "Complete", "No Quote"],
           format: 'public."quoteLineStatus"',
           type: "string",
         },
@@ -41749,6 +41764,16 @@ export default {
         },
         additionalCharges: {
           format: "jsonb",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        noQuoteReason: {
+          format: "text",
+          type: "string",
         },
         modelId: {
           format: "text",
@@ -49662,8 +49687,8 @@ export default {
           type: "integer",
         },
         status: {
-          default: "Draft",
-          enum: ["Draft", "In Progress", "Complete"],
+          default: "Not Started",
+          enum: ["Not Started", "In Progress", "Complete", "No Quote"],
           format: 'public."quoteLineStatus"',
           type: "string",
         },
@@ -49755,6 +49780,10 @@ export default {
         locationId: {
           description:
             "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        noQuoteReason: {
           format: "text",
           type: "string",
         },
@@ -58976,6 +59005,20 @@ export default {
       name: "additionalCharges",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.noQuoteReason": {
+      name: "noQuoteReason",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -69427,6 +69470,13 @@ export default {
     },
     "rowFilter.quoteLine.locationId": {
       name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLine.noQuoteReason": {
+      name: "noQuoteReason",
       required: false,
       format: "text",
       in: "query",

@@ -19,7 +19,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const workCenters = await getWorkCentersByLocation(client, currentLocation);
   const workCenter = workCenters?.data?.[0]?.id ?? "";
 
-  console.log(`location.tsx: ${currentLocation}`);
   throw redirect(path.to.authenticatedRoot, {
     headers: {
       "Set-Cookie": setLocationAndWorkCenter(currentLocation, workCenter),

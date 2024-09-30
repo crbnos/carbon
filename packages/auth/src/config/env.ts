@@ -67,6 +67,10 @@ export const AUTODESK_CLIENT_SECRET = getEnv("AUTODESK_CLIENT_SECRET", {
   isRequired: false,
 });
 export const DOMAIN = getEnv("DOMAIN", { isRequired: false }); // preview environments need no domain
+export const EXCHANGE_RATES_API_KEY = getEnv("EXCHANGE_RATES_API_KEY", {
+  isRequired: false,
+  isSecret: true,
+});
 export const SUPABASE_SERVICE_ROLE = getEnv("SUPABASE_SERVICE_ROLE");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";

@@ -21,7 +21,7 @@ import {
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { TextArea, ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -327,6 +327,12 @@ const QuoteLineForm = ({
                       />
 
                       <CustomFormFields table="quoteLine" />
+                      {initialValues.status === "No Quote" && (
+                        <TextArea
+                          name="noQuoteReason"
+                          label="No Quote Reason"
+                        />
+                      )}
                     </div>
                     <div className="flex gap-y-4">
                       <ArrayNumeric

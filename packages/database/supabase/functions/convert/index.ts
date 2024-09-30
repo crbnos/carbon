@@ -376,7 +376,7 @@ serve(async (req: Request) => {
               modelUploadId: line.modelUploadId,
               notes: line.internalNotes,
               quantity: line.quantity,
-              status: "Draft",
+              status: "Not Started",
               unitOfMeasureCode: line.unitOfMeasureCode,
               companyId,
               createdBy: userId,

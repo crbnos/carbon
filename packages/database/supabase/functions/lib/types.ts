@@ -14164,6 +14164,7 @@ export type Database = {
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
+          noQuoteReason: string | null
           notes: Json | null
           quantity: number[] | null
           quoteId: string
@@ -14189,6 +14190,7 @@ export type Database = {
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          noQuoteReason?: string | null
           notes?: Json | null
           quantity?: number[] | null
           quoteId: string
@@ -14214,6 +14216,7 @@ export type Database = {
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          noQuoteReason?: string | null
           notes?: Json | null
           quantity?: number[] | null
           quoteId?: string
@@ -25614,12 +25617,14 @@ export type Database = {
           itemId: string | null
           itemReadableId: string | null
           itemType: string | null
+          locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           modelId: string | null
           modelName: string | null
           modelPath: string | null
           modelSize: number | null
           modelUploadId: string | null
+          noQuoteReason: string | null
           notes: Json | null
           quantity: number[] | null
           quoteId: string | null
@@ -25736,6 +25741,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "item"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "quoteLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "quoteLine_quoteId_fkey"
@@ -27011,14 +27037,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -29529,7 +29555,7 @@ export type Database = {
         | "Reject"
         | "Request Approval"
       purchaseOrderType: "Purchase" | "Return"
-      quoteLineStatus: "Draft" | "In Progress" | "Complete"
+      quoteLineStatus: "Not Started" | "In Progress" | "Complete" | "No Quote"
       quoteStatus:
         | "Draft"
         | "Sent"
