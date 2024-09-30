@@ -1,7 +1,7 @@
 import { ValidatedForm } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { z } from "zod";
-import { Hidden, Input, Submit } from "~/components/Form";
+import { Currency, Hidden, Input, Submit } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { companyValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
@@ -31,6 +31,7 @@ const CompanyForm = ({ company }: CompanyFormProps) => {
             <Input name="stateProvince" label="State / Province" />
             <Input name="postalCode" label="Postal Code" />
             <Country name="countryCode" label="Country" />
+            <Currency name="baseCurrencyCode" label="Base Currency" />
             <Input name="phone" label="Phone Number" />
             <Input name="fax" label="Fax Number" />
             <Input name="email" label="Email" />

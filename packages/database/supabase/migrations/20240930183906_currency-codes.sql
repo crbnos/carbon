@@ -136,3 +136,33 @@ ALTER TABLE "currency" ADD CONSTRAINT "currency_currencyCode_fkey"
 -- Drop the name and symbol columns from the currency table
 ALTER TABLE "currency" DROP COLUMN "name";
 ALTER TABLE "currency" DROP COLUMN "symbol";
+
+-- Base currency code
+-- Add a baseCurrencyCode column to the company table
+ALTER TABLE "company" ADD COLUMN "baseCurrencyCode" TEXT;
+
+-- Add foreign key constraint
+ALTER TABLE "company" ADD CONSTRAINT "company_baseCurrencyCode_fkey" 
+  FOREIGN KEY ("baseCurrencyCode") REFERENCES "currencyCode"("code") 
+  ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Set the base currency code to USD for all existing companies
+UPDATE "company" SET "baseCurrencyCode" = 'USD';
+
+-- Make the baseCurrencyCode column non-nullable
+ALTER TABLE "company" ALTER COLUMN "baseCurrencyCode" SET NOT NULL;
+
+-- Remake the companies view
+DROP VIEW IF EXISTS "companies";
+CREATE OR REPLACE VIEW "companies" WITH(SECURITY_INVOKER=true) AS
+  SELECT DISTINCT
+    c.*,
+    uc.*,
+    et.name AS "employeeType"
+    FROM "userToCompany" uc
+    INNER JOIN "company" c
+      ON c.id = uc."companyId"
+    LEFT JOIN "employee" e
+      ON e.id = uc."userId" AND e."companyId" = uc."companyId"
+    LEFT JOIN "employeeType" et
+      ON et.id = e."employeeTypeId";
