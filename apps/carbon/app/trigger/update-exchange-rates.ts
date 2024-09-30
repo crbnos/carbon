@@ -1,5 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth";
-import { task, wait } from "@trigger.dev/sdk/v3";
+import { schedules, wait } from "@trigger.dev/sdk/v3";
 import type { ExchangeRatesClient, Rates } from "~/lib/exchange-rates.server";
 import { getExchangeRatesClient } from "~/lib/exchange-rates.server";
 import type { CurrencyCode } from "~/modules/accounting";
@@ -7,8 +7,9 @@ import { exchangeRatesFormValidator } from "~/modules/settings";
 
 const serviceRole = getCarbonServiceRole();
 
-export const updateExchangeRates = task({
+export const updateExchangeRates = schedules.task({
   id: "update-exchange-rates",
+  cron: "0 */8 * * *",
   run: async () => {
     let rates: Rates;
     let hasRates = false;

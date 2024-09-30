@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "apps/carbon/app/trigger/**"
+  workflow_dispatch:
 
 jobs:
   deploy:
