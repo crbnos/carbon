@@ -28,12 +28,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     supplierLocationId
   );
   if (deleteSupplierLocationError) {
+    const errorMessage =
+      deleteSupplierLocationError.code === "23503"
+        ? "Supplier location is used elsewhere, cannot delete"
+        : "Failed to delete supplier location";
     throw redirect(
       path.to.supplierLocations(supplierId),
-      await flash(
-        request,
-        error(deleteSupplierLocationError, "Failed to delete supplier location")
-      )
+      await flash(request, error(deleteSupplierLocationError, errorMessage))
     );
   }
 

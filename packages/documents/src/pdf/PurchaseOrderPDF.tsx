@@ -3,6 +3,7 @@ import { Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
 import type { JSONContent } from "@carbon/react";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import type { PDF } from "../types";
 import {
   getLineDescription,
@@ -10,7 +11,6 @@ import {
   getLineTotal,
   getTotal,
 } from "../utils/purchase-order";
-import { formatAddress } from "../utils/shared";
 import { Header, Note, Summary, Template } from "./components";
 
 interface PurchaseOrderPDFProps extends PDF {
@@ -56,24 +56,24 @@ const PurchaseOrderPDF = ({
     supplierAddressLine1,
     supplierAddressLine2,
     supplierCity,
-    supplierState,
+    supplierStateProvince,
     supplierPostalCode,
-    supplierCountryCode,
+    supplierCountryName,
     deliveryName,
     deliveryAddressLine1,
     deliveryAddressLine2,
     deliveryCity,
-    deliveryState,
+    deliveryStateProvince,
     deliveryPostalCode,
-    deliveryCountryCode,
+    deliveryCountryName,
     dropShipment,
     customerName,
     customerAddressLine1,
     customerAddressLine2,
     customerCity,
-    customerState,
+    customerStateProvince,
     customerPostalCode,
-    customerCountryCode,
+    customerCountryName,
   } = purchaseOrderLocations;
 
   return (
@@ -107,9 +107,13 @@ const PurchaseOrderPDF = ({
             {supplierAddressLine1 && <Text>{supplierAddressLine1}</Text>}
             {supplierAddressLine2 && <Text>{supplierAddressLine2}</Text>}
             <Text>
-              {formatAddress(supplierCity, supplierState, supplierPostalCode)}
+              {formatCityStatePostalCode(
+                supplierCity,
+                supplierStateProvince,
+                supplierPostalCode
+              )}
             </Text>
-            <Text>{supplierCountryCode}</Text>
+            <Text>{supplierCountryName}</Text>
           </View>
           {dropShipment ? (
             <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
@@ -118,9 +122,13 @@ const PurchaseOrderPDF = ({
               {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
               {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
               <Text>
-                {formatAddress(customerCity, customerState, customerPostalCode)}
+                {formatCityStatePostalCode(
+                  customerCity,
+                  customerStateProvince,
+                  customerPostalCode
+                )}
               </Text>
-              <Text>{customerCountryCode}</Text>
+              <Text>{customerCountryName}</Text>
             </View>
           ) : (
             <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
@@ -129,9 +137,13 @@ const PurchaseOrderPDF = ({
               {deliveryAddressLine1 && <Text>{deliveryAddressLine1}</Text>}
               {deliveryAddressLine2 && <Text>{deliveryAddressLine2}</Text>}
               <Text>
-                {formatAddress(deliveryCity, deliveryState, deliveryPostalCode)}
+                {formatCityStatePostalCode(
+                  deliveryCity,
+                  deliveryStateProvince,
+                  deliveryPostalCode
+                )}
               </Text>
-              <Text>{deliveryCountryCode}</Text>
+              <Text>{deliveryCountryName}</Text>
             </View>
           )}
         </View>

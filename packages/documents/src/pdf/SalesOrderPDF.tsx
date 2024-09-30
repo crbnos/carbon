@@ -3,6 +3,7 @@ import { Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
 import type { JSONContent } from "@carbon/react";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import type { PDF } from "../types";
 import {
   getLineDescription,
@@ -10,7 +11,6 @@ import {
   getLineTotal,
   getTotal,
 } from "../utils/sales-order";
-import { formatAddress } from "../utils/shared";
 import { Header, Note, Summary, Template } from "./components";
 
 interface SalesOrderPDFProps extends PDF {
@@ -56,16 +56,16 @@ const SalesOrderPDF = ({
     customerAddressLine1,
     customerAddressLine2,
     customerCity,
-    customerState,
+    customerStateProvince,
     customerPostalCode,
-    customerCountryCode,
+    customerCountryName,
     paymentCustomerName,
     paymentAddressLine1,
     paymentAddressLine2,
     paymentCity,
-    paymentState,
+    paymentStateProvince,
     paymentPostalCode,
-    paymentCountryCode,
+    paymentCountryName,
   } = salesOrderLocations;
 
   return (
@@ -103,9 +103,13 @@ const SalesOrderPDF = ({
               <Text style={tw("text-sm")}>{customerAddressLine2}</Text>
             )}
             <Text style={tw("text-sm")}>
-              {formatAddress(customerCity, customerState, customerPostalCode)}
+              {formatCityStatePostalCode(
+                customerCity,
+                customerStateProvince,
+                customerPostalCode
+              )}
             </Text>
-            <Text style={tw("text-sm")}>{customerCountryCode}</Text>
+            <Text style={tw("text-sm")}>{customerCountryName}</Text>
           </View>
           <View style={tw("flex flex-col gap-1 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Bill To</Text>
@@ -117,9 +121,13 @@ const SalesOrderPDF = ({
               <Text style={tw("text-sm")}>{paymentAddressLine2}</Text>
             )}
             <Text style={tw("text-sm")}>
-              {formatAddress(paymentCity, paymentState, paymentPostalCode)}
+              {formatCityStatePostalCode(
+                paymentCity,
+                paymentStateProvince,
+                paymentPostalCode
+              )}
             </Text>
-            <Text style={tw("text-sm")}>{paymentCountryCode}</Text>
+            <Text style={tw("text-sm")}>{paymentCountryName}</Text>
           </View>
         </View>
         <View style={tw("flex flex-row justify-between mb-5")}>

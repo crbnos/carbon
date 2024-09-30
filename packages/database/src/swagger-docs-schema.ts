@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.1 (cd38da5)",
+    version: "12.0.2 (a4e00ff)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -8212,7 +8212,7 @@ export default {
             $ref: "#/parameters/rowFilter.companies.city",
           },
           {
-            $ref: "#/parameters/rowFilter.companies.state",
+            $ref: "#/parameters/rowFilter.companies.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.companies.postalCode",
@@ -8704,7 +8704,7 @@ export default {
             $ref: "#/parameters/rowFilter.company.city",
           },
           {
-            $ref: "#/parameters/rowFilter.company.state",
+            $ref: "#/parameters/rowFilter.company.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.company.postalCode",
@@ -8808,7 +8808,7 @@ export default {
             $ref: "#/parameters/rowFilter.company.city",
           },
           {
-            $ref: "#/parameters/rowFilter.company.state",
+            $ref: "#/parameters/rowFilter.company.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.company.postalCode",
@@ -8866,7 +8866,7 @@ export default {
             $ref: "#/parameters/rowFilter.company.city",
           },
           {
-            $ref: "#/parameters/rowFilter.company.state",
+            $ref: "#/parameters/rowFilter.company.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.company.postalCode",
@@ -9601,13 +9601,13 @@ export default {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.country.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.country.name",
           },
           {
-            $ref: "#/parameters/rowFilter.country.code",
+            $ref: "#/parameters/rowFilter.country.alpha2",
+          },
+          {
+            $ref: "#/parameters/rowFilter.country.alpha3",
           },
           {
             $ref: "#/parameters/select",
@@ -9669,13 +9669,13 @@ export default {
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.country.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.country.name",
           },
           {
-            $ref: "#/parameters/rowFilter.country.code",
+            $ref: "#/parameters/rowFilter.country.alpha2",
+          },
+          {
+            $ref: "#/parameters/rowFilter.country.alpha3",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -9691,13 +9691,13 @@ export default {
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.country.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.country.name",
           },
           {
-            $ref: "#/parameters/rowFilter.country.code",
+            $ref: "#/parameters/rowFilter.country.alpha2",
+          },
+          {
+            $ref: "#/parameters/rowFilter.country.alpha3",
           },
           {
             $ref: "#/parameters/body.country",
@@ -12898,13 +12898,16 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierCity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierState",
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierPostalCode",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierCountryName",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryName",
@@ -12919,13 +12922,16 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryCity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryState",
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryPostalCode",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.deliveryCountryName",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.dropShipment",
@@ -12943,13 +12949,16 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerCity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerState",
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerPostalCode",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.customerCountryName",
           },
           {
             $ref: "#/parameters/select",
@@ -19459,13 +19468,16 @@ export default {
             $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerCity",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerState",
+            $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerPostalCode",
           },
           {
             $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerCountryName",
           },
           {
             $ref: "#/parameters/select",
@@ -24229,7 +24241,7 @@ export default {
             $ref: "#/parameters/rowFilter.location.city",
           },
           {
-            $ref: "#/parameters/rowFilter.location.state",
+            $ref: "#/parameters/rowFilter.location.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.location.postalCode",
@@ -24339,7 +24351,7 @@ export default {
             $ref: "#/parameters/rowFilter.location.city",
           },
           {
-            $ref: "#/parameters/rowFilter.location.state",
+            $ref: "#/parameters/rowFilter.location.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.location.postalCode",
@@ -24403,7 +24415,7 @@ export default {
             $ref: "#/parameters/rowFilter.location.city",
           },
           {
-            $ref: "#/parameters/rowFilter.location.state",
+            $ref: "#/parameters/rowFilter.location.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.location.postalCode",
@@ -26890,7 +26902,7 @@ export default {
             $ref: "#/parameters/rowFilter.address.city",
           },
           {
-            $ref: "#/parameters/rowFilter.address.state",
+            $ref: "#/parameters/rowFilter.address.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.address.postalCode",
@@ -26979,7 +26991,7 @@ export default {
             $ref: "#/parameters/rowFilter.address.city",
           },
           {
-            $ref: "#/parameters/rowFilter.address.state",
+            $ref: "#/parameters/rowFilter.address.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.address.postalCode",
@@ -27022,7 +27034,7 @@ export default {
             $ref: "#/parameters/rowFilter.address.city",
           },
           {
-            $ref: "#/parameters/rowFilter.address.state",
+            $ref: "#/parameters/rowFilter.address.stateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.address.postalCode",
@@ -28708,13 +28720,16 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLocations.customerCity",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLocations.customerState",
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLocations.customerPostalCode",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLocations.customerCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerCountryName",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCustomerName",
@@ -28729,13 +28744,16 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCity",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentState",
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentStateProvince",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentPostalCode",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCountryName",
           },
           {
             $ref: "#/parameters/select",
@@ -39360,7 +39378,7 @@ export default {
           format: "text",
           type: "string",
         },
-        state: {
+        stateProvince: {
           format: "text",
           type: "string",
         },
@@ -39714,7 +39732,7 @@ export default {
           format: "text",
           type: "string",
         },
-        state: {
+        stateProvince: {
           format: "text",
           type: "string",
         },
@@ -40031,19 +40049,21 @@ export default {
       type: "object",
     },
     country: {
-      required: ["id", "name", "code"],
+      required: ["name", "alpha2", "alpha3"],
       properties: {
-        id: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "integer",
-          type: "integer",
-        },
         name: {
           format: "text",
           type: "string",
         },
-        code: {
-          format: "text",
+        alpha2: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "character",
+          maxLength: 2,
+          type: "string",
+        },
+        alpha3: {
+          format: "character",
+          maxLength: 3,
           type: "string",
         },
       },
@@ -41549,7 +41569,7 @@ export default {
           format: "text",
           type: "string",
         },
-        supplierState: {
+        supplierStateProvince: {
           format: "text",
           type: "string",
         },
@@ -41559,9 +41579,13 @@ export default {
         },
         supplierCountryCode: {
           description:
-            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
-          format: "integer",
-          type: "integer",
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        supplierCountryName: {
+          format: "text",
+          type: "string",
         },
         deliveryName: {
           format: "text",
@@ -41579,7 +41603,7 @@ export default {
           format: "text",
           type: "string",
         },
-        deliveryState: {
+        deliveryStateProvince: {
           format: "text",
           type: "string",
         },
@@ -41588,6 +41612,10 @@ export default {
           type: "string",
         },
         deliveryCountryCode: {
+          format: "text",
+          type: "string",
+        },
+        deliveryCountryName: {
           format: "text",
           type: "string",
         },
@@ -41611,7 +41639,7 @@ export default {
           format: "text",
           type: "string",
         },
-        customerState: {
+        customerStateProvince: {
           format: "text",
           type: "string",
         },
@@ -41621,9 +41649,13 @@ export default {
         },
         customerCountryCode: {
           description:
-            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
-          format: "integer",
-          type: "integer",
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        customerCountryName: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -44578,7 +44610,7 @@ export default {
           format: "text",
           type: "string",
         },
-        customerState: {
+        customerStateProvince: {
           format: "text",
           type: "string",
         },
@@ -44588,9 +44620,13 @@ export default {
         },
         customerCountryCode: {
           description:
-            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
-          format: "integer",
-          type: "integer",
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        customerCountryName: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -46571,7 +46607,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -46620,7 +46656,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -46712,7 +46748,7 @@ export default {
         "name",
         "addressLine1",
         "city",
-        "state",
+        "stateProvince",
         "postalCode",
         "timezone",
         "companyId",
@@ -46742,7 +46778,7 @@ export default {
           format: "text",
           type: "string",
         },
-        state: {
+        stateProvince: {
           format: "text",
           type: "string",
         },
@@ -47814,7 +47850,7 @@ export default {
           format: "text",
           type: "string",
         },
-        state: {
+        stateProvince: {
           format: "text",
           type: "string",
         },
@@ -47824,9 +47860,9 @@ export default {
         },
         countryCode: {
           description:
-            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
-          format: "integer",
-          type: "integer",
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
         },
         phone: {
           format: "text",
@@ -48520,7 +48556,7 @@ export default {
           format: "text",
           type: "string",
         },
-        customerState: {
+        customerStateProvince: {
           format: "text",
           type: "string",
         },
@@ -48530,9 +48566,13 @@ export default {
         },
         customerCountryCode: {
           description:
-            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
-          format: "integer",
-          type: "integer",
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        customerCountryName: {
+          format: "text",
+          type: "string",
         },
         paymentCustomerName: {
           format: "text",
@@ -48550,7 +48590,7 @@ export default {
           format: "text",
           type: "string",
         },
-        paymentState: {
+        paymentStateProvince: {
           format: "text",
           type: "string",
         },
@@ -48560,9 +48600,13 @@ export default {
         },
         paymentCountryCode: {
           description:
-            "Note:\nThis is a Foreign Key to `country.id`.<fk table='country' column='id'/>",
-          format: "integer",
-          type: "integer",
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        paymentCountryName: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -55765,8 +55809,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.companies.state": {
-      name: "state",
+    "rowFilter.companies.stateProvince": {
+      name: "stateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -56254,8 +56298,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.company.state": {
-      name: "state",
+    "rowFilter.company.stateProvince": {
+      name: "stateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -56675,13 +56719,6 @@ export default {
         $ref: "#/definitions/country",
       },
     },
-    "rowFilter.country.id": {
-      name: "id",
-      required: false,
-      format: "integer",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.country.name": {
       name: "name",
       required: false,
@@ -56689,10 +56726,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.country.code": {
-      name: "code",
+    "rowFilter.country.alpha2": {
+      name: "alpha2",
       required: false,
-      format: "text",
+      format: "character",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.country.alpha3": {
+      name: "alpha3",
+      required: false,
+      format: "character",
       in: "query",
       type: "string",
     },
@@ -58654,8 +58698,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLocations.supplierState": {
-      name: "supplierState",
+    "rowFilter.purchaseOrderLocations.supplierStateProvince": {
+      name: "supplierStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -58671,7 +58715,14 @@ export default {
     "rowFilter.purchaseOrderLocations.supplierCountryCode": {
       name: "supplierCountryCode",
       required: false,
-      format: "integer",
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLocations.supplierCountryName": {
+      name: "supplierCountryName",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -58703,8 +58754,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLocations.deliveryState": {
-      name: "deliveryState",
+    "rowFilter.purchaseOrderLocations.deliveryStateProvince": {
+      name: "deliveryStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -58719,6 +58770,13 @@ export default {
     },
     "rowFilter.purchaseOrderLocations.deliveryCountryCode": {
       name: "deliveryCountryCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLocations.deliveryCountryName": {
+      name: "deliveryCountryName",
       required: false,
       format: "text",
       in: "query",
@@ -58759,8 +58817,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLocations.customerState": {
-      name: "customerState",
+    "rowFilter.purchaseOrderLocations.customerStateProvince": {
+      name: "customerStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -58776,7 +58834,14 @@ export default {
     "rowFilter.purchaseOrderLocations.customerCountryCode": {
       name: "customerCountryCode",
       required: false,
-      format: "integer",
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLocations.customerCountryName": {
+      name: "customerCountryName",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -62620,8 +62685,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteCustomerDetails.customerState": {
-      name: "customerState",
+    "rowFilter.quoteCustomerDetails.customerStateProvince": {
+      name: "customerStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -62637,7 +62702,14 @@ export default {
     "rowFilter.quoteCustomerDetails.customerCountryCode": {
       name: "customerCountryCode",
       required: false,
-      format: "integer",
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteCustomerDetails.customerCountryName": {
+      name: "customerCountryName",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -65503,8 +65575,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.location.state": {
-      name: "state",
+    "rowFilter.location.stateProvince": {
+      name: "stateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -66849,8 +66921,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.address.state": {
-      name: "state",
+    "rowFilter.address.stateProvince": {
+      name: "stateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -66866,7 +66938,7 @@ export default {
     "rowFilter.address.countryCode": {
       name: "countryCode",
       required: false,
-      format: "integer",
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -67760,8 +67832,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLocations.customerState": {
-      name: "customerState",
+    "rowFilter.salesOrderLocations.customerStateProvince": {
+      name: "customerStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -67777,7 +67849,14 @@ export default {
     "rowFilter.salesOrderLocations.customerCountryCode": {
       name: "customerCountryCode",
       required: false,
-      format: "integer",
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.customerCountryName": {
+      name: "customerCountryName",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -67809,8 +67888,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLocations.paymentState": {
-      name: "paymentState",
+    "rowFilter.salesOrderLocations.paymentStateProvince": {
+      name: "paymentStateProvince",
       required: false,
       format: "text",
       in: "query",
@@ -67826,7 +67905,14 @@ export default {
     "rowFilter.salesOrderLocations.paymentCountryCode": {
       name: "paymentCountryCode",
       required: false,
-      format: "integer",
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLocations.paymentCountryName": {
+      name: "paymentCountryName",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

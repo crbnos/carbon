@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { formatCityStatePostalCode } from "@carbon/utils";
 import {
   Body,
   Column,
@@ -20,7 +21,6 @@ import {
   getLineDescriptionDetails,
   getTotal,
 } from "../utils/purchase-order";
-import { formatAddress } from "../utils/shared";
 
 interface PurchaseOrderEmailProps extends Email {
   purchaseOrder: Database["public"]["Views"]["purchaseOrders"]["Row"];
@@ -41,17 +41,17 @@ const PurchaseOrderEmail = ({
     deliveryAddressLine1,
     deliveryAddressLine2,
     deliveryCity,
-    deliveryState,
+    deliveryStateProvince,
     deliveryPostalCode,
-    deliveryCountryCode,
+    deliveryCountryName,
     dropShipment,
     customerName,
     customerAddressLine1,
     customerAddressLine2,
     customerCity,
-    customerState,
+    customerStateProvince,
     customerPostalCode,
-    customerCountryCode,
+    customerCountryName,
   } = purchaseOrderLocations;
 
   const reSubject = `Re: ${purchaseOrder.purchaseOrderId} from ${company.name}`;
@@ -147,13 +147,13 @@ const PurchaseOrderEmail = ({
                         <Text>{customerAddressLine2}</Text>
                       )}
                       <Text>
-                        {formatAddress(
+                        {formatCityStatePostalCode(
                           customerCity,
-                          customerState,
+                          customerStateProvince,
                           customerPostalCode
                         )}
                       </Text>
-                      <Text>{customerCountryCode}</Text>
+                      <Text>{customerCountryName}</Text>
                     </>
                   ) : (
                     <>
@@ -166,13 +166,13 @@ const PurchaseOrderEmail = ({
                         <Text>{deliveryAddressLine2}</Text>
                       )}
                       <Text>
-                        {formatAddress(
+                        {formatCityStatePostalCode(
                           deliveryCity,
-                          deliveryState,
+                          deliveryStateProvince,
                           deliveryPostalCode
                         )}
                       </Text>
-                      <Text>{deliveryCountryCode}</Text>
+                      <Text>{deliveryCountryName}</Text>
                     </>
                   )}
                 </Column>

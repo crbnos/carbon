@@ -51,16 +51,20 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
         cell: (item) => item.getValue(),
       },
       {
-        accessorKey: "state",
-        header: "State",
+        accessorKey: "stateProvince",
+        header: "State / Province",
         cell: (item) => item.getValue(),
       },
-
       {
-        accessorKey: "timezone",
-        header: "Timezone",
+        accessorKey: "countryCode",
+        header: "Country",
         cell: (item) => item.getValue(),
       },
+      // {
+      //   accessorKey: "timezone",
+      //   header: "Timezone",
+      //   cell: (item) => item.getValue(),
+      // },
       {
         id: "createdBy",
         header: "Created By",

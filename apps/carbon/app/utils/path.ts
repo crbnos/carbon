@@ -17,6 +17,7 @@ export const path = {
       assign: `${api}/assign`,
       autodeskToken: `${api}/autodesk/token`,
       autodeskUpload: `${api}/autodesk/upload`,
+      countries: `${api}/countries`,
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
         generatePath(`${api}/sales/customer-contacts?customerId=${id}`),

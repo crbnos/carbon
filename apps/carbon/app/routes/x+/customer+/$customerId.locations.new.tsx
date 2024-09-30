@@ -5,6 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { useUser } from "~/hooks";
 import {
   CustomerLocationForm,
   customerLocationValidator,
@@ -67,12 +68,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function CustomerLocationsNewRoute() {
   const navigate = useNavigate();
-
+  const { company } = useUser();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
 
   const initialValues = {
     name: "",
+    countryCode: company?.countryCode ?? "",
   };
 
   return (

@@ -35,6 +35,7 @@ import {
 } from "~/components";
 
 import { Input, Submit } from "~/components/Form";
+import Country from "~/components/Form/Country";
 import { useRouteData, useUser } from "~/hooks";
 import { companyValidator, type Company } from "~/modules/settings";
 import { path } from "~/utils/path";
@@ -183,7 +184,7 @@ function CompanyBreadcrumb() {
                 onSubmit={companyForm.onClose}
               >
                 <ModalHeader>
-                  <ModalTitle>Let's setup your new company</ModalTitle>
+                  <ModalTitle>Let's set up your new company</ModalTitle>
                   <ModalDescription>
                     You can always change this later
                   </ModalDescription>
@@ -193,8 +194,9 @@ function CompanyBreadcrumb() {
                     <Input autoFocus name="name" label="Company Name" />
                     <Input name="addressLine1" label="Address" />
                     <Input name="city" label="City" />
-                    <Input name="state" label="State" />
-                    <Input name="postalCode" label="Zip Code" />
+                    <Input name="stateProvince" label="State / Province" />
+                    <Input name="postalCode" label="Postal Code" />
+                    <Country name="countryCode" />
                   </VStack>
                 </ModalBody>
                 <ModalFooter>

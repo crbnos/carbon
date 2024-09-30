@@ -14,6 +14,7 @@ type Company = {
   id: string;
   name: string;
   logo: string | null;
+  countryCode: string | null;
 };
 
 type Groups = string[];
@@ -62,7 +63,8 @@ function isCompany(value: any): value is Company {
   return (
     typeof value.id === "string" &&
     typeof value.name === "string" &&
-    (typeof value.logo === "string" || value.logo === null)
+    (typeof value.logo === "string" || value.logo === null) &&
+    (typeof value.countryCode === "string" || value.countryCode === null)
   );
 }
 

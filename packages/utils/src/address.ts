@@ -13,11 +13,10 @@ export function formatAddressLines(
   }
 }
 
-export function formatCityStateZipCountry(
+export function formatCityStatePostalCode(
   city?: string | null,
-  state?: string | null,
-  zip?: string | null,
-  country?: string | null
+  stateProvince?: string | null,
+  postalCode?: string | null
 ): string {
   // Create an array to hold the different parts of the address
   const parts: string[] = [];
@@ -25,16 +24,15 @@ export function formatCityStateZipCountry(
   // Add city in the correct format
   if (city) parts.push(city);
 
-  // Combine state and zip without a comma if both are provided
-  if (state) {
-    const stateZip = zip ? `${state} ${zip}` : state;
-    parts.push(stateZip);
-  } else if (zip) {
-    parts.push(zip);
+  // Combine state and postalCode without a comma if both are provided
+  if (stateProvince) {
+    const stateProvincePostalCode = postalCode
+      ? `${stateProvince} ${postalCode}`
+      : stateProvince;
+    parts.push(stateProvincePostalCode);
+  } else if (postalCode) {
+    parts.push(postalCode);
   }
-
-  // Add country in the correct format
-  if (country) parts.push(country);
 
   // Join all parts with a comma separator
   return parts.join(", ");
@@ -44,8 +42,8 @@ export function formatAddress(
   addressLine1?: string | null,
   addressLine2?: string | null,
   city?: string | null,
-  state?: string | null,
-  zip?: string | null,
+  stateProvince?: string | null,
+  postalCode?: string | null,
   country?: string | null
 ): string {
   // Create an array to hold the different parts of the address
@@ -54,13 +52,14 @@ export function formatAddress(
   const formattedAddressLines = formatAddressLines(addressLine1, addressLine2);
   if (formattedAddressLines) parts.push(formattedAddressLines);
 
-  const formattedCityStateZipCountry = formatCityStateZipCountry(
+  const formattedCityStatePostalCode = formatCityStatePostalCode(
     city,
-    state,
-    zip,
-    country
+    stateProvince,
+    postalCode
   );
-  if (formattedCityStateZipCountry) parts.push(formattedCityStateZipCountry);
+  if (formattedCityStatePostalCode) parts.push(formattedCityStatePostalCode);
+
+  if (country) parts.push(country);
 
   // Join all parts with a comma separator
   return parts.join(", ");

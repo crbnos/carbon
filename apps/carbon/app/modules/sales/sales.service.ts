@@ -101,11 +101,23 @@ export async function deleteCustomerLocation(
   customerId: string,
   customerLocationId: string
 ) {
-  return client
+  const { data: customerLocation } = await client
     .from("customerLocation")
-    .delete()
+    .select("addressId")
     .eq("customerId", customerId)
-    .eq("id", customerLocationId);
+    .eq("id", customerLocationId)
+    .single();
+
+  if (customerLocation?.addressId) {
+    return client.from("address").delete().eq("id", customerLocation.addressId);
+  } else {
+    // The customerLocation should always have an addressId, but just in case
+    return client
+      .from("customerLocation")
+      .delete()
+      .eq("customerId", customerId)
+      .eq("id", customerLocationId);
+  }
 }
 
 export async function deleteCustomerStatus(
@@ -224,7 +236,7 @@ export async function getCustomerLocation(
   return client
     .from("customerLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, state, country(id, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
     )
     .eq("id", customerContactId)
     .single();
@@ -237,7 +249,7 @@ export async function getCustomerLocations(
   return client
     .from("customerLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, state, country(id, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
     )
     .eq("customerId", customerId);
 }
@@ -981,8 +993,8 @@ export async function insertCustomerLocation(
       addressLine1?: string;
       addressLine2?: string;
       city?: string;
-      state?: string;
-      // countryId: string;
+      stateProvince?: string;
+      countryCode?: string;
       postalCode?: string;
     };
     customFields?: Json;
@@ -1199,8 +1211,8 @@ export async function updateCustomerLocation(
       addressLine1?: string;
       addressLine2?: string;
       city?: string;
-      state?: string;
-      // countryId: string;
+      stateProvince?: string;
+      countryCode?: string;
       postalCode?: string;
     };
     customFields?: Json;

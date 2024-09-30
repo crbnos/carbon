@@ -4,6 +4,7 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
+import { useUser } from "~/hooks";
 import type { getLocationsList } from "~/modules/resources";
 import { LocationForm } from "~/modules/resources";
 import { path } from "~/utils/path";
@@ -16,6 +17,8 @@ const Location = (props: LocationSelectProps) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useLocations();
+
+  const { company } = useUser();
 
   return (
     <>
@@ -43,8 +46,9 @@ const Location = (props: LocationSelectProps) => {
             addressLine1: "",
             addressLine2: "",
             city: "",
-            state: "",
+            stateProvince: "",
             postalCode: "",
+            countryCode: company?.countryCode ?? "",
           }}
         />
       )}

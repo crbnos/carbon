@@ -27,6 +27,10 @@ export async function getBase64ImageFromSupabase(
   return `data:image/png;base64,${base64String}`;
 }
 
+export async function getCountries(client: SupabaseClient<Database>) {
+  return client.from("country").select("*").order("name");
+}
+
 export async function getNotes(
   client: SupabaseClient<Database>,
   documentId: string
