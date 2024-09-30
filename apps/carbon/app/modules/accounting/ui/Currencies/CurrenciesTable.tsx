@@ -2,8 +2,8 @@ import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
-import { Hyperlink, New, Table } from "~/components";
+import { LuPencil } from "react-icons/lu";
+import { Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Currency } from "~/modules/accounting";
@@ -64,19 +64,6 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
             <MenuIcon icon={<LuPencil />} />
             Edit Currency
           </MenuItem>
-          <MenuItem
-            disabled={!permissions.can("delete", "accounting")}
-            onClick={() => {
-              navigate(
-                `${path.to.deleteCurrency(
-                  row.id as string
-                )}?${params.toString()}`
-              );
-            }}
-          >
-            <MenuIcon icon={<LuTrash />} />
-            Delete Currency
-          </MenuItem>
         </>
       );
     },
@@ -88,11 +75,6 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
       data={data}
       columns={columns}
       count={count}
-      primaryAction={
-        permissions.can("create", "accounting") && (
-          <New label="Currency" to={`new?${params.toString()}`} />
-        )
-      }
       renderContextMenu={renderContextMenu}
     />
   );
