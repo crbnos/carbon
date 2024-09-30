@@ -426,9 +426,8 @@ export async function getCurrenciesList(
   companyId: string
 ) {
   return client
-    .from("currency")
+    .from("currencyCode")
     .select("code, name")
-    .eq("companyId", companyId)
     .order("name", { ascending: true });
 }
 

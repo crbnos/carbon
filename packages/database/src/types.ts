@@ -2664,8 +2664,6 @@ export type Database = {
           exchangeRate: number
           id: string
           isBaseCurrency: boolean
-          name: string
-          symbol: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -2680,8 +2678,6 @@ export type Database = {
           exchangeRate?: number
           id?: string
           isBaseCurrency?: boolean
-          name: string
-          symbol?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2696,8 +2692,6 @@ export type Database = {
           exchangeRate?: number
           id?: string
           isBaseCurrency?: boolean
-          name?: string
-          symbol?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2729,6 +2723,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currency_currencyCode_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "currency_updatedBy_fkey"
@@ -2766,6 +2767,24 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
+      }
+      currencyCode: {
+        Row: {
+          code: string
+          name: string
+          symbol: string
+        }
+        Insert: {
+          code: string
+          name: string
+          symbol: string
+        }
+        Update: {
+          code?: string
+          name?: string
+          symbol?: string
+        }
+        Relationships: []
       }
       customer: {
         Row: {
