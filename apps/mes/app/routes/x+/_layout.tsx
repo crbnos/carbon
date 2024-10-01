@@ -1,3 +1,8 @@
+import { CarbonProvider, getCarbon, getCompanies, getUser } from "@carbon/auth";
+import {
+  destroyAuthSession,
+  requireAuthSession,
+} from "@carbon/auth/session.server";
 import {
   AutodeskProvider,
   ClientOnly,
@@ -13,15 +18,11 @@ import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
-import { useEffect, useState } from "react";
-
-import { CarbonProvider, getCarbon, getCompanies, getUser } from "@carbon/auth";
-import {
-  destroyAuthSession,
-  requireAuthSession,
-} from "@carbon/auth/session.server";
+import { useEffect, useRef, useState } from "react";
 import { LuActivity, LuClock, LuInbox } from "react-icons/lu";
+import type { ImperativePanelHandle } from "react-resizable-panels";
 import { AvatarMenu, Nav } from "~/components";
+import { useMediaQuery } from "~/hooks";
 import {
   getActiveJobCount,
   getLocationsByCompany,
@@ -109,6 +110,14 @@ export default function AuthenticatedRoute() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const transition = useNavigation();
+  const panelRef = useRef<ImperativePanelHandle>(null);
+  const { isMobile } = useMediaQuery();
+
+  useEffect(() => {
+    if (isMobile) {
+      panelRef.current?.collapse();
+    }
+  }, [isMobile]);
 
   /* NProgress */
   useEffect(() => {
@@ -133,7 +142,8 @@ export default function AuthenticatedRoute() {
                 className="h-full items-stretch"
               >
                 <ResizablePanel
-                  defaultSize={defaultLayout[0]}
+                  ref={panelRef}
+                  defaultSize={isMobile ? 4 : defaultLayout[0]}
                   collapsedSize={4}
                   collapsible={true}
                   minSize={15}

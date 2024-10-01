@@ -16,9 +16,8 @@ import {
 import { LuSearch } from "react-icons/lu";
 import { defaultLayout } from "~/utils/layout";
 
-import { error, notFound } from "@carbon/auth";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import {
   Outlet,
   useLoaderData,
@@ -26,8 +25,10 @@ import {
   useParams,
 } from "@remix-run/react";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
+import { useMediaQuery } from "~/hooks";
 import {
   getJobOperationsByWorkCenter,
   getWorkCenter,
@@ -56,13 +57,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const workCenter = await getWorkCenter(client, workCenterId);
   if (workCenter.error) {
-    throw redirect(
-      path.to.jobs,
-      await flash(
-        request,
-        error(workCenter.error, "Failed to fetch work center")
-      )
-    );
+    throw redirect(path.to.recent, {
+      headers: {
+        "Set-Cookie": setLocationAndWorkCenter("", ""),
+      },
+    });
   }
 
   const [operations, workCenters] = await Promise.all([
@@ -99,8 +98,21 @@ export default function JobsRoute() {
   const { operations, workCenters } = useLoaderData<typeof loader>();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { workCenterId } = useParams();
+  const { workCenterId, operationId } = useParams();
+
   if (!workCenterId) throw new Error("workCenterId not found");
+
+  const panelRef = useRef<ImperativePanelHandle>(null);
+  const { isMobile } = useMediaQuery();
+
+  useEffect(() => {
+    if (isMobile && !!operationId) {
+      panelRef.current?.collapse();
+    } else {
+      panelRef.current?.expand();
+    }
+  }, [isMobile, operationId]);
+
   const navigate = useNavigate();
 
   const filteredOperations = useMemo(() => {
@@ -116,7 +128,13 @@ export default function JobsRoute() {
 
   return (
     <>
-      <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
+      <ResizablePanel
+        ref={panelRef}
+        collapsible={true}
+        collapsedSize={0}
+        defaultSize={defaultLayout[1]}
+        minSize={isMobile ? 0 : 30}
+      >
         <Tabs defaultValue="current">
           <div className="flex items-center px-4 py-2 h-[52px] bg-background">
             <Heading size="h2">Jobs</Heading>

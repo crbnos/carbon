@@ -372,7 +372,7 @@ export const JobOperation = ({
                             <Th>Part</Th>
                             <Th>Qty Per</Th>
                             <Th>Estimated Qty</Th>
-                            <Th></Th>
+                            <Th className="lg:block hidden"></Th>
                           </Tr>
                         </Thead>
                         <Tbody>
@@ -395,12 +395,15 @@ export const JobOperation = ({
                                   <span className="font-semibold">
                                     {material.itemReadableId}
                                   </span>
-                                  <span>{material.description}</span>
+                                  <span className="md:flex hidden">
+                                    {material.description}
+                                  </span>
                                 </Td>
 
                                 <Td>{material.quantity}</Td>
                                 <Td>{material.estimatedQuantity}</Td>
-                                <Td>
+
+                                <Td className="lg:block hidden">
                                   <Badge variant="secondary">
                                     <MethodIcon
                                       type={material.methodType}
