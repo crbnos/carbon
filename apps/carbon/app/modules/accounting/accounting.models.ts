@@ -180,9 +180,7 @@ export const accountSubcategoryValidator = z.object({
 
 export const currencyValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
   code: z.string().min(1, { message: "Code is required" }),
-  symbol: z.string().min(1, { message: "Symbol is required" }),
   decimalPlaces: zfd.numeric(z.number().min(0).max(4)),
   exchangeRate: zfd.numeric(z.number().min(0, { message: "Rate is required" })),
 });
