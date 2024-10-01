@@ -61,18 +61,24 @@ import type {
   Operation,
   OperationWithDetails,
   ProductionEvent,
+  productionEventType,
   StorageItem,
 } from "~/services/jobs.service";
-import { getDocumentType } from "~/services/jobs.service";
+import {
+  getDocumentType,
+  productionEventValidator,
+} from "~/services/jobs.service";
 import { path } from "~/utils/path";
 
 import { useCarbon } from "@carbon/auth";
+import { Hidden, useIsSubmitting, ValidatedForm } from "@carbon/form";
 import {
   convertDateStringToIsoString,
   convertKbToString,
   formatDurationMilliseconds,
   formatRelativeTime,
 } from "@carbon/utils";
+import { getLocalTimeZone } from "@internationalized/date";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { FaRedoAlt, FaTasks } from "react-icons/fa";
 import { FaCheck, FaOilCan, FaPause, FaPlay, FaTrash } from "react-icons/fa6";
@@ -107,13 +113,14 @@ export const JobOperation = ({
 }: JobOperationProps) => {
   const {
     activeTab,
+    eventType,
     fullScreen,
     isOverdue,
     progress,
     downloadDocument,
     getDocumentPath,
-
     setActiveTab,
+    setEventType,
     setFullScreen,
   } = useOperation(operation, events, job);
 
@@ -141,40 +148,20 @@ export const JobOperation = ({
             )}
             <Heading size="h2">{operation.jobReadableId}</Heading>
           </div>
-          <div className="flex flex-shrink-0 items-center justify-end gap-2">
-            <TabsList className="ml-auto">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger
-                disabled={!job.autodeskUrn && !operation.itemAutodeskUrn}
-                value="model"
-              >
-                Model
-              </TabsTrigger>
-              <TabsTrigger
-                disabled={
-                  !operation.workInstruction ||
-                  Object.keys(operation.workInstruction).length === 0
-                }
-                value="instructions"
-              >
-                Instructions
-              </TabsTrigger>
-            </TabsList>
-            {!fullScreen && (
-              <IconButton
-                aria-label="Expand"
-                icon={<LuExpand />}
-                variant="secondary"
-                onClick={() => setFullScreen(true)}
-              />
-            )}
+          <div className="hidden md:flex flex-shrink-0 items-center justify-end gap-2">
+            <Navigation
+              job={job}
+              operation={operation}
+              fullScreen={fullScreen}
+              setFullScreen={setFullScreen}
+            />
           </div>
         </div>
 
         {!fullScreen && (
           <>
             <Separator />
-            <div className="flex items-center justify-start px-4 py-2 h-[52px] bg-background gap-4">
+            <div className="flex items-center justify-start px-4 py-2 h-[52px] bg-background gap-4 w-full overflow-y-auto">
               {operation.description && (
                 <HStack className="justify-start space-x-2">
                   <LuClipboardCheck className="text-muted-foreground" />
@@ -203,9 +190,18 @@ export const JobOperation = ({
             <Separator />
           </>
         )}
+        <div className="flex md:hidden items-center justify-start px-4 py-2 h-[52px] bg-background gap-4">
+          <Navigation
+            job={job}
+            operation={operation}
+            fullScreen={fullScreen}
+            setFullScreen={setFullScreen}
+          />
+        </div>
+        <Separator className="flex md:hidden" />
 
         <TabsContent value="details">
-          <ScrollArea className="h-[calc(100vh-104px)] pb-36">
+          <ScrollArea className="h-[calc(100vh-156px)] md:h-[calc(100vh-104px)] pb-36">
             <div className="flex items-start justify-between p-4">
               <div className="flex flex-col flex-grow">
                 <Heading size="h2">{operation.itemReadableId}</Heading>
@@ -495,7 +491,7 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
         <TabsContent value="model">
-          <div className="h-[calc(100vh-104px)] p-4">
+          <div className="h-[calc(100vh-156px)] md:h-[calc(100vh-104px)] p-4">
             <AutodeskViewer
               urn={operation.itemAutodeskUrn ?? job.autodeskUrn}
               showDefaultToolbar
@@ -503,7 +499,7 @@ export const JobOperation = ({
           </div>
         </TabsContent>
         <TabsContent value="instructions" className="flex flex-grow bg-card">
-          <ScrollArea className="h-[calc(100vh-104px)] w-full p-4 pb-36">
+          <ScrollArea className="h-[calc(100vh-156px)] md:h-[calc(100vh-104px)] w-full p-4 pb-36">
             <div
               className="prose dark:prose-invert"
               dangerouslySetInnerHTML={{
@@ -533,10 +529,9 @@ export const JobOperation = ({
                   }
                   tooltip="Scrap"
                 />
-                <PlayButton
-                  onStart={(type) => {
-                    alert(type);
-                  }}
+                <StartStopButton
+                  eventType={eventType as (typeof productionEventType)[number]}
+                  operation={operation}
                 />
                 <IconButtonWithTooltip
                   icon={
@@ -551,7 +546,7 @@ export const JobOperation = ({
                   tooltip="Complete"
                 />
               </div>
-              <WorkTypeToggle />
+              <WorkTypeToggle value={eventType} onChange={setEventType} />
             </div>
           </Controls>
         )}
@@ -568,6 +563,7 @@ function useOperation(
   const { carbon } = useCarbon();
   const [fullScreen, setFullScreen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+  const [eventType, setEventType] = useState("Labor");
   const user = useUser();
 
   const getDocumentPath = useCallback(
@@ -641,6 +637,7 @@ function useOperation(
   return {
     active,
     activeTab,
+    eventType,
     fullScreen,
     isOverdue: operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
@@ -649,6 +646,7 @@ function useOperation(
     downloadDocument,
     getDocumentPath,
     setActiveTab,
+    setEventType,
     setFullScreen,
   };
 }
@@ -734,12 +732,18 @@ function IconButtonWithTooltip({
   );
 }
 
-function WorkTypeToggle() {
+function WorkTypeToggle({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (type: string) => void;
+}) {
   return (
-    <ToggleGroup defaultValue="labor" type="single">
+    <ToggleGroup value={value} type="single" onValueChange={onChange}>
       <ToggleGroupItem
         className="w-[110px]"
-        value="setup"
+        value="Setup"
         aria-label="Toggle setup"
       >
         <LuTimer className="h-4 w-4 mr-2" />
@@ -747,7 +751,7 @@ function WorkTypeToggle() {
       </ToggleGroupItem>
       <ToggleGroupItem
         className="w-[110px]"
-        value="labor"
+        value="Labor"
         aria-label="Toggle labor"
       >
         <LuHardHat className="h-4 w-4 mr-2" />
@@ -755,7 +759,7 @@ function WorkTypeToggle() {
       </ToggleGroupItem>
       <ToggleGroupItem
         className="w-[110px]"
-        value="machine"
+        value="Machine"
         aria-label="Toggle machine"
       >
         <LuHammer className="h-4 w-4 mr-2" />
@@ -765,27 +769,63 @@ function WorkTypeToggle() {
   );
 }
 
+const startStopFormId = "start-stop-form";
+function StartStopButton({
+  className,
+  operation,
+  eventType,
+  ...props
+}: ComponentProps<"button"> & {
+  eventType: (typeof productionEventType)[number];
+  operation: OperationWithDetails;
+}) {
+  const isActive = false; // TODO
+
+  return (
+    <ValidatedForm
+      id={startStopFormId}
+      action={path.to.productionEvent}
+      method="post"
+      validator={productionEventValidator}
+      defaultValues={{
+        jobOperationId: operation.id,
+        timezone: getLocalTimeZone(),
+        action: isActive ? "End" : "Start",
+        type: eventType,
+        workCenterId: operation.workCenterId ?? undefined,
+      }}
+    >
+      <Hidden name="jobOperationId" />
+      <Hidden name="timezone" />
+      <Hidden name="action" />
+      <Hidden name="type" />
+      <Hidden name="workCenterId" />
+      {isActive ? <PauseButton type="submit" /> : <PlayButton type="submit" />}
+    </ValidatedForm>
+  );
+}
+
 function PauseButton({ className, ...props }: ComponentProps<"button">) {
+  const isSubmitting = useIsSubmitting(startStopFormId);
   return (
     <ButtonWithTooltip
       {...props}
       tooltip="Pause"
-      className="group w-16 h-16 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all"
+      disabled={isSubmitting}
+      className="group w-16 h-16 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all disabled:opacity-75 text-2xl"
     >
       <FaPause className="text-accent group-hover:scale-125" />
     </ButtonWithTooltip>
   );
 }
 
-function PlayButton({
-  className,
-  onStart,
-  ...props
-}: ComponentProps<"button"> & { onStart: (type: "setup" | "run") => void }) {
+function PlayButton({ className, ...props }: ComponentProps<"button">) {
+  const isSubmitting = useIsSubmitting(startStopFormId);
   return (
     <button
       {...props}
-      className="group w-16 h-16 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all"
+      disabled={isSubmitting}
+      className="group w-16 h-16 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all disabled:opacity-75"
     >
       <FaPlay className="text-accent group-hover:scale-125" />
     </button>
@@ -832,4 +872,48 @@ function ScrapModal({ operation }: { operation: Operation }) {
       </ModalFooter>
     </ModalContent>
   </Modal>;
+}
+
+function Navigation({
+  job,
+  operation,
+  fullScreen,
+  setFullScreen,
+}: {
+  job: Job;
+  operation: OperationWithDetails;
+  fullScreen: boolean;
+  setFullScreen: (value: boolean) => void;
+}) {
+  return (
+    <>
+      <TabsList className="md:ml-auto">
+        <TabsTrigger value="details">Details</TabsTrigger>
+        <TabsTrigger
+          disabled={!job.autodeskUrn && !operation.itemAutodeskUrn}
+          value="model"
+        >
+          Model
+        </TabsTrigger>
+        <TabsTrigger
+          disabled={
+            !operation.workInstruction ||
+            Object.keys(operation.workInstruction).length === 0
+          }
+          value="instructions"
+        >
+          Instructions
+        </TabsTrigger>
+      </TabsList>
+      {!fullScreen && (
+        <IconButton
+          aria-label="Expand"
+          className="hidden md:flex"
+          icon={<LuExpand />}
+          variant="secondary"
+          onClick={() => setFullScreen(true)}
+        />
+      )}
+    </>
+  );
 }

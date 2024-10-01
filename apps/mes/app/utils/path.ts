@@ -30,6 +30,7 @@ export const path = {
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",
+    productionEvent: `${x}/event`,
     recent: `${x}/recent`,
     refreshSession: "/refresh-session",
     requestAccess: "/request-access",

@@ -10,6 +10,7 @@
     "@carbon/kv": "*",
     "@carbon/form": "*",
     "@carbon/utils": "*",
+    "@internationalized/date": "^3.5.2",
     "@react-aria/i18n": "^3.11.0",
     "@remix-run/dev": "~2.10.2",
     "@remix-run/eslint-config": "~2.10.2",
@@ -37,7 +38,8 @@
     "tailwind-scrollbar": "^3.0.5",
     "tailwind-scrollbar-hide": "^1.1.7",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zod-form-data": "*"
   },
   "devDependencies": {
     "@carbon/tailwind": "*",
