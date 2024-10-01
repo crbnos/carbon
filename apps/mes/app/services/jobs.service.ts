@@ -1,6 +1,8 @@
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
 export type BaseOperation = NonNullable<
   Awaited<ReturnType<typeof getJobOperationsByWorkCenter>>["data"]
@@ -66,6 +68,29 @@ export const documentTypes = [
   "Audio",
   "Other",
 ] as const;
+
+export const productionEventType = ["Setup", "Labor", "Machine"] as const;
+
+export const productionEventAction = ["Start", "End"] as const;
+
+export const productionEventValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  jobOperationId: z
+    .string()
+    .min(1, { message: "Job Operation ID is required" }),
+  timezone: zfd.text(z.string()),
+  action: z.enum(productionEventAction, {
+    errorMap: (issue, ctx) => ({
+      message: "Action is required",
+    }),
+  }),
+  type: z.enum(productionEventType, {
+    errorMap: (issue, ctx) => ({
+      message: "Type is required",
+    }),
+  }),
+  workCenterId: zfd.text(z.string().optional()),
+});
 
 export async function getActiveJobOperationsByEmployee(
   client: SupabaseClient<Database>,
@@ -279,4 +304,37 @@ export async function getWorkCentersByCompany(
     .select("*")
     .eq("companyId", companyId)
     .order("name", { ascending: true });
+}
+
+export async function endProductionEvent(
+  client: SupabaseClient<Database>,
+  data: {
+    jobOperationId: string;
+    employeeId: string;
+    endTime: string;
+    type: (typeof productionEventType)[number];
+  }
+) {
+  return client
+    .from("productionEvent")
+    .update({ endTime: data.endTime, updatedBy: data.employeeId })
+    .eq("jobOperationId", data.jobOperationId)
+    .eq("employeeId", data.employeeId)
+    .eq("type", data.type)
+    .is("endTime", null);
+}
+
+export async function startProductionEvent(
+  client: SupabaseClient<Database>,
+  data: Omit<
+    z.infer<typeof productionEventValidator>,
+    "id" | "action" | "timezone"
+  > & {
+    startTime: string;
+    employeeId: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client.from("productionEvent").insert(data).select("*");
 }

@@ -1,3 +1,4 @@
+import { DOMAIN } from "@carbon/auth";
 import * as cookie from "cookie";
 import type { Mode } from "~/types/validators";
 
@@ -16,6 +17,10 @@ export function setMode(mode: Mode | "system") {
   if (mode === "system") {
     return cookie.serialize(cookieName, "", { path: "/", maxAge: -1 });
   } else {
-    return cookie.serialize(cookieName, mode, { path: "/", maxAge: 31536000 });
+    return cookie.serialize(cookieName, mode, {
+      path: "/",
+      maxAge: 31536000,
+      domain: DOMAIN,
+    });
   }
 }
