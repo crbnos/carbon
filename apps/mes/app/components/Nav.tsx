@@ -1,5 +1,6 @@
 import {
   Button,
+  cn,
   HStack,
   IconButton,
   Tooltip,
@@ -32,9 +33,15 @@ export function Nav({ links, isCollapsed }: NavProps) {
           return isCollapsed ? (
             <Tooltip key={index} delayDuration={0}>
               <TooltipTrigger asChild>
-                <Link to={link.to}>
+                <Link to={link.to} className="relative">
                   <IconButton
                     aria-label={link.title}
+                    className={cn(
+                      link.label &&
+                        Number.isInteger(parseInt(link.label)) &&
+                        parseInt(link.label) > 0 &&
+                        "text-red-500"
+                    )}
                     size="lg"
                     icon={<link.icon className="h-4 w-4" />}
                     variant={isSelected ? "primary" : "ghost"}
@@ -63,7 +70,9 @@ export function Nav({ links, isCollapsed }: NavProps) {
                   <link.icon className="mr-2 h-4 w-4" />
                   {link.title}
                 </HStack>
-                {link.label && <span className="ml-auto">{link.label}</span>}
+                {link.label && (
+                  <span className="ml-auto relative">{link.label}</span>
+                )}
               </Link>
             </Button>
           );
