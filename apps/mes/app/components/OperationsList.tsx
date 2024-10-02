@@ -81,7 +81,6 @@ function OperationCard({
   showProgress,
   showStatus,
 }: OperationCardProps) {
-  console.log({ operation });
   const isOverdue =
     operation.jobDeadlineType !== "No Deadline" && operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()

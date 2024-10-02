@@ -26,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { action: productionAction, timezone, ...data } = validation.data;
+  const { id, action: productionAction, timezone, ...data } = validation.data;
 
   if (productionAction === "Start") {
     const startEvent = await startProductionEvent(client, {
@@ -45,11 +45,17 @@ export async function action({ request }: ActionFunctionArgs) {
 
     return json(
       startEvent.data,
-      await flash(request, success("Started operation"))
+      await flash(
+        request,
+        success(`Started ${data.type.toLowerCase()} operation`)
+      )
     );
   } else {
+    if (!id) {
+      return json({}, await flash(request, error("No event id provided")));
+    }
     const endEvent = await endProductionEvent(client, {
-      ...data,
+      id,
       endTime: now(timezone ?? getLocalTimeZone()).toAbsoluteString(),
       employeeId: userId,
     });
@@ -59,5 +65,12 @@ export async function action({ request }: ActionFunctionArgs) {
         await flash(request, error(endEvent.error, "Failed to end event"))
       );
     }
+    return json(
+      endEvent.data,
+      await flash(
+        request,
+        success(`Ended ${data.type.toLowerCase()} operation`)
+      )
+    );
   }
 }

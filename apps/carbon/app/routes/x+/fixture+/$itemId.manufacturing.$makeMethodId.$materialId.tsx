@@ -105,7 +105,7 @@ export default function MethodMaterialMakePage() {
   if (!materialId) throw new Error("Could not find materialId");
 
   return (
-    <VStack spacing={2} className="p-2" key={JSON.stringify(loaderData)}>
+    <VStack spacing={2} className="p-2">
       <MakeMethodBreadcrumbs itemId={item.id} type="Fixture" />
       <ItemForm
         key={`item:${itemId}:${makeMethodId}:${materialId}`}
@@ -113,12 +113,12 @@ export default function MethodMaterialMakePage() {
         initialValues={item}
       />
       <BillOfProcess
-        key={`bop:${itemId}:${makeMethodId}:${materialId}`}
+        key={`bop:${itemId}:${methodOperations.length}`}
         makeMethodId={makeMethodId}
         operations={methodOperations}
       />
       <BillOfMaterial
-        key={`bom:${itemId}:${makeMethodId}:${materialId}`}
+        key={`bom:${itemId}:${methodMaterials.length}`}
         makeMethodId={makeMethodId}
         materials={methodMaterials}
         operations={methodOperations}

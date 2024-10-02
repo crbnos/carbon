@@ -14,12 +14,6 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  NumberDecrementStepper,
-  NumberField,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputGroup,
-  NumberInputStepper,
   Progress,
   ScrollArea,
   Separator,
@@ -41,9 +35,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
   Tr,
+  useDisclosure,
+  useInterval,
+  VStack,
   type JSONContent,
 } from "@carbon/react";
-import { Await, Link } from "@remix-run/react";
+import { Await, Link, useFetcher } from "@remix-run/react";
 import type { ComponentProps, ReactNode } from "react";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import {
@@ -62,30 +59,47 @@ import type {
   OperationWithDetails,
   ProductionEvent,
   productionEventType,
+  ProductionQuantity,
   StorageItem,
 } from "~/services/jobs.service";
 import {
   getDocumentType,
   productionEventValidator,
+  scrapQuantityValidator,
 } from "~/services/jobs.service";
 import { path } from "~/utils/path";
 
 import { useCarbon } from "@carbon/auth";
-import { Hidden, useIsSubmitting, ValidatedForm } from "@carbon/form";
+import {
+  Hidden,
+  Number,
+  TextArea,
+  useIsSubmitting,
+  ValidatedForm,
+} from "@carbon/form";
 import {
   convertDateStringToIsoString,
   convertKbToString,
   formatDurationMilliseconds,
   formatRelativeTime,
 } from "@carbon/utils";
-import { getLocalTimeZone } from "@internationalized/date";
+import {
+  getLocalTimeZone,
+  now,
+  parseAbsolute,
+  toZoned,
+} from "@internationalized/date";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { FaRedoAlt, FaTasks } from "react-icons/fa";
-import { FaCheck, FaOilCan, FaPause, FaPlay, FaTrash } from "react-icons/fa6";
 import {
-  LuChevronDown,
+  FaCheck,
+  FaFlagCheckered,
+  FaPause,
+  FaPlay,
+  FaTrash,
+} from "react-icons/fa6";
+import {
   LuChevronLeft,
-  LuChevronUp,
   LuClipboardCheck,
   LuExpand,
   LuHammer,
@@ -114,20 +128,23 @@ export const JobOperation = ({
   const {
     activeTab,
     eventType,
-    fullScreen,
+    fullscreen,
+    laborProductionEvent,
+    machineProductionEvent,
     isOverdue,
     progress,
+    scrapModal,
+    setupProductionEvent,
     downloadDocument,
     getDocumentPath,
     setActiveTab,
     setEventType,
-    setFullScreen,
   } = useOperation(operation, events, job);
 
   return (
     <OptionallyFullscreen
-      isFullScreen={fullScreen}
-      onClose={() => setFullScreen(false)}
+      isFullScreen={fullscreen.isOpen}
+      onClose={fullscreen.onClose}
     >
       <Tabs
         key={operation.id}
@@ -137,7 +154,7 @@ export const JobOperation = ({
       >
         <div className="flex items-center justify-between px-4 py-2 h-[52px] bg-background">
           <div className="flex items-start flex-grow gap-1">
-            {!fullScreen && (
+            {!fullscreen.isOpen && (
               <Link to={backPath}>
                 <IconButton
                   aria-label="Back"
@@ -152,13 +169,12 @@ export const JobOperation = ({
             <Navigation
               job={job}
               operation={operation}
-              fullScreen={fullScreen}
-              setFullScreen={setFullScreen}
+              fullscreen={fullscreen}
             />
           </div>
         </div>
 
-        {!fullScreen && (
+        {!fullscreen.isOpen && (
           <>
             <Separator />
             <div className="flex items-center justify-start px-4 py-2 h-[52px] bg-background gap-4 w-full overflow-y-auto">
@@ -191,12 +207,7 @@ export const JobOperation = ({
           </>
         )}
         <div className="flex md:hidden items-center justify-start px-4 py-2 h-[52px] bg-background gap-4">
-          <Navigation
-            job={job}
-            operation={operation}
-            fullScreen={fullScreen}
-            setFullScreen={setFullScreen}
-          />
+          <Navigation job={job} operation={operation} fullscreen={fullscreen} />
         </div>
         <Separator className="flex md:hidden" />
 
@@ -260,7 +271,12 @@ export const JobOperation = ({
               <div className="flex flex-col w-full gap-2">
                 {operation.setupDuration > 0 && (
                   <HStack>
-                    <LuTimer className="h-4 w-4 mr-1" />
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <LuTimer className="h-4 w-4 mr-1" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Setup</TooltipContent>
+                    </Tooltip>
                     <Progress
                       numerator={formatDurationMilliseconds(progress.setup)}
                       denominator={formatDurationMilliseconds(
@@ -272,7 +288,12 @@ export const JobOperation = ({
                 )}
                 {operation.laborDuration > 0 && (
                   <HStack>
-                    <LuHardHat className="h-4 w-4 mr-1" />
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <LuHardHat className="h-4 w-4 mr-1" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Labor</TooltipContent>
+                    </Tooltip>
                     <Progress
                       numerator={formatDurationMilliseconds(progress.labor)}
                       denominator={formatDurationMilliseconds(
@@ -284,7 +305,12 @@ export const JobOperation = ({
                 )}
                 {operation.machineDuration > 0 && (
                   <HStack>
-                    <LuHammer className="h-4 w-4 mr-1" />
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <LuHammer className="h-4 w-4 mr-1" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Machine</TooltipContent>
+                    </Tooltip>
                     <Progress
                       numerator={formatDurationMilliseconds(progress.machine)}
                       denominator={formatDurationMilliseconds(
@@ -297,7 +323,12 @@ export const JobOperation = ({
                   </HStack>
                 )}
                 <HStack>
-                  <FaTasks className="h-4 w-4 mr-1" />
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <FaTasks className="h-4 w-4 mr-1" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Quantity</TooltipContent>
+                  </Tooltip>
                   <Progress
                     indicatorClassName={
                       operation.operationStatus === "Paused"
@@ -346,7 +377,7 @@ export const JobOperation = ({
                             : "–"}
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom">
+                      <TooltipContent side="right">
                         {operation.jobDeadlineType}
                       </TooltipContent>
                     </Tooltip>
@@ -516,24 +547,6 @@ export const JobOperation = ({
             <div className="flex flex-col items-center gap-4">
               <div className="flex items-center gap-4 justify-center">
                 <IconButtonWithTooltip
-                  disabled
-                  icon={
-                    <FaOilCan className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip="Non-Conformance Report"
-                />
-
-                <IconButtonWithTooltip
-                  icon={
-                    <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip="Scrap"
-                />
-                <StartStopButton
-                  eventType={eventType as (typeof productionEventType)[number]}
-                  operation={operation}
-                />
-                <IconButtonWithTooltip
                   icon={
                     <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
@@ -541,30 +554,159 @@ export const JobOperation = ({
                 />
                 <IconButtonWithTooltip
                   icon={
+                    <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                  }
+                  tooltip="Scrap"
+                  onClick={scrapModal.onOpen}
+                />
+                <StartStopButton
+                  eventType={eventType as (typeof productionEventType)[number]}
+                  operation={operation}
+                  setupProductionEvent={setupProductionEvent}
+                  laborProductionEvent={laborProductionEvent}
+                  machineProductionEvent={machineProductionEvent}
+                />
+
+                <IconButtonWithTooltip
+                  icon={
                     <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
                   tooltip="Complete"
                 />
+                <IconButtonWithTooltip
+                  icon={
+                    <FaFlagCheckered className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                  }
+                  tooltip="Finish"
+                />
               </div>
-              <WorkTypeToggle value={eventType} onChange={setEventType} />
+              <WorkTypeToggle
+                operation={operation}
+                value={eventType}
+                onChange={setEventType}
+              />
             </div>
           </Controls>
         )}
       </Tabs>
+      {scrapModal.isOpen && (
+        <ScrapModal
+          operation={operation}
+          setupProductionEvent={setupProductionEvent}
+          laborProductionEvent={laborProductionEvent}
+          machineProductionEvent={machineProductionEvent}
+          onClose={scrapModal.onClose}
+        />
+      )}
     </OptionallyFullscreen>
   );
 };
+
+function useActiveEvents(events: ProductionEvent[]): {
+  active: { setup: boolean; labor: boolean; machine: boolean };
+  setupProductionEvent: ProductionEvent | undefined;
+  laborProductionEvent: ProductionEvent | undefined;
+  machineProductionEvent: ProductionEvent | undefined;
+  progress: { setup: number; labor: number; machine: number };
+} {
+  const user = useUser();
+
+  const getProgress = useCallback(() => {
+    const timeNow = now(getLocalTimeZone());
+    return events.reduce(
+      (acc, event) => {
+        if (event.endTime && event.type) {
+          acc[event.type.toLowerCase() as keyof typeof acc] +=
+            (event.duration ?? 0) * 1000;
+        } else if (event.startTime && event.type) {
+          const startTime = toZoned(
+            parseAbsolute(event.startTime, getLocalTimeZone()),
+            getLocalTimeZone()
+          );
+
+          const difference = timeNow.compare(startTime);
+
+          if (difference > 0) {
+            acc[event.type.toLowerCase() as keyof typeof acc] += difference;
+          }
+        }
+        return acc;
+      },
+      {
+        setup: 0,
+        labor: 0,
+        machine: 0,
+      }
+    );
+  }, [events]);
+  const [progress, setProgress] = useState<{
+    setup: number;
+    labor: number;
+    machine: number;
+  }>(getProgress);
+
+  const activeEvents = useMemo(() => {
+    return {
+      setupProductionEvent: events.find(
+        (e) =>
+          e.type === "Setup" && e.endTime === null && e.employeeId === user.id
+      ),
+      laborProductionEvent: events.find(
+        (e) =>
+          e.type === "Labor" && e.endTime === null && e.employeeId === user.id
+      ),
+      machineProductionEvent: events.find(
+        (e) => e.type === "Machine" && e.endTime === null
+      ),
+    };
+  }, [events, user.id]);
+
+  const active = useMemo(() => {
+    return {
+      setup: !!activeEvents.setupProductionEvent,
+      labor: !!activeEvents.laborProductionEvent,
+      machine: !!activeEvents.machineProductionEvent,
+    };
+  }, [activeEvents]);
+
+  useInterval(() => {
+    setProgress(getProgress());
+  }, 1000);
+
+  return {
+    active,
+    ...activeEvents,
+    progress,
+  };
+}
 
 function useOperation(
   operation: OperationWithDetails,
   events: ProductionEvent[],
   job: Job
 ) {
-  const { carbon } = useCarbon();
-  const [fullScreen, setFullScreen] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
-  const [eventType, setEventType] = useState("Labor");
   const user = useUser();
+  const { carbon } = useCarbon();
+  const fullscreen = useDisclosure();
+  const scrapModal = useDisclosure();
+  const [activeTab, setActiveTab] = useState("details");
+  const [eventType, setEventType] = useState(() => {
+    if (operation.laborDuration > 0) {
+      return "Labor";
+    }
+    if (operation.machineDuration > 0) {
+      return "Machine";
+    }
+    return "Setup";
+  });
+
+  const {
+    active,
+    setupProductionEvent,
+    laborProductionEvent,
+    machineProductionEvent,
+    progress,
+  } = useActiveEvents(events);
 
   const getDocumentPath = useCallback(
     (file: StorageItem) => {
@@ -612,49 +754,31 @@ function useOperation(
     [carbon?.storage, getDocumentPath]
   );
 
-  const myActiveEvents = useMemo(
-    () =>
-      events.filter((e) => e.endTime === null && e.employeeId === user.id) ??
-      [],
-    [events, user.id]
-  );
-
-  const active = useMemo(
-    () => ({
-      setup: myActiveEvents.some((e) => e.type === "Setup"),
-      labor: myActiveEvents.some((e) => e.type === "Labor"),
-      machine: myActiveEvents.some((e) => e.type === "Machine"),
-    }),
-    [myActiveEvents]
-  );
-
-  const progress = {
-    setup: 0,
-    labor: 0,
-    machine: 0,
-  };
-
   return {
     active,
     activeTab,
     eventType,
-    fullScreen,
+    fullscreen,
+    laborProductionEvent,
+    machineProductionEvent,
+    progress,
+    scrapModal,
+    setupProductionEvent,
     isOverdue: operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
       : false,
-    progress,
+
     downloadDocument,
     getDocumentPath,
     setActiveTab,
     setEventType,
-    setFullScreen,
   };
 }
 
 function TableSkeleton() {
   return (
     <Table>
-      <thead>
+      <Thead>
         <Tr>
           <Th>
             <Skeleton className="h-4 w-full" />
@@ -663,8 +787,8 @@ function TableSkeleton() {
             <Skeleton className="h-4 w-full" />
           </Th>
         </Tr>
-      </thead>
-      <tbody>
+      </Thead>
+      <Tbody>
         {[...Array(5)].map((_, index) => (
           <Tr key={index}>
             <Td>
@@ -675,7 +799,7 @@ function TableSkeleton() {
             </Td>
           </Tr>
         ))}
-      </tbody>
+      </Tbody>
     </Table>
   );
 }
@@ -708,10 +832,10 @@ function ButtonWithTooltip({
 }: ComponentProps<"button"> & { tooltip: string }) {
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
+      <TooltipTrigger>
         <button {...props}>{children}</button>
       </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
+      <TooltipContent side="top">{tooltip}</TooltipContent>
     </Tooltip>
   );
 }
@@ -725,7 +849,7 @@ function IconButtonWithTooltip({
     <ButtonWithTooltip
       {...props}
       tooltip={tooltip}
-      className="w-12 h-12 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+      className="w-16 h-16 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:opacity-50"
     >
       {icon}
     </ButtonWithTooltip>
@@ -733,38 +857,59 @@ function IconButtonWithTooltip({
 }
 
 function WorkTypeToggle({
+  operation,
   value,
   onChange,
 }: {
+  operation: OperationWithDetails;
   value: string;
   onChange: (type: string) => void;
 }) {
+  const nonZeroDurations = [
+    operation.setupDuration,
+    operation.laborDuration,
+    operation.machineDuration,
+  ].filter((duration) => duration > 0);
+
+  if (nonZeroDurations.length <= 1) {
+    return null;
+  }
+
   return (
     <ToggleGroup value={value} type="single" onValueChange={onChange}>
-      <ToggleGroupItem
-        className="w-[110px]"
-        value="Setup"
-        aria-label="Toggle setup"
-      >
-        <LuTimer className="h-4 w-4 mr-2" />
-        Setup
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        className="w-[110px]"
-        value="Labor"
-        aria-label="Toggle labor"
-      >
-        <LuHardHat className="h-4 w-4 mr-2" />
-        Labor
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        className="w-[110px]"
-        value="Machine"
-        aria-label="Toggle machine"
-      >
-        <LuHammer className="h-4 w-4 mr-2" />
-        Machine
-      </ToggleGroupItem>
+      {operation.setupDuration > 0 && (
+        <ToggleGroupItem
+          className="w-[110px]"
+          value="Setup"
+          size="lg"
+          aria-label="Toggle setup"
+        >
+          <LuTimer className="h-4 w-4 mr-2" />
+          Setup
+        </ToggleGroupItem>
+      )}
+      {operation.laborDuration > 0 && (
+        <ToggleGroupItem
+          className="w-[110px]"
+          value="Labor"
+          size="lg"
+          aria-label="Toggle labor"
+        >
+          <LuHardHat className="h-4 w-4 mr-2" />
+          Labor
+        </ToggleGroupItem>
+      )}
+      {operation.machineDuration > 0 && (
+        <ToggleGroupItem
+          className="w-[110px]"
+          value="Machine"
+          size="lg"
+          aria-label="Toggle machine"
+        >
+          <LuHammer className="h-4 w-4 mr-2" />
+          Machine
+        </ToggleGroupItem>
+      )}
     </ToggleGroup>
   );
 }
@@ -774,12 +919,47 @@ function StartStopButton({
   className,
   operation,
   eventType,
+  setupProductionEvent,
+  laborProductionEvent,
+  machineProductionEvent,
   ...props
 }: ComponentProps<"button"> & {
   eventType: (typeof productionEventType)[number];
   operation: OperationWithDetails;
+  setupProductionEvent: ProductionEvent | undefined;
+  laborProductionEvent: ProductionEvent | undefined;
+  machineProductionEvent: ProductionEvent | undefined;
 }) {
-  const isActive = false; // TODO
+  const fetcher = useFetcher<ProductionEvent>();
+  const isActive = useMemo(() => {
+    if (eventType === "Setup") {
+      return !!setupProductionEvent;
+    }
+    if (eventType === "Labor") {
+      return !!laborProductionEvent;
+    }
+    return !!machineProductionEvent;
+  }, [
+    eventType,
+    setupProductionEvent,
+    laborProductionEvent,
+    machineProductionEvent,
+  ]);
+
+  const id = useMemo(() => {
+    if (eventType === "Setup") {
+      return setupProductionEvent?.id;
+    }
+    if (eventType === "Labor") {
+      return laborProductionEvent?.id;
+    }
+    return machineProductionEvent?.id;
+  }, [
+    eventType,
+    setupProductionEvent,
+    laborProductionEvent,
+    machineProductionEvent,
+  ]);
 
   return (
     <ValidatedForm
@@ -788,18 +968,21 @@ function StartStopButton({
       method="post"
       validator={productionEventValidator}
       defaultValues={{
+        id,
         jobOperationId: operation.id,
         timezone: getLocalTimeZone(),
         action: isActive ? "End" : "Start",
         type: eventType,
         workCenterId: operation.workCenterId ?? undefined,
       }}
+      fetcher={fetcher}
     >
-      <Hidden name="jobOperationId" />
+      <Hidden name="id" value={id} />
+      <Hidden name="jobOperationId" value={operation.id} />
       <Hidden name="timezone" />
-      <Hidden name="action" />
-      <Hidden name="type" />
-      <Hidden name="workCenterId" />
+      <Hidden name="action" value={isActive ? "End" : "Start"} />
+      <Hidden name="type" value={eventType} />
+      <Hidden name="workCenterId" value={operation.workCenterId ?? undefined} />
       {isActive ? <PauseButton type="submit" /> : <PlayButton type="submit" />}
     </ValidatedForm>
   );
@@ -812,7 +995,7 @@ function PauseButton({ className, ...props }: ComponentProps<"button">) {
       {...props}
       tooltip="Pause"
       disabled={isSubmitting}
-      className="group w-16 h-16 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all disabled:opacity-75 text-2xl"
+      className="group w-20 h-20 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all disabled:opacity-75 text-2xl"
     >
       <FaPause className="text-accent group-hover:scale-125" />
     </ButtonWithTooltip>
@@ -825,65 +1008,120 @@ function PlayButton({ className, ...props }: ComponentProps<"button">) {
     <button
       {...props}
       disabled={isSubmitting}
-      className="group w-16 h-16 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all disabled:opacity-75"
+      className="group w-20 h-20 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all disabled:opacity-75 text-xl"
     >
       <FaPlay className="text-accent group-hover:scale-125" />
     </button>
   );
 }
 
-function ScrapModal({ operation }: { operation: Operation }) {
-  <Modal open={false}>
-    <ModalContent>
-      <ModalHeader>
-        <ModalTitle>{`Scrap ${operation.itemReadableId}`}</ModalTitle>
-        <ModalDescription>Select a scrap quantity and reason</ModalDescription>
-      </ModalHeader>
-      <ModalBody>
-        <div className="grid grid-cols-2 gap-4">
-          <NumberField
-            defaultValue={1}
-            // value={1}
-            // onChange={onPurchaseUnitChange}
-            minValue={1}
-            maxValue={operation.operationQuantity}
-          >
-            <NumberInputGroup className="relative">
-              <NumberInput />
-              <NumberInputStepper>
-                <NumberIncrementStepper>
-                  <LuChevronUp size="1em" strokeWidth="3" />
-                </NumberIncrementStepper>
-                <NumberDecrementStepper>
-                  <LuChevronDown size="1em" strokeWidth="3" />
-                </NumberDecrementStepper>
-              </NumberInputStepper>
-            </NumberInputGroup>
-          </NumberField>
-        </div>
-      </ModalBody>
-      <ModalFooter>
-        <Button variant="secondary" onClick={() => {}}>
-          Cancel
-        </Button>
-        <Button variant="destructive" onClick={() => {}}>
-          Scrap
-        </Button>
-      </ModalFooter>
-    </ModalContent>
-  </Modal>;
+function ScrapModal({
+  operation,
+  setupProductionEvent,
+  laborProductionEvent,
+  machineProductionEvent,
+  onClose,
+}: {
+  operation: Operation;
+  setupProductionEvent: ProductionEvent | undefined;
+  laborProductionEvent: ProductionEvent | undefined;
+  machineProductionEvent: ProductionEvent | undefined;
+  onClose: () => void;
+}) {
+  const fetcher = useFetcher<ProductionQuantity>();
+  const [scrapReason, setScrapReason] = useState("");
+  return (
+    <Modal open>
+      <ModalContent>
+        <ValidatedForm
+          action={path.to.scrap}
+          method="post"
+          validator={scrapQuantityValidator}
+          defaultValues={{
+            jobOperationId: operation.id,
+            quantity: 1,
+            scrapReason: "",
+            setupProductionEventId: setupProductionEvent?.id,
+            laborProductionEventId: laborProductionEvent?.id,
+            machineProductionEventId: machineProductionEvent?.id,
+          }}
+          fetcher={fetcher}
+          onSubmit={() => {
+            onClose();
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>{`Scrap ${operation.itemReadableId}`}</ModalTitle>
+            <ModalDescription>
+              Select a scrap quantity and reason
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <Hidden name="jobOperationId" />
+            <Hidden name="setupProductionEventId" />
+            <Hidden name="laborProductionEventId" />
+            <Hidden name="machineProductionEventId" />
+            <VStack spacing={2}>
+              <Number
+                name="quantity"
+                label="Quantity"
+                minValue={1}
+                maxValue={operation.operationQuantity}
+              />
+              <TextArea
+                label="Scrap Reason"
+                name="scrapReason"
+                value={scrapReason}
+                onChange={(e) => setScrapReason(e.target.value)}
+              />
+              <div className="col-span-2 flex gap-2 mt-2">
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer"
+                  onClick={() => setScrapReason("Defective")}
+                >
+                  Defective
+                </Badge>
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer"
+                  onClick={() => setScrapReason("Damaged")}
+                >
+                  Damaged
+                </Badge>
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer"
+                  onClick={() => setScrapReason("Quality Control")}
+                >
+                  Quality Control
+                </Badge>
+              </div>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+
+            <Button variant="destructive" type="submit">
+              Scrap
+            </Button>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
+  );
 }
 
 function Navigation({
   job,
   operation,
-  fullScreen,
-  setFullScreen,
+  fullscreen,
 }: {
   job: Job;
   operation: OperationWithDetails;
-  fullScreen: boolean;
-  setFullScreen: (value: boolean) => void;
+  fullscreen: ReturnType<typeof useDisclosure>;
 }) {
   return (
     <>
@@ -905,13 +1143,13 @@ function Navigation({
           Instructions
         </TabsTrigger>
       </TabsList>
-      {!fullScreen && (
+      {!fullscreen.isOpen && (
         <IconButton
           aria-label="Expand"
           className="hidden md:flex"
           icon={<LuExpand />}
           variant="secondary"
-          onClick={() => setFullScreen(true)}
+          onClick={fullscreen.onOpen}
         />
       )}
     </>

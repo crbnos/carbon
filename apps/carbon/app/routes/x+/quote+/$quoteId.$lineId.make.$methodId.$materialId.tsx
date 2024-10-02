@@ -109,13 +109,15 @@ export default function QuoteMakeMethodRoute() {
   const { material, materials, operations } = loaderData;
 
   return (
-    <VStack spacing={2} key={JSON.stringify(loaderData)}>
+    <VStack spacing={2}>
       <QuoteMaterialForm initialValues={material} operations={operations} />
       <QuoteBillOfProcess
+        key={`bop:${methodId}:${operations.length}`}
         quoteMakeMethodId={methodId}
         operations={operations}
       />
       <QuoteBillOfMaterial
+        key={`bom:${methodId}:${materials.length}`}
         quoteMakeMethodId={methodId}
         materials={materials}
         operations={operations}

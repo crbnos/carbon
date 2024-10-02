@@ -19,7 +19,7 @@ export const buttonVariants = cva(
           "border border-input bg-card hover:bg-accent hover:text-accent-foreground",
         solid: "bg-accent text-accent-foreground hover:bg-accent/90",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm shadow-[inset_0_2px_3px_0_theme(colors.white/15%)]",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm shadow-[inset_0_1px_2px_0_theme(colors.white/10%)]",
         ghost:
           "bg-transparent hover:bg-primary/10 text-accent-foreground hover:text-accent-foreground/90",
         link: "text-foreground hover:text-foreground underline-offset-4 hover:underline",

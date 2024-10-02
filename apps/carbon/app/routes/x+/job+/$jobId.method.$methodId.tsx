@@ -79,10 +79,15 @@ export default function JobMakeMethodRoute() {
   const { materials, operations } = loaderData;
 
   return (
-    <VStack spacing={2} key={JSON.stringify(loaderData)} className="p-2">
+    <VStack spacing={2} className="p-2">
       <JobBreadcrumbs />
-      <JobBillOfProcess jobMakeMethodId={methodId} operations={operations} />
+      <JobBillOfProcess
+        key={`bop:${methodId}:${operations.length}`}
+        jobMakeMethodId={methodId}
+        operations={operations}
+      />
       <JobBillOfMaterial
+        key={`bom:${methodId}:${materials.length}`}
         jobMakeMethodId={methodId}
         materials={materials}
         operations={operations}

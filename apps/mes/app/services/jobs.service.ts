@@ -48,6 +48,10 @@ export type ProductionEvent = NonNullable<
   Awaited<ReturnType<typeof getProductionEventsForJobOperation>>["data"]
 >[number];
 
+export type ProductionQuantity = NonNullable<
+  Awaited<ReturnType<typeof insertScrapQuantity>>["data"]
+>[number];
+
 export type StorageItem = FileObject & {
   bucket: string;
 };
@@ -90,6 +94,16 @@ export const productionEventValidator = z.object({
     }),
   }),
   workCenterId: zfd.text(z.string().optional()),
+});
+
+export const scrapQuantityValidator = z.object({
+  jobOperationId: z.string(),
+  quantity: zfd.numeric(z.number().positive()),
+  unitOfMeasureCode: z.string().min(1),
+  setupProductionEventId: z.string().optional(),
+  laborProductionEventId: z.string().optional(),
+  machineProductionEventId: z.string().optional(),
+  scrapReason: z.string().min(1),
 });
 
 export async function getActiveJobOperationsByEmployee(
@@ -306,22 +320,35 @@ export async function getWorkCentersByCompany(
     .order("name", { ascending: true });
 }
 
+export async function insertScrapQuantity(
+  client: SupabaseClient<Database>,
+  data: z.infer<typeof scrapQuantityValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client
+    .from("productionQuantity")
+    .insert({
+      ...data,
+      type: "Scrap",
+    })
+    .select("*");
+}
+
 export async function endProductionEvent(
   client: SupabaseClient<Database>,
   data: {
-    jobOperationId: string;
-    employeeId: string;
+    id: string;
     endTime: string;
-    type: (typeof productionEventType)[number];
+    employeeId: string;
   }
 ) {
   return client
     .from("productionEvent")
     .update({ endTime: data.endTime, updatedBy: data.employeeId })
-    .eq("jobOperationId", data.jobOperationId)
-    .eq("employeeId", data.employeeId)
-    .eq("type", data.type)
-    .is("endTime", null);
+    .eq("id", data.id)
+    .select("*");
 }
 
 export async function startProductionEvent(

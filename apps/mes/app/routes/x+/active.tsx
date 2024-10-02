@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { LuSearch } from "react-icons/lu";
 import { OperationsList } from "~/components";
 import { getActiveJobOperationsByEmployee } from "~/services/jobs.service";
-import { makeDurations } from "~/utils/jobs";
+import { makeDurations } from "~/utils/durations";
 
 import { defaultLayout } from "~/utils/layout";
 
