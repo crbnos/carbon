@@ -885,7 +885,7 @@ function WorkTypeToggle({
           <LuTimer className="h-4 w-4 mr-2 flex-shrink-0" />
           Setup
           {active.setup && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}
@@ -899,7 +899,7 @@ function WorkTypeToggle({
           <LuHardHat className="h-4 w-4 mr-2 flex-shrink-0" />
           Labor
           {active.labor && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}
@@ -913,7 +913,7 @@ function WorkTypeToggle({
           <LuHammer className="h-4 w-4 mr-2 flex-shrink-0" />
           Machine
           {active.machine && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}
@@ -939,22 +939,25 @@ function StartStopButton({
 }) {
   const fetcher = useFetcher<ProductionEvent>();
   const isActive = useMemo(() => {
+    if (fetcher.formData?.get("action") === "End") {
+      return false;
+    }
     if (eventType === "Setup") {
       return (
-        (fetcher.formData?.get("id") &&
+        (fetcher.formData?.get("action") === "Start" &&
           fetcher.formData.get("type") === "Setup") ||
         !!setupProductionEvent
       );
     }
     if (eventType === "Labor") {
       return (
-        (fetcher.formData?.get("id") &&
+        (fetcher.formData?.get("action") === "Start" &&
           fetcher.formData.get("type") === "Labor") ||
         !!laborProductionEvent
       );
     }
     return (
-      (fetcher.formData?.get("id") &&
+      (fetcher.formData?.get("action") === "Start" &&
         fetcher.formData.get("type") === "Machine") ||
       !!machineProductionEvent
     );
@@ -1026,12 +1029,13 @@ function PauseButton({ className, ...props }: ComponentProps<"button">) {
 
 function PlayButton({ className, ...props }: ComponentProps<"button">) {
   return (
-    <button
+    <ButtonWithTooltip
       {...props}
+      tooltip="Start"
       className="group w-20 h-20 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all disabled:opacity-75 text-xl"
     >
       <FaPlay className="text-accent group-hover:scale-125" />
-    </button>
+    </ButtonWithTooltip>
   );
 }
 
