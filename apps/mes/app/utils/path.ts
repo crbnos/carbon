@@ -35,6 +35,7 @@ export const path = {
     refreshSession: "/refresh-session",
     requestAccess: "/request-access",
     root: "/",
+    scrap: `${x}/scrap`,
     workCenter: (workCenter: string) => generatePath(`${x}/jobs/${workCenter}`),
   },
 } as const;

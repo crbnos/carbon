@@ -28206,6 +28206,213 @@ export default {
         tags: ["supplierShipping"],
       },
     },
+    "/productionQuantity": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.setupProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.laborProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.machineProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.scrapReason",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/productionQuantity",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["productionQuantity"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["productionQuantity"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.setupProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.laborProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.machineProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.scrapReason",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["productionQuantity"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.setupProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.laborProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.machineProductionEventId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.scrapReason",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["productionQuantity"],
+      },
+    },
     "/customerShipping": {
       get: {
         parameters: [
@@ -48344,6 +48551,86 @@ export default {
       },
       type: "object",
     },
+    productionQuantity: {
+      required: [
+        "id",
+        "jobOperationId",
+        "quantity",
+        "unitOfMeasureCode",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          format: "integer",
+          type: "integer",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        setupProductionEventId: {
+          description:
+            "Note:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        laborProductionEventId: {
+          description:
+            "Note:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        machineProductionEventId: {
+          description:
+            "Note:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        scrapReason: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     customerShipping: {
       required: ["customerId", "companyId"],
       properties: {
@@ -67583,6 +67870,106 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "body.productionQuantity": {
+      name: "productionQuantity",
+      description: "productionQuantity",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/productionQuantity",
+      },
+    },
+    "rowFilter.productionQuantity.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.quantity": {
+      name: "quantity",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.setupProductionEventId": {
+      name: "setupProductionEventId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.laborProductionEventId": {
+      name: "laborProductionEventId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.machineProductionEventId": {
+      name: "machineProductionEventId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.scrapReason": {
+      name: "scrapReason",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { makeDurations } from "~/utils/jobs";
+import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
 import type { OperationWithDetails } from "./jobs.service";
 import {

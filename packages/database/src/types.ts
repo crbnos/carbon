@@ -11700,6 +11700,118 @@ export type Database = {
           },
         ]
       }
+      productionQuantity: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          jobOperationId: string
+          laborProductionEventId: string | null
+          machineProductionEventId: string | null
+          quantity: number
+          scrapReason: string | null
+          setupProductionEventId: string | null
+          type: Database["public"]["Enums"]["productionQuantityType"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          jobOperationId: string
+          laborProductionEventId?: string | null
+          machineProductionEventId?: string | null
+          quantity: number
+          scrapReason?: string | null
+          setupProductionEventId?: string | null
+          type?: Database["public"]["Enums"]["productionQuantityType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          jobOperationId?: string
+          laborProductionEventId?: string | null
+          machineProductionEventId?: string | null
+          quantity?: number
+          scrapReason?: string | null
+          setupProductionEventId?: string | null
+          type?: Database["public"]["Enums"]["productionQuantityType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "productionQuantity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionQuantity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionQuantity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "productionQuantity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "productionQuantity_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionQuantity_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionQuantity_laborProductionEventId_fkey"
+            columns: ["laborProductionEventId"]
+            isOneToOne: false
+            referencedRelation: "productionEvent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionQuantity_machineProductionEventId_fkey"
+            columns: ["machineProductionEventId"]
+            isOneToOne: false
+            referencedRelation: "productionEvent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionQuantity_setupProductionEventId_fkey"
+            columns: ["setupProductionEventId"]
+            isOneToOne: false
+            referencedRelation: "productionEvent"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchaseInvoice: {
         Row: {
           assignee: string | null
@@ -29518,6 +29630,7 @@ export type Database = {
       paymentTermCalculationMethod: "Net" | "End of Month" | "Day of Month"
       processType: "Inside" | "Outside" | "Inside and Outside"
       productionEventType: "Setup" | "Labor" | "Machine"
+      productionQuantityType: "Rework" | "Scrap" | "Production"
       purchaseInvoiceStatus:
         | "Draft"
         | "Pending"

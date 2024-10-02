@@ -38,7 +38,7 @@ import {
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
 } from "~/services/location.server";
-import { makeDurations } from "~/utils/jobs";
+import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
 
 // TODO: it's possible that the location cookie and the work cell become out of sync.

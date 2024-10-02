@@ -210,7 +210,7 @@ export default function AuthenticatedRoute() {
             )}
           </ClientOnly>
         </TooltipProvider>
-        <Toaster position="bottom-right" />
+        <Toaster position="top-right" />
       </AutodeskProvider>
     </CarbonProvider>
   );

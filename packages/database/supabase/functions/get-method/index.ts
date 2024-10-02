@@ -112,6 +112,7 @@ serve(async (req: Request) => {
               .values(
                 sourceMaterials.data.map((material) => ({
                   ...material,
+                  productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
                   makeMethodId: targetMakeMethod.data.id,
                   createdBy: userId,
@@ -1066,6 +1067,7 @@ serve(async (req: Request) => {
               .values(
                 materialInserts.map((insert) => ({
                   ...insert,
+                  productionQuantity: undefined,
                   makeMethodId:
                     insert.makeMethodId ===
                     makeMethodByItemId[jobMakeMethod.data.itemId]
@@ -1240,6 +1242,7 @@ serve(async (req: Request) => {
               .values(
                 materialInserts.map((insert) => ({
                   ...insert,
+                  productionQuantity: undefined,
                   makeMethodId:
                     insert.makeMethodId ===
                     makeMethodByItemId[jobMakeMethod.data.itemId]
@@ -1423,6 +1426,7 @@ serve(async (req: Request) => {
               .values(
                 materialInserts.map((insert) => ({
                   ...insert,
+                  productionQuantity: undefined,
                   makeMethodId:
                     insert.makeMethodId ===
                     makeMethodByItemId[quoteMakeMethod.data.itemId]
@@ -1801,6 +1805,7 @@ serve(async (req: Request) => {
               .values(
                 materialInserts.map((insert) => ({
                   ...insert,
+                  productionQuantity: undefined,
                   makeMethodId:
                     insert.makeMethodId ===
                     makeMethodByItemId[quoteMakeMethod.data.itemId]
