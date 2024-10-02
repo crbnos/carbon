@@ -70,13 +70,7 @@ import {
 import { path } from "~/utils/path";
 
 import { useCarbon } from "@carbon/auth";
-import {
-  Hidden,
-  Number,
-  TextArea,
-  useIsSubmitting,
-  ValidatedForm,
-} from "@carbon/form";
+import { Hidden, Number, TextArea, ValidatedForm } from "@carbon/form";
 import {
   convertDateStringToIsoString,
   convertKbToString,
@@ -126,6 +120,7 @@ export const JobOperation = ({
   operation,
 }: JobOperationProps) => {
   const {
+    active,
     activeTab,
     eventType,
     fullscreen,
@@ -581,6 +576,7 @@ export const JobOperation = ({
                 />
               </div>
               <WorkTypeToggle
+                active={active}
                 operation={operation}
                 value={eventType}
                 onChange={setEventType}
@@ -857,10 +853,12 @@ function IconButtonWithTooltip({
 }
 
 function WorkTypeToggle({
+  active,
   operation,
   value,
   onChange,
 }: {
+  active: { setup: boolean; labor: boolean; machine: boolean };
   operation: OperationWithDetails;
   value: string;
   onChange: (type: string) => void;
@@ -879,35 +877,44 @@ function WorkTypeToggle({
     <ToggleGroup value={value} type="single" onValueChange={onChange}>
       {operation.setupDuration > 0 && (
         <ToggleGroupItem
-          className="w-[110px]"
+          className="w-[110px] relative"
           value="Setup"
           size="lg"
           aria-label="Toggle setup"
         >
-          <LuTimer className="h-4 w-4 mr-2" />
+          <LuTimer className="h-4 w-4 mr-2 flex-shrink-0" />
           Setup
+          {active.setup && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+          )}
         </ToggleGroupItem>
       )}
       {operation.laborDuration > 0 && (
         <ToggleGroupItem
-          className="w-[110px]"
+          className="w-[110px] relative"
           value="Labor"
           size="lg"
           aria-label="Toggle labor"
         >
-          <LuHardHat className="h-4 w-4 mr-2" />
+          <LuHardHat className="h-4 w-4 mr-2 flex-shrink-0" />
           Labor
+          {active.labor && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+          )}
         </ToggleGroupItem>
       )}
       {operation.machineDuration > 0 && (
         <ToggleGroupItem
-          className="w-[110px]"
+          className="w-[110px] relative"
           value="Machine"
           size="lg"
           aria-label="Toggle machine"
         >
-          <LuHammer className="h-4 w-4 mr-2" />
+          <LuHammer className="h-4 w-4 mr-2 flex-shrink-0" />
           Machine
+          {active.machine && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
+          )}
         </ToggleGroupItem>
       )}
     </ToggleGroup>
@@ -933,17 +940,30 @@ function StartStopButton({
   const fetcher = useFetcher<ProductionEvent>();
   const isActive = useMemo(() => {
     if (eventType === "Setup") {
-      return !!setupProductionEvent;
+      return (
+        (fetcher.formData?.get("id") &&
+          fetcher.formData.get("type") === "Setup") ||
+        !!setupProductionEvent
+      );
     }
     if (eventType === "Labor") {
-      return !!laborProductionEvent;
+      return (
+        (fetcher.formData?.get("id") &&
+          fetcher.formData.get("type") === "Labor") ||
+        !!laborProductionEvent
+      );
     }
-    return !!machineProductionEvent;
+    return (
+      (fetcher.formData?.get("id") &&
+        fetcher.formData.get("type") === "Machine") ||
+      !!machineProductionEvent
+    );
   }, [
     eventType,
     setupProductionEvent,
     laborProductionEvent,
     machineProductionEvent,
+    fetcher.formData,
   ]);
 
   const id = useMemo(() => {
@@ -983,18 +1003,20 @@ function StartStopButton({
       <Hidden name="action" value={isActive ? "End" : "Start"} />
       <Hidden name="type" value={eventType} />
       <Hidden name="workCenterId" value={operation.workCenterId ?? undefined} />
-      {isActive ? <PauseButton type="submit" /> : <PlayButton type="submit" />}
+      {isActive ? (
+        <PauseButton disabled={fetcher.state !== "idle"} type="submit" />
+      ) : (
+        <PlayButton disabled={fetcher.state !== "idle"} type="submit" />
+      )}
     </ValidatedForm>
   );
 }
 
 function PauseButton({ className, ...props }: ComponentProps<"button">) {
-  const isSubmitting = useIsSubmitting(startStopFormId);
   return (
     <ButtonWithTooltip
       {...props}
       tooltip="Pause"
-      disabled={isSubmitting}
       className="group w-20 h-20 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all disabled:opacity-75 text-2xl"
     >
       <FaPause className="text-accent group-hover:scale-125" />
@@ -1003,11 +1025,9 @@ function PauseButton({ className, ...props }: ComponentProps<"button">) {
 }
 
 function PlayButton({ className, ...props }: ComponentProps<"button">) {
-  const isSubmitting = useIsSubmitting(startStopFormId);
   return (
     <button
       {...props}
-      disabled={isSubmitting}
       className="group w-20 h-20 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all disabled:opacity-75 text-xl"
     >
       <FaPlay className="text-accent group-hover:scale-125" />
