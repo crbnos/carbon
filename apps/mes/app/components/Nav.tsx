@@ -40,7 +40,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
                       link.label &&
                         Number.isInteger(parseInt(link.label)) &&
                         parseInt(link.label) > 0 &&
-                        "text-red-500"
+                        "text-emerald-500"
                     )}
                     size="lg"
                     icon={<link.icon className="h-4 w-4" />}
