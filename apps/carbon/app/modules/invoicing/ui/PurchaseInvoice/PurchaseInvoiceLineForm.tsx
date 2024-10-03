@@ -187,28 +187,28 @@ const PurchaseInvoiceLineForm = ({
         });
 
         break;
-      case "Service":
-        const service = await carbon
-          .from("item")
-          .select("readableId, name")
-          .eq("id", itemId)
-          .eq("companyId", company.id)
-          .single();
+      // case "Service":
+      //   const service = await carbon
+      //     .from("item")
+      //     .select("readableId, name")
+      //     .eq("id", itemId)
+      //     .eq("companyId", company.id)
+      //     .single();
 
-        setItemData({
-          itemId: itemId,
-          itemReadableId: service.data?.readableId ?? "",
-          description: service.data?.name ?? "",
-          quantity: 1,
-          unitPrice: 0,
-          purchaseUom: "EA",
-          inventoryUom: "EA",
-          conversionFactor: 1,
-          shelfId: "",
-          minimumOrderQuantity: undefined,
-        });
+      //   setItemData({
+      //     itemId: itemId,
+      //     itemReadableId: service.data?.readableId ?? "",
+      //     description: service.data?.name ?? "",
+      //     quantity: 1,
+      //     unitPrice: 0,
+      //     purchaseUom: "EA",
+      //     inventoryUom: "EA",
+      //     conversionFactor: 1,
+      //     shelfId: "",
+      //     minimumOrderQuantity: undefined,
+      //   });
 
-        break;
+      //   break;
       default:
         throw new Error(
           `Invalid invoice line type: ${type} is not implemented`

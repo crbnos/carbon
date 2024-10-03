@@ -7,7 +7,7 @@ export const itemTypes = [
   "Tool",
   "Fixture",
   "Consumable",
-  "Service",
+  // "Service",
 ] as const;
 
 export const itemLedgerTypes = [

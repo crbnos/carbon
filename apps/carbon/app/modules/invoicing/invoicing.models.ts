@@ -3,7 +3,7 @@ import { zfd } from "zod-form-data";
 
 export const purchaseInvoiceLineType = [
   "Part",
-  "Service",
+  // "Service",
   "Material",
   "Tool",
   "Fixture",

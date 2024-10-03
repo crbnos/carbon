@@ -126,7 +126,7 @@ const OpportunityDocuments = ({
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>Documents</CardTitle>
+            <CardTitle>Files</CardTitle>
           </CardHeader>
           <CardAction>
             <OpportunityDocumentForm

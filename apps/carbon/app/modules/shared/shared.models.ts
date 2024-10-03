@@ -7,7 +7,7 @@ export const methodItemType = [
   "Tool",
   "Fixture",
   "Consumable",
-  "Service",
+  // "Service",
 ] as const;
 
 export const methodOperationOrders = [

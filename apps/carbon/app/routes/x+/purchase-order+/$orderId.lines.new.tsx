@@ -75,5 +75,10 @@ export default function NewPurchaseOrderLineRoute() {
     shelfId: "",
   };
 
-  return <PurchaseOrderLineForm initialValues={initialValues} />;
+  return (
+    <PurchaseOrderLineForm
+      // @ts-ignore
+      initialValues={initialValues}
+    />
+  );
 }

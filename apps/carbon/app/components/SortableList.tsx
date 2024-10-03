@@ -123,7 +123,7 @@ function SortableListItem<T>({
                       {typeof item.title === "string" ? (
                         <span
                           className={cn(
-                            "flex font-semibold text-sm md:text-base truncate hover:underline",
+                            "flex font-medium text-sm md:text-base truncate hover:underline",
                             item.checked ? "text-red-400" : "text-foreground"
                           )}
                           onClick={(e) => {

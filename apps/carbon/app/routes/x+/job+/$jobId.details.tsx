@@ -117,6 +117,7 @@ export default function JobDetailsRoute() {
   return (
     <VStack spacing={2} className="p-2">
       <JobBreadcrumbs />
+      {/* @ts-ignore */}
       <JobForm key={jobInitialValues.id} initialValues={jobInitialValues} />
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">

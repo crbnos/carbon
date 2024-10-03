@@ -157,6 +157,7 @@ export default function EditSalesOrderLineRoute() {
     <>
       <SalesOrderLineForm
         key={initialValues.id}
+        // @ts-ignore
         initialValues={initialValues}
       />
       {line.methodType === "Make" && (

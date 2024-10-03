@@ -184,7 +184,7 @@ const EmployeesTable = memo(
               }
             >
               <MenuIcon icon={<LuPencil />} />
-              Edit Employee
+              Edit Permissions
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -203,7 +203,7 @@ const EmployeesTable = memo(
                 }}
               >
                 <MenuIcon icon={<FaBan />} />
-                Deactivate Employee
+                Deactivate Account
               </MenuItem>
             )}
           </>
@@ -222,7 +222,7 @@ const EmployeesTable = memo(
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
             permissions.can("create", "users") && (
-              <New label="Employee" to={`new?${params.toString()}`} />
+              <New label="Account" to={`new?${params.toString()}`} />
             )
           }
           renderContextMenu={renderContextMenu}

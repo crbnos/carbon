@@ -95,6 +95,22 @@ const SalesRFQHeader = () => {
             </>
           )}
 
+          {["Ready for Quote", "Closed"].includes(status) && (
+            <>
+              <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
+                <input type="hidden" name="status" value="Draft" />
+                <Button
+                  isDisabled={!permissions.can("update", "sales")}
+                  leftIcon={<LuRefreshCw />}
+                  type="submit"
+                  variant="secondary"
+                >
+                  Reopen
+                </Button>
+              </Form>
+            </>
+          )}
+
           {status === "Ready for Quote" && (
             <>
               <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
@@ -138,33 +154,6 @@ const SalesRFQHeader = () => {
               </Link>
             </Button>
           )}
-
-          {status === "Closed" && (
-            <>
-              <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
-                <input type="hidden" name="status" value="Draft" />
-                <Button
-                  isDisabled={!permissions.can("update", "sales")}
-                  leftIcon={<LuRefreshCw />}
-                  type="submit"
-                  variant="secondary"
-                >
-                  Reopen
-                </Button>
-              </Form>
-            </>
-          )}
-
-          {/* <IconButton
-            aria-label="Previous"
-            icon={<LuMoveLeft />}
-            variant="secondary"
-          />
-          <IconButton
-            aria-label="Next"
-            icon={<LuMoveRight />}
-            variant="secondary"
-          /> */}
         </HStack>
       </HStack>
       {convertToQuoteModal.isOpen && (

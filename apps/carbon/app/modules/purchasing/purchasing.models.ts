@@ -5,7 +5,7 @@ import { currencyCodes } from "../accounting";
 
 export const purchaseOrderLineType = [
   "Part",
-  "Service",
+  // "Service",
   "Material",
   "Tool",
   "Fixture",

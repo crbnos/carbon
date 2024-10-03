@@ -22,9 +22,6 @@ type WorkCentersTableProps = {
 
 const defaultColumnVisibility = {
   description: false,
-  laborRate: false,
-  machineRate: false,
-  overheadRate: false,
   createdAt: false,
   createdBy: false,
   updatedAt: false,

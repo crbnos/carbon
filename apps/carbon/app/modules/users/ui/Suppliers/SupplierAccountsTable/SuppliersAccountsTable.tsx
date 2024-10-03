@@ -227,7 +227,7 @@ const SupplierAccountsTable = memo(
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
             permissions.can("create", "users") && (
-              <New label="Customer" to={`new?${params.toString()}`} />
+              <New label="Supplier" to={`new?${params.toString()}`} />
             )
           }
           renderContextMenu={renderContextMenu}

@@ -676,21 +676,30 @@ function OperationForm({
           }}
         />
 
-        <Select
-          name="operationOrder"
-          label="Operation Order"
-          placeholder="Operation Order"
-          options={methodOperationOrders.map((o) => ({
-            value: o,
-            label: o,
-          }))}
-          onChange={(value) => {
-            setProcessData((d) => ({
-              ...d,
-              operationOrder: value?.value as string,
-            }));
-          }}
-        />
+        {processData.operationType === "Outside" ? (
+          <>
+            <SupplierProcess
+              name="operationSupplierProcessId"
+              label="Supplier"
+              processId={processData.processId}
+              isOptional
+            />
+          </>
+        ) : (
+          <>
+            <WorkCenter
+              name="workCenterId"
+              label="Work Center"
+              isOptional
+              processId={processData.processId}
+              onChange={(value) => {
+                if (value) {
+                  onWorkCenterChange(value?.value as string);
+                }
+              }}
+            />
+          </>
+        )}
 
         <SelectControlled
           name="operationType"
@@ -723,30 +732,21 @@ function OperationForm({
           className="col-span-2"
         />
 
-        {processData.operationType === "Outside" ? (
-          <>
-            <SupplierProcess
-              name="operationSupplierProcessId"
-              label="Supplier"
-              processId={processData.processId}
-              isOptional
-            />
-          </>
-        ) : (
-          <>
-            <WorkCenter
-              name="workCenterId"
-              label="Work Center"
-              isOptional
-              processId={processData.processId}
-              onChange={(value) => {
-                if (value) {
-                  onWorkCenterChange(value?.value as string);
-                }
-              }}
-            />
-          </>
-        )}
+        <Select
+          name="operationOrder"
+          label="Operation Order"
+          placeholder="Operation Order"
+          options={methodOperationOrders.map((o) => ({
+            value: o,
+            label: o,
+          }))}
+          onChange={(value) => {
+            setProcessData((d) => ({
+              ...d,
+              operationOrder: value?.value as string,
+            }));
+          }}
+        />
       </div>
       {processData.operationType === "Inside" && (
         <>

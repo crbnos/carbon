@@ -79,22 +79,11 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
               {hasSelections ? (
                 <div className="flex gap-1 flex-wrap">
                   {value.map((item) => (
-                    <Badge
-                      key={item}
-                      variant="secondary"
-                      onClick={() => handleUnselect(item)}
-                    >
+                    <Badge key={item} variant="secondary">
                       {options.find((option) => option.value === item)?.label}
                       <BadgeCloseButton
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleUnselect(item);
-                          }
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
+                        type="button"
+                        tabIndex={-1}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();

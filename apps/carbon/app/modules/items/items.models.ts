@@ -203,19 +203,19 @@ export const methodMaterialValidator = z
       message: "Consumable ID is required",
       path: ["itemId"],
     }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Service") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Service ID is required",
-      path: ["itemId"],
-    }
   );
+// .refine(
+//   (data) => {
+//     if (data.itemType === "Service") {
+//       return !!data.itemReadableId;
+//     }
+//     return true;
+//   },
+//   {
+//     message: "Service ID is required",
+//     path: ["itemId"],
+//   }
+// );
 
 export const methodOperationValidator = z
   .object({

@@ -357,19 +357,19 @@ export const jobMaterialValidator = z
       message: "Consumable ID is required",
       path: ["itemId"],
     }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Service") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Service ID is required",
-      path: ["itemId"],
-    }
   );
+// .refine(
+//   (data) => {
+//     if (data.itemType === "Service") {
+//       return !!data.itemReadableId;
+//     }
+//     return true;
+//   },
+//   {
+//     message: "Service ID is required",
+//     path: ["itemId"],
+//   }
+// );
 
 export const getJobMethodValidator = z.object({
   sourceId: z.string().min(1, { message: "Source ID is required" }),

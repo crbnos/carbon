@@ -321,14 +321,14 @@ function SelectedOption({
   return (
     <Badge
       key={item}
-      onClick={() => onUnselect(item)}
       variant="secondary"
       className="border border-border shadow-sm"
     >
       {options.find((option) => option.value === item)?.label}
       <BadgeCloseButton
-        tabIndex={-1}
         disabled={isReadOnly}
+        tabIndex={-1}
+        type="button"
         onKeyDown={(e) => {
           if (e.key === "Enter" && !isReadOnly) {
             onUnselect(item);

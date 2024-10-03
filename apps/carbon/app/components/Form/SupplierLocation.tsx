@@ -43,7 +43,7 @@ const SupplierLocation = (props: SupplierLocationSelectProps) => {
           c.address?.addressLine1,
           c.address?.addressLine2,
           c.address?.city,
-          c.address?.state
+          c.address?.stateProvince
         )} (${c.name})`,
       })) ?? [],
 

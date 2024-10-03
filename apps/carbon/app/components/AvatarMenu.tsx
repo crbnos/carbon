@@ -16,9 +16,9 @@ import {
 import { themes } from "@carbon/utils";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { BsHexagon } from "react-icons/bs";
 import {
   LuFileText,
+  LuHome,
   LuLogOut,
   LuMoon,
   LuPalette,
@@ -73,7 +73,7 @@ const AvatarMenu = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to={path.to.authenticatedRoot}>
-            <DropdownMenuIcon icon={<BsHexagon />} />
+            <DropdownMenuIcon icon={<LuHome />} />
             Dashboard
           </Link>
         </DropdownMenuItem>

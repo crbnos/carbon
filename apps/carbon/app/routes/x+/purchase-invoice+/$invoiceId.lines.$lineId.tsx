@@ -119,6 +119,7 @@ export default function EditPurchaseInvoiceLineRoute() {
   return (
     <PurchaseInvoiceLineForm
       key={initialValues.id}
+      // @ts-ignore
       initialValues={initialValues}
     />
   );

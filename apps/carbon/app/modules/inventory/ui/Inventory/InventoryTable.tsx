@@ -55,6 +55,7 @@ const InventoryTable = memo(
             <HStack className="py-1">
               <ItemThumbnail
                 thumbnailPath={row.original.thumbnailPath}
+                // @ts-ignore
                 type={row.original.type}
               />
               <Hyperlink

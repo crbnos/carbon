@@ -146,6 +146,7 @@ export default function QuoteLine() {
     itemReadableId: line.itemReadableId ?? "",
     methodType: line.methodType ?? "Make",
     modelUploadId: line.modelUploadId ?? undefined,
+    noQuoteReason: line.noQuoteReason ?? undefined,
     status: line.status ?? "Not Started",
     quantity: line.quantity ?? [1],
     unitOfMeasureCode: line.unitOfMeasureCode ?? "",

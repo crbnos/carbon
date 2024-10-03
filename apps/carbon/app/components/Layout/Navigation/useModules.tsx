@@ -1,10 +1,10 @@
 import {
   LuBox,
-  LuComponent,
   LuCreditCard,
   LuCrown,
   LuFactory,
   LuFiles,
+  LuHexagon,
   LuSettings,
   LuShield,
   LuShoppingCart,
@@ -20,17 +20,10 @@ export function useModules() {
 
   const modules: Authenticated<NavItem>[] = [
     {
-      permission: "parts",
-      name: "Items",
-      to: path.to.parts,
-      icon: LuComponent,
-    },
-
-    {
-      permission: "inventory",
-      name: "Inventory",
-      to: path.to.inventory,
-      icon: LuBox,
+      permission: "sales",
+      name: "Sales",
+      to: path.to.salesOrders,
+      icon: LuCrown,
     },
     {
       permission: "production",
@@ -39,10 +32,16 @@ export function useModules() {
       icon: LuFactory,
     },
     {
-      permission: "sales",
-      name: "Sales",
-      to: path.to.salesOrders,
-      icon: LuCrown,
+      permission: "parts",
+      name: "Items",
+      to: path.to.parts,
+      icon: LuHexagon,
+    },
+    {
+      permission: "inventory",
+      name: "Inventory",
+      to: path.to.inventory,
+      icon: LuBox,
     },
     {
       permission: "purchasing",

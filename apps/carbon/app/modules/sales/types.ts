@@ -140,8 +140,10 @@ export type SalesOrderLine = NonNullable<
   Awaited<ReturnType<typeof getSalesOrderLines>>["data"]
 >[number];
 
-export type SalesOrderLineType =
-  Database["public"]["Enums"]["salesOrderLineType"];
+export type SalesOrderLineType = Omit<
+  Database["public"]["Enums"]["salesOrderLineType"],
+  "Service"
+>;
 
 export type SalesOrderStatus = Database["public"]["Enums"]["salesOrderStatus"];
 

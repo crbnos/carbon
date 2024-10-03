@@ -629,8 +629,8 @@ function getDocumentLocation(
       return path.to.fixture(sourceDocumentId);
     case "Consumable":
       return path.to.consumable(sourceDocumentId);
-    case "Service":
-      return path.to.service(sourceDocumentId);
+    // case "Service":
+    //   return path.to.service(sourceDocumentId);
     case "Purchase Order":
       return path.to.purchaseOrder(sourceDocumentId);
     case "Quote":

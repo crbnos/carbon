@@ -233,19 +233,19 @@ export const quoteMaterialValidator = z
       message: "Consumable ID is required",
       path: ["itemId"],
     }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Service") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Service ID is required",
-      path: ["itemId"],
-    }
   );
+// .refine(
+//   (data) => {
+//     if (data.itemType === "Service") {
+//       return !!data.itemReadableId;
+//     }
+//     return true;
+//   },
+//   {
+//     message: "Service ID is required",
+//     path: ["itemId"],
+//   }
+// );
 
 export const quoteOperationValidator = z
   .object({
@@ -471,7 +471,7 @@ export const quoteShipmentValidator = z.object({
 
 export const salesOrderLineType = [
   "Part",
-  "Service",
+  // "Service",
   "Material",
   "Tool",
   "Fixture",

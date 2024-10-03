@@ -78,5 +78,10 @@ export default function NewSalesOrderLineRoute() {
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
   };
 
-  return <SalesOrderLineForm initialValues={initialValues} />;
+  return (
+    <SalesOrderLineForm
+      // @ts-ignore
+      initialValues={initialValues}
+    />
+  );
 }

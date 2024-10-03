@@ -1,4 +1,4 @@
-import { LuShapes, LuStar, LuUserSquare } from "react-icons/lu";
+import { LuStar, LuUserSquare } from "react-icons/lu";
 import {
   RiProgress2Line,
   RiProgress4Line,
@@ -43,12 +43,12 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
         role: "employee",
         icon: <LuStar />,
       },
-      {
-        name: "Types",
-        to: path.to.customerTypes,
-        role: "employee",
-        icon: <LuShapes />,
-      },
+      // {
+      //   name: "Types",
+      //   to: path.to.customerTypes,
+      //   role: "employee",
+      //   icon: <LuShapes />,
+      // },
     ],
   },
 ];

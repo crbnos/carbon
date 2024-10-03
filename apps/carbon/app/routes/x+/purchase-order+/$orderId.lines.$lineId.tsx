@@ -119,6 +119,7 @@ export default function EditPurchaseOrderLineRoute() {
   return (
     <PurchaseOrderLineForm
       key={initialValues.id}
+      // @ts-ignore
       initialValues={initialValues}
     />
   );
