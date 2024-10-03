@@ -42,7 +42,7 @@ import {
 } from "@carbon/react";
 import { Await, Link, useFetcher } from "@remix-run/react";
 import type { ComponentProps, ReactNode } from "react";
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
   DeadlineIcon,
   DocumentIcon,
@@ -120,21 +120,24 @@ export const JobOperation = ({
   operation,
 }: JobOperationProps) => {
   const {
-    active,
     activeTab,
     eventType,
     fullscreen,
-    laborProductionEvent,
-    machineProductionEvent,
     isOverdue,
-    progress,
     scrapModal,
-    setupProductionEvent,
     downloadDocument,
     getDocumentPath,
     setActiveTab,
     setEventType,
-  } = useOperation(operation, events, job);
+  } = useOperation(operation, job);
+
+  const {
+    active,
+    setupProductionEvent,
+    laborProductionEvent,
+    machineProductionEvent,
+    progress,
+  } = useActiveEvents(operation, events);
 
   return (
     <OptionallyFullscreen
@@ -598,18 +601,76 @@ export const JobOperation = ({
   );
 };
 
-function useActiveEvents(events: ProductionEvent[]): {
+function useActiveEvents(
+  operation: OperationWithDetails,
+  events: ProductionEvent[]
+): {
   active: { setup: boolean; labor: boolean; machine: boolean };
   setupProductionEvent: ProductionEvent | undefined;
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
   progress: { setup: number; labor: number; machine: number };
 } {
+  const { carbon, accessToken } = useCarbon();
   const user = useUser();
+
+  const [eventState, setEventState] = useState<ProductionEvent[]>(events);
+
+  useEffect(() => {
+    setEventState(events);
+  }, [events]);
+
+  useEffect(() => {
+    if (!carbon || !accessToken) return;
+    carbon.realtime.setAuth(accessToken);
+    const channel = carbon
+      .channel("realtime:core")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "productionEvent",
+          filter: `jobOperationId=eq.${operation.id}`,
+        },
+        (payload) => {
+          switch (payload.eventType) {
+            case "INSERT":
+              const { new: inserted } = payload;
+              setEventState((prevEvents) => [
+                ...prevEvents,
+                inserted as ProductionEvent,
+              ]);
+              break;
+            case "UPDATE":
+              const { new: updated } = payload;
+              setEventState((prevEvents) =>
+                prevEvents.map((event) =>
+                  event.id === updated.id ? (updated as ProductionEvent) : event
+                )
+              );
+              break;
+            case "DELETE":
+              const { old: deleted } = payload;
+              setEventState((prevEvents) =>
+                prevEvents.filter((event) => event.id !== deleted.id)
+              );
+              break;
+            default:
+              break;
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (channel) carbon?.removeChannel(channel);
+    };
+  }, [accessToken, carbon, operation.id]);
 
   const getProgress = useCallback(() => {
     const timeNow = now(getLocalTimeZone());
-    return events.reduce(
+    return eventState.reduce(
       (acc, event) => {
         if (event.endTime && event.type) {
           acc[event.type.toLowerCase() as keyof typeof acc] +=
@@ -634,7 +695,7 @@ function useActiveEvents(events: ProductionEvent[]): {
         machine: 0,
       }
     );
-  }, [events]);
+  }, [eventState]);
   const [progress, setProgress] = useState<{
     setup: number;
     labor: number;
@@ -651,11 +712,11 @@ function useActiveEvents(events: ProductionEvent[]): {
         (e) =>
           e.type === "Labor" && e.endTime === null && e.employeeId === user.id
       ),
-      machineProductionEvent: events.find(
+      machineProductionEvent: eventState.find(
         (e) => e.type === "Machine" && e.endTime === null
       ),
     };
-  }, [events, user.id]);
+  }, [eventState, events, user.id]);
 
   const active = useMemo(() => {
     return {
@@ -676,11 +737,7 @@ function useActiveEvents(events: ProductionEvent[]): {
   };
 }
 
-function useOperation(
-  operation: OperationWithDetails,
-  events: ProductionEvent[],
-  job: Job
-) {
+function useOperation(operation: OperationWithDetails, job: Job) {
   const user = useUser();
   const { carbon } = useCarbon();
   const fullscreen = useDisclosure();
@@ -695,14 +752,6 @@ function useOperation(
     }
     return "Setup";
   });
-
-  const {
-    active,
-    setupProductionEvent,
-    laborProductionEvent,
-    machineProductionEvent,
-    progress,
-  } = useActiveEvents(events);
 
   const getDocumentPath = useCallback(
     (file: StorageItem) => {
@@ -751,15 +800,10 @@ function useOperation(
   );
 
   return {
-    active,
     activeTab,
     eventType,
     fullscreen,
-    laborProductionEvent,
-    machineProductionEvent,
-    progress,
     scrapModal,
-    setupProductionEvent,
     isOverdue: operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
       : false,

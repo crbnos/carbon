@@ -11,9 +11,9 @@ import { Link } from "@remix-run/react";
 import {
   LuContainer,
   LuHardHat,
-  LuHexagon,
   LuPlus,
   LuShoppingCart,
+  LuSquareStack,
   LuUserSquare,
   LuUsers,
 } from "react-icons/lu";
@@ -38,7 +38,7 @@ function useCreate(): Route[] {
       links.push({
         name: "Part",
         to: path.to.newPart,
-        icon: <LuHexagon />,
+        icon: <LuSquareStack />,
       });
     }
 

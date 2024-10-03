@@ -30,7 +30,7 @@ import {
   LuAlertTriangle,
   LuDownload,
   LuHardHat,
-  LuHexagon,
+  LuSquareStack,
   LuUpload,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
@@ -154,7 +154,7 @@ const JobBreadcrumbs = () => {
                   {isJobMethod && (
                     <TabsList className="grid w-full grid-cols-2 my-4">
                       <TabsTrigger value="item">
-                        <LuHexagon className="mr-2" /> Item
+                        <LuSquareStack className="mr-2" /> Item
                       </TabsTrigger>
                       <TabsTrigger value="quote">
                         <RiProgress4Line className="mr-2" />

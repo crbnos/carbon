@@ -69,3 +69,10 @@ CREATE POLICY "Employees can delete production quantities" ON "productionQuantit
         SELECT "companyId" from "userToCompany" where "userId" = auth.uid()::text
     )
   );
+
+
+ALTER TABLE "productionQuantity" REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE "productionQuantity";
+
+ALTER TABLE "jobOperation" REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE "jobOperation";

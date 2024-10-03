@@ -12,7 +12,7 @@ import { userAdminTask } from "~/trigger/user-admin";
 // export const config = { runtime: "nodejs" };
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "users",
   });
 
@@ -39,6 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
           payload: {
             id,
             type: "resend",
+            companyId,
           },
         }))
       );

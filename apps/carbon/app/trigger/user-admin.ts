@@ -9,6 +9,7 @@ const serviceRole = getCarbonServiceRole();
 export const userAdminSchema = z.object({
   id: z.string(),
   type: z.enum(["resend", "deactivate"]),
+  companyId: z.string(),
 });
 
 export const userAdminTask = task({
@@ -25,7 +26,11 @@ export const userAdminTask = task({
         break;
       case "deactivate":
         console.log(`🚭 Deactivating ${payload.id}`);
-        result = await deactivateUser(serviceRole, payload.id);
+        result = await deactivateUser(
+          serviceRole,
+          payload.id,
+          payload.companyId
+        );
         break;
       default:
         result = {
