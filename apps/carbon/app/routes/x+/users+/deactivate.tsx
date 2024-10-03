@@ -12,7 +12,7 @@ import type { userAdminTask } from "~/trigger/user-admin";
 // export const config = { runtime: "nodejs" };
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "users",
   });
 
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (users.length === 1) {
     const [userId] = users;
-    const result = await deactivateUser(client, userId);
+    const result = await deactivateUser(client, userId, companyId);
 
     throw redirect(safeRedirect(redirectTo), await flash(request, result));
   } else {
@@ -36,6 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
       payload: {
         id,
         type: "deactivate" as const,
+        companyId,
       },
     }));
 

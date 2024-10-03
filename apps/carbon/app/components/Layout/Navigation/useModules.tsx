@@ -4,10 +4,10 @@ import {
   LuCrown,
   LuFactory,
   LuFiles,
-  LuHexagon,
   LuSettings,
   LuShield,
   LuShoppingCart,
+  LuSquareStack,
   LuUsers,
   LuWrench,
 } from "react-icons/lu";
@@ -35,7 +35,7 @@ export function useModules() {
       permission: "parts",
       name: "Items",
       to: path.to.parts,
-      icon: LuHexagon,
+      icon: LuSquareStack,
     },
     {
       permission: "inventory",

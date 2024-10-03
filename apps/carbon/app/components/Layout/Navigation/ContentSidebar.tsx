@@ -13,7 +13,7 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
     <CollapsibleSidebar>
       <div className="overflow-y-auto h-full w-full pb-8">
         <VStack>
-          <VStack spacing={0} className="p-2">
+          <VStack spacing={1} className="p-2">
             {links.map((route) => {
               const isActive =
                 location.pathname.includes(route.to) && route.q === filter;

@@ -9,7 +9,6 @@ import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "@vercel/remix";
-import crypto from "crypto";
 import { getSupplierContact } from "~/modules/purchasing";
 import { getCustomerContact } from "~/modules/sales";
 import type {
@@ -358,21 +357,58 @@ async function createUser(
 
 export async function deactivateUser(
   client: SupabaseClient<Database>,
-  userId: string
+  userId: string,
+  companyId: string
 ): Promise<Result> {
-  const updateActiveStatus = await client
-    .from("user")
-    .update({ active: false, firstName: "Deactivate", lastName: "User" })
-    .eq("id", userId);
-  if (updateActiveStatus.error) {
-    return error(updateActiveStatus.error, "Failed to deactivate user");
+  const serviceRole = getCarbonServiceRole();
+  const currentPermissions = await serviceRole
+    .from("userPermission")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (currentPermissions.error) {
+    return error(currentPermissions.error, "Failed to get user permissions");
   }
 
-  const randomPassword = crypto.randomBytes(20).toString("hex");
-  const updatePassword = await resetPassword(userId, randomPassword);
+  const permissions = Object.entries(
+    currentPermissions.data?.permissions as Record<string, string[]>
+  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
+    acc[key] = value.filter((id) => id !== companyId);
+    return acc;
+  }, {});
 
-  if (updatePassword.error) {
-    return error(updatePassword.error, "Failed to deactivate user");
+  const [updatePermissions, userToCompanyDelete, employeeDelete] =
+    await Promise.all([
+      serviceRole
+        .from("userPermission")
+        .update({ permissions })
+        .eq("id", userId),
+      serviceRole
+        .from("userToCompany")
+        .delete()
+        .eq("userId", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("employee")
+        .delete()
+        .eq("id", userId)
+        .eq("companyId", companyId),
+    ]);
+
+  if (updatePermissions.error) {
+    return error(updatePermissions.error, "Failed to update user permissions");
+  }
+
+  if (userToCompanyDelete.error) {
+    return error(
+      userToCompanyDelete.error,
+      "Failed to remove user from company"
+    );
+  }
+
+  if (employeeDelete.error) {
+    return error(employeeDelete.error, "Failed to remove employee");
   }
 
   return success("Sucessfully deactivated user");

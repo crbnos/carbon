@@ -1,5 +1,5 @@
 import { Spinner } from "@carbon/react";
-import { LuHexagon } from "react-icons/lu";
+import { LuSquareStack } from "react-icons/lu";
 import type { MethodItemType } from "~/modules/shared";
 import { MethodItemTypeIcon } from "./Icons";
 
@@ -32,7 +32,7 @@ const ItemThumbnail = ({
           type={type}
         />
       ) : (
-        <LuHexagon className="w-5 h-5 text-muted-foreground" />
+        <LuSquareStack className="w-5 h-5 text-muted-foreground" />
       )}
     </div>
   );
