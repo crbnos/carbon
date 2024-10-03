@@ -22,6 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return new Response(css, {
     headers: {
       "Content-Type": "text/css",
+      "Cache-Control": "s-maxage=1, stale-while-revalidate=3600",
     },
   });
 }
