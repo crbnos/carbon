@@ -34,14 +34,14 @@ import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import type { documentTypes, Operation } from "~/services/jobs.service";
 
-type DocumentIconProps = {
+type FileIconProps = {
   type: (typeof documentTypes)[number];
   className?: string;
 };
 
 const documentIconBaseClase = "w-6 h-6 flex-shrink-0";
 
-export const DocumentIcon = ({ type, className }: DocumentIconProps) => {
+export const FileIcon = ({ type, className }: FileIconProps) => {
   switch (type) {
     case "Document":
       return (

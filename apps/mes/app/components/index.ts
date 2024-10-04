@@ -1,8 +1,8 @@
 import Avatar from "./Avatar";
 import AvatarMenu from "./AvatarMenu";
-import DocumentPreview from "./DocumentPreview";
+import FilePreview from "./FilePreview";
 import Hyperlink from "./Hyperlink";
-import { DeadlineIcon, DocumentIcon, StatusIcon } from "./Icons";
+import { DeadlineIcon, FileIcon, StatusIcon } from "./Icons";
 import { JobOperation } from "./JobOperation";
 import { Nav } from "./Nav";
 import { OperationsList } from "./OperationsList";
@@ -12,8 +12,8 @@ export {
   Avatar,
   AvatarMenu,
   DeadlineIcon,
-  DocumentIcon,
-  DocumentPreview,
+  FileIcon,
+  FilePreview,
   Hyperlink,
   JobOperation,
   Nav,

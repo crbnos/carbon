@@ -8,10 +8,11 @@ import { path } from "~/utils/path";
 import type { OperationWithDetails } from "./jobs.service";
 import {
   getJobByOperationId,
-  getJobDocuments,
+  getJobFiles,
   getJobMaterialsByOperationId,
   getJobOperationById,
   getProductionEventsForJobOperation,
+  getProductionQuantitiesForJobOperation,
 } from "./jobs.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -20,11 +21,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
-  const [events, job, operation] = await Promise.all([
+  const [events, quantities, job, operation] = await Promise.all([
     getProductionEventsForJobOperation(client, {
       operationId,
       userId,
     }),
+    getProductionQuantitiesForJobOperation(client, operationId),
     getJobByOperationId(client, operationId),
     getJobOperationById(client, operationId),
   ]);
@@ -45,8 +47,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     events: events.data ?? [],
+    quantities: (quantities.data ?? []).reduce(
+      (acc, curr) => {
+        if (curr.type === "Scrap") {
+          acc.scrap += curr.quantity;
+        } else if (curr.type === "Production") {
+          acc.production += curr.quantity;
+        } else if (curr.type === "Rework") {
+          acc.rework += curr.quantity;
+        }
+        return acc;
+      },
+      { scrap: 0, production: 0, rework: 0 }
+    ),
     job: job.data,
-    files: getJobDocuments(client, companyId, job.data),
+    files: getJobFiles(client, companyId, job.data),
     materials: getJobMaterialsByOperationId(client, operation.data?.[0]),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
   });

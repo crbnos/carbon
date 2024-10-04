@@ -132,86 +132,98 @@ export default function AuthenticatedRoute() {
   }, [transition.state]);
 
   return (
-    <CarbonProvider session={session}>
-      <AutodeskProvider tokenEndpoint={path.to.api.autodeskToken}>
-        <TooltipProvider delayDuration={0}>
-          <ClientOnly fallback={null}>
-            {() => (
-              <ResizablePanelGroup
-                direction="horizontal"
-                className="h-full items-stretch"
-              >
-                <ResizablePanel
-                  ref={panelRef}
-                  defaultSize={isMobile ? 4 : defaultLayout[0]}
-                  collapsedSize={4}
-                  collapsible={true}
-                  minSize={15}
-                  maxSize={25}
-                  onCollapse={() => {
-                    setIsCollapsed(true);
-                  }}
-                  onExpand={() => {
-                    setIsCollapsed(false);
-                  }}
-                  className={cn(
-                    isCollapsed &&
-                      "min-w-[50px] transition-all duration-300 ease-in-out"
-                  )}
+    <div className="h-full w-full">
+      <div className="ray" data-theme="dark" data-chat-started="true">
+        <div className="light-ray ray-one"></div>
+        <div className="light-ray ray-two"></div>
+        <div className="light-ray ray-three"></div>
+        <div className="light-ray ray-four"></div>
+        <div className="light-ray ray-five"></div>
+      </div>
+
+      <CarbonProvider session={session}>
+        <AutodeskProvider tokenEndpoint={path.to.api.autodeskToken}>
+          <TooltipProvider delayDuration={0}>
+            <ClientOnly fallback={null}>
+              {() => (
+                <ResizablePanelGroup
+                  direction="horizontal"
+                  className="h-full items-stretch"
                 >
-                  <div
+                  <ResizablePanel
+                    ref={panelRef}
+                    defaultSize={isMobile ? 4 : defaultLayout[0]}
+                    collapsedSize={4}
+                    collapsible={true}
+                    minSize={15}
+                    maxSize={25}
+                    onCollapse={() => {
+                      setIsCollapsed(true);
+                    }}
+                    onExpand={() => {
+                      setIsCollapsed(false);
+                    }}
                     className={cn(
-                      "flex h-[52px] items-center justify-start bg-background",
-                      isCollapsed ? "h-[52px]" : "px-2"
+                      isCollapsed &&
+                        "min-w-[50px] transition-all duration-300 ease-in-out"
                     )}
                   >
                     <div
-                      className={cn("flex w-full items-center justify-center")}
+                      className={cn(
+                        "flex h-[52px] items-center justify-start bg-background",
+                        isCollapsed ? "h-[52px]" : "px-2"
+                      )}
                     >
-                      <AvatarMenu
-                        // company={company}
-                        // companies={companies}
-                        isCollapsed={isCollapsed}
-                        location={location}
-                        locations={locations}
-                      />
+                      <div
+                        className={cn(
+                          "flex w-full items-center justify-center"
+                        )}
+                      >
+                        <AvatarMenu
+                          // company={company}
+                          // companies={companies}
+                          isCollapsed={isCollapsed}
+                          location={location}
+                          locations={locations}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto bg-background">
-                    <div className="flex flex-col">
-                      <Separator />
-                      <Nav
-                        isCollapsed={isCollapsed}
-                        links={[
-                          {
-                            title: "Jobs",
-                            icon: LuInbox,
-                            to: path.to.jobs,
-                          },
-                          {
-                            title: "Active",
-                            icon: LuActivity,
-                            label: (activeEvents ?? 0).toString(),
-                            to: path.to.active,
-                          },
-                          {
-                            title: "Recent",
-                            icon: LuClock,
-                            to: path.to.recent,
-                          },
-                        ]}
-                      />
+                    <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto bg-background">
+                      <div className="flex flex-col">
+                        <Separator />
+                        <Nav
+                          isCollapsed={isCollapsed}
+                          links={[
+                            {
+                              title: "Jobs",
+                              icon: LuInbox,
+                              to: path.to.jobs,
+                            },
+                            {
+                              title: "Active",
+                              icon: LuActivity,
+                              label: (activeEvents ?? 0).toString(),
+                              to: path.to.active,
+                            },
+                            {
+                              title: "Recent",
+                              icon: LuClock,
+                              to: path.to.recent,
+                            },
+                          ]}
+                        />
+                      </div>
                     </div>
-                  </div>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <Outlet />
-              </ResizablePanelGroup>
-            )}
-          </ClientOnly>
-        </TooltipProvider>
-        <Toaster position="top-right" />
-      </AutodeskProvider>
-    </CarbonProvider>
+                  </ResizablePanel>
+                  <ResizableHandle withHandle />
+                  <Outlet />
+                </ResizablePanelGroup>
+              )}
+            </ClientOnly>
+          </TooltipProvider>
+          <Toaster position="top-right" />
+        </AutodeskProvider>
+      </CarbonProvider>
+    </div>
   );
 }
