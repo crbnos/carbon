@@ -1,0 +1,30 @@
+{
+  "include": [
+    "env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "app/modules/documents/documents.service.ts",
+    "../carbon/app/components/Breadcrumb.tsx"
+  ],
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "ESNext"],
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "target": "ES2019",
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./app/*"]
+    },
+    "types": ["@remix-run/react/future/single-fetch.d.ts"],
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noErrorTruncation": true
+  }
+}
