@@ -111,6 +111,7 @@ function Document({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <title>{title}</title>
+        <link rel="manifest" href="/site.webmanifest" />
         <Links />
         <script
           defer
