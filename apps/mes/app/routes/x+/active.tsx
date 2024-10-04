@@ -1,11 +1,13 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Heading, Input, ResizablePanel, Separator, Tabs } from "@carbon/react";
-import { json, Outlet, useLoaderData } from "@remix-run/react";
+import { json, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { LuSearch } from "react-icons/lu";
+import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
+import { useMediaQuery } from "~/hooks";
 import { getActiveJobOperationsByEmployee } from "~/services/jobs.service";
 import { makeDurations } from "~/utils/durations";
 
@@ -30,6 +32,18 @@ export default function ActiveRoute() {
   const { operations } = useLoaderData<typeof loader>();
   const [searchTerm, setSearchTerm] = useState("");
 
+  const panelRef = useRef<ImperativePanelHandle>(null);
+  const { isMobile } = useMediaQuery();
+  const { operationId } = useParams();
+
+  useEffect(() => {
+    if (isMobile && !!operationId) {
+      panelRef.current?.collapse();
+    } else {
+      panelRef.current?.expand();
+    }
+  }, [isMobile, operationId]);
+
   const filteredOperations = useMemo(() => {
     if (!searchTerm) return operations;
     const lowercasedTerm = searchTerm.toLowerCase();
@@ -43,7 +57,13 @@ export default function ActiveRoute() {
 
   return (
     <>
-      <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
+      <ResizablePanel
+        ref={panelRef}
+        collapsible={true}
+        collapsedSize={0}
+        defaultSize={defaultLayout[1]}
+        minSize={isMobile ? 0 : 30}
+      >
         <Tabs defaultValue="current">
           <div className="flex items-center px-4 py-2 h-[52px] bg-background">
             <Heading size="h2">Active</Heading>

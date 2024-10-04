@@ -139,8 +139,8 @@ export const loader: LoaderFunction = () => {
     ],
     start_url: "/",
     display: "standalone",
-    theme_color: "#2d2d2d",
-    background_color: "#2d2d2d",
+    theme_color: "#101113",
+    background_color: "#101113",
   };
 
   return new Response(JSON.stringify(manifest), {
