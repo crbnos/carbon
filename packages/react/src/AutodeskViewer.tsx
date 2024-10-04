@@ -182,7 +182,7 @@ const AutodeskViewer: React.FC<AutodeskViewerProps> = ({
   return typeof Autodesk === "undefined" ? (
     <div>Please include viewer3D.min.js to the index.html </div>
   ) : (
-    <div ref={viewerRef} className={cn("forgeViewer", className)}></div>
+    <div ref={viewerRef} className={cn("forge-viewer", className)}></div>
   );
 };
 

@@ -18,6 +18,7 @@ import {
   ScrollArea,
   Separator,
   Skeleton,
+  Slider,
   Table,
   Tabs,
   TabsContent,
@@ -42,11 +43,18 @@ import {
 } from "@carbon/react";
 import { Await, Link, useFetcher } from "@remix-run/react";
 import type { ComponentProps, ReactNode } from "react";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   DeadlineIcon,
-  DocumentIcon,
-  DocumentPreview,
+  FileIcon,
+  FilePreview,
   Hyperlink,
   OptionallyFullscreen,
   StatusIcon,
@@ -55,7 +63,6 @@ import { useUser } from "~/hooks";
 import type {
   Job,
   JobMaterial,
-  Operation,
   OperationWithDetails,
   ProductionEvent,
   productionEventType,
@@ -63,14 +70,21 @@ import type {
   StorageItem,
 } from "~/services/jobs.service";
 import {
-  getDocumentType,
+  getFileType,
+  nonScrapQuantityValidator,
   productionEventValidator,
   scrapQuantityValidator,
 } from "~/services/jobs.service";
 import { path } from "~/utils/path";
+import { capitalize } from "~/utils/string";
 
 import { useCarbon } from "@carbon/auth";
-import { Hidden, Number, TextArea, ValidatedForm } from "@carbon/form";
+import {
+  Hidden,
+  NumberControlled,
+  TextArea,
+  ValidatedForm,
+} from "@carbon/form";
 import {
   convertDateStringToIsoString,
   convertKbToString,
@@ -83,7 +97,7 @@ import {
   parseAbsolute,
   toZoned,
 } from "@internationalized/date";
-import type { PostgrestResponse } from "@supabase/supabase-js";
+import type { PostgrestResponse, RealtimeChannel } from "@supabase/supabase-js";
 import { FaRedoAlt, FaTasks } from "react-icons/fa";
 import {
   FaCheck,
@@ -117,19 +131,22 @@ export const JobOperation = ({
   files,
   job,
   materials,
-  operation,
+  operation: originalOperation,
 }: JobOperationProps) => {
   const {
     activeTab,
     eventType,
     fullscreen,
     isOverdue,
+    operation,
     scrapModal,
-    downloadDocument,
-    getDocumentPath,
+    reworkModal,
+    completeModal,
     setActiveTab,
     setEventType,
-  } = useOperation(operation, job);
+  } = useOperationState(originalOperation, job);
+
+  const { downloadFile, getFilePath } = useFiles(job);
 
   const {
     active,
@@ -137,7 +154,7 @@ export const JobOperation = ({
     laborProductionEvent,
     machineProductionEvent,
     progress,
-  } = useActiveEvents(operation, events);
+  } = useActiveEvents(originalOperation, events);
 
   return (
     <OptionallyFullscreen
@@ -428,7 +445,7 @@ export const JobOperation = ({
                                 <Td>{material.quantity}</Td>
                                 <Td>{material.estimatedQuantity}</Td>
 
-                                <Td className="lg:block hidden">
+                                <Td className="lg:table-cell hidden">
                                   <Badge variant="secondary">
                                     <MethodIcon
                                       type={material.methodType}
@@ -474,24 +491,24 @@ export const JobOperation = ({
                             </Tr>
                           ) : (
                             resolvedFiles.map((file) => {
-                              const type = getDocumentType(file.name);
+                              const type = getFileType(file.name);
                               return (
                                 <Tr key={file.id}>
                                   <Td>
                                     <HStack>
-                                      <DocumentIcon type={type} />
+                                      <FileIcon type={type} />
                                       <Hyperlink
-                                        onClick={() => downloadDocument(file)}
+                                        onClick={() => downloadFile(file)}
                                       >
                                         {["PDF", "Image"].includes(type) ? (
-                                          <DocumentPreview
+                                          <FilePreview
                                             bucket="private"
-                                            pathToFile={getDocumentPath(file)}
+                                            pathToFile={getFilePath(file)}
                                             // @ts-ignore
-                                            type={getDocumentType(file.name)}
+                                            type={getFileType(file.name)}
                                           >
                                             {file.name}
-                                          </DocumentPreview>
+                                          </FilePreview>
                                         ) : (
                                           file.name
                                         )}
@@ -549,6 +566,7 @@ export const JobOperation = ({
                     <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
                   tooltip="Rework"
+                  onClick={reworkModal.onOpen}
                 />
                 <IconButtonWithTooltip
                   icon={
@@ -570,6 +588,7 @@ export const JobOperation = ({
                     <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
                   tooltip="Complete"
+                  onClick={completeModal.onOpen}
                 />
                 <IconButtonWithTooltip
                   icon={
@@ -588,13 +607,34 @@ export const JobOperation = ({
           </Controls>
         )}
       </Tabs>
+      {reworkModal.isOpen && (
+        <QuantityModal
+          type="rework"
+          operation={operation}
+          setupProductionEvent={setupProductionEvent}
+          laborProductionEvent={laborProductionEvent}
+          machineProductionEvent={machineProductionEvent}
+          onClose={reworkModal.onClose}
+        />
+      )}
       {scrapModal.isOpen && (
-        <ScrapModal
+        <QuantityModal
+          type="scrap"
           operation={operation}
           setupProductionEvent={setupProductionEvent}
           laborProductionEvent={laborProductionEvent}
           machineProductionEvent={machineProductionEvent}
           onClose={scrapModal.onClose}
+        />
+      )}
+      {completeModal.isOpen && (
+        <QuantityModal
+          type="complete"
+          operation={operation}
+          setupProductionEvent={setupProductionEvent}
+          laborProductionEvent={laborProductionEvent}
+          machineProductionEvent={machineProductionEvent}
+          onClose={completeModal.onClose}
         />
       )}
     </OptionallyFullscreen>
@@ -613,6 +653,7 @@ function useActiveEvents(
 } {
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const [eventState, setEventState] = useState<ProductionEvent[]>(events);
 
@@ -623,50 +664,57 @@ function useActiveEvents(
   useEffect(() => {
     if (!carbon || !accessToken) return;
     carbon.realtime.setAuth(accessToken);
-    const channel = carbon
-      .channel("realtime:core")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "productionEvent",
-          filter: `jobOperationId=eq.${operation.id}`,
-        },
-        (payload) => {
-          switch (payload.eventType) {
-            case "INSERT":
-              const { new: inserted } = payload;
-              setEventState((prevEvents) => [
-                ...prevEvents,
-                inserted as ProductionEvent,
-              ]);
-              break;
-            case "UPDATE":
-              const { new: updated } = payload;
-              setEventState((prevEvents) =>
-                prevEvents.map((event) =>
-                  event.id === updated.id ? (updated as ProductionEvent) : event
-                )
-              );
-              break;
-            case "DELETE":
-              const { old: deleted } = payload;
-              setEventState((prevEvents) =>
-                prevEvents.filter((event) => event.id !== deleted.id)
-              );
-              break;
-            default:
-              break;
+
+    if (!channelRef.current) {
+      channelRef.current = carbon
+        .channel("realtime:core")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "productionEvent",
+            filter: `jobOperationId=eq.${operation.id}`,
+          },
+          (payload) => {
+            switch (payload.eventType) {
+              case "INSERT":
+                const { new: inserted } = payload;
+                setEventState((prevEvents) => [
+                  ...prevEvents,
+                  inserted as ProductionEvent,
+                ]);
+                break;
+              case "UPDATE":
+                const { new: updated } = payload;
+                setEventState((prevEvents) =>
+                  prevEvents.map((event) =>
+                    event.id === updated.id
+                      ? (updated as ProductionEvent)
+                      : event
+                  )
+                );
+                break;
+              case "DELETE":
+                const { old: deleted } = payload;
+                setEventState((prevEvents) =>
+                  prevEvents.filter((event) => event.id !== deleted.id)
+                );
+                break;
+              default:
+                break;
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    }
 
     return () => {
-      if (channel) carbon?.removeChannel(channel);
+      if (channelRef.current) carbon?.removeChannel(channelRef.current);
     };
-  }, [accessToken, carbon, operation.id]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, operation.id]);
 
   const getProgress = useCallback(() => {
     const timeNow = now(getLocalTimeZone());
@@ -737,23 +785,11 @@ function useActiveEvents(
   };
 }
 
-function useOperation(operation: OperationWithDetails, job: Job) {
+function useFiles(job: Job) {
   const user = useUser();
   const { carbon } = useCarbon();
-  const fullscreen = useDisclosure();
-  const scrapModal = useDisclosure();
-  const [activeTab, setActiveTab] = useState("details");
-  const [eventType, setEventType] = useState(() => {
-    if (operation.laborDuration > 0) {
-      return "Labor";
-    }
-    if (operation.machineDuration > 0) {
-      return "Machine";
-    }
-    return "Setup";
-  });
 
-  const getDocumentPath = useCallback(
+  const getFilePath = useCallback(
     (file: StorageItem) => {
       const companyId = user.company.id;
       const { bucket } = file;
@@ -765,18 +801,16 @@ function useOperation(operation: OperationWithDetails, job: Job) {
     [job.id, job.quoteLineId, job.salesOrderLineId, user.company.id]
   );
 
-  const downloadDocument = useCallback(
+  const downloadFile = useCallback(
     async (file: StorageItem) => {
-      const type = getDocumentType(file.name);
+      const type = getFileType(file.name);
       if (type === "PDF") {
-        const url = path.to.file.previewFile(
-          `private/${getDocumentPath(file)}`
-        );
+        const url = path.to.file.previewFile(`private/${getFilePath(file)}`);
         window.open(url, "_blank");
       } else {
         const result = await carbon?.storage
           .from("private")
-          .download(getDocumentPath(file));
+          .download(getFilePath(file));
 
         if (!result || result.error) {
           toast.error(result?.error?.message || "Error downloading file");
@@ -796,20 +830,102 @@ function useOperation(operation: OperationWithDetails, job: Job) {
         }, 0);
       }
     },
-    [carbon?.storage, getDocumentPath]
+    [carbon?.storage, getFilePath]
   );
 
   return {
+    downloadFile,
+    getFilePath,
+  };
+}
+
+function useOperationState(operation: OperationWithDetails, job: Job) {
+  const fullscreen = useDisclosure();
+
+  const scrapModal = useDisclosure();
+  const reworkModal = useDisclosure();
+  const completeModal = useDisclosure();
+  const finishModal = useDisclosure();
+
+  const [activeTab, setActiveTab] = useState("details");
+  const [eventType, setEventType] = useState(() => {
+    if (operation.laborDuration > 0) {
+      return "Labor";
+    }
+    if (operation.machineDuration > 0) {
+      return "Machine";
+    }
+    return "Setup";
+  });
+
+  const { carbon, accessToken } = useCarbon();
+  const [operationState, setOperationState] = useState(operation);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    setOperationState(operation);
+  }, [operation]);
+
+  useEffect(() => {
+    if (!carbon || !accessToken) return;
+
+    carbon.realtime.setAuth(accessToken);
+
+    if (!channelRef.current) {
+      channelRef.current = carbon
+        .channel("realtime:core")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "jobOperation",
+            filter: `id=eq.${operation.id}`,
+          },
+          (payload) => {
+            if (payload.eventType === "UPDATE") {
+              const { new: updated } = payload;
+              if (updated.id === operation.id) {
+                setOperationState((prevState) => ({
+                  ...prevState,
+                  quantityComplete: updated.quantityComplete,
+                  quantityScrapped: updated.quantityScrapped,
+                  quantityReworked: updated.quantityReworked,
+                }));
+              }
+            } else if (payload.eventType === "DELETE") {
+              if (payload.old.id === operation.id) {
+                alert("This operation has been deleted.");
+                window.location.href = path.to.jobs;
+              }
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      if (channelRef.current) {
+        carbon?.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, operation.id]);
+
+  return {
+    operation: operationState,
     activeTab,
     eventType,
     fullscreen,
     scrapModal,
+    reworkModal,
+    completeModal,
+    finishModal,
     isOverdue: operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
       : false,
 
-    downloadDocument,
-    getDocumentPath,
     setActiveTab,
     setEventType,
   };
@@ -1083,32 +1199,66 @@ function PlayButton({ className, ...props }: ComponentProps<"button">) {
   );
 }
 
-function ScrapModal({
+function QuantityModal({
   operation,
   setupProductionEvent,
   laborProductionEvent,
   machineProductionEvent,
   onClose,
+  type,
 }: {
-  operation: Operation;
+  operation: OperationWithDetails;
   setupProductionEvent: ProductionEvent | undefined;
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
   onClose: () => void;
+  type: "scrap" | "rework" | "complete";
 }) {
   const fetcher = useFetcher<ProductionQuantity>();
-  const [scrapReason, setScrapReason] = useState("");
+  const [reason, setReason] = useState("");
+  const [quantity, setQuantity] = useState(1);
+
+  const titleMap = {
+    scrap: `Scrap ${operation.itemReadableId}`,
+    rework: `Rework ${operation.itemReadableId}`,
+    complete: `Complete ${operation.itemReadableId}`,
+  };
+
+  const descriptionMap = {
+    scrap: "Select a scrap quantity and reason",
+    rework: "Select a rework quantity",
+    complete: "Select a completion quantity",
+  };
+
+  const actionMap = {
+    scrap: path.to.scrap,
+    rework: path.to.rework,
+    complete: path.to.complete,
+  };
+
+  const validatorMap = {
+    scrap: scrapQuantityValidator,
+    rework: nonScrapQuantityValidator,
+    complete: nonScrapQuantityValidator,
+  };
+
   return (
-    <Modal open>
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
       <ModalContent>
         <ValidatedForm
-          action={path.to.scrap}
+          action={actionMap[type]}
           method="post"
-          validator={scrapQuantityValidator}
+          validator={validatorMap[type]}
           defaultValues={{
             jobOperationId: operation.id,
             quantity: 1,
-            scrapReason: "",
             setupProductionEventId: setupProductionEvent?.id,
             laborProductionEventId: laborProductionEvent?.id,
             machineProductionEventId: machineProductionEvent?.id,
@@ -1119,10 +1269,8 @@ function ScrapModal({
           }}
         >
           <ModalHeader>
-            <ModalTitle>{`Scrap ${operation.itemReadableId}`}</ModalTitle>
-            <ModalDescription>
-              Select a scrap quantity and reason
-            </ModalDescription>
+            <ModalTitle>{titleMap[type]}</ModalTitle>
+            <ModalDescription>{descriptionMap[type]}</ModalDescription>
           </ModalHeader>
           <ModalBody>
             <Hidden name="jobOperationId" />
@@ -1130,41 +1278,66 @@ function ScrapModal({
             <Hidden name="laborProductionEventId" />
             <Hidden name="machineProductionEventId" />
             <VStack spacing={2}>
-              <Number
+              <NumberControlled
                 name="quantity"
                 label="Quantity"
+                value={quantity}
+                onChange={setQuantity}
                 minValue={1}
-                maxValue={operation.operationQuantity}
               />
-              <TextArea
-                label="Scrap Reason"
-                name="scrapReason"
-                value={scrapReason}
-                onChange={(e) => setScrapReason(e.target.value)}
+              <Slider
+                className="py-3"
+                value={[quantity]}
+                onValueChange={(value) => setQuantity(value[0])}
+                step={1}
+                min={1}
+                max={operation.operationQuantity}
               />
-              <div className="col-span-2 flex gap-2 mt-2">
-                <Badge
-                  variant="secondary"
-                  className="cursor-pointer"
-                  onClick={() => setScrapReason("Defective")}
-                >
-                  Defective
-                </Badge>
-                <Badge
-                  variant="secondary"
-                  className="cursor-pointer"
-                  onClick={() => setScrapReason("Damaged")}
-                >
-                  Damaged
-                </Badge>
-                <Badge
-                  variant="secondary"
-                  className="cursor-pointer"
-                  onClick={() => setScrapReason("Quality Control")}
-                >
-                  Quality Control
-                </Badge>
-              </div>
+              {type === "scrap" ? (
+                <>
+                  <TextArea
+                    label="Scrap Reason"
+                    name="scrapReason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                  />
+                  <div className="col-span-2 flex gap-2 mt-2">
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => setReason("Defective")}
+                    >
+                      Defective
+                    </Badge>
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => setReason("Damaged")}
+                    >
+                      Damaged
+                    </Badge>
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => setReason("Quality Control")}
+                    >
+                      Quality Control
+                    </Badge>
+                  </div>
+                </>
+              ) : (
+                <NumberControlled
+                  name="totalQuantity"
+                  label="Total Quantity"
+                  value={
+                    quantity +
+                    (type === "rework"
+                      ? operation.quantityReworked
+                      : operation.quantityComplete)
+                  }
+                  isReadOnly
+                />
+              )}
             </VStack>
           </ModalBody>
           <ModalFooter>
@@ -1172,8 +1345,11 @@ function ScrapModal({
               Cancel
             </Button>
 
-            <Button variant="destructive" type="submit">
-              Scrap
+            <Button
+              variant={type === "scrap" ? "destructive" : "primary"}
+              type="submit"
+            >
+              {capitalize(type)}
             </Button>
           </ModalFooter>
         </ValidatedForm>

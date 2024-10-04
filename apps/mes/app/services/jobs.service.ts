@@ -3,6 +3,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { sanitize } from "~/utils/supabase";
 
 export type BaseOperation = NonNullable<
   Awaited<ReturnType<typeof getJobOperationsByWorkCenter>>["data"]
@@ -49,7 +50,7 @@ export type ProductionEvent = NonNullable<
 >[number];
 
 export type ProductionQuantity = NonNullable<
-  Awaited<ReturnType<typeof insertScrapQuantity>>["data"]
+  Awaited<ReturnType<typeof getProductionQuantitiesForJobOperation>>["data"]
 >[number];
 
 export type StorageItem = FileObject & {
@@ -96,14 +97,16 @@ export const productionEventValidator = z.object({
   workCenterId: zfd.text(z.string().optional()),
 });
 
-export const scrapQuantityValidator = z.object({
+export const nonScrapQuantityValidator = z.object({
   jobOperationId: z.string(),
   quantity: zfd.numeric(z.number().positive()),
-  unitOfMeasureCode: z.string().min(1),
-  setupProductionEventId: z.string().optional(),
-  laborProductionEventId: z.string().optional(),
-  machineProductionEventId: z.string().optional(),
-  scrapReason: z.string().min(1),
+  setupProductionEventId: zfd.text(z.string().optional()),
+  laborProductionEventId: zfd.text(z.string().optional()),
+  machineProductionEventId: zfd.text(z.string().optional()),
+});
+
+export const scrapQuantityValidator = nonScrapQuantityValidator.extend({
+  scrapReason: z.string().min(1, { message: "Scrap reason is required" }),
 });
 
 export async function getActiveJobOperationsByEmployee(
@@ -132,9 +135,7 @@ export async function getActiveJobCount(
   });
 }
 
-export function getDocumentType(
-  fileName: string
-): (typeof documentTypes)[number] {
+export function getFileType(fileName: string): (typeof documentTypes)[number] {
   const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
   if (["zip", "rar", "7z", "tar", "gz"].includes(extension)) {
     return "Archive";
@@ -175,7 +176,7 @@ export function getDocumentType(
   return "Other";
 }
 
-export async function getJobDocuments(
+export async function getJobFiles(
   client: SupabaseClient<Database>,
   companyId: string,
   job: Job
@@ -278,6 +279,16 @@ export async function getProductionEventsForJobOperation(
     .eq("jobOperationId", args.operationId);
 }
 
+export async function getProductionQuantitiesForJobOperation(
+  client: SupabaseClient<Database>,
+  operationId: string
+) {
+  return client
+    .from("productionQuantity")
+    .select("*")
+    .eq("jobOperationId", operationId);
+}
+
 export async function getRecentJobOperationsByEmployee(
   client: SupabaseClient<Database>,
   args: {
@@ -320,6 +331,42 @@ export async function getWorkCentersByCompany(
     .order("name", { ascending: true });
 }
 
+export async function insertReworkQuantity(
+  client: SupabaseClient<Database>,
+  data: z.infer<typeof nonScrapQuantityValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client
+    .from("productionQuantity")
+    .insert(
+      sanitize({
+        ...data,
+        type: "Rework",
+      })
+    )
+    .select("*");
+}
+
+export async function insertProductionQuantity(
+  client: SupabaseClient<Database>,
+  data: z.infer<typeof nonScrapQuantityValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client
+    .from("productionQuantity")
+    .insert(
+      sanitize({
+        ...data,
+        type: "Production",
+      })
+    )
+    .select("*");
+}
+
 export async function insertScrapQuantity(
   client: SupabaseClient<Database>,
   data: z.infer<typeof scrapQuantityValidator> & {
@@ -329,10 +376,12 @@ export async function insertScrapQuantity(
 ) {
   return client
     .from("productionQuantity")
-    .insert({
-      ...data,
-      type: "Scrap",
-    })
+    .insert(
+      sanitize({
+        ...data,
+        type: "Scrap",
+      })
+    )
     .select("*");
 }
 

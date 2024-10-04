@@ -5,8 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import {
-  insertScrapQuantity,
-  scrapQuantityValidator,
+  insertProductionQuantity,
+  nonScrapQuantityValidator,
 } from "~/services/jobs.service";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -16,30 +16,32 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(scrapQuantityValidator).validate(formData);
+  const validation = await validator(nonScrapQuantityValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const insertScrap = await insertScrapQuantity(client, {
+  const insertProduction = await insertProductionQuantity(client, {
     ...validation.data,
     companyId,
     createdBy: userId,
   });
 
-  if (insertScrap.error) {
+  if (insertProduction.error) {
     return json(
       {},
       await flash(
         request,
-        error(insertScrap.error, "Failed to record scrap quantity")
+        error(insertProduction.error, "Failed to record production quantity")
       )
     );
   }
 
   return json(
-    insertScrap.data,
-    await flash(request, success("Scrap quantity recorded successfully"))
+    insertProduction.data,
+    await flash(request, success("Production quantity recorded successfully"))
   );
 }
