@@ -15,6 +15,7 @@ import {
 import { Analytics } from "@vercel/analytics/react";
 import type {
   ActionFunctionArgs,
+  LinksFunction,
   LoaderFunctionArgs,
   MetaFunction,
 } from "@vercel/remix";
@@ -30,14 +31,14 @@ import { modeValidator } from "./types/validators";
 
 // export const config = { runtime: "edge" };
 
-export function links() {
+export const links: LinksFunction = () => {
   return [
     { rel: "stylesheet", href: Tailwind },
     { rel: "stylesheet", href: Background },
     { rel: "stylesheet", href: NProgress },
     { rel: "stylesheet", href: "/assets/theme.css" },
   ];
-}
+};
 
 export const meta: MetaFunction = () => {
   return [
