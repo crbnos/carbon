@@ -1,5 +1,4 @@
 import type { ComponentProps } from "react";
-import { RxDotFilled } from "react-icons/rx";
 import { Badge } from "./Badge";
 import { cn } from "./utils/cn";
 
@@ -16,10 +15,12 @@ const Status = ({
   return (
     <Badge
       variant={color}
-      className={cn("pl-0.5 truncate", className)}
+      className={cn(
+        "truncate uppercase font-bold text-xs tracking-tight",
+        className
+      )}
       {...props}
     >
-      <RxDotFilled className="w-5 h-5 mr-0.5" />
       {children}
     </Badge>
   );

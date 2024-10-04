@@ -15,6 +15,7 @@ const SalesStatus = ({ status }: SalesOrderStatusProps) => {
     case "Confirmed":
       return <Status color="blue">{status}</Status>;
     case "In Progress":
+      return <Status color="yellow">{status}</Status>;
     case "Needs Approval":
       return <Status color="orange">{status}</Status>;
     case "Invoiced":

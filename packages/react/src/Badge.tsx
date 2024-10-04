@@ -22,13 +22,13 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
         outline: "text-foreground",
         green:
-          "border-transparent bg-[#dbeddb] text-[#1c3829] dark:bg-[#2b593f] dark:text-white",
+          "border-transparent bg-green-600 text-green-100 dark:bg-green-900/50 dark:text-green-400",
         yellow:
-          "border-transparent bg-[#f9e4bc] text-[#402c1b] dark:bg-[#835e33] dark:text-white",
+          "border-transparent bg-yellow-600 text-yellow-100 dark:bg-yellow-900/50 dark:text-yellow-300",
         orange:
-          "border-transparent bg-[#fadec9] text-[#49290e] dark:bg-[#854c1d] dark:text-white",
-        red: "border-transparent bg-[#ffe2dd] text-[#5d1715] dark:bg-[#6e3630] dark:text-white",
-        blue: "border-transparent bg-[#d3e5ef] text-[#183347] dark:bg-[#28456c] dark:text-white",
+          "border-transparent bg-orange-600 text-orange-100 dark:bg-orange-900/50 dark:text-orange-300",
+        red: "border-transparent bg-red-600 text-red-100 dark:bg-red-900/50 dark:text-red-400",
+        blue: "border-transparent bg-blue-600 text-blue-100 dark:bg-blue-900/50 dark:text-blue-400",
         gray: "border-transparent bg-[#e3e2e080] text-[#32302c] dark:bg-[#373737] dark:text-white hover:bg-[#e3e2e0] dark:hover:bg-[#5a5a5a]",
       },
     },
