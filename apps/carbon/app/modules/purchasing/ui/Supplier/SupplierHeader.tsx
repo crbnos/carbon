@@ -65,6 +65,12 @@ const SupplierHeader = () => {
         <CardContent>
           <CardAttributes>
             <CardAttribute>
+              <CardAttributeLabel>Status</CardAttributeLabel>
+              <CardAttributeValue>
+                {supplierStatus ? <Enumerable value={supplierStatus!} /> : "-"}
+              </CardAttributeValue>
+            </CardAttribute>
+            <CardAttribute>
               <CardAttributeLabel>Account Manager</CardAttributeLabel>
               <CardAttributeValue>
                 {routeData?.supplier?.accountManagerId ? (
@@ -90,13 +96,6 @@ const SupplierHeader = () => {
                 </CardAttributeValue>
               </CardAttribute>
             )}
-
-            <CardAttribute>
-              <CardAttributeLabel>Status</CardAttributeLabel>
-              <CardAttributeValue>
-                {supplierStatus ? <Enumerable value={supplierStatus!} /> : "-"}
-              </CardAttributeValue>
-            </CardAttribute>
           </CardAttributes>
         </CardContent>
       </Card>

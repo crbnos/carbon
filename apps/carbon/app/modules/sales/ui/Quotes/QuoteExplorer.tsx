@@ -210,21 +210,6 @@ function QuoteLineItem({
     }
   };
 
-  function getStatusIcon(status: (typeof quoteLineStatusType)[number]) {
-    switch (status) {
-      case "Not Started":
-        return <LuCircle className="text-blue-600" />;
-      case "No Quote":
-        return <LuXCircle className="text-red-600" />;
-      case "Complete":
-        return <LuCheckCircle className="text-green-600" />;
-      case "In Progress":
-        return <LuClock3 className="text-yellow-600" />;
-      default:
-        return null;
-    }
-  }
-
   return (
     <VStack spacing={0}>
       <HStack
@@ -308,4 +293,19 @@ function QuoteLineItem({
         )}
     </VStack>
   );
+}
+
+function getStatusIcon(status: (typeof quoteLineStatusType)[number]) {
+  switch (status) {
+    case "Not Started":
+      return <LuCircle size={12} className="text-blue-600" />;
+    case "No Quote":
+      return <LuXCircle size={12} className="text-red-600" />;
+    case "Complete":
+      return <LuCheckCircle size={12} className="text-green-600" />;
+    case "In Progress":
+      return <LuClock3 size={12} className="text-yellow-600" />;
+    default:
+      return null;
+  }
 }

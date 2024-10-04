@@ -13,14 +13,7 @@ const Status = ({
   ...props
 }: StatusProps) => {
   return (
-    <Badge
-      variant={color}
-      className={cn(
-        "truncate uppercase font-bold text-xs tracking-tight",
-        className
-      )}
-      {...props}
-    >
+    <Badge variant={color} className={cn(className)} {...props}>
       {children}
     </Badge>
   );

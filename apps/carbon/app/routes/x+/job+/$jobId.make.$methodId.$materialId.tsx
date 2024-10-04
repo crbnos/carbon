@@ -108,7 +108,11 @@ export default function JobMakeMethodRoute() {
   return (
     <VStack spacing={2} className="p-2">
       <JobBreadcrumbs />
-      <JobMaterialForm initialValues={material} operations={operations} />
+      <JobMaterialForm
+        key={material.id}
+        initialValues={material}
+        operations={operations}
+      />
       <JobBillOfProcess
         key={`bop:${methodId}:${operations.length}`}
         jobMakeMethodId={methodId}

@@ -259,7 +259,7 @@ export const themes = [
       dark: {
         background: "20 14.3% 6.1%",
         foreground: "60 9.1% 97.8%",
-        card: "20 14.3% 4.1%",
+        card: "20 14.3% 8.9%",
         "card-foreground": "60 9.1% 97.8%",
         popover: "20 14.3% 4.1%",
         "popover-foreground": "60 9.1% 97.8%",

@@ -14,7 +14,7 @@ const Hyperlink = ({
     <Link
       prefetch="intent"
       className={cn(
-        "text-foreground hover:underline cursor-pointer font-medium",
+        "text-foreground font-bold uppercase tracking-tighter text-sm hover:underline cursor-pointer ",
         className
       )}
       {...props}
@@ -24,7 +24,7 @@ const Hyperlink = ({
   ) : (
     <span
       className={cn(
-        "text-foreground hover:underline cursor-pointer ",
+        "text-foreground font-bold uppercase tracking-tighter text-sm cursor-pointer ",
         className
       )}
       {...props}
