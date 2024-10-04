@@ -128,26 +128,23 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           },
         },
       },
+
       {
-        header: "Progress",
+        accessorKey: "status",
+        header: "Status",
         cell: ({ row }) => {
+          const status = row.original.status;
           const lines = row.original.lines ?? 0;
           const completedLines = row.original.completedLines ?? 0;
-          return (
+          return status === "Draft" ? (
             <Progress
               numerator={completedLines.toString()}
               denominator={lines.toString()}
               value={lines === 0 ? 0 : (completedLines / lines) * 100}
             />
+          ) : (
+            <QuoteStatus status={status} />
           );
-        },
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: (item) => {
-          const status = item.getValue<(typeof quoteStatusType)[number]>();
-          return <QuoteStatus status={status} />;
         },
         meta: {
           filter: {
@@ -159,6 +156,11 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           },
           pluralHeader: "Statuses",
         },
+      },
+      {
+        accessorKey: "customerReference",
+        header: "Customer Reference",
+        cell: (item) => item.getValue(),
       },
       {
         accessorKey: "salesPersonId",
@@ -225,11 +227,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           },
         },
       },
-      {
-        accessorKey: "customerReference",
-        header: "Customer Reference",
-        cell: (item) => item.getValue(),
-      },
+
       {
         id: "createdBy",
         header: "Created By",

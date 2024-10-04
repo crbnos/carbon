@@ -109,7 +109,7 @@ function SortableListItem<T>({
                     className="ml-3 border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
                   />
                   {/* List Order */}
-                  <p className="font-mono text-xs pl-1 text-foreground/50 flex flex-shrink-0">
+                  <p className="font-medium text-xs pl-1 text-foreground/50 flex flex-shrink-0">
                     {getParallelizedOrder(order, item, items)}
                   </p>
 

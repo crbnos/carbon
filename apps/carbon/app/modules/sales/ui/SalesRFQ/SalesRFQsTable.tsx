@@ -101,6 +101,23 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           </HStack>
         ),
       },
+
+      {
+        id: "customerId",
+        header: "Customer",
+        cell: ({ row }) => (
+          <CustomerAvatar customerId={row.original.customerId} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: customers?.map((customer) => ({
+              value: customer.id,
+              label: customer.name,
+            })),
+          },
+        },
+      },
       {
         accessorKey: "status",
         header: "Status",
@@ -120,20 +137,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         },
       },
       {
-        id: "customerId",
-        header: "Customer",
-        cell: ({ row }) => (
-          <CustomerAvatar customerId={row.original.customerId} />
-        ),
-        meta: {
-          filter: {
-            type: "static",
-            options: customers?.map((customer) => ({
-              value: customer.id,
-              label: customer.name,
-            })),
-          },
-        },
+        accessorKey: "customerReference",
+        header: "Customer Reference",
+        cell: (item) => item.getValue(),
       },
       {
         accessorKey: "rfqDate",
@@ -145,11 +151,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         header: "Due Date",
         cell: (item) => item.getValue(),
       },
-      {
-        accessorKey: "customerReference",
-        header: "Customer Reference",
-        cell: (item) => item.getValue(),
-      },
+
       {
         id: "assignee",
         header: "Assignee",

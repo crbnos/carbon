@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.1 (cd38da5)",
+    version: "12.0.2 (a4e00ff)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -28426,10 +28426,10 @@ export default {
             $ref: "#/parameters/rowFilter.productionQuantity.jobOperationId",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
+            $ref: "#/parameters/rowFilter.productionQuantity.type",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.unitOfMeasureCode",
+            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.setupProductionEventId",
@@ -28524,10 +28524,10 @@ export default {
             $ref: "#/parameters/rowFilter.productionQuantity.jobOperationId",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
+            $ref: "#/parameters/rowFilter.productionQuantity.type",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.unitOfMeasureCode",
+            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.setupProductionEventId",
@@ -28576,10 +28576,10 @@ export default {
             $ref: "#/parameters/rowFilter.productionQuantity.jobOperationId",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
+            $ref: "#/parameters/rowFilter.productionQuantity.type",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.unitOfMeasureCode",
+            $ref: "#/parameters/rowFilter.productionQuantity.quantity",
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.setupProductionEventId",
@@ -47091,7 +47091,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -47140,7 +47140,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -48832,12 +48832,11 @@ export default {
       required: [
         "id",
         "jobOperationId",
+        "type",
         "quantity",
-        "unitOfMeasureCode",
         "companyId",
         "createdAt",
         "createdBy",
-        "updatedBy",
       ],
       properties: {
         id: {
@@ -48852,13 +48851,15 @@ export default {
           format: "text",
           type: "string",
         },
+        type: {
+          default: "Production",
+          enum: ["Rework", "Scrap", "Production"],
+          format: 'public."productionQuantityType"',
+          type: "string",
+        },
         quantity: {
           format: "integer",
           type: "integer",
-        },
-        unitOfMeasureCode: {
-          format: "text",
-          type: "string",
         },
         setupProductionEventId: {
           description:
@@ -68304,17 +68305,17 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.productionQuantity.type": {
+      name: "type",
+      required: false,
+      format: 'public."productionQuantityType"',
+      in: "query",
+      type: "string",
+    },
     "rowFilter.productionQuantity.quantity": {
       name: "quantity",
       required: false,
       format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.productionQuantity.unitOfMeasureCode": {
-      name: "unitOfMeasureCode",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },

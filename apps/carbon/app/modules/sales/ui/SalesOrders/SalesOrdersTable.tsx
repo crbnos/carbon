@@ -128,16 +128,6 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         },
       },
       {
-        accessorKey: "customerReference",
-        header: "Customer Ref.",
-        cell: (item) => item.getValue(),
-      },
-      {
-        accessorKey: "orderDate",
-        header: "Order Date",
-        cell: (item) => item.getValue(),
-      },
-      {
         accessorKey: "status",
         header: "Status",
         cell: (item) => {
@@ -155,6 +145,17 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           pluralHeader: "Statuses",
         },
       },
+      {
+        accessorKey: "customerReference",
+        header: "Customer Ref.",
+        cell: (item) => item.getValue(),
+      },
+      {
+        accessorKey: "orderDate",
+        header: "Order Date",
+        cell: (item) => item.getValue(),
+      },
+
       {
         id: "assignee",
         header: "Assignee",

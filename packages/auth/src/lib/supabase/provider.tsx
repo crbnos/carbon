@@ -43,7 +43,10 @@ export const CarbonProvider = ({
   const refresh = useFetcher<{}>();
 
   useInterval(() => {
-    if (!initialLoad.current && expiresIn) {
+    // refresh five minutes before expiry
+    const shouldRefresh = expiresAt - 60 * 5 < Date.now() / 1000;
+
+    if (!initialLoad.current && shouldRefresh) {
       refresh.submit(null, {
         method: "post",
         action: path.to.refreshSession,

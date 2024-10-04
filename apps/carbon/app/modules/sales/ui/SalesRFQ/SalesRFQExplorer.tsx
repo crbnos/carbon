@@ -259,7 +259,7 @@ function SalesRFQLineItem({
                 {line.customerPartId}
                 {line.customerPartRevision && ` (${line.customerPartRevision})`}
               </span>
-              <span className="font-mono text-muted-foreground text-xs line-clamp-1">
+              <span className="font-medium text-muted-foreground text-xs line-clamp-1">
                 {line.itemReadableId}
               </span>
             </VStack>

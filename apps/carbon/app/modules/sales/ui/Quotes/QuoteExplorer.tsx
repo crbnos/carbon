@@ -251,7 +251,7 @@ function QuoteLineItem({
                 {getStatusIcon(line.status ?? "Not Started")}
               </div>
             </HStack>
-            <span className="font-mono text-muted-foreground text-xs line-clamp-1">
+            <span className="font-medium text-muted-foreground text-xs line-clamp-1">
               {line.customerPartId}
               {line.customerPartRevision && ` (${line.customerPartRevision})`}
             </span>

@@ -36,14 +36,28 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     throw new Error("File type not supported");
   const contentType = supportedFileTypes[fileType];
 
-  const result = await client.storage.from(bucket).download(`${path}`);
-  if (result.error) {
-    throw new Error("Failed to load file");
+  async function downloadFile() {
+    const result = await client.storage.from(bucket!).download(`${path}`);
+    if (result.error) {
+      console.error(result.error);
+      return null;
+    }
+    return result.data;
+  }
+
+  let fileData = await downloadFile();
+  if (!fileData) {
+    // Wait for a second and try again
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    fileData = await downloadFile();
+    if (!fileData) {
+      throw new Error("Failed to download file after retry");
+    }
   }
 
   const headers = new Headers({
     "Content-Type": contentType,
     "Cache-Control": "public, max-age=31536000", // Cache for a year
   });
-  return new Response(result.data, { status: 200, headers });
+  return new Response(fileData, { status: 200, headers });
 };

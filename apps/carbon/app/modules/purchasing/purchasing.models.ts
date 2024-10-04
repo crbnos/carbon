@@ -20,11 +20,11 @@ export const purchaseOrderTypeType = ["Purchase", "Return"] as const;
 export const purchaseOrderStatusType = [
   "Draft",
   "To Review",
-  "Rejected",
   "To Receive",
   "To Receive and Invoice",
   "To Invoice",
   "Completed",
+  "Rejected",
   "Closed",
 ] as const;
 

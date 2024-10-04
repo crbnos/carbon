@@ -15,14 +15,14 @@ export const purchaseInvoiceLineType = [
 
 export const purchaseInvoiceStatusType = [
   "Draft",
-  "Pending",
-  "Submitted",
   "Return",
+  "Pending",
+  "Partially Paid",
+  "Submitted",
   "Debit Note Issued",
   "Paid",
-  "Partially Paid",
-  "Overdue",
   "Voided",
+  "Overdue",
 ] as const;
 
 export const purchaseInvoiceValidator = z.object({

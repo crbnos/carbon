@@ -150,7 +150,7 @@ export default QuoteBoMExplorer;
 function NodeText({ node }: { node: FlatTreeItem<QuoteMethod> }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-sm font-mono">{node.data.itemReadableId}</span>
+      <span className="text-sm font-medium">{node.data.itemReadableId}</span>
     </div>
   );
 }
