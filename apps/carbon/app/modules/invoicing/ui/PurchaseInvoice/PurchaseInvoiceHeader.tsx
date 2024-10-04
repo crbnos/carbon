@@ -118,6 +118,11 @@ const PurchaseInvoiceHeader = () => {
           <CardContent>
             <CardAttributes>
               <CardAttribute>
+                <CardAttributeLabel>Status</CardAttributeLabel>
+                <PurchaseInvoicingStatus status={purchaseInvoice.status} />
+              </CardAttribute>
+
+              <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
                   <Assignee
@@ -150,10 +155,6 @@ const PurchaseInvoiceHeader = () => {
                 </CardAttributeValue>
               </CardAttribute>
 
-              <CardAttribute>
-                <CardAttributeLabel>Status</CardAttributeLabel>
-                <PurchaseInvoicingStatus status={purchaseInvoice.status} />
-              </CardAttribute>
               <CardAttribute>
                 <CardAttributeLabel>Total</CardAttributeLabel>
                 <CardAttributeValue>

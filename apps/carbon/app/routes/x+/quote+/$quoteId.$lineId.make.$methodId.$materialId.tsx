@@ -110,7 +110,11 @@ export default function QuoteMakeMethodRoute() {
 
   return (
     <VStack spacing={2}>
-      <QuoteMaterialForm initialValues={material} operations={operations} />
+      <QuoteMaterialForm
+        key={material.id}
+        initialValues={material}
+        operations={operations}
+      />
       <QuoteBillOfProcess
         key={`bop:${methodId}:${operations.length}`}
         quoteMakeMethodId={methodId}

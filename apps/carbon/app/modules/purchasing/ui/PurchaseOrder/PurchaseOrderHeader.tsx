@@ -129,6 +129,10 @@ const PurchaseOrderHeader = () => {
           <CardContent>
             <CardAttributes>
               <CardAttribute>
+                <CardAttributeLabel>Status</CardAttributeLabel>
+                <PurchasingStatus status={routeData?.purchaseOrder?.status} />
+              </CardAttribute>
+              <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
                   <Assignee
@@ -159,10 +163,7 @@ const PurchaseOrderHeader = () => {
                   <Enumerable value={routeData?.purchaseOrder?.type} />
                 </CardAttributeValue>
               </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Status</CardAttributeLabel>
-                <PurchasingStatus status={routeData?.purchaseOrder?.status} />
-              </CardAttribute>
+
               <CardAttribute>
                 <CardAttributeLabel>Total</CardAttributeLabel>
                 <CardAttributeValue>

@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -18,7 +18,6 @@ import {
   DatePicker,
   Hidden,
   Input,
-  InputControlled,
   Item,
   Location,
   NumberControlled,
@@ -189,13 +188,16 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                 />
               )}
 
-              <InputControlled
-                name="description"
-                label="Short Description"
-                value={itemData.description}
-                isReadOnly
-                className="col-span-2"
-              />
+              {isEditing && (
+                <InputControlled
+                  name="description"
+                  label="Short Description"
+                  value={itemData.description}
+                  isReadOnly
+                  className="col-span-2"
+                />
+              )}
+
               <NumberControlled
                 name="quantity"
                 label="Quantity"

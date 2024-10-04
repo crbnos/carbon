@@ -88,6 +88,12 @@ const ReceiptHeader = () => {
           <CardContent>
             <CardAttributes>
               <CardAttribute>
+                <CardAttributeLabel>Status</CardAttributeLabel>
+                <CardAttributeValue>
+                  <ReceiptStatus status={routeData?.receipt?.status} />
+                </CardAttributeValue>
+              </CardAttribute>
+              <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
                   <Assignee
@@ -124,12 +130,6 @@ const ReceiptHeader = () => {
                   {routeData?.receipt?.postingDate
                     ? formatDate(routeData?.receipt?.postingDate)
                     : "-"}
-                </CardAttributeValue>
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Status</CardAttributeLabel>
-                <CardAttributeValue>
-                  <ReceiptStatus status={routeData?.receipt?.status} />
                 </CardAttributeValue>
               </CardAttribute>
             </CardAttributes>
