@@ -36,7 +36,7 @@ import { path } from "~/utils/path";
 export const meta: MetaFunction = () => {
   return [
     {
-      title: "Carbon Developers | Forgot Password",
+      title: "Carbon MES | Forgot Password",
     },
   ];
 };

@@ -30,7 +30,7 @@ import { LuAlertCircle } from "react-icons/lu";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Carbon Developers | Login" }];
+  return [{ title: "Carbon MES | Login" }];
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

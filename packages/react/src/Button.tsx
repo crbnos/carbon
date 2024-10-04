@@ -12,14 +12,14 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-[inset_0_1px_2px_0_theme(colors.white/15%)]",
+          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-[inset_0_1px_2px_0_theme(colors.white/15%)]",
         active:
           "bg-active text-active-foreground hover:bg-active/90 hover:text-active-foreground",
         secondary:
           "border border-input bg-card hover:bg-accent hover:text-accent-foreground",
         solid: "bg-accent text-accent-foreground hover:bg-accent/90",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm shadow-[inset_0_1px_2px_0_theme(colors.white/10%)]",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow-[inset_0_1px_2px_0_theme(colors.white/10%)]",
         ghost:
           "bg-transparent hover:bg-primary/10 text-accent-foreground hover:text-accent-foreground/90",
         link: "text-foreground hover:text-foreground underline-offset-4 hover:underline",
