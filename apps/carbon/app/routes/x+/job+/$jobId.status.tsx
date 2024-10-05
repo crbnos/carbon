@@ -25,16 +25,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  console.log({ status });
-
   if (status === "Ready") {
     const { data } = await client
       .from("job")
       .select("item(itemReplenishment(manufacturingBlocked))")
       .eq("id", id)
       .single();
-
-    console.log(data);
 
     if (data?.item?.itemReplenishment?.manufacturingBlocked) {
       throw redirect(

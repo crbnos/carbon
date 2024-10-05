@@ -1,4 +1,4 @@
-import { useCarbon , error } from "@carbon/auth";
+import { error, useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -103,7 +103,7 @@ export default function Terms() {
   const onUploadImage = async (file: File) => {
     // Implement image upload logic here
     // This is a placeholder function
-    console.log("Image upload not implemented", file);
+    console.error("Image upload not implemented", file);
     return "";
   };
 
