@@ -49,6 +49,10 @@ const JobForm = ({ initialValues }: JobFormProps) => {
     initialValues.itemType ?? "Part"
   );
 
+  const isDisabled = ["Completed", "Cancelled"].includes(
+    initialValues.status ?? ""
+  );
+
   const [itemData, setItemData] = useState<{
     itemId: string;
     description: string;
@@ -258,9 +262,10 @@ const JobForm = ({ initialValues }: JobFormProps) => {
         <CardFooter>
           <Submit
             isDisabled={
-              isEditing
+              isDisabled ||
+              (isEditing
                 ? !permissions.can("update", "production")
-                : !permissions.can("create", "production")
+                : !permissions.can("create", "production"))
             }
           >
             Save

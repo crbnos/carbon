@@ -115,7 +115,7 @@ export default function JobDetailsRoute() {
   };
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={2} className="p-2 h-full">
       <JobBreadcrumbs />
       {/* @ts-ignore */}
       <JobForm key={jobInitialValues.id} initialValues={jobInitialValues} />
@@ -127,8 +127,8 @@ export default function JobDetailsRoute() {
             metadata={{ jobId: jobData?.job?.id ?? undefined }}
             modelPath={jobData?.job?.modelPath ?? null}
             title="CAD Model"
-            uploadClassName="min-h-[360px]"
-            viewerClassName="min-h-[360px]"
+            uploadClassName="min-h-[420px]"
+            viewerClassName="min-h-[420px]"
           />
 
           <Suspense

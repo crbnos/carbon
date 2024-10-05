@@ -393,6 +393,8 @@ export const path = {
     jobOperationsOrder: `${x}/job/methods/operation/order`,
     jobProductionEvents: (id: string) => generatePath(`${x}/job/${id}/events`),
     jobs: `${x}/production/jobs`,
+    jobRelease: (id: string) => generatePath(`${x}/job/${id}/release`),
+    jobStatus: (id: string) => generatePath(`${x}/job/${id}/status`),
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
     login: "/login",

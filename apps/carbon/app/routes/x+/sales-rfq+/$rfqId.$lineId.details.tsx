@@ -119,8 +119,8 @@ export default function SalesRFQLine() {
           metadata={{ salesRfqLineId: line.id ?? undefined }}
           modelPath={line?.modelPath ?? null}
           title="CAD Model"
-          uploadClassName="min-h-[360px]"
-          viewerClassName="min-h-[360px]"
+          uploadClassName="min-h-[420px]"
+          viewerClassName="min-h-[420px]"
         />
         <OpportunityLineDocuments
           files={files ?? []}

@@ -30,8 +30,8 @@ import {
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
-import type { jobOperationValidator } from "~/modules/production";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { Job, jobOperationValidator } from "~/modules/production";
 import { jobMaterialValidator } from "~/modules/production";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -56,6 +56,8 @@ const JobMaterialForm = ({
   const { jobId, materialId } = useParams();
   if (!jobId) throw new Error("jobId not found");
   if (!materialId) throw new Error("materialId not found");
+
+  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   const [itemType, setItemType] = useState<MethodItemType>(
     initialValues.itemType
@@ -164,6 +166,10 @@ const JobMaterialForm = ({
     navigate,
   ]);
 
+  const isDisabled = ["Completed", "Cancelled"].includes(
+    jobData?.job?.status ?? ""
+  );
+
   return (
     <Card>
       <ValidatedForm
@@ -245,7 +251,9 @@ const JobMaterialForm = ({
           </VStack>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "production")}>
+          <Submit
+            isDisabled={isDisabled || !permissions.can("update", "production")}
+          >
             Save
           </Submit>
         </CardFooter>

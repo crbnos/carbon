@@ -29,10 +29,8 @@ export const CarbonProvider = ({
   session: Partial<AuthSession>;
 }>) => {
   const { accessToken, refreshToken, expiresIn, expiresAt } = session;
-  const [browserSessionExpiresAt, setBrowserSessionExpiresAt] = useState<
-    number | undefined
-  >();
   const initialLoad = useRef(true);
+  const authenticatedClientLoaded = useRef(false);
   const [carbon, setCarbon] = useState<SupabaseClient<Database> | undefined>(
     () => {
       // prevents server side initial state
@@ -56,10 +54,10 @@ export const CarbonProvider = ({
     initialLoad.current = false;
   }, expiresIn);
 
-  if (isBrowser && expiresAt !== browserSessionExpiresAt && accessToken) {
+  if (isBrowser && accessToken && !authenticatedClientLoaded.current) {
     // recreate a carbon client to force provider's consumer to rerender
     setCarbon(getCarbon(accessToken));
-    setBrowserSessionExpiresAt(expiresAt);
+    authenticatedClientLoaded.current = true;
   }
 
   useEffect(() => {

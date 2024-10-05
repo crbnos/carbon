@@ -34,7 +34,7 @@ import {
   LuUpload,
 } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
-import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
+import { DocumentPreview, FileDropzone } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import { path } from "~/utils/path";
@@ -92,7 +92,7 @@ const OpportunityDocuments = ({
         <HStack>
           {context.droppableContainers.size > 0 && <LuGripVertical />}
           <DocumentIcon type={getDocumentType(attachment.name)} />
-          <Hyperlink onClick={() => download(attachment)}>
+          <span className="font-medium" onClick={() => download(attachment)}>
             {["PDF", "Image"].includes(getDocumentType(attachment.name)) ? (
               <DocumentPreview
                 bucket="private"
@@ -105,7 +105,7 @@ const OpportunityDocuments = ({
             ) : (
               attachment.name
             )}
-          </Hyperlink>
+          </span>
           {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
             <Badge variant="secondary">
               <LuShoppingCart />

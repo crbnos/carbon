@@ -112,7 +112,7 @@ export default function JobRoute() {
                   <ResizableHandle withHandle />
                   <ResizablePanel order={2}>
                     <ScrollArea className="h-[calc(100vh-99px)]">
-                      <VStack spacing={2}>
+                      <VStack spacing={2} className="h-[calc(100vh-99px)]">
                         <Outlet />
                       </VStack>
                     </ScrollArea>

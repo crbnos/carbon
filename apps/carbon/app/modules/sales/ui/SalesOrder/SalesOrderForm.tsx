@@ -20,11 +20,10 @@ import {
   Hidden,
   Input,
   Location,
-  Select,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { salesOrderStatusType, salesOrderValidator } from "~/modules/sales";
+import { salesOrderValidator } from "~/modules/sales";
 
 type SalesOrderFormValues = z.infer<typeof salesOrderValidator>;
 
@@ -39,11 +38,6 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
   );
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
-
-  const statusOptions = salesOrderStatusType.map((status) => ({
-    label: status,
-    value: status,
-  }));
 
   return (
     <Card>
@@ -63,6 +57,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
         </CardHeader>
         <CardContent>
           <Hidden name="salesOrderId" />
+          <Hidden name="status" />
           <VStack>
             <div
               className={cn(
@@ -99,15 +94,6 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                 isDisabled={isCustomer}
               />
 
-              {isEditing && permissions.can("delete", "sales") && (
-                <Select
-                  name="status"
-                  label="Status"
-                  value={initialValues.status}
-                  options={statusOptions}
-                  isReadOnly={isCustomer}
-                />
-              )}
               <Location name="locationId" label="Sales Location" />
               <CustomFormFields table="salesOrder" />
             </div>

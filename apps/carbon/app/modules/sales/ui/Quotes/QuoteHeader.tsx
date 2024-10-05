@@ -1,11 +1,12 @@
 import { Button, HStack, Heading, useDisclosure } from "@carbon/react";
 
-import { Form, Link, useFetcher, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
   LuEye,
   LuRefreshCw,
   LuSend,
+  LuStopCircle,
   LuTrophy,
   LuXCircle,
 } from "react-icons/lu";
@@ -52,6 +53,7 @@ const QuoteHeader = () => {
       : routeData?.quote?.assignee;
 
   const finalizeFetcher = useFetcher<{}>();
+  const statusFetcher = useFetcher<{}>();
 
   return (
     <>
@@ -86,17 +88,27 @@ const QuoteHeader = () => {
             </Button>
             {routeData?.quote?.status === "Draft" && (
               <>
-                <Form method="post" action={path.to.quoteStatus(quoteId)}>
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.quoteStatus(quoteId)}
+                >
                   <input type="hidden" name="status" value="Cancelled" />
                   <Button
-                    isDisabled={!permissions.can("update", "sales")}
-                    leftIcon={<LuXCircle />}
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "sales")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Cancelled"
+                    }
+                    leftIcon={<LuStopCircle />}
                     type="submit"
-                    variant="destructive"
+                    variant="secondary"
                   >
                     Cancel
                   </Button>
-                </Form>
+                </statusFetcher.Form>
                 <Button
                   onClick={finalizeModal.onOpen}
                   isLoading={finalizeFetcher.state !== "idle"}
@@ -113,28 +125,48 @@ const QuoteHeader = () => {
             )}
             {routeData?.quote?.status === "Sent" && (
               <>
-                <Form method="post" action={path.to.quoteStatus(quoteId)}>
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.quoteStatus(quoteId)}
+                >
                   <input type="hidden" name="status" value="Draft" />
                   <Button
-                    isDisabled={!permissions.can("update", "sales")}
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "sales")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Draft"
+                    }
                     leftIcon={<LuRefreshCw />}
                     type="submit"
                     variant="secondary"
                   >
                     Reopen
                   </Button>
-                </Form>
-                <Form method="post" action={path.to.quoteStatus(quoteId)}>
+                </statusFetcher.Form>
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.quoteStatus(quoteId)}
+                >
                   <input type="hidden" name="status" value="Lost" />
                   <Button
-                    isDisabled={!permissions.can("update", "sales")}
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "sales")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Lost"
+                    }
                     leftIcon={<LuXCircle />}
                     type="submit"
                     variant="destructive"
                   >
                     Lost
                   </Button>
-                </Form>
+                </statusFetcher.Form>
 
                 <Button
                   leftIcon={<LuTrophy />}
@@ -149,17 +181,27 @@ const QuoteHeader = () => {
               routeData?.quote?.status ?? ""
             ) && (
               <>
-                <Form method="post" action={path.to.quoteStatus(quoteId)}>
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.quoteStatus(quoteId)}
+                >
                   <input type="hidden" name="status" value="Draft" />
                   <Button
-                    isDisabled={!permissions.can("update", "sales")}
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "sales")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Draft"
+                    }
                     leftIcon={<LuRefreshCw />}
                     type="submit"
                     variant="secondary"
                   >
                     Reopen
                   </Button>
-                </Form>
+                </statusFetcher.Form>
               </>
             )}
             {["Ordered", "Partial"].includes(routeData?.quote?.status ?? "") ? (
@@ -180,17 +222,27 @@ const QuoteHeader = () => {
                   </Link>
                 </Button>
               ) : (
-                <Form method="post" action={path.to.quoteStatus(quoteId)}>
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.quoteStatus(quoteId)}
+                >
                   <input type="hidden" name="status" value="Draft" />
                   <Button
-                    isDisabled={!permissions.can("update", "sales")}
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "sales")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Draft"
+                    }
                     leftIcon={<LuRefreshCw />}
                     type="submit"
                     variant="secondary"
                   >
                     Reopen
                   </Button>
-                </Form>
+                </statusFetcher.Form>
               )
             ) : null}
           </HStack>

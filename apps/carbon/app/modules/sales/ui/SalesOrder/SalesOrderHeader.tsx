@@ -1,12 +1,13 @@
 import { Button, HStack, Heading } from "@carbon/react";
 
-import { Form, Link, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
   LuEye,
   LuFile,
+  LuRefreshCw,
+  LuStopCircle,
   LuTruck,
-  LuXCircle,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import {
@@ -41,6 +42,8 @@ const SalesOrderHeader = () => {
       ? optimisticAssignment
       : routeData?.salesOrder?.assignee;
 
+  const statusFetcher = useFetcher<{}>();
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
@@ -74,17 +77,27 @@ const SalesOrderHeader = () => {
             </Button>
             {routeData?.salesOrder?.status === "Draft" && (
               <>
-                <Form method="post" action={path.to.salesOrderStatus(orderId)}>
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.salesOrderStatus(orderId)}
+                >
                   <input type="hidden" name="status" value="Confirmed" />
                   <Button
-                    isDisabled={!permissions.can("update", "sales")}
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "sales")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Confirmed"
+                    }
                     leftIcon={<LuCheckCheck />}
                     type="submit"
                     variant="secondary"
                   >
                     Confirm
                   </Button>
-                </Form>
+                </statusFetcher.Form>
               </>
             )}
             {routeData?.salesOrder?.status !== "Draft" && (
@@ -98,10 +111,57 @@ const SalesOrderHeader = () => {
                 </Button>
               </>
             )}
+            {!["Cancelled", "Closed", "Completed", "Invoiced"].includes(
+              routeData?.salesOrder?.status ?? ""
+            ) && (
+              <statusFetcher.Form
+                method="post"
+                action={path.to.salesOrderStatus(orderId)}
+              >
+                <input type="hidden" name="status" value="Cancelled" />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  leftIcon={<LuStopCircle />}
+                  isDisabled={
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "sales")
+                  }
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") === "Cancelled"
+                  }
+                >
+                  Cancel
+                </Button>
+              </statusFetcher.Form>
+            )}
 
-            <Button variant="secondary" isDisabled leftIcon={<LuXCircle />}>
-              Cancel
-            </Button>
+            {["Cancelled", "Closed"].includes(
+              routeData?.salesOrder?.status ?? ""
+            ) && (
+              <statusFetcher.Form
+                method="post"
+                action={path.to.salesOrderStatus(orderId)}
+              >
+                <input type="hidden" name="status" value="Draft" />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  leftIcon={<LuRefreshCw />}
+                  isDisabled={
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "sales")
+                  }
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") === "Draft"
+                  }
+                >
+                  Reopen
+                </Button>
+              </statusFetcher.Form>
+            )}
           </HStack>
         </HStack>
       </div>

@@ -234,7 +234,7 @@ export async function createEmployeeAccount(
     return error(permissionsUpdate.error, "Failed to update user permissions");
   }
 
-  return success("Employee account created");
+  return success(userId);
 }
 
 export async function createSupplierAccount(

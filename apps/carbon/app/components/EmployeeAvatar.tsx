@@ -1,5 +1,5 @@
 import type { AvatarProps } from "@carbon/react";
-import { HStack } from "@carbon/react";
+import { cn, HStack } from "@carbon/react";
 import { usePeople } from "~/stores";
 import Avatar from "./Avatar";
 
@@ -26,7 +26,9 @@ const EmployeeAvatar = ({
       <HStack>
         <Avatar size={"xs"} {...props} />
         {withName && (
-          <span className="text-muted-foreground">Deactivated user</span>
+          <span className="text-muted-foreground normal-case font-medium">
+            Deactivated user
+          </span>
         )}
       </HStack>
     );
@@ -43,7 +45,11 @@ const EmployeeAvatar = ({
         path={person.avatarUrl ?? undefined}
         name={person?.name ?? ""}
       />
-      {withName && <span className={className}>{person.name}</span>}
+      {withName && (
+        <span className={cn("normal-case font-medium", className)}>
+          {person.name}
+        </span>
+      )}
     </HStack>
   );
 };

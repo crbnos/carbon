@@ -3,7 +3,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil } from "react-icons/lu";
-import { Avatar, Hyperlink, New, Table } from "~/components";
+import { Avatar, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { DataType } from "~/modules/shared";
@@ -89,14 +89,8 @@ const PeopleTable = memo(
           header: "User",
           cell: ({ row }) => (
             <HStack>
-              <Avatar
-                size="sm"
-                name={row.original.name ?? undefined}
-                path={row.original.avatarUrl ?? undefined}
-              />
-
               <Hyperlink to={path.to.personDetails(row?.original.id!)}>
-                {row.original.name}
+                <EmployeeAvatar size="sm" employeeId={row?.original.id} />
               </Hyperlink>
             </HStack>
           ),

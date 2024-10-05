@@ -59,6 +59,10 @@ const JobBreadcrumbs = () => {
     method: Tree<JobMethod>;
   }>(path.to.job(jobId));
 
+  const isDisabled = ["Completed", "Cancelled"].includes(
+    routeData?.job?.status ?? ""
+  );
+
   const { pathname } = useLocation();
 
   const methodTree = routeData?.method;
@@ -116,7 +120,7 @@ const JobBreadcrumbs = () => {
                 </MenubarItem>
                 <MenubarItem
                   isLoading={isGetMethodLoading}
-                  isDisabled={isGetMethodLoading}
+                  isDisabled={isDisabled || isGetMethodLoading}
                   leftIcon={<LuDownload />}
                   onClick={getMethodModal.onOpen}
                 >

@@ -185,7 +185,7 @@ export default function JobsRoute() {
             <OperationsList
               key={`current:${workCenterId}`}
               operations={filteredOperations.filter((operation) =>
-                ["In Progress", "Ready", "Todo"].includes(
+                ["In Progress", "Ready", "Todo", "Waiting"].includes(
                   operation.operationStatus
                 )
               )}
