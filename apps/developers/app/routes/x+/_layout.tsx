@@ -89,7 +89,7 @@ export default function AuthenticatedRoute() {
               <PrimaryNavigation />
               <div className="flex w-full h-full">
                 <div className="w-full h-full flex-1 overflow-hidden">
-                  <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-x-hidden bg-muted dark:bg-background">
+                  <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-x-hidden bg-muted">
                     <Topbar />
                     <main className="flex-1 overflow-y-auto max-h-[calc(100vh-49px)]">
                       <Outlet />

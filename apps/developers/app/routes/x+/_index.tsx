@@ -19,7 +19,7 @@ export default function AppIndexRoute() {
   );
 
   return (
-    <div className="p-8 w-full h-full bg-muted dark:bg-background">
+    <div className="p-8 w-full h-full bg-muted">
       <Heading size="h3">Hello, {user.firstName}</Heading>
       <Subheading>{formatter.format(date)}</Subheading>
       <Hr />
