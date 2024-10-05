@@ -20,9 +20,7 @@ import {
 } from "~/utils/resizablePanel";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    view: "scheduling",
-  });
+  await requirePermissions(request, {});
 
   const resizeSettings = await getResizableGanttSettings(request);
 

@@ -126,7 +126,9 @@ const JobBillOfMaterial = ({
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
-  const isDisabled = jobData?.job?.status !== "Draft";
+  const isDisabled = ["Completed", "Cancelled"].includes(
+    jobData?.job?.status ?? ""
+  );
 
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "production") || isDisabled) return;

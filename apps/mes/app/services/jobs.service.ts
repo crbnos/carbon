@@ -97,17 +97,36 @@ export const productionEventValidator = z.object({
   workCenterId: zfd.text(z.string().optional()),
 });
 
-export const nonScrapQuantityValidator = z.object({
+export const finishValidator = z.object({
   jobOperationId: z.string(),
-  quantity: zfd.numeric(z.number().positive()),
   setupProductionEventId: zfd.text(z.string().optional()),
   laborProductionEventId: zfd.text(z.string().optional()),
   machineProductionEventId: zfd.text(z.string().optional()),
 });
 
+export const nonScrapQuantityValidator = finishValidator.extend({
+  quantity: zfd.numeric(z.number().positive()),
+});
+
 export const scrapQuantityValidator = nonScrapQuantityValidator.extend({
   scrapReason: z.string().min(1, { message: "Scrap reason is required" }),
 });
+
+export async function finishJobOperation(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationId: string;
+    userId: string;
+  }
+) {
+  return client
+    .from("jobOperation")
+    .update({
+      status: "Done",
+      updatedBy: args.userId,
+    })
+    .eq("id", args.jobOperationId);
+}
 
 export async function getActiveJobOperationsByEmployee(
   client: SupabaseClient<Database>,

@@ -339,7 +339,10 @@ const OpportunityLineDocuments = ({
                     <Td>
                       <HStack>
                         <DocumentIcon type={type} />
-                        <Hyperlink onClick={() => download(file)}>
+                        <span
+                          className="font-medium"
+                          onClick={() => download(file)}
+                        >
                           {["PDF", "Image"].includes(type) ? (
                             <DocumentPreview
                               bucket="private"
@@ -352,7 +355,7 @@ const OpportunityLineDocuments = ({
                           ) : (
                             file.name
                           )}
-                        </Hyperlink>
+                        </span>
                       </HStack>
                     </Td>
                     <Td>

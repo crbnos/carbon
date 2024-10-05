@@ -8,6 +8,7 @@ import { sanitize } from "~/utils/supabase";
 import type {
   jobMaterialValidator,
   jobOperationValidator,
+  jobStatus,
   jobValidator,
 } from "./production.models";
 import type { Job } from "./types";
@@ -313,6 +314,28 @@ export async function recalculateJobMakeMethodRequirements(
       ...params,
     },
   });
+}
+
+export async function updateJobStatus(
+  client: SupabaseClient<Database>,
+  params: {
+    id: string;
+    status: (typeof jobStatus)[number];
+    assignee?: string | null;
+    updatedBy: string;
+  }
+) {
+  const { id, status, assignee, updatedBy } = params;
+
+  return client
+    .from("job")
+    .update({
+      status,
+      assignee,
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", id);
 }
 
 export async function updateJobMaterialOrder(

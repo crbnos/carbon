@@ -55,11 +55,10 @@ import {
   DeadlineIcon,
   FileIcon,
   FilePreview,
-  Hyperlink,
   OptionallyFullscreen,
   StatusIcon,
 } from "~/components";
-import { useUser } from "~/hooks";
+import { useRealtime, useUser } from "~/hooks";
 import type {
   Job,
   JobMaterial,
@@ -70,6 +69,7 @@ import type {
   StorageItem,
 } from "~/services/jobs.service";
 import {
+  finishValidator,
   getFileType,
   nonScrapQuantityValidator,
   productionEventValidator,
@@ -133,12 +133,14 @@ export const JobOperation = ({
   materials,
   operation: originalOperation,
 }: JobOperationProps) => {
+  useRealtime("job", `id=eq.${job.id}`);
   const {
     activeTab,
     eventType,
     fullscreen,
     isOverdue,
     operation,
+    finishModal,
     scrapModal,
     reworkModal,
     completeModal,
@@ -168,7 +170,7 @@ export const JobOperation = ({
         className="w-full h-full bg-card"
       >
         <div className="flex items-center justify-between px-4 py-2 h-[52px] bg-background">
-          <div className="flex items-start flex-grow gap-1">
+          <div className="flex items-center flex-grow gap-2">
             {!fullscreen.isOpen && (
               <Link to={backPath}>
                 <IconButton
@@ -203,9 +205,17 @@ export const JobOperation = ({
               )}
               {operation.operationStatus && (
                 <HStack className="justify-start space-x-2">
-                  <StatusIcon status={operation.operationStatus} />
+                  <StatusIcon
+                    status={
+                      operation.jobStatus === "Paused"
+                        ? "Paused"
+                        : operation.operationStatus
+                    }
+                  />
                   <span className="text-sm truncate">
-                    {operation.operationStatus}
+                    {operation.jobStatus === "Paused"
+                      ? "Paused"
+                      : operation.operationStatus}
                   </span>
                 </HStack>
               )}
@@ -412,9 +422,8 @@ export const JobOperation = ({
                         <Thead>
                           <Tr>
                             <Th>Part</Th>
-                            <Th>Qty Per</Th>
-                            <Th>Estimated Qty</Th>
-                            <Th className="lg:block hidden"></Th>
+                            <Th className="lg:table-cell hidden">Method</Th>
+                            <Th>Quantity</Th>
                           </Tr>
                         </Thead>
                         <Tbody>
@@ -441,10 +450,6 @@ export const JobOperation = ({
                                     {material.description}
                                   </span>
                                 </Td>
-
-                                <Td>{material.quantity}</Td>
-                                <Td>{material.estimatedQuantity}</Td>
-
                                 <Td className="lg:table-cell hidden">
                                   <Badge variant="secondary">
                                     <MethodIcon
@@ -454,6 +459,7 @@ export const JobOperation = ({
                                     {material.methodType}
                                   </Badge>
                                 </Td>
+                                <Td>{material.estimatedQuantity}</Td>
                               </Tr>
                             ))
                           )}
@@ -497,7 +503,8 @@ export const JobOperation = ({
                                   <Td>
                                     <HStack>
                                       <FileIcon type={type} />
-                                      <Hyperlink
+                                      <span
+                                        className="font-medium"
                                         onClick={() => downloadFile(file)}
                                       >
                                         {["PDF", "Image"].includes(type) ? (
@@ -512,7 +519,7 @@ export const JobOperation = ({
                                         ) : (
                                           file.name
                                         )}
-                                      </Hyperlink>
+                                      </span>
                                     </HStack>
                                   </Td>
                                   <Td className="text-xs font-mono">
@@ -577,6 +584,7 @@ export const JobOperation = ({
                 />
                 <StartStopButton
                   eventType={eventType as (typeof productionEventType)[number]}
+                  job={job}
                   operation={operation}
                   setupProductionEvent={setupProductionEvent}
                   laborProductionEvent={laborProductionEvent}
@@ -595,6 +603,7 @@ export const JobOperation = ({
                     <FaFlagCheckered className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
                   tooltip="Finish"
+                  onClick={finishModal.onOpen}
                 />
               </div>
               <WorkTypeToggle
@@ -635,6 +644,17 @@ export const JobOperation = ({
           laborProductionEvent={laborProductionEvent}
           machineProductionEvent={machineProductionEvent}
           onClose={completeModal.onClose}
+        />
+      )}
+      {/* @ts-ignore */}
+      {finishModal.isOpen && (
+        <QuantityModal
+          type="finish"
+          operation={operation}
+          setupProductionEvent={setupProductionEvent}
+          laborProductionEvent={laborProductionEvent}
+          machineProductionEvent={machineProductionEvent}
+          onClose={finishModal.onClose}
         />
       )}
     </OptionallyFullscreen>
@@ -1005,7 +1025,7 @@ function IconButtonWithTooltip({
     <ButtonWithTooltip
       {...props}
       tooltip={tooltip}
-      className="w-16 h-16 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+      className="w-12 h-12 md:w-16 md:h-16 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted"
     >
       {icon}
     </ButtonWithTooltip>
@@ -1084,6 +1104,7 @@ function WorkTypeToggle({
 const startStopFormId = "start-stop-form";
 function StartStopButton({
   className,
+  job,
   operation,
   eventType,
   setupProductionEvent,
@@ -1092,6 +1113,7 @@ function StartStopButton({
   ...props
 }: ComponentProps<"button"> & {
   eventType: (typeof productionEventType)[number];
+  job: Job;
   operation: OperationWithDetails;
   setupProductionEvent: ProductionEvent | undefined;
   laborProductionEvent: ProductionEvent | undefined;
@@ -1180,7 +1202,7 @@ function PauseButton({ className, ...props }: ComponentProps<"button">) {
     <ButtonWithTooltip
       {...props}
       tooltip="Pause"
-      className="group w-20 h-20 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all disabled:opacity-75 text-2xl"
+      className="group w-16 h-16 md:w-20 md:h-20 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all disabled:bg-muted text-2xl"
     >
       <FaPause className="text-accent group-hover:scale-125" />
     </ButtonWithTooltip>
@@ -1192,7 +1214,7 @@ function PlayButton({ className, ...props }: ComponentProps<"button">) {
     <ButtonWithTooltip
       {...props}
       tooltip="Start"
-      className="group w-20 h-20 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all disabled:opacity-75 text-xl"
+      className="group w-16 h-16 md:w-20 md:h-20 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all disabled:bg-muted text-xl"
     >
       <FaPlay className="text-accent group-hover:scale-125" />
     </ButtonWithTooltip>
@@ -1212,34 +1234,39 @@ function QuantityModal({
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
   onClose: () => void;
-  type: "scrap" | "rework" | "complete";
+  type: "scrap" | "rework" | "complete" | "finish";
 }) {
   const fetcher = useFetcher<ProductionQuantity>();
   const [reason, setReason] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(type === "finish" ? 0 : 1);
 
   const titleMap = {
     scrap: `Scrap ${operation.itemReadableId}`,
     rework: `Rework ${operation.itemReadableId}`,
     complete: `Complete ${operation.itemReadableId}`,
+    finish: `Finish ${operation.itemReadableId}`,
   };
 
   const descriptionMap = {
     scrap: "Select a scrap quantity and reason",
     rework: "Select a rework quantity",
     complete: "Select a completion quantity",
+    finish:
+      "Are you sure you want to complete this operation? This will end all active production events for this operation.",
   };
 
   const actionMap = {
     scrap: path.to.scrap,
     rework: path.to.rework,
     complete: path.to.complete,
+    finish: path.to.finish,
   };
 
   const validatorMap = {
     scrap: scrapQuantityValidator,
     rework: nonScrapQuantityValidator,
     complete: nonScrapQuantityValidator,
+    finish: finishValidator,
   };
 
   return (
@@ -1258,7 +1285,8 @@ function QuantityModal({
           validator={validatorMap[type]}
           defaultValues={{
             jobOperationId: operation.id,
-            quantity: 1,
+            // @ts-ignore
+            quantity: type === "finish" ? undefined : 1,
             setupProductionEventId: setupProductionEvent?.id,
             laborProductionEventId: laborProductionEvent?.id,
             machineProductionEventId: machineProductionEvent?.id,
@@ -1278,21 +1306,25 @@ function QuantityModal({
             <Hidden name="laborProductionEventId" />
             <Hidden name="machineProductionEventId" />
             <VStack spacing={2}>
-              <NumberControlled
-                name="quantity"
-                label="Quantity"
-                value={quantity}
-                onChange={setQuantity}
-                minValue={1}
-              />
-              <Slider
-                className="py-3"
-                value={[quantity]}
-                onValueChange={(value) => setQuantity(value[0])}
-                step={1}
-                min={1}
-                max={operation.operationQuantity}
-              />
+              {type !== "finish" && (
+                <>
+                  <NumberControlled
+                    name="quantity"
+                    label="Quantity"
+                    value={quantity}
+                    onChange={setQuantity}
+                    minValue={1}
+                  />
+                  <Slider
+                    className="py-3"
+                    value={[quantity]}
+                    onValueChange={(value) => setQuantity(value[0])}
+                    step={1}
+                    min={1}
+                    max={operation.operationQuantity}
+                  />
+                </>
+              )}
               {type === "scrap" ? (
                 <>
                   <TextArea

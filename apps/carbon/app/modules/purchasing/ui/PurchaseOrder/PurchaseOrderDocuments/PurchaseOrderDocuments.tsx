@@ -20,7 +20,7 @@ import {
 import { convertKbToString } from "@carbon/utils";
 import { Outlet } from "@remix-run/react";
 import { MdMoreVert } from "react-icons/md";
-import { DocumentPreview, Hyperlink } from "~/components";
+import { DocumentPreview } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { PurchaseOrderAttachment } from "~/modules/purchasing";
 import PurchaseOrderDocumentForm from "./PurchaseOrderDocumentForm";
@@ -78,7 +78,10 @@ const PurchaseOrderDocuments = ({
                       <Td>
                         <HStack>
                           <DocumentIcon type={type} />
-                          <Hyperlink onClick={() => download(attachment)}>
+                          <span
+                            className="font-medium"
+                            onClick={() => download(attachment)}
+                          >
                             {["PDF", "Image"].includes(type) ? (
                               <DocumentPreview
                                 bucket="private"
@@ -91,7 +94,7 @@ const PurchaseOrderDocuments = ({
                             ) : (
                               attachment.name
                             )}
-                          </Hyperlink>
+                          </span>
                         </HStack>
                       </Td>
                       <Td>

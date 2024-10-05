@@ -15,7 +15,7 @@ import {
   useDisclosure,
 } from "@carbon/react";
 
-import { Form, Link, useFetcher, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
 import {
   LuAlertTriangle,
@@ -58,6 +58,8 @@ const SalesRFQHeader = () => {
 
   const status = routeData?.rfqSummary?.status ?? "Draft";
 
+  const statusFetcher = useFetcher<{}>();
+
   return (
     <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border">
       <HStack className="w-full justify-between">
@@ -81,49 +83,75 @@ const SalesRFQHeader = () => {
           />
 
           {status === "Draft" && (
-            <>
-              <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
-                <input type="hidden" name="status" value="Ready for Quote" />
-                <Button
-                  isDisabled={!permissions.can("update", "sales")}
-                  leftIcon={<LuRefreshCw />}
-                  type="submit"
-                >
-                  Ready for Quote
-                </Button>
-              </Form>
-            </>
+            <statusFetcher.Form
+              method="post"
+              action={path.to.salesRfqStatus(rfqId)}
+            >
+              <input type="hidden" name="status" value="Ready for Quote" />
+              <Button
+                isDisabled={
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "sales")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Ready for Quote"
+                }
+                leftIcon={<LuRefreshCw />}
+                type="submit"
+              >
+                Ready for Quote
+              </Button>
+            </statusFetcher.Form>
           )}
 
           {["Ready for Quote", "Closed"].includes(status) && (
-            <>
-              <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
-                <input type="hidden" name="status" value="Draft" />
-                <Button
-                  isDisabled={!permissions.can("update", "sales")}
-                  leftIcon={<LuRefreshCw />}
-                  type="submit"
-                  variant="secondary"
-                >
-                  Reopen
-                </Button>
-              </Form>
-            </>
+            <statusFetcher.Form
+              method="post"
+              action={path.to.salesRfqStatus(rfqId)}
+            >
+              <input type="hidden" name="status" value="Draft" />
+              <Button
+                isDisabled={
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "sales")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Draft"
+                }
+                leftIcon={<LuRefreshCw />}
+                type="submit"
+                variant="secondary"
+              >
+                Reopen
+              </Button>
+            </statusFetcher.Form>
           )}
 
           {status === "Ready for Quote" && (
             <>
-              <Form method="post" action={path.to.salesRfqStatus(rfqId)}>
+              <statusFetcher.Form
+                method="post"
+                action={path.to.salesRfqStatus(rfqId)}
+              >
                 <input type="hidden" name="status" value="Closed" />
                 <Button
-                  isDisabled={!permissions.can("update", "sales")}
+                  isDisabled={
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "sales")
+                  }
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") === "Closed"
+                  }
                   leftIcon={<LuXCircle />}
                   type="submit"
                   variant="destructive"
                 >
                   No Quote
                 </Button>
-              </Form>
+              </statusFetcher.Form>
               <Button
                 isDisabled={
                   routeData?.lines?.length === 0 ||

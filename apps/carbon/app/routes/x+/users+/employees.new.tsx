@@ -59,6 +59,13 @@ export async function action({ request }: ActionFunctionArgs) {
     companyId,
   });
 
+  if (result.success && result.message) {
+    throw redirect(
+      path.to.personJob(result.message),
+      await flash(request, result)
+    );
+  }
+
   throw redirect(path.to.employeeAccounts, await flash(request, result));
 }
 

@@ -11,7 +11,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { BsEnvelope, BsShieldLock } from "react-icons/bs";
 import { FaBan } from "react-icons/fa";
 import { LuPencil } from "react-icons/lu";
-import { Avatar, Hyperlink, New, Table } from "~/components";
+import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Employee } from "~/modules/users";
@@ -63,18 +63,12 @@ const EmployeesTable = memo(
           header: "User",
           cell: ({ row }) => (
             <HStack>
-              <Avatar
-                size="sm"
-                name={row.original.name ?? undefined}
-                path={row.original.avatarUrl ?? undefined}
-              />
-
               <Hyperlink
                 to={`${path.to.employeeAccount(
                   row.original.id!
                 )}?${params.toString()}`}
               >
-                {`${row.original.firstName} ${row.original.lastName}`}
+                <EmployeeAvatar size="sm" employeeId={row.original.id} />
               </Hyperlink>
             </HStack>
           ),

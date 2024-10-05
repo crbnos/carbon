@@ -3,22 +3,36 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
   Heading,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  useDisclosure,
 } from "@carbon/react";
 
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import type { FetcherWithComponents } from "@remix-run/react";
+import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
 import {
+  LuCheckCheck,
   LuChevronDown,
   LuClock,
   LuHardHat,
   LuList,
   LuPackage,
+  LuPauseCircle,
+  LuPlayCircle,
+  LuRefreshCw,
   LuSettings,
+  LuStopCircle,
   LuTable,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
@@ -41,6 +55,8 @@ const JobHeader = () => {
 
   const location = useOptimisticLocation();
 
+  const releaseModal = useDisclosure();
+
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const optimisticAssignment = useOptimisticAssignment({
     id: jobId,
@@ -50,6 +66,9 @@ const JobHeader = () => {
     optimisticAssignment !== undefined
       ? optimisticAssignment
       : routeData?.job?.assignee;
+
+  const statusFetcher = useFetcher<{}>();
+  const status = routeData?.job?.status;
 
   const getExplorePath = (type: string) => {
     switch (type) {
@@ -77,69 +96,198 @@ const JobHeader = () => {
   const currentValue = getOptionFromPath();
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
-      <HStack>
-        <Link to={path.to.jobDetails(jobId)}>
-          <Heading size="h3" className="flex items-center gap-2">
-            <ModuleIcon icon={<LuHardHat />} />
-            <span>{routeData?.job?.jobId}</span>
-          </Heading>
-        </Link>
-        <Copy text={routeData?.job?.jobId ?? ""} />
-        <JobStatus status={routeData?.job?.status} />
-      </HStack>
-      <HStack>
-        <Assignee
-          id={jobId}
-          table="job"
-          value={assignee ?? ""}
-          className="h-8"
-          isReadOnly={!permissions.can("update", "production")}
-        />
-        {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
-          <Button leftIcon={<RiProgress8Line />} variant="secondary" asChild>
-            <Link
-              to={path.to.salesOrderLine(
-                routeData?.job?.salesOrderId,
-                routeData?.job?.salesOrderLineId
-              )}
-            >
-              View Order
-            </Link>
-          </Button>
-        )}
+    <>
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
+        <HStack>
+          <Link to={path.to.jobDetails(jobId)}>
+            <Heading size="h3" className="flex items-center gap-2">
+              <ModuleIcon icon={<LuHardHat />} />
+              <span>{routeData?.job?.jobId}</span>
+            </Heading>
+          </Link>
+          <Copy text={routeData?.job?.jobId ?? ""} />
+          <JobStatus status={routeData?.job?.status} />
+        </HStack>
+        <HStack>
+          <Assignee
+            id={jobId}
+            table="job"
+            value={assignee ?? ""}
+            className="h-8"
+            isReadOnly={!permissions.can("update", "production")}
+          />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              leftIcon={currentValue === "details" ? <LuList /> : <LuTable />}
-              rightIcon={<LuChevronDown />}
-              variant="secondary"
-            >
-              {getExplorerLabel(currentValue)}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuRadioGroup
-              value={currentValue}
-              onValueChange={(option) => navigate(getExplorePath(option))}
-            >
-              <DropdownMenuRadioItem value="details">
-                <DropdownMenuIcon icon={getExplorerMenuIcon("details")} />
-                {getExplorerLabel("details")}
-              </DropdownMenuRadioItem>
-              <DropdownMenuSeparator />
-              {["materials", "operations", "events"].map((i) => (
-                <DropdownMenuRadioItem value={i} key={i}>
-                  <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
-                  {getExplorerLabel(i)}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                leftIcon={currentValue === "details" ? <LuList /> : <LuTable />}
+                rightIcon={<LuChevronDown />}
+                variant="secondary"
+              >
+                {getExplorerLabel(currentValue)}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuRadioGroup
+                value={currentValue}
+                onValueChange={(option) => navigate(getExplorePath(option))}
+              >
+                <DropdownMenuRadioItem value="details">
+                  <DropdownMenuIcon icon={getExplorerMenuIcon("details")} />
+                  {getExplorerLabel("details")}
                 </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </HStack>
-    </div>
+                <DropdownMenuSeparator />
+                {["materials", "operations", "events"].map((i) => (
+                  <DropdownMenuRadioItem value={i} key={i}>
+                    <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                    {getExplorerLabel(i)}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+              {routeData?.job?.salesOrderId &&
+                routeData?.job.salesOrderLineId && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to={path.to.salesOrderLine(
+                          routeData?.job?.salesOrderId,
+                          routeData?.job?.salesOrderLineId
+                        )}
+                      >
+                        <DropdownMenuIcon icon={<RiProgress8Line />} />
+                        Sales Order
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {["Cancelled", "Completed"].includes(status ?? "") && (
+            <>
+              <statusFetcher.Form
+                method="post"
+                action={path.to.jobStatus(jobId)}
+              >
+                <input
+                  type="hidden"
+                  name="status"
+                  value={status === "Cancelled" ? "Draft" : "In Progress"}
+                />
+                <Button
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    ["Draft", "In Progress"].includes(
+                      (statusFetcher.formData?.get("status") as string) ?? ""
+                    )
+                  }
+                  isDisabled={
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "production")
+                  }
+                  leftIcon={<LuRefreshCw />}
+                  type="submit"
+                  variant="secondary"
+                >
+                  Reopen
+                </Button>
+              </statusFetcher.Form>
+            </>
+          )}
+
+          {!["Cancelled", "Completed"].includes(status ?? "") && (
+            <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
+              <input type="hidden" name="status" value="Cancelled" />
+              <Button
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Cancelled"
+                }
+                isDisabled={
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production")
+                }
+                leftIcon={<LuStopCircle />}
+                type="submit"
+                variant="secondary"
+              >
+                Cancel
+              </Button>
+            </statusFetcher.Form>
+          )}
+
+          {["Ready", "In Progress"].includes(status ?? "") && (
+            <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
+              <input type="hidden" name="status" value="Paused" />
+              <Button
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Paused"
+                }
+                isDisabled={
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production")
+                }
+                leftIcon={<LuPauseCircle />}
+                type="submit"
+                variant="secondary"
+              >
+                Pause
+              </Button>
+            </statusFetcher.Form>
+          )}
+
+          {status === "Paused" && (
+            <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
+              <input type="hidden" name="status" value="Ready" />
+              <Button
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Ready"
+                }
+                isDisabled={
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production")
+                }
+                leftIcon={<LuPlayCircle />}
+                type="submit"
+              >
+                Resume
+              </Button>
+            </statusFetcher.Form>
+          )}
+
+          {status === "Draft" && (
+            <>
+              <Button
+                onClick={releaseModal.onOpen}
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Ready"
+                }
+                isDisabled={
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production") ||
+                  (routeData?.job?.quantity === 0 &&
+                    routeData?.job?.scrapQuantity === 0)
+                }
+                leftIcon={<LuCheckCheck />}
+              >
+                Release
+              </Button>
+            </>
+          )}
+        </HStack>
+      </div>
+      {releaseModal.isOpen && (
+        <JobReleaseModal
+          job={routeData?.job}
+          onClose={releaseModal.onClose}
+          fetcher={statusFetcher}
+        />
+      )}
+    </>
   );
 };
 
@@ -169,4 +317,50 @@ function getExplorerMenuIcon(type: string) {
     default:
       return <LuHardHat />;
   }
+}
+
+function JobReleaseModal({
+  job,
+  onClose,
+  fetcher,
+}: {
+  job?: Job;
+  fetcher: FetcherWithComponents<{}>;
+  onClose: () => void;
+}) {
+  if (!job) return null;
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Release {job?.jobId}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          Are you sure you want to release this job? It will become available to
+          the shop floor.
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <fetcher.Form
+            onSubmit={onClose}
+            method="post"
+            action={path.to.jobStatus(job.id!)}
+          >
+            <input type="hidden" name="status" value="Ready" />
+            <Button type="submit">Release</Button>
+          </fetcher.Form>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
 }

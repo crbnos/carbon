@@ -1,5 +1,5 @@
 import type { AvatarProps } from "@carbon/react";
-import { HStack } from "@carbon/react";
+import { cn, HStack } from "@carbon/react";
 import { useSuppliers } from "~/stores";
 import Avatar from "./Avatar";
 
@@ -26,7 +26,9 @@ const SupplierAvatar = ({
   return (
     <HStack className="truncate">
       <Avatar size={size ?? "xs"} {...props} name={supplier?.name ?? ""} />
-      <span className={className}>{supplier.name}</span>
+      <span className={cn("normal-case font-medium", className)}>
+        {supplier.name}
+      </span>
     </HStack>
   );
 };

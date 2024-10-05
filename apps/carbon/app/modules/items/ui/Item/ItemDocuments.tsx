@@ -146,7 +146,10 @@ const ItemDocuments = ({
                   <Td>
                     <HStack>
                       <DocumentIcon type={type} />
-                      <Hyperlink onClick={() => download(file)}>
+                      <span
+                        className="font-medium"
+                        onClick={() => download(file)}
+                      >
                         {["PDF", "Image"].includes(type) ? (
                           <DocumentPreview
                             bucket="private"
@@ -159,7 +162,7 @@ const ItemDocuments = ({
                         ) : (
                           file.name
                         )}
-                      </Hyperlink>
+                      </span>
                     </HStack>
                   </Td>
                   <Td className="text-xs font-mono">

@@ -13,9 +13,7 @@ import {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting",
-  });
+  const { client, companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const validation = await validator(productionEventValidator).validate(

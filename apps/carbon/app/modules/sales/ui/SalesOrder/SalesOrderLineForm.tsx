@@ -245,7 +245,12 @@ const SalesOrderLineForm = ({
                   name="itemReadableId"
                   value={itemData?.itemReadableId}
                 />
-
+                {!isEditing && (
+                  <Hidden
+                    name="description"
+                    value={itemData?.description ?? ""}
+                  />
+                )}
                 <Hidden
                   name="modelUploadId"
                   value={itemData?.modelUploadId ?? undefined}
@@ -264,12 +269,19 @@ const SalesOrderLineForm = ({
                       onTypeChange={onTypeChange}
                     />
 
-                    <InputControlled
-                      name="description"
-                      label="Short Description"
-                      value={itemData.description}
-                      isReadOnly
-                    />
+                    {isEditing && (
+                      <InputControlled
+                        name="description"
+                        label="Short Description"
+                        onChange={(value) => {
+                          setItemData((d) => ({
+                            ...d,
+                            description: value,
+                          }));
+                        }}
+                        value={itemData.description}
+                      />
+                    )}
 
                     {lineType !== "Comment" && (
                       <>
