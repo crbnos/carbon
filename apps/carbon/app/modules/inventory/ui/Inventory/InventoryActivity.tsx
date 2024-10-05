@@ -3,7 +3,6 @@ import Activity from "~/components/Activity";
 import type { ItemLedger } from "../../types";
 
 const getActivityText = (ledgerRecord: ItemLedger) => {
-  console.log({ ledgerRecord });
   switch (ledgerRecord.documentType) {
     case "Purchase Receipt":
       return `received ${ledgerRecord.quantity} units`;

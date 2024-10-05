@@ -49,7 +49,7 @@ export class ExchangeRatesClient {
 
   async getExchangeRates(base?: CurrencyCode): Promise<Rates> {
     const url = `${this.#apiUrl}?access_key=${this.#apiKey}`;
-    console.log(url);
+
     const response = await fetch(url);
 
     if (!response.ok) {
