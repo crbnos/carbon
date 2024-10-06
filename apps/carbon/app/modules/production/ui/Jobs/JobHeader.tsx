@@ -22,7 +22,6 @@ import {
 import type { FetcherWithComponents } from "@remix-run/react";
 import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
 import {
-  LuCheckCheck,
   LuChevronDown,
   LuClock,
   LuHardHat,
@@ -32,6 +31,7 @@ import {
   LuPlayCircle,
   LuRefreshCw,
   LuSettings,
+  LuSigmaSquare,
   LuStopCircle,
   LuTable,
 } from "react-icons/lu";
@@ -70,20 +70,7 @@ const JobHeader = () => {
   const statusFetcher = useFetcher<{}>();
   const status = routeData?.job?.status;
 
-  const getExplorePath = (type: string) => {
-    switch (type) {
-      case "materials":
-        return path.to.jobMaterials(jobId);
-      case "operations":
-        return path.to.jobOperations(jobId);
-      case "events":
-        return path.to.jobProductionEvents(jobId);
-      default:
-        return path.to.jobDetails(jobId);
-    }
-  };
-
-  const getOptionFromPath = () => {
+  const getOptionFromPath = (jobId: string) => {
     if (location.pathname.includes(path.to.jobMaterials(jobId)))
       return "materials";
     if (location.pathname.includes(path.to.jobOperations(jobId)))
@@ -93,7 +80,7 @@ const JobHeader = () => {
     return "details";
   };
 
-  const currentValue = getOptionFromPath();
+  const currentValue = getOptionFromPath(jobId);
 
   return (
     <>
@@ -130,14 +117,23 @@ const JobHeader = () => {
             <DropdownMenuContent className="w-56">
               <DropdownMenuRadioGroup
                 value={currentValue}
-                onValueChange={(option) => navigate(getExplorePath(option))}
+                onValueChange={(option) => {
+                  navigate(getExplorePath(jobId, option));
+                }}
               >
                 <DropdownMenuRadioItem value="details">
                   <DropdownMenuIcon icon={getExplorerMenuIcon("details")} />
                   {getExplorerLabel("details")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuSeparator />
-                {["materials", "operations", "events"].map((i) => (
+                {["materials", "operations"].map((i) => (
+                  <DropdownMenuRadioItem value={i} key={i}>
+                    <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                    {getExplorerLabel(i)}
+                  </DropdownMenuRadioItem>
+                ))}
+                <DropdownMenuSeparator />
+                {["events", "quantities"].map((i) => (
                   <DropdownMenuRadioItem value={i} key={i}>
                     <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
                     {getExplorerLabel(i)}
@@ -272,16 +268,16 @@ const JobHeader = () => {
                   (routeData?.job?.quantity === 0 &&
                     routeData?.job?.scrapQuantity === 0)
                 }
-                leftIcon={<LuCheckCheck />}
+                leftIcon={<LuPlayCircle />}
               >
-                Release
+                Start
               </Button>
             </>
           )}
         </HStack>
       </div>
       {releaseModal.isOpen && (
-        <JobReleaseModal
+        <JobStartModal
           job={routeData?.job}
           onClose={releaseModal.onClose}
           fetcher={statusFetcher}
@@ -301,6 +297,8 @@ function getExplorerLabel(type: string) {
       return "Operations";
     case "events":
       return "Production Events";
+    case "quantities":
+      return "Production Quantities";
     default:
       return "Job";
   }
@@ -314,12 +312,29 @@ function getExplorerMenuIcon(type: string) {
       return <LuSettings />;
     case "events":
       return <LuClock />;
+    case "quantities":
+      return <LuSigmaSquare />;
     default:
       return <LuHardHat />;
   }
 }
 
-function JobReleaseModal({
+const getExplorePath = (jobId: string, type: string) => {
+  switch (type) {
+    case "materials":
+      return path.to.jobMaterials(jobId);
+    case "operations":
+      return path.to.jobOperations(jobId);
+    case "events":
+      return path.to.jobProductionEvents(jobId);
+    case "quantities":
+      return path.to.jobProductionQuantities(jobId);
+    default:
+      return path.to.jobDetails(jobId);
+  }
+};
+
+function JobStartModal({
   job,
   onClose,
   fetcher,
@@ -341,10 +356,10 @@ function JobReleaseModal({
     >
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Release {job?.jobId}</ModalTitle>
+          <ModalTitle>Start {job?.jobId}</ModalTitle>
         </ModalHeader>
         <ModalBody>
-          Are you sure you want to release this job? It will become available to
+          Are you sure you want to start this job? It will become available to
           the shop floor.
         </ModalBody>
         <ModalFooter>
@@ -357,7 +372,7 @@ function JobReleaseModal({
             action={path.to.jobStatus(job.id!)}
           >
             <input type="hidden" name="status" value="Ready" />
-            <Button type="submit">Release</Button>
+            <Button type="submit">Start</Button>
           </fetcher.Form>
         </ModalFooter>
       </ModalContent>

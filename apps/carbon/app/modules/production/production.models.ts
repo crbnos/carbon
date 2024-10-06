@@ -24,6 +24,16 @@ export const jobStatus = [
   "Cancelled",
 ] as const;
 
+export const jobOperationStatus = [
+  "Todo",
+  "Ready",
+  "Waiting",
+  "In Progress",
+  "Paused",
+  "Done",
+  "Canceled",
+] as const;
+
 const baseJobValidator = z.object({
   id: zfd.text(z.string().optional()),
   jobId: zfd.text(z.string().optional()),
@@ -380,3 +390,28 @@ export const getJobMethodValidator = z.object({
 //   jobMaterialId: z.string().min(1, { message: "Quote Material is required" }),
 //   itemId: z.string().min(1, { message: "Please select a source method" }),
 // });
+
+export const productionEventValidator = z
+  .object({
+    id: z.string().min(0, { message: "ID is required" }),
+    jobOperationId: z.string().min(1, { message: "Operation is required" }),
+    type: z.enum(["Labor", "Machine", "Setup"], {
+      errorMap: () => ({ message: "Event type is required" }),
+    }),
+    employeeId: zfd.text(z.string().optional()),
+    workCenterId: zfd.text(z.string().optional()),
+    startTime: z.string().min(1, { message: "Start time is required" }),
+    endTime: zfd.text(z.string().optional()),
+  })
+  .refine(
+    (data) => {
+      if (data.endTime) {
+        return new Date(data.startTime) < new Date(data.endTime);
+      }
+      return true;
+    },
+    {
+      message: "Start time must be before end time",
+      path: ["endTime"],
+    }
+  );

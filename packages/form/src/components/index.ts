@@ -9,6 +9,7 @@ import CreatableCombobox from "./CreatableCombobox";
 import type { CreatableMultiSelectProps } from "./CreatableMultiSelect";
 import CreatableMultiSelect from "./CreatableMultiSelect";
 import DatePicker from "./DatePicker";
+import DateTimePicker from "./DateTimePicker";
 import Hidden from "./Hidden";
 import Input from "./Input";
 import InputControlled from "./InputControlled";
@@ -36,6 +37,7 @@ export {
   CreatableCombobox,
   CreatableMultiSelect,
   DatePicker,
+  DateTimePicker,
   Hidden,
   Input,
   InputControlled,

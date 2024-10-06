@@ -55,8 +55,8 @@ import {
   DeadlineIcon,
   FileIcon,
   FilePreview,
+  OperationStatusIcon,
   OptionallyFullscreen,
-  StatusIcon,
 } from "~/components";
 import { useRealtime, useUser } from "~/hooks";
 import type {
@@ -205,7 +205,7 @@ export const JobOperation = ({
               )}
               {operation.operationStatus && (
                 <HStack className="justify-start space-x-2">
-                  <StatusIcon
+                  <OperationStatusIcon
                     status={
                       operation.jobStatus === "Paused"
                         ? "Paused"
@@ -1057,13 +1057,13 @@ function WorkTypeToggle({
     <ToggleGroup value={value} type="single" onValueChange={onChange}>
       {operation.setupDuration > 0 && (
         <ToggleGroupItem
-          className="w-[110px] relative"
+          className="w-[80px] sm:w-[110px] relative"
           value="Setup"
           size="lg"
           aria-label="Toggle setup"
         >
           <LuTimer className="h-4 w-4 mr-2 flex-shrink-0" />
-          Setup
+          <span className="hidden sm:inline-flex">Setup</span>
           {active.setup && (
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
           )}
@@ -1071,13 +1071,13 @@ function WorkTypeToggle({
       )}
       {operation.laborDuration > 0 && (
         <ToggleGroupItem
-          className="w-[110px] relative"
+          className="w-[80px] sm:w-[110px] relative"
           value="Labor"
           size="lg"
           aria-label="Toggle labor"
         >
           <LuHardHat className="h-4 w-4 mr-2 flex-shrink-0" />
-          Labor
+          <span className="hidden sm:inline-flex">Labor</span>
           {active.labor && (
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
           )}
@@ -1085,13 +1085,13 @@ function WorkTypeToggle({
       )}
       {operation.machineDuration > 0 && (
         <ToggleGroupItem
-          className="w-[110px] relative"
+          className="w-[80px] sm:w-[110px] relative"
           value="Machine"
           size="lg"
           aria-label="Toggle machine"
         >
           <LuHammer className="h-4 w-4 mr-2 flex-shrink-0" />
-          Machine
+          <span className="hidden sm:inline-flex">Machine</span>
           {active.machine && (
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
           )}

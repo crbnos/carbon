@@ -24,9 +24,11 @@ const CustomerAvatar = ({
   };
 
   return (
-    <HStack className="truncate">
+    <HStack className="truncate no-underline hover:no-underline">
       <Avatar size={size ?? "xs"} {...props} name={customer?.name ?? ""} />
-      <span className={cn("normal-case font-medium", className)}>
+      <span
+        className={cn("normal-case font-normal tracking-normal", className)}
+      >
         {customer.name}
       </span>
     </HStack>

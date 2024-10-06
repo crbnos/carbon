@@ -431,17 +431,10 @@ const Table = <T extends object>({
     ]
   );
 
-  // reset the selected cell when the table data changes
   useEffect(() => {
-    setSelectedCell(null);
+    if (selectedCell) setSelectedCell(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    editMode,
-    pagination.pageIndex,
-    pagination.pageSize,
-    columnOrder,
-    columnVisibility,
-  ]);
+  }, [editMode, pagination.pageIndex, pagination.pageSize]);
 
   useMount(() => {
     setColumnOrder(table.getAllLeafColumns().map((column) => column.id));

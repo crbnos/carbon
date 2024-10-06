@@ -42,6 +42,7 @@ export const CollapsibleSidebar = ({
             <Button
               onClick={sidebar.onToggle}
               aria-label="Toggle sidebar"
+              variant="secondary"
               className="bg-popover inline-block border border-border border-l-0 absolute top-[calc(100vh-135px)] text-muted-foreground right-[-31px] left-auto rounded-l-none z-[3] hover:bg-popover p-0 shadow-none w-8 h-8"
             >
               {sidebar.isOpen ? (

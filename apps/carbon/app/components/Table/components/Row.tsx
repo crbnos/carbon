@@ -93,8 +93,7 @@ const MemoizedRow = memo(
     next.row.index === prev.selectedCell?.row &&
     next.selectedCell?.column === prev.selectedCell?.column &&
     next.isEditing === prev.isEditing &&
-    next.isEditMode === prev.isEditMode &&
-    prev.pinnedColumns === next.pinnedColumns
+    next.isEditMode === prev.isEditMode
 ) as typeof Row;
 
 export default MemoizedRow;

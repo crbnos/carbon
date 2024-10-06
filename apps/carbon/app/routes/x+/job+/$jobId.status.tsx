@@ -34,7 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     if (data?.item?.itemReplenishment?.manufacturingBlocked) {
       throw redirect(
-        path.to.job(id),
+        requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, "Manufacturing is blocked"))
       );
     }

@@ -23,10 +23,10 @@ const EmployeeAvatar = ({
 
   if (!person && people.length > 0) {
     return (
-      <HStack>
+      <HStack className="no-underline">
         <Avatar size={"xs"} {...props} />
         {withName && (
-          <span className="text-muted-foreground normal-case font-medium">
+          <span className="text-muted-foreground normal-case font-normal tracking-normal tracking-normal">
             Deactivated user
           </span>
         )}
@@ -39,14 +39,16 @@ const EmployeeAvatar = ({
   }
 
   return (
-    <HStack className="truncate">
+    <HStack className="truncate no-underline hover:no-underline">
       <Avatar
         size={size ?? "xs"}
         path={person.avatarUrl ?? undefined}
         name={person?.name ?? ""}
       />
       {withName && (
-        <span className={cn("normal-case font-medium", className)}>
+        <span
+          className={cn("normal-case font-normal tracking-normal", className)}
+        >
           {person.name}
         </span>
       )}

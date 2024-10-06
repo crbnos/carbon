@@ -1,8 +1,7 @@
 import { Button, HStack } from "@carbon/react";
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { type ReactNode } from "react";
-import { BsFillCheckCircleFill } from "react-icons/bs";
-import { MdOutlineEditNote } from "react-icons/md";
+import { LuFileEdit, LuLock } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { useUrlParams } from "~/hooks";
 import type { TableAction } from "../types";
@@ -62,27 +61,6 @@ const TableHeader = <T extends object>({
           {!!filters?.length && <Filter filters={filters} />}
         </HStack>
         <HStack>
-          {withSelectableRows && actions.length > 0 && (
-            // TODO: move this to a draggable bar like Linear
-            <Actions actions={actions} selectedRows={selectedRows} />
-          )}
-          {withInlineEditing &&
-            (editMode ? (
-              <Button
-                leftIcon={<BsFillCheckCircleFill />}
-                onClick={() => setEditMode(false)}
-              >
-                Finish Editing
-              </Button>
-            ) : (
-              <Button
-                leftIcon={<MdOutlineEditNote />}
-                variant="ghost"
-                onClick={() => setEditMode(true)}
-              >
-                Edit
-              </Button>
-            ))}
           <Sort columnAccessors={columnAccessors} />
 
           <Columns
@@ -96,6 +74,28 @@ const TableHeader = <T extends object>({
             (pagination.canNextPage || pagination.canPreviousPage) && (
               <PaginationButtons {...pagination} condensed />
             )}
+          {withSelectableRows && actions.length > 0 && (
+            // TODO: move this to a draggable bar like Linear
+            <Actions actions={actions} selectedRows={selectedRows} />
+          )}
+          {withInlineEditing &&
+            (editMode ? (
+              <Button
+                leftIcon={<LuLock />}
+                variant="secondary"
+                onClick={() => setEditMode(false)}
+              >
+                Lock
+              </Button>
+            ) : (
+              <Button
+                leftIcon={<LuFileEdit />}
+                variant="secondary"
+                onClick={() => setEditMode(true)}
+              >
+                Edit
+              </Button>
+            ))}
           <>{primaryAction}</>
         </HStack>
       </HStack>

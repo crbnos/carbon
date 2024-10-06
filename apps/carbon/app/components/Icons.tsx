@@ -4,6 +4,7 @@ import { FaCodePullRequest } from "react-icons/fa6";
 import { HiSquares2X2 } from "react-icons/hi2";
 import {
   LuAtom,
+  LuCheckCircle,
   LuExternalLink,
   LuGrip,
   LuHammer,
@@ -12,6 +13,7 @@ import {
   LuPizza,
   LuShoppingCart,
   LuTimer,
+  LuXCircle,
 } from "react-icons/lu";
 
 import { RxCodesandboxLogo } from "react-icons/rx";
@@ -20,7 +22,11 @@ import { TbTargetArrow, TbTargetOff } from "react-icons/tb";
 import { getColor } from "@carbon/utils";
 import { Link } from "@remix-run/react";
 import type { ReactNode } from "react";
+import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
+import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
+import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { useMode } from "~/hooks/useMode";
+import type { JobOperation } from "~/modules/production";
 import type { MethodType } from "~/modules/shared";
 
 export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
@@ -126,10 +132,10 @@ type MethodBadgeProps = {
 
 export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   const mode = useMode();
-  const style = getBadgeColor(type, mode);
+  const style = getReplenishmentBadgeColor(type, mode);
   return (
     <HStack className="group" spacing={1}>
-      <Badge style={style}>
+      <Badge style={style} className={className}>
         <MethodIcon type={type} className="w-3 h-3 mr-1 " />
         {text}
       </Badge>
@@ -144,10 +150,35 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   );
 }
 
-function getBadgeColor(type: MethodType, mode: "light" | "dark") {
+function getReplenishmentBadgeColor(type: MethodType, mode: "light" | "dark") {
   return type === "Buy"
     ? getColor("blue", mode)
     : type === "Make"
     ? getColor("green", mode)
     : getColor("orange", mode);
+}
+
+export function OperationStatusIcon({
+  status,
+  className,
+}: {
+  status: JobOperation["status"];
+  className?: string;
+}) {
+  switch (status) {
+    case "Ready":
+    case "Todo":
+      return <TodoStatusIcon className={cn("text-foreground", className)} />;
+    case "Waiting":
+    case "Canceled":
+      return <LuXCircle className={cn("text-muted-foreground", className)} />;
+    case "Done":
+      return <LuCheckCircle className={cn("text-blue-600", className)} />;
+    case "In Progress":
+      return <AlmostDoneIcon className={className} />;
+    case "Paused":
+      return <InProgressStatusIcon className={className} />;
+    default:
+      return null;
+  }
 }

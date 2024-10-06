@@ -147,7 +147,7 @@ export const MethodItemTypeIcon = ({
   return <HiSquares2X2 className={cn("text-muted-foreground", className)} />;
 };
 
-export function StatusIcon({
+export function OperationStatusIcon({
   status,
 }: {
   status: Operation["operationStatus"];

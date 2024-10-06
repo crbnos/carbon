@@ -50,7 +50,8 @@ const Cell = <T extends object>({
         wasEdited && "bg-yellow-100 dark:bg-yellow-900",
         !hasEditableTableCellComponent && "bg-muted/50",
         hasError && "ring-inset ring-2 ring-red-500",
-        isSelected && "ring-inset ring-2 ring-ring"
+        isSelected && "!ring-inset !ring-2 !ring-ring",
+        isSelected && hasEditableTableCellComponent && "!bg-background"
       )}
       ref={ref}
       data-row={cell.row.index}

@@ -17,7 +17,7 @@ import {
 import { Link, useParams } from "@remix-run/react";
 import { LuAlertTriangle, LuClipboardCheck, LuTimer } from "react-icons/lu";
 import type { Operation, OperationSettings } from "~/services/jobs.service";
-import { DeadlineIcon, StatusIcon } from "./Icons";
+import { DeadlineIcon, OperationStatusIcon } from "./Icons";
 
 type OperationsListProps = {
   operations: Operation[];
@@ -117,7 +117,7 @@ function OperationCard({
           )}
           {showStatus && operation.operationStatus && (
             <HStack className="justify-start space-x-2">
-              <StatusIcon status={operation.operationStatus} />
+              <OperationStatusIcon status={operation.operationStatus} />
               <span className="text-sm">{operation.operationStatus}</span>
             </HStack>
           )}

@@ -61,10 +61,15 @@ const EditableNumber =
       <NumberField {...numberFieldProps} defaultValue={value as number}>
         <Input
           size="sm"
-          className="w-full rounded-none ring-offset-0"
+          className="w-full rounded-none outline-none border-none focus-visible:ring-0 out"
           autoFocus
           onKeyDown={onKeyDown}
           onBlur={onBlur}
+          ref={(input) => {
+            if (input) {
+              input.select();
+            }
+          }}
         />
       </NumberField>
     );

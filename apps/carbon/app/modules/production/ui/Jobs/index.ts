@@ -10,6 +10,8 @@ import JobOperationsTable from "./JobOperationsTable";
 
 import JobsTable from "./JobsTable";
 import JobStatus from "./JobStatus";
+import ProductionEventForm from "./ProductionEventForm";
+import ProductionEventsTable from "./ProductionEventsTable";
 
 export {
   getDeadlineIcon,
@@ -24,4 +26,6 @@ export {
   JobOperationsTable,
   JobsTable,
   JobStatus,
+  ProductionEventForm,
+  ProductionEventsTable,
 };
