@@ -69,7 +69,7 @@ function makeItem(material: Material): ItemWithData {
     id: material.id!,
     title: (
       <VStack spacing={0} className="py-2.5">
-        <h4 className="flex font-medium text-sm md:text-base truncate">
+        <h4 className="flex text-xs font-bold uppercase tracking-tighter md:text-sm truncate">
           {material.itemReadableId}
         </h4>
         {material?.description && (
@@ -549,13 +549,21 @@ function MaterialForm({
             onTypeChange={onTypeChange}
           />
           <InputControlled
-            className="col-span-2"
             name="description"
             label="Description"
             value={itemData.description}
             onChange={(newValue) => {
               setItemData((d) => ({ ...d, description: newValue }));
             }}
+          />
+          <Select
+            name="jobOperationId"
+            label="Operation"
+            isClearable
+            options={jobOperations.map((o) => ({
+              value: o.id!,
+              label: o.description,
+            }))}
           />
 
           <DefaultMethodType
@@ -575,15 +583,7 @@ function MaterialForm({
               }))
             }
           />
-          <Select
-            name="jobOperationId"
-            label="Operation"
-            isClearable
-            options={jobOperations.map((o) => ({
-              value: o.id!,
-              label: o.description,
-            }))}
-          />
+
           {itemData.methodType !== "Make" && (
             <NumberControlled
               name="unitCost"

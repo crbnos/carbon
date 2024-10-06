@@ -1,16 +1,27 @@
-import { HStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { useCarbon } from "@carbon/auth";
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+  HStack,
+  IconButton,
+} from "@carbon/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
-import { LuCheckCircle, LuXCircle } from "react-icons/lu";
-import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
-import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
-import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
+import { memo, useCallback, useMemo } from "react";
+import { LuRefreshCcwDot } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
+import { EditableNumber } from "~/components/Editable";
 import { Enumerable } from "~/components/Enumerable";
-import { useRouteData } from "~/hooks";
+import { OperationStatusIcon } from "~/components/Icons";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { jobOperationStatus } from "../../production.models";
 import type { Job, JobOperation } from "../../types";
 
 type JobOperationsTableProps = {
@@ -25,6 +36,23 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const isPaused = routeData?.job?.status === "Paused";
 
+  const fetcher = useFetcher<{}>();
+  const permissions = usePermissions();
+
+  const onOperationStatusChange = useCallback(
+    async (id: string, status: JobOperation["status"]) => {
+      const formData = new FormData();
+      formData.set("id", id);
+      formData.set("status", status);
+
+      return await fetcher.submit(formData, {
+        method: "post",
+        action: path.to.jobOperationStatus,
+      });
+    },
+    [fetcher]
+  );
+
   const columns = useMemo<ColumnDef<JobOperation>[]>(() => {
     return [
       {
@@ -32,13 +60,44 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         header: "Description",
         cell: ({ row }) => (
           <HStack className="py-1">
-            {getStatusIcon(isPaused ? "Paused" : row.original.status)}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Change status"
+                  icon={
+                    <OperationStatusIcon
+                      status={isPaused ? "Paused" : row.original.status}
+                    />
+                  }
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuRadioGroup
+                  value={row.original.status}
+                  onValueChange={(status) =>
+                    onOperationStatusChange(
+                      row.original.id,
+                      status as JobOperation["status"]
+                    )
+                  }
+                >
+                  {jobOperationStatus.map((status) => (
+                    <DropdownMenuRadioItem key={status} value={status}>
+                      <DropdownMenuIcon
+                        icon={<OperationStatusIcon status={status} />}
+                      />
+                      <span>{status}</span>
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Hyperlink
-              to={path.to.jobMakeMethod(
-                jobId,
-                "make",
-                row.original.jobMakeMethodId!
-              )}
+              to={`${path.to.jobProductionEvents(
+                jobId
+              )}?filter=jobOperationId:eq:${row.original.id}`}
               className="max-w-[260px] truncate"
             >
               {row.original.description}
@@ -50,21 +109,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         id: "item",
         header: "Item",
         cell: ({ row }) => {
-          return (
-            <Hyperlink
-              to={
-                row.original.jobMakeMethod?.parentMaterialId
-                  ? path.to.jobMakeMethod(
-                      jobId,
-                      row.original.jobMakeMethodId!,
-                      row.original.jobMakeMethod?.parentMaterialId
-                    )
-                  : path.to.jobMethod(jobId, row.original.jobMakeMethodId!)
-              }
-            >
-              {row.original.jobMakeMethod?.item?.readableId}
-            </Hyperlink>
-          );
+          return row.original.jobMakeMethod?.item?.readableId;
         },
       },
       {
@@ -97,32 +142,65 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         header: "Qty. Scrapped",
         cell: (item) => item.getValue(),
       },
+      {
+        accessorKey: "quantityReworked",
+        header: "Qty. Reworked",
+        cell: (item) => item.getValue(),
+      },
     ];
-  }, [isPaused, jobId]);
+  }, [isPaused, jobId, onOperationStatusChange]);
 
-  return <Table<JobOperation> count={count} columns={columns} data={data} />;
+  const { carbon } = useCarbon();
+  const { id: userId } = useUser();
+  const onCellEdit = useCallback(
+    async (id: string, value: unknown, row: JobOperation) => {
+      if (!carbon) throw new Error("Carbon client not found");
+      return await carbon
+        .from("jobOperation")
+        .update({
+          [id]: value,
+          updatedBy: userId,
+        })
+        .eq("id", row.id!);
+    },
+    [carbon, userId]
+  );
+
+  const editableComponents = useMemo(() => {
+    return {
+      operationQuantity: EditableNumber(onCellEdit),
+      quantityScrapped: EditableNumber(onCellEdit),
+      quantityComplete: EditableNumber(onCellEdit),
+      quantityReworked: EditableNumber(onCellEdit),
+    };
+  }, [onCellEdit]);
+
+  return (
+    <Table<JobOperation>
+      count={count}
+      columns={columns}
+      data={data}
+      primaryAction={
+        data.length > 0 && permissions.can("update", "production") ? (
+          <fetcher.Form action={path.to.jobRecalculate(jobId)} method="post">
+            <Button
+              leftIcon={<LuRefreshCcwDot />}
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              type="submit"
+              variant="secondary"
+            >
+              Recalculate
+            </Button>
+          </fetcher.Form>
+        ) : undefined
+      }
+      editableComponents={editableComponents}
+      withInlineEditing={permissions.can("update", "production")}
+    />
+  );
 });
 
 JobOperationsTable.displayName = "JobOperationsTable";
 
 export default JobOperationsTable;
-
-// TODO: this might be in a shared location since it is used in the MES too
-export function getStatusIcon(status: JobOperation["status"]) {
-  switch (status) {
-    case "Ready":
-    case "Todo":
-      return <TodoStatusIcon className="text-foreground" />;
-    case "Waiting":
-    case "Canceled":
-      return <LuXCircle className="text-muted-foreground" />;
-    case "Done":
-      return <LuCheckCircle className="text-blue-600" />;
-    case "In Progress":
-      return <AlmostDoneIcon />;
-    case "Paused":
-      return <InProgressStatusIcon />;
-    default:
-      return null;
-  }
-}

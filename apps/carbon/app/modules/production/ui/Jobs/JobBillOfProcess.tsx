@@ -12,6 +12,7 @@ import {
   CardTitle,
   Editor,
   HStack,
+  IconButton,
   Label,
   cn,
   generateHTML,
@@ -42,15 +43,17 @@ import {
   WorkCenter,
   getUnitHint,
 } from "~/components/Form";
+import { OperationStatusIcon } from "~/components/Icons";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { methodOperationOrders, operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { jobOperationValidator } from "../../production.models";
-import type { Job } from "../../types";
+import type { Job, JobOperation } from "../../types";
 
 type Operation = z.infer<typeof jobOperationValidator> & {
+  status: JobOperation["status"];
   workInstruction: JSONContent | null;
 };
 
@@ -70,7 +73,14 @@ function makeItems(operations: Operation[]): ItemWithData[] {
 function makeItem(operation: Operation): ItemWithData {
   return {
     id: operation.id!,
-    title: operation.description ?? "",
+    title: (
+      <HStack>
+        <h4 className="flex text-xs font-bold uppercase tracking-tighter md:text-sm truncate">
+          {operation.description}
+        </h4>
+        <OperationStatusIcon status={operation.status} />
+      </HStack>
+    ),
     checked: false,
     order: operation.operationOrder,
     details: (
@@ -116,6 +126,7 @@ const initialOperation: Omit<Operation, "jobMakeMethodId" | "order"> = {
   processId: "",
   setupTime: 0,
   setupUnit: "Total Minutes",
+  status: "Todo",
   workCenterId: "",
   workInstruction: {},
 };
@@ -762,6 +773,7 @@ function OperationForm({
                   ...makeItem({
                     ...values,
                     workInstruction: i.data.workInstruction,
+                    status: i.data.status,
                   }),
                   id: item.id,
                 }
@@ -904,7 +916,15 @@ function OperationForm({
                 <TimeTypeIcon type="Setup" />
                 <Label>Setup</Label>
               </HStack>
-              <LuChevronDown
+              <IconButton
+                icon={<LuChevronDown />}
+                aria-label={showSetup ? "Collapse Setup" : "Expand Setup"}
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSetup(!showSetup);
+                }}
                 className={`transition-transform ${
                   showSetup ? "rotate-180" : ""
                 }`}
@@ -963,7 +983,15 @@ function OperationForm({
                 <TimeTypeIcon type="Labor" />
                 <Label>Labor</Label>
               </HStack>
-              <LuChevronDown
+              <IconButton
+                icon={<LuChevronDown />}
+                aria-label={showLabor ? "Collapse Labor" : "Expand Labor"}
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLabor(!showLabor);
+                }}
                 className={`transition-transform ${
                   showLabor ? "rotate-180" : ""
                 }`}
@@ -1023,7 +1051,15 @@ function OperationForm({
                 <TimeTypeIcon type="Machine" />
                 <Label>Machine</Label>
               </HStack>
-              <LuChevronDown
+              <IconButton
+                icon={<LuChevronDown />}
+                aria-label={showMachine ? "Collapse Machine" : "Expand Machine"}
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMachine(!showMachine);
+                }}
                 className={`transition-transform ${
                   showMachine ? "rotate-180" : ""
                 }`}
@@ -1083,7 +1119,15 @@ function OperationForm({
                 <LuDollarSign />
                 <Label>Costing</Label>
               </HStack>
-              <LuChevronDown
+              <IconButton
+                icon={<LuChevronDown />}
+                aria-label={showCost ? "Collapse Costing" : "Expand Costing"}
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCost(!showCost);
+                }}
                 className={`transition-transform ${
                   showCost ? "rotate-180" : ""
                 }`}

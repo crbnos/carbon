@@ -9,16 +9,31 @@ import { parseDate } from "@internationalized/date";
 import { useState } from "react";
 import { useField } from "../hooks";
 
-type DatePickerProps = { name: string; label?: string; isDisabled?: boolean };
+type DatePickerProps = {
+  name: string;
+  label?: string;
+  onChange?: (date: CalendarDate) => void;
+  isDisabled?: boolean;
+  minValue?: CalendarDate;
+  maxValue?: CalendarDate;
+};
 
-const DatePicker = ({ name, label, isDisabled = false }: DatePickerProps) => {
+const DatePicker = ({
+  name,
+  label,
+  isDisabled = false,
+  minValue,
+  maxValue,
+  onChange,
+}: DatePickerProps) => {
   const { error, defaultValue, validate } = useField(name);
   const [date, setDate] = useState<CalendarDate | undefined>(
     defaultValue ? parseDate(defaultValue) : undefined
   );
 
-  const onChange = (date: CalendarDate) => {
+  const handleChange = (date: CalendarDate) => {
     setDate(date);
+    onChange?.(date);
     validate();
   };
 
@@ -28,9 +43,10 @@ const DatePicker = ({ name, label, isDisabled = false }: DatePickerProps) => {
       <input type="hidden" name={name} value={date?.toString()} />
       <DatePickerBase
         value={date}
-        //@ts-ignore
-        onChange={onChange}
         isDisabled={isDisabled}
+        minValue={minValue}
+        maxValue={maxValue}
+        onChange={handleChange}
       />
       {error && <FormErrorMessage>{error}</FormErrorMessage>}
     </FormControl>

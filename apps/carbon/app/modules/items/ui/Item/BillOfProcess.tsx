@@ -12,6 +12,7 @@ import {
   CardTitle,
   Editor,
   HStack,
+  IconButton,
   Label,
   cn,
   generateHTML,
@@ -69,7 +70,11 @@ function makeItems(operations: Operation[]): ItemWithData[] {
 function makeItem(operation: Operation): ItemWithData {
   return {
     id: operation.id!,
-    title: operation.description ?? "",
+    title: (
+      <h4 className="flex text-xs font-bold uppercase tracking-tighter md:text-sm truncate">
+        {operation.description}
+      </h4>
+    ),
     checked: false,
     order: operation.operationOrder,
     details: (
@@ -759,7 +764,15 @@ function OperationForm({
                 <TimeTypeIcon type="Setup" />
                 <Label>Setup</Label>
               </HStack>
-              <LuChevronDown
+              <IconButton
+                icon={<LuChevronDown />}
+                aria-label={showSetup ? "Collapse Setup" : "Expand Setup"}
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSetup(!showSetup);
+                }}
                 className={`transition-transform ${
                   showSetup ? "rotate-180" : ""
                 }`}
@@ -819,7 +832,15 @@ function OperationForm({
                 <TimeTypeIcon type="Labor" />
                 <Label>Labor</Label>
               </HStack>
-              <LuChevronDown
+              <IconButton
+                icon={<LuChevronDown />}
+                aria-label={showLabor ? "Collapse Labor" : "Expand Labor"}
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLabor(!showLabor);
+                }}
                 className={`transition-transform ${
                   showLabor ? "rotate-180" : ""
                 }`}
@@ -878,7 +899,15 @@ function OperationForm({
                 <TimeTypeIcon type="Machine" />
                 <Label>Machine</Label>
               </HStack>
-              <LuChevronDown
+              <IconButton
+                icon={<LuChevronDown />}
+                aria-label={showMachine ? "Collapse Machine" : "Expand Machine"}
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMachine(!showMachine);
+                }}
                 className={`transition-transform ${
                   showMachine ? "rotate-180" : ""
                 }`}

@@ -43,7 +43,7 @@ const ConfirmDelete = ({
         <ModalBody>{text}</ModalBody>
 
         <ModalFooter>
-          <Button variant="secondary" className="mr-3" onClick={onCancel}>
+          <Button variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
           <Form method="post" action={action} onSubmit={onSubmit}>

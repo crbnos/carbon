@@ -7,9 +7,11 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   jobMaterialValidator,
+  jobOperationStatus,
   jobOperationValidator,
   jobStatus,
   jobValidator,
+  productionEventValidator,
 } from "./production.models";
 import type { Job } from "./types";
 
@@ -36,6 +38,23 @@ export async function deleteJobOperation(
   jobOperationId: string
 ) {
   return client.from("jobOperation").delete().eq("id", jobOperationId);
+}
+
+export async function deleteProductionEvent(
+  client: SupabaseClient<Database>,
+  productionEventId: string
+) {
+  return client.from("productionEvent").delete().eq("id", productionEventId);
+}
+
+export async function deleteProductionQuantity(
+  client: SupabaseClient<Database>,
+  productionQuantityId: string
+) {
+  return client
+    .from("productionQuantity")
+    .delete()
+    .eq("id", productionQuantityId);
 }
 
 export async function getJobDocuments(
@@ -266,11 +285,22 @@ export async function getJobOperations(
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true },
+      { column: "description", ascending: true },
     ]);
   }
 
   return query;
+}
+
+export async function getJobOperationsList(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("id, description, order")
+    .eq("jobId", jobId)
+    .order("order", { ascending: true });
 }
 
 export async function getJobOperationsByMethodId(
@@ -281,7 +311,43 @@ export async function getJobOperationsByMethodId(
     .from("jobOperation")
     .select("*")
     .eq("jobMakeMethodId", jobMakeMethodId)
-    .order("order", { ascending: true });
+    .order("startTime", { ascending: true });
+}
+
+export async function getProductionEvent(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("productionEvent")
+    .select("*, jobOperation(description)")
+    .eq("id", id)
+    .single();
+}
+
+export async function getProductionEvents(
+  client: SupabaseClient<Database>,
+  jobOperationIds: string[],
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("productionEvent")
+    .select("*, jobOperation(description)", {
+      count: "exact",
+    })
+    .in("jobOperationId", jobOperationIds);
+
+  if (args?.search) {
+    query = query.or(`jobOperation.description.ilike.%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false },
+    ]);
+  }
+
+  return query;
 }
 
 export async function recalculateJobRequirements(
@@ -364,6 +430,47 @@ export async function updateJobOperationOrder(
     client.from("jobOperation").update({ order, updatedBy }).eq("id", id)
   );
   return Promise.all(updatePromises);
+}
+
+export async function updateJobOperationStatus(
+  client: SupabaseClient<Database>,
+  id: string,
+  status: (typeof jobOperationStatus)[number],
+  updatedBy: string
+) {
+  return client
+    .from("jobOperation")
+    .update({
+      status,
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .single();
+}
+
+export async function updateProductionEvent(
+  client: SupabaseClient<Database>,
+  productionEvent: z.infer<typeof productionEventValidator> & {
+    id: string;
+    updatedBy: string;
+    companyId: string;
+  }
+) {
+  const { id, updatedBy, companyId, ...updateData } = productionEvent;
+
+  return client
+    .from("productionEvent")
+    .update({
+      ...sanitize(updateData),
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select()
+    .single();
 }
 
 export async function upsertJob(

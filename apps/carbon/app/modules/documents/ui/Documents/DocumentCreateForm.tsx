@@ -26,6 +26,7 @@ const DocumentCreateForm = () => {
         });
 
       if (fileUpload.error) {
+        console.error(fileUpload.error);
         toast.error("Failed to upload file");
       }
 

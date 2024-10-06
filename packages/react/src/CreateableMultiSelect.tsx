@@ -64,6 +64,7 @@ const CreatableMultiSelect = forwardRef<
     ref
   ) => {
     const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
 
     const id = useId();
 
@@ -133,6 +134,8 @@ const CreatableMultiSelect = forwardRef<
               itemHeight={itemHeight}
               setOpen={setOpen}
               label={label}
+              search={search}
+              setSearch={setSearch}
             />
           </PopoverContent>
         </Popover>
@@ -161,6 +164,8 @@ type VirtualizedCommandProps = {
   itemHeight: number;
   setOpen: (open: boolean) => void;
   label?: string;
+  search: string;
+  setSearch: (search: string) => void;
 };
 
 function VirtualizedCommand({
@@ -171,8 +176,9 @@ function VirtualizedCommand({
   itemHeight,
   setOpen,
   label,
+  search,
+  setSearch,
 }: VirtualizedCommandProps) {
-  const [search, setSearch] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
 
   const filteredOptions = useMemo(() => {

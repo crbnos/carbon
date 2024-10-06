@@ -3,7 +3,7 @@ import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
 import { useRef } from "react";
-import { MdOutlineDoNotDisturb } from "react-icons/md";
+import { LuBan } from "react-icons/lu";
 import { HStack } from "../HStack";
 import { InputGroup } from "../Input";
 import { useOutsideClick } from "../hooks";
@@ -36,7 +36,7 @@ const DatePicker = (props: DatePickerProps<CalendarDate>) => {
           <div className="flex w-full px-4 py-2">
             <DateField {...fieldProps} />
             {state.isInvalid && (
-              <MdOutlineDoNotDisturb className="text-destructive-foreground aboslute right-[12px]" />
+              <LuBan className="!text-destructive-foreground absolute right-[12px] top-[12px]" />
             )}
           </div>
         </InputGroup>

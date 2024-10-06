@@ -55,6 +55,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     ref
   ) => {
     const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
 
     return (
       <HStack className="w-full" spacing={1}>
@@ -86,10 +87,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
               options={options}
               selected={selected}
               value={value}
+              itemHeight={itemHeight}
+              search={search}
               onChange={onChange}
               onCreateOption={onCreateOption}
-              itemHeight={itemHeight}
               setOpen={setOpen}
+              setSearch={setSearch}
             />
           </PopoverContent>
         </Popover>
@@ -115,10 +118,12 @@ type VirtualizedCommandProps = {
   selected?: string[];
   value?: string;
   label?: string;
+  itemHeight: number;
+  search: string;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
-  itemHeight: number;
   setOpen: (open: boolean) => void;
+  setSearch: (search: string) => void;
 };
 
 function VirtualizedCommand({
@@ -126,12 +131,13 @@ function VirtualizedCommand({
   label,
   selected,
   value,
+  itemHeight,
+  search,
+  setSearch,
   onChange,
   onCreateOption,
-  itemHeight,
   setOpen,
 }: VirtualizedCommandProps) {
-  const [search, setSearch] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
 
   const filteredOptions = useMemo(() => {

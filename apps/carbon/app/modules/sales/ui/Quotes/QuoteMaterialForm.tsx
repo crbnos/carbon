@@ -201,6 +201,14 @@ const QuoteMaterialForm = ({
                 }}
                 onTypeChange={onTypeChange}
               />
+              <InputControlled
+                name="description"
+                label="Description"
+                value={itemData.description}
+                onChange={(newValue) => {
+                  setItemData((d) => ({ ...d, description: newValue }));
+                }}
+              />
               <Select
                 name="quoteOperationId"
                 label="Operation"
@@ -210,16 +218,7 @@ const QuoteMaterialForm = ({
                   label: o.description,
                 }))}
               />
-            </div>
-            <InputControlled
-              name="description"
-              label="Description"
-              value={itemData.description}
-              onChange={(newValue) => {
-                setItemData((d) => ({ ...d, description: newValue }));
-              }}
-            />
-            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+
               <DefaultMethodType
                 name="methodType"
                 label="Method Type"

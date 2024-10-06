@@ -3,7 +3,8 @@ import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
 import { useRef } from "react";
-import { MdOutlineDoNotDisturb } from "react-icons/md";
+import { LuBan } from "react-icons/lu";
+import { cn } from "..";
 import { HStack } from "../HStack";
 import { InputGroup } from "../Input";
 import { useOutsideClick } from "../hooks";
@@ -13,7 +14,12 @@ import { Calendar } from "./components/Calendar";
 import DateField from "./components/DateField";
 import { Popover } from "./components/Popover";
 
-const DateTimePicker = (props: DatePickerProps<DateValue>) => {
+const DateTimePicker = (
+  props: DatePickerProps<DateValue> & {
+    className?: string;
+    withButton?: boolean;
+  }
+) => {
   const state = useDatePickerState({
     ...props,
     shouldCloseOnSelect: false,
@@ -33,17 +39,18 @@ const DateTimePicker = (props: DatePickerProps<DateValue>) => {
         <InputGroup
           {...groupProps}
           ref={ref}
-          className="w-full inline-flex rounded-r-none"
+          className={cn("w-full inline-flex rounded-r-none", props.className)}
         >
           <div className="flex w-full px-4 py-2">
             <DateField {...fieldProps} />
             {state.isInvalid && (
-              <MdOutlineDoNotDisturb className="text-destructive-foreground absolute right-[12px]" />
+              <LuBan className="!text-destructive-foreground absolute right-[12px] top-[12px]" />
             )}
           </div>
         </InputGroup>
-
-        <FieldButton {...buttonProps} isPressed={state.isOpen} />
+        {props.withButton !== false && (
+          <FieldButton {...buttonProps} isPressed={state.isOpen} />
+        )}
       </HStack>
       {state.isOpen && (
         <Popover {...dialogProps} onClose={() => state.setOpen(false)}>

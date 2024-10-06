@@ -19,6 +19,7 @@ import {
   MethodIcon,
   MethodItemTypeIcon,
   ModuleIcon,
+  OperationStatusIcon,
   TimeTypeIcon,
   TrackingTypeIcon,
 } from "./Icons";
@@ -58,6 +59,7 @@ export {
   MethodItemTypeIcon,
   ModuleIcon,
   New,
+  OperationStatusIcon,
   RealtimeDataProvider,
   RichText,
   SearchFilter,

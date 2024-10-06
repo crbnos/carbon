@@ -6,7 +6,7 @@ export function TodoStatusIcon({ className }: { className?: string }) {
       viewBox="0 0 14 14"
       fill="none"
       color="currentColor"
-      className="className"
+      className={className}
     >
       <circle
         cx="7"

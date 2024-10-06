@@ -160,15 +160,6 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                 <SequenceOrCustomId name="jobId" label="Job ID" table="job" />
               )}
 
-              <Customer
-                autoFocus={!isEditing}
-                name="customerId"
-                label="Customer"
-                isOptional
-              />
-
-              {isEditing && <div className="col-span-1" />}
-
               <Item
                 name="itemId"
                 label={type}
@@ -180,17 +171,6 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                 }}
                 onTypeChange={onTypeChange}
               />
-              {!isEditing && (
-                <UnitOfMeasure
-                  name="unitOfMeasureCode"
-                  value={itemData.uom}
-                  onChange={(value) => {
-                    if (value?.value) {
-                      setItemData((prev) => ({ ...prev, uom: value.value }));
-                    }
-                  }}
-                />
-              )}
 
               {isEditing && (
                 <InputControlled
@@ -198,7 +178,6 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                   label="Short Description"
                   value={itemData.description}
                   isReadOnly
-                  className="col-span-2"
                 />
               )}
 
@@ -229,17 +208,17 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                 }
                 minValue={0}
               />
-              {isEditing && (
-                <UnitOfMeasure
-                  name="unitOfMeasureCode"
-                  value={itemData.uom}
-                  onChange={(value) => {
-                    if (value?.value) {
-                      setItemData((prev) => ({ ...prev, uom: value.value }));
-                    }
-                  }}
-                />
-              )}
+
+              <UnitOfMeasure
+                name="unitOfMeasureCode"
+                value={itemData.uom}
+                onChange={(value) => {
+                  if (value?.value) {
+                    setItemData((prev) => ({ ...prev, uom: value.value }));
+                  }
+                }}
+              />
+              <Location name="locationId" label="Location" />
 
               <DatePicker
                 name="dueDate"
@@ -254,7 +233,11 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                   label: d,
                 }))}
               />
-              <Location name="locationId" label="Location" />
+
+              {isEditing && (
+                <Customer name="customerId" label="Customer" isOptional />
+              )}
+
               <CustomFormFields table="job" />
             </div>
           </VStack>

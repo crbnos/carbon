@@ -1,8 +1,12 @@
-import { Badge, HStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { useCarbon } from "@carbon/auth";
+import { Badge, Button, HStack } from "@carbon/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
+import { LuRefreshCcwDot } from "react-icons/lu";
 import { Hyperlink, MethodIcon, MethodItemTypeIcon, Table } from "~/components";
+import { EditableNumber, EditableText } from "~/components/Editable";
+import { usePermissions, useUser } from "~/hooks";
 import { methodItemType, methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { JobMaterial } from "../../types";
@@ -15,6 +19,8 @@ type JobMaterialsTableProps = {
 const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Job ID is required");
+
+  const fetcher = useFetcher<{}>();
 
   const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
     return [
@@ -110,7 +116,55 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
     ];
   }, [jobId]);
 
-  return <Table<JobMaterial> count={count} columns={columns} data={data} />;
+  const permissions = usePermissions();
+  const { carbon } = useCarbon();
+  const { id: userId } = useUser();
+  const onCellEdit = useCallback(
+    async (id: string, value: unknown, row: JobMaterial) => {
+      if (!carbon) throw new Error("Carbon client not found");
+      return await carbon
+        .from("jobMaterial")
+        .update({
+          [id]: value,
+          updatedBy: userId,
+        })
+        .eq("id", row.id!);
+    },
+    [carbon, userId]
+  );
+
+  const editableComponents = useMemo(() => {
+    return {
+      description: EditableText(onCellEdit),
+      quantity: EditableNumber(onCellEdit),
+      estimatedQuantity: EditableNumber(onCellEdit),
+    };
+  }, [onCellEdit]);
+
+  return (
+    <Table<JobMaterial>
+      count={count}
+      columns={columns}
+      data={data}
+      primaryAction={
+        data.length > 0 && permissions.can("update", "production") ? (
+          <fetcher.Form action={path.to.jobRecalculate(jobId)} method="post">
+            <Button
+              leftIcon={<LuRefreshCcwDot />}
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              type="submit"
+              variant="secondary"
+            >
+              Recalculate
+            </Button>
+          </fetcher.Form>
+        ) : undefined
+      }
+      editableComponents={editableComponents}
+      withInlineEditing={permissions.can("update", "production")}
+    />
+  );
 });
 
 JobMaterialsTable.displayName = "JobMaterialsTable";

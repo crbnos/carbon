@@ -1,3 +1,4 @@
+import EditableDateTime from "./EditableDateTime";
 import EditableList from "./EditableList";
 import EditableNumber from "./EditableNumber";
 import EditablePurchaseInvoiceLineNumber from "./EditablePurchaseInvoiceLineNumber";
@@ -6,6 +7,7 @@ import EditableText from "./EditableText";
 
 export * from "./types";
 export {
+  EditableDateTime,
   EditableList,
   EditableNumber,
   EditablePurchaseInvoiceLineNumber,

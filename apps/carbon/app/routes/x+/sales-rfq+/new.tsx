@@ -85,7 +85,7 @@ export default function SalesRFQNewRoute() {
   };
 
   return (
-    <div className="w-1/2 max-w-[600px] min-w-[420px] mx-auto mt-8">
+    <div className="max-w-[50rem] w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
       <SalesRFQForm initialValues={initialValues} />
     </div>
   );

@@ -252,6 +252,10 @@ export const path = {
       generatePath(`${x}/accounting/payment-terms/delete/${id}`),
     deleteProcess: (id: string) =>
       generatePath(`${x}/resources/processes/delete/${id}`),
+    deleteProductionEvent: (id: string) =>
+      generatePath(`${x}/job/methods/event/delete/${id}`),
+    deleteProductionQuantity: (id: string) =>
+      generatePath(`${x}/job/methods/quantity/delete/${id}`),
     deletePurchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/delete/${id}`),
     deletePurchaseInvoiceLine: (invoiceId: string, lineId: string) =>
@@ -391,8 +395,12 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/operation/${id}`),
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsOrder: `${x}/job/methods/operation/order`,
+    jobOperationStatus: `${x}/job/methods/operation/status`,
     jobProductionEvents: (id: string) => generatePath(`${x}/job/${id}/events`),
+    jobProductionQuantities: (id: string) =>
+      generatePath(`${x}/job/${id}/quantities`),
     jobs: `${x}/production/jobs`,
+    jobRecalculate: (id: string) => generatePath(`${x}/job/${id}/recalculate`),
     jobRelease: (id: string) => generatePath(`${x}/job/${id}/release`),
     jobStatus: (id: string) => generatePath(`${x}/job/${id}/status`),
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),

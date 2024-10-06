@@ -39,13 +39,17 @@ export function formatDate(
     try {
       const date = new Date(dateString);
       return new Intl.DateTimeFormat(
-        undefined,
+        undefined, // TODO: use locale
         options || defaultFormatOptions
       ).format(date);
     } catch {
       return dateString;
     }
   }
+}
+
+export function formatDateTime(isoString: string) {
+  return formatDate(isoString, { dateStyle: "short", timeStyle: "short" });
 }
 
 export function formatRelativeTime(isoString: string) {
