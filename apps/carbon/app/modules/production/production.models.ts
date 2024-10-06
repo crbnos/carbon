@@ -415,3 +415,13 @@ export const productionEventValidator = z
       path: ["endTime"],
     }
   );
+
+export const productionQuantityValidator = z.object({
+  id: z.string().min(0, { message: "ID is required" }),
+  jobOperationId: z.string().min(1, { message: "Operation is required" }),
+  type: z.enum(["Rework", "Scrap", "Production"], {
+    errorMap: () => ({ message: "Quantity type is required" }),
+  }),
+  createdBy: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(z.number().min(0)),
+});

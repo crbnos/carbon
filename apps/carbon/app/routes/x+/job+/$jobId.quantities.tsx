@@ -2,16 +2,16 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
   getJobOperationsList,
-  getJobQuantities,
-  JobQuantitiesTable,
+  getProductionQuantities,
+  ProductionQuantitiesTable,
 } from "~/modules/production";
 import { getWorkCentersList } from "~/modules/resources";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -28,8 +28,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [events, workCenters, operations] = await Promise.all([
-    getJobQuantities(client, jobId, {
+  const operations = await getJobOperationsList(client, jobId);
+  if (operations.error) {
+    redirect(
+      requestReferrer(request) ?? path.to.job(jobId),
+      await flash(
+        request,
+        error(operations.error, "Failed to fetch job operations")
+      )
+    );
+  }
+
+  if (operations.data?.length === 0) {
+    return json({
+      count: 0,
+      events: [],
+      operations: [],
+    });
+  }
+
+  const [events] = await Promise.all([
+    getProductionQuantities(client, operations.data?.map((o) => o.id) ?? [], {
       search,
       limit,
       offset,
@@ -37,7 +56,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       filters,
     }),
     getWorkCentersList(client, companyId),
-    getJobOperationsList(client, jobId),
   ]);
 
   if (events.error) {
@@ -50,23 +68,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     count: events.count ?? 0,
     events: events.data ?? [],
-    workCenters: workCenters.data ?? [],
     operations: operations.data ?? [],
   });
 }
 
-export default function JobQuantitiesRoute() {
-  const { count, events, operations, workCenters } =
-    useLoaderData<typeof loader>();
+export default function ProductionQuantitiesRoute() {
+  const { count, events, operations } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={0} className="h-[calc(100vh-99px)]">
-      <JobQuantitiesTable
-        data={events}
-        count={count}
-        operations={operations}
-        workCenters={workCenters}
-      />
-    </VStack>
+    <>
+      <VStack spacing={0} className="h-[calc(100vh-99px)]">
+        <ProductionQuantitiesTable
+          data={events}
+          count={count}
+          operations={operations}
+        />
+      </VStack>
+      <Outlet />
+    </>
   );
 }

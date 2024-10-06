@@ -1,32 +1,29 @@
 import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
 import { useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, Table, TimeTypeIcon } from "~/components";
+import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import type { WorkCenter } from "~/modules/resources";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
-import type { ProductionEvent } from "../../types";
+import type { ProductionQuantity } from "../../types";
 
-type ProductionEventsTableProps = {
-  data: ProductionEvent[];
+type ProductionQuantitiesTableProps = {
+  data: ProductionQuantity[];
   count: number;
   operations: { id: string; description: string | null }[];
-  workCenters: WorkCenter[];
 };
 
-const ProductionEventsTable = memo(
-  ({ data, count, operations, workCenters }: ProductionEventsTableProps) => {
+const ProductionQuantitiesTable = memo(
+  ({ data, count, operations }: ProductionQuantitiesTableProps) => {
     const { jobId } = useParams();
     if (!jobId) throw new Error("Job ID is required");
     const [people] = usePeople();
 
-    const columns = useMemo<ColumnDef<ProductionEvent>[]>(() => {
+    const columns = useMemo<ColumnDef<ProductionQuantity>[]>(() => {
       return [
         {
           accessorKey: "jobOperationId",
@@ -54,10 +51,10 @@ const ProductionEventsTable = memo(
           },
         },
         {
-          accessorKey: "employeeId",
+          accessorKey: "createdBy",
           header: "Employee",
           cell: ({ row }) => (
-            <EmployeeAvatar employeeId={row.original.employeeId} />
+            <EmployeeAvatar employeeId={row.original.createdBy} />
           ),
           meta: {
             filter: {
@@ -75,33 +72,31 @@ const ProductionEventsTable = memo(
           cell: ({ row }) => (
             <Badge
               variant={
-                row.original.type === "Labor"
+                row.original.type === "Production"
                   ? "green"
-                  : row.original.type === "Machine"
-                  ? "blue"
-                  : "yellow"
+                  : row.original.type === "Rework"
+                  ? "orange"
+                  : "red"
               }
             >
-              <TimeTypeIcon type={row.original.type ?? ""} className="mr-2" />
               {row.original.type}
             </Badge>
           ),
           meta: {
             filter: {
               type: "static",
-              options: ["Setup", "Labor", "Machine"].map((type) => ({
+              options: ["Production", "Rework", "Scrap"].map((type) => ({
                 value: type,
                 label: (
                   <Badge
                     variant={
-                      type === "Labor"
+                      type === "Production"
                         ? "green"
-                        : type === "Machine"
-                        ? "blue"
-                        : "yellow"
+                        : type === "Rework"
+                        ? "orange"
+                        : "red"
                     }
                   >
-                    <TimeTypeIcon type={type} className="mr-2" />
                     {type}
                   </Badge>
                 ),
@@ -110,54 +105,20 @@ const ProductionEventsTable = memo(
           },
         },
         {
-          accessorKey: "duration",
-          header: "Duration",
-          cell: ({ row }) =>
-            row.original.duration
-              ? formatDurationMilliseconds(row.original.duration * 1000)
-              : null,
-        },
-        {
-          accessorKey: "workCenterId",
-          header: "Work Center",
-          cell: ({ row }) => {
-            const workCenter = workCenters.find(
-              (wc) => wc.id === row.original.workCenterId
-            );
-            return <Enumerable value={workCenter?.name ?? null} />;
-          },
-          meta: {
-            filter: {
-              type: "static",
-              options: workCenters.map((workCenter) => ({
-                value: workCenter.id!,
-                label: <Enumerable value={workCenter.name} />,
-              })),
-            },
-          },
-        },
-        {
-          accessorKey: "startTime",
-          header: "Start Time",
-          cell: ({ row }) => formatDateTime(row.original.startTime),
-        },
-        {
-          accessorKey: "endTime",
-          header: "End Time",
-          cell: ({ row }) =>
-            row.original.endTime ? formatDateTime(row.original.endTime) : null,
+          accessorKey: "quantity",
+          header: "Quantity",
+          cell: ({ row }) => row.original.quantity,
         },
       ];
-    }, [operations, people, workCenters]);
+    }, [operations, people]);
 
     const permissions = usePermissions();
 
     const deleteModal = useDisclosure();
-    const [selectedEvent, setSelectedEvent] = useState<ProductionEvent | null>(
-      null
-    );
+    const [selectedEvent, setSelectedEvent] =
+      useState<ProductionQuantity | null>(null);
 
-    const onDelete = (data: ProductionEvent) => {
+    const onDelete = (data: ProductionQuantity) => {
       setSelectedEvent(data);
       deleteModal.onOpen();
     };
@@ -170,7 +131,7 @@ const ProductionEventsTable = memo(
     const navigate = useNavigate();
 
     const renderContextMenu = useCallback<
-      (row: ProductionEvent) => JSX.Element
+      (row: ProductionQuantity) => JSX.Element
     >(
       (row) => (
         <>
@@ -179,24 +140,25 @@ const ProductionEventsTable = memo(
             onClick={() => navigate(row.id)}
           >
             <MenuIcon icon={<LuPencil />} />
-            Edit Event
+            Edit Quantity
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "users")}
             onClick={() => onDelete(row)}
           >
             <MenuIcon icon={<LuTrash />} />
-            Delete Event
+            Delete Quantity
           </MenuItem>
         </>
       ),
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [permissions]
     );
 
     return (
       <>
-        <Table<ProductionEvent>
+        <Table<ProductionQuantity>
           count={count}
           columns={columns}
           data={data}
@@ -204,15 +166,15 @@ const ProductionEventsTable = memo(
         />
         {deleteModal.isOpen && selectedEvent && (
           <ConfirmDelete
-            action={path.to.deleteProductionEvent(selectedEvent.id)}
+            action={path.to.deleteProductionQuantity(selectedEvent.id)}
             isOpen
             name={`${
               selectedEvent.jobOperation?.description ?? "Operation"
             } by ${
-              people.find((p) => p.id === selectedEvent.employeeId)?.name ??
+              people.find((p) => p.id === selectedEvent.createdBy)?.name ??
               "Unknown Employee"
             }`}
-            text="Are you sure you want to delete this production event? This action cannot be undone."
+            text="Are you sure you want to delete this production quantity? This action cannot be undone."
             onCancel={onDeleteCancel}
             onSubmit={onDeleteCancel}
           />
@@ -222,6 +184,6 @@ const ProductionEventsTable = memo(
   }
 );
 
-ProductionEventsTable.displayName = "ProductionEventsTable";
+ProductionQuantitiesTable.displayName = "ProductionQuantitiesTable";
 
-export default ProductionEventsTable;
+export default ProductionQuantitiesTable;

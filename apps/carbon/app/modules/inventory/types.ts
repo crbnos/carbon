@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
 import type {
   getInventoryItems,
-  getItemLedger,
+  getItemLedgerPage,
   getReceiptLines,
   getReceipts,
   getShippingMethods,
@@ -12,7 +12,7 @@ export type InventoryItem = NonNullable<
 >[number];
 
 export type ItemLedger = NonNullable<
-  Awaited<ReturnType<typeof getItemLedger>>["data"]
+  Awaited<ReturnType<typeof getItemLedgerPage>>["data"]
 >[number];
 
 export type Receipt = NonNullable<

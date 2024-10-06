@@ -12,6 +12,7 @@ import type {
   jobStatus,
   jobValidator,
   productionEventValidator,
+  productionQuantityValidator,
 } from "./production.models";
 import type { Job } from "./types";
 
@@ -311,7 +312,7 @@ export async function getJobOperationsByMethodId(
     .from("jobOperation")
     .select("*")
     .eq("jobMakeMethodId", jobMakeMethodId)
-    .order("startTime", { ascending: true });
+    .order("createdAt", { ascending: true });
 }
 
 export async function getProductionEvent(
@@ -332,9 +333,85 @@ export async function getProductionEvents(
 ) {
   let query = client
     .from("productionEvent")
-    .select("*, jobOperation(description)", {
-      count: "exact",
-    })
+    .select(
+      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))",
+      {
+        count: "exact",
+      }
+    )
+    .in("jobOperationId", jobOperationIds)
+    .order("startTime", { ascending: true });
+
+  if (args?.search) {
+    query = query.or(`jobOperation.description.ilike.%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getProductionEventsPage(
+  client: SupabaseClient<Database>,
+  jobOperationId: string,
+  companyId: string,
+  sortDescending: boolean = false,
+  page: number = 1
+) {
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
+
+  let query = client
+    .from("productionEvent")
+    .select("*", { count: "exact" })
+    .eq("jobOperationId", jobOperationId)
+    .eq("companyId", companyId)
+    .order("startTime", { ascending: !sortDescending })
+    .range(offset, offset + pageSize - 1);
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    return { error };
+  }
+
+  return {
+    data,
+    count,
+    page,
+    pageSize,
+    hasMore: count !== null && offset + pageSize < count,
+  };
+}
+
+export async function getProductionQuantity(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("productionQuantity")
+    .select("*, jobOperation(description)")
+    .eq("id", id)
+    .single();
+}
+
+export async function getProductionQuantities(
+  client: SupabaseClient<Database>,
+  jobOperationIds: string[],
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("productionQuantity")
+    .select(
+      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))",
+      {
+        count: "exact",
+      }
+    )
     .in("jobOperationId", jobOperationIds);
 
   if (args?.search) {
@@ -462,6 +539,29 @@ export async function updateProductionEvent(
 
   return client
     .from("productionEvent")
+    .update({
+      ...sanitize(updateData),
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select()
+    .single();
+}
+
+export async function updateProductionQuantity(
+  client: SupabaseClient<Database>,
+  productionQuantity: z.infer<typeof productionQuantityValidator> & {
+    id: string;
+    updatedBy: string;
+    companyId: string;
+  }
+) {
+  const { id, updatedBy, companyId, ...updateData } = productionQuantity;
+
+  return client
+    .from("productionQuantity")
     .update({
       ...sanitize(updateData),
       updatedBy,

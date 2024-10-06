@@ -6,7 +6,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useCallback, useState } from "react";
 import InfiniteScroll from "~/components/InfiniteScroll";
-import { getItemLedger, InventoryActivity } from "~/modules/inventory";
+import { getItemLedgerPage, InventoryActivity } from "~/modules/inventory";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
@@ -52,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const itemLedgerRecords = await getItemLedger(
+  const itemLedgerRecords = await getItemLedgerPage(
     client,
     itemId,
     companyId,
@@ -93,7 +93,7 @@ export default function ItemInventoryActivityRoute() {
 
     setIsLoading(true);
 
-    const newItemLedgers = await getItemLedger(
+    const newItemLedgers = await getItemLedgerPage(
       carbon!,
       itemId,
       companyId,

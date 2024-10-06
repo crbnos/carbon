@@ -74,7 +74,7 @@ export async function insertManualInventoryAdjustment(
   return client.from("itemLedger").insert([data]).select("*").single();
 }
 
-export async function getItemLedger(
+export async function getItemLedgerPage(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string,
