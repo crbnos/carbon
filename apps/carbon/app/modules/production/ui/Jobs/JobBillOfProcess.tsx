@@ -1,5 +1,6 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
+import type { Database } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -19,16 +20,19 @@ import {
   useDebounce,
   useThrottle,
 } from "@carbon/react";
+import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useParams } from "@remix-run/react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { LuChevronDown, LuDollarSign, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs, TimeTypeIcon } from "~/components";
+import Activity from "~/components/Activity";
 import {
   Hidden,
   InputControlled,
@@ -44,12 +48,14 @@ import {
   getUnitHint,
 } from "~/components/Form";
 import { OperationStatusIcon } from "~/components/Icons";
+import InfiniteScroll from "~/components/InfiniteScroll";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { methodOperationOrders, operationTypes } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { jobOperationValidator } from "../../production.models";
+import { getProductionEventsPage } from "../../production.service";
 import type { Job, JobOperation } from "../../types";
 
 type Operation = z.infer<typeof jobOperationValidator> & {
@@ -135,7 +141,7 @@ const JobBillOfProcess = ({
   jobMakeMethodId,
   operations,
 }: JobBillOfProcessProps) => {
-  const { carbon } = useCarbon();
+  const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
   const permissions = usePermissions();
   const {
@@ -297,6 +303,90 @@ const JobBillOfProcess = ({
     return `/file/preview/private/${result.data.path}`;
   };
 
+  const [productionEvents, setProductionEvents] = useState<
+    Database["public"]["Tables"]["productionEvent"]["Row"][]
+  >([]);
+  const [page, setPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    if (!carbon || !accessToken || !selectedItemId) return;
+    carbon.realtime.setAuth(accessToken);
+
+    if (!channelRef.current) {
+      channelRef.current = carbon
+        .channel("realtime:core")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "productionEvent",
+            filter: `jobOperationId=eq.${selectedItemId}`,
+          },
+          (payload) => {
+            switch (payload.eventType) {
+              case "INSERT":
+                const { new: inserted } = payload;
+                setProductionEvents((prevEvents) => [
+                  ...prevEvents,
+                  inserted as Database["public"]["Tables"]["productionEvent"]["Row"],
+                ]);
+                break;
+              case "UPDATE":
+                const { new: updated } = payload;
+                setProductionEvents((prevEvents) =>
+                  prevEvents.map((event) =>
+                    event.id === updated.id
+                      ? (updated as Database["public"]["Tables"]["productionEvent"]["Row"])
+                      : event
+                  )
+                );
+                break;
+              case "DELETE":
+                const { old: deleted } = payload;
+                setProductionEvents((prevEvents) =>
+                  prevEvents.filter((event) => event.id !== deleted.id)
+                );
+                break;
+              default:
+                break;
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      if (channelRef.current) carbon?.removeChannel(channelRef.current);
+    };
+  }, [accessToken, carbon, selectedItemId]);
+
+  const loadMoreProductionEvents = useCallback(async () => {
+    if (isLoading || !hasMore || !selectedItemId) return;
+
+    setIsLoading(true);
+
+    const newProductionEvents = await getProductionEventsPage(
+      carbon!,
+      selectedItemId,
+      companyId,
+      false,
+      page + 1
+    );
+
+    if (newProductionEvents.data && newProductionEvents.data.length > 0) {
+      setProductionEvents((prev) => [...prev, ...newProductionEvents.data]);
+      setPage((prevPage) => prevPage + 1);
+    } else {
+      setHasMore(false);
+    }
+
+    setIsLoading(false);
+  }, [isLoading, hasMore, carbon, selectedItemId, companyId, page]);
+
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,
@@ -365,6 +455,31 @@ const JobBillOfProcess = ({
                   }}
                 />
               )}
+            </motion.div>
+          </div>
+        ),
+      },
+      {
+        id: 2,
+        label: "Realtime Events",
+        content: (
+          <div className="flex w-full flex-col pr-2 py-6 min-h-[300px]">
+            <motion.div
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{
+                type: "spring",
+                bounce: 0.2,
+                duration: 0.75,
+                delay: 0.15,
+              }}
+            >
+              <InfiniteScroll
+                component={ProductionEventActivity}
+                items={productionEvents}
+                loadMore={loadMoreProductionEvents}
+                hasMore={hasMore}
+              />
             </motion.div>
           </div>
         ),
@@ -1207,3 +1322,52 @@ function OperationForm({
     </ValidatedForm>
   );
 }
+
+type ProductionEventActivityProps = {
+  item: Database["public"]["Tables"]["productionEvent"]["Row"];
+};
+
+const getActivityText = (
+  item: Database["public"]["Tables"]["productionEvent"]["Row"]
+) => {
+  switch (item.type) {
+    case "Setup":
+      return item.duration
+        ? `did ${formatDurationMilliseconds(item.duration * 1000)} of setup`
+        : `started setup`;
+    case "Labor":
+      return item.duration
+        ? `did ${formatDurationMilliseconds(item.duration * 1000)} of labor`
+        : `started labor`;
+    case "Machine":
+      return item.duration
+        ? `did ${formatDurationMilliseconds(item.duration * 1000)} of machine`
+        : `started machine`;
+    default:
+      return "";
+  }
+};
+
+const ProductionEventActivity = ({ item }: ProductionEventActivityProps) => {
+  return (
+    <Activity
+      employeeId={item.employeeId ?? item.createdBy}
+      activityMessage={getActivityText(item)}
+      activityTime={formatDateTime(item.startTime)}
+      activityIcon={
+        item.type ? (
+          <TimeTypeIcon
+            type={item.type}
+            className={cn(
+              item.type === "Labor"
+                ? "text-green-500"
+                : item.type === "Machine"
+                ? "text-blue-500"
+                : "text-yellow-500"
+            )}
+          />
+        ) : null
+      }
+    />
+  );
+};

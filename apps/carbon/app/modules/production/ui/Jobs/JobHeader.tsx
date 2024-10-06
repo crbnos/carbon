@@ -77,6 +77,8 @@ const JobHeader = () => {
       return "operations";
     if (location.pathname.includes(path.to.jobProductionEvents(jobId)))
       return "events";
+    if (location.pathname.includes(path.to.jobProductionQuantities(jobId)))
+      return "quantities";
     return "details";
   };
 

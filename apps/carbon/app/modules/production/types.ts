@@ -4,6 +4,7 @@ import type {
   getJobMethodTree,
   getJobOperations,
   getProductionEvents,
+  getProductionQuantities,
 } from "./production.service";
 
 export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
@@ -22,4 +23,8 @@ export type JobOperation = NonNullable<
 
 export type ProductionEvent = NonNullable<
   Awaited<ReturnType<typeof getProductionEvents>>["data"]
+>[number];
+
+export type ProductionQuantity = NonNullable<
+  Awaited<ReturnType<typeof getProductionQuantities>>["data"]
 >[number];

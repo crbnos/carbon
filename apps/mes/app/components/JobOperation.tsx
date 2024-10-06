@@ -1202,9 +1202,9 @@ function PauseButton({ className, ...props }: ComponentProps<"button">) {
     <ButtonWithTooltip
       {...props}
       tooltip="Pause"
-      className="group w-16 h-16 md:w-20 md:h-20 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all disabled:bg-muted text-2xl"
+      className="group w-16 h-16 md:w-20 md:h-20 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 text-2xl"
     >
-      <FaPause className="text-accent group-hover:scale-125" />
+      <FaPause className="group-hover:scale-125" />
     </ButtonWithTooltip>
   );
 }
@@ -1214,9 +1214,9 @@ function PlayButton({ className, ...props }: ComponentProps<"button">) {
     <ButtonWithTooltip
       {...props}
       tooltip="Start"
-      className="group w-16 h-16 md:w-20 md:h-20 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all disabled:bg-muted text-xl"
+      className="group w-16 h-16 md:w-20 md:h-20 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 text-xl"
     >
-      <FaPlay className="text-accent group-hover:scale-125" />
+      <FaPlay className="group-hover:scale-125" />
     </ButtonWithTooltip>
   );
 }
