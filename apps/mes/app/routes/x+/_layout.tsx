@@ -77,6 +77,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }),
   ]);
 
+  if (!locations.data || locations.data.length === 0) {
+    throw new Error(`No locations found for ${company.name}`);
+  }
+
+  if (!locations.data.some((l) => l.id === storedLocations.location)) {
+    throw redirect(path.to.authenticatedRoot, {
+      headers: {
+        "Set-Cookie": setLocationAndWorkCenter("", ""),
+      },
+    });
+  }
+
   return json(
     {
       session: {
@@ -105,7 +117,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session, activeEvents, location, locations } =
+  const { session, activeEvents, company, companies, location, locations } =
     useLoaderData<typeof loader>();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -180,8 +192,8 @@ export default function AuthenticatedRoute() {
                         )}
                       >
                         <AvatarMenu
-                          // company={company}
-                          // companies={companies}
+                          company={company}
+                          companies={companies}
                           isCollapsed={isCollapsed}
                           location={location}
                           locations={locations}
