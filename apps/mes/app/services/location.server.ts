@@ -1,6 +1,14 @@
+import { error } from "@carbon/auth";
+import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { redirect } from "@vercel/remix";
 import * as cookie from "cookie";
+import { path, requestReferrer } from "~/utils/path";
+import {
+  getLocationsByCompany,
+  getWorkCentersByLocation,
+} from "./jobs.service";
 
 const locationCookieName = "location";
 const workCenterCookieName = "workCenter";
@@ -35,15 +43,33 @@ export function setWorkCenter(workCenter: string) {
   });
 }
 
-export function clearLocationAndWorkCenter() {
-  return [
-    cookie.serialize(locationCookieName, "", {
-      path: "/",
-    }),
-    cookie.serialize(workCenterCookieName, "", {
-      path: "/",
-    }),
-  ].join(",");
+export async function updateLocationAndWorkCenter(
+  request: Request,
+  client: SupabaseClient<Database>,
+  args: { companyId: string }
+) {
+  const location = await getLocationsByCompany(client, args.companyId!);
+  if (!location.data || location.data.length === 0) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.authenticatedRoot,
+      await flash(request, error(null, "Location not found"))
+    );
+  }
+  const workCenters = await getWorkCentersByLocation(
+    client,
+    location.data[0].id
+  );
+  if (!workCenters.data || workCenters.data.length === 0) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.authenticatedRoot,
+      await flash(request, error(null, "Location not found"))
+    );
+  }
+
+  return {
+    locationId: location.data[0].id,
+    workCenterId: workCenters.data[0].id,
+  };
 }
 
 export function setLocationAndWorkCenter(

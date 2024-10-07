@@ -28,9 +28,9 @@ import {
   getLocationsByCompany,
 } from "~/services/jobs.service";
 import {
-  clearLocationAndWorkCenter,
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
+  updateLocationAndWorkCenter,
 } from "~/services/location.server";
 import { defaultLayout } from "~/utils/layout";
 import { path } from "~/utils/path";
@@ -66,7 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.accountSettings);
   }
 
-  const [storedLocations, locations, activeEvents] = await Promise.all([
+  let [storedLocations, locations, activeEvents] = await Promise.all([
     getLocationAndWorkCenter(request, client, {
       companyId,
       userId,
@@ -83,11 +83,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locations.data.some((l) => l.id === storedLocations.location)) {
-    throw redirect(path.to.authenticatedRoot, {
-      headers: {
-        "Set-Cookie": clearLocationAndWorkCenter(),
-      },
-    });
+    const { locationId, workCenterId } = await updateLocationAndWorkCenter(
+      request,
+      client,
+      {
+        companyId: companyId!,
+      }
+    );
+
+    storedLocations.location = locationId;
+    storedLocations.workCenter = workCenterId;
+    storedLocations.updated = true;
+
+    // TODO: replace this garbage once middleware is available.
+    // for now the race condition makes it so that each route has to be self-healing
+    let freshData = await Promise.all([
+      getLocationsByCompany(client, companyId),
+      getActiveJobCount(client, {
+        employeeId: userId,
+        companyId,
+      }),
+    ]);
+
+    locations = freshData[0];
+    activeEvents = freshData[1];
   }
 
   return json(

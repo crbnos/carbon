@@ -24,7 +24,7 @@ import {
   useNavigate,
   useParams,
 } from "@remix-run/react";
-import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
+import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
@@ -35,9 +35,9 @@ import {
   getWorkCentersByLocation,
 } from "~/services/jobs.service";
 import {
-  clearLocationAndWorkCenter,
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
+  updateLocationAndWorkCenter,
 } from "~/services/location.server";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
@@ -50,19 +50,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { workCenterId } = params;
   if (!workCenterId) throw notFound("workCenterId not found");
-  const { location: currentLocation, workCenter: currentWorkCenter } =
-    await getLocationAndWorkCenter(request, client, {
-      companyId,
-      userId,
-    });
 
-  const workCenter = await getWorkCenter(client, workCenterId);
-  if (workCenter.error || workCenter.data?.companyId !== companyId) {
-    throw redirect(path.to.recent, {
-      headers: {
-        "Set-Cookie": clearLocationAndWorkCenter(),
-      },
-    });
+  const storedLocations = await getLocationAndWorkCenter(request, client, {
+    companyId,
+    userId,
+  });
+
+  let workCenter = await getWorkCenter(client, workCenterId);
+  if (workCenter.error) {
+    throw new Error("Work center not found");
+  }
+  if (workCenter.data?.companyId !== companyId) {
+    // TODO: replace this garbage once middleware is available.
+    // for now the race condition makes it so that each route has to be self-healing
+    const { locationId, workCenterId } = await updateLocationAndWorkCenter(
+      request,
+      client,
+      {
+        companyId: companyId!,
+      }
+    );
+
+    storedLocations.location = locationId;
+    storedLocations.workCenter = workCenterId;
+    storedLocations.updated = true;
   }
 
   const [operations, workCenters] = await Promise.all([
@@ -78,15 +89,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     workCenters: workCenters.data ?? [],
   };
 
-  if (
-    currentWorkCenter !== workCenterId ||
-    currentLocation !== workCenter.data?.locationId
-  ) {
+  if (storedLocations.updated) {
     return json(payload, {
       headers: {
         "Set-Cookie": setLocationAndWorkCenter(
-          workCenter.data.locationId! ?? currentLocation,
-          workCenter.data.id
+          storedLocations.location,
+          storedLocations.workCenter
         ),
       },
     });
