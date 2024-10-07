@@ -89,12 +89,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     workCenters: workCenters.data ?? [],
   };
 
-  if (storedLocations.updated) {
+  if (storedLocations.updated || workCenterId !== storedLocations.workCenter) {
     return json(payload, {
       headers: {
         "Set-Cookie": setLocationAndWorkCenter(
           storedLocations.location,
-          storedLocations.workCenter
+          workCenterId
         ),
       },
     });
