@@ -25,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId,
     updatedBy: userId,
   });
-  console.log(update);
+
   if (update.error) {
     throw redirect(
       path.to.integrations,
