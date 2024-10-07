@@ -1,6 +1,4 @@
-import ExchangeRatesForm from "./ExchangeRatesForm";
-import GooglePlacesForm from "./GooglePlacesForm";
+import { IntegrationForm } from "./IntegrationForm";
 import IntegrationsList from "./IntegrationsList";
-import ResendForm from "./ResendForm";
 
-export { ExchangeRatesForm, GooglePlacesForm, IntegrationsList, ResendForm };
+export { IntegrationForm, IntegrationsList };

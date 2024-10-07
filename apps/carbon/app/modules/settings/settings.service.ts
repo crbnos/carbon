@@ -13,6 +13,27 @@ import type {
   sequenceValidator,
 } from "./settings.models";
 
+export async function deactivateIntegration(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const { id, companyId, updatedBy } = args;
+
+  return client
+    .from("companyIntegration")
+    .update({
+      active: false,
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
 export async function deleteApiKey(
   client: SupabaseClient<Database>,
   id: string
@@ -187,12 +208,7 @@ export async function getIntegrations(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("integrations")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("visible", true)
-    .order("title");
+  return client.from("integrations").select("*").eq("companyId", companyId);
 }
 
 export async function getNextSequence(

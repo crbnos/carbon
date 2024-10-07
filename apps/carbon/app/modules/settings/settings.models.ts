@@ -8,7 +8,7 @@ export const modulesType = [
   "Invoicing",
   "Inventory",
   "Items",
-  "Jobs",
+  "Production",
   // "Messaging",
   "Purchasing",
   "Resources",

@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
+import { integrations as availableIntegrations } from "~/integrations";
 import { IntegrationsList, getIntegrations } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -23,16 +24,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    integrations: integrations.data ?? [],
+    installedIntegrations: (integrations.data
+      .filter((i) => i.active)
+      .map((i) => i.id) ?? []) as string[],
   };
 }
 
 export default function IntegrationsRoute() {
-  const { integrations } = useLoaderData<typeof loader>();
+  const { installedIntegrations } = useLoaderData<typeof loader>();
 
   return (
     <>
-      <IntegrationsList integrations={integrations} />
+      <IntegrationsList
+        installedIntegrations={installedIntegrations}
+        availableIntegrations={availableIntegrations}
+      />
       <Outlet />
     </>
   );

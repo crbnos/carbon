@@ -1,7 +1,7 @@
 import { EXCHANGE_RATES_API_KEY, getCarbonServiceRole } from "@carbon/auth";
 import { schedules } from "@trigger.dev/sdk/v3";
-import type { Rates } from "~/lib/exchange-rates.server";
-import { getExchangeRatesClient } from "~/lib/exchange-rates.server";
+import type { Rates } from "~/integrations/exchange-rates/exchange-rates.server";
+import { getExchangeRatesClient } from "~/integrations/exchange-rates/exchange-rates.server";
 import type { CurrencyCode } from "~/modules/accounting";
 
 const serviceRole = getCarbonServiceRole();

@@ -1,5 +1,5 @@
 import type { AvatarProps } from "@carbon/react";
-import { cn, HStack } from "@carbon/react";
+import { HStack } from "@carbon/react";
 import { useCustomers } from "~/stores";
 import Avatar from "./Avatar";
 
@@ -26,11 +26,7 @@ const CustomerAvatar = ({
   return (
     <HStack className="truncate no-underline hover:no-underline">
       <Avatar size={size ?? "xs"} {...props} name={customer?.name ?? ""} />
-      <span
-        className={cn("normal-case font-normal tracking-normal", className)}
-      >
-        {customer.name}
-      </span>
+      <span className={className}>{customer.name}</span>
     </HStack>
   );
 };

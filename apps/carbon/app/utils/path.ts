@@ -354,8 +354,10 @@ export const path = {
     groups: `${x}/users/groups`,
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
-    integration: (name: string) =>
-      generatePath(`${x}/settings/integrations/${name}`),
+    integration: (id: string) =>
+      generatePath(`${x}/settings/integrations/${id}`),
+    integrationDeactivate: (id: string) =>
+      generatePath(`${x}/settings/integrations/deactivate/${id}`),
     integrations: `${x}/settings/integrations`,
     inventory: `${x}/inventory/quantities`,
     inventoryItem: (id: string) =>
