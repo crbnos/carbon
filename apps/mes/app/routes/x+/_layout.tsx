@@ -28,6 +28,7 @@ import {
   getLocationsByCompany,
 } from "~/services/jobs.service";
 import {
+  clearLocationAndWorkCenter,
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
 } from "~/services/location.server";
@@ -84,7 +85,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!locations.data.some((l) => l.id === storedLocations.location)) {
     throw redirect(path.to.authenticatedRoot, {
       headers: {
-        "Set-Cookie": setLocationAndWorkCenter("", ""),
+        "Set-Cookie": clearLocationAndWorkCenter(),
       },
     });
   }

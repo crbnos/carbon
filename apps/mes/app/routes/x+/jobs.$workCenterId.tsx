@@ -35,6 +35,7 @@ import {
   getWorkCentersByLocation,
 } from "~/services/jobs.service";
 import {
+  clearLocationAndWorkCenter,
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
 } from "~/services/location.server";
@@ -56,10 +57,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
 
   const workCenter = await getWorkCenter(client, workCenterId);
-  if (workCenter.error) {
-    throw redirect(path.to.recent, {
+  if (workCenter.error || workCenter.data?.companyId !== companyId) {
+    throw redirect(path.to.authenticatedRoot, {
       headers: {
-        "Set-Cookie": setLocationAndWorkCenter("", ""),
+        "Set-Cookie": clearLocationAndWorkCenter(),
       },
     });
   }

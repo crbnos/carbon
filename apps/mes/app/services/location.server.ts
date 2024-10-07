@@ -35,6 +35,17 @@ export function setWorkCenter(workCenter: string) {
   });
 }
 
+export function clearLocationAndWorkCenter() {
+  return [
+    cookie.serialize(locationCookieName, "", {
+      path: "/",
+    }),
+    cookie.serialize(workCenterCookieName, "", {
+      path: "/",
+    }),
+  ].join(",");
+}
+
 export function setLocationAndWorkCenter(
   currentLocation: string,
   workCenter: string
