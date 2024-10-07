@@ -1,9 +1,9 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { nanoid } from "nanoid";
 import { Resend } from "resend";
+import { Resend as ResendConfig } from "~/integrations/resend/config";
 
 import { getCarbonServiceRole } from "@carbon/auth";
-import { resendFormValidator } from "~/modules/settings";
 
 const serviceRole = getCarbonServiceRole();
 
@@ -33,7 +33,7 @@ export const sendEmailResendTask = task({
         .maybeSingle(),
     ]);
 
-    const integrationMetadata = resendFormValidator.safeParse(
+    const integrationMetadata = ResendConfig.schema.safeParse(
       integration?.data?.metadata
     );
 
