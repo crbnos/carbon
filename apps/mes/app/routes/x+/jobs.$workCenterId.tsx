@@ -58,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const workCenter = await getWorkCenter(client, workCenterId);
   if (workCenter.error || workCenter.data?.companyId !== companyId) {
-    throw redirect(path.to.authenticatedRoot, {
+    throw redirect(path.to.recent, {
       headers: {
         "Set-Cookie": clearLocationAndWorkCenter(),
       },
