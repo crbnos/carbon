@@ -1,0 +1,148 @@
+import { Boolean, Input, Submit, ValidatedForm } from "@carbon/form";
+import {
+  Badge,
+  Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  Heading,
+  HStack,
+  ScrollArea,
+  toast,
+  VStack,
+} from "@carbon/react";
+import { useParams } from "@remix-run/react";
+import { usePermissions } from "~/hooks";
+import { integrations as availableIntegrations } from "~/integrations";
+import { path } from "~/utils/path";
+
+interface IntegrationFormProps {
+  metadata: Record<string, unknown>;
+  installed: boolean;
+  onClose: () => void;
+}
+
+export function IntegrationForm({
+  installed,
+  metadata,
+  onClose,
+}: IntegrationFormProps) {
+  const permissions = usePermissions();
+  const isDisabled = !permissions.can("update", "settings");
+
+  const { id: integrationId } = useParams();
+  if (!integrationId) {
+    throw new Error("Integration ID is required");
+  }
+
+  const integration = availableIntegrations.find((i) => i.id === integrationId);
+
+  if (!integration) {
+    toast.error("Integration not found");
+    return null;
+  }
+
+  const initialValues = integration.settings.reduce((acc, setting) => {
+    return {
+      ...acc,
+      [setting.name]: metadata[setting.name],
+    };
+  }, {});
+
+  return (
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DrawerContent>
+        <ValidatedForm
+          validator={integration.schema}
+          method="post"
+          action={path.to.integration(integration.id)}
+          defaultValues={initialValues}
+          className="flex flex-col h-full"
+        >
+          <DrawerHeader>
+            <VStack spacing={2}>
+              <integration.logo className="h-10 w-auto" />
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Heading size="h3">{integration.name}</Heading>
+
+                  {installed && <Badge variant="green">Installed</Badge>}
+                </div>
+
+                <span className="text-xs text-[#878787]">
+                  <Badge variant="secondary">{integration.category}</Badge> •
+                  Published by CarbonOS
+                </span>
+              </div>
+            </VStack>
+          </DrawerHeader>
+          <DrawerBody>
+            <ScrollArea className="h-[calc(100vh-240px)]">
+              <VStack spacing={2}>
+                <Heading size="h3">How it works</Heading>
+                <p className="text-sm text-muted-foreground">
+                  {integration.description}
+                </p>
+
+                {integration.settings.map((setting) => {
+                  switch (setting.type) {
+                    case "text":
+                      return (
+                        <Input
+                          key={setting.name}
+                          name={setting.name}
+                          label={setting.label}
+                          isOptional={!setting.required}
+                        />
+                      );
+                    case "switch":
+                      return (
+                        <Boolean
+                          key={setting.name}
+                          name={setting.name}
+                          label={setting.label}
+                          description={setting.label}
+                        />
+                      );
+                    default:
+                      return null;
+                  }
+                })}
+              </VStack>
+            </ScrollArea>
+            <p className="text-sm text-muted-foreground">
+              Carbon Manufacturing Systems does not endorse any third-party
+              software.Report any concerns about app content or behavior.
+            </p>
+
+            <a href="mailto:rob@carbonos.dev" className="text-sm text-red-500">
+              Report integration
+            </a>
+          </DrawerBody>
+          <DrawerFooter>
+            <HStack>
+              {integration.settings.length > 0 ? (
+                installed ? (
+                  <Submit isDisabled={isDisabled}>Update</Submit>
+                ) : (
+                  <Submit isDisabled={isDisabled}>Install</Submit>
+                )
+              ) : null}
+
+              <Button variant="solid" onClick={onClose}>
+                Close
+              </Button>
+            </HStack>
+          </DrawerFooter>
+        </ValidatedForm>
+      </DrawerContent>
+    </Drawer>
+  );
+}
