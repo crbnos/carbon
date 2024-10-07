@@ -1,6 +1,5 @@
-import { error, getBrowserEnv } from "@carbon/auth";
+import { getBrowserEnv } from "@carbon/auth";
 import { getSessionFlash } from "@carbon/auth/session.server";
-import { validator } from "@carbon/form";
 import { Button, Heading, toast } from "@carbon/react";
 import {
   Links,
@@ -13,24 +12,20 @@ import {
   useRouteError,
 } from "@remix-run/react";
 import { Analytics } from "@vercel/analytics/react";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@vercel/remix";
+import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
-import { getMode, setMode } from "~/services/mode.server";
+import { getMode } from "~/services/mode.server";
 
 import Tailwind from "~/styles/tailwind.css?url";
-
-import { modeValidator } from "~/types/validators";
-import { useMode } from "./hooks/useMode";
 
 // export const config = { runtime: "edge" };
 
 export function links() {
-  return [{ rel: "stylesheet", href: Tailwind }];
+  return [
+    { rel: "stylesheet", href: Tailwind },
+    { rel: "stylesheet", href: "/assets/theme.css" },
+  ];
 }
 
 export const meta: MetaFunction = () => {
@@ -64,27 +59,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
     {
       headers: sessionFlash?.headers,
-    }
-  );
-}
-
-export async function action({ request }: ActionFunctionArgs) {
-  const validation = await validator(modeValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return json(error(validation.error, "Invalid mode"), {
-      status: 400,
-    });
-  }
-
-  return json(
-    {
-      mode: validation.data.mode,
-    },
-    {
-      headers: { "Set-Cookie": setMode(validation.data.mode) },
     }
   );
 }
@@ -132,11 +106,8 @@ export default function App() {
     }
   }, [result]);
 
-  /* Dark/Light Mode */
-  const mode = useMode();
-
   return (
-    <Document mode={mode}>
+    <Document mode="dark">
       <Outlet />
       <script
         dangerouslySetInnerHTML={{
