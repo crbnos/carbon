@@ -39,6 +39,8 @@ export const path = {
     rework: `${x}/rework`,
     root: "/",
     scrap: `${x}/scrap`,
+    switchCompany: (companyId: string) =>
+      generatePath(`${x}/company/switch/${companyId}`),
     workCenter: (workCenter: string) => generatePath(`${x}/jobs/${workCenter}`),
   },
 } as const;

@@ -1,3 +1,4 @@
+import type { Company } from "@carbon/auth";
 import {
   Button,
   cn,
@@ -19,6 +20,7 @@ import {
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
 import {
+  LuBuilding,
   LuChevronsUpDown,
   LuLogOut,
   LuMapPin,
@@ -35,9 +37,13 @@ import { path } from "~/utils/path";
 
 const AvatarMenu = ({
   isCollapsed,
+  company,
+  companies,
   location,
   locations,
 }: {
+  company: Company;
+  companies: Company[];
   isCollapsed: boolean;
   location: string;
   locations: Location[];
@@ -95,6 +101,44 @@ const AvatarMenu = ({
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        {companies && companies.length > 1 ? (
+          <>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <DropdownMenuIcon icon={<LuBuilding />} />
+                Company
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup value={company.companyId!}>
+                  {companies.map((c) => (
+                    <DropdownMenuRadioItem
+                      key={c.companyId}
+                      value={c.companyId!}
+                      onSelect={() => {
+                        const form = new FormData();
+                        form.append("companyId", c.companyId!);
+                        fetcher.submit(form, {
+                          method: "post",
+                          action: path.to.switchCompany(c.companyId!),
+                        });
+                      }}
+                    >
+                      <HStack>
+                        <Avatar
+                          size="xs"
+                          name={c.name ?? undefined}
+                          src={c.logo ?? undefined}
+                        />
+                        <span>{c.name}</span>
+                      </HStack>
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         {locations.length > 1 ? (
           <>
             <DropdownMenuSub>

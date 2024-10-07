@@ -1,3 +1,5 @@
+import type { getCompanies } from "./services/users";
+
 export interface AuthSession {
   accessToken: string;
   refreshToken: string;
@@ -7,6 +9,10 @@ export interface AuthSession {
   expiresIn: number;
   expiresAt: number;
 }
+
+export type Company = NonNullable<
+  Awaited<ReturnType<typeof getCompanies>>["data"]
+>[number];
 
 export type CompanyPermission = {
   view: boolean;
