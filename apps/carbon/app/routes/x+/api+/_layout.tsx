@@ -2,6 +2,7 @@ import { swaggerDocsSchema } from "@carbon/database";
 import { Button } from "@carbon/react";
 import { Outlet, useLocation, useNavigate } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
+import { LuEye, LuTable2 } from "react-icons/lu";
 import { GroupedContentSidebar } from "~/components/Layout";
 import type { ValidLang } from "~/modules/api";
 import { useSelectedLang } from "~/modules/api";
@@ -103,6 +104,12 @@ function useApiDocsMenu(): RouteGroup[] {
   ];
 
   const tables = Object.keys(swaggerDocsSchema.definitions).sort();
+  const isTable = (table: string): boolean => {
+    const tableKey = `/${table}` as keyof typeof swaggerDocsSchema.paths;
+    return !!Object.keys(swaggerDocsSchema.paths[tableKey] ?? {})?.some(
+      (x) => x.toUpperCase() === "POST"
+    );
+  };
 
   result.push({
     name: "Tables and Views",
@@ -111,6 +118,7 @@ function useApiDocsMenu(): RouteGroup[] {
       .map((table) => ({
         name: table,
         to: path.to.apiTable(selectedLang, table),
+        icon: isTable(table) ? <LuTable2 /> : <LuEye />,
       })),
   });
 

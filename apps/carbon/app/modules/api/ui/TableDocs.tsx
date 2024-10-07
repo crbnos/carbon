@@ -25,6 +25,7 @@ const TableDocs = ({
 }: TableDocsProps) => {
   const { paths, definitions } = swaggerDocsSchema;
   // @ts-ignore
+
   const resourcePaths = paths[`/${resourceId}`];
   // @ts-ignore
   const resourceDefinition = definitions?.[resourceId];

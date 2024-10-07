@@ -3,7 +3,6 @@ import { useParams } from "@remix-run/react";
 import { BiListCheck } from "react-icons/bi";
 import {
   LuBox,
-  LuFileBarChart,
   LuFileText,
   LuReceipt,
   LuShoppingCart,
@@ -64,13 +63,13 @@ export function usePartNavigation() {
       icon: LuTags,
       shortcut: "Command+Shift+a",
     },
-    {
-      name: "Planning",
-      to: path.to.partPlanning(itemId),
-      role: ["employee"],
-      icon: LuFileBarChart,
-      shortcut: "Command+Shift+p",
-    },
+    // {
+    //   name: "Planning",
+    //   to: path.to.partPlanning(itemId),
+    //   role: ["employee"],
+    //   icon: LuFileBarChart,
+    //   shortcut: "Command+Shift+p",
+    // },
     {
       name: "Sales",
       to: path.to.partSales(itemId),

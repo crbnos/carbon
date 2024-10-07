@@ -1,12 +1,6 @@
 import { useParams } from "@remix-run/react";
 
-import {
-  LuBox,
-  LuFileBarChart,
-  LuFileText,
-  LuShoppingCart,
-  LuTags,
-} from "react-icons/lu";
+import { LuBox, LuFileText, LuShoppingCart, LuTags } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -37,13 +31,13 @@ export function useConsumableNavigation() {
       icon: LuTags,
       shortcut: "Command+Shift+c",
     },
-    {
-      name: "Planning",
-      to: path.to.consumablePlanning(itemId),
-      role: ["employee"],
-      icon: LuFileBarChart,
-      shortcut: "Command+Shift+p",
-    },
+    // {
+    //   name: "Planning",
+    //   to: path.to.consumablePlanning(itemId),
+    //   role: ["employee"],
+    //   icon: LuFileBarChart,
+    //   shortcut: "Command+Shift+p",
+    // },
     {
       name: "Inventory",
       to: path.to.consumableInventory(itemId),
