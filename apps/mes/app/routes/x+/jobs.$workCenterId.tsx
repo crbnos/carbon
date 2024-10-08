@@ -37,7 +37,6 @@ import {
 import {
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
-  updateLocationAndWorkCenter,
 } from "~/services/location.server";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
@@ -60,21 +59,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (workCenter.error) {
     throw new Error("Work center not found");
   }
-  if (workCenter.data?.companyId !== companyId) {
-    // TODO: replace this garbage once middleware is available.
-    // for now the race condition makes it so that each route has to be self-healing
-    const { locationId, workCenterId } = await updateLocationAndWorkCenter(
-      request,
-      client,
-      {
-        companyId: companyId!,
-      }
-    );
-
-    storedLocations.location = locationId;
-    storedLocations.workCenter = workCenterId;
-    storedLocations.updated = true;
-  }
 
   const [operations, workCenters] = await Promise.all([
     getJobOperationsByWorkCenter(client, {
@@ -93,6 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return json(payload, {
       headers: {
         "Set-Cookie": setLocationAndWorkCenter(
+          companyId,
           storedLocations.location,
           workCenterId
         ),

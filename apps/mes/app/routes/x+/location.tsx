@@ -8,7 +8,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {});
   const formData = await request.formData();
 
   const currentLocation = formData.get("location");
@@ -21,7 +21,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   throw redirect(path.to.authenticatedRoot, {
     headers: {
-      "Set-Cookie": setLocationAndWorkCenter(currentLocation, workCenter),
+      "Set-Cookie": setLocationAndWorkCenter(
+        companyId,
+        currentLocation,
+        workCenter
+      ),
     },
   });
 }

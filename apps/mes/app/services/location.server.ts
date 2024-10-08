@@ -1,91 +1,34 @@
-import { error } from "@carbon/auth";
-import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { redirect } from "@vercel/remix";
 import * as cookie from "cookie";
-import { path, requestReferrer } from "~/utils/path";
-import {
-  getLocationsByCompany,
-  getWorkCentersByLocation,
-} from "./jobs.service";
 
-const locationCookieName = "location";
-const workCenterCookieName = "workCenter";
-
-export function getLocation(request: Request): string | null {
-  const cookieHeader = request.headers.get("cookie");
-  const parsed = cookieHeader
-    ? cookie.parse(cookieHeader)[locationCookieName]
-    : null;
-  return parsed || null;
-}
-
-export function setLocation(location: string) {
-  return cookie.serialize(locationCookieName, location, {
-    path: "/",
-    maxAge: 31536000,
-  });
-}
-
-export function getWorkCenter(request: Request): string | null {
-  const cookieHeader = request.headers.get("cookie");
-  const parsed = cookieHeader
-    ? cookie.parse(cookieHeader)[workCenterCookieName]
-    : null;
-  return parsed || null;
-}
-
-export function setWorkCenter(workCenter: string) {
-  return cookie.serialize(workCenterCookieName, workCenter, {
-    path: "/",
-    maxAge: 31536000,
-  });
-}
-
-export async function updateLocationAndWorkCenter(
+export function getCompanySettings(
   request: Request,
-  client: SupabaseClient<Database>,
-  args: { companyId: string }
-) {
-  const location = await getLocationsByCompany(client, args.companyId!);
-  if (!location.data || location.data.length === 0) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.authenticatedRoot,
-      await flash(request, error(null, "Location not found"))
-    );
+  companyId: string
+):
+  | { location: string; workCenter: string }
+  | { location: undefined; workCenter: undefined } {
+  const cookieHeader = request.headers.get("cookie");
+  const parsed = cookieHeader ? cookie.parse(cookieHeader)[companyId] : null;
+  if (parsed) {
+    const [location, workCenter] = parsed.split(":");
+    return { location, workCenter };
   }
-  const workCenters = await getWorkCentersByLocation(
-    client,
-    location.data[0].id
-  );
-  if (!workCenters.data || workCenters.data.length === 0) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.authenticatedRoot,
-      await flash(request, error(null, "Location not found"))
-    );
-  }
-
   return {
-    locationId: location.data[0].id,
-    workCenterId: workCenters.data[0].id,
+    location: undefined,
+    workCenter: undefined,
   };
 }
 
 export function setLocationAndWorkCenter(
+  companyId: string,
   currentLocation: string,
   workCenter: string
 ) {
-  return [
-    cookie.serialize(locationCookieName, currentLocation, {
-      path: "/",
-      maxAge: 31536000,
-    }),
-    cookie.serialize(workCenterCookieName, workCenter, {
-      path: "/",
-      maxAge: 31536000,
-    }),
-  ].join(",");
+  return cookie.serialize(companyId, `${currentLocation}:${workCenter}`, {
+    path: "/",
+    maxAge: 31536000,
+  });
 }
 
 export async function getLocationAndWorkCenter(
@@ -97,8 +40,7 @@ export async function getLocationAndWorkCenter(
   }
 ) {
   const { userId, companyId } = args;
-  let location = getLocation(request);
-  let workCenter = getWorkCenter(request);
+  let { location, workCenter } = getCompanySettings(request, companyId);
 
   let updated = false;
 
@@ -113,7 +55,6 @@ export async function getLocationAndWorkCenter(
     if (employeeJob.data && employeeJob.data.locationId) {
       location = employeeJob.data.locationId;
       updated = true;
-      setLocation(location);
     } else {
       const locations = await client
         .from("location")
@@ -141,6 +82,9 @@ export async function getLocationAndWorkCenter(
   }
 
   if (!workCenter) throw new Error("Failed to get a valid work center");
+  if (updated) {
+    setLocationAndWorkCenter(companyId, location, workCenter);
+  }
 
   return { location, workCenter, updated };
 }
