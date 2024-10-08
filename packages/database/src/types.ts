@@ -5588,28 +5588,16 @@ export type Database = {
       }
       integration: {
         Row: {
-          description: string | null
           id: string
           jsonschema: Json
-          logoPath: string | null
-          title: string
-          visible: boolean
         }
         Insert: {
-          description?: string | null
           id: string
           jsonschema: Json
-          logoPath?: string | null
-          title: string
-          visible?: boolean
         }
         Update: {
-          description?: string | null
           id?: string
           jsonschema?: Json
-          logoPath?: string | null
-          title?: string
-          visible?: boolean
         }
         Relationships: []
       }
@@ -23689,13 +23677,9 @@ export type Database = {
         Row: {
           active: boolean | null
           companyId: string | null
-          description: string | null
           id: string | null
           jsonschema: Json | null
-          logoPath: string | null
           metadata: Json | null
-          title: string | null
-          visible: boolean | null
         }
         Relationships: []
       }

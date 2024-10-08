@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.2 (a4e00ff)",
+    version: "12.0.1 (cd38da5)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -8089,18 +8089,6 @@ export default {
             $ref: "#/parameters/rowFilter.integration.id",
           },
           {
-            $ref: "#/parameters/rowFilter.integration.title",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.logoPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.visible",
-          },
-          {
             $ref: "#/parameters/rowFilter.integration.jsonschema",
           },
           {
@@ -8166,18 +8154,6 @@ export default {
             $ref: "#/parameters/rowFilter.integration.id",
           },
           {
-            $ref: "#/parameters/rowFilter.integration.title",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.logoPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.visible",
-          },
-          {
             $ref: "#/parameters/rowFilter.integration.jsonschema",
           },
           {
@@ -8195,18 +8171,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.integration.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.title",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.logoPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integration.visible",
           },
           {
             $ref: "#/parameters/rowFilter.integration.jsonschema",
@@ -21914,18 +21878,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.integrations.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integrations.title",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integrations.description",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integrations.logoPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.integrations.visible",
           },
           {
             $ref: "#/parameters/rowFilter.integrations.jsonschema",
@@ -39617,29 +39569,12 @@ export default {
       type: "object",
     },
     integration: {
-      required: ["id", "title", "visible", "jsonschema"],
+      required: ["id", "jsonschema"],
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
-        },
-        title: {
-          format: "text",
-          type: "string",
-        },
-        description: {
-          format: "text",
-          type: "string",
-        },
-        logoPath: {
-          format: "text",
-          type: "string",
-        },
-        visible: {
-          default: true,
-          format: "boolean",
-          type: "boolean",
         },
         jsonschema: {
           format: "json",
@@ -46105,22 +46040,6 @@ export default {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
-        },
-        title: {
-          format: "text",
-          type: "string",
-        },
-        description: {
-          format: "text",
-          type: "string",
-        },
-        logoPath: {
-          format: "text",
-          type: "string",
-        },
-        visible: {
-          format: "boolean",
-          type: "boolean",
         },
         jsonschema: {
           format: "json",
@@ -56205,34 +56124,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.integration.title": {
-      name: "title",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.integration.description": {
-      name: "description",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.integration.logoPath": {
-      name: "logoPath",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.integration.visible": {
-      name: "visible",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.integration.jsonschema": {
       name: "jsonschema",
       required: false,
@@ -64708,34 +64599,6 @@ export default {
       name: "id",
       required: false,
       format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.integrations.title": {
-      name: "title",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.integrations.description": {
-      name: "description",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.integrations.logoPath": {
-      name: "logoPath",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.integrations.visible": {
-      name: "visible",
-      required: false,
-      format: "boolean",
       in: "query",
       type: "string",
     },
