@@ -10,6 +10,7 @@ import {
   getPurchasingTerms,
 } from "~/modules/purchasing";
 import { getCompany } from "~/modules/settings";
+import { getLocale } from "~/utils/request";
 
 // export const config = { runtime: "nodejs" };
 
@@ -65,9 +66,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load purchase order");
   }
 
+  const locale = getLocale(request);
+
   const stream = await renderToStream(
     <PurchaseOrderPDF
       company={company.data}
+      locale={locale}
       purchaseOrder={purchaseOrder.data}
       purchaseOrderLines={purchaseOrderLines.data ?? []}
       purchaseOrderLocations={purchaseOrderLocations.data}

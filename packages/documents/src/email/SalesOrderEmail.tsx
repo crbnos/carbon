@@ -22,6 +22,7 @@ import {
   getLineTotal,
   getTotal,
 } from "../utils/sales-order";
+import { getCurrencyFormatter } from "../utils/shared";
 
 interface SalesOrderEmailProps extends Email {
   salesOrder: Database["public"]["Views"]["salesOrders"]["Row"];
@@ -29,13 +30,9 @@ interface SalesOrderEmailProps extends Email {
   salesOrderLocations: Database["public"]["Views"]["salesOrderLocations"]["Row"];
 }
 
-const formatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
 const SalesOrderEmail = ({
   company,
+  locale,
   salesOrder,
   salesOrderLines,
   salesOrderLocations,
@@ -60,6 +57,8 @@ const SalesOrderEmail = ({
   } = salesOrderLocations;
 
   const reSubject = `Re: ${salesOrder.salesOrderId} from ${company.name}`;
+
+  const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
 
   return (
     <Html>

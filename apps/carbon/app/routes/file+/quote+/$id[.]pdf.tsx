@@ -16,6 +16,7 @@ import {
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { getLocale } from "~/utils/request";
 
 // export const config = { runtime: "nodejs" };
 
@@ -26,6 +27,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
+
+  const locale = getLocale(request);
 
   const [
     company,
@@ -109,6 +112,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const stream = await renderToStream(
     <QuotePDF
       company={company.data}
+      locale={locale}
       quote={quote.data}
       quoteLines={quoteLines.data ?? []}
       quoteLinePrices={quoteLinePrices.data ?? []}

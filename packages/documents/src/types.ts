@@ -12,12 +12,14 @@ export interface Email {
     lastName: string;
     email: string;
   };
+  locale: string;
 }
 
 export interface PDF {
   title?: string;
   meta?: Meta;
   company: Company;
+  locale: string;
 }
 
 export type Meta = {
