@@ -1,20 +1,14 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { Button, MenuIcon, MenuItem } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useNavigate } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { LuPencil } from "react-icons/lu";
-import {
-  CustomerAvatar,
-  EmployeeAvatar,
-  Hyperlink,
-  New,
-  Table,
-} from "~/components";
+import { CustomerAvatar, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Customer, CustomerStatus } from "~/modules/sales";
+import type { action } from "~/routes/api+/ai+/csv+/$table.columns";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -27,8 +21,55 @@ type CustomersTableProps = {
 const CustomersTable = memo(
   ({ data, count, customerStatuses }: CustomersTableProps) => {
     const navigate = useNavigate();
-    const permissions = usePermissions();
+    // const permissions = usePermissions();
     const [people] = usePeople();
+    const fetcher = useFetcher<typeof action>();
+
+    const letsGo = () => {
+      fetcher.submit(
+        {
+          fieldColumns: [
+            "ID",
+            "Customer Name",
+            "EIN",
+            "Website",
+            "Address",
+            "City",
+            "State",
+            "Zip",
+          ],
+          firstRows: [
+            {
+              ID: "31294323",
+              "Customer Name": "Acme Corp",
+              EIN: "12-3456789",
+              Website: "https://www.acmecorp.com",
+              Address: "123 Main St",
+              City: "Anytown",
+              State: "CA",
+              Zip: "12345",
+            },
+            {
+              ID: "2324393",
+              "Customer Name": "XYZ Industries",
+              EIN: "98-7654321",
+              Website: "https://www.xyzindustries.com",
+              Address: "456 Oak Ave",
+              City: "Somewhere",
+              State: "NY",
+              Zip: "67890",
+            },
+          ],
+        },
+        {
+          method: "POST",
+          action: path.to.api.generateCsvColumns("customer"),
+          encType: "application/json",
+        }
+      );
+    };
+
+    console.log(fetcher);
 
     const customColumns = useCustomColumns<Customer>("customer");
     const columns = useMemo<ColumnDef<Customer>[]>(() => {
@@ -163,9 +204,16 @@ const CustomersTable = memo(
             updatedAt: false,
           }}
           primaryAction={
-            permissions.can("create", "sales") && (
-              <New label="Customer" to={path.to.newCustomer} />
-            )
+            // permissions.can("create", "sales") && (
+            //   <New label="Customer" to={path.to.newCustomer} />
+            // )
+            <Button
+              onClick={letsGo}
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+            >
+              Import
+            </Button>
           }
           renderContextMenu={renderContextMenu}
         />

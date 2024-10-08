@@ -28,6 +28,8 @@ export const path = {
       departments: `${api}/people/departments`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
+      generateCsvColumns: (table: string) =>
+        generatePath(`${api}/ai/csv/${table}/columns`),
       groupsByType: (type?: string) =>
         generatePath(`${api}/users/groups?type=${type}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
