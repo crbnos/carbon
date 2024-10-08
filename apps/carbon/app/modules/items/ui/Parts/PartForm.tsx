@@ -28,7 +28,7 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
-import { useNextItemId, usePermissions } from "~/hooks";
+import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import {
   itemReplenishmentSystems,
   itemTrackingTypes,
@@ -47,6 +47,9 @@ function startsWithLetter(value: string) {
 }
 
 const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
@@ -176,7 +179,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                     label="Unit Cost"
                     formatOptions={{
                       style: "currency",
-                      currency: "USD",
+                      currency: baseCurrency,
                     }}
                     minValue={0}
                   />

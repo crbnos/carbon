@@ -415,6 +415,8 @@ function MaterialForm({
   const params = useParams();
   const { company } = useUser();
 
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   useEffect(() => {
     // replace the temporary id with the actual id
     if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
@@ -590,6 +592,10 @@ function MaterialForm({
               label="Unit Cost"
               value={itemData.unitCost}
               minValue={0}
+              formatOptions={{
+                style: "currency",
+                currency: baseCurrency,
+              }}
             />
           )}
         </div>

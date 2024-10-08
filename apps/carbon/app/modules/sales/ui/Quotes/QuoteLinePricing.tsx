@@ -101,7 +101,8 @@ const QuoteLinePricing = ({
     return line.unitCost ?? 0;
   }, [line.itemId, line.unitCost, fetcher.formAction, fetcher.formData]);
 
-  const { id: userId } = useUser();
+  const { id: userId, company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const formatter = useCurrencyFormatter();
 
@@ -381,7 +382,7 @@ const QuoteLinePricing = ({
                       value={optimisticUnitCost}
                       formatOptions={{
                         style: "currency",
-                        currency: "USD",
+                        currency: baseCurrency,
                       }}
                       minValue={0}
                       onChange={(value) => {
@@ -463,7 +464,7 @@ const QuoteLinePricing = ({
                       value={price}
                       formatOptions={{
                         style: "currency",
-                        currency: "USD",
+                        currency: baseCurrency,
                       }}
                       minValue={0}
                       onChange={(value) => {
@@ -663,7 +664,7 @@ const QuoteLinePricing = ({
                               defaultValue={amount}
                               formatOptions={{
                                 style: "currency",
-                                currency: "USD",
+                                currency: baseCurrency,
                               }}
                               onChange={(value) => {
                                 if (

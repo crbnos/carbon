@@ -28,7 +28,7 @@ import {
   Submit,
   TextArea,
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { workCenterValidator } from "~/modules/resources";
 import { path } from "~/utils/path";
 
@@ -49,6 +49,9 @@ const WorkCenterForm = ({
 }: WorkCenterFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -110,7 +113,7 @@ const WorkCenterForm = ({
                   label="Labor Rate (Hourly)"
                   formatOptions={{
                     style: "currency",
-                    currency: "USD",
+                    currency: baseCurrency,
                   }}
                 />
                 <Number
@@ -118,7 +121,7 @@ const WorkCenterForm = ({
                   label="Machine Rate (Hourly)"
                   formatOptions={{
                     style: "currency",
-                    currency: "USD",
+                    currency: baseCurrency,
                   }}
                 />
                 <Number
@@ -126,7 +129,7 @@ const WorkCenterForm = ({
                   label="Overhead Rate (Hourly)"
                   formatOptions={{
                     style: "currency",
-                    currency: "USD",
+                    currency: baseCurrency,
                   }}
                 />
 

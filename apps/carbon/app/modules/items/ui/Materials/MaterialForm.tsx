@@ -30,7 +30,7 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
-import { useNextItemId, usePermissions, useRouteData } from "~/hooks";
+import { useNextItemId, usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
   getMaterialFormsList,
   getMaterialSubstancesList,
@@ -54,6 +54,9 @@ const MaterialForm = ({
   type = "card",
   onClose,
 }: MaterialFormProps) => {
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode;
+
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
   const forms = useMaterialForms();
   const substances = useMaterialSubstances();
@@ -175,7 +178,7 @@ const MaterialForm = ({
                     label="Unit Cost"
                     formatOptions={{
                       style: "currency",
-                      currency: "USD",
+                      currency: baseCurrency,
                     }}
                     minValue={0}
                   />

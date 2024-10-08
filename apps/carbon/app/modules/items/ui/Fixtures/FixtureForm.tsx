@@ -28,7 +28,7 @@ import {
   Submit,
   TextArea,
 } from "~/components/Form";
-import { useNextItemId, usePermissions } from "~/hooks";
+import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import {
   fixtureValidator,
   itemReplenishmentSystems,
@@ -51,6 +51,9 @@ const FixtureForm = ({
   type = "card",
   onClose,
 }: FixtureFormProps) => {
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
@@ -178,7 +181,7 @@ const FixtureForm = ({
                     label="Unit Cost"
                     formatOptions={{
                       style: "currency",
-                      currency: "USD",
+                      currency: baseCurrency,
                     }}
                     minValue={0}
                   />

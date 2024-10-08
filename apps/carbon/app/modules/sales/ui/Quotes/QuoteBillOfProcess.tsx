@@ -527,12 +527,14 @@ function OperationForm({
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
 }) {
   const { quoteId, lineId } = useParams();
-  const { id: userId } = useUser();
+  const { id: userId, company } = useUser();
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
 
   const fetcher = useFetcher<{ id: string }>();
   const { carbon } = useCarbon();
+
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   useEffect(() => {
     // replace the temporary id with the actual id
@@ -844,7 +846,7 @@ function OperationForm({
               value={processData.operationMinimumCost}
               formatOptions={{
                 style: "currency",
-                currency: "USD",
+                currency: baseCurrency,
               }}
               onChange={(newValue) =>
                 setProcessData((d) => ({
@@ -860,7 +862,7 @@ function OperationForm({
               value={processData.operationUnitCost}
               formatOptions={{
                 style: "currency",
-                currency: "USD",
+                currency: baseCurrency,
               }}
               onChange={(newValue) =>
                 setProcessData((d) => ({
@@ -1137,7 +1139,7 @@ function OperationForm({
                 value={processData.laborRate}
                 formatOptions={{
                   style: "currency",
-                  currency: "USD",
+                  currency: baseCurrency,
                 }}
                 onChange={(newValue) =>
                   setProcessData((d) => ({
@@ -1153,7 +1155,7 @@ function OperationForm({
                 value={processData.machineRate}
                 formatOptions={{
                   style: "currency",
-                  currency: "USD",
+                  currency: baseCurrency,
                 }}
                 onChange={(newValue) =>
                   setProcessData((d) => ({
@@ -1169,7 +1171,7 @@ function OperationForm({
                 value={processData.overheadRate}
                 formatOptions={{
                   style: "currency",
-                  currency: "USD",
+                  currency: baseCurrency,
                 }}
                 onChange={(newValue) =>
                   setProcessData((d) => ({

@@ -46,7 +46,7 @@ import { CustomerAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
-import { useRouteData } from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { getDocumentType } from "~/modules/documents";
 import { path } from "~/utils/path";
@@ -440,6 +440,9 @@ const LinePricingOptions = ({
     unitPrice: 0,
   });
 
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   useEffect(() => {
     if (selectedValue === "custom") {
       setSelectedLines((prev) => ({
@@ -575,7 +578,7 @@ const LinePricingOptions = ({
                     value={overridePricing.unitPrice}
                     formatOptions={{
                       style: "currency",
-                      currency: "USD",
+                      currency: baseCurrency,
                     }}
                     onChange={(unitPrice) =>
                       setOverridePricing((v) => ({
@@ -596,7 +599,7 @@ const LinePricingOptions = ({
                     value={overridePricing.addOn}
                     formatOptions={{
                       style: "currency",
-                      currency: "USD",
+                      currency: baseCurrency,
                     }}
                     onChange={(addOn) =>
                       setOverridePricing((v) => ({
