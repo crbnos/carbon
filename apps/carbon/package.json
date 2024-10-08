@@ -2,6 +2,7 @@
   "name": "carbon",
   "type": "module",
   "dependencies": {
+    "@ai-sdk/openai": "~0.0.66",
     "@carbon/auth": "*",
     "@carbon/database": "*",
     "@carbon/documents": "*",
@@ -43,6 +44,7 @@
     "@visx/responsive": "3.3.0",
     "@visx/scale": "3.3.0",
     "@visx/shape": "3.3.0",
+    "ai": "3.4.9",
     "assert-never": "^1.2.1",
     "clsx": "^2.1.0",
     "cookie": "^0.6.0",
@@ -52,6 +54,7 @@
     "localforage": "^1.10.0",
     "lodash.debounce": "^4.0.8",
     "lodash.words": "^4.2.0",
+    "papaparse": "^5.4.1",
     "nanoid": "5.0.4",
     "nanostores": "^0.9.3",
     "non.geist": "~1.0.3",
