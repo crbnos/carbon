@@ -10,6 +10,7 @@ import {
   getSalesTerms,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
+import { getLocale } from "~/utils/request";
 
 // export const config = { runtime: "nodejs" };
 
@@ -60,9 +61,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load sales order");
   }
 
+  const locale = getLocale(request);
+
   const stream = await renderToStream(
     <SalesOrderPDF
       company={company.data}
+      locale={locale}
       meta={{
         author: "CarbonOS",
         keywords: "sales order",

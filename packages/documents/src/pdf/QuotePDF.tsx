@@ -7,6 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import { formatCityStatePostalCode } from "@carbon/utils";
 import type { PDF } from "../types";
 import { getLineDescription, getLineDescriptionDetails } from "../utils/quote";
+import { getCurrencyFormatter } from "../utils/shared";
 import { Header, Note, Summary, Template } from "./components";
 
 interface QuotePDFProps extends PDF {
@@ -21,12 +22,6 @@ interface QuotePDFProps extends PDF {
   terms: JSONContent;
   thumbnails: Record<string, string | null>;
 }
-
-// TODO: format currency based on settings
-const formatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 const tw = createTw({
   theme: {
@@ -45,6 +40,7 @@ const tw = createTw({
 
 const QuotePDF = ({
   company,
+  locale,
   meta,
   quote,
   quoteLines,
@@ -67,6 +63,8 @@ const QuotePDF = ({
     customerPostalCode,
     customerCountryName,
   } = quoteCustomerDetails;
+
+  const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
 
   const pricesByLine = quoteLinePrices.reduce<
     Record<string, Database["public"]["Tables"]["quoteLinePrice"]["Row"][]>

@@ -11,6 +11,7 @@ import {
   getLineTotal,
   getTotal,
 } from "../utils/purchase-order";
+import { getCurrencyFormatter } from "../utils/shared";
 import { Header, Note, Summary, Template } from "./components";
 
 interface PurchaseOrderPDFProps extends PDF {
@@ -19,12 +20,6 @@ interface PurchaseOrderPDFProps extends PDF {
   purchaseOrderLocations: Database["public"]["Views"]["purchaseOrderLocations"]["Row"];
   terms: JSONContent;
 }
-
-// TODO: format currency based on settings
-const formatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 // Initialize tailwind-styled-components
 const tw = createTw({
@@ -44,6 +39,7 @@ const tw = createTw({
 
 const PurchaseOrderPDF = ({
   company,
+  locale,
   meta,
   purchaseOrder,
   purchaseOrderLines,
@@ -75,6 +71,8 @@ const PurchaseOrderPDF = ({
     customerPostalCode,
     customerCountryName,
   } = purchaseOrderLocations;
+
+  const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
 
   return (
     <Template
