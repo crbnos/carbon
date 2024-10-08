@@ -10,8 +10,6 @@ export const updateExchangeRates = schedules.task({
   id: "update-exchange-rates",
   cron: "0 0 * * *",
   run: async () => {
-    let rates: Rates;
-
     console.log(`💵 Exchange Rates Task Started: ${new Date().toISOString()}`);
     const integrations = await serviceRole
       .from("companyIntegration")
@@ -33,37 +31,60 @@ export const updateExchangeRates = schedules.task({
 
     console.log(`Found ${integrations.data.length} active integrations`);
 
-    const exchangeRatesClient = getExchangeRatesClient(EXCHANGE_RATES_API_KEY);
-    if (!exchangeRatesClient) {
-      console.error(
-        "Exchange rates client is undefined. Check API key configuration."
-      );
-      return;
-    }
-
-    try {
-      rates = await exchangeRatesClient.getExchangeRates();
-      if (!rates) throw new Error("No rates returned from exchange rates API");
-      console.log(
-        `Successfully fetched exchange rates for ${
-          Object.keys(rates).length
-        } currencies`
-      );
-    } catch (error) {
-      console.error(
-        `Error fetching exchange rates: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      return;
-    }
-
-    const updatedAt = new Date().toISOString();
-
     for (const integration of integrations.data) {
       console.log(
         `Processing integration for company ID: ${integration.companyId}`
       );
+
+      const company = await serviceRole
+        .from("company")
+        .select("*")
+        .eq("id", integration.companyId)
+        .single();
+
+      if (company.error) {
+        console.error(
+          `Error fetching company ${integration.companyId}: ${JSON.stringify(
+            company.error
+          )}`
+        );
+        continue;
+      }
+
+      const exchangeRatesClient = getExchangeRatesClient(
+        EXCHANGE_RATES_API_KEY,
+        undefined,
+        company.data.baseCurrencyCode as CurrencyCode
+      );
+
+      if (!exchangeRatesClient) {
+        console.error(
+          "Exchange rates client is undefined. Check API key configuration."
+        );
+        return;
+      }
+
+      let rates: Rates;
+      try {
+        rates = await exchangeRatesClient.getExchangeRates();
+        if (!rates)
+          throw new Error("No rates returned from exchange rates API");
+        console.log(
+          `Successfully fetched exchange rates for ${
+            Object.keys(rates).length
+          } currencies`
+        );
+      } catch (error) {
+        console.error(
+          `Error fetching exchange rates: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        return;
+      }
+
+      const updatedAt = new Date().toISOString();
+
       try {
         const { data, error } = await serviceRole
           .from("currency")
