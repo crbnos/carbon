@@ -28,7 +28,7 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
-import { useNextItemId, usePermissions } from "~/hooks";
+import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import { itemTrackingTypes, toolValidator } from "~/modules/items";
 import { path } from "~/utils/path";
 
@@ -43,6 +43,9 @@ function startsWithLetter(value: string) {
 }
 
 const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
@@ -152,7 +155,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                     label="Unit Cost"
                     formatOptions={{
                       style: "currency",
-                      currency: "USD",
+                      currency: baseCurrency,
                     }}
                     minValue={0}
                   />

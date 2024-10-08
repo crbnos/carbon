@@ -17,17 +17,18 @@ import {
   Select,
   Submit,
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { itemCostValidator, itemCostingMethods } from "~/modules/items";
 
 type ItemCostingFormProps = {
   initialValues: z.infer<typeof itemCostValidator>;
 };
 
-const currency = "USD"; // TODO: get from settings
-
 const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
   const permissions = usePermissions();
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   const [partCostingMethod, setItemCostingMethod] = useState<string>(
     initialValues.costingMethod
   );
@@ -66,7 +67,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               label="Standard Cost"
               formatOptions={{
                 style: "currency",
-                currency,
+                currency: baseCurrency,
               }}
               isReadOnly={partCostingMethod !== "Standard"}
             />
@@ -76,7 +77,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               label="Unit Cost"
               formatOptions={{
                 style: "currency",
-                currency,
+                currency: baseCurrency,
               }}
             />
 
@@ -85,7 +86,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               label="Sales History"
               formatOptions={{
                 style: "currency",
-                currency,
+                currency: baseCurrency,
               }}
               isReadOnly
             />

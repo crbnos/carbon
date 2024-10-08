@@ -24,7 +24,7 @@ import {
   Submit,
   Supplier,
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { SupplierProcess } from "~/modules/purchasing";
 import { supplierProcessValidator } from "~/modules/purchasing";
 import { path } from "~/utils/path";
@@ -47,6 +47,9 @@ const SupplierProcessForm = ({
   const { supplierId } = useParams();
   const [supplier, setSupplier] = useState<string | undefined>(supplierId);
   const navigate = useNavigate();
+
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -115,7 +118,7 @@ const SupplierProcessForm = ({
                   label="Minimum Cost"
                   formatOptions={{
                     style: "currency",
-                    currency: "USD",
+                    currency: baseCurrency,
                   }}
                   minValue={0}
                 />
@@ -124,7 +127,7 @@ const SupplierProcessForm = ({
                   label="Unit Cost"
                   formatOptions={{
                     style: "currency",
-                    currency: "USD",
+                    currency: baseCurrency,
                   }}
                   minValue={0}
                 />

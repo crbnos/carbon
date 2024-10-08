@@ -79,6 +79,8 @@ const SalesOrderLineForm = ({
     routeData?.salesOrder?.status ?? ""
   );
 
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [itemData, setItemData] = useState<{
@@ -315,7 +317,7 @@ const SalesOrderLineForm = ({
                           value={itemData.unitPrice}
                           formatOptions={{
                             style: "currency",
-                            currency: "USD",
+                            currency: baseCurrency,
                           }}
                           onChange={(value) =>
                             setItemData((d) => ({
@@ -329,7 +331,7 @@ const SalesOrderLineForm = ({
                           label="Add-On Cost"
                           formatOptions={{
                             style: "currency",
-                            currency: "USD",
+                            currency: baseCurrency,
                           }}
                         />
 

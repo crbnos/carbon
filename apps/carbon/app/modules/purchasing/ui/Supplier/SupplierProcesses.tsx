@@ -33,7 +33,7 @@ type SupplierProccessesProps = {
 const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
-  const { id: userId } = useUser();
+  const { id: userId, company } = useUser();
 
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -41,6 +41,8 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
   const canEdit = permissions.can("update", "purchasing");
   const canDelete = permissions.can("delete", "purchasing");
   const { carbon } = useCarbon();
+
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const onCellEdit = useCallback(
     async (id: string, value: unknown, row: SupplierProcess) => {
@@ -135,14 +137,14 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
   const editableComponents = useMemo(
     () => ({
       minimumCost: EditableNumber(onCellEdit, {
-        formatOptions: { style: "currency", currency: "USD" },
+        formatOptions: { style: "currency", currency: baseCurrency },
       }),
       unitCost: EditableNumber(onCellEdit, {
-        formatOptions: { style: "currency", currency: "USD" },
+        formatOptions: { style: "currency", currency: baseCurrency },
       }),
       leadTime: EditableNumber(onCellEdit),
     }),
-    [onCellEdit]
+    [onCellEdit, baseCurrency]
   );
 
   return (
