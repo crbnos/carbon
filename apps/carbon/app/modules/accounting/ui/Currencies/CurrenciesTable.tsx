@@ -37,10 +37,6 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
         cell: (item) => item.getValue(),
       },
       {
-        header: "Symbol",
-        cell: ({ row }) => row.original.symbol,
-      },
-      {
         accessorKey: "exchangeRate",
         header: "Exchange Rate",
         cell: (item) => item.getValue(),

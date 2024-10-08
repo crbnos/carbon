@@ -2779,17 +2779,14 @@ export type Database = {
         Row: {
           code: string
           name: string
-          symbol: string
         }
         Insert: {
           code: string
           name: string
-          symbol: string
         }
         Update: {
           code?: string
           name?: string
-          symbol?: string
         }
         Relationships: []
       }
@@ -22732,7 +22729,6 @@ export type Database = {
           exchangeRate: number | null
           id: string | null
           name: string | null
-          symbol: string | null
           updatedAt: string | null
           updatedBy: string | null
         }

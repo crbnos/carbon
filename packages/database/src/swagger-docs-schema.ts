@@ -3490,9 +3490,6 @@ export default {
             $ref: "#/parameters/rowFilter.currencyCode.name",
           },
           {
-            $ref: "#/parameters/rowFilter.currencyCode.symbol",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -3558,9 +3555,6 @@ export default {
             $ref: "#/parameters/rowFilter.currencyCode.name",
           },
           {
-            $ref: "#/parameters/rowFilter.currencyCode.symbol",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -3578,9 +3572,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.currencyCode.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.currencyCode.symbol",
           },
           {
             $ref: "#/parameters/body.currencyCode",
@@ -7778,9 +7769,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.currencies.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.currencies.symbol",
           },
           {
             $ref: "#/parameters/select",
@@ -37288,7 +37276,7 @@ export default {
       type: "object",
     },
     currencyCode: {
-      required: ["code", "name", "symbol"],
+      required: ["code", "name"],
       properties: {
         code: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -37296,10 +37284,6 @@ export default {
           type: "string",
         },
         name: {
-          format: "text",
-          type: "string",
-        },
-        symbol: {
           format: "text",
           type: "string",
         },
@@ -39441,10 +39425,6 @@ export default {
           format: "jsonb",
         },
         name: {
-          format: "text",
-          type: "string",
-        },
-        symbol: {
           format: "text",
           type: "string",
         },
@@ -53270,13 +53250,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.currencyCode.symbol": {
-      name: "symbol",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "body.methodMaterial": {
       name: "methodMaterial",
       description: "methodMaterial",
@@ -55954,13 +55927,6 @@ export default {
     },
     "rowFilter.currencies.name": {
       name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.currencies.symbol": {
-      name: "symbol",
       required: false,
       format: "text",
       in: "query",
