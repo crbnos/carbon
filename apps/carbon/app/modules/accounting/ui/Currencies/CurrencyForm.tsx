@@ -74,7 +74,6 @@ const CurrencyForm = ({ initialValues }: CurrencyFormProps) => {
             <VStack spacing={4}>
               <Input name="name" label="Name" isReadOnly />
               <Input name="code" label="Code" isReadOnly />
-              <Input name="symbol" label="Symbol" isReadOnly />
               <Number
                 name="decimalPlaces"
                 label="Decimal Places"
