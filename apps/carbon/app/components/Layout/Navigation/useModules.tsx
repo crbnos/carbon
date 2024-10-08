@@ -4,6 +4,7 @@ import {
   LuCrown,
   LuFactory,
   LuFiles,
+  LuLandmark,
   LuSettings,
   LuShield,
   LuShoppingCart,
@@ -56,12 +57,12 @@ export function useModules() {
     //   to: path.to.messaging,
     //   icon: BiMessage,
     // },
-    // {
-    //   permission: "accounting",
-    //   name: "Accounting",
-    //   to: path.to.chartOfAccounts,
-    //   icon: LuLandmark,
-    // },
+    {
+      permission: "accounting",
+      name: "Accounting",
+      to: path.to.currencies,
+      icon: LuLandmark,
+    },
     {
       permission: "invoicing",
       name: "Invoicing",
