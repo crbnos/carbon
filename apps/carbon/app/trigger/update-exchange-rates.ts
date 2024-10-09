@@ -31,6 +31,40 @@ export const updateExchangeRates = schedules.task({
 
     console.log(`Found ${integrations.data.length} active integrations`);
 
+    // Fetch the exchange rates for the base currency of EUR
+    const exchangeRatesClient = getExchangeRatesClient(EXCHANGE_RATES_API_KEY);
+
+    if (!exchangeRatesClient) {
+      console.error(
+        "Exchange rates client is undefined. Check API key configuration."
+      );
+      return;
+    }
+
+    let ratesEUR: Rates;
+    try {
+      ratesEUR = await exchangeRatesClient.getExchangeRates();
+      if (!ratesEUR)
+        throw new Error("No rates returned from exchange rates API");
+      console.log(
+        `Successfully fetched exchange rates with base currency of EUR for ${
+          Object.keys(ratesEUR).length
+        } currencies`
+      );
+    } catch (error) {
+      console.error(
+        `Error fetching exchange rates: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return;
+    }
+
+    // Cache the rates for each currency to avoid unnecessary computations
+    let cachedRates: { [key in CurrencyCode]?: Rates } = {
+      EUR: ratesEUR,
+    };
+
     for (const integration of integrations.data) {
       console.log(
         `Processing integration for company ID: ${integration.companyId}`
@@ -51,36 +85,19 @@ export const updateExchangeRates = schedules.task({
         continue;
       }
 
-      const exchangeRatesClient = getExchangeRatesClient(
-        EXCHANGE_RATES_API_KEY,
-        undefined,
-        company.data.baseCurrencyCode as CurrencyCode
-      );
-
-      if (!exchangeRatesClient) {
-        console.error(
-          "Exchange rates client is undefined. Check API key configuration."
+      const baseCurrencyCode = company.data.baseCurrencyCode as CurrencyCode;
+      let rates: Rates | undefined;
+      rates = cachedRates[baseCurrencyCode];
+      // Check if the rates for this base currency are cached, and if not compute them
+      if (rates) {
+        console.log(`Using cached rates for ${baseCurrencyCode}`);
+      } else {
+        console.log(`Computing rates for ${baseCurrencyCode}`);
+        rates = await exchangeRatesClient.convertExchangeRates(
+          baseCurrencyCode,
+          ratesEUR
         );
-        return;
-      }
-
-      let rates: Rates;
-      try {
-        rates = await exchangeRatesClient.getExchangeRates();
-        if (!rates)
-          throw new Error("No rates returned from exchange rates API");
-        console.log(
-          `Successfully fetched exchange rates for ${
-            Object.keys(rates).length
-          } currencies`
-        );
-      } catch (error) {
-        console.error(
-          `Error fetching exchange rates: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
-        return;
+        cachedRates[baseCurrencyCode] = rates;
       }
 
       const updatedAt = new Date().toISOString();
