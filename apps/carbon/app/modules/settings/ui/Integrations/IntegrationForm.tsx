@@ -13,6 +13,7 @@ import {
   toast,
   VStack,
 } from "@carbon/react";
+import { SUPPORT_EMAIL } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { usePermissions } from "~/hooks";
 import { integrations as availableIntegrations } from "~/integrations";
@@ -122,7 +123,10 @@ export function IntegrationForm({
               software.Report any concerns about app content or behavior.
             </p>
 
-            <a href="mailto:rob@carbonos.dev" className="text-sm text-red-500">
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              className="text-sm text-red-500"
+            >
               Report integration
             </a>
           </DrawerBody>

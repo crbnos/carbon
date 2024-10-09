@@ -99,7 +99,7 @@ export default function LoginRoute() {
           Developers
         </h3>
       </div>
-      <div className="rounded-lg bg-card border border-border shadow-lg p-8 w-[380px]">
+      <div className="p-8 w-[380px]">
         <ValidatedForm
           validator={loginValidator}
           defaultValues={{ redirectTo }}
