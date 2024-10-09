@@ -9,7 +9,7 @@ import {
 } from "@carbon/react";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef } from "react";
-import { MdClose } from "react-icons/md";
+import { LuX } from "react-icons/lu";
 
 export type SelectProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -69,7 +69,7 @@ const Select = forwardRef<HTMLButtonElement, SelectProps>(
           <IconButton
             variant="ghost"
             aria-label="Clear"
-            icon={<MdClose />}
+            icon={<LuX />}
             onClick={() => onChange("")}
             size={size === "sm" ? "md" : size}
           />

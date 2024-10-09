@@ -233,7 +233,7 @@ export const FormControl = forwardRef<HTMLDivElement, FormControlProps>(
       <FormControlContext.Provider value={context}>
         <div
           {...getRootProps({}, ref)}
-          className={cn("flex flex-col w-full space-y-2", props.className)}
+          className={cn("flex flex-col w-full gap-y-2", props.className)}
         />
       </FormControlContext.Provider>
     );

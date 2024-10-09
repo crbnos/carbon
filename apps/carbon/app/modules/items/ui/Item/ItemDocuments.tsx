@@ -35,6 +35,7 @@ import { useCallback } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
 
 type ItemDocumentsProps = {
   files: ItemFile[];
@@ -260,7 +261,9 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
   const canDelete = permissions.can("delete", "parts");
   const getPath = useCallback(
     (file: { name: string }) => {
-      return `${company.id}/parts/${itemId}/${file.name}`;
+      return `${company.id}/parts/${itemId}/${stripSpecialCharacters(
+        file.name
+      )}`;
     },
     [company.id, itemId]
   );

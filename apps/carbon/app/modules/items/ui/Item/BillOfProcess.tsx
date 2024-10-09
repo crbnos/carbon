@@ -320,16 +320,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
         label: "Work Instructions",
         content: (
           <div className="flex flex-col">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15,
-              }}
-            >
+            <div>
               {permissions.can("update", "parts") ? (
                 <Editor
                   initialValue={
@@ -348,7 +339,7 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
                   }}
                 />
               )}
-            </motion.div>
+            </div>
           </div>
         ),
       },

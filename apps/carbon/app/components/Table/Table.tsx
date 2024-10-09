@@ -44,6 +44,7 @@ import type {
   EditableTableCellComponent,
   Position,
 } from "~/components/Editable";
+import type { fieldMappings } from "~/modules/shared";
 import {
   IndeterminateCheckbox,
   Pagination,
@@ -66,6 +67,10 @@ interface TableProps<T extends object> {
   defaultColumnPinning?: ColumnPinningState;
   defaultColumnVisibility?: Record<string, boolean>;
   editableComponents?: Record<string, EditableTableCellComponent<T>>;
+  importCSV?: {
+    table: keyof typeof fieldMappings;
+    label: string;
+  }[];
   primaryAction?: ReactNode;
   withInlineEditing?: boolean;
   withPagination?: boolean;

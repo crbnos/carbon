@@ -16,7 +16,7 @@ import {
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { MdClose } from "react-icons/md";
+import { LuX } from "react-icons/lu";
 import Filter from "./Filter";
 import type { ColumnFilter } from "./types";
 import { useFilters } from "./useFilters";
@@ -190,7 +190,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
           removeKey(filter.accessorKey);
         }}
       >
-        <MdClose />
+        <LuX />
       </Button>
     </HStack>
   );

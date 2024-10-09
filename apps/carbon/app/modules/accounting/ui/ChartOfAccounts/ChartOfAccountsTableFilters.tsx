@@ -8,7 +8,8 @@ import {
   PopoverTrigger,
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
-import { MdCalendarMonth, MdClose } from "react-icons/md";
+import { LuX } from "react-icons/lu";
+import { MdCalendarMonth } from "react-icons/md";
 import { New, Select } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { incomeBalanceTypes } from "~/modules/accounting";
@@ -67,7 +68,7 @@ const ChartOfAccountsTableFilters = () => {
         {[...params.entries()].length > 0 && (
           <Button
             variant="solid"
-            rightIcon={<MdClose />}
+            rightIcon={<LuX />}
             onClick={() =>
               setParams({
                 incomeBalance: undefined,

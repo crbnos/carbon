@@ -20,6 +20,7 @@ import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
 import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have this task defined
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
 
 // export const config = { runtime: "nodejs" };
 
@@ -64,9 +65,9 @@ export async function action(args: ActionFunctionArgs) {
       throw new Error("Failed to generate PDF");
 
     file = await pdf.arrayBuffer();
-    fileName = `${quote.data.quoteId} - ${new Date()
-      .toISOString()
-      .slice(0, -5)}.pdf`;
+    fileName = stripSpecialCharacters(
+      `${quote.data.quoteId} - ${new Date().toISOString().slice(0, -5)}.pdf`
+    );
 
     const documentFilePath = `${companyId}/opportunity/${opportunity.data.id}/${fileName}`;
 

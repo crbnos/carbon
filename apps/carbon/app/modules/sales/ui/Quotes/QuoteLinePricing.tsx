@@ -71,6 +71,7 @@ const QuoteLinePricing = ({
   if (!lineId) throw new Error("Could not find lineId");
   const [prices, setPrices] =
     useState<Record<number, QuotationPrice>>(pricesByQuantity);
+
   useEffect(() => {
     setPrices(pricesByQuantity);
   }, [pricesByQuantity]);
