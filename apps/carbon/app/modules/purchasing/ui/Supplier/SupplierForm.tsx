@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { PhoneInput, ValidatedForm } from "@carbon/form";
 import {
   HStack,
   ModalCard,
@@ -17,6 +17,7 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import type { z } from "zod";
 import {
+  Currency,
   CustomFormFields,
   Employee,
   Hidden,
@@ -105,6 +106,12 @@ const SupplierForm = ({
                   />
 
                   <Employee name="accountManagerId" label="Account Manager" />
+
+                  <Currency name="currencyCode" label="Currency" />
+
+                  <PhoneInput name="phone" label="Phone" />
+                  <PhoneInput name="fax" label="Fax" />
+                  <Input name="website" label="Website" />
 
                   <CustomFormFields table="supplier" />
                 </div>

@@ -13342,6 +13342,18 @@ export default {
             $ref: "#/parameters/rowFilter.customer.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.customer.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.phone",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.fax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.website",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -13443,6 +13455,18 @@ export default {
             $ref: "#/parameters/rowFilter.customer.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.customer.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.phone",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.fax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.website",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -13496,6 +13520,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customer.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.phone",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.fax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.website",
           },
           {
             $ref: "#/parameters/body.customer",
@@ -14842,6 +14878,18 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.phone",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.fax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.website",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -14943,6 +14991,18 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.phone",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.fax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.website",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -14996,6 +15056,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.phone",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.fax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.website",
           },
           {
             $ref: "#/parameters/body.supplier",
@@ -29566,6 +29638,18 @@ export default {
             $ref: "#/parameters/rowFilter.suppliers.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.suppliers.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.suppliers.phone",
+          },
+          {
+            $ref: "#/parameters/rowFilter.suppliers.fax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.suppliers.website",
+          },
+          {
             $ref: "#/parameters/rowFilter.suppliers.type",
           },
           {
@@ -29996,6 +30080,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customers.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customers.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customers.phone",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customers.fax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customers.website",
           },
           {
             $ref: "#/parameters/rowFilter.customers.type",
@@ -42280,6 +42376,24 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
+        phone: {
+          format: "text",
+          type: "string",
+        },
+        fax: {
+          format: "text",
+          type: "string",
+        },
+        website: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -42938,6 +43052,24 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
+        phone: {
+          format: "text",
+          type: "string",
+        },
+        fax: {
+          format: "text",
+          type: "string",
+        },
+        website: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -46990,7 +47122,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -47039,7 +47171,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -49412,6 +49544,24 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
+        phone: {
+          format: "text",
+          type: "string",
+        },
+        fax: {
+          format: "text",
+          type: "string",
+        },
+        website: {
+          format: "text",
+          type: "string",
+        },
         type: {
           format: "text",
           type: "string",
@@ -49731,6 +49881,24 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
+        phone: {
+          format: "text",
+          type: "string",
+        },
+        fax: {
+          format: "text",
+          type: "string",
+        },
+        website: {
+          format: "text",
+          type: "string",
         },
         type: {
           format: "text",
@@ -59731,6 +59899,34 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.customer.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customer.phone": {
+      name: "phone",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customer.fax": {
+      name: "fax",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customer.website": {
+      name: "website",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.note": {
       name: "note",
       description: "note",
@@ -60612,6 +60808,34 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplier.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplier.phone": {
+      name: "phone",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplier.fax": {
+      name: "fax",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplier.website": {
+      name: "website",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -69018,6 +69242,34 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.suppliers.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.suppliers.phone": {
+      name: "phone",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.suppliers.fax": {
+      name: "fax",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.suppliers.website": {
+      name: "website",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.suppliers.type": {
       name: "type",
       required: false,
@@ -69462,6 +69714,34 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customers.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customers.phone": {
+      name: "phone",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customers.fax": {
+      name: "fax",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customers.website": {
+      name: "website",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

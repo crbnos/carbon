@@ -2797,15 +2797,19 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string | null
+          currencyCode: string | null
           customerStatusId: string | null
           customerTypeId: string | null
           customFields: Json | null
+          fax: string | null
           id: string
           logo: string | null
           name: string
+          phone: string | null
           taxId: string | null
           updatedAt: string | null
           updatedBy: string | null
+          website: string | null
         }
         Insert: {
           accountManagerId?: string | null
@@ -2813,15 +2817,19 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy?: string | null
+          currencyCode?: string | null
           customerStatusId?: string | null
           customerTypeId?: string | null
           customFields?: Json | null
+          fax?: string | null
           id?: string
           logo?: string | null
           name: string
+          phone?: string | null
           taxId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          website?: string | null
         }
         Update: {
           accountManagerId?: string | null
@@ -2829,15 +2837,19 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string | null
+          currencyCode?: string | null
           customerStatusId?: string | null
           customerTypeId?: string | null
           customFields?: Json | null
+          fax?: string | null
           id?: string
           logo?: string | null
           name?: string
+          phone?: string | null
           taxId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          website?: string | null
         }
         Relationships: [
           {
@@ -2972,6 +2984,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customer_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "customer_customerStatusId_fkey"
@@ -18943,15 +18962,19 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string | null
+          currencyCode: string | null
           customFields: Json | null
+          fax: string | null
           id: string
           logo: string | null
           name: string
+          phone: string | null
           supplierStatusId: string | null
           supplierTypeId: string | null
           taxId: string | null
           updatedAt: string | null
           updatedBy: string | null
+          website: string | null
         }
         Insert: {
           accountManagerId?: string | null
@@ -18959,15 +18982,19 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy?: string | null
+          currencyCode?: string | null
           customFields?: Json | null
+          fax?: string | null
           id?: string
           logo?: string | null
           name: string
+          phone?: string | null
           supplierStatusId?: string | null
           supplierTypeId?: string | null
           taxId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          website?: string | null
         }
         Update: {
           accountManagerId?: string | null
@@ -18975,15 +19002,19 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string | null
+          currencyCode?: string | null
           customFields?: Json | null
+          fax?: string | null
           id?: string
           logo?: string | null
           name?: string
+          phone?: string | null
           supplierStatusId?: string | null
           supplierTypeId?: string | null
           taxId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          website?: string | null
         }
         Relationships: [
           {
@@ -19118,6 +19149,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "supplier_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "supplier_supplierStatusId_fkey"
@@ -22812,18 +22850,22 @@ export type Database = {
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
+          currencyCode: string | null
           customerStatusId: string | null
           customerTypeId: string | null
           customFields: Json | null
+          fax: string | null
           id: string | null
           logo: string | null
           name: string | null
           orderCount: number | null
+          phone: string | null
           status: string | null
           taxId: string | null
           type: string | null
           updatedAt: string | null
           updatedBy: string | null
+          website: string | null
         }
         Relationships: [
           {
@@ -22958,6 +23000,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customer_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "customer_customerStatusId_fkey"
@@ -28580,12 +28629,15 @@ export type Database = {
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
+          currencyCode: string | null
           customFields: Json | null
+          fax: string | null
           id: string | null
           logo: string | null
           name: string | null
           orderCount: number | null
           partCount: number | null
+          phone: string | null
           status: string | null
           supplierStatusId: string | null
           supplierTypeId: string | null
@@ -28593,6 +28645,7 @@ export type Database = {
           type: string | null
           updatedAt: string | null
           updatedBy: string | null
+          website: string | null
         }
         Relationships: [
           {
@@ -28727,6 +28780,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "supplier_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "supplier_supplierStatusId_fkey"
