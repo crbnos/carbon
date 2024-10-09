@@ -105,9 +105,9 @@ export const inputVariants = cva(
   {
     variants: {
       size: {
-        lg: "h-12 rounded-lg px-4 text-lg",
-        md: "h-10 rounded-md px-4 text-base",
-        sm: "h-8 rounded px-3 text-sm",
+        lg: "h-12 rounded-lg px-4 text-base",
+        md: "h-10 rounded-md px-4 text-sm",
+        sm: "h-8 rounded px-3 text-xs",
         xs: "h-6 rounded px-2 text-xs",
       },
       isInputGroup: {

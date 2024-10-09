@@ -26,8 +26,8 @@ const selectTriggerVariants = cva(
     variants: {
       size: {
         lg: "h-12 px-4 py-3 rounded-lg text-base space-x-4",
-        md: "h-10 px-3 py-2 rounded-md text-base space-x-3",
-        sm: "h-8  px-3 py-2 rounded text-sm space-x-2",
+        md: "h-10 px-3 py-2 rounded-md text-sm space-x-3",
+        sm: "h-8  px-3 py-2 rounded text-sm text-xs space-x-2",
       },
     },
     defaultVariants: {
@@ -139,7 +139,10 @@ const SelectLabel = forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn("px-2 py-1.5 text-sm font-semibold", className)}
+    className={cn(
+      "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase",
+      className
+    )}
     {...props}
   />
 ));

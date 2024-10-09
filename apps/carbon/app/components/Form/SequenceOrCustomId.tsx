@@ -50,7 +50,7 @@ const SequenceOrCustomId = forwardRef<
               />
             ) : (
               <Button
-                size="lg"
+                size="md"
                 variant="secondary"
                 className="flex-grow bg-muted text-muted-foreground justify-start pl-4 h-10 rounded-r-none"
               >
