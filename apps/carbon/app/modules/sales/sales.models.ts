@@ -40,6 +40,10 @@ export const customerValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
   customerStatusId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  phone: zfd.text(z.string().optional()),
+  fax: zfd.text(z.string().optional()),
+  website: zfd.text(z.string().optional()),
 });
 
 export const customerPaymentValidator = z.object({
