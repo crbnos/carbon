@@ -47,9 +47,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // TODO: move all of this to transaction
+  const { baseCurrencyCode, ...locationData } = validation.data;
   const [locationInsert] = await Promise.all([
     upsertLocation(client, {
-      ...validation.data,
+      ...locationData,
       name: "Headquarters",
       companyId,
       timezone: getLocalTimeZone(),
