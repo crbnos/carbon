@@ -54,6 +54,7 @@ const InventoryTable = memo(
           cell: ({ row }) => (
             <HStack className="py-1">
               <ItemThumbnail
+                size="sm"
                 thumbnailPath={row.original.thumbnailPath}
                 // @ts-ignore
                 type={row.original.type}
