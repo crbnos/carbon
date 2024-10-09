@@ -21,7 +21,7 @@ const CompanyForm = ({ company }: CompanyFormProps) => {
       >
         <Hidden name="intent" value="about" />
 
-        <VStack spacing={4} className="p-4">
+        <VStack spacing={4}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
             <Input name="name" label="Company Name" />
             <Input name="taxId" label="Tax ID" />
