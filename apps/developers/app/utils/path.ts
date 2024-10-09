@@ -1,11 +1,21 @@
 import { SUPABASE_API_URL } from "@carbon/auth";
+import { generatePath } from "@remix-run/react";
 
 const x = "/x"; // from ~/routes/x+ folder
+
+export const ERP_URL =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : `https://app.carbonos.dev`;
 
 export const path = {
   to: {
     authenticatedRoot: x,
+    accountSettings: `${ERP_URL}/x/account`,
     callback: "/callback",
+    companySwitch: (companyId: string) =>
+      generatePath(`${x}/company/switch/${companyId}`),
+    dashboard: `${ERP_URL}/x`,
     forgotPassword: "/forgot-password",
     healthcheck: "/healthcheck",
     login: "/login",

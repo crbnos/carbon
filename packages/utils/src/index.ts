@@ -2,6 +2,7 @@ export * from "./accounting";
 export * from "./address";
 export * from "./arrays";
 export * from "./color";
+export * from "./const";
 export * from "./date";
 export * from "./duration";
 export * from "./file";
