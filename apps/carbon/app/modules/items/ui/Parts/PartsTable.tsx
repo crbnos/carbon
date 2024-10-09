@@ -55,6 +55,7 @@ const PartsTable = memo(({ data, count }: PartsTableProps) => {
         cell: ({ row }) => (
           <HStack className="py-1">
             <ItemThumbnail
+              size="sm"
               thumbnailPath={row.original.thumbnailPath}
               type="Part"
             />

@@ -92,19 +92,16 @@ function FieldRow({
   const formatDescription = (description?: string) => {
     if (!description) return;
 
-    if (type === "date") {
-      return formatDate(description);
+    switch (type) {
+      case "date":
+        return formatDate(description);
+      case "currency":
+        return formatter.format(parseFloat(description));
+      case "boolean":
+        return description.toLowerCase() === "true" ? "Yes" : "No";
+      default:
+        return description;
     }
-
-    if (type === "currency") {
-      return formatter.format(parseFloat(description));
-    }
-
-    if (type === "boolean") {
-      return description.toLowerCase() === "true" ? "Yes" : "No";
-    }
-
-    return description;
   };
 
   return (
