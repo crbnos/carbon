@@ -219,7 +219,7 @@ const CadModelUpload = ({
       )}
     >
       <input {...getInputProps()} name="file" className="sr-only" />
-      <div className="flex flex-col h-full w-full">
+      <div className="flex flex-col h-full w-full p-4">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
         </CardHeader>
