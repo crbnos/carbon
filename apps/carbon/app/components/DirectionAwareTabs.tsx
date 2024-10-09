@@ -64,7 +64,18 @@ function DirectionAwareTabs({
   };
 
   return (
-    <div className=" flex flex-col items-center w-full">
+    <motion.div
+      initial={{
+        opacity: 0,
+        filter: "blur(4px)",
+      }}
+      animate={{
+        opacity: 1,
+        filter: "blur(0px)",
+      }}
+      transition={{ duration: 0.2, delay: 0.3 }}
+      className=" flex flex-col items-center w-full"
+    >
       <div
         className={cn(
           "flex space-x-1 rounded-lg cursor-pointer bg-muted px-[3px] py-[3.2px] shadow-inner-shadow",
@@ -126,7 +137,7 @@ function DirectionAwareTabs({
           </div>
         </motion.div>
       </MotionConfig>
-    </div>
+    </motion.div>
   );
 }
 export { DirectionAwareTabs };

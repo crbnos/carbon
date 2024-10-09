@@ -25,7 +25,7 @@ const GroupedContentSidebar = ({
               className="border-b border-border p-2"
               spacing={1}
             >
-              <h4 className="text-xs text-muted-foreground font-mono pl-4 py-1 uppercase">
+              <h4 className="text-xs text-muted-foreground font-bold pl-4 py-1 uppercase">
                 {group.name}
               </h4>
               {group.routes.map((route) => {
@@ -39,7 +39,7 @@ const GroupedContentSidebar = ({
                     leftIcon={route.icon}
                     variant={isActive ? "active" : "ghost"}
                     className={cn(
-                      "w-full justify-start",
+                      "w-full justify-start truncate",
                       !isActive &&
                         "hover:bg-active hover:text-active-foreground"
                     )}

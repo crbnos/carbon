@@ -5,6 +5,7 @@ import type { ChangeEvent } from "react";
 import { LuUpload } from "react-icons/lu";
 import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
 
 type PurchaseOrderDocumentFormProps = {
   orderId: string;
@@ -24,7 +25,7 @@ const PurchaseOrderDocumentForm = ({
       const file = e.target.files[0];
       const fileName = `${company.id}/purchasing/${
         isExternal ? "external" : "internal"
-      }/${orderId}/${file.name}`;
+      }/${orderId}/${stripSpecialCharacters(file.name)}`;
 
       const fileUpload = await carbon.storage
         .from("private")

@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@carbon/react";
 import { timezones } from "@carbon/utils";
-import { MdClose } from "react-icons/md";
+import { LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 import type { SelectProps } from "./Select";
 
@@ -73,7 +73,7 @@ const Timezone = ({
           <IconButton
             variant="ghost"
             aria-label="Clear"
-            icon={<MdClose />}
+            icon={<LuX />}
             onClick={() => setValue("")}
             size={size === "sm" ? "md" : size}
           />

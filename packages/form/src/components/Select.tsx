@@ -10,11 +10,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Spinner,
 } from "@carbon/react";
 
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef } from "react";
-import { MdClose } from "react-icons/md";
+import { LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 
 export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
@@ -30,6 +31,7 @@ const Select = ({
   label,
   helperText,
   isOptional = false,
+  isLoading,
   ...props
 }: SelectProps) => {
   const { getInputProps, error } = useField(name);
@@ -67,6 +69,7 @@ const Select = ({
           onChange(newValue ?? "");
         }}
         isClearable={isOptional && !props.isReadOnly}
+        isLoading={isLoading}
         className="w-full"
       />
 
@@ -94,6 +97,7 @@ export type SelectBaseProps = Omit<
     value: string;
   }[];
   isClearable?: boolean;
+  isLoading?: boolean;
   isReadOnly?: boolean;
   placeholder?: string;
   onChange: (selected: string) => void;
@@ -106,6 +110,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
       value,
       options,
       isClearable,
+      isLoading,
       isReadOnly,
       placeholder,
       onChange,
@@ -125,9 +130,15 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
             size={size}
             // isReadOnly={isReadOnly}
             {...props}
-            className="min-w-[160px]"
+            className="min-w-[160px] relative"
+            hideIcon={isLoading}
           >
             <SelectValue placeholder={placeholder} />
+            {isLoading && (
+              <div className="absolute top-2 right-2">
+                <Spinner />
+              </div>
+            )}
           </SelectTrigger>
           <SelectContent>
             {options.map((option) => (
@@ -141,7 +152,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
           <IconButton
             variant="ghost"
             aria-label="Clear"
-            icon={<MdClose />}
+            icon={<LuX />}
             onClick={() => onChange("")}
             size={size === "sm" ? "md" : size}
           />

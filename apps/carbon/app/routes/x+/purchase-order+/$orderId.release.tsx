@@ -20,6 +20,7 @@ import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have a sendEmail task defined
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
 
 // export const config = { runtime: "nodejs" };
 
@@ -66,9 +67,11 @@ export async function action(args: ActionFunctionArgs) {
       throw new Error("Failed to generate PDF");
 
     file = await pdf.arrayBuffer();
-    fileName = `${purchaseOrder.data.purchaseOrderId} - ${new Date()
-      .toISOString()
-      .slice(0, -5)}.pdf`;
+    fileName = stripSpecialCharacters(
+      `${purchaseOrder.data.purchaseOrderId} - ${new Date()
+        .toISOString()
+        .slice(0, -5)}.pdf`
+    );
 
     const documentFilePath = `${companyId}/purchasing/external/${orderId}/${fileName}`;
 

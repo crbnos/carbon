@@ -35,6 +35,7 @@ import { path } from "~/utils/path";
 import { useCarbon } from "@carbon/auth";
 import { useCallback } from "react";
 import type { ModelUpload } from "~/types";
+import { stripSpecialCharacters } from "~/utils/string";
 
 const useOpportunityLineDocuments = ({
   id,
@@ -57,7 +58,9 @@ const useOpportunityLineDocuments = ({
 
   const getPath = useCallback(
     (file: { name: string }) => {
-      return `${company.id}/opportunity-line/${lineId}/${file.name}`;
+      return `${company.id}/opportunity-line/${lineId}/${stripSpecialCharacters(
+        file.name
+      )}`;
     },
     [company.id, lineId]
   );

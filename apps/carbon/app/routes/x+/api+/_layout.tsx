@@ -118,7 +118,11 @@ function useApiDocsMenu(): RouteGroup[] {
       .map((table) => ({
         name: table,
         to: path.to.apiTable(selectedLang, table),
-        icon: isTable(table) ? <LuTable2 /> : <LuEye />,
+        icon: isTable(table) ? (
+          <LuTable2 className="flex-shrink-0" />
+        ) : (
+          <LuEye className="flex-shrink-0" />
+        ),
       })),
   });
 

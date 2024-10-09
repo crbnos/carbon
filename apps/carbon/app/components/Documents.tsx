@@ -31,6 +31,7 @@ import { usePermissions, useUser } from "~/hooks";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { ModelUpload, StorageItem } from "~/types";
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
 
 type DocumentsProps = {
   files: StorageItem[];
@@ -72,7 +73,9 @@ const Documents = ({
   const getWritePath = useCallback(
     (file: { name: string }) => {
       const id = sourceDocumentLineId || sourceDocumentId;
-      return `${company.id}/${writeBucket}/${id}/${file.name}`;
+      return `${company.id}/${writeBucket}/${id}/${stripSpecialCharacters(
+        file.name
+      )}`;
     },
     [company.id, sourceDocumentId, sourceDocumentLineId, writeBucket]
   );

@@ -5,8 +5,8 @@ import type {
   HTMLAttributes,
 } from "react";
 import { forwardRef } from "react";
-import { MdClose } from "react-icons/md";
 
+import { LuX } from "react-icons/lu";
 import { cn } from "./utils/cn";
 
 const badgeVariants = cva(
@@ -59,7 +59,7 @@ const BadgeCloseButton = forwardRef<
     )}
     {...props}
   >
-    <MdClose className="h-3 w-3 " />
+    <LuX className="h-3 w-3 " />
   </button>
 ));
 BadgeCloseButton.displayName = "BadgeCloseButton";

@@ -38,6 +38,7 @@ import { DocumentPreview, FileDropzone } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
 import type { Opportunity } from "../../types";
 import { useOptimisticDocumentDrag } from "../SalesRFQ/useOptimiticDocumentDrag";
 
@@ -227,7 +228,11 @@ export const useOpportunityDocuments = ({
 
   const getPath = useCallback(
     (attachment: { name: string }) => {
-      return `${company.id}/opportunity/${opportunityId}/${attachment.name}`;
+      return `${
+        company.id
+      }/opportunity/${opportunityId}/${stripSpecialCharacters(
+        attachment.name
+      )}`;
     },
     [company.id, opportunityId]
   );

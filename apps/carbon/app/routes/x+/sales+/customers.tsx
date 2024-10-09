@@ -66,6 +66,7 @@ export default function SalesCustomersRoute() {
         count={count}
         customerStatuses={customerStatuses}
       />
+
       <Outlet />
     </VStack>
   );

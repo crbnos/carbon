@@ -1,8 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
-import { LuCheck } from "react-icons/lu";
-import { MdClose } from "react-icons/md";
+import { LuCheck, LuX } from "react-icons/lu";
 import {
   Command,
   CommandGroup,
@@ -100,7 +99,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           <IconButton
             variant="ghost"
             aria-label="Clear"
-            icon={<MdClose />}
+            icon={<LuX />}
             onClick={() => onChange?.("")}
             size={size === "sm" ? "md" : size}
           />

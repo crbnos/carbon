@@ -277,7 +277,7 @@ export const themes = [
         "destructive-foreground": "61 9.1% 97.8%",
         border: "12 6.5% 15.1%",
         input: "12 6.5% 15.1%",
-        ring: "35.5 91.7% 32.9%",
+        ring: "61 91.7% 32.9%",
       },
     },
   },

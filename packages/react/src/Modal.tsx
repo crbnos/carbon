@@ -9,8 +9,8 @@ import type {
   HTMLAttributes,
 } from "react";
 import { forwardRef } from "react";
-import { MdClose } from "react-icons/md";
 
+import { LuX } from "react-icons/lu";
 import { ClientOnly } from "./ClientOnly";
 import { cn } from "./utils/cn";
 
@@ -42,7 +42,7 @@ ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const ModalContentVariants = cva(
   cn(
-    "p-6",
+    "p-10",
     "relative z-50 grid w-full gap-4 border shadow-md dark:shadow-sm duration-200",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -84,8 +84,8 @@ const ModalContent = forwardRef<
             {...props}
           >
             {children}
-            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted">
-              <MdClose className="h-4 w-4" />
+            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-2 hover:bg-accent/80">
+              <LuX className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
           </DialogPrimitive.Content>
@@ -102,7 +102,7 @@ const ModalHeader = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left p-1 mb-2",
+      "flex flex-col space-y-1.5 text-center sm:text-left p-1 pt-0 mb-4",
       className
     )}
     {...props}

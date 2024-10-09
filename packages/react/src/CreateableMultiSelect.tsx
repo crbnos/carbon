@@ -3,8 +3,7 @@ import { CommandEmpty } from "cmdk";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useId, useMemo, useRef, useState } from "react";
 import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
-import { LuPlus } from "react-icons/lu";
-import { MdClose } from "react-icons/md";
+import { LuPlus, LuX } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { Button } from "./Button";
@@ -143,7 +142,7 @@ const CreatableMultiSelect = forwardRef<
           <IconButton
             variant="ghost"
             aria-label="Clear"
-            icon={<MdClose />}
+            icon={<LuX />}
             onClick={() => onChange?.([])}
             size={size === "sm" ? "md" : size}
           />

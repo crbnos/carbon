@@ -83,6 +83,7 @@
     "@carbon/tsconfig": "*",
     "@trigger.dev/build": "3.0.6",
     "@types/nprogress": "^0.2.0",
+    "@types/papaparse": "^5.3.14",
     "@types/react": "^18.2.74",
     "@types/react-dom": "^18.2.24",
     "autoprefixer": "10.4.14",
