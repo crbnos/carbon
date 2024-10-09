@@ -184,8 +184,8 @@ const commandTriggerVariants = cva(
     variants: {
       size: {
         lg: "h-12 px-4 py-3 rounded-lg text-base space-x-4",
-        md: "h-10 px-3 py-2 rounded-md text-base space-x-3",
-        sm: "h-8  px-3 py-2 rounded text-sm space-x-2",
+        md: "h-10 px-3 py-2 rounded-md text-sm space-x-3",
+        sm: "h-8  px-3 py-2 rounded text-xs space-x-2",
       },
     },
     defaultVariants: {
@@ -200,8 +200,8 @@ export const multiSelectTriggerVariants = cva(
     variants: {
       size: {
         lg: "text-base",
-        md: "text-base",
-        sm: "text-sm",
+        md: "text-sm",
+        sm: "text-xs",
       },
       hasSelections: {
         true: "h-full",
