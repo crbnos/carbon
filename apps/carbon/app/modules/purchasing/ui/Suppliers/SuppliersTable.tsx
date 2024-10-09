@@ -113,6 +113,26 @@ const SuppliersTable = memo(
           ),
         },
         {
+          accessorKey: "currencyCode",
+          header: "Currency",
+          cell: (item) => item.getValue(),
+        },
+        {
+          accessorKey: "phone",
+          header: "Phone",
+          cell: (item) => item.getValue(),
+        },
+        {
+          accessorKey: "fax",
+          header: "Fax",
+          cell: (item) => item.getValue(),
+        },
+        {
+          accessorKey: "website",
+          header: "Website",
+          cell: (item) => item.getValue(),
+        },
+        {
           id: "createdBy",
           header: "Created By",
           cell: ({ row }) => (
@@ -151,7 +171,7 @@ const SuppliersTable = memo(
         },
         {
           accessorKey: "updatedAt",
-          header: "Created At",
+          header: "Updated At",
           cell: (item) => formatDate(item.getValue<string>()),
         },
       ];
@@ -181,6 +201,10 @@ const SuppliersTable = memo(
             left: ["name"],
           }}
           defaultColumnVisibility={{
+            currencyCode: false,
+            phone: false,
+            fax: false,
+            website: false,
             createdBy: false,
             createdAt: false,
             updatedBy: false,

@@ -12,6 +12,7 @@ import {
   customerValidator,
   upsertCustomer,
 } from "~/modules/sales";
+import type { Company } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -60,7 +61,14 @@ export default function CustomerEditRoute() {
     path.to.customer(customerId)
   );
 
+  const rootRouteData = useRouteData<{ company: Company }>(
+    path.to.authenticatedRoot
+  );
+
   if (!routeData?.customer) return null;
+
+  const company = rootRouteData?.company;
+  if (!company) throw new Error("Company not found");
 
   const initialValues = {
     ...routeData.customer,
@@ -69,6 +77,10 @@ export default function CustomerEditRoute() {
     customerStatusId: routeData?.customer?.customerStatusId ?? undefined,
     accountManagerId: routeData?.customer?.accountManagerId ?? undefined,
     taxId: routeData?.customer?.taxId ?? "",
+    currencyCode: routeData?.customer?.currencyCode ?? undefined,
+    phone: routeData?.customer?.phone ?? "",
+    fax: routeData?.customer?.fax ?? "",
+    website: routeData?.customer?.website ?? "",
     ...getCustomFields(routeData?.customer?.customFields),
   };
 
