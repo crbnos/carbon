@@ -167,7 +167,8 @@ export default function OnboardingCompany() {
     city: company?.city ?? "",
     stateProvince: company?.stateProvince ?? "",
     postalCode: company?.postalCode ?? "",
-    countryCode: company?.countryCode ?? "",
+    countryCode: company?.countryCode ?? "US",
+    baseCurrencyCode: company?.baseCurrencyCode ?? "USD",
   };
 
   return (

@@ -6,6 +6,7 @@ import {
   ModalDescription,
   ModalHeader,
   ModalTitle,
+  toast,
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
@@ -15,6 +16,8 @@ import {
   importSchemas,
   type fieldMappings,
 } from "~/modules/shared/imports.models";
+import type { action } from "~/routes/x+/shared+/import.$tableId";
+import { path } from "~/utils/path";
 import { AnimatedSizeContainer } from "../AnimatedSizeContainer";
 import { FieldMapping } from "./FieldMappings";
 import { UploadCSV } from "./UploadCSV";
@@ -33,17 +36,27 @@ type ImportCSVModalProps = {
 };
 
 export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
-  const fetcher = useFetcher<{}>();
+  const fetcher = useFetcher<typeof action>();
 
   const [page, setPage] = useState<(typeof pages)[number]>(
     ImportCSVPage.UploadCSV
   );
   const [file, setFile] = useState<File | null>(null);
-  const [path, setPath] = useState<string | null>(null);
+  const [filePath, setFilePath] = useState<string | null>(null);
   const [fileColumns, setFileColumns] = useState<string[] | null>(null);
   const [firstRows, setFirstRows] = useState<Record<string, string>[] | null>(
     null
   );
+
+  useEffect(() => {
+    if (fetcher.data?.success === true) {
+      toast.success("Import successful.");
+      onClose();
+    } else if (fetcher.data?.success === false) {
+      toast.error(fetcher.data.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.data?.success]);
 
   // if the file upload is successful, set the page to field-mapping
   useEffect(() => {
@@ -85,29 +98,36 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
                   file,
                   fileColumns,
                   firstRows,
-                  path,
+                  filePath,
                   setFile,
                   setFileColumns,
                   setFirstRows,
-                  setPath,
+                  setFilePath,
                 }}
               >
                 <div>
                   <ValidatedForm
                     className="flex flex-col gap-y-4"
                     fetcher={fetcher}
+                    method="post"
+                    action={path.to.import(table)}
                     validator={importSchemas[table].extend({
-                      path: z.string().min(1, { message: "Path is required" }),
+                      filePath: z
+                        .string()
+                        .min(1, { message: "Path is required" }),
                     })}
+                    onSubmit={() => {
+                      toast.info("Importing...");
+                    }}
                   >
-                    <Hidden name="path" value={path ?? ""} />
+                    <Hidden name="filePath" value={filePath ?? ""} />
                     {page === ImportCSVPage.UploadCSV && <UploadCSV />}
                     {page === ImportCSVPage.FieldMappings && (
                       <>
                         <FieldMapping table={table} />
 
                         <Submit
-                          isDisabled={!path || fetcher.state !== "idle"}
+                          isDisabled={!filePath || fetcher.state !== "idle"}
                           className="mt-4"
                           type="submit"
                         >

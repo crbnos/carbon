@@ -34,7 +34,7 @@ export default function GetStarted() {
         <Heading
           {...fade}
           transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
-          size="display"
+          size="h1"
           className="m-0"
         >
           Welcome to CarbonOS

@@ -30,7 +30,7 @@ const New = ({ label, to }: NewProps) => {
       <TooltipTrigger>
         <Button asChild leftIcon={<LuPlus />} ref={buttonRef}>
           <Link to={to} prefetch="intent">
-            New {label}
+            New
           </Link>
         </Button>
       </TooltipTrigger>

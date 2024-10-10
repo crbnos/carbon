@@ -1,9 +1,23 @@
-import { Button, HStack } from "@carbon/react";
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  HStack,
+  IconButton,
+} from "@carbon/react";
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
-import { type ReactNode } from "react";
-import { LuFileEdit, LuLock } from "react-icons/lu";
+import { useState, type ReactNode } from "react";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { LuFileEdit, LuImport, LuLock } from "react-icons/lu";
 import { SearchFilter } from "~/components";
+import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { useUrlParams } from "~/hooks";
+import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { TableAction } from "../types";
 import Actions from "./Actions";
 import Columns from "./Columns";
@@ -20,6 +34,10 @@ type HeaderProps<T> = {
   columns: Column<T, unknown>[];
   editMode: boolean;
   filters: ColumnFilter[];
+  importCSV?: {
+    table: keyof typeof fieldMappings;
+    label: string;
+  }[];
   primaryAction?: ReactNode;
   pagination: PaginationProps;
   selectedRows: T[];
@@ -38,6 +56,7 @@ const TableHeader = <T extends object>({
   columns,
   editMode,
   filters,
+  importCSV,
   primaryAction,
   pagination,
   selectedRows,
@@ -50,6 +69,9 @@ const TableHeader = <T extends object>({
 }: HeaderProps<T>) => {
   const [params] = useUrlParams();
   const currentFilters = params.getAll("filter");
+  const [importCSVTable, setImportCSVTable] = useState<
+    keyof typeof fieldMappings | null
+  >(null);
 
   return (
     <>
@@ -97,6 +119,32 @@ const TableHeader = <T extends object>({
               </Button>
             ))}
           <>{primaryAction}</>
+          {importCSV && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="Additional actions"
+                  variant="secondary"
+                  icon={<BsThreeDotsVertical />}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Bulk Import</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {importCSV.map(({ table, label }) => (
+                  <DropdownMenuItem
+                    key={table}
+                    onClick={() => {
+                      setImportCSVTable(table);
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuImport />} />
+                    Import {label} CSV
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </HStack>
       </HStack>
       {currentFilters.length > 0 && (
@@ -105,6 +153,12 @@ const TableHeader = <T extends object>({
             <ActiveFilters filters={filters} />
           </HStack>
         </HStack>
+      )}
+      {importCSVTable && (
+        <ImportCSVModal
+          table={importCSVTable}
+          onClose={() => setImportCSVTable(null)}
+        />
       )}
     </>
   );

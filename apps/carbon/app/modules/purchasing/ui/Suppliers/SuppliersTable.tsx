@@ -210,6 +210,12 @@ const SuppliersTable = memo(
             updatedBy: false,
             updatedAt: false,
           }}
+          importCSV={[
+            {
+              table: "supplier",
+              label: "Suppliers",
+            },
+          ]}
           primaryAction={
             permissions.can("create", "purchasing") && (
               <New label="Supplier" to={path.to.newSupplier} />

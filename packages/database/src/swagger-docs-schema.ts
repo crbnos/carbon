@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.1 (cd38da5)",
+    version: "12.0.2 (a4e00ff)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -13354,6 +13354,9 @@ export default {
             $ref: "#/parameters/rowFilter.customer.website",
           },
           {
+            $ref: "#/parameters/rowFilter.customer.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -13467,6 +13470,9 @@ export default {
             $ref: "#/parameters/rowFilter.customer.website",
           },
           {
+            $ref: "#/parameters/rowFilter.customer.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -13532,6 +13538,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customer.website",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.externalId",
           },
           {
             $ref: "#/parameters/body.customer",
@@ -14890,6 +14899,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.website",
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -15003,6 +15015,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.website",
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -15068,6 +15083,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.website",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.externalId",
           },
           {
             $ref: "#/parameters/body.supplier",
@@ -42394,6 +42412,9 @@ export default {
           format: "text",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -43070,6 +43091,9 @@ export default {
         website: {
           format: "text",
           type: "string",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -47122,7 +47146,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -47171,7 +47195,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -59927,6 +59951,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.customer.externalId": {
+      name: "externalId",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.note": {
       name: "note",
       description: "note",
@@ -60836,6 +60867,13 @@ export default {
       name: "website",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplier.externalId": {
+      name: "externalId",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },

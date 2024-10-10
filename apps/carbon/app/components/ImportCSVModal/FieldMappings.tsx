@@ -111,7 +111,7 @@ function FieldRow({
           name={name}
           onChange={(value) => setValue(value?.value)}
           isLoading={isLoading}
-          value={value}
+          value={value ?? undefined}
           options={[
             // Filter out empty columns
             ...(fileColumns?.filter((column) => column !== "") || []),

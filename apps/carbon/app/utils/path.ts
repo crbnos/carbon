@@ -356,6 +356,7 @@ export const path = {
     groups: `${x}/users/groups`,
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
+    import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
     integrationDeactivate: (id: string) =>

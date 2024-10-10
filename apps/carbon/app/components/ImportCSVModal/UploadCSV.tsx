@@ -11,7 +11,8 @@ import { useCsvContext } from "./useCsvContext";
 export const UploadCSV = () => {
   const { carbon } = useCarbon();
   const { company } = useUser();
-  const { setFile, setFileColumns, setFirstRows, setPath } = useCsvContext();
+  const { setFile, setFileColumns, setFirstRows, setFilePath } =
+    useCsvContext();
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +86,7 @@ export const UploadCSV = () => {
       return;
     }
 
-    setPath(data.path);
+    setFilePath(data.path);
   };
 
   const onDrop = async (acceptedFiles: File[]) => {

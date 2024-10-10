@@ -10,7 +10,7 @@ import { importSchemas } from "~/modules/shared";
 
 const inputSchema = z.object({
   fileColumns: z.array(z.string()),
-  firstRows: z.array(z.record(z.string())),
+  // firstRows: z.array(z.record(z.string())),
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw notFound("Table not found in the list of supported tables");
   }
 
-  const { fileColumns, firstRows } = result.data;
+  const { fileColumns } = result.data;
 
   const schema = importSchemas[table as keyof typeof importSchemas];
 
@@ -44,12 +44,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         Map these column names to the correct fields in our database (${[
           ...Object.keys(getZodSchemaFieldsShallow(schema)),
         ].join(", ")}) by providing the matching column name for each field.
-        You may also consult the first few rows of data to help you make the mapping, but you are mapping the columns, not the values. 
-        If you are not sure or there is no matching column, omit the value. Only include the columns as possible values. Don't include data from the first few rows.
+        
+        If you are not sure or there is no matching column, omit the value. 
+        
         Columns:
         ${fileColumns.join(",")}
-        First few rows of data:
-        ${firstRows.map((row) => JSON.stringify(row)).join("\n")}
       `,
     temperature: 0.2,
   });
