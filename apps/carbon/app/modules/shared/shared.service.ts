@@ -43,6 +43,21 @@ export async function getNotes(
     .order("createdAt");
 }
 
+export async function importCsv(
+  client: SupabaseClient<Database>,
+  args: {
+    table: string;
+    filePath: string;
+    mappings: Record<string, string>;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("import-csv", {
+    body: args,
+  });
+}
+
 export async function insertNote(
   client: SupabaseClient<Database>,
   note: {

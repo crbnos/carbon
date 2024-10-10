@@ -90,6 +90,7 @@ const Table = <T extends object>({
   defaultColumnPinning,
   defaultColumnVisibility,
   editableComponents,
+  importCSV,
   primaryAction,
   withInlineEditing = false,
   withPagination = true,
@@ -556,6 +557,7 @@ const Table = <T extends object>({
         columns={table.getAllLeafColumns()}
         editMode={editMode}
         filters={filters}
+        importCSV={importCSV}
         primaryAction={primaryAction}
         selectedRows={selectedRows}
         setColumnOrder={setColumnOrder}

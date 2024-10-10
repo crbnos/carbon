@@ -2801,6 +2801,7 @@ export type Database = {
           customerStatusId: string | null
           customerTypeId: string | null
           customFields: Json | null
+          externalId: Json | null
           fax: string | null
           id: string
           logo: string | null
@@ -2821,6 +2822,7 @@ export type Database = {
           customerStatusId?: string | null
           customerTypeId?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -2841,6 +2843,7 @@ export type Database = {
           customerStatusId?: string | null
           customerTypeId?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -18964,6 +18967,7 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customFields: Json | null
+          externalId: Json | null
           fax: string | null
           id: string
           logo: string | null
@@ -18984,6 +18988,7 @@ export type Database = {
           createdBy?: string | null
           currencyCode?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -19004,6 +19009,7 @@ export type Database = {
           createdBy?: string | null
           currencyCode?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           fax?: string | null
           id?: string
           logo?: string | null
