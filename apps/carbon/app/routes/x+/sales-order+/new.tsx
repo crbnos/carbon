@@ -82,6 +82,7 @@ export default function SalesOrderNewRoute() {
     customerId: customerId ?? "",
     orderDate: today(getLocalTimeZone()).toString(),
     status: "Draft" as SalesOrderStatus,
+    presentationCurrencyCode: undefined,
   };
 
   return (

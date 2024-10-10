@@ -3,7 +3,7 @@ export default {
   info: {
     description: "",
     title: "standard public schema",
-    version: "12.0.2 (a4e00ff)",
+    version: "12.0.1 (cd38da5)",
   },
   host: "0.0.0.0:3000",
   basePath: "/",
@@ -2441,6 +2441,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quotes.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotes.presentationCurrencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.quotes.locationName",
@@ -8521,6 +8524,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.presentationCurrencyCode",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8640,6 +8646,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.presentationCurrencyCode",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -8711,6 +8720,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.presentationCurrencyCode",
           },
           {
             $ref: "#/parameters/body.purchaseOrder",
@@ -14791,6 +14803,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrders.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrders.presentationCurrencyCode",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrders.shippingMethodName",
           },
           {
@@ -14807,9 +14825,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.dropShipment",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrders.locationId",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.locationName",
@@ -18256,6 +18271,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.internalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.presentationCurrencyCode",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -18381,6 +18399,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.internalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.presentationCurrencyCode",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -18458,6 +18479,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quote.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.presentationCurrencyCode",
           },
           {
             $ref: "#/parameters/body.quote",
@@ -26296,6 +26320,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.presentationCurrencyCode",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -26418,6 +26445,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.presentationCurrencyCode",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -26492,6 +26522,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.presentationCurrencyCode",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -29837,6 +29870,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.presentationCurrencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.shippingMethodName",
@@ -37085,6 +37121,12 @@ export default {
         internalNotes: {
           format: "json",
         },
+        presentationCurrencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
         locationName: {
           format: "text",
           type: "string",
@@ -40146,6 +40188,12 @@ export default {
           format: "text",
           type: "string",
         },
+        presentationCurrencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -43014,6 +43062,18 @@ export default {
           format: "text",
           type: "string",
         },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        presentationCurrencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
         shippingMethodName: {
           format: "text",
           type: "string",
@@ -43037,11 +43097,6 @@ export default {
         dropShipment: {
           format: "boolean",
           type: "boolean",
-        },
-        locationId: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
         },
         locationName: {
           format: "text",
@@ -44612,6 +44667,12 @@ export default {
         },
         internalNotes: {
           format: "json",
+        },
+        presentationCurrencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -48242,6 +48303,12 @@ export default {
           format: "text",
           type: "string",
         },
+        presentationCurrencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -49804,6 +49871,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        presentationCurrencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
           type: "string",
         },
@@ -53031,6 +53104,13 @@ export default {
       name: "internalNotes",
       required: false,
       format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotes.presentationCurrencyCode": {
+      name: "presentationCurrencyCode",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -56885,6 +56965,13 @@ export default {
     },
     "rowFilter.purchaseOrder.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrder.presentationCurrencyCode": {
+      name: "presentationCurrencyCode",
       required: false,
       format: "text",
       in: "query",
@@ -60747,6 +60834,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrders.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrders.presentationCurrencyCode": {
+      name: "presentationCurrencyCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrders.shippingMethodName": {
       name: "shippingMethodName",
       required: false,
@@ -60786,13 +60887,6 @@ export default {
       name: "dropShipment",
       required: false,
       format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrders.locationId": {
-      name: "locationId",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },
@@ -62756,6 +62850,13 @@ export default {
       name: "internalNotes",
       required: false,
       format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quote.presentationCurrencyCode": {
+      name: "presentationCurrencyCode",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -67535,6 +67636,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrder.presentationCurrencyCode": {
+      name: "presentationCurrencyCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.userAttributeValue": {
       name: "userAttributeValue",
       description: "userAttributeValue",
@@ -69625,6 +69733,13 @@ export default {
     },
     "rowFilter.purchaseOrders.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrders.presentationCurrencyCode": {
+      name: "presentationCurrencyCode",
       required: false,
       format: "text",
       in: "query",

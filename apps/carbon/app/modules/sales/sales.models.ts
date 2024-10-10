@@ -117,6 +117,7 @@ export const quoteValidator = z.object({
   notes: z.any().optional(),
   dueDate: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
+  presentationCurrencyCode: zfd.text(z.string().optional()),
 });
 
 export const quoteLineAdditionalChargesValidator = z.record(
@@ -507,6 +508,7 @@ export const salesOrderValidator = z.object({
   customerReference: zfd.text(z.string().optional()),
   quoteId: zfd.text(z.string().optional()),
   locationId: zfd.text(z.string().optional()),
+  presentationCurrencyCode: zfd.text(z.string().optional()),
 });
 
 export const salesOrderShipmentValidator = z

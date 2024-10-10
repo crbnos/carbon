@@ -12,7 +12,6 @@ import {
   supplierValidator,
   upsertSupplier,
 } from "~/modules/purchasing";
-import type { Company } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -61,14 +60,7 @@ export default function SupplierEditRoute() {
     path.to.supplier(supplierId)
   );
 
-  const rootRouteData = useRouteData<{ company: Company }>(
-    path.to.authenticatedRoot
-  );
-
   if (!routeData?.supplier) return null;
-
-  const company = rootRouteData?.company;
-  if (!company) throw new Error("Company not found");
 
   const initialValues = {
     id: routeData?.supplier?.id ?? undefined,
