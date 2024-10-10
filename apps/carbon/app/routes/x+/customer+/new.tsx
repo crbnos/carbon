@@ -4,13 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { useRouteData } from "~/hooks";
+import { useUser } from "~/hooks";
 import {
   CustomerForm,
   customerValidator,
   upsertCustomer,
 } from "~/modules/sales";
-import type { Company } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -68,16 +67,11 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function CustomersNewRoute() {
-  const routeData = useRouteData<{ company: Company }>(
-    path.to.authenticatedRoot
-  );
-
-  const company = routeData?.company;
-  if (!company) throw new Error("Company not found");
+  const { company } = useUser();
 
   const initialValues = {
     name: "",
-    currencyCode: company.baseCurrencyCode ?? undefined,
+    currencyCode: company?.baseCurrencyCode ?? undefined,
     phone: "",
     fax: "",
     website: "",

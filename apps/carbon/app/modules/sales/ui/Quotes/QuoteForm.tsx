@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import type { z } from "zod";
 import {
+  Currency,
   CustomFormFields,
   Customer,
   CustomerContact,
@@ -99,6 +100,11 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 name="expirationDate"
                 label="Expiration Date"
                 isDisabled={isCustomer}
+              />
+
+              <Currency
+                name="presentationCurrencyCode"
+                label="Presentation Currency"
               />
 
               <CustomFormFields table="quote" />

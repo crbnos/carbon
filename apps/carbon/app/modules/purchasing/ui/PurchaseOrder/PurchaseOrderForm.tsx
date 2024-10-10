@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import type { z } from "zod";
 import {
+  Currency,
   CustomFormFields,
   DatePicker,
   Hidden,
@@ -122,6 +123,11 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                 label="Type"
                 options={typeOptions}
                 isReadOnly={true} // {isSupplier}
+              />
+
+              <Currency
+                name="presentationCurrencyCode"
+                label="Presentation Currency"
               />
 
               {isEditing && (

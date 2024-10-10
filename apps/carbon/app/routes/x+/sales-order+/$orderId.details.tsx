@@ -153,6 +153,8 @@ export default function SalesOrderRoute() {
     receiptRequestedDate: orderData?.salesOrder?.receiptRequestedDate ?? "",
     receiptPromisedDate: orderData?.salesOrder?.receiptPromisedDate ?? "",
     notes: orderData?.salesOrder?.notes ?? "",
+    presentationCurrencyCode:
+      orderData?.salesOrder?.presentationCurrencyCode ?? undefined,
     ...getCustomFields(orderData?.salesOrder?.customFields),
   };
 

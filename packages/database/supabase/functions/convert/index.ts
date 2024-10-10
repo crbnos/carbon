@@ -99,6 +99,7 @@ serve(async (req: Request) => {
                 status: "Draft",
                 createdBy: userId,
                 companyId: companyId,
+                presentationCurrencyCode: quote.data.presentationCurrencyCode,
               },
             ])
             .returning(["id"])

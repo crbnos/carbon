@@ -8,18 +8,18 @@ import { useCustomers } from "~/stores";
 type CustomerSelectProps = Omit<ComboboxProps, "options">;
 
 const Customer = (props: CustomerSelectProps) => {
-  const [suppliers] = useCustomers();
+  const [customers] = useCustomers();
   const newCustomersModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(
     () =>
-      suppliers.map((c) => ({
+      customers.map((c) => ({
         value: c.id,
         label: c.name,
       })) ?? [],
-    [suppliers]
+    [customers]
   );
 
   return (
