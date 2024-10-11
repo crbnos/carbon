@@ -12,6 +12,7 @@ import {
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
+import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
 
 export type ComboboxProps = Omit<
@@ -26,6 +27,7 @@ export type ComboboxProps = Omit<
     helper?: string;
   }[];
   isClearable?: boolean;
+  isLoading?: boolean;
   isReadOnly?: boolean;
   placeholder?: string;
   onChange?: (selected: string) => void;
@@ -39,6 +41,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       value,
       options,
       isClearable,
+      isLoading,
       isReadOnly,
       placeholder,
       onChange,
@@ -57,6 +60,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
               size={size}
               role="combobox"
               className={cn("min-w-[160px]", !value && "text-muted-foreground")}
+              icon={isLoading ? <Spinner /> : undefined}
               ref={ref}
               {...props}
               onClick={() => setOpen(true)}

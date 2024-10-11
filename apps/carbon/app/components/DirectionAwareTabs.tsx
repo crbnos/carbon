@@ -102,14 +102,14 @@ function DirectionAwareTabs({
               <motion.span
                 layoutId="bubble"
                 className="absolute inset-0 z-10 bg-background text-foreground rounded-md shadow-md"
-                transition={{ type: "spring", bounce: 0.19, duration: 0.4 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
               />
             )}
             <span className="z-20">{tab.label}</span>
           </button>
         ))}
       </div>
-      <MotionConfig transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}>
+      <MotionConfig transition={{ duration: 0.4, type: "spring", bounce: 0 }}>
         <motion.div
           className="relative mx-auto w-full h-full overflow-hidden"
           initial={false}

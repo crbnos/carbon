@@ -17,7 +17,7 @@ import {
   AccountCategory,
   AccountSubcategory,
   Boolean,
-  ComboboxControlled,
+  Combobox,
   CustomFormFields,
   Hidden,
   Input,
@@ -121,7 +121,7 @@ const ChartOfAccountForm = ({ initialValues }: ChartOfAccountFormProps) => {
                 name="accountSubcategoryId"
                 accountCategoryId={accountCategoryId}
               />
-              <ComboboxControlled
+              <Combobox
                 name="incomeBalance"
                 label="Income/Balance"
                 options={incomeBalanceTypes.map((incomeBalance) => ({
@@ -134,7 +134,7 @@ const ChartOfAccountForm = ({ initialValues }: ChartOfAccountFormProps) => {
                     setIncomeBalance(newValue.value as AccountIncomeBalance);
                 }}
               />
-              <ComboboxControlled
+              <Combobox
                 name="class"
                 label="Class"
                 options={accountClassTypes.map((accountClass) => ({

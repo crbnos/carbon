@@ -1,13 +1,5 @@
-import { Hidden, Submit, ValidatedForm } from "@carbon/form";
-import {
-  Button,
-  Modal,
-  ModalContent,
-  ModalDescription,
-  ModalHeader,
-  ModalTitle,
-  toast,
-} from "@carbon/react";
+import { Hidden, ValidatedForm } from "@carbon/form";
+import { Modal, ModalContent, toast } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -34,6 +26,8 @@ type ImportCSVModalProps = {
   table: keyof typeof fieldMappings;
   onClose: () => void;
 };
+
+const formId = "import-csv-modal";
 
 export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
   const fetcher = useFetcher<typeof action>();
@@ -76,21 +70,6 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
     >
       <ModalContent>
         <div className="p-4">
-          <ModalHeader>
-            <div className="flex space-x-4 items-center mb-4">
-              <ModalTitle className="m-0 p-0">
-                {page === ImportCSVPage.UploadCSV && "Upload CSV"}
-                {page === ImportCSVPage.FieldMappings && "Field mapping"}
-              </ModalTitle>
-            </div>
-            <ModalDescription>
-              {page === ImportCSVPage.UploadCSV &&
-                `Please upload a CSV file of your ${table} data`}
-              {page === ImportCSVPage.FieldMappings &&
-                "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."}
-            </ModalDescription>
-          </ModalHeader>
-
           <div className="relative">
             <AnimatedSizeContainer height>
               <ImportCsvContext.Provider
@@ -115,40 +94,30 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
                       filePath: z
                         .string()
                         .min(1, { message: "Path is required" }),
+                      enumMappings: z.string().optional(),
                     })}
+                    id={formId}
                     onSubmit={() => {
                       toast.info("Importing...");
                     }}
                   >
                     <Hidden name="filePath" value={filePath ?? ""} />
-                    {page === ImportCSVPage.UploadCSV && <UploadCSV />}
+                    {page === ImportCSVPage.UploadCSV && (
+                      <UploadCSV table={table} />
+                    )}
                     {page === ImportCSVPage.FieldMappings && (
-                      <>
-                        <FieldMapping table={table} />
-
-                        <Submit
-                          isDisabled={!filePath || fetcher.state !== "idle"}
-                          className="mt-4"
-                          type="submit"
-                        >
-                          Confirm Import
-                        </Submit>
-
-                        <Button
-                          variant="link"
-                          type="button"
-                          onClick={() => {
-                            flushSync(() => {
-                              setFile(null);
-                              setFileColumns(null);
-                              setFirstRows(null);
-                            });
-                            setPage(ImportCSVPage.UploadCSV);
-                          }}
-                        >
-                          Choose another file
-                        </Button>
-                      </>
+                      <FieldMapping
+                        formId={formId}
+                        table={table}
+                        onReset={() => {
+                          flushSync(() => {
+                            setFile(null);
+                            setFileColumns(null);
+                            setFirstRows(null);
+                          });
+                          setPage(ImportCSVPage.UploadCSV);
+                        }}
+                      />
                     )}
                   </ValidatedForm>
                 </div>

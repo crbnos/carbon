@@ -1,14 +1,22 @@
 import { useCarbon } from "@carbon/auth";
-import { Spinner, cn, toast } from "@carbon/react";
+import {
+  ModalDescription,
+  ModalHeader,
+  ModalTitle,
+  Spinner,
+  cn,
+  toast,
+} from "@carbon/react";
 import { nanoid } from "nanoid";
 import Papa from "papaparse";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import { useUser } from "~/hooks/useUser";
+import type { importSchemas } from "~/modules/shared";
 import { useCsvContext } from "./useCsvContext";
 
-export const UploadCSV = () => {
+export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
   const { carbon } = useCarbon();
   const { company } = useUser();
   const { setFile, setFileColumns, setFirstRows, setFilePath } =
@@ -27,7 +35,7 @@ export const UploadCSV = () => {
       setLoading(true);
     });
 
-    readLines(file, 4)
+    readLines(file, 100)
       .then((lines) => {
         const { data, meta } = Papa.parse(lines, {
           worker: false,
@@ -122,40 +130,50 @@ export const UploadCSV = () => {
     });
 
   return (
-    <div
-      {...getRootProps()}
-      className={cn(
-        "w-full border-2 border-dashed h-[200px] rounded-md mt-8 mb-8 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-foreground cursor-pointer focus-visible:border-primary focus-visible:text-foreground hover:bg-primary/5 focus-visible:outline-none",
-        isDragActive
-          ? "border-primary text-foreground bg-primary/5"
-          : "border-muted",
-        isDragReject && "border-destructive"
-      )}
-    >
-      <div className="text-center flex items-center justify-center flex-col text-xs">
-        <input {...getInputProps()} />
-
-        {loading ? (
-          <div className="flex space-x-1 items-center">
-            <Spinner />
-            <span>Loading...</span>
-          </div>
-        ) : (
-          <div>
-            <p>Drop your file here, or click to browse.</p>
-            <span>5MB file limit</span>
-          </div>
+    <>
+      <ModalHeader>
+        <div className="flex space-x-4 items-center mb-4">
+          <ModalTitle className="m-0 p-0">Upload CSV</ModalTitle>
+        </div>
+        <ModalDescription>
+          {`Please upload a CSV file of your ${table} data`}
+        </ModalDescription>
+      </ModalHeader>
+      <div
+        {...getRootProps()}
+        className={cn(
+          "w-full border-2 border-dashed h-[200px] rounded-md mt-8 mb-8 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-foreground cursor-pointer focus-visible:border-primary focus-visible:text-foreground hover:bg-primary/5 focus-visible:outline-none",
+          isDragActive
+            ? "border-primary text-foreground bg-primary/5"
+            : "border-muted",
+          isDragReject && "border-destructive"
         )}
+      >
+        <div className="text-center flex items-center justify-center flex-col text-xs">
+          <input {...getInputProps()} />
 
-        {error && (
-          <p className="text-center text-sm text-red-600 mt-4">{error}</p>
-        )}
+          {loading ? (
+            <div className="flex space-x-1 items-center">
+              <Spinner />
+              <span>Loading...</span>
+            </div>
+          ) : (
+            <div>
+              <p>Drop your file here, or click to browse.</p>
+              <span>5MB file limit</span>
+            </div>
+          )}
+
+          {error && (
+            <p className="text-center text-sm text-red-600 mt-4">{error}</p>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-async function readLines(file: File, count = 4): Promise<string> {
+async function readLines(file: File, count = 100): Promise<string> {
   const reader = file.stream().getReader();
   const decoder = new TextDecoder("utf-8");
   let { value: chunk, done: readerDone } = await reader.read();

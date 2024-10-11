@@ -254,6 +254,12 @@ const PartsTable = memo(({ data, count }: PartsTableProps) => {
           updatedBy: false,
           updatedAt: false,
         }}
+        importCSV={[
+          {
+            table: "part" as const,
+            label: "Parts",
+          },
+        ]}
         primaryAction={
           permissions.can("create", "parts") && (
             <New label="Part" to={path.to.newPart} />

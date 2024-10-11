@@ -12,7 +12,8 @@ const db = getDatabaseClient<DB>(pool);
 const importCsvValidator = z.object({
   table: z.enum(["customer", "supplier"]),
   filePath: z.string(),
-  mappings: z.record(z.string()),
+  columnMappings: z.record(z.string()),
+  enumMappings: z.record(z.record(z.string())).optional(),
   companyId: z.string(),
   userId: z.string(),
 });
@@ -26,14 +27,15 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    const { table, filePath, mappings, companyId, userId } =
+    const { table, filePath, columnMappings, enumMappings, companyId, userId } =
       importCsvValidator.parse(payload);
 
     console.log({
       function: "import-csv",
       table,
       filePath,
-      mappings,
+      columnMappings,
+      enumMappings,
       companyId,
       userId,
     });
@@ -53,7 +55,7 @@ serve(async (req: Request) => {
 
     const mappedRecords = parsedCsv.map((row) => {
       const record: Record<string, string> = {};
-      for (const [key, value] of Object.entries(mappings)) {
+      for (const [key, value] of Object.entries(columnMappings)) {
         if (row[value]) {
           record[key] = row[value];
         }

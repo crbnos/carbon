@@ -11,7 +11,6 @@ import {
 import type { z } from "zod";
 import {
   Combobox,
-  ComboboxControlled,
   CustomFormFields,
   Hidden,
   Input,
@@ -82,7 +81,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
           <VStack spacing={4} className="min-h-full">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 w-full">
               <Input name="receiptId" label="Receipt ID" isReadOnly />
-              <ComboboxControlled
+              <Combobox
                 name="locationId"
                 label="Location"
                 options={locationOptions}
