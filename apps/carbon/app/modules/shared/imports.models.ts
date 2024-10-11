@@ -114,24 +114,33 @@ export const fieldMappings = {
       label: "Replenishment System",
       required: false,
       type: "enum",
-      description:
-        "Whether demand for a part should be fulfilled by buying or making",
-      options: itemReplenishmentSystems,
+      enumData: {
+        description:
+          "Whether demand for a part should be fulfilled by buying or making",
+        options: itemReplenishmentSystems,
+        default: "Buy and Make",
+      },
     },
     defaultMethodType: {
       label: "Default Method",
       required: false,
       type: "enum",
-      description:
-        "How a part should be produced when it is required in production",
-      options: methodType,
+      enumData: {
+        description:
+          "How a part should be produced when it is required in production",
+        options: methodType,
+        default: "Make",
+      },
     },
     itemTrackingType: {
       label: "Tracking Type",
       required: false,
       type: "enum",
-      description: "Whether a part is tracked as inventory or not",
-      options: itemTrackingTypes,
+      enumData: {
+        description: "Whether a part is tracked as inventory or not",
+        options: itemTrackingTypes,
+        default: "Inventory",
+      },
     },
   },
 } as const;

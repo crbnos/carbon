@@ -47,9 +47,9 @@ export function FieldMapping({
   >(() =>
     Object.entries(mappableFields).reduce<
       Record<string, Record<string, string>>
-    >((acc, [name, { type }]) => {
+    >((acc, [name, { type, enumData }]) => {
       if (type === "enum") {
-        acc[name] = {};
+        acc[name] = { Default: enumData.default };
       }
       return acc;
     }, {})
@@ -79,13 +79,30 @@ export function FieldMapping({
       !initialized.current
     ) {
       initialized.current = true;
-      setColumnMappings(fetcher.data);
+      setColumnMappings((prevMappings) => {
+        if (!fetcher.data || !fileColumns) return prevMappings;
+
+        return Object.entries(fetcher.data).reduce((acc, [key, value]) => {
+          if (fileColumns.includes(value)) {
+            acc[key] = value;
+          }
+          return acc;
+        }, {} as Record<string, string>);
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.data]);
 
   const enumFields: [
     string,
-    { label: string; description: string; options: readonly string[] }
+    {
+      label: string;
+      enumData: {
+        default: string;
+        description: string;
+        options: readonly string[];
+      };
+    }
   ][] = Object.entries(mappableFields).filter(
     ([_, { type }]) => type === "enum"
   );
@@ -133,7 +150,7 @@ export function FieldMapping({
         <ModalDescription>
           {currentStep === 0
             ? "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
-            : enumFields[currentStep - 1][1].description}
+            : enumFields[currentStep - 1][1].enumData.description}
         </ModalDescription>
       </ModalHeader>
       <div className="mt-6">
@@ -169,12 +186,12 @@ export function FieldMapping({
           </>
         )}
         {enumFields.map(
-          ([name, { options }], index) =>
+          ([name, { enumData }], index) =>
             currentStep === index + 1 && (
               <EnumMappingStep
                 key={name}
                 name={name}
-                options={options}
+                options={enumData.options}
                 mappedColumn={columnMappings[name]}
                 firstRows={firstRows}
                 mappings={enumMappings[name]}
