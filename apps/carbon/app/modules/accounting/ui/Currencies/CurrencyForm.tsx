@@ -41,7 +41,7 @@ const CurrencyForm = ({ initialValues }: CurrencyFormProps) => {
   const isBaseCurrency = company?.baseCurrencyCode === initialValues.code;
   const exchangeRateHelperText = isBaseCurrency
     ? "This is the base currency. Exchange rate is always 1."
-    : `One ${initialValues.code} is equal to how many ${company?.baseCurrencyCode}?`;
+    : `One ${company?.baseCurrencyCode} is equal to how many ${initialValues.code}?`;
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

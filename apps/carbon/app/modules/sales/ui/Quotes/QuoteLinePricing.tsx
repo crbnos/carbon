@@ -78,6 +78,7 @@ const QuoteLinePricing = ({
 
   const routeData = useRouteData<{
     quote: Quotation;
+    presentationExchangeRate: number;
   }>(path.to.quote(quoteId));
   const isEditable =
     permissions.can("update", "sales") &&
@@ -106,6 +107,9 @@ const QuoteLinePricing = ({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const formatter = useCurrencyFormatter();
+  const presentationCurrencyFormatter = useCurrencyFormatter(
+    routeData?.quote?.presentationCurrencyCode ?? baseCurrency
+  );
 
   const additionalCharges = useMemo(() => {
     if (fetcher.formAction === path.to.quoteLineCost(quoteId, lineId)) {
@@ -751,6 +755,49 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
+            {routeData?.quote?.presentationCurrencyCode !== baseCurrency && (
+              <>
+                <Tr className="[&>td]:bg-muted/60">
+                  <Td className="border-r border-border group-hover:bg-muted/50">
+                    <HStack className="w-full justify-between ">
+                      <span>Exchange Rate</span>
+                    </HStack>
+                  </Td>
+                  {quantities.map((quantity, index) => (
+                    <Td key={index} className="group-hover:bg-muted/50">
+                      <VStack spacing={0}>
+                        <span>{routeData?.presentationExchangeRate ?? 1}</span>
+                      </VStack>
+                    </Td>
+                  ))}
+                </Tr>
+                <Tr className="font-bold [&>td]:bg-muted/60">
+                  <Td className="border-r border-border group-hover:bg-muted/50">
+                    <HStack className="w-full justify-between ">
+                      <span>Converted Total Price</span>
+                    </HStack>
+                  </Td>
+                  {quantities.map((quantity, index) => {
+                    const price =
+                      netPricesByQuantity[index] * quantity +
+                      additionalChargesByQuantity[index];
+                    const convertedPrice =
+                      price * (routeData?.presentationExchangeRate ?? 1);
+                    return (
+                      <Td key={index} className="group-hover:bg-muted/50">
+                        <VStack spacing={0}>
+                          <span>
+                            {presentationCurrencyFormatter.format(
+                              convertedPrice
+                            )}
+                          </span>
+                        </VStack>
+                      </Td>
+                    );
+                  })}
+                </Tr>
+              </>
+            )}
           </Tbody>
         </Table>
       </CardContent>
