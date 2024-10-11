@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -8,8 +9,10 @@ import {
   CardTitle,
   VStack,
   cn,
+  toast,
 } from "@carbon/react";
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import type { z } from "zod";
 import {
   Currency,
@@ -39,9 +42,14 @@ type PurchaseOrderFormProps = {
 
 const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
   const permissions = usePermissions();
-  const [supplier, setSupplier] = useState<string | undefined>(
-    initialValues.supplierId
-  );
+  const { carbon } = useCarbon();
+  const [supplier, setSupplier] = useState<{
+    id: string | undefined;
+    currencyCode: string | undefined;
+  }>({
+    id: initialValues.supplierId,
+    currencyCode: initialValues.presentationCurrencyCode,
+  });
   const isEditing = initialValues.id !== undefined;
   const isSupplier = permissions.is("supplier");
 
@@ -54,6 +62,47 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
     label: type,
     value: type,
   }));
+
+  const onSupplierChange = async (
+    newValue: {
+      value: string | undefined;
+      label: string;
+    } | null
+  ) => {
+    if (!carbon) {
+      toast.error("Carbon client not found");
+      return;
+    }
+
+    if (newValue?.value) {
+      flushSync(() => {
+        // update the supplier immediately
+        setSupplier({
+          id: newValue?.value,
+          currencyCode: undefined,
+        });
+      });
+
+      const { data, error } = await carbon
+        ?.from("supplier")
+        .select("currencyCode")
+        .eq("id", newValue.value)
+        .single();
+      if (error) {
+        toast.error("Error fetching supplier data");
+      } else {
+        setSupplier((prev) => ({
+          ...prev,
+          currencyCode: data.currencyCode ?? undefined,
+        }));
+      }
+    } else {
+      setSupplier({
+        id: undefined,
+        currencyCode: undefined,
+      });
+    }
+  };
 
   return (
     <ValidatedForm
@@ -88,9 +137,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                 autoFocus={!isEditing}
                 name="supplierId"
                 label="Supplier"
-                onChange={(newValue) =>
-                  setSupplier(newValue?.value as string | undefined)
-                }
+                onChange={onSupplierChange}
               />
               <Input name="supplierReference" label="Supplier Order Number" />
               {isEditing && permissions.can("delete", "purchasing") && (
@@ -105,12 +152,12 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
               <SupplierLocation
                 name="supplierLocationId"
                 label="Supplier Location"
-                supplier={supplier}
+                supplier={supplier.id}
               />
               <SupplierContact
                 name="supplierContactId"
                 label="Supplier Contact"
-                supplier={supplier}
+                supplier={supplier.id}
               />
 
               <DatePicker
@@ -128,6 +175,15 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
               <Currency
                 name="presentationCurrencyCode"
                 label="Presentation Currency"
+                value={supplier.currencyCode}
+                onChange={(newValue) => {
+                  if (newValue?.value) {
+                    setSupplier((prevSupplier) => ({
+                      ...prevSupplier,
+                      currencyCode: newValue.value,
+                    }));
+                  }
+                }}
               />
 
               {isEditing && (
