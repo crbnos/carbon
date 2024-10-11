@@ -8,7 +8,7 @@ import { getDocument } from "~/modules/documents";
 import DocumentView from "~/modules/documents/ui/Documents/DocumentView";
 import { path } from "~/utils/path";
 
-// export const config = { runtime: "nodejs" };
+export const config = { runtime: "nodejs" };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

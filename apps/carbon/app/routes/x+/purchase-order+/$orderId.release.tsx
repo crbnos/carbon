@@ -6,6 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
+import { parseAcceptLanguage } from "intl-parse-accept-language";
 import { upsertDocument } from "~/modules/documents";
 import {
   getPurchaseOrder,
@@ -22,7 +23,7 @@ import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assum
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
-// export const config = { runtime: "nodejs" };
+export const config = { runtime: "nodejs" };
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -60,6 +61,11 @@ export async function action(args: ActionFunctionArgs) {
       )
     );
   }
+
+  const acceptLanguage = request.headers.get("accept-language");
+  const locales = parseAcceptLanguage(acceptLanguage, {
+    validate: Intl.DateTimeFormat.supportedLocalesOf,
+  });
 
   try {
     const pdf = await pdfLoader(args);
@@ -163,6 +169,7 @@ export async function action(args: ActionFunctionArgs) {
 
         const emailTemplate = PurchaseOrderEmail({
           company: company.data,
+          locale: locales?.[0] ?? "en-US",
           purchaseOrder: purchaseOrder.data,
           purchaseOrderLines: purchaseOrderLines.data ?? [],
           purchaseOrderLocations: purchaseOrderLocations.data,

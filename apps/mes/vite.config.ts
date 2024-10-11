@@ -18,6 +18,9 @@ export default defineConfig({
       },
     },
   },
+  define: {
+    global: "globalThis",
+  },
   ssr: {
     noExternal: [
       "react-tweet",
