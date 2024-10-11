@@ -3,8 +3,6 @@ import { validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
 
-export const config = { runtime: "nodejs" };
-
 const oauthTokenValidator = z.object({
   grant_type: z.enum(["authorization_code", "refresh_token"]),
   client_id: z.string(),

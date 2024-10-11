@@ -15,8 +15,6 @@ import type { recalculateTask } from "~/trigger/recalculate";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-export const config = { runtime: "nodejs" };
-
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
