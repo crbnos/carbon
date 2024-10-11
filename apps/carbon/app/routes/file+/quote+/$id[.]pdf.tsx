@@ -3,7 +3,7 @@ import { QuotePDF } from "@carbon/documents";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@vercel/remix";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
 import {
   getQuote,
@@ -109,10 +109,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return acc;
     }, {}) ?? {};
 
+  let presentationExchangeRate = 1;
+  if (quote.data?.presentationCurrencyCode) {
+    const presentationCurrency = await getCurrencyByCode(
+      client,
+      companyId,
+      quote.data.presentationCurrencyCode
+    );
+    if (presentationCurrency.data?.exchangeRate) {
+      presentationExchangeRate = presentationCurrency.data.exchangeRate;
+    }
+  }
+
   const stream = await renderToStream(
     <QuotePDF
       company={company.data}
       locale={locale}
+      presentationExchangeRate={presentationExchangeRate}
       quote={quote.data}
       quoteLines={quoteLines.data ?? []}
       quoteLinePrices={quoteLinePrices.data ?? []}

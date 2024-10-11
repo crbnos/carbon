@@ -11,6 +11,7 @@ import { getCurrencyFormatter } from "../utils/shared";
 import { Header, Note, Summary, Template } from "./components";
 
 interface QuotePDFProps extends PDF {
+  presentationExchangeRate: number;
   quote: Database["public"]["Views"]["quotes"]["Row"];
   quoteLines: Database["public"]["Views"]["quoteLines"]["Row"][];
   quoteCustomerDetails: Database["public"]["Views"]["quoteCustomerDetails"]["Row"];
@@ -42,6 +43,7 @@ const QuotePDF = ({
   company,
   locale,
   meta,
+  presentationExchangeRate,
   quote,
   quoteLines,
   quoteLinePrices,
@@ -64,7 +66,10 @@ const QuotePDF = ({
     customerCountryName,
   } = quoteCustomerDetails;
 
-  const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
+  const currencyCode =
+    quote.presentationCurrencyCode ?? company.baseCurrencyCode;
+  const shouldConvertCurrency = currencyCode !== company.baseCurrencyCode;
+  const formatter = getCurrencyFormatter(currencyCode, locale);
 
   const pricesByLine = quoteLinePrices.reduce<
     Record<string, Database["public"]["Tables"]["quoteLinePrice"]["Row"][]>
@@ -72,7 +77,11 @@ const QuotePDF = ({
     if (!acc[price.quoteLineId]) {
       acc[price.quoteLineId] = [];
     }
-    acc[price.quoteLineId].push(price);
+    const convertedPrice = { ...price };
+    if (shouldConvertCurrency) {
+      convertedPrice.unitPrice = price.unitPrice * presentationExchangeRate;
+    }
+    acc[price.quoteLineId].push(convertedPrice);
     return acc;
   }, {});
 
@@ -160,10 +169,10 @@ const QuotePDF = ({
               "flex flex-row justify-between items-center py-1.5 px-[6px] border-t border-b border-gray-300 text-gray-500 font-bold uppercase"
             )}
           >
-            <View style={tw("w-2/5")}>
+            <View style={tw("w-1/3")}>
               <Text>Description</Text>
             </View>
-            <View style={tw("w-3/5 flex flex-row")}>
+            <View style={tw("w-2/3 flex flex-row")}>
               <Text style={tw("w-1/5 text-right")}>Qty</Text>
               <Text style={tw("w-1/5 text-right")}>Unit Price</Text>
               <Text style={tw("w-1/5 text-right")}>Add-Ons</Text>
@@ -178,7 +187,10 @@ const QuotePDF = ({
               (quantity) => {
                 const charges = Object.values(additionalCharges).reduce(
                   (acc, charge) => {
-                    const amount = charge.amounts?.[quantity] ?? 0;
+                    let amount = charge.amounts?.[quantity] ?? 0;
+                    if (shouldConvertCurrency) {
+                      amount *= presentationExchangeRate;
+                    }
                     return acc + amount;
                   },
                   0
@@ -194,7 +206,7 @@ const QuotePDF = ({
                 )}
                 key={line.id}
               >
-                <View style={tw("w-2/5")}>
+                <View style={tw("w-1/3")}>
                   <View>
                     <Text style={tw("font-bold mb-1")}>
                       {getLineDescription(line)}
@@ -236,7 +248,7 @@ const QuotePDF = ({
                       </View>
                     )}
                 </View>
-                <View style={tw("flex flex-col w-3/5 gap-2")}>
+                <View style={tw("flex flex-col w-2/3 gap-2")}>
                   {line.status !== "No Quote" ? (
                     line.quantity.map((quantity, index) => {
                       const prices = pricesByLine[line.id] ?? [];

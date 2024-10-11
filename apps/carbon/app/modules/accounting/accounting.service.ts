@@ -409,6 +409,19 @@ export async function getCurrency(
   return client.from("currencies").select("*").eq("id", currencyId).single();
 }
 
+export async function getCurrencyByCode(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+) {
+  return client
+    .from("currencies")
+    .select("*")
+    .eq("code", currencyCode)
+    .eq("companyId", companyId)
+    .single();
+}
+
 export async function getCurrencies(
   client: SupabaseClient<Database>,
   companyId: string,

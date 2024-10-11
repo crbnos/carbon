@@ -12,6 +12,7 @@ import {
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
+import { getCurrencyByCode } from "~/modules/accounting";
 import {
   getOpportunityByQuote,
   getOpportunityDocuments,
@@ -84,6 +85,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  let presentationExchangeRate = 1;
+  if (quote.data?.presentationCurrencyCode) {
+    const presentationCurrency = await getCurrencyByCode(
+      client,
+      companyId,
+      quote.data.presentationCurrencyCode
+    );
+    if (presentationCurrency.data?.exchangeRate) {
+      presentationExchangeRate = presentationCurrency.data.exchangeRate;
+    }
+  }
+
   return defer({
     quote: quote.data,
     lines: lines.data ?? [],
@@ -93,6 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shipment: shipment.data,
     payment: payment.data,
     opportunity: opportunity.data,
+    presentationExchangeRate,
   });
 }
 
