@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -8,8 +9,10 @@ import {
   CardTitle,
   VStack,
   cn,
+  toast,
 } from "@carbon/react";
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import type { z } from "zod";
 import {
   Currency,
@@ -34,11 +37,57 @@ type SalesOrderFormProps = {
 
 const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
   const permissions = usePermissions();
-  const [customer, setCustomer] = useState<string | undefined>(
-    initialValues.customerId
-  );
+  const { carbon } = useCarbon();
+  const [customer, setCustomer] = useState<{
+    id: string | undefined;
+    currencyCode: string | undefined;
+  }>({
+    id: initialValues.customerId,
+    currencyCode: initialValues.presentationCurrencyCode,
+  });
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
+
+  const onCustomerChange = async (
+    newValue: {
+      value: string | undefined;
+      label: string;
+    } | null
+  ) => {
+    if (!carbon) {
+      toast.error("Carbon client not found");
+      return;
+    }
+
+    if (newValue?.value) {
+      flushSync(() => {
+        // update the customer immediately
+        setCustomer({
+          id: newValue?.value,
+          currencyCode: undefined,
+        });
+      });
+
+      const { data, error } = await carbon
+        ?.from("customer")
+        .select("currencyCode")
+        .eq("id", newValue.value)
+        .single();
+      if (error) {
+        toast.error("Error fetching customer data");
+      } else {
+        setCustomer((prev) => ({
+          ...prev,
+          currencyCode: data.currencyCode ?? undefined,
+        }));
+      }
+    } else {
+      setCustomer({
+        id: undefined,
+        currencyCode: undefined,
+      });
+    }
+  };
 
   return (
     <Card>
@@ -72,21 +121,19 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                 autoFocus={!isEditing}
                 name="customerId"
                 label="Customer"
-                onChange={(newValue) =>
-                  setCustomer(newValue?.value as string | undefined)
-                }
+                onChange={onCustomerChange}
               />
               <Input name="customerReference" label="Customer PO Number" />
 
               <CustomerLocation
                 name="customerLocationId"
                 label="Customer Location"
-                customer={customer}
+                customer={customer.id}
               />
               <CustomerContact
                 name="customerContactId"
                 label="Customer Contact"
-                customer={customer}
+                customer={customer.id}
               />
 
               <DatePicker
@@ -100,6 +147,15 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
               <Currency
                 name="presentationCurrencyCode"
                 label="Presentation Currency"
+                value={customer.currencyCode}
+                onChange={(newValue) => {
+                  if (newValue?.value) {
+                    setCustomer((prevCustomer) => ({
+                      ...prevCustomer,
+                      currencyCode: newValue.value,
+                    }));
+                  }
+                }}
               />
 
               <CustomFormFields table="salesOrder" />
