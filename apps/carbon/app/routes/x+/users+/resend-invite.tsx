@@ -9,7 +9,7 @@ import { resendInviteValidator } from "~/modules/users";
 import { resendInvite } from "~/modules/users/users.server";
 import { userAdminTask } from "~/trigger/user-admin";
 
-// export const config = { runtime: "nodejs" };
+export const config = { runtime: "nodejs" };
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
