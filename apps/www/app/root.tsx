@@ -19,7 +19,7 @@ import { getMode } from "~/services/mode.server";
 
 import Tailwind from "~/styles/tailwind.css?url";
 
-// export const config = { runtime: "edge" };
+export const config = { runtime: "edge" };
 
 export function links() {
   return [

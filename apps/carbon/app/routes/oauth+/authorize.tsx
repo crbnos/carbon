@@ -5,7 +5,7 @@ import { Form, json, redirect, useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
 
-// export const config = { runtime: "nodejs" };
+export const config = { runtime: "nodejs" };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
