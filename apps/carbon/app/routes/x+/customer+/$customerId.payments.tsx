@@ -85,7 +85,6 @@ export default function CustomerPaymentRoute() {
     invoiceCustomerContactId: customerPayment?.invoiceCustomerContactId ?? "",
     invoiceCustomerLocationId: customerPayment?.invoiceCustomerLocationId ?? "",
     paymentTermId: customerPayment?.paymentTermId ?? "",
-    currencyCode: customerPayment?.currencyCode ?? "",
   };
 
   return <CustomerPaymentForm initialValues={initialValues} />;

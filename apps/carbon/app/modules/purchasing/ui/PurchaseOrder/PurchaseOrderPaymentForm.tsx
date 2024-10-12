@@ -10,7 +10,6 @@ import { useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
-  Currency,
   CustomFormFields,
   Hidden,
   PaymentTerm,
@@ -65,7 +64,6 @@ const PurchaseOrderPaymentForm = ({
             />
 
             <PaymentTerm name="paymentTermId" label="Payment Terms" />
-            <Currency name="currencyCode" label="Currency" />
 
             <Boolean name="paymentComplete" label="Payment Complete" />
             <CustomFormFields table="purchaseOrderPayment" />

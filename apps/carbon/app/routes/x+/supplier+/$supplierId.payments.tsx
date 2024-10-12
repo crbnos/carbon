@@ -87,7 +87,6 @@ export default function SupplierPaymentRoute() {
     invoiceSupplierContactId: supplierPayment?.invoiceSupplierContactId ?? "",
     invoiceSupplierLocationId: supplierPayment?.invoiceSupplierLocationId ?? "",
     paymentTermId: supplierPayment?.paymentTermId ?? "",
-    currencyCode: supplierPayment?.currencyCode ?? "",
     ...getCustomFields(supplierPayment?.customFields),
   };
 

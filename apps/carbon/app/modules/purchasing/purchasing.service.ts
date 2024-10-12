@@ -828,7 +828,6 @@ export async function upsertPurchaseOrder(
   if (supplierShipping.error) return supplierShipping;
 
   const {
-    currencyCode,
     paymentTermId,
     invoiceSupplierId,
     invoiceSupplierContactId,
@@ -861,7 +860,6 @@ export async function upsertPurchaseOrder(
     client.from("purchaseOrderPayment").insert([
       {
         id: purchaseOrderId,
-        currencyCode: currencyCode ?? "USD",
         invoiceSupplierId: invoiceSupplierId,
         invoiceSupplierContactId: invoiceSupplierContactId,
         invoiceSupplierLocationId: invoiceSupplierLocationId,
