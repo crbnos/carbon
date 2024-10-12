@@ -99,7 +99,6 @@ export default function PurchaseOrderPaymentRoute() {
       purchaseOrderPayment.invoiceSupplierContactId ?? undefined,
     paymentTermId: purchaseOrderPayment.paymentTermId ?? undefined,
     paymentComplete: purchaseOrderPayment.paymentComplete ?? undefined,
-    currencyCode: (purchaseOrderPayment.currencyCode ?? "USD") as "USD",
     ...getCustomFields(purchaseOrderPayment.customFields),
   };
 

@@ -124,7 +124,7 @@ export async function upsertPurchaseInvoice(
 
   if (supplierPayment.error) return supplierPayment;
 
-  const { currencyCode, paymentTermId } = supplierPayment.data;
+  const { paymentTermId } = supplierPayment.data;
 
   const invoice = await client
     .from("purchaseInvoice")
@@ -133,7 +133,7 @@ export async function upsertPurchaseInvoice(
         ...purchaseInvoice,
         invoiceSupplierId:
           purchaseInvoice.invoiceSupplierId ?? purchaseInvoice.supplierId ?? "",
-        currencyCode: purchaseInvoice.currencyCode ?? currencyCode ?? "USD",
+        currencyCode: purchaseInvoice.currencyCode ?? "USD",
         paymentTermId: purchaseInvoice.paymentTermId ?? paymentTermId,
       },
     ])

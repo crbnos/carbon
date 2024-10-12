@@ -2026,9 +2026,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.paymentComplete",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderPayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.companyId",
           },
           {
@@ -2118,9 +2115,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.paymentComplete",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderPayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.companyId",
           },
           {
@@ -2162,9 +2156,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.paymentComplete",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderPayment.currencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.companyId",
@@ -2572,9 +2563,6 @@ export default {
             $ref: "#/parameters/rowFilter.customerPayment.paymentTermId",
           },
           {
-            $ref: "#/parameters/rowFilter.customerPayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.customerPayment.companyId",
           },
           {
@@ -2658,9 +2646,6 @@ export default {
             $ref: "#/parameters/rowFilter.customerPayment.paymentTermId",
           },
           {
-            $ref: "#/parameters/rowFilter.customerPayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.customerPayment.companyId",
           },
           {
@@ -2696,9 +2681,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerPayment.paymentTermId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.customerPayment.currencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.customerPayment.companyId",
@@ -3337,9 +3319,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPayment.paymentTermId",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierPayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierPayment.companyId",
           },
           {
@@ -3426,9 +3405,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPayment.paymentTermId",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierPayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierPayment.companyId",
           },
           {
@@ -3467,9 +3443,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierPayment.paymentTermId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierPayment.currencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.supplierPayment.companyId",
@@ -14422,9 +14395,6 @@ export default {
             $ref: "#/parameters/rowFilter.quotePayment.paymentTermId",
           },
           {
-            $ref: "#/parameters/rowFilter.quotePayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.quotePayment.companyId",
           },
           {
@@ -14511,9 +14481,6 @@ export default {
             $ref: "#/parameters/rowFilter.quotePayment.paymentTermId",
           },
           {
-            $ref: "#/parameters/rowFilter.quotePayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.quotePayment.companyId",
           },
           {
@@ -14552,9 +14519,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quotePayment.paymentTermId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quotePayment.currencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.quotePayment.companyId",
@@ -15805,9 +15769,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderPayment.paymentComplete",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderPayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderPayment.companyId",
           },
           {
@@ -15897,9 +15858,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderPayment.paymentComplete",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderPayment.currencyCode",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderPayment.companyId",
           },
           {
@@ -15941,9 +15899,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderPayment.paymentComplete",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderPayment.currencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderPayment.companyId",
@@ -36951,7 +36906,7 @@ export default {
       type: "object",
     },
     purchaseOrderPayment: {
-      required: ["id", "paymentComplete", "currencyCode", "companyId"],
+      required: ["id", "paymentComplete", "companyId"],
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -36986,11 +36941,6 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean",
-        },
-        currencyCode: {
-          default: "USD",
-          format: "text",
-          type: "string",
         },
         companyId: {
           format: "text",
@@ -37267,10 +37217,6 @@ export default {
           format: "text",
           type: "string",
         },
-        currencyCode: {
-          format: "text",
-          type: "string",
-        },
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
@@ -37539,10 +37485,6 @@ export default {
         paymentTermId: {
           description:
             "Note:\nThis is a Foreign Key to `paymentTerm.id`.<fk table='paymentTerm' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        currencyCode: {
           format: "text",
           type: "string",
         },
@@ -42910,7 +42852,7 @@ export default {
       type: "object",
     },
     quotePayment: {
-      required: ["id", "currencyCode", "companyId"],
+      required: ["id", "companyId"],
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -42938,11 +42880,6 @@ export default {
         paymentTermId: {
           description:
             "Note:\nThis is a Foreign Key to `paymentTerm.id`.<fk table='paymentTerm' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        currencyCode: {
-          default: "USD",
           format: "text",
           type: "string",
         },
@@ -43602,7 +43539,7 @@ export default {
       type: "object",
     },
     salesOrderPayment: {
-      required: ["id", "paymentComplete", "currencyCode", "companyId"],
+      required: ["id", "paymentComplete", "companyId"],
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -43637,11 +43574,6 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean",
-        },
-        currencyCode: {
-          default: "USD",
-          format: "text",
-          type: "string",
         },
         companyId: {
           description:
@@ -52929,13 +52861,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderPayment.currencyCode": {
-      name: "currencyCode",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.purchaseOrderPayment.companyId": {
       name: "companyId",
       required: false,
@@ -53329,13 +53254,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.customerPayment.currencyCode": {
-      name: "currencyCode",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.customerPayment.companyId": {
       name: "companyId",
       required: false,
@@ -53675,13 +53593,6 @@ export default {
     },
     "rowFilter.supplierPayment.paymentTermId": {
       name: "paymentTermId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierPayment.currencyCode": {
-      name: "currencyCode",
       required: false,
       format: "text",
       in: "query",
@@ -60698,13 +60609,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quotePayment.currencyCode": {
-      name: "currencyCode",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quotePayment.companyId": {
       name: "companyId",
       required: false,
@@ -61563,13 +61467,6 @@ export default {
       name: "paymentComplete",
       required: false,
       format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrderPayment.currencyCode": {
-      name: "currencyCode",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },

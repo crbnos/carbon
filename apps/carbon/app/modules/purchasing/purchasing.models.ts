@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { currencyCodes } from "../accounting";
 
 export const purchaseOrderLineType = [
   "Part",
@@ -153,7 +152,6 @@ export const purchaseOrderPaymentValidator = z.object({
   invoiceSupplierContactId: zfd.text(z.string().optional()),
   paymentTermId: zfd.text(z.string().optional()),
   paymentComplete: zfd.checkbox(),
-  currencyCode: z.enum(currencyCodes).optional(),
 });
 
 export const purchaseOrderReleaseValidator = z
@@ -198,7 +196,6 @@ export const supplierPaymentValidator = z.object({
   invoiceSupplierLocationId: zfd.text(z.string().optional()),
   invoiceSupplierContactId: zfd.text(z.string().optional()),
   paymentTermId: zfd.text(z.string().optional()),
-  currencyCode: zfd.text(z.string().optional()),
 });
 
 export const supplierProcessValidator = z.object({

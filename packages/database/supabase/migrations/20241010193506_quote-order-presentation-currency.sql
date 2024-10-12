@@ -98,3 +98,10 @@ CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "purchaseOrderPayment" pp ON pp."id" = p."id"
   LEFT JOIN "paymentTerm" pt ON pt."id" = pp."paymentTermId"
   LEFT JOIN "location" l ON l."id" = pd."locationId";
+
+-- Remove currencyCode from customerPayment, supplierPayment, quotePayment, salesOrderPayment, and purchaseOrderPayment
+ALTER TABLE "customerPayment" DROP COLUMN "currencyCode";
+ALTER TABLE "supplierPayment" DROP COLUMN "currencyCode";
+ALTER TABLE "quotePayment" DROP COLUMN "currencyCode";
+ALTER TABLE "salesOrderPayment" DROP COLUMN "currencyCode";
+ALTER TABLE "purchaseOrderPayment" DROP COLUMN "currencyCode";

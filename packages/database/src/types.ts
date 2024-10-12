@@ -3393,7 +3393,6 @@ export type Database = {
       customerPayment: {
         Row: {
           companyId: string
-          currencyCode: string | null
           customerId: string
           invoiceCustomerContactId: string | null
           invoiceCustomerId: string | null
@@ -3404,7 +3403,6 @@ export type Database = {
         }
         Insert: {
           companyId: string
-          currencyCode?: string | null
           customerId: string
           invoiceCustomerContactId?: string | null
           invoiceCustomerId?: string | null
@@ -3415,7 +3413,6 @@ export type Database = {
         }
         Update: {
           companyId?: string
-          currencyCode?: string | null
           customerId?: string
           invoiceCustomerContactId?: string | null
           invoiceCustomerId?: string | null
@@ -3452,20 +3449,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "customerPayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "customerPayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currency"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "customerPayment_customerId_fkey"
@@ -13472,7 +13455,6 @@ export type Database = {
       purchaseOrderPayment: {
         Row: {
           companyId: string
-          currencyCode: string
           customFields: Json | null
           id: string
           invoiceSupplierContactId: string | null
@@ -13485,7 +13467,6 @@ export type Database = {
         }
         Insert: {
           companyId: string
-          currencyCode?: string
           customFields?: Json | null
           id: string
           invoiceSupplierContactId?: string | null
@@ -13498,7 +13479,6 @@ export type Database = {
         }
         Update: {
           companyId?: string
-          currencyCode?: string
           customFields?: Json | null
           id?: string
           invoiceSupplierContactId?: string | null
@@ -13510,20 +13490,6 @@ export type Database = {
           updatedBy?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "purchaseOrderPayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "purchaseOrderPayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currency"
-            referencedColumns: ["code", "companyId"]
-          },
           {
             foreignKeyName: "purchaseOrderPayment_id_fkey"
             columns: ["id"]
@@ -15529,7 +15495,6 @@ export type Database = {
       quotePayment: {
         Row: {
           companyId: string
-          currencyCode: string
           customFields: Json | null
           id: string
           invoiceCustomerContactId: string | null
@@ -15541,7 +15506,6 @@ export type Database = {
         }
         Insert: {
           companyId: string
-          currencyCode?: string
           customFields?: Json | null
           id: string
           invoiceCustomerContactId?: string | null
@@ -15553,7 +15517,6 @@ export type Database = {
         }
         Update: {
           companyId?: string
-          currencyCode?: string
           customFields?: Json | null
           id?: string
           invoiceCustomerContactId?: string | null
@@ -15591,20 +15554,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "quotePayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "quotePayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currency"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "quotePayment_id_fkey"
@@ -16855,7 +16804,6 @@ export type Database = {
       salesOrderPayment: {
         Row: {
           companyId: string
-          currencyCode: string
           customFields: Json | null
           id: string
           invoiceCustomerContactId: string | null
@@ -16868,7 +16816,6 @@ export type Database = {
         }
         Insert: {
           companyId: string
-          currencyCode?: string
           customFields?: Json | null
           id: string
           invoiceCustomerContactId?: string | null
@@ -16881,7 +16828,6 @@ export type Database = {
         }
         Update: {
           companyId?: string
-          currencyCode?: string
           customFields?: Json | null
           id?: string
           invoiceCustomerContactId?: string | null
@@ -16920,20 +16866,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "salesOrderPayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "salesOrderPayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currency"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "salesOrderPayment_id_fkey"
@@ -19601,7 +19533,6 @@ export type Database = {
       supplierPayment: {
         Row: {
           companyId: string
-          currencyCode: string | null
           customFields: Json | null
           invoiceSupplierContactId: string | null
           invoiceSupplierId: string | null
@@ -19613,7 +19544,6 @@ export type Database = {
         }
         Insert: {
           companyId: string
-          currencyCode?: string | null
           customFields?: Json | null
           invoiceSupplierContactId?: string | null
           invoiceSupplierId?: string | null
@@ -19625,7 +19555,6 @@ export type Database = {
         }
         Update: {
           companyId?: string
-          currencyCode?: string | null
           customFields?: Json | null
           invoiceSupplierContactId?: string | null
           invoiceSupplierId?: string | null
@@ -19663,20 +19592,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "supplierPayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "supplierPayment_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currency"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "supplierPayment_invoiceSupplierContactId_fkey"

@@ -120,7 +120,6 @@ export default function QuoteDetailsRoute() {
       quoteData?.payment.invoiceCustomerLocationId ?? "",
     invoiceCustomerContactId: quoteData?.payment.invoiceCustomerContactId ?? "",
     paymentTermId: quoteData?.payment.paymentTermId ?? "",
-    currencyCode: quoteData?.payment.currencyCode as "USD",
   };
 
   return (

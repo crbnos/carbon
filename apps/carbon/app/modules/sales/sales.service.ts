@@ -1502,7 +1502,6 @@ export async function upsertQuote(
     if (customerShipping.error) return customerShipping;
 
     const {
-      currencyCode,
       paymentTermId,
       invoiceCustomerId,
       invoiceCustomerContactId,
@@ -1536,7 +1535,6 @@ export async function upsertQuote(
       client.from("quotePayment").insert([
         {
           id: quoteId,
-          currencyCode: currencyCode ?? "USD",
           invoiceCustomerId: invoiceCustomerId,
           invoiceCustomerContactId: invoiceCustomerContactId,
           invoiceCustomerLocationId: invoiceCustomerLocationId,
@@ -1909,7 +1907,6 @@ export async function upsertSalesOrder(
   if (customerShipping.error) return customerShipping;
 
   const {
-    currencyCode,
     paymentTermId,
     invoiceCustomerId,
     invoiceCustomerContactId,
@@ -1942,7 +1939,6 @@ export async function upsertSalesOrder(
     client.from("salesOrderPayment").insert([
       {
         id: salesOrderId,
-        currencyCode: currencyCode ?? "USD",
         invoiceCustomerId: invoiceCustomerId,
         invoiceCustomerContactId: invoiceCustomerContactId,
         invoiceCustomerLocationId: invoiceCustomerLocationId,

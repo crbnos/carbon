@@ -52,7 +52,6 @@ export const customerPaymentValidator = z.object({
   invoiceCustomerLocationId: zfd.text(z.string().optional()),
   invoiceCustomerContactId: zfd.text(z.string().optional()),
   paymentTermId: zfd.text(z.string().optional()),
-  currencyCode: zfd.text(z.string().optional()),
 });
 
 export const customerShippingValidator = z.object({
@@ -464,7 +463,6 @@ export const quotePaymentValidator = z.object({
   invoiceCustomerLocationId: zfd.text(z.string().optional()),
   invoiceCustomerContactId: zfd.text(z.string().optional()),
   paymentTermId: zfd.text(z.string().optional()),
-  currencyCode: z.enum(currencyCodes).optional(),
 });
 
 export const quoteShipmentValidator = z.object({

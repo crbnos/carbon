@@ -10,7 +10,6 @@ import {
 import { useState } from "react";
 import type { z } from "zod";
 import {
-  Currency,
   CustomFormFields,
   Customer,
   CustomerContact,
@@ -64,7 +63,6 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
             />
 
             <PaymentTerm name="paymentTermId" label="Payment Term" />
-            <Currency name="currencyCode" label="Currency" />
             <CustomFormFields table="customerPayment" />
           </div>
         </CardContent>
