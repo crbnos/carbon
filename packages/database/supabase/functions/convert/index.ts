@@ -99,7 +99,7 @@ serve(async (req: Request) => {
                 status: "Draft",
                 createdBy: userId,
                 companyId: companyId,
-                presentationCurrencyCode: quote.data.presentationCurrencyCode,
+                currencyCode: quote.data.currencyCode ?? undefined,
               },
             ])
             .returning(["id"])

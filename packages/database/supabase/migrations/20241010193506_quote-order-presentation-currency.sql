@@ -1,7 +1,9 @@
--- Quote presentation currency
-ALTER TABLE "quote" ADD COLUMN "presentationCurrencyCode" TEXT;
-ALTER TABLE "quote" ADD CONSTRAINT "quote_presentationCurrencyCode_fkey" 
-  FOREIGN KEY ("presentationCurrencyCode") REFERENCES "currencyCode"("code") 
+-- Quote currency
+ALTER TABLE "quote" ADD COLUMN "currencyCode" TEXT;
+ALTER TABLE "quote" ADD COLUMN "exchangeRate" NUMERIC(10,4);
+ALTER TABLE "quote" ADD COLUMN "exchangeRateDate" DATE;
+ALTER TABLE "quote" ADD CONSTRAINT "quote_currencyCode_fkey" 
+  FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") 
   ON DELETE SET NULL ON UPDATE CASCADE;
 
 DROP VIEW IF EXISTS "quotes";
@@ -28,10 +30,13 @@ CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "opportunity" opp
     ON opp."quoteId" = q.id;
 
--- Sales Order presentation currency
-ALTER TABLE "salesOrder" ADD COLUMN "presentationCurrencyCode" TEXT;
-ALTER TABLE "salesOrder" ADD CONSTRAINT "salesOrder_presentationCurrencyCode_fkey" 
-  FOREIGN KEY ("presentationCurrencyCode") REFERENCES "currencyCode"("code") 
+-- Sales Order currency
+ALTER TABLE "salesOrder" ALTER COLUMN "currencyCode" DROP DEFAULT;
+ALTER TABLE "salesOrder" ADD COLUMN "exchangeRate" NUMERIC(10,4);
+ALTER TABLE "salesOrder" ADD COLUMN "exchangeRateDate" DATE;
+ALTER TABLE "salesOrder" DROP CONSTRAINT "salesOrder_currencyCode_fkey";
+ALTER TABLE "salesOrder" ADD CONSTRAINT "salesOrder_currencyCode_fkey" 
+  FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") 
   ON DELETE SET NULL ON UPDATE CASCADE;
 
 DROP VIEW IF EXISTS "salesOrders";
@@ -65,10 +70,12 @@ CREATE OR REPLACE VIEW "salesOrders" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "user" u2 ON u2."id" = s."updatedBy"
   LEFT JOIN "user" u3 ON u3."id" = s."closedBy";
 
--- Purchase Order presentation currency
-ALTER TABLE "purchaseOrder" ADD COLUMN "presentationCurrencyCode" TEXT;
-ALTER TABLE "purchaseOrder" ADD CONSTRAINT "purchaseOrder_presentationCurrencyCode_fkey" 
-  FOREIGN KEY ("presentationCurrencyCode") REFERENCES "currencyCode"("code") 
+-- Purchase Order currency
+ALTER TABLE "purchaseOrder" ADD COLUMN "currencyCode" TEXT;
+ALTER TABLE "purchaseOrder" ADD COLUMN "exchangeRate" NUMERIC(10,4);
+ALTER TABLE "purchaseOrder" ADD COLUMN "exchangeRateDate" DATE;
+ALTER TABLE "purchaseOrder" ADD CONSTRAINT "purchaseOrder_currencyCode_fkey" 
+  FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") 
   ON DELETE SET NULL ON UPDATE CASCADE;
 
 DROP VIEW IF EXISTS "purchaseOrders";

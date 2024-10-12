@@ -2443,7 +2443,13 @@ export default {
             $ref: "#/parameters/rowFilter.quotes.internalNotes",
           },
           {
-            $ref: "#/parameters/rowFilter.quotes.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.quotes.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotes.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotes.exchangeRateDate",
           },
           {
             $ref: "#/parameters/rowFilter.quotes.locationName",
@@ -8524,7 +8530,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.purchaseOrder.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateDate",
           },
           {
             $ref: "#/parameters/select",
@@ -8646,7 +8658,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.purchaseOrder.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateDate",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -8722,7 +8740,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.purchaseOrder.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateDate",
           },
           {
             $ref: "#/parameters/body.purchaseOrder",
@@ -14806,7 +14830,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrders.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.salesOrders.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrders.exchangeRateDate",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.shippingMethodName",
@@ -18271,7 +18298,13 @@ export default {
             $ref: "#/parameters/rowFilter.quote.internalNotes",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.quote.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.exchangeRateDate",
           },
           {
             $ref: "#/parameters/select",
@@ -18399,7 +18432,13 @@ export default {
             $ref: "#/parameters/rowFilter.quote.internalNotes",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.quote.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.exchangeRateDate",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -18481,7 +18520,13 @@ export default {
             $ref: "#/parameters/rowFilter.quote.internalNotes",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.quote.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.exchangeRateDate",
           },
           {
             $ref: "#/parameters/body.quote",
@@ -26320,7 +26365,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateDate",
           },
           {
             $ref: "#/parameters/select",
@@ -26445,7 +26493,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateDate",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -26524,7 +26575,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateDate",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -29872,7 +29926,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrders.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrders.presentationCurrencyCode",
+            $ref: "#/parameters/rowFilter.purchaseOrders.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.exchangeRateDate",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.shippingMethodName",
@@ -37121,10 +37181,18 @@ export default {
         internalNotes: {
           format: "json",
         },
-        presentationCurrencyCode: {
+        currencyCode: {
           description:
             "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
+          type: "string",
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRateDate: {
+          format: "date",
           type: "string",
         },
         locationName: {
@@ -40188,10 +40256,18 @@ export default {
           format: "text",
           type: "string",
         },
-        presentationCurrencyCode: {
+        currencyCode: {
           description:
             "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
+          type: "string",
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRateDate: {
+          format: "date",
           type: "string",
         },
       },
@@ -42992,6 +43068,8 @@ export default {
           type: "string",
         },
         currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
           type: "string",
         },
@@ -43068,10 +43146,12 @@ export default {
           format: "text",
           type: "string",
         },
-        presentationCurrencyCode: {
-          description:
-            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
-          format: "text",
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRateDate: {
+          format: "date",
           type: "string",
         },
         shippingMethodName: {
@@ -44668,10 +44748,18 @@ export default {
         internalNotes: {
           format: "json",
         },
-        presentationCurrencyCode: {
+        currencyCode: {
           description:
             "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
+          type: "string",
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRateDate: {
+          format: "date",
           type: "string",
         },
       },
@@ -48225,7 +48313,8 @@ export default {
           type: "string",
         },
         currencyCode: {
-          default: "USD",
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
           type: "string",
         },
@@ -48303,10 +48392,12 @@ export default {
           format: "text",
           type: "string",
         },
-        presentationCurrencyCode: {
-          description:
-            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
-          format: "text",
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRateDate: {
+          format: "date",
           type: "string",
         },
       },
@@ -49874,10 +49965,18 @@ export default {
           format: "text",
           type: "string",
         },
-        presentationCurrencyCode: {
+        currencyCode: {
           description:
             "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
           format: "text",
+          type: "string",
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRateDate: {
+          format: "date",
           type: "string",
         },
         shippingMethodName: {
@@ -53107,10 +53206,24 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quotes.presentationCurrencyCode": {
-      name: "presentationCurrencyCode",
+    "rowFilter.quotes.currencyCode": {
+      name: "currencyCode",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotes.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotes.exchangeRateDate": {
+      name: "exchangeRateDate",
+      required: false,
+      format: "date",
       in: "query",
       type: "string",
     },
@@ -56970,10 +57083,24 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrder.presentationCurrencyCode": {
-      name: "presentationCurrencyCode",
+    "rowFilter.purchaseOrder.currencyCode": {
+      name: "currencyCode",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrder.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrder.exchangeRateDate": {
+      name: "exchangeRateDate",
+      required: false,
+      format: "date",
       in: "query",
       type: "string",
     },
@@ -60841,10 +60968,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrders.presentationCurrencyCode": {
-      name: "presentationCurrencyCode",
+    "rowFilter.salesOrders.exchangeRate": {
+      name: "exchangeRate",
       required: false,
-      format: "text",
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrders.exchangeRateDate": {
+      name: "exchangeRateDate",
+      required: false,
+      format: "date",
       in: "query",
       type: "string",
     },
@@ -62853,10 +62987,24 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quote.presentationCurrencyCode": {
-      name: "presentationCurrencyCode",
+    "rowFilter.quote.currencyCode": {
+      name: "currencyCode",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quote.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quote.exchangeRateDate": {
+      name: "exchangeRateDate",
+      required: false,
+      format: "date",
       in: "query",
       type: "string",
     },
@@ -67636,10 +67784,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrder.presentationCurrencyCode": {
-      name: "presentationCurrencyCode",
+    "rowFilter.salesOrder.exchangeRate": {
+      name: "exchangeRate",
       required: false,
-      format: "text",
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrder.exchangeRateDate": {
+      name: "exchangeRateDate",
+      required: false,
+      format: "date",
       in: "query",
       type: "string",
     },
@@ -69738,10 +69893,24 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrders.presentationCurrencyCode": {
-      name: "presentationCurrencyCode",
+    "rowFilter.purchaseOrders.currencyCode": {
+      name: "currencyCode",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrders.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrders.exchangeRateDate": {
+      name: "exchangeRateDate",
+      required: false,
+      format: "date",
       in: "query",
       type: "string",
     },

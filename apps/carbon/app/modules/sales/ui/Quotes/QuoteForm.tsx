@@ -44,7 +44,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
     currencyCode: string | undefined;
   }>({
     id: initialValues.customerId,
-    currencyCode: initialValues.presentationCurrencyCode,
+    currencyCode: initialValues.currencyCode,
   });
   const isCustomer = permissions.is("customer");
   const isDisabled = initialValues?.status !== "Draft";
@@ -150,8 +150,8 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
               />
 
               <Currency
-                name="presentationCurrencyCode"
-                label="Presentation Currency"
+                name="currencyCode"
+                label="Currency"
                 value={customer.currencyCode}
                 onChange={(newValue) => {
                   if (newValue?.value) {

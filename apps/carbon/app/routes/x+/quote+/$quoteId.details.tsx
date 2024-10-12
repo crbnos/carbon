@@ -102,8 +102,7 @@ export default function QuoteDetailsRoute() {
     quoteId: quoteData?.quote?.quoteId ?? "",
     salesPersonId: quoteData?.quote?.salesPersonId ?? "",
     status: quoteData?.quote?.status ?? "Draft",
-    presentationCurrencyCode:
-      quoteData?.quote?.presentationCurrencyCode ?? undefined,
+    currencyCode: quoteData?.quote?.currencyCode ?? "",
   };
 
   const shipmentInitialValues = {

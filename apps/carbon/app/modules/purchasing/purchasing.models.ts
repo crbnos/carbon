@@ -43,7 +43,7 @@ export const purchaseOrderValidator = z.object({
   supplierLocationId: zfd.text(z.string().optional()),
   supplierContactId: zfd.text(z.string().optional()),
   supplierReference: zfd.text(z.string().optional()),
-  presentationCurrencyCode: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
 });
 
 export const purchaseOrderDeliveryValidator = z

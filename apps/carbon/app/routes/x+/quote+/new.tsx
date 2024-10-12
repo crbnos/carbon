@@ -77,7 +77,7 @@ export default function QuoteNewRoute() {
     locationId: defaults?.locationId ?? "",
     quoteId: undefined,
     status: "Draft" as QuotationStatusType,
-    presentationCurrencyCode: undefined,
+    currencyCode: undefined,
   };
 
   return (

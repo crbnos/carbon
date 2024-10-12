@@ -85,15 +85,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  let presentationExchangeRate = 1;
-  if (quote.data?.presentationCurrencyCode) {
+  let exchangeRate = 1;
+  if (quote.data?.currencyCode) {
     const presentationCurrency = await getCurrencyByCode(
       client,
       companyId,
-      quote.data.presentationCurrencyCode
+      quote.data.currencyCode
     );
     if (presentationCurrency.data?.exchangeRate) {
-      presentationExchangeRate = presentationCurrency.data.exchangeRate;
+      exchangeRate = presentationCurrency.data.exchangeRate;
     }
   }
 
@@ -106,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shipment: shipment.data,
     payment: payment.data,
     opportunity: opportunity.data,
-    presentationExchangeRate,
+    exchangeRate,
   });
 }
 

@@ -48,7 +48,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
     currencyCode: string | undefined;
   }>({
     id: initialValues.supplierId,
-    currencyCode: initialValues.presentationCurrencyCode,
+    currencyCode: initialValues.currencyCode,
   });
   const isEditing = initialValues.id !== undefined;
   const isSupplier = permissions.is("supplier");
@@ -173,8 +173,8 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
               />
 
               <Currency
-                name="presentationCurrencyCode"
-                label="Presentation Currency"
+                name="currencyCode"
+                label="Currency"
                 value={supplier.currencyCode}
                 onChange={(newValue) => {
                   if (newValue?.value) {

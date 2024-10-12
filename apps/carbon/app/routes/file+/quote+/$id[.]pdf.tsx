@@ -109,15 +109,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return acc;
     }, {}) ?? {};
 
-  let presentationExchangeRate = 1;
-  if (quote.data?.presentationCurrencyCode) {
-    const presentationCurrency = await getCurrencyByCode(
+  let exchangeRate = 1;
+  if (quote.data?.currencyCode) {
+    const currency = await getCurrencyByCode(
       client,
       companyId,
-      quote.data.presentationCurrencyCode
+      quote.data.currencyCode
     );
-    if (presentationCurrency.data?.exchangeRate) {
-      presentationExchangeRate = presentationCurrency.data.exchangeRate;
+    if (currency.data?.exchangeRate) {
+      exchangeRate = currency.data.exchangeRate;
     }
   }
 
@@ -125,7 +125,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     <QuotePDF
       company={company.data}
       locale={locale}
-      presentationExchangeRate={presentationExchangeRate}
+      exchangeRate={exchangeRate}
       quote={quote.data}
       quoteLines={quoteLines.data ?? []}
       quoteLinePrices={quoteLinePrices.data ?? []}
