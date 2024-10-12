@@ -78,7 +78,7 @@ const QuoteLinePricing = ({
 
   const routeData = useRouteData<{
     quote: Quotation;
-    presentationExchangeRate: number;
+    exchangeRate: number;
   }>(path.to.quote(quoteId));
   const isEditable =
     permissions.can("update", "sales") &&
@@ -108,7 +108,7 @@ const QuoteLinePricing = ({
 
   const formatter = useCurrencyFormatter();
   const presentationCurrencyFormatter = useCurrencyFormatter(
-    routeData?.quote?.presentationCurrencyCode ?? baseCurrency
+    routeData?.quote?.currencyCode ?? baseCurrency
   );
 
   const additionalCharges = useMemo(() => {
@@ -755,7 +755,7 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
-            {routeData?.quote?.presentationCurrencyCode !== baseCurrency && (
+            {routeData?.quote?.currencyCode !== baseCurrency && (
               <>
                 <Tr className="[&>td]:bg-muted/60">
                   <Td className="border-r border-border group-hover:bg-muted/50">
@@ -766,7 +766,7 @@ const QuoteLinePricing = ({
                   {quantities.map((quantity, index) => (
                     <Td key={index} className="group-hover:bg-muted/50">
                       <VStack spacing={0}>
-                        <span>{routeData?.presentationExchangeRate ?? 1}</span>
+                        <span>{routeData?.exchangeRate ?? 1}</span>
                       </VStack>
                     </Td>
                   ))}
@@ -782,7 +782,7 @@ const QuoteLinePricing = ({
                       netPricesByQuantity[index] * quantity +
                       additionalChargesByQuantity[index];
                     const convertedPrice =
-                      price * (routeData?.presentationExchangeRate ?? 1);
+                      price * (routeData?.exchangeRate ?? 1);
                     return (
                       <Td key={index} className="group-hover:bg-muted/50">
                         <VStack spacing={0}>

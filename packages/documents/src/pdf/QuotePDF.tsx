@@ -11,7 +11,7 @@ import { getCurrencyFormatter } from "../utils/shared";
 import { Header, Note, Summary, Template } from "./components";
 
 interface QuotePDFProps extends PDF {
-  presentationExchangeRate: number;
+  exchangeRate: number;
   quote: Database["public"]["Views"]["quotes"]["Row"];
   quoteLines: Database["public"]["Views"]["quoteLines"]["Row"][];
   quoteCustomerDetails: Database["public"]["Views"]["quoteCustomerDetails"]["Row"];
@@ -43,7 +43,7 @@ const QuotePDF = ({
   company,
   locale,
   meta,
-  presentationExchangeRate,
+  exchangeRate,
   quote,
   quoteLines,
   quoteLinePrices,
@@ -66,8 +66,7 @@ const QuotePDF = ({
     customerCountryName,
   } = quoteCustomerDetails;
 
-  const currencyCode =
-    quote.presentationCurrencyCode ?? company.baseCurrencyCode;
+  const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
   const shouldConvertCurrency = currencyCode !== company.baseCurrencyCode;
   const formatter = getCurrencyFormatter(currencyCode, locale);
 
@@ -79,7 +78,7 @@ const QuotePDF = ({
     }
     const convertedPrice = { ...price };
     if (shouldConvertCurrency) {
-      convertedPrice.unitPrice = price.unitPrice * presentationExchangeRate;
+      convertedPrice.unitPrice = price.unitPrice * exchangeRate;
     }
     acc[price.quoteLineId].push(convertedPrice);
     return acc;
@@ -189,7 +188,7 @@ const QuotePDF = ({
                   (acc, charge) => {
                     let amount = charge.amounts?.[quantity] ?? 0;
                     if (shouldConvertCurrency) {
-                      amount *= presentationExchangeRate;
+                      amount *= exchangeRate;
                     }
                     return acc + amount;
                   },

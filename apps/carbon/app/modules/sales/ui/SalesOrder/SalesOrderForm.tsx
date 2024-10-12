@@ -43,7 +43,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
     currencyCode: string | undefined;
   }>({
     id: initialValues.customerId,
-    currencyCode: initialValues.presentationCurrencyCode,
+    currencyCode: initialValues.currencyCode,
   });
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
@@ -145,8 +145,8 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
               <Location name="locationId" label="Sales Location" />
 
               <Currency
-                name="presentationCurrencyCode"
-                label="Presentation Currency"
+                name="currencyCode"
+                label="Currency"
                 value={customer.currencyCode}
                 onChange={(newValue) => {
                   if (newValue?.value) {

@@ -12702,11 +12702,13 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          currencyCode: string | null
           customFields: Json | null
+          exchangeRate: number | null
+          exchangeRateDate: string | null
           id: string
           notes: string | null
           orderDate: string
-          presentationCurrencyCode: string | null
           purchaseOrderId: string
           revisionId: number
           status: Database["public"]["Enums"]["purchaseOrderStatus"]
@@ -12725,11 +12727,13 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          currencyCode?: string | null
           customFields?: Json | null
+          exchangeRate?: number | null
+          exchangeRateDate?: string | null
           id?: string
           notes?: string | null
           orderDate?: string
-          presentationCurrencyCode?: string | null
           purchaseOrderId: string
           revisionId?: number
           status?: Database["public"]["Enums"]["purchaseOrderStatus"]
@@ -12748,11 +12752,13 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          currencyCode?: string | null
           customFields?: Json | null
+          exchangeRate?: number | null
+          exchangeRateDate?: string | null
           id?: string
           notes?: string | null
           orderDate?: string
-          presentationCurrencyCode?: string | null
           purchaseOrderId?: string
           revisionId?: number
           status?: Database["public"]["Enums"]["purchaseOrderStatus"]
@@ -12899,8 +12905,8 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "purchaseOrder_presentationCurrencyCode_fkey"
-            columns: ["presentationCurrencyCode"]
+            foreignKeyName: "purchaseOrder_currencyCode_fkey"
+            columns: ["currencyCode"]
             isOneToOne: false
             referencedRelation: "currencyCode"
             referencedColumns: ["code"]
@@ -13961,6 +13967,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          currencyCode: string | null
           customerContactId: string | null
           customerId: string
           customerLocationId: string | null
@@ -13968,12 +13975,13 @@ export type Database = {
           customFields: Json | null
           dueDate: string | null
           estimatorId: string | null
+          exchangeRate: number | null
+          exchangeRateDate: string | null
           expirationDate: string | null
           externalNotes: Json | null
           id: string
           internalNotes: Json | null
           locationId: string | null
-          presentationCurrencyCode: string | null
           quoteId: string
           revisionId: number
           salesPersonId: string | null
@@ -13986,6 +13994,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          currencyCode?: string | null
           customerContactId?: string | null
           customerId: string
           customerLocationId?: string | null
@@ -13993,12 +14002,13 @@ export type Database = {
           customFields?: Json | null
           dueDate?: string | null
           estimatorId?: string | null
+          exchangeRate?: number | null
+          exchangeRateDate?: string | null
           expirationDate?: string | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
           locationId?: string | null
-          presentationCurrencyCode?: string | null
           quoteId: string
           revisionId?: number
           salesPersonId?: string | null
@@ -14011,6 +14021,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          currencyCode?: string | null
           customerContactId?: string | null
           customerId?: string
           customerLocationId?: string | null
@@ -14018,12 +14029,13 @@ export type Database = {
           customFields?: Json | null
           dueDate?: string | null
           estimatorId?: string | null
+          exchangeRate?: number | null
+          exchangeRateDate?: string | null
           expirationDate?: string | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
           locationId?: string | null
-          presentationCurrencyCode?: string | null
           quoteId?: string
           revisionId?: number
           salesPersonId?: string | null
@@ -14131,6 +14143,13 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "quote_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "quote_customerContactId_fkey"
             columns: ["customerContactId"]
             isOneToOne: false
@@ -14213,13 +14232,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrders"
             referencedColumns: ["locationId"]
-          },
-          {
-            foreignKeyName: "quote_presentationCurrencyCode_fkey"
-            columns: ["presentationCurrencyCode"]
-            isOneToOne: false
-            referencedRelation: "currencyCode"
-            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "quote_salesPersonId_fkey"
@@ -16247,11 +16259,12 @@ export type Database = {
           customerLocationId: string | null
           customerReference: string | null
           customFields: Json | null
+          exchangeRate: number | null
+          exchangeRateDate: string | null
           id: string
           locationId: string | null
           notes: string | null
           orderDate: string
-          presentationCurrencyCode: string | null
           revisionId: number
           salesOrderId: string
           status: Database["public"]["Enums"]["salesOrderStatus"]
@@ -16265,17 +16278,18 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          currencyCode?: string
+          currencyCode: string
           customerContactId?: string | null
           customerId: string
           customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
+          exchangeRate?: number | null
+          exchangeRateDate?: string | null
           id?: string
           locationId?: string | null
           notes?: string | null
           orderDate?: string
-          presentationCurrencyCode?: string | null
           revisionId?: number
           salesOrderId: string
           status?: Database["public"]["Enums"]["salesOrderStatus"]
@@ -16295,11 +16309,12 @@ export type Database = {
           customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
+          exchangeRate?: number | null
+          exchangeRateDate?: string | null
           id?: string
           locationId?: string | null
           notes?: string | null
           orderDate?: string
-          presentationCurrencyCode?: string | null
           revisionId?: number
           salesOrderId?: string
           status?: Database["public"]["Enums"]["salesOrderStatus"]
@@ -16442,17 +16457,10 @@ export type Database = {
           },
           {
             foreignKeyName: "salesOrder_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
+            columns: ["currencyCode"]
             isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "salesOrder_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currency"
-            referencedColumns: ["code", "companyId"]
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "salesOrder_customerContactId_fkey"
@@ -16502,13 +16510,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrders"
             referencedColumns: ["locationId"]
-          },
-          {
-            foreignKeyName: "salesOrder_presentationCurrencyCode_fkey"
-            columns: ["presentationCurrencyCode"]
-            isOneToOne: false
-            referencedRelation: "currencyCode"
-            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "salesOrder_updatedBy_fkey"
@@ -25607,8 +25608,11 @@ export type Database = {
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
+          currencyCode: string | null
           customFields: Json | null
           dropShipment: boolean | null
+          exchangeRate: number | null
+          exchangeRateDate: string | null
           favorite: boolean | null
           id: string | null
           locationId: string | null
@@ -25616,7 +25620,6 @@ export type Database = {
           notes: string | null
           orderDate: string | null
           paymentTermName: string | null
-          presentationCurrencyCode: string | null
           purchaseOrderId: string | null
           receiptPromisedDate: string | null
           receiptRequestedDate: string | null
@@ -25767,8 +25770,8 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "purchaseOrder_presentationCurrencyCode_fkey"
-            columns: ["presentationCurrencyCode"]
+            foreignKeyName: "purchaseOrder_currencyCode_fkey"
+            columns: ["currencyCode"]
             isOneToOne: false
             referencedRelation: "currencyCode"
             referencedColumns: ["code"]
@@ -26574,6 +26577,7 @@ export type Database = {
           completedLines: number | null
           createdAt: string | null
           createdBy: string | null
+          currencyCode: string | null
           customerContactId: string | null
           customerId: string | null
           customerLocationId: string | null
@@ -26581,6 +26585,8 @@ export type Database = {
           customFields: Json | null
           dueDate: string | null
           estimatorId: string | null
+          exchangeRate: number | null
+          exchangeRateDate: string | null
           expirationDate: string | null
           externalNotes: Json | null
           favorite: boolean | null
@@ -26589,7 +26595,6 @@ export type Database = {
           lines: number | null
           locationId: string | null
           locationName: string | null
-          presentationCurrencyCode: string | null
           quoteId: string | null
           revisionId: number | null
           salesOrderId: string | null
@@ -26734,6 +26739,13 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "quote_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "quote_customerContactId_fkey"
             columns: ["customerContactId"]
             isOneToOne: false
@@ -26816,13 +26828,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrders"
             referencedColumns: ["locationId"]
-          },
-          {
-            foreignKeyName: "quote_presentationCurrencyCode_fkey"
-            columns: ["presentationCurrencyCode"]
-            isOneToOne: false
-            referencedRelation: "currencyCode"
-            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "quote_salesPersonId_fkey"
@@ -27374,6 +27379,8 @@ export type Database = {
           customerReference: string | null
           customFields: Json | null
           dropShipment: boolean | null
+          exchangeRate: number | null
+          exchangeRateDate: string | null
           favorite: boolean | null
           id: string | null
           locationId: string | null
@@ -27381,7 +27388,6 @@ export type Database = {
           notes: string | null
           orderDate: string | null
           paymentTermName: string | null
-          presentationCurrencyCode: string | null
           receiptPromisedDate: string | null
           receiptRequestedDate: string | null
           revisionId: number | null
@@ -27530,17 +27536,10 @@ export type Database = {
           },
           {
             foreignKeyName: "salesOrder_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
+            columns: ["currencyCode"]
             isOneToOne: false
-            referencedRelation: "currency"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "salesOrder_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code", "companyId"]
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "salesOrder_customerContactId_fkey"
@@ -27590,13 +27589,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrders"
             referencedColumns: ["locationId"]
-          },
-          {
-            foreignKeyName: "salesOrder_presentationCurrencyCode_fkey"
-            columns: ["presentationCurrencyCode"]
-            isOneToOne: false
-            referencedRelation: "currencyCode"
-            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "salesOrder_updatedBy_fkey"

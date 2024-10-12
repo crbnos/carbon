@@ -78,8 +78,7 @@ export default function PurchaseOrderBasicRoute() {
     receiptRequestedDate: orderData?.purchaseOrder?.receiptRequestedDate ?? "",
     receiptPromisedDate: orderData?.purchaseOrder?.receiptPromisedDate ?? "",
     notes: orderData?.purchaseOrder?.notes ?? "",
-    presentationCurrencyCode:
-      orderData?.purchaseOrder?.presentationCurrencyCode ?? "",
+    currencyCode: orderData?.purchaseOrder?.currencyCode ?? "",
     ...getCustomFields(orderData?.purchaseOrder?.customFields),
   };
 
