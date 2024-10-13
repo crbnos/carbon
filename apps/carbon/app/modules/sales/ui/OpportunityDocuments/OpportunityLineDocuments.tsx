@@ -289,7 +289,7 @@ const OpportunityLineDocuments = ({
                 <Tr>
                   <Td>
                     <HStack>
-                      <LuAxis3D className="text-green-500 w-6 h-6 flex-shrink-0" />
+                      <LuAxis3D className="text-emerald-500 w-6 h-6 flex-shrink-0" />
                       <Hyperlink
                         target="_blank"
                         onClick={() => viewModel(modelUpload)}

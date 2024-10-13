@@ -53,7 +53,7 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
           {userStatus === UserStatus.Active && (
             <span
               title="Active"
-              className="inline-block bg-green-400 rounded-full w-3 h-3 ml-1.5"
+              className="inline-block bg-emerald-400 rounded-full w-3 h-3 ml-1.5"
             />
           )}
           {userStatus === UserStatus.Inactive && (

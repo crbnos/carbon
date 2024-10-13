@@ -94,7 +94,7 @@ const ItemDocuments = ({
               <Tr>
                 <Td>
                   <HStack>
-                    <LuAxis3D className="text-green-500 w-6 h-6" />
+                    <LuAxis3D className="text-emerald-500 w-6 h-6" />
                     <Hyperlink
                       target="_blank"
                       onClick={() => viewModel(modelUpload)}

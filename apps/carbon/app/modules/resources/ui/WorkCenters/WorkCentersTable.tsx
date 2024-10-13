@@ -67,7 +67,7 @@ const WorkCentersTable = memo(
 
               {row.original.requiredAbilityId && (
                 <BsFillCheckCircleFill
-                  className="text-green-500"
+                  className="text-emerald-500"
                   title="Requires ability"
                 />
               )}

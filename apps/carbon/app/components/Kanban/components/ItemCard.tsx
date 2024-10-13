@@ -50,7 +50,7 @@ const cardVariants = cva(
           "ring-2 ring-primary hover:from-muted hover:via-muted hover:to-muted",
       },
       status: {
-        IN_PROGRESS: "border-green-600/30 from-green-600/10",
+        IN_PROGRESS: "border-emerald-600/30 from-emerald-600/10",
         READY: "",
         DONE: "",
         PAUSED: "",
@@ -68,7 +68,7 @@ const cardVariants = cva(
 const cardHeaderVariants = cva("border-b", {
   variants: {
     status: {
-      IN_PROGRESS: "border-green-600/30",
+      IN_PROGRESS: "border-emerald-600/30",
       READY: "",
       DONE: "",
       PAUSED: "",

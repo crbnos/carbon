@@ -65,7 +65,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
             <div
               key={node.id}
               className={cn(
-                "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2",
+                "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
                 getNodePath(node) === location.pathname
                   ? "bg-muted hover:bg-muted/90"
                   : "bg-transparent hover:bg-muted/90"
@@ -103,9 +103,9 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                 >
                   {node.hasChildren ? (
                     state.expanded ? (
-                      <LuChevronDown className="h-4 w-4 text-gray-400" />
+                      <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
                     ) : (
-                      <LuChevronUp className="h-4 w-4 text-gray-400" />
+                      <LuChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
                     )
                   ) : (
                     <div className="h-8 w-4" />

@@ -206,7 +206,7 @@ const FixtureProperties = () => {
         {routeData?.fixtureSummary?.autodeskUrn && (
           <HStack className="group" spacing={1}>
             <Badge variant="secondary">
-              <LuMove3D className="w-3 h-3 mr-1 text-green-500" />
+              <LuMove3D className="w-3 h-3 mr-1 text-emerald-500" />
               3D Model
             </Badge>
             <Link

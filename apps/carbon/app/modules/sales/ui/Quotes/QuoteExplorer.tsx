@@ -302,7 +302,7 @@ function getStatusIcon(status: (typeof quoteLineStatusType)[number]) {
     case "No Quote":
       return <LuXCircle size={12} className="text-red-600" />;
     case "Complete":
-      return <LuCheckCircle size={12} className="text-green-600" />;
+      return <LuCheckCircle size={12} className="text-emerald-600" />;
     case "In Progress":
       return <LuClock3 size={12} className="text-yellow-600" />;
     default:

@@ -10,7 +10,15 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 const importCsvValidator = z.object({
-  table: z.enum(["customer", "supplier"]),
+  table: z.enum([
+    "consumable",
+    "customer",
+    "fixture",
+    "material",
+    "part",
+    "supplier",
+    "tool",
+  ]),
   filePath: z.string(),
   columnMappings: z.record(z.string()),
   enumMappings: z.record(z.record(z.string())).optional(),

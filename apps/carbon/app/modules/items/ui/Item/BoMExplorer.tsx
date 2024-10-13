@@ -103,7 +103,7 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
           <div
             key={node.id}
             className={cn(
-              "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2",
+              "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
               state.selected
                 ? "bg-muted hover:bg-muted/90"
                 : "bg-transparent hover:bg-muted/90"
@@ -150,9 +150,9 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
               >
                 {node.hasChildren ? (
                   state.expanded ? (
-                    <LuChevronDown className="h-4 w-4 text-gray-400" />
+                    <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
                   ) : (
-                    <LuChevronUp className="h-4 w-4 text-gray-400" />
+                    <LuChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
                   )
                 ) : (
                   <div className="h-8 w-4" />
@@ -198,9 +198,7 @@ export default BoMExplorer;
 function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
     <div className="flex flex-col items-start gap-0">
-      <span className="text-sm font-mono line-clamp-1">
-        {node.data.itemReadableId}
-      </span>
+      <span className="text-sm line-clamp-1">{node.data.itemReadableId}</span>
     </div>
   );
 }

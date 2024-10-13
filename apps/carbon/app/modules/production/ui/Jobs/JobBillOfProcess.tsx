@@ -1353,7 +1353,7 @@ const ProductionEventActivity = ({ item }: ProductionEventActivityProps) => {
             type={item.type}
             className={cn(
               item.type === "Labor"
-                ? "text-green-500"
+                ? "text-emerald-500"
                 : item.type === "Machine"
                 ? "text-blue-500"
                 : "text-yellow-500"
