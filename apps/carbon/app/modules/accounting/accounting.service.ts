@@ -84,13 +84,6 @@ export async function deleteAccountSubcategory(
     .eq("id", accountSubcategoryId);
 }
 
-export async function deleteCurrency(
-  client: SupabaseClient<Database>,
-  currencyId: string
-) {
-  return client.from("currency").update({ active: false }).eq("id", currencyId);
-}
-
 export async function deletePaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
