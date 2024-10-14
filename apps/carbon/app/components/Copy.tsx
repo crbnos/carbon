@@ -25,7 +25,11 @@ const Copy = ({ text, className }: { text: string; className?: string }) => {
           variant="secondary"
           aria-label="Copy"
           size="sm"
-          className={cn("p-1", isCopied && "text-emerald-500", className)}
+          className={cn(
+            "p-1",
+            isCopied && "text-emerald-500 hover:text-emerald-500",
+            className
+          )}
           onClick={handleCopy}
         >
           {isCopied ? (
