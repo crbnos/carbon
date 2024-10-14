@@ -52,7 +52,7 @@ export const FileIcon = ({ type, className }: FileIconProps) => {
     case "Spreadsheet":
       return (
         <BsFileExcelFill
-          className={cn(documentIconBaseClase, "text-green-700", className)}
+          className={cn(documentIconBaseClase, "text-emerald-700", className)}
         />
       );
     case "Presentation":
@@ -114,7 +114,9 @@ export const MethodIcon = ({
     case "Buy":
       return <LuShoppingCart className={cn("text-blue-500", className)} />;
     case "Make":
-      return <RxCodesandboxLogo className={cn("text-green-500", className)} />;
+      return (
+        <RxCodesandboxLogo className={cn("text-emerald-500", className)} />
+      );
     case "Pick":
       return <FaCodePullRequest className={cn("text-yellow-500", className)} />;
   }

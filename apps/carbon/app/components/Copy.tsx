@@ -1,9 +1,15 @@
-import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
+import {
+  Button,
+  cn,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@carbon/react";
 import { useState } from "react";
 import { LuCheck, LuCopy } from "react-icons/lu";
 import { copyToClipboard } from "~/utils/string";
 
-const Copy = ({ text }: { text: string }) => {
+const Copy = ({ text, className }: { text: string; className?: string }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
@@ -19,7 +25,11 @@ const Copy = ({ text }: { text: string }) => {
           variant="secondary"
           aria-label="Copy"
           size="sm"
-          className="p-1"
+          className={cn(
+            "p-1",
+            isCopied && "text-emerald-500 hover:text-emerald-500",
+            className
+          )}
           onClick={handleCopy}
         >
           {isCopied ? (

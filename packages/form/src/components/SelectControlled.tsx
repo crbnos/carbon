@@ -33,7 +33,8 @@ const SelectControlled = ({
   );
 
   useEffect(() => {
-    setControlValue(props.value ?? "");
+    if (props.value !== null && props.value !== undefined)
+      setControlValue(props.value);
   }, [props.value, setControlValue]);
 
   const onChange = (value: string) => {

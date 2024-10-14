@@ -20,7 +20,7 @@ import { useState } from "react";
 import type { z } from "zod";
 import {
   Account,
-  ComboboxControlled,
+  Combobox,
   ConversionFactor,
   CustomFormFields,
   Hidden,
@@ -390,7 +390,7 @@ const PurchaseOrderLineForm = ({
                     "Consumable",
                     "Fixed Asset",
                   ].includes(type) && (
-                    <ComboboxControlled
+                    <Combobox
                       name="locationId"
                       label="Location"
                       options={locationOptions}

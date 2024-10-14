@@ -53,7 +53,7 @@ const PartsTable = memo(({ data, count }: PartsTableProps) => {
         accessorKey: "id",
         header: "Part ID",
         cell: ({ row }) => (
-          <HStack className="py-1">
+          <HStack className="py-1 max-w-[200px] truncate">
             <ItemThumbnail
               size="sm"
               thumbnailPath={row.original.thumbnailPath}
@@ -68,12 +68,20 @@ const PartsTable = memo(({ data, count }: PartsTableProps) => {
       {
         accessorKey: "name",
         header: "Short Description",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <div className="max-w-[320px] truncate">
+            {item.getValue<string>()}
+          </div>
+        ),
       },
       {
         accessorKey: "description",
         header: "Description",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <div className="max-w-[320px] truncate">
+            {item.getValue<string>()}
+          </div>
+        ),
       },
       {
         accessorKey: "itemTrackingType",
@@ -254,6 +262,12 @@ const PartsTable = memo(({ data, count }: PartsTableProps) => {
           updatedBy: false,
           updatedAt: false,
         }}
+        importCSV={[
+          {
+            table: "part" as const,
+            label: "Parts",
+          },
+        ]}
         primaryAction={
           permissions.can("create", "parts") && (
             <New label="Part" to={path.to.newPart} />

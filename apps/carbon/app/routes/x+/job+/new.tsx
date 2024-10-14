@@ -24,8 +24,6 @@ export const handle: Handle = {
   module: "production",
 };
 
-export const config = { runtime: "nodejs" };
-
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await requirePermissions(request, {

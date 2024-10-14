@@ -30,7 +30,7 @@ const Progress = forwardRef<
     >
       <ProgressPrimitive.Indicator
         className={cn(
-          "h-full w-full flex-1 bg-green-500 transition-all",
+          "h-full w-full flex-1 bg-emerald-500 transition-all",
           indicatorClassName
         )}
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}

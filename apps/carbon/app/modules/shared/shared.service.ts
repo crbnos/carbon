@@ -48,7 +48,8 @@ export async function importCsv(
   args: {
     table: string;
     filePath: string;
-    mappings: Record<string, string>;
+    columnMappings: Record<string, string>;
+    enumMappings?: Record<string, string[]>;
     companyId: string;
     userId: string;
   }

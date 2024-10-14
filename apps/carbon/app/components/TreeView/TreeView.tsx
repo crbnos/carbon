@@ -78,7 +78,7 @@ export function TreeView<TData>({
         }
       }}
       className={cn(
-        "w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-charcoal-600 focus-within:outline-none",
+        "w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 focus-within:outline-none",
         parentClassName
       )}
       layoutScroll
@@ -629,7 +629,7 @@ export function LevelLine({
   return (
     <div
       className={cn(
-        "h-8 w-2 border-r border-border",
+        "h-8 w-3 border-r border-border",
         isError && "border-destructive",
         isSelected && "border-foreground/60"
       )}

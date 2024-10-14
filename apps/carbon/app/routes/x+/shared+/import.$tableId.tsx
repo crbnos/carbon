@@ -22,6 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const schema = importSchemas[table].extend({
     filePath: z.string().min(1, { message: "Path is required" }),
+    enumMappings: z.string().optional(),
   });
 
   const validation = await validator(schema).validate(await request.formData());
@@ -33,13 +34,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  const { filePath, ...mappings } = validation.data;
+  const { filePath, enumMappings, ...columnMappings } = validation.data;
 
   const serviceRole = getCarbonServiceRole();
   const importResult = await importCsv(serviceRole, {
     table,
     filePath: filePath as string,
-    mappings,
+    columnMappings,
+    enumMappings: enumMappings ? JSON.parse(enumMappings as string) : undefined,
     companyId,
     userId,
   });

@@ -6,11 +6,13 @@ import {
   FormHelperText,
   FormLabel,
 } from "@carbon/react";
+import { useEffect } from "react";
 import { useControlField, useField } from "../hooks";
 
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   name: string;
   label?: string;
+  isLoading?: boolean;
   isOptional?: boolean;
   helperText?: string;
   onChange?: (newValue: { value: string; label: string } | null) => void;
@@ -19,16 +21,21 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
 const Combobox = ({
   name,
   label,
+  isLoading = false,
   isOptional = false,
   helperText,
   ...props
 }: ComboboxProps) => {
   const { getInputProps, error } = useField(name);
   const [value, setValue] = useControlField<string | undefined>(name);
+  useEffect(() => {
+    if (props.value !== null && props.value !== undefined)
+      setValue(props.value);
+  }, [props.value, setValue]);
 
   const onChange = (value: string) => {
     if (value) {
-      props?.onChange?.(props.options.find((o) => o.value === value) ?? null);
+      props?.onChange?.(props?.options.find((o) => o.value === value) ?? null);
     } else {
       props?.onChange?.(null);
     }
@@ -58,6 +65,7 @@ const Combobox = ({
           onChange(newValue ?? "");
         }}
         isClearable={isOptional && !props.isReadOnly}
+        isLoading={isLoading}
         className="w-full"
       />
 

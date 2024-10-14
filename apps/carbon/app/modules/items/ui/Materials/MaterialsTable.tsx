@@ -52,7 +52,7 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
         accessorKey: "id",
         header: "Material ID",
         cell: ({ row }) => (
-          <HStack className="py-1">
+          <HStack className="py-1 max-w-[200px] truncate">
             <Hyperlink to={path.to.materialDetails(row.original.itemId!)}>
               {row.original.id}
             </Hyperlink>
@@ -62,12 +62,20 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
       {
         accessorKey: "name",
         header: "Short Description",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <div className="max-w-[320px] truncate">
+            {item.getValue<string>()}
+          </div>
+        ),
       },
       {
         accessorKey: "description",
         header: "Description",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <div className="max-w-[320px] truncate">
+            {item.getValue<string>()}
+          </div>
+        ),
       },
       {
         accessorKey: "materialSubstance",
@@ -280,6 +288,12 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
           updatedBy: false,
           updatedAt: false,
         }}
+        importCSV={[
+          {
+            table: "material" as const,
+            label: "Materials",
+          },
+        ]}
         primaryAction={
           permissions.can("create", "parts") && (
             <New label="Material" to={path.to.newMaterial} />

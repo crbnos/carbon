@@ -225,7 +225,7 @@ const AbilityChart = ({
                   onTouchStart={dragStart}
                   onTouchMove={dragMove}
                   onTouchEnd={dragEnd}
-                  className="fill-green-400 stroke-green-600"
+                  className="fill-emerald-400 stroke-emerald-600"
                 />
               )}
             </Drag>

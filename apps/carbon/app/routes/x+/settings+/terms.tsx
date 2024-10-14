@@ -121,7 +121,7 @@ export default function Terms() {
             {purchasingTermsStatus === "draft" ? (
               <Badge variant="secondary">Draft</Badge>
             ) : (
-              <LuCheckCircle className="w-4 h-4 text-green-500" />
+              <LuCheckCircle className="w-4 h-4 text-emerald-500" />
             )}
           </CardAction>
         </HStack>
@@ -154,7 +154,7 @@ export default function Terms() {
             {salesTermsStatus === "draft" ? (
               <Badge variant="secondary">Draft</Badge>
             ) : (
-              <LuCheckCircle className="w-4 h-4 text-green-500" />
+              <LuCheckCircle className="w-4 h-4 text-emerald-500" />
             )}
           </CardAction>
         </HStack>

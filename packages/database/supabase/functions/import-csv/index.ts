@@ -1,6 +1,7 @@
 import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import z from "https://deno.land/x/zod@v3.21.4/index.ts";
+import { sql } from "https://esm.sh/kysely@0.26.3";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
@@ -10,9 +11,18 @@ const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 const importCsvValidator = z.object({
-  table: z.enum(["customer", "supplier"]),
+  table: z.enum([
+    "consumable",
+    "customer",
+    "fixture",
+    "material",
+    "part",
+    "supplier",
+    "tool",
+  ]),
   filePath: z.string(),
-  mappings: z.record(z.string()),
+  columnMappings: z.record(z.string()),
+  enumMappings: z.record(z.record(z.string())).optional(),
   companyId: z.string(),
   userId: z.string(),
 });
@@ -26,14 +36,21 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    const { table, filePath, mappings, companyId, userId } =
-      importCsvValidator.parse(payload);
+    const {
+      table,
+      filePath,
+      columnMappings,
+      enumMappings = {},
+      companyId,
+      userId,
+    } = importCsvValidator.parse(payload);
 
     console.log({
       function: "import-csv",
       table,
       filePath,
-      mappings,
+      columnMappings,
+      enumMappings,
       companyId,
       userId,
     });
@@ -51,15 +68,42 @@ serve(async (req: Request) => {
       string
     >[];
 
-    const mappedRecords = parsedCsv.map((row) => {
+    let mappedRecords = parsedCsv.map((row) => {
       const record: Record<string, string> = {};
-      for (const [key, value] of Object.entries(mappings)) {
-        if (row[value]) {
+      for (const [key, value] of Object.entries(columnMappings)) {
+        if (key in enumMappings) {
+          const enumMapping = enumMappings[key];
+          const csvValue = row[value];
+          if (csvValue in enumMapping) {
+            record[key] = enumMapping[csvValue];
+          } else {
+            record[key] = enumMapping["Default"];
+          }
+        } else if (row[value]) {
           record[key] = row[value];
         }
       }
       return record;
     });
+
+    // Determine which enum keys are missing from the first record
+    const missingEnumKeys = Object.keys(enumMappings).filter(
+      (key) => !(key in mappedRecords[0])
+    );
+
+    if (missingEnumKeys.length > 0) {
+      // Add default values for missing enum keys
+      mappedRecords = mappedRecords.map((record) => {
+        const processedRecord = { ...record };
+
+        // Add default values for missing enum keys
+        missingEnumKeys.forEach((key) => {
+          processedRecord[key] = enumMappings[key]["Default"];
+        });
+
+        return processedRecord;
+      });
+    }
 
     switch (table) {
       case "customer": {
@@ -226,8 +270,260 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "material":
+      case "consumable":
+      case "tool":
+      case "fixture":
+      case "part": {
+        const currentItems = await db
+          .selectFrom("item")
+          .where("companyId", "=", companyId)
+          .select(["id", "externalId"])
+          .execute();
+
+        const readableIds = new Set();
+
+        const externalIdMap = new Map(
+          currentItems.reduce((acc, item) => {
+            if (
+              item.externalId &&
+              typeof item.externalId === "object" &&
+              EXTERNAL_ID_KEY in item.externalId
+            ) {
+              acc.set(item.externalId[EXTERNAL_ID_KEY] as string, {
+                id: item.id!,
+                externalId: item.externalId as Record<string, string>,
+              });
+            }
+            return acc;
+          }, new Map<string, { id: string; externalId: Record<string, string> }>())
+        );
+
+        await db.transaction().execute(async (trx) => {
+          const itemInserts: Database["public"]["Tables"]["item"]["Insert"][] =
+            [];
+          const itemUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["item"]["Update"];
+          }[] = [];
+          const materialPartialInserts: Record<
+            string,
+            Omit<Database["public"]["Tables"]["material"]["Insert"], "itemId">
+          > = {};
+
+          const materialUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["material"]["Update"];
+          }[] = [];
+
+          const itemValidator = z.object({
+            id: z.string(),
+            readableId: z.string(),
+            name: z.string(),
+            description: z.string().optional(),
+            active: z.string().optional(),
+            unitOfMeasureCode: z.string().optional(),
+            replenishmentSystem: z
+              .enum(["Buy", "Make", "Buy and Make"])
+              .optional(),
+            defaultMethodType: z.enum(["Buy", "Make", "Pick"]).optional(),
+            itemTrackingType: z.enum(["Inventory", "Non-Inventory"]),
+          });
+
+          const materialValidator = itemValidator.extend({
+            materialSubstanceId: z.string(),
+            materialFormId: z.string(),
+            finish: z.string().optional(),
+            dimensions: z.string().optional(),
+            grade: z.string().optional(),
+          });
+
+          for (const record of mappedRecords) {
+            const item = itemValidator.safeParse(record);
+
+            if (!item.success) {
+              console.error(item.error.message);
+              continue;
+            }
+
+            const { id, ...rest } = item.data;
+
+            if (
+              externalIdMap.has(id) &&
+              !readableIds.has(item.data.readableId)
+            ) {
+              const existingItem = externalIdMap.get(id)!;
+
+              readableIds.add(item.data.readableId);
+              itemUpdates.push({
+                id: existingItem.id,
+                data: {
+                  ...rest,
+                  active: rest.active?.toLowerCase() !== "false" ?? true,
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: userId,
+                  externalId: {
+                    ...existingItem.externalId,
+                  },
+                },
+              });
+
+              if (table === "material") {
+                const material = materialValidator.safeParse(record);
+                if (material.success) {
+                  materialUpdates.push({
+                    id: existingItem.id,
+                    data: {
+                      materialSubstanceId: material.data.materialSubstanceId,
+                      materialFormId: material.data.materialFormId,
+                      dimensions: material.data.dimensions,
+                      grade: material.data.grade,
+                      finish: material.data.finish,
+                      companyId,
+                      updatedAt: new Date().toISOString(),
+                      updatedBy: userId,
+                    },
+                  });
+                }
+              }
+            } else if (!readableIds.has(rest.readableId)) {
+              readableIds.add(rest.readableId);
+              const newItem = {
+                ...rest,
+                replenishmentSystem: rest.replenishmentSystem ?? "Buy",
+                active: rest.active?.toLowerCase() !== "false" ?? true,
+                type: capitalize(table) as
+                  | "Part"
+                  | "Service"
+                  | "Material"
+                  | "Tool"
+                  | "Fixture"
+                  | "Consumable",
+                companyId,
+                createdAt: new Date().toISOString(),
+                createdBy: userId,
+                externalId: {
+                  [EXTERNAL_ID_KEY]: id,
+                },
+              };
+              itemInserts.push(newItem);
+
+              if (table === "material") {
+                const material = materialValidator.safeParse(record);
+                if (!material.success) {
+                  console.error(material.error.message);
+                  continue;
+                }
+                if (material.success) {
+                  materialPartialInserts[rest.readableId] = {
+                    ...material.data,
+                    id: rest.readableId,
+                    companyId,
+                    createdAt: new Date().toISOString(),
+                    createdBy: userId,
+                    externalId: {
+                      [EXTERNAL_ID_KEY]: id,
+                    },
+                  };
+                }
+              }
+            }
+          }
+
+          if (itemInserts.length > 0) {
+            const insertedItems = await trx
+              .insertInto("item")
+              .values(itemInserts)
+              .onConflict((oc) =>
+                oc.constraint("item_unique").doUpdateSet({
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: userId,
+                  name: sql`EXCLUDED."name"`,
+                  description: sql`EXCLUDED."description"`,
+                  active: sql`EXCLUDED."active"`,
+                  unitOfMeasureCode: sql`EXCLUDED."unitOfMeasureCode"`,
+                  replenishmentSystem: sql`EXCLUDED."replenishmentSystem"`,
+                  defaultMethodType: sql`EXCLUDED."defaultMethodType"`,
+                  itemTrackingType: sql`EXCLUDED."itemTrackingType"`,
+                  externalId: sql`EXCLUDED."externalId"`,
+                })
+              )
+              .returning(["id", "externalId", "readableId"])
+              .execute();
+
+            if (["part", "fixture", "tool", "consumable"].includes(table)) {
+              const specificInserts: Database["public"]["Tables"]["part"]["Insert"][] =
+                insertedItems.map((item) => ({
+                  id: item.readableId,
+                  itemId: item.id!,
+                  approved: true,
+                  externalId: item.externalId,
+                  companyId,
+                  createdAt: new Date().toISOString(),
+                  createdBy: userId,
+                }));
+
+              await trx.insertInto(table).values(specificInserts).execute();
+            }
+
+            if (
+              table === "material" &&
+              Object.keys(materialPartialInserts).length > 0
+            ) {
+              const materialInserts = insertedItems.reduce<
+                Database["public"]["Tables"]["material"]["Insert"][]
+              >((acc, item) => {
+                const materialData = materialPartialInserts[item.readableId];
+                if (materialData) {
+                  acc.push({
+                    id: item.readableId,
+                    itemId: item.id!,
+                    materialSubstanceId: materialData.materialSubstanceId,
+                    materialFormId: materialData.materialFormId,
+                    dimensions: materialData.dimensions,
+                    grade: materialData.grade,
+                    finish: materialData.finish,
+                    externalId: item.externalId,
+                    companyId,
+                    createdAt: new Date().toISOString(),
+                    createdBy: userId,
+                  });
+                }
+                return acc;
+              }, []);
+
+              await trx
+                .insertInto("material")
+                .values(materialInserts)
+                .execute();
+            }
+          }
+
+          if (itemUpdates.length > 0) {
+            for (const update of itemUpdates) {
+              await trx
+                .updateTable("item")
+                .set(update.data)
+                .where("id", "=", update.id)
+                .execute();
+            }
+
+            if (materialUpdates.length > 0) {
+              for (const update of materialUpdates) {
+                await trx
+                  .updateTable("material")
+                  .set(update.data)
+                  .where("itemId", "=", update.id)
+                  .execute();
+              }
+            }
+          }
+        });
+
+        break;
+      }
       default: {
-        throw new Error("Invalid type");
+        throw new Error(`Invalid table: ${table}`);
       }
     }
 
@@ -248,3 +544,7 @@ serve(async (req: Request) => {
     });
   }
 });
+
+function capitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}

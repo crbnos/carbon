@@ -30,7 +30,7 @@ const DocumentIcon = ({ type, className }: DocumentIconProps) => {
     case "Spreadsheet":
       return (
         <BsFileExcelFill
-          className={cn(documentIconBaseClase, "text-green-700", className)}
+          className={cn(documentIconBaseClase, "text-emerald-700", className)}
         />
       );
     case "Presentation":
