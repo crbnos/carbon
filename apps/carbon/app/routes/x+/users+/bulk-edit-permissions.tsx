@@ -13,6 +13,8 @@ import {
 } from "~/modules/users";
 import { getParams, path } from "~/utils/path";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId } = await requirePermissions(request, {

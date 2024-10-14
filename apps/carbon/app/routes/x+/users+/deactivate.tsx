@@ -9,6 +9,8 @@ import { deactivateUsersValidator } from "~/modules/users";
 import { deactivateUser } from "~/modules/users/users.server";
 import type { userAdminTask } from "~/trigger/user-admin";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     delete: "users",
