@@ -13,12 +13,12 @@ import { Input } from "~/components/Form";
 
 interface ExchangeRateProps extends React.ComponentProps<typeof Input> {
   onRefresh?: () => void;
-  exchangeRateDate: string | undefined;
+  exchangeRateUpdatedAt: string | undefined;
 }
 
 const ExchangeRate: React.FC<ExchangeRateProps> = ({
   onRefresh,
-  exchangeRateDate,
+  exchangeRateUpdatedAt,
   ...props
 }) => {
   const { locale } = useLocale();
@@ -32,8 +32,8 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
     [locale]
   );
 
-  const formattedDate = exchangeRateDate
-    ? formatter.format(new Date(exchangeRateDate))
+  const formattedDate = exchangeRateUpdatedAt
+    ? formatter.format(new Date(exchangeRateUpdatedAt))
     : "";
 
   return (
@@ -43,7 +43,7 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
           label={
             <HStack spacing={1}>
               <span>Exchange Rate</span>
-              {exchangeRateDate && onRefresh && (
+              {exchangeRateUpdatedAt && onRefresh && (
                 <Tooltip>
                   <TooltipTrigger tabIndex={-1}>
                     <LuInfo className="w-4 h-4" />

@@ -154,7 +154,12 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 name="currencyCode"
                 label="Currency"
                 value={customer.currencyCode}
-                onChange={(newValue) => {
+                onChange={(
+                  newValue: {
+                    value: string | undefined;
+                    label: string;
+                  } | null
+                ) => {
                   if (newValue?.value) {
                     setCustomer((prevCustomer) => ({
                       ...prevCustomer,
@@ -166,7 +171,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
               {isEditing && (
                 <ExchangeRate
                   name="exchangeRate"
-                  exchangeRateDate={initialValues.exchangeRateDate}
+                  exchangeRateUpdatedAt={initialValues.exchangeRateUpdatedAt}
                   isReadOnly
                   onRefresh={() => {
                     console.log("refresh");

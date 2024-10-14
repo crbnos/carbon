@@ -1,7 +1,7 @@
 -- Quote currency
 ALTER TABLE "quote" ADD COLUMN "currencyCode" TEXT;
 ALTER TABLE "quote" ADD COLUMN "exchangeRate" NUMERIC(10,4);
-ALTER TABLE "quote" ADD COLUMN "exchangeRateDate" DATE;
+ALTER TABLE "quote" ADD COLUMN "exchangeRateUpdatedAt" TIMESTAMP WITH TIME ZONE;
 ALTER TABLE "quote" ADD CONSTRAINT "quote_currencyCode_fkey" 
   FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") 
   ON DELETE SET NULL ON UPDATE CASCADE;
@@ -33,7 +33,7 @@ CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
 -- Sales Order currency
 ALTER TABLE "salesOrder" ALTER COLUMN "currencyCode" DROP DEFAULT;
 ALTER TABLE "salesOrder" ADD COLUMN "exchangeRate" NUMERIC(10,4);
-ALTER TABLE "salesOrder" ADD COLUMN "exchangeRateDate" DATE;
+ALTER TABLE "salesOrder" ADD COLUMN "exchangeRateUpdatedAt" TIMESTAMP WITH TIME ZONE;
 ALTER TABLE "salesOrder" DROP CONSTRAINT "salesOrder_currencyCode_fkey";
 ALTER TABLE "salesOrder" ADD CONSTRAINT "salesOrder_currencyCode_fkey" 
   FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") 
@@ -73,7 +73,7 @@ CREATE OR REPLACE VIEW "salesOrders" WITH(SECURITY_INVOKER=true) AS
 -- Purchase Order currency
 ALTER TABLE "purchaseOrder" ADD COLUMN "currencyCode" TEXT;
 ALTER TABLE "purchaseOrder" ADD COLUMN "exchangeRate" NUMERIC(10,4);
-ALTER TABLE "purchaseOrder" ADD COLUMN "exchangeRateDate" DATE;
+ALTER TABLE "purchaseOrder" ADD COLUMN "exchangeRateUpdatedAt" TIMESTAMP WITH TIME ZONE;
 ALTER TABLE "purchaseOrder" ADD CONSTRAINT "purchaseOrder_currencyCode_fkey" 
   FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") 
   ON DELETE SET NULL ON UPDATE CASCADE;

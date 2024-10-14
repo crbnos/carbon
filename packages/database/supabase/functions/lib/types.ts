@@ -12688,7 +12688,7 @@ export type Database = {
           currencyCode: string | null
           customFields: Json | null
           exchangeRate: number | null
-          exchangeRateDate: string | null
+          exchangeRateUpdatedAt: string | null
           id: string
           notes: string | null
           orderDate: string
@@ -12713,7 +12713,7 @@ export type Database = {
           currencyCode?: string | null
           customFields?: Json | null
           exchangeRate?: number | null
-          exchangeRateDate?: string | null
+          exchangeRateUpdatedAt?: string | null
           id?: string
           notes?: string | null
           orderDate?: string
@@ -12738,7 +12738,7 @@ export type Database = {
           currencyCode?: string | null
           customFields?: Json | null
           exchangeRate?: number | null
-          exchangeRateDate?: string | null
+          exchangeRateUpdatedAt?: string | null
           id?: string
           notes?: string | null
           orderDate?: string
@@ -13942,7 +13942,7 @@ export type Database = {
           dueDate: string | null
           estimatorId: string | null
           exchangeRate: number | null
-          exchangeRateDate: string | null
+          exchangeRateUpdatedAt: string | null
           expirationDate: string | null
           externalNotes: Json | null
           id: string
@@ -13969,7 +13969,7 @@ export type Database = {
           dueDate?: string | null
           estimatorId?: string | null
           exchangeRate?: number | null
-          exchangeRateDate?: string | null
+          exchangeRateUpdatedAt?: string | null
           expirationDate?: string | null
           externalNotes?: Json | null
           id?: string
@@ -13996,7 +13996,7 @@ export type Database = {
           dueDate?: string | null
           estimatorId?: string | null
           exchangeRate?: number | null
-          exchangeRateDate?: string | null
+          exchangeRateUpdatedAt?: string | null
           expirationDate?: string | null
           externalNotes?: Json | null
           id?: string
@@ -16209,7 +16209,7 @@ export type Database = {
           customerReference: string | null
           customFields: Json | null
           exchangeRate: number | null
-          exchangeRateDate: string | null
+          exchangeRateUpdatedAt: string | null
           id: string
           locationId: string | null
           notes: string | null
@@ -16234,7 +16234,7 @@ export type Database = {
           customerReference?: string | null
           customFields?: Json | null
           exchangeRate?: number | null
-          exchangeRateDate?: string | null
+          exchangeRateUpdatedAt?: string | null
           id?: string
           locationId?: string | null
           notes?: string | null
@@ -16259,7 +16259,7 @@ export type Database = {
           customerReference?: string | null
           customFields?: Json | null
           exchangeRate?: number | null
-          exchangeRateDate?: string | null
+          exchangeRateUpdatedAt?: string | null
           id?: string
           locationId?: string | null
           notes?: string | null
@@ -25527,7 +25527,7 @@ export type Database = {
           customFields: Json | null
           dropShipment: boolean | null
           exchangeRate: number | null
-          exchangeRateDate: string | null
+          exchangeRateUpdatedAt: string | null
           favorite: boolean | null
           id: string | null
           locationId: string | null
@@ -26501,7 +26501,7 @@ export type Database = {
           dueDate: string | null
           estimatorId: string | null
           exchangeRate: number | null
-          exchangeRateDate: string | null
+          exchangeRateUpdatedAt: string | null
           expirationDate: string | null
           externalNotes: Json | null
           favorite: boolean | null
@@ -27295,7 +27295,7 @@ export type Database = {
           customFields: Json | null
           dropShipment: boolean | null
           exchangeRate: number | null
-          exchangeRateDate: string | null
+          exchangeRateUpdatedAt: string | null
           favorite: boolean | null
           id: string | null
           locationId: string | null
