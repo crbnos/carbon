@@ -104,7 +104,7 @@ export default function QuoteDetailsRoute() {
     status: quoteData?.quote?.status ?? "Draft",
     currencyCode: quoteData?.quote?.currencyCode ?? undefined,
     exchangeRate: quoteData?.quote?.exchangeRate ?? undefined,
-    exchangeRateDate: quoteData?.quote?.exchangeRateDate ?? "",
+    exchangeRateUpdatedAt: quoteData?.quote?.exchangeRateUpdatedAt ?? "",
   };
 
   const shipmentInitialValues = {

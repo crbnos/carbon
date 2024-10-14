@@ -2440,7 +2440,7 @@ export default {
             $ref: "#/parameters/rowFilter.quotes.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.quotes.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.quotes.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/rowFilter.quotes.locationName",
@@ -8509,7 +8509,7 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/select",
@@ -8637,7 +8637,7 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -8719,7 +8719,7 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/body.purchaseOrder",
@@ -14797,7 +14797,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrders.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.salesOrders.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.shippingMethodName",
@@ -18259,7 +18259,7 @@ export default {
             $ref: "#/parameters/rowFilter.quote.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.quote.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/select",
@@ -18393,7 +18393,7 @@ export default {
             $ref: "#/parameters/rowFilter.quote.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.quote.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -18481,7 +18481,7 @@ export default {
             $ref: "#/parameters/rowFilter.quote.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.quote.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/body.quote",
@@ -26323,7 +26323,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/select",
@@ -26451,7 +26451,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -26533,7 +26533,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.salesOrder.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -29887,7 +29887,7 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrders.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrders.exchangeRateDate",
+            $ref: "#/parameters/rowFilter.purchaseOrders.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.shippingMethodName",
@@ -37141,8 +37141,8 @@ export default {
           format: "numeric",
           type: "number",
         },
-        exchangeRateDate: {
-          format: "date",
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
           type: "string",
         },
         locationName: {
@@ -40208,8 +40208,8 @@ export default {
           format: "numeric",
           type: "number",
         },
-        exchangeRateDate: {
-          format: "date",
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
           type: "string",
         },
       },
@@ -43087,8 +43087,8 @@ export default {
           format: "numeric",
           type: "number",
         },
-        exchangeRateDate: {
-          format: "date",
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
           type: "string",
         },
         shippingMethodName: {
@@ -44690,8 +44690,8 @@ export default {
           format: "numeric",
           type: "number",
         },
-        exchangeRateDate: {
-          format: "date",
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
           type: "string",
         },
       },
@@ -48328,8 +48328,8 @@ export default {
           format: "numeric",
           type: "number",
         },
-        exchangeRateDate: {
-          format: "date",
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
           type: "string",
         },
       },
@@ -49907,8 +49907,8 @@ export default {
           format: "numeric",
           type: "number",
         },
-        exchangeRateDate: {
-          format: "date",
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
           type: "string",
         },
         shippingMethodName: {
@@ -53145,10 +53145,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quotes.exchangeRateDate": {
-      name: "exchangeRateDate",
+    "rowFilter.quotes.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
       required: false,
-      format: "date",
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -57008,10 +57008,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrder.exchangeRateDate": {
-      name: "exchangeRateDate",
+    "rowFilter.purchaseOrder.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
       required: false,
-      format: "date",
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -60879,10 +60879,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrders.exchangeRateDate": {
-      name: "exchangeRateDate",
+    "rowFilter.salesOrders.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
       required: false,
-      format: "date",
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -62898,10 +62898,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quote.exchangeRateDate": {
-      name: "exchangeRateDate",
+    "rowFilter.quote.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
       required: false,
-      format: "date",
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -67688,10 +67688,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrder.exchangeRateDate": {
-      name: "exchangeRateDate",
+    "rowFilter.salesOrder.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
       required: false,
-      format: "date",
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -69804,10 +69804,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrders.exchangeRateDate": {
-      name: "exchangeRateDate",
+    "rowFilter.purchaseOrders.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
       required: false,
-      format: "date",
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },

@@ -79,7 +79,7 @@ export default function QuoteNewRoute() {
     status: "Draft" as QuotationStatusType,
     currencyCode: undefined,
     exchangeRate: undefined,
-    exchangeRateDate: "",
+    exchangeRateUpdatedAt: "",
   };
 
   return (
