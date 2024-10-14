@@ -1841,8 +1841,10 @@ export async function upsertService(
     id: service.id,
     name: service.name,
     description: service.description,
-    replenishmentSystem: service.serviceType === "External" ? "Buy" : "Make",
-    defaultMethodType: service.serviceType === "External" ? "Buy" : "Make",
+    replenishmentSystem:
+      service.serviceType === "External" ? "Buy" : ("Make" as "Buy"),
+    defaultMethodType:
+      service.serviceType === "External" ? "Buy" : ("Make" as "Buy"),
     itemTrackingType: service.itemTrackingType,
     unitOfMeasureCode: null,
     active: service.active,

@@ -1,6 +1,7 @@
 import {
   Badge,
   Checkbox,
+  HStack,
   MenuIcon,
   MenuItem,
   useDisclosure,
@@ -51,20 +52,30 @@ const ConsumablesTable = memo(
           accessorKey: "id",
           header: "Consumable ID",
           cell: ({ row }) => (
-            <Hyperlink to={path.to.consumableDetails(row.original.itemId!)}>
-              {row.original.id}
-            </Hyperlink>
+            <HStack className="py-1 max-w-[200px] truncate">
+              <Hyperlink to={path.to.consumableDetails(row.original.itemId!)}>
+                {row.original.id}
+              </Hyperlink>
+            </HStack>
           ),
         },
         {
           accessorKey: "name",
           header: "Short Description",
-          cell: (item) => item.getValue(),
+          cell: (item) => (
+            <div className="max-w-[320px] truncate">
+              {item.getValue<string>()}
+            </div>
+          ),
         },
         {
           accessorKey: "description",
           header: "Description",
-          cell: (item) => item.getValue(),
+          cell: (item) => (
+            <div className="max-w-[320px] truncate">
+              {item.getValue<string>()}
+            </div>
+          ),
         },
         {
           accessorKey: "itemTrackingType",
@@ -233,6 +244,12 @@ const ConsumablesTable = memo(
             updatedBy: false,
             updatedAt: false,
           }}
+          importCSV={[
+            {
+              table: "consumable",
+              label: "Consumables",
+            },
+          ]}
           primaryAction={
             permissions.can("create", "parts") && (
               <New label="Consumable" to={path.to.newConsumable} />

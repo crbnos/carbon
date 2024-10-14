@@ -15,7 +15,7 @@ import {
   useKeyboardShortcuts,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
 
 export type PaginationProps = {
@@ -88,6 +88,22 @@ export const PaginationButtons = ({
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const previousButtonRef = useRef<HTMLButtonElement>(null);
 
+  const scrollToTop = useCallback(() => {
+    document
+      .getElementById("table-container")
+      ?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handlePreviousPage = useCallback(() => {
+    previousPage();
+    scrollToTop();
+  }, [previousPage, scrollToTop]);
+
+  const handleNextPage = useCallback(() => {
+    nextPage();
+    scrollToTop();
+  }, [nextPage, scrollToTop]);
+
   useKeyboardShortcuts({
     ArrowRight: (event: KeyboardEvent) => {
       event.stopPropagation();
@@ -109,7 +125,7 @@ export const PaginationButtons = ({
                 aria-label="Previous"
                 icon={<BsChevronLeft />}
                 isDisabled={!canPreviousPage}
-                onClick={previousPage}
+                onClick={handlePreviousPage}
                 variant="secondary"
               />
             </TooltipTrigger>
@@ -123,7 +139,7 @@ export const PaginationButtons = ({
                 aria-label="Next"
                 icon={<BsChevronRight />}
                 isDisabled={!canNextPage}
-                onClick={nextPage}
+                onClick={handleNextPage}
                 variant="secondary"
               />
             </TooltipTrigger>
@@ -144,7 +160,7 @@ export const PaginationButtons = ({
                 ref={previousButtonRef}
                 variant="secondary"
                 isDisabled={!canPreviousPage}
-                onClick={previousPage}
+                onClick={handlePreviousPage}
                 leftIcon={<BsChevronLeft />}
               >
                 Previous
@@ -160,7 +176,7 @@ export const PaginationButtons = ({
                 ref={nextButtonRef}
                 variant="secondary"
                 isDisabled={!canNextPage}
-                onClick={nextPage}
+                onClick={handleNextPage}
                 rightIcon={<BsChevronRight />}
               >
                 Next

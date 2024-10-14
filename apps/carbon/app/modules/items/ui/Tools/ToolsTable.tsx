@@ -1,6 +1,7 @@
 import {
   Badge,
   Checkbox,
+  HStack,
   MenuIcon,
   MenuItem,
   useDisclosure,
@@ -50,20 +51,30 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
         accessorKey: "id",
         header: "Tool ID",
         cell: ({ row }) => (
-          <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
-            {row.original.id}
-          </Hyperlink>
+          <HStack className="py-1 max-w-[200px] truncate">
+            <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
+              {row.original.id}
+            </Hyperlink>
+          </HStack>
         ),
       },
       {
         accessorKey: "name",
         header: "Short Description",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <div className="max-w-[320px] truncate">
+            {item.getValue<string>()}
+          </div>
+        ),
       },
       {
         accessorKey: "description",
         header: "Description",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <div className="max-w-[320px] truncate">
+            {item.getValue<string>()}
+          </div>
+        ),
       },
       {
         accessorKey: "itemTrackingType",
@@ -229,6 +240,12 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
           updatedBy: false,
           updatedAt: false,
         }}
+        importCSV={[
+          {
+            table: "tool",
+            label: "Tools",
+          },
+        ]}
         primaryAction={
           permissions.can("create", "parts") && (
             <New label="Tool" to={path.to.newTool} />

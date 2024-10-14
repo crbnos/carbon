@@ -3124,6 +3124,9 @@ export default {
             $ref: "#/parameters/rowFilter.material.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.material.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -3228,6 +3231,9 @@ export default {
             $ref: "#/parameters/rowFilter.material.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.material.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -3284,6 +3290,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.externalId",
           },
           {
             $ref: "#/parameters/body.material",
@@ -5665,6 +5674,9 @@ export default {
             $ref: "#/parameters/rowFilter.item.modelUploadId",
           },
           {
+            $ref: "#/parameters/rowFilter.item.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -5775,6 +5787,9 @@ export default {
             $ref: "#/parameters/rowFilter.item.modelUploadId",
           },
           {
+            $ref: "#/parameters/rowFilter.item.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -5837,6 +5852,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.item.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.item.externalId",
           },
           {
             $ref: "#/parameters/body.item",
@@ -13996,6 +14014,9 @@ export default {
             $ref: "#/parameters/rowFilter.tool.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.tool.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -14085,6 +14106,9 @@ export default {
             $ref: "#/parameters/rowFilter.tool.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.tool.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -14126,6 +14150,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tool.externalId",
           },
           {
             $ref: "#/parameters/body.tool",
@@ -24316,6 +24343,9 @@ export default {
             $ref: "#/parameters/rowFilter.consumable.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.consumable.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -24405,6 +24435,9 @@ export default {
             $ref: "#/parameters/rowFilter.consumable.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.consumable.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -24446,6 +24479,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.consumable.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumable.externalId",
           },
           {
             $ref: "#/parameters/body.consumable",
@@ -27346,6 +27382,9 @@ export default {
             $ref: "#/parameters/rowFilter.part.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.part.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27441,6 +27480,9 @@ export default {
             $ref: "#/parameters/rowFilter.part.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.part.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27488,6 +27530,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.part.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.part.externalId",
           },
           {
             $ref: "#/parameters/body.part",
@@ -30304,6 +30349,9 @@ export default {
             $ref: "#/parameters/rowFilter.fixture.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.fixture.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -30396,6 +30444,9 @@ export default {
             $ref: "#/parameters/rowFilter.fixture.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.fixture.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -30440,6 +30491,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.fixture.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixture.externalId",
           },
           {
             $ref: "#/parameters/body.fixture",
@@ -37328,6 +37382,9 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -38675,6 +38732,9 @@ export default {
         modelUploadId: {
           format: "text",
           type: "string",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -42641,6 +42701,9 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -47278,6 +47341,9 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -48488,6 +48554,9 @@ export default {
           type: "string",
         },
         customFields: {
+          format: "jsonb",
+        },
+        externalId: {
           format: "jsonb",
         },
       },
@@ -50017,6 +50086,9 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -53340,6 +53412,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.material.externalId": {
+      name: "externalId",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.supplierPayment": {
       name: "supplierPayment",
       description: "supplierPayment",
@@ -55043,6 +55122,13 @@ export default {
       name: "modelUploadId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.item.externalId": {
+      name: "externalId",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -60227,6 +60313,13 @@ export default {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tool.externalId": {
+      name: "externalId",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -66318,6 +66411,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.consumable.externalId": {
+      name: "externalId",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.location": {
       name: "location",
       description: "location",
@@ -67838,6 +67938,13 @@ export default {
     },
     "rowFilter.part.customFields": {
       name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.part.externalId": {
+      name: "externalId",
       required: false,
       format: "jsonb",
       in: "query",
@@ -69910,6 +70017,13 @@ export default {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fixture.externalId": {
+      name: "externalId",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },

@@ -1,11 +1,14 @@
 "use client";
 
+import { useCarbon } from "@carbon/auth";
+import type { Database } from "@carbon/database";
 import { Combobox, useFormContext } from "@carbon/form";
 import {
   Button,
   ModalDescription,
   ModalHeader,
   ModalTitle,
+  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -13,16 +16,33 @@ import {
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { LuInfo, LuMoveRight } from "react-icons/lu";
 import { Submit } from "~/components/Form";
-import { useCurrencyFormatter } from "~/hooks";
+import { useCurrencyFormatter, useUser } from "~/hooks";
 import type { importSchemas } from "~/modules/shared";
 import { fieldMappings } from "~/modules/shared";
 import type { action } from "~/routes/api+/ai+/csv+/$table.columns";
+import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 import { useCsvContext } from "./useCsvContext";
+
+type EnumData =
+  | {
+      default: string;
+      description: string;
+      options: readonly string[];
+    }
+  | {
+      default: string;
+      description: string;
+      fetcher: (
+        client: SupabaseClient<Database>,
+        companyId: string
+      ) => Promise<PostgrestResponse<ListItem>>;
+    };
 
 export function FieldMapping({
   formId,
@@ -97,11 +117,7 @@ export function FieldMapping({
     string,
     {
       label: string;
-      enumData: {
-        default: string;
-        description: string;
-        options: readonly string[];
-      };
+      enumData: EnumData;
     }
   ][] = Object.entries(mappableFields).filter(
     ([_, { type }]) => type === "enum"
@@ -191,7 +207,7 @@ export function FieldMapping({
               <EnumMappingStep
                 key={name}
                 name={name}
-                options={enumData.options}
+                enumData={enumData}
                 mappedColumn={columnMappings[name]}
                 firstRows={firstRows}
                 mappings={enumMappings[name]}
@@ -329,14 +345,14 @@ function FieldRow({
 
 function EnumMappingStep({
   name,
-  options,
+  enumData,
   mappedColumn,
   firstRows,
   mappings,
   onEnumMappingChange,
 }: {
   name: string;
-  options: readonly string[];
+  enumData: EnumData;
   mappedColumn: string | undefined;
   firstRows: Record<string, string>[] | null;
   mappings: Record<string, string>;
@@ -346,6 +362,23 @@ function EnumMappingStep({
     value: string
   ) => void;
 }) {
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const [options, setOptions] = useState<{ label: string; value: string }[]>(
+    () => {
+      if ("options" in enumData) {
+        return (
+          enumData.options.map((option) => ({
+            label: option,
+            value: option,
+          })) || []
+        );
+      } else {
+        return [];
+      }
+    }
+  );
+
   const uniqueValues = Array.from(
     new Set(
       firstRows
@@ -353,6 +386,23 @@ function EnumMappingStep({
         .filter((value) => !!value)
     )
   );
+
+  const fetchOptions = useCallback(async () => {
+    if ("fetcher" in enumData) {
+      const { data, error } = await enumData.fetcher(carbon!, company.id);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        setOptions(data.map((item) => ({ label: item.name, value: item.id })));
+      }
+    }
+  }, [enumData, carbon, company.id]);
+
+  useEffect(() => {
+    if ("fetcher" in enumData && carbon) {
+      fetchOptions();
+    }
+  }, [enumData, carbon, company.id, fetchOptions]);
 
   return (
     <div>
@@ -362,31 +412,28 @@ function EnumMappingStep({
         </div>
         <div className="font-medium">Carbon Value</div>
 
-        {[...new Set([...uniqueValues, "Default"])].map((csvValue) => (
-          <Fragment key={csvValue}>
-            <div className="relative flex min-w-0 items-center gap-2">
-              <div>{csvValue}</div>
-              <div className="flex items-center justify-end">
-                <LuMoveRight className="text-muted-foreground" />
+        {[...new Set([...uniqueValues, "Default"])].map((csvValue) => {
+          return (
+            <Fragment key={csvValue}>
+              <div className="relative flex min-w-0 items-center gap-2">
+                <div>{csvValue}</div>
+                <div className="flex items-center justify-end">
+                  <LuMoveRight className="text-muted-foreground" />
+                </div>
               </div>
-            </div>
-            <Combobox
-              name={`${name}-${csvValue}`}
-              onChange={(value) => {
-                if (value?.value) {
-                  onEnumMappingChange(name, csvValue, value.value);
-                }
-              }}
-              value={mappings[csvValue]}
-              options={[
-                ...options.map((option) => ({
-                  value: option,
-                  label: option,
-                })),
-              ]}
-            />
-          </Fragment>
-        ))}
+              <Combobox
+                name={`${name}-${csvValue}`}
+                onChange={(value) => {
+                  if (value?.value) {
+                    onEnumMappingChange(name, csvValue, value.value);
+                  }
+                }}
+                value={mappings[csvValue]}
+                options={options}
+              />
+            </Fragment>
+          );
+        })}
       </div>
     </div>
   );

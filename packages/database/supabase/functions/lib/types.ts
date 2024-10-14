@@ -2086,6 +2086,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          externalId: Json | null
           id: string
           itemId: string | null
           updatedAt: string | null
@@ -2098,6 +2099,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          externalId?: Json | null
           id: string
           itemId?: string | null
           updatedAt?: string | null
@@ -2110,6 +2112,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           itemId?: string | null
           updatedAt?: string | null
@@ -5201,6 +5204,7 @@ export type Database = {
           createdBy: string
           customerId: string | null
           customFields: Json | null
+          externalId: Json | null
           id: string
           itemId: string | null
           updatedAt: string | null
@@ -5214,6 +5218,7 @@ export type Database = {
           createdBy: string
           customerId?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           id: string
           itemId?: string | null
           updatedAt?: string | null
@@ -5227,6 +5232,7 @@ export type Database = {
           createdBy?: string
           customerId?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           itemId?: string | null
           updatedAt?: string | null
@@ -5629,6 +5635,7 @@ export type Database = {
           createdBy: string
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
+          externalId: Json | null
           id: string
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId: string | null
@@ -5648,6 +5655,7 @@ export type Database = {
           createdBy: string
           defaultMethodType?: Database["public"]["Enums"]["methodType"] | null
           description?: string | null
+          externalId?: Json | null
           id?: string
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId?: string | null
@@ -5667,6 +5675,7 @@ export type Database = {
           createdBy?: string
           defaultMethodType?: Database["public"]["Enums"]["methodType"] | null
           description?: string | null
+          externalId?: Json | null
           id?: string
           itemTrackingType?: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId?: string | null
@@ -8413,6 +8422,7 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           dimensions: string | null
+          externalId: Json | null
           finish: string | null
           grade: string | null
           id: string
@@ -8430,6 +8440,7 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           dimensions?: string | null
+          externalId?: Json | null
           finish?: string | null
           grade?: string | null
           id: string
@@ -8447,6 +8458,7 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           dimensions?: string | null
+          externalId?: Json | null
           finish?: string | null
           grade?: string | null
           id?: string
@@ -10018,6 +10030,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          externalId: Json | null
           fromDate: string | null
           id: string
           itemId: string
@@ -10032,6 +10045,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          externalId?: Json | null
           fromDate?: string | null
           id: string
           itemId: string
@@ -10046,6 +10060,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          externalId?: Json | null
           fromDate?: string | null
           id?: string
           itemId?: string
@@ -20584,6 +20599,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          externalId: Json | null
           id: string
           itemId: string | null
           updatedAt: string | null
@@ -20596,6 +20612,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          externalId?: Json | null
           id: string
           itemId?: string | null
           updatedAt?: string | null
@@ -20608,6 +20625,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           itemId?: string | null
           updatedAt?: string | null

@@ -1,6 +1,7 @@
 import {
   Badge,
   Checkbox,
+  HStack,
   MenuIcon,
   MenuItem,
   useDisclosure,
@@ -54,20 +55,30 @@ const FixturesTable = memo(
           accessorKey: "id",
           header: "Fixture ID",
           cell: ({ row }) => (
-            <Hyperlink to={path.to.fixtureDetails(row.original.itemId!)}>
-              {row.original.id}
-            </Hyperlink>
+            <HStack className="py-1 max-w-[200px] truncate">
+              <Hyperlink to={path.to.fixtureDetails(row.original.itemId!)}>
+                {row.original.id}
+              </Hyperlink>
+            </HStack>
           ),
         },
         {
           accessorKey: "name",
           header: "Short Description",
-          cell: (item) => item.getValue(),
+          cell: (item) => (
+            <div className="max-w-[320px] truncate">
+              {item.getValue<string>()}
+            </div>
+          ),
         },
         {
           accessorKey: "description",
           header: "Description",
-          cell: (item) => item.getValue(),
+          cell: (item) => (
+            <div className="max-w-[320px] truncate">
+              {item.getValue<string>()}
+            </div>
+          ),
         },
         {
           accessorKey: "itemTrackingType",
@@ -267,6 +278,12 @@ const FixturesTable = memo(
             updatedBy: false,
             updatedAt: false,
           }}
+          importCSV={[
+            {
+              table: "fixture",
+              label: "Fixtures",
+            },
+          ]}
           primaryAction={
             permissions.can("create", "parts") && (
               <New label="Fixture" to={path.to.newFixture} />
