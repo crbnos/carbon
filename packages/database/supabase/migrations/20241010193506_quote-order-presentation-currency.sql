@@ -105,3 +105,15 @@ ALTER TABLE "supplierPayment" DROP COLUMN "currencyCode";
 ALTER TABLE "quotePayment" DROP COLUMN "currencyCode";
 ALTER TABLE "salesOrderPayment" DROP COLUMN "currencyCode";
 ALTER TABLE "purchaseOrderPayment" DROP COLUMN "currencyCode";
+
+-- Fix the currency RLS policies
+DROP POLICY IF EXISTS "Employees with accounting_view can view currencies" ON "currency";
+CREATE POLICY "Employees with accounting_view can view currencies" ON "currency"
+  FOR SELECT
+  USING (
+    has_role('employee', "companyId") AND
+    has_company_permission('accounting_view', "companyId")
+  );
+
+DROP POLICY IF EXISTS "Employees with accounting_create can insert currencies" ON "currency";
+DROP POLICY IF EXISTS "Employees with accounting_delete can delete currencies" ON "currency";
