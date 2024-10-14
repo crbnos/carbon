@@ -27,6 +27,7 @@ import {
   Location,
   Submit,
 } from "~/components/Form";
+import ExchangeRate from "~/components/Form/ExchangeRate";
 import { usePermissions } from "~/hooks";
 import { quoteValidator } from "~/modules/sales";
 
@@ -162,6 +163,16 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                   }
                 }}
               />
+              {isEditing && (
+                <ExchangeRate
+                  name="exchangeRate"
+                  exchangeRateDate={initialValues.exchangeRateDate}
+                  isReadOnly
+                  onRefresh={() => {
+                    console.log("refresh");
+                  }}
+                />
+              )}
 
               <CustomFormFields table="quote" />
             </div>

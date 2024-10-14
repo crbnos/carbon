@@ -117,6 +117,8 @@ export const quoteValidator = z.object({
   dueDate: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  exchangeRateDate: zfd.text(z.string().optional()),
 });
 
 export const quoteLineAdditionalChargesValidator = z.record(
