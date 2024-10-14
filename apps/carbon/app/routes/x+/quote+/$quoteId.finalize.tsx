@@ -22,7 +22,7 @@ import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assum
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
-// export const config = { runtime: "nodejs" };
+export const config = { runtime: "nodejs" };
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;

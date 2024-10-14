@@ -29,7 +29,7 @@ import { useMode } from "./hooks/useMode";
 import { getTheme } from "./services/theme.server";
 import { modeValidator } from "./types/validators";
 
-// export const config = { runtime: "edge" };
+export const config = { runtime: "edge", regions: ["iad1"] };
 
 export const links: LinksFunction = () => {
   return [

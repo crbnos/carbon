@@ -1,5 +1,5 @@
 .ProseMirror {
-  fontfamily: "Geist Mono Variable";
+  font-family: "Geist Mono Variable";
 }
 
 .ProseMirror .is-editor-empty:first-child::before {
