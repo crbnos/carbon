@@ -6,6 +6,8 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { upsertModelUpload } from "~/modules/shared";
 import type { autodeskUploadTask } from "~/trigger/autodesk-upload";
 
+export const config = { runtime: "nodejs" };
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts",
