@@ -30005,6 +30005,11 @@ export type Database = {
         | "Purchase Invoice"
         | "Document"
         | "Sales RFQ"
+        | "Service"
+        | "Tool"
+        | "Consumable"
+        | "Material"
+        | "Fixture"
       serviceType: "Internal" | "External"
       shippingCarrier: "UPS" | "FedEx" | "USPS" | "DHL" | "Other"
       supplierLedgerDocumentType:

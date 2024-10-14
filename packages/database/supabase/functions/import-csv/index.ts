@@ -275,6 +275,10 @@ serve(async (req: Request) => {
       case "tool":
       case "fixture":
       case "part": {
+        const getExternalId = (id: string) => {
+          return `${table}:${id}`;
+        };
+
         const currentItems = await db
           .selectFrom("item")
           .where("companyId", "=", companyId)
@@ -349,10 +353,10 @@ serve(async (req: Request) => {
             const { id, ...rest } = item.data;
 
             if (
-              externalIdMap.has(id) &&
+              externalIdMap.has(getExternalId(id)) &&
               !readableIds.has(item.data.readableId)
             ) {
-              const existingItem = externalIdMap.get(id)!;
+              const existingItem = externalIdMap.get(getExternalId(id))!;
 
               readableIds.add(item.data.readableId);
               itemUpdates.push({
@@ -403,7 +407,7 @@ serve(async (req: Request) => {
                 createdAt: new Date().toISOString(),
                 createdBy: userId,
                 externalId: {
-                  [EXTERNAL_ID_KEY]: id,
+                  [EXTERNAL_ID_KEY]: getExternalId(id),
                 },
               };
               itemInserts.push(newItem);
@@ -422,7 +426,7 @@ serve(async (req: Request) => {
                     createdAt: new Date().toISOString(),
                     createdBy: userId,
                     externalId: {
-                      [EXTERNAL_ID_KEY]: id,
+                      [EXTERNAL_ID_KEY]: getExternalId(id),
                     },
                   };
                 }

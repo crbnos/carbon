@@ -24,7 +24,6 @@ import { useNavigate } from "@remix-run/react";
 import idb from "localforage";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useState } from "react";
-import { AiOutlinePartition } from "react-icons/ai";
 import { HiOutlineDocumentDuplicate } from "react-icons/hi";
 import {
   LuHardHat,
@@ -41,6 +40,7 @@ import {
   RiProgress8Line,
 } from "react-icons/ri";
 import { RxMagnifyingGlass } from "react-icons/rx";
+import { MethodItemTypeIcon } from "~/components/Icons";
 import { useModules } from "~/components/Layout/Navigation/useModules";
 import { useUser } from "~/hooks";
 import { useAccountSubmodules } from "~/modules/account";
@@ -261,7 +261,11 @@ function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
     case "Job":
       return <LuHardHat className="w-4 h-4 mr-2" />;
     case "Part":
-      return <AiOutlinePartition className="w-4 h-4 mr-2" />;
+    case "Material":
+    case "Tool":
+    case "Fixture":
+    case "Consumable":
+      return <MethodItemTypeIcon type={entity} className="w-4 h-4 mr-2" />;
     case "Person":
       return <LuUser className="w-4 h-4 mr-2" />;
     case "Resource":
