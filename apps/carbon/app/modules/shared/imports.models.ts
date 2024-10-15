@@ -146,20 +146,7 @@ export const fieldMappings = {
     phone: {
       label: "Phone",
       required: false,
-      type: "enum",
-      enumData: {
-        description: "The account manager of the customer",
-        fetcher: async (
-          client: SupabaseClient<Database>,
-          companyId: string
-        ) => {
-          return client
-            .from("employees")
-            .select("id, name, avatarUrl")
-            .eq("companyId", companyId)
-            .order("name");
-        },
-      },
+      type: "string",
     },
     fax: {
       label: "Fax",
