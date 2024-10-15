@@ -1,5 +1,6 @@
 import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "https://deno.land/x/zod@v3.21.4/index.ts";
 import { sql } from "https://esm.sh/kysely@0.26.3";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
@@ -573,10 +574,108 @@ serve(async (req: Request) => {
           }, new Map<string, { id: string; externalId: Record<string, string> }>())
         );
 
-        await db.transaction().execute(async (trx) => {});
+        await db.transaction().execute(async (trx) => {
+          const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
+            [];
+          const contactUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["contact"]["Update"];
+          }[] = [];
+          const customerContactInserts: Database["public"]["Tables"]["customerContact"]["Insert"][] =
+            [];
+
+          const isContactValid = (
+            record: Record<string, string>
+          ): record is {
+            firstName: string;
+            lastName: string;
+            email: string;
+          } => {
+            return (
+              typeof record.firstName === "string" &&
+              record.firstName.trim() !== "" &&
+              typeof record.lastName === "string" &&
+              record.lastName.trim() !== "" &&
+              typeof record.email === "string" &&
+              record.email.trim() !== ""
+            );
+          };
+
+          for (const record of mappedRecords) {
+            const { id, customerId, ...contactData } = record;
+
+            if (externalContactIdMap.has(id)) {
+              const existingContact = externalContactIdMap.get(id)!;
+              if (isContactValid(contactData)) {
+                contactUpdates.push({
+                  id: existingContact.id,
+                  data: {
+                    ...contactData,
+                    externalId: {
+                      ...existingContact.externalId,
+                    },
+                  },
+                });
+              }
+            } else if (
+              isContactValid(contactData) &&
+              externalCustomerIdMap.has(customerId)
+            ) {
+              const existingCustomer = externalCustomerIdMap.get(customerId)!;
+              const contactId = nanoid();
+              const newContact = {
+                id: contactId,
+                ...contactData,
+                companyId,
+                externalId: {
+                  [EXTERNAL_ID_KEY]: id,
+                },
+              };
+              contactInserts.push(newContact);
+              customerContactInserts.push({
+                contactId,
+                customerId: existingCustomer.id,
+                customFields: {},
+              });
+            }
+          }
+
+          if (contactInserts.length > 0) {
+            const insertedContacts = await trx
+              .insertInto("contact")
+              .values(contactInserts)
+              .returning(["id"])
+              .execute();
+
+            // Update customerContactInserts with the new contact IDs
+            insertedContacts.forEach((contact, index) => {
+              if (customerContactInserts[index] && contact.id) {
+                customerContactInserts[index].contactId = contact.id;
+              }
+            });
+          }
+
+          if (contactUpdates.length > 0) {
+            for (const update of contactUpdates) {
+              await trx
+                .updateTable("contact")
+                .set(update.data)
+                .where("id", "=", update.id)
+                .execute();
+            }
+          }
+
+          if (customerContactInserts.length > 0) {
+            await trx
+              .insertInto("customerContact")
+              .values(customerContactInserts)
+              .execute();
+          }
+        });
 
         break;
       }
+
       default: {
         throw new Error(`Invalid table: ${table}`);
       }
