@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ...Object.keys(getZodSchemaFieldsShallow(schema)),
       ].join(", ")}) by providing the matching column name for each field.
       
-      If you are not sure or there is no matching column, please omit the value. 
+      If you are not sure or there is no matching column, please return "N/A". 
       
       Columns:
       ${fileColumns.join(",")}
