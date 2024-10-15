@@ -176,6 +176,12 @@ serve(async (req: Request) => {
             }
           }
 
+          console.log({
+            totalRecords: mappedRecords.length,
+            customerInserts: customerInserts.length,
+            customerUpdates: customerUpdates.length,
+          });
+
           if (customerInserts.length > 0) {
             await trx.insertInto(table).values(customerInserts).execute();
           }
@@ -257,6 +263,12 @@ serve(async (req: Request) => {
               });
             }
           }
+
+          console.log({
+            totalRecords: mappedRecords.length,
+            supplierInserts: supplierInserts.length,
+            supplierUpdates: supplierUpdates.length,
+          });
 
           if (supplierInserts.length > 0) {
             await trx.insertInto(table).values(supplierInserts).execute();
@@ -506,6 +518,14 @@ serve(async (req: Request) => {
             }
           }
 
+          console.log({
+            totalRecords: mappedRecords.length,
+            itemInserts: itemInserts.length,
+            itemUpdates: itemUpdates.length,
+            materialInserts: Object.keys(materialPartialInserts).length,
+            materialUpdates: materialUpdates.length,
+          });
+
           if (itemUpdates.length > 0) {
             for (const update of itemUpdates) {
               await trx
@@ -587,22 +607,15 @@ serve(async (req: Request) => {
           const isContactValid = (
             record: Record<string, string>
           ): record is {
-            firstName: string;
-            lastName: string;
             email: string;
           } => {
             return (
-              typeof record.firstName === "string" &&
-              record.firstName.trim() !== "" &&
-              typeof record.lastName === "string" &&
-              record.lastName.trim() !== "" &&
-              typeof record.email === "string" &&
-              record.email.trim() !== ""
+              typeof record.email === "string" && record.email.trim() !== ""
             );
           };
 
           for (const record of mappedRecords) {
-            const { id, customerId, ...contactData } = record;
+            const { id, companyId: customerId, ...contactData } = record;
 
             if (externalContactIdMap.has(id)) {
               const existingContact = externalContactIdMap.get(id)!;
@@ -640,19 +653,19 @@ serve(async (req: Request) => {
             }
           }
 
+          console.log({
+            totalRecords: mappedRecords.length,
+            contactInserts: contactInserts.length,
+            contactUpdates: contactUpdates.length,
+            customerContactInserts: customerContactInserts.length,
+          });
+
           if (contactInserts.length > 0) {
-            const insertedContacts = await trx
+            await trx
               .insertInto("contact")
               .values(contactInserts)
               .returning(["id"])
               .execute();
-
-            // Update customerContactInserts with the new contact IDs
-            insertedContacts.forEach((contact, index) => {
-              if (customerContactInserts[index] && contact.id) {
-                customerContactInserts[index].contactId = contact.id;
-              }
-            });
           }
 
           if (contactUpdates.length > 0) {
@@ -675,7 +688,145 @@ serve(async (req: Request) => {
 
         break;
       }
+      case "supplierContact": {
+        const currentContacts = await db
+          .selectFrom("contact")
+          .where("companyId", "=", companyId)
+          .select(["id", "externalId"])
+          .execute();
 
+        const currentSuppliers = await db
+          .selectFrom("supplier")
+          .where("companyId", "=", companyId)
+          .select(["id", "externalId"])
+          .execute();
+
+        const externalSupplierIdMap = new Map(
+          currentSuppliers.reduce((acc, supplier) => {
+            if (
+              supplier.externalId &&
+              typeof supplier.externalId === "object" &&
+              EXTERNAL_ID_KEY in supplier.externalId
+            ) {
+              acc.set(supplier.externalId[EXTERNAL_ID_KEY] as string, {
+                id: supplier.id!,
+                externalId: supplier.externalId as Record<string, string>,
+              });
+            }
+            return acc;
+          }, new Map<string, { id: string; externalId: Record<string, string> }>())
+        );
+
+        const externalContactIdMap = new Map(
+          currentContacts.reduce((acc, contact) => {
+            if (
+              contact.externalId &&
+              typeof contact.externalId === "object" &&
+              EXTERNAL_ID_KEY in contact.externalId
+            ) {
+              acc.set(contact.externalId[EXTERNAL_ID_KEY] as string, {
+                id: contact.id!,
+                externalId: contact.externalId as Record<string, string>,
+              });
+            }
+            return acc;
+          }, new Map<string, { id: string; externalId: Record<string, string> }>())
+        );
+
+        await db.transaction().execute(async (trx) => {
+          const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
+            [];
+          const contactUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["contact"]["Update"];
+          }[] = [];
+          const supplierContactInserts: Database["public"]["Tables"]["supplierContact"]["Insert"][] =
+            [];
+
+          const isContactValid = (
+            record: Record<string, string>
+          ): record is {
+            email: string;
+          } => {
+            return (
+              typeof record.email === "string" && record.email.trim() !== ""
+            );
+          };
+
+          for (const record of mappedRecords) {
+            const { id, companyId: supplierId, ...contactData } = record;
+
+            if (externalContactIdMap.has(id)) {
+              const existingContact = externalContactIdMap.get(id)!;
+              if (isContactValid(contactData)) {
+                contactUpdates.push({
+                  id: existingContact.id,
+                  data: {
+                    ...contactData,
+                    externalId: {
+                      ...existingContact.externalId,
+                    },
+                  },
+                });
+              }
+            } else if (
+              isContactValid(contactData) &&
+              externalSupplierIdMap.has(supplierId)
+            ) {
+              const existingSupplier = externalSupplierIdMap.get(supplierId)!;
+              const contactId = nanoid();
+              const newContact = {
+                id: contactId,
+                ...contactData,
+                companyId,
+                externalId: {
+                  [EXTERNAL_ID_KEY]: id,
+                },
+              };
+              contactInserts.push(newContact);
+              supplierContactInserts.push({
+                contactId,
+                supplierId: existingSupplier.id,
+                customFields: {},
+              });
+            }
+          }
+
+          console.log({
+            totalRecords: mappedRecords.length,
+            contactInserts: contactInserts.length,
+            contactUpdates: contactUpdates.length,
+            supplierContactInserts: supplierContactInserts.length,
+          });
+
+          if (contactInserts.length > 0) {
+            await trx
+              .insertInto("contact")
+              .values(contactInserts)
+              .returning(["id"])
+              .execute();
+          }
+
+          if (contactUpdates.length > 0) {
+            for (const update of contactUpdates) {
+              await trx
+                .updateTable("contact")
+                .set(update.data)
+                .where("id", "=", update.id)
+                .execute();
+            }
+          }
+
+          if (supplierContactInserts.length > 0) {
+            await trx
+              .insertInto("supplierContact")
+              .values(supplierContactInserts)
+              .execute();
+          }
+        });
+
+        break;
+      }
       default: {
         throw new Error(`Invalid table: ${table}`);
       }
