@@ -2265,6 +2265,7 @@ export type Database = {
         Row: {
           companyId: string
           email: string
+          externalId: Json | null
           fax: string | null
           firstName: string
           fullName: string | null
@@ -2279,6 +2280,7 @@ export type Database = {
         Insert: {
           companyId: string
           email: string
+          externalId?: Json | null
           fax?: string | null
           firstName: string
           fullName?: string | null
@@ -2293,6 +2295,7 @@ export type Database = {
         Update: {
           companyId?: string
           email?: string
+          externalId?: Json | null
           fax?: string | null
           firstName?: string
           fullName?: string | null
@@ -3158,6 +3161,7 @@ export type Database = {
           customerId: string
           customerLocationId: string | null
           customFields: Json | null
+          externalId: Json | null
           id: string
           userId: string | null
         }
@@ -3166,6 +3170,7 @@ export type Database = {
           customerId: string
           customerLocationId?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           userId?: string | null
         }
@@ -3174,6 +3179,7 @@ export type Database = {
           customerId?: string
           customerLocationId?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           userId?: string | null
         }
@@ -19350,6 +19356,7 @@ export type Database = {
         Row: {
           contactId: string
           customFields: Json | null
+          externalId: Json | null
           id: string
           supplierId: string
           supplierLocationId: string | null
@@ -19358,6 +19365,7 @@ export type Database = {
         Insert: {
           contactId: string
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           supplierId: string
           supplierLocationId?: string | null
@@ -19366,6 +19374,7 @@ export type Database = {
         Update: {
           contactId?: string
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           supplierId?: string
           supplierLocationId?: string | null

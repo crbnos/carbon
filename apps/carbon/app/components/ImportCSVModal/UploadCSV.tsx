@@ -136,7 +136,7 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
           <ModalTitle className="m-0 p-0">Upload CSV</ModalTitle>
         </div>
         <ModalDescription>
-          {`Please upload a CSV file of your ${table} data`}
+          Please upload a CSV file of your data
         </ModalDescription>
       </ModalHeader>
       <div

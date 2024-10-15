@@ -14,10 +14,12 @@ const importCsvValidator = z.object({
   table: z.enum([
     "consumable",
     "customer",
+    "customerContact",
     "fixture",
     "material",
     "part",
     "supplier",
+    "supplierContact",
     "tool",
   ]),
   filePath: z.string(),
@@ -523,6 +525,55 @@ serve(async (req: Request) => {
             }
           }
         });
+
+        break;
+      }
+      case "customerContact": {
+        const currentContacts = await db
+          .selectFrom("contact")
+          .where("companyId", "=", companyId)
+          .select(["id", "externalId"])
+          .execute();
+
+        const currentCustomers = await db
+          .selectFrom("customer")
+          .where("companyId", "=", companyId)
+          .select(["id", "externalId"])
+          .execute();
+
+        const externalCustomerIdMap = new Map(
+          currentCustomers.reduce((acc, customer) => {
+            if (
+              customer.externalId &&
+              typeof customer.externalId === "object" &&
+              EXTERNAL_ID_KEY in customer.externalId
+            ) {
+              acc.set(customer.externalId[EXTERNAL_ID_KEY] as string, {
+                id: customer.id!,
+                externalId: customer.externalId as Record<string, string>,
+              });
+            }
+            return acc;
+          }, new Map<string, { id: string; externalId: Record<string, string> }>())
+        );
+
+        const externalContactIdMap = new Map(
+          currentContacts.reduce((acc, contact) => {
+            if (
+              contact.externalId &&
+              typeof contact.externalId === "object" &&
+              EXTERNAL_ID_KEY in contact.externalId
+            ) {
+              acc.set(contact.externalId[EXTERNAL_ID_KEY] as string, {
+                id: contact.id!,
+                externalId: contact.externalId as Record<string, string>,
+              });
+            }
+            return acc;
+          }, new Map<string, { id: string; externalId: Record<string, string> }>())
+        );
+
+        await db.transaction().execute(async (trx) => {});
 
         break;
       }

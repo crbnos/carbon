@@ -37,9 +37,11 @@ const CustomersTable = memo(
           accessorKey: "name",
           header: "Name",
           cell: ({ row }) => (
-            <Hyperlink to={path.to.customerDetails(row.original.id!)}>
-              <CustomerAvatar customerId={row.original.id!} />
-            </Hyperlink>
+            <div className="max-w-[320px] truncate">
+              <Hyperlink to={path.to.customerDetails(row.original.id!)}>
+                <CustomerAvatar customerId={row.original.id!} />
+              </Hyperlink>
+            </div>
           ),
         },
         {
@@ -190,6 +192,10 @@ const CustomersTable = memo(
             {
               table: "customer",
               label: "Customers",
+            },
+            {
+              table: "customerContact",
+              label: "Contacts",
             },
           ]}
           primaryAction={
