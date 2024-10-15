@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     return json(object);
   } catch (error) {
-    return json({});
+    return json({} as Record<string, string>);
   }
 }
 

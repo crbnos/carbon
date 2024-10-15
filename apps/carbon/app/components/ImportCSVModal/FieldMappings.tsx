@@ -81,7 +81,6 @@ export function FieldMapping({
     fetcher.submit(
       {
         fileColumns,
-        firstRows,
       },
       {
         method: "POST",

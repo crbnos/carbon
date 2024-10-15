@@ -2267,11 +2267,11 @@ export type Database = {
           email: string
           externalId: Json | null
           fax: string | null
-          firstName: string
+          firstName: string | null
           fullName: string | null
           homePhone: string | null
           id: string
-          lastName: string
+          lastName: string | null
           mobilePhone: string | null
           notes: string | null
           title: string | null
@@ -2282,11 +2282,11 @@ export type Database = {
           email: string
           externalId?: Json | null
           fax?: string | null
-          firstName: string
+          firstName?: string | null
           fullName?: string | null
           homePhone?: string | null
           id?: string
-          lastName: string
+          lastName?: string | null
           mobilePhone?: string | null
           notes?: string | null
           title?: string | null
@@ -2297,11 +2297,11 @@ export type Database = {
           email?: string
           externalId?: Json | null
           fax?: string | null
-          firstName?: string
+          firstName?: string | null
           fullName?: string | null
           homePhone?: string | null
           id?: string
-          lastName?: string
+          lastName?: string | null
           mobilePhone?: string | null
           notes?: string | null
           title?: string | null
@@ -22744,6 +22744,7 @@ export type Database = {
           customFields: Json | null
           email: string | null
           firstName: string | null
+          fullName: string | null
           hoursPerWeek: number | null
           lastName: string | null
           supplierContactId: string | null

@@ -42,7 +42,7 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
     () =>
       supplierContactsFetcher.data?.data?.map((c) => ({
         value: c.id,
-        label: `${c.contact?.firstName} ${c.contact?.lastName}`,
+        label: c.contact?.fullName ?? c.contact?.email ?? "Unknown",
       })) ?? [],
 
     [supplierContactsFetcher.data]

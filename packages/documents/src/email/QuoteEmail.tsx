@@ -56,7 +56,9 @@ const QuoteEmail = ({ company, quote, recipient, sender }: QuoteEmailProps) => {
             </Section>
             <Section>
               <Text className="mt-9 mb-10 text-left text-sm font-medium text-gray-900">
-                Hi {recipient.firstName}, please see the attached quote.
+                {recipient.firstName ? `Hi ${recipient.firstName},` : "Hi,"}
+                please see the attached quote and let me know if you have any
+                questions.
               </Text>
             </Section>
             <Section className="rounded-lg bg-gray-50 text-xs">

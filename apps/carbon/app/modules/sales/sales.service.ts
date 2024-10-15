@@ -224,7 +224,7 @@ export async function getCustomerContacts(
   return client
     .from("customerContact")
     .select(
-      "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
+      "*, contact(id, fullName, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
     )
     .eq("customerId", customerId);
 }

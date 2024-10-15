@@ -75,9 +75,11 @@ export default function DeleteContractorRoute() {
   return (
     <ConfirmDelete
       action={path.to.deleteContractor(contractor.supplierContactId)}
-      name={`${contractor.firstName} ${contractor.lastName}`}
+      name={contractor.fullName ?? contractor.email ?? "Unknown"}
       text={`Are you sure you want to delete the contractor: 
-        ${contractor.firstName} ${contractor.lastName}? This cannot be undone.`}
+        ${
+          contractor.fullName ?? contractor.email ?? "Unknown"
+        }? This cannot be undone.`}
       onCancel={onCancel}
     />
   );

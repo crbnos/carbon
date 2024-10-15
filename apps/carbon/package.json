@@ -54,7 +54,7 @@
     "localforage": "^1.10.0",
     "lodash.debounce": "^4.0.8",
     "lodash.words": "^4.2.0",
-    "papaparse": "^5.4.1",
+    "papaparse": "5.3.2",
     "nanoid": "5.0.4",
     "nanostores": "^0.9.3",
     "non.geist": "~1.0.3",

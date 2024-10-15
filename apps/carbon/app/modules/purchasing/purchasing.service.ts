@@ -283,7 +283,7 @@ export async function getSupplierContacts(
   return client
     .from("supplierContact")
     .select(
-      "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
+      "*, contact(id, fullName, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
     )
     .eq("supplierId", supplierId);
 }
