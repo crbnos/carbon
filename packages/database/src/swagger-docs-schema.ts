@@ -10096,9 +10096,6 @@ export default {
             $ref: "#/parameters/rowFilter.contact.lastName",
           },
           {
-            $ref: "#/parameters/rowFilter.contact.fullName",
-          },
-          {
             $ref: "#/parameters/rowFilter.contact.email",
           },
           {
@@ -10121,6 +10118,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.contact.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contact.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contact.fullName",
           },
           {
             $ref: "#/parameters/select",
@@ -10191,9 +10194,6 @@ export default {
             $ref: "#/parameters/rowFilter.contact.lastName",
           },
           {
-            $ref: "#/parameters/rowFilter.contact.fullName",
-          },
-          {
             $ref: "#/parameters/rowFilter.contact.email",
           },
           {
@@ -10216,6 +10216,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.contact.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contact.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contact.fullName",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -10240,9 +10246,6 @@ export default {
             $ref: "#/parameters/rowFilter.contact.lastName",
           },
           {
-            $ref: "#/parameters/rowFilter.contact.fullName",
-          },
-          {
             $ref: "#/parameters/rowFilter.contact.email",
           },
           {
@@ -10265,6 +10268,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.contact.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contact.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contact.fullName",
           },
           {
             $ref: "#/parameters/body.contact",
@@ -19172,6 +19181,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.contractors.supplierName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractors.fullName",
           },
           {
             $ref: "#/parameters/rowFilter.contractors.firstName",
@@ -39356,6 +39368,11 @@ export default {
             "Purchase Invoice",
             "Document",
             "Sales RFQ",
+            "Service",
+            "Tool",
+            "Consumable",
+            "Material",
+            "Fixture",
           ],
           format: 'public."searchEntity"',
           type: "string",
@@ -40716,7 +40733,7 @@ export default {
       type: "object",
     },
     contact: {
-      required: ["id", "firstName", "lastName", "email", "companyId"],
+      required: ["id", "email", "companyId"],
       properties: {
         id: {
           default: "public.xid()",
@@ -40729,10 +40746,6 @@ export default {
           type: "string",
         },
         lastName: {
-          format: "text",
-          type: "string",
-        },
-        fullName: {
           format: "text",
           type: "string",
         },
@@ -40767,6 +40780,13 @@ export default {
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        externalId: {
+          format: "jsonb",
+        },
+        fullName: {
           format: "text",
           type: "string",
         },
@@ -44841,6 +44861,10 @@ export default {
           format: "text",
           type: "string",
         },
+        fullName: {
+          format: "text",
+          type: "string",
+        },
         firstName: {
           format: "text",
           type: "string",
@@ -47209,7 +47233,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -47258,7 +47282,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -57687,13 +57711,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.contact.fullName": {
-      name: "fullName",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.contact.email": {
       name: "email",
       required: false,
@@ -57745,6 +57762,20 @@ export default {
     },
     "rowFilter.contact.companyId": {
       name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.contact.externalId": {
+      name: "externalId",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.contact.fullName": {
+      name: "fullName",
       required: false,
       format: "text",
       in: "query",
@@ -63069,6 +63100,13 @@ export default {
     },
     "rowFilter.contractors.supplierName": {
       name: "supplierName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.contractors.fullName": {
+      name: "fullName",
       required: false,
       format: "text",
       in: "query",
