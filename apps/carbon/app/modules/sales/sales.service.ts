@@ -6,6 +6,7 @@ import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { getCurrencyByCode } from "../accounting";
 import type {
   customerAccountingValidator,
   customerContactValidator,
@@ -1346,6 +1347,22 @@ export async function updateSalesRFQLineOrder(
   return Promise.all(updatePromises);
 }
 
+export async function updateQuoteExchangeRate(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    exchangeRate: number;
+  }
+) {
+  const update = {
+    id: data.id,
+    exchangeRate: data.exchangeRate,
+    exchangeRateUpdatedAt: new Date().toISOString(),
+  };
+
+  return client.from("quote").update(update).eq("id", update.id);
+}
+
 export async function updateQuoteFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -1510,6 +1527,21 @@ export async function upsertQuote(
 
     const { shippingMethodId, shippingTermId } = customerShipping.data;
 
+    if (quote.currencyCode) {
+      const currency = await getCurrencyByCode(
+        client,
+        quote.companyId,
+        quote.currencyCode
+      );
+      if (currency.data) {
+        quote.exchangeRate = currency.data.exchangeRate ?? undefined;
+        quote.exchangeRateUpdatedAt = new Date().toISOString();
+      }
+    } else {
+      quote.exchangeRate = 1;
+      quote.exchangeRateUpdatedAt = new Date().toISOString();
+    }
+
     const locationId = employee?.data?.locationId ?? null;
     const insert = await client
       .from("quote")
@@ -1562,6 +1594,28 @@ export async function upsertQuote(
 
     return insert;
   } else {
+    // Only update the exchange rate if the currency code has changed
+    const existingQuote = await client
+      .from("quote")
+      .select("companyId, currencyCode")
+      .eq("id", quote.id)
+      .single();
+
+    if (existingQuote.error) return existingQuote;
+
+    const { companyId, currencyCode } = existingQuote.data;
+
+    if (quote.currencyCode && currencyCode !== quote.currencyCode) {
+      const currency = await getCurrencyByCode(
+        client,
+        companyId,
+        quote.currencyCode
+      );
+      if (currency.data) {
+        quote.exchangeRate = currency.data.exchangeRate ?? undefined;
+        quote.exchangeRateUpdatedAt = new Date().toISOString();
+      }
+    }
     return client
       .from("quote")
       .update({

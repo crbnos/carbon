@@ -27,7 +27,7 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
     () =>
       new Intl.DateTimeFormat(locale, {
         dateStyle: "medium",
-        timeZone: "UTC",
+        timeStyle: "short",
       }),
     [locale]
   );
@@ -48,9 +48,7 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
                   <TooltipTrigger tabIndex={-1}>
                     <LuInfo className="w-4 h-4" />
                   </TooltipTrigger>
-                  <TooltipContent>
-                    Last updated on: {formattedDate}
-                  </TooltipContent>
+                  <TooltipContent>Last updated: {formattedDate}</TooltipContent>
                 </Tooltip>
               )}
             </HStack>
