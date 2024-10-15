@@ -18,10 +18,23 @@ export const fieldMappings = {
       required: true,
       type: "string",
     },
-    phone: {
-      label: "Phone",
+    accountManagerId: {
+      label: "Account Manager",
       required: false,
-      type: "string",
+      type: "enum",
+      enumData: {
+        description: "The account manager of the customer",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("employees")
+            .select("id, name, avatarUrl")
+            .eq("companyId", companyId)
+            .order("name");
+        },
+      },
     },
     fax: {
       label: "Fax",
@@ -54,6 +67,24 @@ export const fieldMappings = {
       label: "Name",
       required: true,
       type: "string",
+    },
+    accountManagerId: {
+      label: "Account Manager",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The account manager of the customer",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("employees")
+            .select("id, name, avatarUrl")
+            .eq("companyId", companyId)
+            .order("name");
+        },
+      },
     },
     phone: {
       label: "Phone",
@@ -592,22 +623,38 @@ export const importSchemas: Record<
       .describe(
         "The name of the customer. Sometimes contains Inc or LLC. Usually a proper noun."
       ),
-    phone: z.string().optional().describe("The phone number of the customer"),
-    fax: z.string().optional().describe("The fax number of the customer"),
+    accountManagerId: z
+      .string()
+      .optional()
+      .describe("The id of the account manager of the customer")
+      .nullable(),
+    phone: z
+      .string()
+      .optional()
+      .describe("The phone number of the customer")
+      .nullable(),
+    fax: z
+      .string()
+      .optional()
+      .describe("The fax number of the customer")
+      .nullable(),
     taxId: z
       .string()
       .optional()
       .describe(
         "The tax identification number of the customer. Usually numeric."
-      ),
+      )
+      .nullable(),
     currencyCode: z
       .string()
       .optional()
-      .describe("The currency code of the customer. Usually a 3-letter code."),
+      .describe("The currency code of the customer. Usually a 3-letter code.")
+      .nullable(),
     website: z
       .string()
       .optional()
-      .describe("The website url. Usually begins with http:// or https://"),
+      .describe("The website url. Usually begins with http:// or https://")
+      .nullable(),
   }),
   supplier: z.object({
     id: z
@@ -622,22 +669,38 @@ export const importSchemas: Record<
       .describe(
         "The name of the supplier. Sometimes contains Inc or LLC. Usually a proper noun."
       ),
-    phone: z.string().optional().describe("The phone number of the supplier"),
-    fax: z.string().optional().describe("The fax number of the supplier"),
+    accountManagerId: z
+      .string()
+      .optional()
+      .describe("The id of the account manager of the supplier")
+      .nullable(),
+    phone: z
+      .string()
+      .optional()
+      .describe("The phone number of the supplier")
+      .nullable(),
+    fax: z
+      .string()
+      .optional()
+      .describe("The fax number of the supplier")
+      .nullable(),
     taxId: z
       .string()
       .optional()
       .describe(
         "The tax identification number of the supplier. Usually numeric."
-      ),
+      )
+      .nullable(),
     currencyCode: z
       .string()
       .optional()
-      .describe("The currency code of the supplier. Usually a 3-letter code."),
+      .describe("The currency code of the supplier. Usually a 3-letter code.")
+      .nullable(),
     website: z
       .string()
       .optional()
-      .describe("The website url. Usually begins with http:// or https://"),
+      .describe("The website url. Usually begins with http:// or https://")
+      .nullable(),
   }),
   part: z.object({
     id: z

@@ -36,24 +36,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw notFound("Table not found in the list of supported tables");
   }
 
-  const { object } = await generateObject<Record<string, string>>({
-    model: openai("gpt-4o-mini"),
-    schema,
-    prompt: `
-        The following columns are the headings from a CSV import file for importing a ${table}. 
-        Map these column names to the correct fields in our database (${[
-          ...Object.keys(getZodSchemaFieldsShallow(schema)),
-        ].join(", ")}) by providing the matching column name for each field.
-        
-        If you are not sure or there is no matching column, omit the value. 
-        
-        Columns:
-        ${fileColumns.join(",")}
+  try {
+    const { object } = await generateObject<Record<string, string>>({
+      model: openai("gpt-4o-mini"),
+      schema,
+      prompt: `
+      The following columns are the headings from a CSV import file for importing a ${table}. 
+      Map these column names to the correct fields in our database (${[
+        ...Object.keys(getZodSchemaFieldsShallow(schema)),
+      ].join(", ")}) by providing the matching column name for each field.
+      
+      If you are not sure or there is no matching column. 
+      
+      Columns:
+      ${fileColumns.join(",")}
       `,
-    temperature: 0.2,
-  });
+      temperature: 0.2,
+    });
 
-  return json(object);
+    return json(object);
+  } catch (error) {
+    return json({});
+  }
 }
 
 export function getZodSchemaFieldsShallow(schema: ZodSchema) {
