@@ -126,7 +126,11 @@ const SupplierContacts = ({ contacts }: SupplierContactsProps) => {
         <ConfirmDelete
           action={path.to.deleteSupplierContact(supplierId, selectedContact.id)}
           isOpen={deleteContactModal.isOpen}
-          name={`${selectedContact.contact?.firstName} ${selectedContact.contact?.lastName}`}
+          name={
+            selectedContact.contact?.fullName ??
+            selectedContact.contact?.email ??
+            "Unknown"
+          }
           text="Are you sure you want to delete this contact?"
           onCancel={deleteContactModal.onClose}
           onSubmit={deleteContactModal.onClose}

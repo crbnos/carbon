@@ -34,14 +34,14 @@ const ContractorsTable = memo(
             <HStack>
               <Avatar
                 size="sm"
-                name={`${row.original.firstName} ${row.original.lastName}`}
+                name={row.original.fullName ?? row.original.email ?? "Unknown"}
               />
               <Hyperlink
                 to={`${path.to.contractor(
                   row.original.supplierContactId!
                 )}?${params.toString()}`}
               >
-                {row.original.firstName} {row.original.lastName}
+                {row.original.fullName ?? row.original.email ?? "Unknown"}
               </Hyperlink>
             </HStack>
           ),

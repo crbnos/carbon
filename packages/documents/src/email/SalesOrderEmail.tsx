@@ -92,8 +92,9 @@ const SalesOrderEmail = ({
             </Section>
             <Section>
               <Text className="text-left text-sm font-medium text-gray-900 my-9">
-                Hi {recipient.firstName}, please see the attached sales order
-                and let me know if you have any questions.
+                {recipient.firstName ? `Hi ${recipient.firstName},` : "Hi,"}
+                please see the attached sales order and let me know if you have
+                any questions.
               </Text>
             </Section>
             <Section className="bg-gray-50 rounded-lg text-xs">

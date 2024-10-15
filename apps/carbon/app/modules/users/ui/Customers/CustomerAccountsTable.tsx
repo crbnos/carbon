@@ -74,10 +74,9 @@ const CustomerAccountsTable = memo(
               />
 
               <span>
-                {
-                  // @ts-ignore
-                  `${row.original.user?.firstName} ${row.original.user?.lastName}`
-                }
+                {row.original.user?.fullName ??
+                  row.original.user?.email ??
+                  "Unknown"}
               </span>
             </HStack>
           ),

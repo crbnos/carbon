@@ -57,6 +57,63 @@ export const fieldMappings = {
       type: "string",
     },
   },
+  customerContact: {
+    id: {
+      label: "External ID",
+      required: true,
+      type: "string",
+    },
+    companyId: {
+      label: "External Company ID",
+      required: true,
+      type: "string",
+    },
+    firstName: {
+      label: "First Name",
+      required: true,
+      type: "string",
+    },
+    lastName: {
+      label: "Last Name",
+      required: true,
+      type: "string",
+    },
+    email: {
+      label: "Email",
+      type: "string",
+      required: true,
+    },
+    title: {
+      label: "Title",
+      type: "string",
+      required: false,
+    },
+    mobilePhone: {
+      label: "Mobile Phone",
+      type: "string",
+      required: false,
+    },
+    workPhone: {
+      label: "Work Phone",
+      type: "string",
+      required: false,
+    },
+    homePhone: {
+      label: "Home Phone",
+      type: "string",
+      required: false,
+    },
+    fax: {
+      label: "Fax",
+      type: "string",
+      required: false,
+    },
+    notes: {
+      label: "Notes",
+      type: "string",
+      required: false,
+    },
+  },
   supplier: {
     id: {
       label: "External ID",
@@ -89,7 +146,20 @@ export const fieldMappings = {
     phone: {
       label: "Phone",
       required: false,
-      type: "string",
+      type: "enum",
+      enumData: {
+        description: "The account manager of the customer",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("employees")
+            .select("id, name, avatarUrl")
+            .eq("companyId", companyId)
+            .order("name");
+        },
+      },
     },
     fax: {
       label: "Fax",
@@ -110,6 +180,63 @@ export const fieldMappings = {
       label: "Website",
       required: false,
       type: "string",
+    },
+  },
+  supplierContact: {
+    id: {
+      label: "External ID",
+      required: true,
+      type: "string",
+    },
+    companyId: {
+      label: "External Company ID",
+      required: true,
+      type: "string",
+    },
+    firstName: {
+      label: "First Name",
+      required: true,
+      type: "string",
+    },
+    lastName: {
+      label: "Last Name",
+      required: true,
+      type: "string",
+    },
+    email: {
+      label: "Email",
+      type: "string",
+      required: true,
+    },
+    title: {
+      label: "Title",
+      type: "string",
+      required: false,
+    },
+    mobilePhone: {
+      label: "Mobile Phone",
+      type: "string",
+      required: false,
+    },
+    workPhone: {
+      label: "Work Phone",
+      type: "string",
+      required: false,
+    },
+    homePhone: {
+      label: "Home Phone",
+      type: "string",
+      required: false,
+    },
+    fax: {
+      label: "Fax",
+      type: "string",
+      required: false,
+    },
+    notes: {
+      label: "Notes",
+      type: "string",
+      required: false,
     },
   },
   part: {
@@ -598,7 +725,9 @@ export const fieldMappings = {
 
 export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   customer: "sales",
+  customerContact: "sales",
   supplier: "purchasing",
+  supplierContact: "purchasing",
   part: "parts",
   material: "parts",
   tool: "parts",
@@ -626,18 +755,9 @@ export const importSchemas: Record<
     accountManagerId: z
       .string()
       .optional()
-      .describe("The id of the account manager of the customer")
-      .nullable(),
-    phone: z
-      .string()
-      .optional()
-      .describe("The phone number of the customer")
-      .nullable(),
-    fax: z
-      .string()
-      .optional()
-      .describe("The fax number of the customer")
-      .nullable(),
+      .describe("The id of the account manager of the customer"),
+    phone: z.string().optional().describe("The phone number of the customer"),
+    fax: z.string().optional().describe("The fax number of the customer"),
     taxId: z
       .string()
       .optional()
@@ -656,6 +776,39 @@ export const importSchemas: Record<
       .describe("The website url. Usually begins with http:// or https://")
       .nullable(),
   }),
+  customerContact: z.object({
+    id: z
+      .string()
+      .min(1, { message: "ID is required" })
+      .describe(
+        "The id of the customer contact, usually a number or set of alphanumeric characters."
+      ),
+    companyId: z
+      .string()
+      .min(1, { message: "Company ID is required" })
+      .describe("The id of the company the contact belongs to"),
+    firstName: z.string().describe("The first name of the customer contact"),
+    lastName: z.string().describe("The last name of the customer contact"),
+    email: z
+      .string()
+      .min(1, { message: "Email is required" })
+      .describe("The email of the customer contact"),
+    title: z.string().optional().describe("The title of the customer contact"),
+    mobilePhone: z
+      .string()
+      .optional()
+      .describe("The mobile phone of the customer contact"),
+    workPhone: z
+      .string()
+      .optional()
+      .describe("The work phone of the customer contact"),
+    homePhone: z
+      .string()
+      .optional()
+      .describe("The home phone of the customer contact"),
+    fax: z.string().optional().describe("The fax of the customer contact"),
+    notes: z.string().optional().describe("The notes of the customer contact"),
+  }),
   supplier: z.object({
     id: z
       .string()
@@ -672,18 +825,9 @@ export const importSchemas: Record<
     accountManagerId: z
       .string()
       .optional()
-      .describe("The id of the account manager of the supplier")
-      .nullable(),
-    phone: z
-      .string()
-      .optional()
-      .describe("The phone number of the supplier")
-      .nullable(),
-    fax: z
-      .string()
-      .optional()
-      .describe("The fax number of the supplier")
-      .nullable(),
+      .describe("The id of the account manager of the supplier"),
+    phone: z.string().optional().describe("The phone number of the supplier"),
+    fax: z.string().optional().describe("The fax number of the supplier"),
     taxId: z
       .string()
       .optional()
@@ -701,6 +845,45 @@ export const importSchemas: Record<
       .optional()
       .describe("The website url. Usually begins with http:// or https://")
       .nullable(),
+  }),
+  supplierContact: z.object({
+    id: z
+      .string()
+      .min(1, { message: "ID is required" })
+      .describe(
+        "The id of the supplier contact, usually a number or set of alphanumeric characters."
+      ),
+    companyId: z
+      .string()
+      .min(1, { message: "Company ID is required" })
+      .describe("The id of the company the contact belongs to"),
+    firstName: z
+      .string()
+      .describe("The first name of the supplier contact")
+      .optional(),
+    lastName: z
+      .string()
+      .describe("The last name of the supplier contact")
+      .optional(),
+    email: z
+      .string()
+      .min(1, { message: "Email is required" })
+      .describe("The email of the supplier contact"),
+    title: z.string().optional().describe("The title of the supplier contact"),
+    mobilePhone: z
+      .string()
+      .optional()
+      .describe("The mobile phone of the supplier contact"),
+    workPhone: z
+      .string()
+      .optional()
+      .describe("The work phone of the supplier contact"),
+    homePhone: z
+      .string()
+      .optional()
+      .describe("The home phone of the supplier contact"),
+    fax: z.string().optional().describe("The fax of the supplier contact"),
+    notes: z.string().optional().describe("The notes of the supplier contact"),
   }),
   part: z.object({
     id: z

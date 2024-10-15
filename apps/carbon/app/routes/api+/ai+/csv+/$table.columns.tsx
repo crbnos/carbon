@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { fileColumns } = result.data;
 
-  const schema = importSchemas[table as keyof typeof importSchemas];
+  const schema = importSchemas[table as keyof typeof importSchemas].partial();
 
   if (!schema) {
     throw notFound("Table not found in the list of supported tables");
@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ...Object.keys(getZodSchemaFieldsShallow(schema)),
       ].join(", ")}) by providing the matching column name for each field.
       
-      If you are not sure or there is no matching column. 
+      If you are not sure or there is no matching column, please return "N/A". 
       
       Columns:
       ${fileColumns.join(",")}
@@ -56,7 +56,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     return json(object);
   } catch (error) {
-    return json({});
+    console.error(error);
+    return json({} as Record<string, string>);
   }
 }
 

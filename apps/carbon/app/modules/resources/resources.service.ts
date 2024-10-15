@@ -153,7 +153,7 @@ export async function getContractors(
 
   if (args?.search) {
     query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%`
+      `fullName.ilike.%${args.search}%,email.ilike.%${args.search}%`
     );
   }
 

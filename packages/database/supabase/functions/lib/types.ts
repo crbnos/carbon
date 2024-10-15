@@ -2265,12 +2265,13 @@ export type Database = {
         Row: {
           companyId: string
           email: string
+          externalId: Json | null
           fax: string | null
-          firstName: string
+          firstName: string | null
           fullName: string | null
           homePhone: string | null
           id: string
-          lastName: string
+          lastName: string | null
           mobilePhone: string | null
           notes: string | null
           title: string | null
@@ -2279,12 +2280,13 @@ export type Database = {
         Insert: {
           companyId: string
           email: string
+          externalId?: Json | null
           fax?: string | null
-          firstName: string
+          firstName?: string | null
           fullName?: string | null
           homePhone?: string | null
           id?: string
-          lastName: string
+          lastName?: string | null
           mobilePhone?: string | null
           notes?: string | null
           title?: string | null
@@ -2293,12 +2295,13 @@ export type Database = {
         Update: {
           companyId?: string
           email?: string
+          externalId?: Json | null
           fax?: string | null
-          firstName?: string
+          firstName?: string | null
           fullName?: string | null
           homePhone?: string | null
           id?: string
-          lastName?: string
+          lastName?: string | null
           mobilePhone?: string | null
           notes?: string | null
           title?: string | null
@@ -3158,6 +3161,7 @@ export type Database = {
           customerId: string
           customerLocationId: string | null
           customFields: Json | null
+          externalId: Json | null
           id: string
           userId: string | null
         }
@@ -3166,6 +3170,7 @@ export type Database = {
           customerId: string
           customerLocationId?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           userId?: string | null
         }
@@ -3174,6 +3179,7 @@ export type Database = {
           customerId?: string
           customerLocationId?: string | null
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           userId?: string | null
         }
@@ -19350,6 +19356,7 @@ export type Database = {
         Row: {
           contactId: string
           customFields: Json | null
+          externalId: Json | null
           id: string
           supplierId: string
           supplierLocationId: string | null
@@ -19358,6 +19365,7 @@ export type Database = {
         Insert: {
           contactId: string
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           supplierId: string
           supplierLocationId?: string | null
@@ -19366,6 +19374,7 @@ export type Database = {
         Update: {
           contactId?: string
           customFields?: Json | null
+          externalId?: Json | null
           id?: string
           supplierId?: string
           supplierLocationId?: string | null
@@ -22735,6 +22744,7 @@ export type Database = {
           customFields: Json | null
           email: string | null
           firstName: string | null
+          fullName: string | null
           hoursPerWeek: number | null
           lastName: string | null
           supplierContactId: string | null

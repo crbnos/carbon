@@ -20,7 +20,7 @@ import {
 import { cn } from "./utils/cn";
 
 export const avatarVariants = cva(
-  "flex flex-shrink-0 overflow-hidden rounded-full items-center justify-center text-white font-semibold",
+  "flex flex-shrink-0 overflow-hidden rounded-full items-center justify-center font-semibold",
   {
     variants: {
       size: {
@@ -78,13 +78,16 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
           "bg-muted-foreground",
           className
         )}
-        style={name ? { background } : undefined}
+        style={name ? { background, color } : undefined}
         {...props}
         ref={ref}
       >
         <>
           {avatarInitials ? (
-            <span className="text-white" style={{ color }}>
+            <span
+              className="text-foreground"
+              style={name ? { color } : undefined}
+            >
               {avatarInitials}
             </span>
           ) : (
@@ -92,6 +95,7 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
               viewBox="0 0 128 128"
               className="h-full w-full text-muted"
               role="img"
+              style={name ? { color } : undefined}
               aria-label=" avatar"
             >
               <path

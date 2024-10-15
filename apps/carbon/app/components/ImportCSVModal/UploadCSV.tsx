@@ -35,13 +35,17 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
       setLoading(true);
     });
 
-    readLines(file, 100)
-      .then((lines) => {
-        const { data, meta } = Papa.parse(lines, {
-          worker: false,
-          skipEmptyLines: true,
-          header: true,
-        });
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      error: (error) => {
+        setError(error.message);
+        setFileColumns(null);
+        setFirstRows(null);
+        setLoading(false);
+      },
+      complete: (results) => {
+        const { data, meta } = results;
 
         if (!data || data.length < 2) {
           setError("CSV file must have at least 2 rows.");
@@ -62,13 +66,8 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
         setFileColumns(meta.fields);
         setFirstRows(data as Record<string, string>[]);
         setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to read CSV file.");
-        setFileColumns(null);
-        setFirstRows(null);
-        setLoading(false);
-      });
+      },
+    });
   };
 
   const uploadFile = async (file: File) => {
@@ -136,7 +135,7 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
           <ModalTitle className="m-0 p-0">Upload CSV</ModalTitle>
         </div>
         <ModalDescription>
-          {`Please upload a CSV file of your ${table} data`}
+          Please upload a CSV file of your data
         </ModalDescription>
       </ModalHeader>
       <div
@@ -172,23 +171,3 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
     </>
   );
 };
-
-async function readLines(file: File, count = 100): Promise<string> {
-  const reader = file.stream().getReader();
-  const decoder = new TextDecoder("utf-8");
-  let { value: chunk, done: readerDone } = await reader.read();
-  let content = "";
-  const result: string[] = [];
-
-  while (!readerDone) {
-    content += decoder.decode(chunk, { stream: true });
-    const lines = content.split("\n");
-    if (lines.length >= count) {
-      reader.cancel();
-      return lines.slice(0, count).join("\n");
-    }
-    ({ value: chunk, done: readerDone } = await reader.read());
-  }
-
-  return result.join("\n");
-}

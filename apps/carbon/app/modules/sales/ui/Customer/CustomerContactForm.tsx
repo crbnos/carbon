@@ -81,9 +81,9 @@ const CustomerContactForm = ({
             <Hidden name="type" value={type} />
             <Hidden name="contactId" />
             <VStack spacing={4}>
+              <Input name="email" label="Email" />
               <Input name="firstName" label="First Name" />
               <Input name="lastName" label="Last Name" />
-              <Input name="email" label="Email" />
               <Input name="title" label="Title" />
               <PhoneInput name="mobilePhone" label="Mobile Phone" />
               <PhoneInput name="homePhone" label="Home Phone" />
