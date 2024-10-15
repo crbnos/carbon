@@ -177,6 +177,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 customer.currencyCode !== company.baseCurrencyCode && (
                   <ExchangeRate
                     name="exchangeRate"
+                    value={initialValues.exchangeRate}
                     exchangeRateUpdatedAt={initialValues.exchangeRateUpdatedAt}
                     isReadOnly
                     onRefresh={() => {
