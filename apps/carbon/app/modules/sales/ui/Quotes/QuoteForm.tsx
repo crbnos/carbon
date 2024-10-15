@@ -11,6 +11,7 @@ import {
   cn,
   toast,
 } from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import type { z } from "zod";
@@ -28,8 +29,9 @@ import {
   Submit,
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { quoteValidator } from "~/modules/sales";
+import { path } from "~/utils/path";
 
 type QuoteFormValues = z.infer<typeof quoteValidator>;
 
@@ -40,6 +42,7 @@ type QuoteFormProps = {
 const QuoteForm = ({ initialValues }: QuoteFormProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
+  const { company } = useUser();
   const [customer, setCustomer] = useState<{
     id: string | undefined;
     currencyCode: string | undefined;
@@ -50,6 +53,8 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
   const isCustomer = permissions.is("customer");
   const isDisabled = initialValues?.status !== "Draft";
   const isEditing = initialValues.id !== undefined;
+
+  const exchangeRateFetcher = useFetcher<{ exchangeRate: number }>();
 
   const onCustomerChange = async (
     newValue: {
@@ -168,16 +173,27 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                   }
                 }}
               />
-              {isEditing && (
-                <ExchangeRate
-                  name="exchangeRate"
-                  exchangeRateUpdatedAt={initialValues.exchangeRateUpdatedAt}
-                  isReadOnly
-                  onRefresh={() => {
-                    console.log("refresh");
-                  }}
-                />
-              )}
+              {isEditing &&
+                customer.currencyCode !== company.baseCurrencyCode && (
+                  <ExchangeRate
+                    name="exchangeRate"
+                    exchangeRateUpdatedAt={initialValues.exchangeRateUpdatedAt}
+                    isReadOnly
+                    onRefresh={() => {
+                      const formData = new FormData();
+                      formData.append(
+                        "currencyCode",
+                        customer.currencyCode ?? ""
+                      );
+                      exchangeRateFetcher.submit(formData, {
+                        method: "post",
+                        action: path.to.quoteExchangeRate(
+                          initialValues.id ?? ""
+                        ),
+                      });
+                    }}
+                  />
+                )}
 
               <CustomFormFields table="quote" />
             </div>

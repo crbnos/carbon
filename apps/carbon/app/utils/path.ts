@@ -634,6 +634,8 @@ export const path = {
         `${x}/quote/${quoteId}/lines/${lineId}/assembly/${assemblyId}`
       ),
     quoteDetails: (id: string) => generatePath(`${x}/quote/${id}/details`),
+    quoteExchangeRate: (id: string) =>
+      generatePath(`${x}/quote/${id}/exchange-rate`),
     quoteExternalDocuments: (id: string) =>
       generatePath(`${x}/quote/${id}/external`),
     quoteFavorite: `${x}/sales/quotes/favorite`,
