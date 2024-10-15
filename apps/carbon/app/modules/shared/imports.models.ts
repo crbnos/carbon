@@ -146,7 +146,20 @@ export const fieldMappings = {
     phone: {
       label: "Phone",
       required: false,
-      type: "string",
+      type: "enum",
+      enumData: {
+        description: "The account manager of the customer",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("employees")
+            .select("id, name, avatarUrl")
+            .eq("companyId", companyId)
+            .order("name");
+        },
+      },
     },
     fax: {
       label: "Fax",
@@ -750,15 +763,18 @@ export const importSchemas: Record<
       .optional()
       .describe(
         "The tax identification number of the customer. Usually numeric."
-      ),
+      )
+      .nullable(),
     currencyCode: z
       .string()
       .optional()
-      .describe("The currency code of the customer. Usually a 3-letter code."),
+      .describe("The currency code of the customer. Usually a 3-letter code.")
+      .nullable(),
     website: z
       .string()
       .optional()
-      .describe("The website url. Usually begins with http:// or https://"),
+      .describe("The website url. Usually begins with http:// or https://")
+      .nullable(),
   }),
   customerContact: z.object({
     id: z
@@ -817,15 +833,18 @@ export const importSchemas: Record<
       .optional()
       .describe(
         "The tax identification number of the supplier. Usually numeric."
-      ),
+      )
+      .nullable(),
     currencyCode: z
       .string()
       .optional()
-      .describe("The currency code of the supplier. Usually a 3-letter code."),
+      .describe("The currency code of the supplier. Usually a 3-letter code.")
+      .nullable(),
     website: z
       .string()
       .optional()
-      .describe("The website url. Usually begins with http:// or https://"),
+      .describe("The website url. Usually begins with http:// or https://")
+      .nullable(),
   }),
   supplierContact: z.object({
     id: z
