@@ -71,6 +71,8 @@ serve(async (req: Request) => {
       string
     >[];
 
+    console.log(columnMappings);
+
     let mappedRecords = parsedCsv.map((row) => {
       const record: Record<string, string> = {};
       for (const [key, value] of Object.entries(columnMappings)) {
@@ -82,7 +84,7 @@ serve(async (req: Request) => {
           } else {
             record[key] = enumMapping["Default"];
           }
-        } else if (row[value]) {
+        } else if (value && value !== "N/A" && row[value]) {
           record[key] = row[value];
         }
       }
@@ -132,6 +134,8 @@ serve(async (req: Request) => {
           }, new Map<string, { id: string; externalId: Record<string, string> }>())
         );
 
+        const customerIds = new Set();
+
         await db.transaction().execute(async (trx) => {
           const customerInserts: Database["public"]["Tables"]["customer"]["Insert"][] =
             [];
@@ -150,7 +154,8 @@ serve(async (req: Request) => {
             const { id, ...rest } = record;
             if (externalIdMap.has(id)) {
               const existingCustomer = externalIdMap.get(id)!;
-              if (isCustomerValid(rest)) {
+              if (isCustomerValid(rest) && !customerIds.has(id)) {
+                customerIds.add(id);
                 customerUpdates.push({
                   id: existingCustomer.id,
                   data: {
@@ -163,7 +168,8 @@ serve(async (req: Request) => {
                   },
                 });
               }
-            } else if (isCustomerValid(rest)) {
+            } else if (isCustomerValid(rest) && !customerIds.has(id)) {
+              customerIds.add(id);
               customerInserts.push({
                 ...rest,
                 companyId,
@@ -220,6 +226,8 @@ serve(async (req: Request) => {
           }, new Map<string, { id: string; externalId: Record<string, string> }>())
         );
 
+        const supplierIds = new Set();
+
         await db.transaction().execute(async (trx) => {
           const supplierInserts: Database["public"]["Tables"]["supplier"]["Insert"][] =
             [];
@@ -236,7 +244,8 @@ serve(async (req: Request) => {
 
           for (const record of mappedRecords) {
             const { id, ...rest } = record;
-            if (externalIdMap.has(id)) {
+            if (externalIdMap.has(id) && !supplierIds.has(id)) {
+              supplierIds.add(id);
               const existingSupplier = externalIdMap.get(id)!;
               if (isSupplierValid(rest)) {
                 supplierUpdates.push({
@@ -251,7 +260,8 @@ serve(async (req: Request) => {
                   },
                 });
               }
-            } else if (isSupplierValid(rest)) {
+            } else if (isSupplierValid(rest) && !supplierIds.has(id)) {
+              supplierIds.add(id);
               supplierInserts.push({
                 ...rest,
                 companyId,
@@ -644,6 +654,7 @@ serve(async (req: Request) => {
                   [EXTERNAL_ID_KEY]: id,
                 },
               };
+
               contactInserts.push(newContact);
               customerContactInserts.push({
                 contactId,

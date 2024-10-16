@@ -53,7 +53,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function MethodMaterialsRoute() {
   const { count, materials } = useLoaderData<typeof loader>();
-  console.log({ materials });
 
   return (
     <VStack spacing={0} className="h-[calc(100vh-49px)]">

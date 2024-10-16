@@ -53,7 +53,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function MethodOperationsRoute() {
   const { count, operations } = useLoaderData<typeof loader>();
-  console.log({ operations });
 
   return (
     <VStack spacing={0} className="h-[calc(100vh-49px)]">
