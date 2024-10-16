@@ -608,6 +608,32 @@ export async function getMethodMaterial(
 
 export async function getMethodMaterials(
   client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("methodMaterial")
+    .select(
+      "*, item(name, readableId), makeMethod!makeMethodId(item(id, type, name, readableId))",
+      {
+        count: "exact",
+      }
+    )
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("itemReadableId", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, []);
+  }
+
+  return query;
+}
+
+export async function getMethodMaterialsByMakeMethod(
+  client: SupabaseClient<Database>,
   makeMethodId: string
 ) {
   return client
@@ -618,6 +644,31 @@ export async function getMethodMaterials(
 }
 
 export async function getMethodOperations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("methodOperation")
+    .select("*, makeMethod!makeMethodId(item(id, type, name, readableId))", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("description", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "order", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMethodOperationsByMakeMethodId(
   client: SupabaseClient<Database>,
   makeMethodId: string
 ) {

@@ -119,6 +119,7 @@ export const path = {
     attributeCategoryList: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}`),
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
+    bulkUpdateItems: `${x}/items/update`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
@@ -444,9 +445,11 @@ export const path = {
     materialSubstances: `${x}/items/substances`,
     methodMaterial: (id: string) =>
       generatePath(`${x}/items/methods/material/${id}`),
+    methodMaterials: `${x}/items/methods/materials`,
     methodMaterialsOrder: `${x}/items/methods/material/order`,
     methodOperation: (id: string) =>
       generatePath(`${x}/items/methods/operation/${id}`),
+    methodOperations: `${x}/items/methods/operations`,
     methodOperationsOrder: `${x}/items/methods/operation/order`,
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,

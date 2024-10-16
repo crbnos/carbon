@@ -194,10 +194,6 @@ const InventoryTable = memo(
       ];
     }, [forms, params, substances, unitOfMeasures]);
 
-    const actions = useMemo(() => {
-      return [];
-    }, []);
-
     const defaultColumnVisibility = {
       active: false,
       type: false,
@@ -220,7 +216,6 @@ const InventoryTable = memo(
         ) : (
           <>
             <Table<InventoryItem>
-              actions={actions}
               count={count}
               columns={columns}
               data={data}

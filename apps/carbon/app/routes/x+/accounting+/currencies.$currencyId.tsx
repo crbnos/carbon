@@ -78,7 +78,6 @@ export default function EditCurrencysRoute() {
     id: currency?.id ?? undefined,
     name: currency?.name ?? "",
     code: currency?.code ?? "",
-    symbol: currency?.symbol ?? "",
     exchangeRate: currency?.exchangeRate ?? 1,
     decimalPlaces: currency?.decimalPlaces ?? 2,
     ...getCustomFields(currency?.customFields),

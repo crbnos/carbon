@@ -175,8 +175,8 @@ export async function action(args: ActionFunctionArgs) {
           purchaseOrderLocations: purchaseOrderLocations.data,
           recipient: {
             email: supplier.data.contact.email,
-            firstName: supplier.data.contact.firstName,
-            lastName: supplier.data.contact.lastName,
+            firstName: supplier.data.contact.firstName ?? undefined,
+            lastName: supplier.data.contact.lastName ?? undefined,
           },
           sender: {
             email: buyer.data.email,

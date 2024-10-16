@@ -1,14 +1,21 @@
 import {
   Badge,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   VStack,
   cn,
+  toast,
 } from "@carbon/react";
-import { Link, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
+import { useCallback, useEffect } from "react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import {
   MethodBadge,
@@ -19,9 +26,15 @@ import {
 import Assignee from "~/components/Assignee";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
+import { methodType } from "~/modules/shared";
+import type { action } from "~/routes/x+/items+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
+import {
+  itemReplenishmentSystems,
+  itemTrackingTypes,
+} from "../../items.models";
 import type { BuyMethod, ItemFile, PartSummary, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 
@@ -52,6 +65,30 @@ const PartProperties = () => {
     optimisticAssignment !== undefined
       ? optimisticAssignment
       : routeData?.partSummary?.assignee;
+
+  const fetcher = useFetcher<typeof action>();
+  useEffect(() => {
+    if (fetcher.data?.error) {
+      toast.error(fetcher.data.error.message);
+    }
+  }, [fetcher.data]);
+  const onUpdate = useCallback(
+    (
+      field: "replenishmentSystem" | "defaultMethodType" | "itemTrackingType",
+      value: string
+    ) => {
+      const formData = new FormData();
+
+      formData.append("items", itemId);
+      formData.append("field", field);
+      formData.append("value", value);
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateItems,
+      });
+    },
+    [fetcher, itemId]
+  );
 
   return (
     <VStack
@@ -124,40 +161,81 @@ const PartProperties = () => {
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
-        <Badge variant="secondary">
-          <TrackingTypeIcon
-            type={routeData?.partSummary?.itemTrackingType!}
-            className={cn(
-              "mr-2",
-              routeData?.partSummary?.active === false && "opacity-50"
-            )}
-          />
-          <span>{routeData?.partSummary?.itemTrackingType!}</span>
-        </Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Badge variant="secondary">
+              <TrackingTypeIcon
+                type={routeData?.partSummary?.itemTrackingType!}
+                className={cn(
+                  "mr-2",
+                  routeData?.partSummary?.active === false && "opacity-50"
+                )}
+              />
+              <span>{routeData?.partSummary?.itemTrackingType!}</span>
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {itemTrackingTypes.map((type) => (
+              <DropdownMenuItem
+                key={type}
+                onClick={() => onUpdate("itemTrackingType", type)}
+              >
+                <DropdownMenuIcon icon={<TrackingTypeIcon type={type} />} />
+                <span>{type}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </VStack>
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Default Method Type</h3>
-        <Badge variant="secondary">
-          <MethodIcon
-            type={routeData?.partSummary?.defaultMethodType!}
-            className={cn(
-              "mr-2",
-              routeData?.partSummary?.active === false && "opacity-50"
-            )}
-          />
-          <span>{routeData?.partSummary?.defaultMethodType!}</span>
-        </Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Badge variant="secondary">
+              <MethodIcon
+                type={routeData?.partSummary?.defaultMethodType!}
+                className={cn(
+                  "mr-2",
+                  routeData?.partSummary?.active === false && "opacity-50"
+                )}
+              />
+              <span>{routeData?.partSummary?.defaultMethodType!}</span>
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {methodType.map((type) => (
+              <DropdownMenuItem
+                key={type}
+                onClick={() => onUpdate("defaultMethodType", type)}
+              >
+                <DropdownMenuIcon icon={<MethodIcon type={type} />} />
+                <span>{type}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </VStack>
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Replenishment</h3>
-        <Enumerable
-          className={cn(
-            routeData?.partSummary?.active === false && "opacity-50"
-          )}
-          value={routeData?.partSummary?.replenishmentSystem ?? null}
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Enumerable
+              value={routeData?.partSummary?.replenishmentSystem ?? null}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {itemReplenishmentSystems.map((system) => (
+              <DropdownMenuItem
+                key={system}
+                onClick={() => onUpdate("replenishmentSystem", system)}
+              >
+                <Enumerable value={system} />
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </VStack>
 
       <VStack spacing={2}>

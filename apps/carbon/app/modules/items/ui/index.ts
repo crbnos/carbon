@@ -7,6 +7,7 @@ export * from "./ItemPostingGroups";
 export * from "./MaterialForms";
 export * from "./Materials";
 export * from "./MaterialSubstances";
+export * from "./Methods";
 export * from "./Parts";
 export * from "./Tools";
 export * from "./UnitOfMeasure";

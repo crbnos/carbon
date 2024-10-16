@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -13,13 +14,11 @@ import {
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { useState, type ReactNode } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { LuFileEdit, LuImport, LuLock } from "react-icons/lu";
+import { LuFileEdit, LuImport, LuLock, LuZap } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { useUrlParams } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
-import type { TableAction } from "../types";
-import Actions from "./Actions";
 import Columns from "./Columns";
 import { ActiveFilters, Filter } from "./Filter";
 import type { ColumnFilter } from "./Filter/types";
@@ -28,7 +27,7 @@ import { PaginationButtons } from "./Pagination";
 import Sort from "./Sort";
 
 type HeaderProps<T> = {
-  actions: TableAction<T>[];
+  renderActions?: (selectedRows: T[]) => ReactNode;
   columnAccessors: Record<string, string>;
   columnOrder: ColumnOrderState;
   columns: Column<T, unknown>[];
@@ -50,7 +49,6 @@ type HeaderProps<T> = {
 };
 
 const TableHeader = <T extends object>({
-  actions,
   columnAccessors,
   columnOrder,
   columns,
@@ -60,6 +58,7 @@ const TableHeader = <T extends object>({
   primaryAction,
   pagination,
   selectedRows,
+  renderActions,
   setColumnOrder,
   setEditMode,
   withInlineEditing,
@@ -83,6 +82,24 @@ const TableHeader = <T extends object>({
           {!!filters?.length && <Filter filters={filters} />}
         </HStack>
         <HStack>
+          {withSelectableRows &&
+            selectedRows.length > 0 &&
+            typeof renderActions === "function" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    className="pl-2 pr-1"
+                    leftIcon={<LuZap />}
+                    variant="secondary"
+                  >
+                    <Badge variant="secondary">
+                      <span>{selectedRows.length}</span>
+                    </Badge>
+                  </Button>
+                </DropdownMenuTrigger>
+                {renderActions(selectedRows)}
+              </DropdownMenu>
+            )}
           <Sort columnAccessors={columnAccessors} />
 
           <Columns
@@ -96,10 +113,7 @@ const TableHeader = <T extends object>({
             (pagination.canNextPage || pagination.canPreviousPage) && (
               <PaginationButtons {...pagination} condensed />
             )}
-          {withSelectableRows && actions.length > 0 && (
-            // TODO: move this to a draggable bar like Linear
-            <Actions actions={actions} selectedRows={selectedRows} />
-          )}
+
           {withInlineEditing &&
             (editMode ? (
               <Button
@@ -123,7 +137,7 @@ const TableHeader = <T extends object>({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="Additional actions"
+                  aria-label="Table actions"
                   variant="secondary"
                   icon={<BsThreeDotsVertical />}
                 />

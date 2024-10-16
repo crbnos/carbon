@@ -24,7 +24,7 @@ const IndeterminateCheckbox = ({
     <Checkbox
       isChecked={!!checked || !!indeterminate}
       isIndeterminate={indeterminate}
-      className="ml-2"
+      className="ml-2 left-0 sticky z-[1]"
       onCheckedChange={handleChange}
       {...rest}
     >

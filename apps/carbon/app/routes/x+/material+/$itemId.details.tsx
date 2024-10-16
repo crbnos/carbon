@@ -95,7 +95,7 @@ export default function MaterialDetailsRoute() {
   return (
     <VStack spacing={2} className="w-full h-full">
       <MaterialForm
-        key={materialInitialValues.id}
+        key={JSON.stringify(materialInitialValues)}
         initialValues={materialInitialValues}
       />
       {permissions.is("employee") && (

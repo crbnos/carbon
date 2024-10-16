@@ -79,7 +79,10 @@ export default function ToolDetailsRoute() {
 
   return (
     <VStack spacing={2} className="w-full h-full">
-      <ToolForm key={toolInitialValues.id} initialValues={toolInitialValues} />
+      <ToolForm
+        key={JSON.stringify(toolInitialValues)}
+        initialValues={toolInitialValues}
+      />
       {permissions.is("employee") && (
         <ItemDocuments
           files={toolData?.files ?? []}

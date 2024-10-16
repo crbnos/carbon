@@ -1,15 +1,26 @@
 import {
   Badge,
   Checkbox,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   HStack,
   MenuIcon,
   MenuItem,
+  toast,
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useNavigate } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   EmployeeAvatar,
@@ -25,6 +36,7 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Consumable } from "~/modules/items";
 import { itemTrackingTypes } from "~/modules/items";
 import { methodType } from "~/modules/shared";
+import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -205,6 +217,92 @@ const ConsumablesTable = memo(
       return [...defaultColumns, ...customColumns];
     }, [customColumns, people]);
 
+    const fetcher = useFetcher<typeof action>();
+    useEffect(() => {
+      if (fetcher.data?.error) {
+        toast.error(fetcher.data.error.message);
+      }
+    }, [fetcher.data]);
+    const onBulkUpdate = useCallback(
+      (
+        selectedRows: typeof data,
+        field: "replenishmentSystem" | "defaultMethodType" | "itemTrackingType",
+        value: string
+      ) => {
+        const formData = new FormData();
+        selectedRows.forEach((row) => {
+          if (row.itemId) formData.append("items", row.itemId);
+        });
+        formData.append("field", field);
+        formData.append("value", value);
+        fetcher.submit(formData, {
+          method: "post",
+          action: path.to.bulkUpdateItems,
+        });
+      },
+      [fetcher]
+    );
+
+    const renderActions = useCallback(
+      (selectedRows: typeof data) => {
+        return (
+          <DropdownMenuContent align="end" className="min-w-[200px]">
+            <DropdownMenuLabel>Bulk Update</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  Default Method Type
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    {methodType
+                      .filter((type) => type !== "Make")
+                      .map((type) => (
+                        <DropdownMenuItem
+                          key={type}
+                          onClick={() =>
+                            onBulkUpdate(
+                              selectedRows,
+                              "defaultMethodType",
+                              type
+                            )
+                          }
+                        >
+                          <DropdownMenuIcon icon={<MethodIcon type={type} />} />
+                          <span>{type}</span>
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Inventory</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    {itemTrackingTypes.map((type) => (
+                      <DropdownMenuItem
+                        key={type}
+                        onClick={() =>
+                          onBulkUpdate(selectedRows, "itemTrackingType", type)
+                        }
+                      >
+                        <DropdownMenuIcon
+                          icon={<TrackingTypeIcon type={type} />}
+                        />
+                        <span>{type}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        );
+      },
+      [onBulkUpdate]
+    );
+
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
       return (row: Consumable) => (
@@ -255,7 +353,9 @@ const ConsumablesTable = memo(
               <New label="Consumable" to={path.to.newConsumable} />
             )
           }
+          renderActions={renderActions}
           renderContextMenu={renderContextMenu}
+          withSelectableRows
         />
         {selectedItem && selectedItem.id && (
           <ConfirmDelete

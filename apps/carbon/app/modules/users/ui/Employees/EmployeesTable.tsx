@@ -1,5 +1,7 @@
 import {
   Checkbox,
+  DropdownMenuContent,
+  DropdownMenuItem,
   HStack,
   MenuIcon,
   MenuItem,
@@ -8,9 +10,9 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { BsEnvelope, BsShieldLock } from "react-icons/bs";
+import { BsEnvelope } from "react-icons/bs";
 import { FaBan } from "react-icons/fa";
-import { LuPencil } from "react-icons/lu";
+import { LuPencil, LuShield } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -133,38 +135,45 @@ const EmployeesTable = memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params]);
 
-    const actions = useMemo(() => {
-      return [
-        {
-          label: "Edit Permissions",
-          icon: <BsShieldLock />,
-          disabled: !permissions.can("update", "users"),
-          onClick: (selected: typeof data) => {
-            setSelectedUserIds(selected.map((row) => row.id!));
-            bulkEditDrawer.onOpen();
-          },
-        },
-        {
-          label: "Send Account Invite",
-          icon: <BsEnvelope />,
-          disabled: !permissions.can("create", "users"),
-          onClick: (selected: typeof data) => {
-            setSelectedUserIds(selected.map((row) => row.id!));
-            resendInviteModal.onOpen();
-          },
-        },
-        {
-          label: "Deactivate Users",
-          icon: <FaBan />,
-          disabled: !permissions.can("delete", "users"),
-          onClick: (selected: typeof data) => {
-            setSelectedUserIds(selected.map((row) => row.id!));
-            deactivateEmployeeModal.onOpen();
-          },
-        },
-      ];
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const renderActions = useCallback(
+      (selectedRows: typeof data) => {
+        return (
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedUserIds(selectedRows.map((row) => row.id!));
+                bulkEditDrawer.onOpen();
+              }}
+              disabled={!permissions.can("update", "users")}
+            >
+              <LuShield className="mr-2 h-4 w-4" />
+              <span>Edit Permissions</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedUserIds(selectedRows.map((row) => row.id!));
+                resendInviteModal.onOpen();
+              }}
+              disabled={!permissions.can("create", "users")}
+            >
+              <BsEnvelope className="mr-2 h-4 w-4" />
+              <span>Send Account Invite</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedUserIds(selectedRows.map((row) => row.id!));
+                deactivateEmployeeModal.onOpen();
+              }}
+              disabled={!permissions.can("delete", "users")}
+            >
+              <FaBan className="mr-2 h-4 w-4" />
+              <span>Deactivate Users</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        );
+      },
+      [permissions, bulkEditDrawer, resendInviteModal, deactivateEmployeeModal]
+    );
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
@@ -209,7 +218,6 @@ const EmployeesTable = memo(
     return (
       <>
         <Table<(typeof data)[number]>
-          actions={actions}
           count={count}
           columns={columns}
           data={data}
@@ -219,6 +227,7 @@ const EmployeesTable = memo(
               <New label="Account" to={`new?${params.toString()}`} />
             )
           }
+          renderActions={renderActions}
           renderContextMenu={renderContextMenu}
           withSelectableRows={canEdit}
         />

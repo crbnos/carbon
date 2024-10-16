@@ -1,5 +1,4 @@
 import {
-  Button,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -39,18 +38,17 @@ export const CollapsibleSidebar = ({
       <div className="h-full w-full overflow-y-scroll bg-card border-r border-border">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
+            <button
               onClick={sidebar.onToggle}
               aria-label="Toggle sidebar"
-              variant="secondary"
-              className="bg-card inline-block border border-border border-l-0 absolute top-[calc(100vh-135px)] text-muted-foreground right-[-31px] left-auto rounded-l-none z-[3] hover:bg-card p-0 shadow-none w-8 h-8"
+              className="bg-transparent inline-block absolute top-[calc(100vh-135px)] text-muted-foreground right-[-31px] left-auto rounded-l-none z-[3] shadow-none w-8 h-8"
             >
               {sidebar.isOpen ? (
-                <LuPanelLeftClose className="w-4 h-4 ml-1" />
+                <LuPanelLeftClose className="w-5 h-5 ml-1.5" />
               ) : (
-                <LuPanelLeftOpen className="w-4 h-4 ml-1" />
+                <LuPanelLeftOpen className="w-5 h-5 ml-1.5" />
               )}
-            </Button>
+            </button>
           </TooltipTrigger>
 
           <TooltipContent side="right">

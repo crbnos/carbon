@@ -31,7 +31,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
           setQuery(e.target.value);
           debounceQuery(e.target.value);
         }}
-        className="w-[100px] sm:w-[200px]"
+        className="w-[100px] sm:w-[200px] text-sm"
         {...props}
       />
     </InputGroup>

@@ -1,14 +1,21 @@
 import {
   Badge,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   VStack,
   cn,
+  toast,
 } from "@carbon/react";
-import { Link, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
+import { useCallback, useEffect } from "react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import {
   Assignee,
@@ -20,9 +27,15 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
+import { methodType } from "~/modules/shared";
+import type { action } from "~/routes/x+/items+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
+import {
+  itemReplenishmentSystems,
+  itemTrackingTypes,
+} from "../../items.models";
 import type { BuyMethod, Fixture, ItemFile, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 
@@ -53,6 +66,30 @@ const FixtureProperties = () => {
     optimisticAssignment !== undefined
       ? optimisticAssignment
       : routeData?.fixtureSummary?.assignee;
+
+  const fetcher = useFetcher<typeof action>();
+  useEffect(() => {
+    if (fetcher.data?.error) {
+      toast.error(fetcher.data.error.message);
+    }
+  }, [fetcher.data]);
+  const onUpdate = useCallback(
+    (
+      field: "replenishmentSystem" | "defaultMethodType" | "itemTrackingType",
+      value: string
+    ) => {
+      const formData = new FormData();
+
+      formData.append("items", itemId);
+      formData.append("field", field);
+      formData.append("value", value);
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateItems,
+      });
+    },
+    [fetcher, itemId]
+  );
 
   return (
     <VStack
@@ -124,40 +161,81 @@ const FixtureProperties = () => {
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
-        <Badge variant="secondary">
-          <TrackingTypeIcon
-            type={routeData?.fixtureSummary?.itemTrackingType!}
-            className={cn(
-              "mr-2",
-              routeData?.fixtureSummary?.active === false && "opacity-50"
-            )}
-          />
-          <span>{routeData?.fixtureSummary?.itemTrackingType!}</span>
-        </Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Badge variant="secondary">
+              <TrackingTypeIcon
+                type={routeData?.fixtureSummary?.itemTrackingType!}
+                className={cn(
+                  "mr-2",
+                  routeData?.fixtureSummary?.active === false && "opacity-50"
+                )}
+              />
+              <span>{routeData?.fixtureSummary?.itemTrackingType!}</span>
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {itemTrackingTypes.map((type) => (
+              <DropdownMenuItem
+                key={type}
+                onClick={() => onUpdate("itemTrackingType", type)}
+              >
+                <DropdownMenuIcon icon={<TrackingTypeIcon type={type} />} />
+                <span>{type}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </VStack>
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Default Method Type</h3>
-        <Badge variant="secondary">
-          <MethodIcon
-            type={routeData?.fixtureSummary?.defaultMethodType!}
-            className={cn(
-              "mr-2",
-              routeData?.fixtureSummary?.active === false && "opacity-50"
-            )}
-          />
-          <span>{routeData?.fixtureSummary?.defaultMethodType!}</span>
-        </Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Badge variant="secondary">
+              <MethodIcon
+                type={routeData?.fixtureSummary?.defaultMethodType!}
+                className={cn(
+                  "mr-2",
+                  routeData?.fixtureSummary?.active === false && "opacity-50"
+                )}
+              />
+              <span>{routeData?.fixtureSummary?.defaultMethodType!}</span>
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {methodType.map((type) => (
+              <DropdownMenuItem
+                key={type}
+                onClick={() => onUpdate("defaultMethodType", type)}
+              >
+                <DropdownMenuIcon icon={<MethodIcon type={type} />} />
+                <span>{type}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </VStack>
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Replenishment</h3>
-        <Enumerable
-          className={cn(
-            routeData?.fixtureSummary?.active === false && "opacity-50"
-          )}
-          value={routeData?.fixtureSummary?.replenishmentSystem ?? null}
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Enumerable
+              value={routeData?.fixtureSummary?.replenishmentSystem ?? null}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {itemReplenishmentSystems.map((system) => (
+              <DropdownMenuItem
+                key={system}
+                onClick={() => onUpdate("replenishmentSystem", system)}
+              >
+                <Enumerable value={system} />
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </VStack>
 
       <VStack spacing={2}>

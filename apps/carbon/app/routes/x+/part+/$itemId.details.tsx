@@ -80,7 +80,10 @@ export default function PartDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <PartForm key={partInitialValues.id} initialValues={partInitialValues} />
+      <PartForm
+        key={JSON.stringify(partInitialValues)}
+        initialValues={partInitialValues}
+      />
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel

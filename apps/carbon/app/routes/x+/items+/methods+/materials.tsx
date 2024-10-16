@@ -5,22 +5,21 @@ import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  getJob,
-  getJobMaterials,
-  JobMaterialsTable,
-} from "~/modules/production";
+import { getMethodMaterials, MethodMaterialsTable } from "~/modules/items";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+export const handle: Handle = {
+  breadcrumb: "Method Materials",
+  to: path.to.methodMaterials,
+};
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
     view: "production",
     role: "employee",
   });
-
-  const { jobId } = params;
-  if (!jobId) throw new Error("Could not find jobId");
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -28,15 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const job = await getJob(client, jobId);
-  if (job.error) {
-    throw redirect(
-      path.to.jobs,
-      await flash(request, error(job.error, "Failed to fetch job"))
-    );
-  }
-
-  const materials = await getJobMaterials(client, jobId, {
+  const materials = await getMethodMaterials(client, companyId, {
     search,
     limit,
     offset,
@@ -49,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.production,
       await flash(
         request,
-        error(materials.error, "Failed to fetch job materials")
+        error(materials.error, "Failed to fetch method materials")
       )
     );
   }
@@ -60,12 +51,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
-export default function JobMaterialsRoute() {
+export default function MethodMaterialsRoute() {
   const { count, materials } = useLoaderData<typeof loader>();
+  console.log({ materials });
 
   return (
-    <VStack spacing={0} className="h-[calc(100vh-99px)]">
-      <JobMaterialsTable data={materials} count={count} />
+    <VStack spacing={0} className="h-[calc(100vh-49px)]">
+      <MethodMaterialsTable data={materials} count={count} />
     </VStack>
   );
 }

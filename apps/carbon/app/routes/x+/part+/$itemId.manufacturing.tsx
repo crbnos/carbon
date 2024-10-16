@@ -24,8 +24,8 @@ import type { Method } from "~/modules/items";
 import {
   BoMExplorer,
   getMakeMethod,
-  getMethodMaterials,
-  getMethodOperations,
+  getMethodMaterialsByMakeMethod,
+  getMethodOperationsByMakeMethodId,
   getMethodTree,
 } from "~/modules/items";
 import type { MethodItemType, MethodType } from "~/modules/shared";
@@ -53,8 +53,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [methodTree, methodMaterials, methodOperations] = await Promise.all([
     getMethodTree(client, makeMethod.data.id),
-    getMethodMaterials(client, makeMethod.data.id),
-    getMethodOperations(client, makeMethod.data.id),
+    getMethodMaterialsByMakeMethod(client, makeMethod.data.id),
+    getMethodOperationsByMakeMethodId(client, makeMethod.data.id),
   ]);
   if (methodTree?.error) {
     throw redirect(

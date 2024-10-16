@@ -22,7 +22,7 @@ const GroupedContentSidebar = ({
           {groups.map((group) => (
             <VStack
               key={group.name}
-              className="border-b border-border p-2"
+              className="border-b border-border p-2 pb-6"
               spacing={1}
             >
               <h4 className="text-xs text-muted-foreground font-bold pl-4 py-1 uppercase">

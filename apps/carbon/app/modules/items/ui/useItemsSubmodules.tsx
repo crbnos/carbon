@@ -2,8 +2,10 @@ import { AiOutlinePartition } from "react-icons/ai";
 import { GiWoodBeam } from "react-icons/gi";
 import {
   LuAtom,
+  LuClock,
   LuGrip,
   LuHammer,
+  LuPackage,
   LuPizza,
   LuRuler,
   LuShapes,
@@ -15,7 +17,7 @@ import { path } from "~/utils/path";
 
 const itemsRoutes: AuthenticatedRouteGroup[] = [
   {
-    name: "Manage",
+    name: "Items",
     routes: [
       {
         name: "Parts",
@@ -47,6 +49,21 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       //   to: path.to.services,
       //   icon: <LuHeadphones />,
       // },
+    ],
+  },
+  {
+    name: "Methods",
+    routes: [
+      {
+        name: "Materials",
+        to: path.to.methodMaterials,
+        icon: <LuPackage />,
+      },
+      {
+        name: "Operations",
+        to: path.to.methodOperations,
+        icon: <LuClock />,
+      },
     ],
   },
   {

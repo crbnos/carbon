@@ -10,9 +10,3 @@ declare module "@tanstack/react-table" {
 }
 
 export type ColumnSizeMap = Map<string, { width: number; startX: number }>;
-export interface TableAction<T> {
-  label: string;
-  onClick: (rows: T[]) => void;
-  disabled?: boolean;
-  icon?: JSX.Element;
-}

@@ -1,5 +1,7 @@
 import {
   Checkbox,
+  DropdownMenuContent,
+  DropdownMenuItem,
   HStack,
   MenuIcon,
   MenuItem,
@@ -146,42 +148,42 @@ const SupplierAccountsTable = memo(
       ];
     }, [supplierTypes, suppliers]);
 
-    const actions = useMemo(() => {
-      return [
-        {
-          label: "Send Account Invite",
-          icon: <BsEnvelope />,
-          disabled: !permissions.can("create", "users"),
-          onClick: (selected: typeof rows) => {
-            setSelectedUserIds(
-              selected.reduce<string[]>((acc, row) => {
-                if (row.user && !Array.isArray(row.user)) {
-                  acc.push(row.user.id);
-                }
-                return acc;
-              }, [])
-            );
-            resendInviteModal.onOpen();
-          },
-        },
-        {
-          label: "Deactivate Users",
-          icon: <FaBan />,
-          disabled: !permissions.can("delete", "users"),
-          onClick: (selected: typeof rows) => {
-            setSelectedUserIds(
-              selected.reduce<string[]>((acc, row) => {
-                if (row.user && !Array.isArray(row.user)) {
-                  acc.push(row.user.id);
-                }
-                return acc;
-              }, [])
-            );
-            deactivateSupplierModal.onOpen();
-          },
-        },
-      ];
-    }, [deactivateSupplierModal, permissions, resendInviteModal]);
+    const renderActions = useCallback(
+      (selectedRows: typeof data) => {
+        const selectedUserIds = selectedRows.reduce<string[]>((acc, row) => {
+          if (row.user && !Array.isArray(row.user)) {
+            acc.push(row.user.id);
+          }
+          return acc;
+        }, []);
+
+        return (
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedUserIds(selectedUserIds);
+                resendInviteModal.onOpen();
+              }}
+              disabled={!permissions.can("create", "users")}
+            >
+              <BsEnvelope className="mr-2 h-4 w-4" />
+              <span>Send Account Invite</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedUserIds(selectedUserIds);
+                deactivateSupplierModal.onOpen();
+              }}
+              disabled={!permissions.can("delete", "users")}
+            >
+              <FaBan className="mr-2 h-4 w-4" />
+              <span>Deactivate Users</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        );
+      },
+      [permissions, resendInviteModal, deactivateSupplierModal]
+    );
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
@@ -220,7 +222,6 @@ const SupplierAccountsTable = memo(
     return (
       <>
         <Table<(typeof rows)[number]>
-          actions={actions}
           count={count}
           columns={columns}
           data={rows}
@@ -230,6 +231,7 @@ const SupplierAccountsTable = memo(
               <New label="Supplier" to={`new?${params.toString()}`} />
             )
           }
+          renderActions={renderActions}
           renderContextMenu={renderContextMenu}
           withSelectableRows={canEdit}
         />

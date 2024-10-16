@@ -107,8 +107,8 @@ export const inputVariants = cva(
       size: {
         lg: "h-12 rounded-lg px-4 text-base",
         md: "h-10 rounded-md px-4 text-sm",
-        sm: "h-8 rounded px-3 text-xs",
-        xs: "h-6 rounded px-2 text-xs",
+        sm: "h-8 rounded px-3 text-sm",
+        xs: "h-6 rounded px-2 text-sm",
       },
       isInputGroup: {
         true: "h-auto outline-none focus-within:outline-none",

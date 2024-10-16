@@ -370,45 +370,6 @@ const DocumentsTable = memo(
       view,
     ]);
 
-    const actions = useMemo(() => {
-      return [
-        // {
-        //   label: "Add to Favorites",
-        //   icon: <BsBookmark />,
-        //   onClick: (selected: Document[]) => {
-        //     console.log("move to favorites", selected);
-        //   },
-        // },
-        // {
-        //   label: "Add Labels",
-        //   icon: <BsTag />,
-        //   // TODO - disabled can be a function of selected
-        //   disabled: true,
-        //   onClick: (selected: Document[]) => {
-        //     console.log("move to favorites", selected);
-        //   },
-        // },
-        // {
-        //   label: "Move to Trash",
-        //   icon: <LuTrash />,
-        //   // TODO - disabled can be a function of selected
-        //   disabled: true,
-        //   onClick: (selected: Document[]) => {
-        //     console.log("move to trash", selected);
-        //   },
-        // },
-        // {
-        //   label: "Update Visibility",
-        //   icon: <BsEyeFill />,
-        //   // TODO - disabled can be a function of selected
-        //   disabled: true,
-        //   onClick: (selected: Document[]) => {
-        //     console.log("update visibility", selected);
-        //   },
-        // },
-      ];
-    }, []);
-
     const defaultColumnVisibility = {
       type: false,
       extension: false,
@@ -474,7 +435,6 @@ const DocumentsTable = memo(
     return (
       <>
         <Table<Document>
-          actions={actions}
           count={count}
           columns={columns}
           data={rows}

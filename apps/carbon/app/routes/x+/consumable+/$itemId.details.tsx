@@ -87,7 +87,7 @@ export default function ConsumableDetailsRoute() {
   return (
     <VStack spacing={2} className="w-full h-full">
       <ConsumableForm
-        key={consumableInitialValues.id}
+        key={JSON.stringify(consumableInitialValues)}
         initialValues={consumableInitialValues}
       />
       {permissions.is("employee") && (

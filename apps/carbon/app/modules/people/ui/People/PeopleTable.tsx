@@ -196,7 +196,6 @@ const PeopleTable = memo(
     return (
       <>
         <Table<(typeof data)[number]>
-          // actions={actions}
           count={count}
           columns={columns}
           data={data}

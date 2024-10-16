@@ -13,8 +13,8 @@ import {
   MakeMethodBreadcrumbs,
   getItem,
   getMethodMaterial,
-  getMethodMaterials,
-  getMethodOperations,
+  getMethodMaterialsByMakeMethod,
+  getMethodOperationsByMakeMethodId,
 } from "~/modules/items";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -30,8 +30,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [material, methodMaterials, methodOperations] = await Promise.all([
     getMethodMaterial(client, materialId),
-    getMethodMaterials(client, makeMethodId),
-    getMethodOperations(client, makeMethodId),
+    getMethodMaterialsByMakeMethod(client, makeMethodId),
+    getMethodOperationsByMakeMethodId(client, makeMethodId),
   ]);
 
   if (material.error) {

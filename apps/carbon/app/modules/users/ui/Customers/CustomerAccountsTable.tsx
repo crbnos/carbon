@@ -1,5 +1,7 @@
 import {
   Checkbox,
+  DropdownMenuContent,
+  DropdownMenuItem,
   HStack,
   MenuIcon,
   MenuItem,
@@ -151,43 +153,42 @@ const CustomerAccountsTable = memo(
       ];
     }, [customerTypes, customers]);
 
-    const actions = useMemo(() => {
-      return [
-        {
-          label: "Send Account Invite",
-          icon: <BsEnvelope />,
-          disabled: !permissions.can("create", "users"),
-          onClick: (selected: typeof rows) => {
-            setSelectedUserIds(
-              selected.reduce<string[]>((acc, row) => {
-                if (row.user && !Array.isArray(row.user)) {
-                  acc.push(row.user.id);
-                }
-                return acc;
-              }, [])
-            );
-            resendInviteModal.onOpen();
-          },
-        },
-        {
-          label: "Deactivate Users",
-          icon: <FaBan />,
-          disabled: !permissions.can("delete", "users"),
-          onClick: (selected: typeof rows) => {
-            setSelectedUserIds(
-              selected.reduce<string[]>((acc, row) => {
-                if (row.user && !Array.isArray(row.user)) {
-                  acc.push(row.user.id);
-                }
-                return acc;
-              }, [])
-            );
-            deactivateCustomerModal.onOpen();
-          },
-        },
-      ];
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const renderActions = useCallback(
+      (selectedRows: typeof data) => {
+        const selectedUserIds = selectedRows.reduce<string[]>((acc, row) => {
+          if (row.user && !Array.isArray(row.user)) {
+            acc.push(row.user.id);
+          }
+          return acc;
+        }, []);
+
+        return (
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedUserIds(selectedUserIds);
+                resendInviteModal.onOpen();
+              }}
+              disabled={!permissions.can("create", "users")}
+            >
+              <BsEnvelope className="mr-2 h-4 w-4" />
+              <span>Send Account Invite</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedUserIds(selectedUserIds);
+                deactivateCustomerModal.onOpen();
+              }}
+              disabled={!permissions.can("delete", "users")}
+            >
+              <FaBan className="mr-2 h-4 w-4" />
+              <span>Deactivate Users</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        );
+      },
+      [permissions, resendInviteModal, deactivateCustomerModal]
+    );
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
@@ -226,7 +227,6 @@ const CustomerAccountsTable = memo(
     return (
       <>
         <Table<(typeof rows)[number]>
-          actions={actions}
           count={count}
           columns={columns}
           data={rows}
@@ -236,6 +236,7 @@ const CustomerAccountsTable = memo(
               <New label="Customer" to={`new?${params.toString()}`} />
             )
           }
+          renderActions={renderActions}
           renderContextMenu={renderContextMenu}
           withSelectableRows={canEdit}
         />

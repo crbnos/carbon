@@ -80,8 +80,8 @@ export async function createCustomerAccount(
     const insertUser = await createUser(client, {
       id: userId,
       email,
-      firstName,
-      lastName,
+      firstName: firstName ?? "",
+      lastName: lastName ?? "",
       avatarUrl: null,
     });
 
@@ -282,8 +282,8 @@ export async function createSupplierAccount(
     const insertUser = await createUser(client, {
       id: userId,
       email,
-      firstName,
-      lastName,
+      firstName: firstName ?? "",
+      lastName: lastName ?? "",
       avatarUrl: null,
     });
 

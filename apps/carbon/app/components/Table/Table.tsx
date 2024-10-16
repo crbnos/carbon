@@ -55,14 +55,13 @@ import {
 } from "./components";
 import type { ColumnFilter } from "./components/Filter/types";
 import { useFilters } from "./components/Filter/useFilters";
-import type { ColumnSizeMap, TableAction } from "./types";
+import type { ColumnSizeMap } from "./types";
 import { getAccessorKey, updateNestedProperty } from "./utils";
 
 interface TableProps<T extends object> {
   columns: ColumnDef<T>[];
-  data: T[];
-  actions?: TableAction<T>[];
   count?: number;
+  data: T[];
   defaultColumnOrder?: string[];
   defaultColumnPinning?: ColumnPinningState;
   defaultColumnVisibility?: Record<string, boolean>;
@@ -78,13 +77,13 @@ interface TableProps<T extends object> {
   withSelectableRows?: boolean;
   withSimpleSorting?: boolean;
   onSelectedRowsChange?: (selectedRows: T[]) => void;
+  renderActions?: (selectedRows: T[]) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
 }
 
 const Table = <T extends object>({
   data,
   columns,
-  actions = [],
   count = 0,
   defaultColumnOrder,
   defaultColumnPinning,
@@ -98,6 +97,7 @@ const Table = <T extends object>({
   withSelectableRows = false,
   withSimpleSorting = true,
   onSelectedRowsChange,
+  renderActions,
   renderContextMenu,
 }: TableProps<T>) => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -535,8 +535,6 @@ const Table = <T extends object>({
           ? "4px 0 6px -2px rgba(0, 0, 0, 0.1)"
           : "-4px 0 6px -2px rgba(0, 0, 0, 0.1)"
         : "none",
-      borderRight:
-        isPinned === "left" ? "1px solid hsl(var(--border))" : undefined,
 
       maxWidth: isPinned === "right" ? 60 : undefined,
     };
@@ -551,18 +549,18 @@ const Table = <T extends object>({
   return (
     <VStack spacing={0} className="h-full">
       <TableHeader
-        actions={actions}
         columnAccessors={columnAccessors}
         columnOrder={columnOrder}
         columns={table.getAllLeafColumns()}
         editMode={editMode}
         filters={filters}
         importCSV={importCSV}
+        pagination={pagination}
         primaryAction={primaryAction}
         selectedRows={selectedRows}
+        renderActions={renderActions}
         setColumnOrder={setColumnOrder}
         setEditMode={setEditMode}
-        pagination={pagination}
         withInlineEditing={withInlineEditing}
         withPagination={withPagination}
         withSearch={withSearch}

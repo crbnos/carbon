@@ -3,7 +3,6 @@ import type { LinkProps } from "@remix-run/react";
 import { Link } from "@remix-run/react";
 import type { ComponentProps } from "react";
 import { cloneElement, forwardRef } from "react";
-import { LuChevronRight } from "react-icons/lu";
 
 const Breadcrumbs = forwardRef<
   HTMLElement,
@@ -44,11 +43,7 @@ const BreadcrumbItem = forwardRef<
     className={cn("inline-flex items-center", className)}
     {...props}
   >
-    {!isFirstChild && (
-      <span className="text-muted-foreground">
-        <LuChevronRight />
-      </span>
-    )}
+    {!isFirstChild && <span className="text-muted-foreground">/</span>}
     {children}
   </li>
 ));
