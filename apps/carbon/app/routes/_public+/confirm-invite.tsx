@@ -22,10 +22,8 @@ export default function ConfirmInvite() {
   }
 
   const getConfirmationURL = (token: string) => {
-    return `${SUPABASE_API_URL}/auth/v1/verify?token=${token}&type=invite&redirect_to=${window.location.origin}/callback`;
+    return `${SUPABASE_API_URL}/auth/v1/verify?token=${token}&type=invite&redirect_to=${window?.location.origin}/callback`;
   };
-
-  console.log(getConfirmationURL("xxxx"));
 
   return (
     <AnimatePresence>
