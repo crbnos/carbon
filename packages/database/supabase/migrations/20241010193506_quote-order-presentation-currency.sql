@@ -117,3 +117,25 @@ CREATE POLICY "Employees with accounting_view can view currencies" ON "currency"
 
 DROP POLICY IF EXISTS "Employees with accounting_create can insert currencies" ON "currency";
 DROP POLICY IF EXISTS "Employees with accounting_delete can delete currencies" ON "currency";
+
+-- Add exchangeRate and convertedUnitPrice to quoteLinePrice
+ALTER TABLE "quoteLinePrice" ADD COLUMN "exchangeRate" NUMERIC(10,4) DEFAULT 1;
+ALTER TABLE "quoteLinePrice" ADD COLUMN "convertedUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate") STORED;
+
+-- Add a trigger to update the exchangeRate on quoteLinePrice when the exchangeRate is updated
+CREATE OR REPLACE FUNCTION update_quote_line_price_exchange_rate()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE "quoteLinePrice"
+  SET "exchangeRate" = NEW."exchangeRate"
+  WHERE "quoteId" = NEW."id";
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER update_quote_line_price_exchange_rate_trigger
+AFTER UPDATE OF "exchangeRate" ON "quote"
+FOR EACH ROW
+WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
+EXECUTE FUNCTION update_quote_line_price_exchange_rate();

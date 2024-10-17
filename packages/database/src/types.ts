@@ -14609,9 +14609,11 @@ export type Database = {
       }
       quoteLinePrice: {
         Row: {
+          convertedUnitPrice: number | null
           createdAt: string
           createdBy: string
           discountPercent: number
+          exchangeRate: number | null
           leadTime: number
           quantity: number
           quoteId: string
@@ -14621,9 +14623,11 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          convertedUnitPrice?: number | null
           createdAt?: string
           createdBy: string
           discountPercent?: number
+          exchangeRate?: number | null
           leadTime?: number
           quantity?: number
           quoteId: string
@@ -14633,9 +14637,11 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          convertedUnitPrice?: number | null
           createdAt?: string
           createdBy?: string
           discountPercent?: number
+          exchangeRate?: number | null
           leadTime?: number
           quantity?: number
           quoteId?: string

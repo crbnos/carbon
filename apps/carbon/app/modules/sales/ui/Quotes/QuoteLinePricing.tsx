@@ -227,6 +227,12 @@ const QuoteLinePricing = ({
     value: number
   ) => {
     if (!carbon) return;
+    const quoteExchangeRate = await carbon
+      .from("quote")
+      .select("id, exchangeRate")
+      .eq("id", quoteId)
+      .single();
+
     const hasPrice = prices[quantity];
     const oldPrices = { ...prices };
     const newPrices = { ...oldPrices };
@@ -238,6 +244,7 @@ const QuoteLinePricing = ({
         leadTime: 0,
         unitPrice: 0,
         discountPercent: 0,
+        exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
         createdBy: userId,
       } as unknown as QuotationPrice;
     }
