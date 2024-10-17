@@ -14,7 +14,7 @@ export default function ConfirmInvite() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const redirectTo = params.get("redirect");
+  const redirectTo = params.get("confirmation_url");
   if (!redirectTo) {
     navigate("/");
     return null;

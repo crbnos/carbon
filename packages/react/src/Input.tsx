@@ -183,7 +183,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       isInvalid = false,
       isDisabled = false,
       isReadOnly = false,
-      type,
+      type = "text",
       ...props
     },
     ref
