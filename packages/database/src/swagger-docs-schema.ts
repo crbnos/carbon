@@ -20605,6 +20605,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.unitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -20694,6 +20700,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.unitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -20735,6 +20747,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice",
           },
           {
             $ref: "#/parameters/body.quoteLinePrice",
@@ -45789,6 +45807,15 @@ export default {
           format: "numeric",
           type: "number",
         },
+        exchangeRate: {
+          default: 1,
+          format: "numeric",
+          type: "number",
+        },
+        convertedUnitPrice: {
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -64377,6 +64404,20 @@ export default {
     },
     "rowFilter.quoteLinePrice.unitPrice": {
       name: "unitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrice.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrice.convertedUnitPrice": {
+      name: "convertedUnitPrice",
       required: false,
       format: "numeric",
       in: "query",

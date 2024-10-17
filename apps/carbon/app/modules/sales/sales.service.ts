@@ -1031,52 +1031,6 @@ export async function insertCustomerLocation(
     .single();
 }
 
-export async function insertQuoteLinePrice(
-  client: SupabaseClient<Database>,
-  quoteLinePrice: {
-    quoteId: string;
-    quoteLineId: string;
-    quantity?: number;
-    markupPercent?: number;
-    unitCost?: number;
-    createdBy: string;
-  }
-) {
-  const quoteLine = await getQuoteLine(client, quoteLinePrice.quoteLineId);
-  if (quoteLine.error) {
-    return quoteLine;
-  }
-
-  let unitCost = 0;
-
-  if (quoteLine.data?.methodType !== "Make") {
-    const itemId = quoteLine.data?.itemId;
-    if (!itemId) {
-      throw new Error("itemId not found");
-    }
-    const [itemCost] = await Promise.all([
-      client.from("itemCost").select("unitCost").eq("itemId", itemId).single(),
-    ]);
-
-    if (itemCost.error) {
-      return itemCost;
-    }
-
-    unitCost = itemCost.data?.unitCost;
-  }
-
-  const totalCost = unitCost * (quoteLinePrice.quantity ?? 0);
-
-  return client.from("quoteLinePrice").insert([
-    {
-      ...quoteLinePrice,
-      unitCost,
-      extendedPrice:
-        totalCost + totalCost * ((quoteLinePrice?.markupPercent ?? 0) / 100),
-    },
-  ]);
-}
-
 export async function insertSalesOrderLines(
   client: SupabaseClient<Database>,
   salesOrderLines:
@@ -1664,9 +1618,9 @@ export async function upsertQuoteLineAdditionalCharges(
 
 export async function upsertQuoteLinePrices(
   client: SupabaseClient<Database>,
+  quoteId: string,
   lineId: string,
   quoteLinePrices: {
-    quoteId: string;
     quoteLineId: string;
     unitPrice: number;
     leadTime: number;
@@ -1691,8 +1645,20 @@ export async function upsertQuoteLinePrices(
     return deletePrices;
   }
 
+  const quoteExchangeRate = await client
+    .from("quote")
+    .select("id, exchangeRate")
+    .eq("id", quoteId)
+    .single();
+
   const pricesByQuantity = existingPrices.data.reduce<
-    Record<number, { discountPercent: number; leadTime: number }>
+    Record<
+      number,
+      {
+        discountPercent: number;
+        leadTime: number;
+      }
+    >
   >((acc, price) => {
     acc[price.quantity] = price;
     return acc;
@@ -1704,9 +1670,15 @@ export async function upsertQuoteLinePrices(
         ...p,
         discountPercent: pricesByQuantity[p.quantity].discountPercent,
         leadTime: pricesByQuantity[p.quantity].leadTime,
+        quoteId: quoteId,
+        exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
       };
     }
-    return p;
+    return {
+      ...p,
+      quoteId: quoteId,
+      exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
+    };
   });
 
   return client

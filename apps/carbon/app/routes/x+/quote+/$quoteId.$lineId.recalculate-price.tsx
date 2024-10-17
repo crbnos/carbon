@@ -43,7 +43,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const inserts = unitCostsByQuantity.data.map((unitCost, index) => ({
-    quoteId,
     quoteLineId: lineId,
     quantity: quantities.data[index],
     unitPrice: unitCost * (1 + markup / 100),
@@ -52,7 +51,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     createdBy: userId,
   }));
 
-  const insertLinePrices = await upsertQuoteLinePrices(client, lineId, inserts);
+  const insertLinePrices = await upsertQuoteLinePrices(
+    client,
+    quoteId,
+    lineId,
+    inserts
+  );
   if (insertLinePrices.error) {
     return json(
       { data: null, error: insertLinePrices.error.message },
