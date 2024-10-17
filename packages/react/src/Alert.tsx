@@ -11,11 +11,11 @@ const alertVariants = cva(
       variant: {
         default: "bg-background text-foreground",
         success:
-          "bg-gradient-to-r dark:from-emerald-600/60 dark:via-card dark:to-card from-emerald-100 to-emerald-100 border-emerald-600 text-emerald-600 [&>svg]:text-emerald-600 dark:text-foreground dark:[&>svg]:text-foreground",
+          "bg-gradient-to-r dark:from-emerald-600/30 dark:via-card dark:to-card from-emerald-100 to-emerald-100 border-emerald-600 text-emerald-600 [&>svg]:text-emerald-600 dark:text-foreground dark:[&>svg]:text-foreground",
         warning:
-          "bg-gradient-to-r dark:from-yellow-700/60 dark:via-card dark:to-card from-yellow-100/10 to-yellow-100/10 border-yellow-700 text-yellow-800 [&>svg]:text-yellow-800 dark:text-foreground  dark:[&>svg]:text-foreground",
+          "bg-gradient-to-r dark:from-yellow-700/30 dark:via-card dark:to-card from-yellow-100/10 to-yellow-100/10 border-yellow-700 text-yellow-800 [&>svg]:text-yellow-800 dark:text-foreground  dark:[&>svg]:text-foreground",
         destructive:
-          "bg-gradient-to-r dark:from-destructive/60 dark:via-card dark:to-card from-destructive/10 to-destructive/10 border-destructive text-destructive [&>svg]:text-destructive dark:text-foreground  dark:[&>svg]:text-foreground",
+          "bg-gradient-to-r dark:from-destructive/30 dark:via-card dark:to-card from-destructive/10 to-destructive/10 border-destructive text-destructive [&>svg]:text-destructive dark:text-foreground  dark:[&>svg]:text-foreground",
       },
     },
     defaultVariants: {
