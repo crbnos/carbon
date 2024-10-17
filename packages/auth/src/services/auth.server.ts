@@ -161,7 +161,7 @@ export async function sendInviteByEmail(
   data?: Record<string, unknown>
 ) {
   return getCarbonServiceRole().auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${VERCEL_URL}/callback`,
+    redirectTo: `${VERCEL_URL}`,
     data,
   });
 }
@@ -170,7 +170,7 @@ export async function sendMagicLink(email: string) {
   return getCarbonServiceRole().auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${VERCEL_URL}/callback`,
+      emailRedirectTo: `${VERCEL_URL}`,
     },
   });
 }
