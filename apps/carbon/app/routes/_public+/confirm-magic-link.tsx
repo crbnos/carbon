@@ -28,6 +28,8 @@ export default function ConfirmInvite() {
     return `${SUPABASE_API_URL}/auth/v1/verify?token=${token}&type=magiclink&redirect_to=${appUrl}/callback`;
   };
 
+  console.log(getConfirmationURL("xxxx"));
+
   return (
     <AnimatePresence>
       <VStack
