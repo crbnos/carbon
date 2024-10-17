@@ -11,7 +11,7 @@ const fade = {
   animate: { opacity: 1 },
 };
 
-export default function ConfirmInvite() {
+export default function ConfirmMagicLink() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
