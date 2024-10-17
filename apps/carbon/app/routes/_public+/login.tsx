@@ -89,7 +89,7 @@ export default function LoginRoute() {
           className="hidden dark:block max-w-[100px] mb-3"
         />
       </div>
-      <div className="rounded-lg bg-card border border-border shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
         <ValidatedForm
           validator={loginValidator}
           defaultValues={{ redirectTo }}

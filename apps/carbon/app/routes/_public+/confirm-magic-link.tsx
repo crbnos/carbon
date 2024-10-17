@@ -1,3 +1,4 @@
+import { SUPABASE_API_URL, VERCEL_URL } from "@carbon/auth";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { useNavigate, useSearchParams } from "@remix-run/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -14,11 +15,18 @@ export default function ConfirmInvite() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const redirectTo = params.get("confirmation_url");
-  if (!redirectTo) {
+  const token = params.get("token");
+  if (!token) {
     navigate("/");
     return null;
   }
+
+  const getConfirmationURL = (token: string) => {
+    const appUrl = VERCEL_URL
+      ? `https://${VERCEL_URL}`
+      : "http://localhost:3000";
+    return `${SUPABASE_API_URL}/auth/v1/verify?token=${token}&type=magiclink&redirect_to=${appUrl}/callback`;
+  };
 
   return (
     <AnimatePresence>
@@ -62,9 +70,11 @@ export default function ConfirmInvite() {
           {...fade}
           transition={{ duration: 1, delay: 2.4 }}
           size="lg"
-          asChild
+          onClick={() => {
+            window.location.href = getConfirmationURL(token);
+          }}
         >
-          <a href={redirectTo}>Log In</a>
+          Log In
         </Button>
       </VStack>
     </AnimatePresence>
