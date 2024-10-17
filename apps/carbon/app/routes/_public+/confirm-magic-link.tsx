@@ -1,4 +1,4 @@
-import { SUPABASE_API_URL, VERCEL_URL } from "@carbon/auth";
+import { SUPABASE_API_URL, VERCEL_ENV } from "@carbon/auth";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { useNavigate, useSearchParams } from "@remix-run/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -22,9 +22,11 @@ export default function ConfirmInvite() {
   }
 
   const getConfirmationURL = (token: string) => {
-    const appUrl = VERCEL_URL
-      ? `https://${VERCEL_URL}`
-      : "http://localhost:3000";
+    const appUrl =
+      VERCEL_ENV === "production"
+        ? `https://app.carbonos.dev`
+        : "http://localhost:3000";
+
     return `${SUPABASE_API_URL}/auth/v1/verify?token=${token}&type=magiclink&redirect_to=${appUrl}/callback`;
   };
 
