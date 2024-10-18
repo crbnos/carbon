@@ -81,7 +81,9 @@ const QuoteToOrderDrawer = ({
       {
         quantity: number;
         netUnitPrice: number;
+        convertedNetUnitPrice: number;
         addOn: number;
+        convertedAddOn: number;
         leadTime: number;
       }
     >
@@ -349,7 +351,9 @@ type LinePricingFormProps = {
         {
           quantity: number;
           netUnitPrice: number;
+          convertedNetUnitPrice: number;
           addOn: number;
+          convertedAddOn: number;
           leadTime: number;
         }
       >
@@ -375,6 +379,7 @@ const LinePricingForm = ({
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const quoteCurrency = quote.currencyCode ?? baseCurrency;
+  const shouldConvertCurrency = quoteCurrency !== baseCurrency;
   const quoteExchangeRate = quote.exchangeRate ?? 1;
   const formatter = useCurrencyFormatter(quoteCurrency);
 
@@ -406,6 +411,7 @@ const LinePricingForm = ({
             line={line}
             options={pricingByLine[line.id!]}
             quoteCurrency={quoteCurrency}
+            shouldConvertCurrency={shouldConvertCurrency}
             quoteExchangeRate={quoteExchangeRate}
             formatter={formatter}
             setSelectedLines={setSelectedLines}
@@ -420,6 +426,7 @@ type LinePricingOptionsProps = {
   line: QuotationLine;
   options: QuotationPrice[];
   quoteCurrency: string;
+  shouldConvertCurrency: boolean;
   quoteExchangeRate: number;
   formatter: Intl.NumberFormat;
   setSelectedLines: Dispatch<
@@ -429,7 +436,9 @@ type LinePricingOptionsProps = {
         {
           quantity: number;
           netUnitPrice: number;
+          convertedNetUnitPrice: number;
           addOn: number;
+          convertedAddOn: number;
           leadTime: number;
         }
       >
@@ -441,6 +450,7 @@ const LinePricingOptions = ({
   line,
   options,
   quoteCurrency,
+  shouldConvertCurrency,
   quoteExchangeRate,
   formatter,
   setSelectedLines,
@@ -451,7 +461,9 @@ const LinePricingOptions = ({
     quantity: 1,
     leadTime: 0,
     addOn: 0,
+    convertedAddOn: 0,
     netUnitPrice: 0,
+    convertedNetUnitPrice: 0,
   });
 
   useEffect(() => {
@@ -461,12 +473,20 @@ const LinePricingOptions = ({
         [line.id!]: {
           quantity: overridePricing.quantity,
           netUnitPrice: overridePricing.netUnitPrice,
+          convertedNetUnitPrice: overridePricing.convertedNetUnitPrice,
           addOn: overridePricing.addOn,
+          convertedAddOn: overridePricing.convertedAddOn,
           leadTime: overridePricing.leadTime,
         },
       }));
     }
-  }, [line.id, overridePricing, selectedValue, setSelectedLines]);
+  }, [
+    line.id,
+    overridePricing,
+    selectedValue,
+    setSelectedLines,
+    quoteExchangeRate,
+  ]);
 
   const additionalChargesByQuantity =
     line.quantity?.reduce((acc, quantity) => {
@@ -498,8 +518,13 @@ const LinePricingOptions = ({
               [line.id!]: {
                 quantity: selectedOption.quantity,
                 netUnitPrice: selectedOption.netUnitPrice ?? 0,
+                convertedNetUnitPrice:
+                  selectedOption.convertedNetUnitPrice ?? 0,
                 addOn:
                   additionalChargesByQuantity[selectedOption.quantity] || 0,
+                convertedAddOn:
+                  additionalChargesByQuantity[selectedOption.quantity] *
+                    quoteExchangeRate || 0,
                 leadTime: selectedOption.leadTime,
               },
             }));
@@ -591,7 +616,11 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
-                    value={overridePricing.netUnitPrice}
+                    value={
+                      shouldConvertCurrency
+                        ? overridePricing.convertedNetUnitPrice
+                        : overridePricing.netUnitPrice
+                    }
                     formatOptions={{
                       style: "currency",
                       currency: quoteCurrency,
@@ -599,7 +628,12 @@ const LinePricingOptions = ({
                     onChange={(netUnitPrice) =>
                       setOverridePricing((v) => ({
                         ...v,
-                        netUnitPrice,
+                        netUnitPrice: shouldConvertCurrency
+                          ? netUnitPrice / quoteExchangeRate
+                          : netUnitPrice,
+                        convertedNetUnitPrice: shouldConvertCurrency
+                          ? netUnitPrice
+                          : netUnitPrice * quoteExchangeRate,
                       }))
                     }
                   >
@@ -612,7 +646,11 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
-                    value={overridePricing.addOn}
+                    value={
+                      shouldConvertCurrency
+                        ? overridePricing.convertedAddOn
+                        : overridePricing.addOn
+                    }
                     formatOptions={{
                       style: "currency",
                       currency: quoteCurrency,
@@ -620,7 +658,12 @@ const LinePricingOptions = ({
                     onChange={(addOn) =>
                       setOverridePricing((v) => ({
                         ...v,
-                        addOn,
+                        addOn: shouldConvertCurrency
+                          ? addOn / quoteExchangeRate
+                          : addOn,
+                        convertedAddOn: shouldConvertCurrency
+                          ? addOn
+                          : addOn * quoteExchangeRate,
                       }))
                     }
                   >
@@ -654,8 +697,13 @@ const LinePricingOptions = ({
                 </Td>
                 <Td>
                   {formatter.format(
-                    overridePricing.netUnitPrice * overridePricing.quantity +
-                      overridePricing.addOn
+                    shouldConvertCurrency
+                      ? overridePricing.convertedNetUnitPrice *
+                          overridePricing.quantity +
+                          overridePricing.convertedAddOn
+                      : overridePricing.netUnitPrice *
+                          overridePricing.quantity +
+                          overridePricing.addOn
                   )}
                 </Td>
               </Tr>

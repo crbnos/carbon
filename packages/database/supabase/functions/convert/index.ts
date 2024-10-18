@@ -24,7 +24,9 @@ const payloadValidator = z
         z.object({
           quantity: z.number(),
           netUnitPrice: z.number(),
+          convertedNetUnitPrice: z.number(),
           addOn: z.number(),
+          convertedAddOn: z.number(),
           leadTime: z.number(),
         })
       )

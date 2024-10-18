@@ -677,9 +677,11 @@ export const salesRfqLineValidator = z.object({
 
 const selectedLineSchema = z.object({
   addOn: z.number(),
+  convertedAddOn: z.number(),
+  convertedNetUnitPrice: z.number(),
   leadTime: z.number(),
-  quantity: z.number(),
   netUnitPrice: z.number(),
+  quantity: z.number(),
 });
 
 export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);
