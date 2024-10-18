@@ -702,6 +702,8 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/shipment`),
     salesOrderDetails: (id: string) =>
       generatePath(`${x}/sales-order/${id}/details`),
+    salesOrderExchangeRate: (id: string) =>
+      generatePath(`${x}/sales-order/${id}/exchange-rate`),
     salesOrderExternalDocuments: (id: string) =>
       generatePath(`${x}/sales-order/${id}/external`),
     salesOrderFavorite: `${x}/sales-order/orders/favorite`,

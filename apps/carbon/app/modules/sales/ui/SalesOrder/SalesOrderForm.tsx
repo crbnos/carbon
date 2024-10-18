@@ -11,6 +11,7 @@ import {
   cn,
   toast,
 } from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import type { z } from "zod";
@@ -26,18 +27,21 @@ import {
   Location,
   Submit,
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import ExchangeRate from "~/components/Form/ExchangeRate";
+import { usePermissions, useUser } from "~/hooks";
 import { salesOrderValidator } from "~/modules/sales";
+import { path } from "~/utils/path";
 
 type SalesOrderFormValues = z.infer<typeof salesOrderValidator>;
 
 type SalesOrderFormProps = {
-  initialValues: SalesOrderFormValues;
+  initialValues: SalesOrderFormValues & { originatedFromQuote: boolean };
 };
 
 const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
+  const { company } = useUser();
   const [customer, setCustomer] = useState<{
     id: string | undefined;
     currencyCode: string | undefined;
@@ -47,6 +51,8 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
   });
   const isEditing = initialValues.id !== undefined;
   const isCustomer = permissions.is("customer");
+
+  const exchangeRateFetcher = useFetcher<{ exchangeRate: number }>();
 
   const onCustomerChange = async (
     newValue: {
@@ -156,7 +162,35 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                     }));
                   }
                 }}
+                disabled={initialValues.originatedFromQuote}
               />
+
+              {isEditing &&
+                customer.currencyCode !== company.baseCurrencyCode && (
+                  <ExchangeRate
+                    name="exchangeRate"
+                    value={initialValues.exchangeRate}
+                    exchangeRateUpdatedAt={initialValues.exchangeRateUpdatedAt}
+                    isReadOnly
+                    onRefresh={
+                      !initialValues.originatedFromQuote
+                        ? () => {
+                            const formData = new FormData();
+                            formData.append(
+                              "currencyCode",
+                              customer.currencyCode ?? ""
+                            );
+                            exchangeRateFetcher.submit(formData, {
+                              method: "post",
+                              action: path.to.salesOrderExchangeRate(
+                                initialValues.id ?? ""
+                              ),
+                            });
+                          }
+                        : undefined
+                    }
+                  />
+                )}
 
               <CustomFormFields table="salesOrder" />
             </div>

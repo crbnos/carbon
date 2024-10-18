@@ -4612,6 +4612,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.methodType",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.convertedUnitPrice",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.modelId",
           },
           {
@@ -9373,6 +9379,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.methodType",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -9528,6 +9540,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.methodType",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -9635,6 +9653,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.methodType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -38161,6 +38185,14 @@ export default {
           format: 'public."methodType"',
           type: "string",
         },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedUnitPrice: {
+          format: "numeric",
+          type: "number",
+        },
         modelId: {
           format: "text",
           type: "string",
@@ -40713,6 +40745,15 @@ export default {
           enum: ["Buy", "Make", "Pick"],
           format: 'public."methodType"',
           type: "string",
+        },
+        exchangeRate: {
+          default: 1,
+          format: "numeric",
+          type: "number",
+        },
+        convertedUnitPrice: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -54475,6 +54516,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderLines.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.convertedUnitPrice": {
+      name: "convertedUnitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrderLines.modelId": {
       name: "modelId",
       required: false,
@@ -57722,6 +57777,20 @@ export default {
       name: "methodType",
       required: false,
       format: 'public."methodType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.convertedUnitPrice": {
+      name: "convertedUnitPrice",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },

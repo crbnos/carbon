@@ -1317,6 +1317,22 @@ export async function updateQuoteExchangeRate(
   return client.from("quote").update(update).eq("id", update.id);
 }
 
+export async function updateSalesOrderExchangeRate(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    exchangeRate: number;
+  }
+) {
+  const update = {
+    id: data.id,
+    exchangeRate: data.exchangeRate,
+    exchangeRateUpdatedAt: new Date().toISOString(),
+  };
+
+  return client.from("salesOrder").update(update).eq("id", update.id);
+}
+
 export async function updateQuoteFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -1916,6 +1932,28 @@ export async function upsertSalesOrder(
       })
 ) {
   if ("id" in salesOrder) {
+    // Only update the exchange rate if the currency code has changed
+    const existingSalesOrder = await client
+      .from("salesOrder")
+      .select("companyId, currencyCode")
+      .eq("id", salesOrder.id)
+      .single();
+
+    if (existingSalesOrder.error) return existingSalesOrder;
+
+    const { companyId, currencyCode } = existingSalesOrder.data;
+
+    if (salesOrder.currencyCode && currencyCode !== salesOrder.currencyCode) {
+      const currency = await getCurrencyByCode(
+        client,
+        companyId,
+        salesOrder.currencyCode
+      );
+      if (currency.data) {
+        salesOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
+        salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
+      }
+    }
     return client
       .from("salesOrder")
       .update(sanitize(salesOrder))
@@ -1942,6 +1980,21 @@ export async function upsertSalesOrder(
   const { shippingMethodId, shippingTermId } = customerShipping.data;
 
   const locationId = employee?.data?.locationId ?? null;
+
+  if (salesOrder.currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      salesOrder.companyId,
+      salesOrder.currencyCode
+    );
+    if (currency.data) {
+      salesOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
+      salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  } else {
+    salesOrder.exchangeRate = 1;
+    salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
+  }
 
   const order = await client
     .from("salesOrder")
@@ -2043,6 +2096,11 @@ export async function upsertSalesOrderLine(
       .select("id")
       .single();
   }
+  const salesOrder = await getSalesOrder(client, salesOrderLine.salesOrderId);
+  if (salesOrder.error) return salesOrder;
+
+  salesOrderLine.exchangeRate = salesOrder.data?.exchangeRate ?? 1;
+
   return client
     .from("salesOrderLine")
     .insert([salesOrderLine])

@@ -126,7 +126,7 @@ ALTER TABLE "quoteLinePrice" ADD COLUMN "convertedNetUnitPrice" NUMERIC(10,5) GE
 ALTER TABLE "quoteLinePrice" ADD COLUMN "netExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * (1 - "discountPercent") * "quantity") STORED;
 ALTER TABLE "quoteLinePrice" ADD COLUMN "convertedNetExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate" * (1 - "discountPercent") * "quantity") STORED;
 
--- Add a trigger to update the exchangeRate on quoteLinePrice when the exchangeRate is updated
+-- Add a trigger to update the exchangeRate on quoteLinePrice when the exchangeRate on quote is updated
 CREATE OR REPLACE FUNCTION update_quote_line_price_exchange_rate()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -143,3 +143,49 @@ AFTER UPDATE OF "exchangeRate" ON "quote"
 FOR EACH ROW
 WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
 EXECUTE FUNCTION update_quote_line_price_exchange_rate();
+
+-- Add exchangeRate and convertedUnitPrice to salesOrderLine
+ALTER TABLE "salesOrderLine" ADD COLUMN "exchangeRate" NUMERIC(10,4) DEFAULT 1;
+ALTER TABLE "salesOrderLine" ADD COLUMN "convertedUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate") STORED;
+
+DROP VIEW "salesOrderLines";
+CREATE OR REPLACE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS (
+  SELECT
+    sl.*,
+    COALESCE(mu.id, imu.id) as "modelId",
+    COALESCE(mu."autodeskUrn", imu."autodeskUrn") as "autodeskUrn",
+    COALESCE(mu."modelPath", imu."modelPath") as "modelPath",
+    COALESCE(mu."thumbnailPath", imu."thumbnailPath") as "thumbnailPath",
+    COALESCE(mu."name", imu."name") as "modelName",
+    COALESCE(mu."size", imu."size") as "modelSize",
+    ic."unitCost" as "unitCost",
+    cp."customerPartId",
+    cp."customerPartRevision"
+  FROM "salesOrderLine" sl
+  INNER JOIN "salesOrder" so ON so.id = sl."salesOrderId"
+  LEFT JOIN "modelUpload" mu ON sl."modelUploadId" = mu."id"
+  INNER JOIN "item" i ON i.id = sl."itemId"
+  LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
+  LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
+  LEFT JOIN "customerPartToItem" cp ON cp."customerId" = so."customerId" AND cp."itemId" = i.id
+);
+
+-- Add a trigger to update the exchangeRate on salesOrderLine when the exchangeRate on salesOrder is updated
+CREATE OR REPLACE FUNCTION update_sales_order_line_exchange_rate()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE "salesOrderLine"
+  SET "exchangeRate" = NEW."exchangeRate"
+  WHERE "salesOrderId" = NEW."id";  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER update_sales_order_line_exchange_rate_trigger
+AFTER UPDATE OF "exchangeRate" ON "salesOrder"
+FOR EACH ROW
+WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
+EXECUTE FUNCTION update_sales_order_line_exchange_rate();
+
+
+
