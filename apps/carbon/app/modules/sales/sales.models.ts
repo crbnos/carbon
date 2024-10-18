@@ -509,6 +509,8 @@ export const salesOrderValidator = z.object({
   quoteId: zfd.text(z.string().optional()),
   locationId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  exchangeRateUpdatedAt: zfd.text(z.string().optional()),
 });
 
 export const salesOrderShipmentValidator = z
@@ -570,6 +572,7 @@ export const salesOrderLineValidator = z
     shelfId: zfd.text(z.string().optional()),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     unitPrice: zfd.numeric(z.number().optional()),
+    exchangeRate: zfd.numeric(z.number().optional()),
   })
   .refine((data) => (data.salesOrderLineType === "Part" ? data.itemId : true), {
     message: "Part is required",

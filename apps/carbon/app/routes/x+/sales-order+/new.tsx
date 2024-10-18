@@ -5,7 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { useUrlParams } from "~/hooks";
+import { useUrlParams, useUser } from "~/hooks";
 import type { SalesOrderStatus } from "~/modules/sales";
 import {
   SalesOrderForm,
@@ -76,13 +76,17 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function SalesOrderNewRoute() {
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
+  const { company } = useUser();
   const initialValues = {
     id: undefined,
     salesOrderId: undefined,
     customerId: customerId ?? "",
     orderDate: today(getLocalTimeZone()).toString(),
     status: "Draft" as SalesOrderStatus,
-    currencyCode: undefined,
+    currencyCode: company?.baseCurrencyCode ?? "USD",
+    exchangeRate: undefined,
+    exchangeRateUpdatedAt: "",
+    originatedFromQuote: false,
   };
 
   return (

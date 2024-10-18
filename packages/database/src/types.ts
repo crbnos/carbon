@@ -16593,10 +16593,12 @@ export type Database = {
           addOnCost: number
           assetId: string | null
           companyId: string
+          convertedUnitPrice: number | null
           createdAt: string
           createdBy: string
           customFields: Json | null
           description: string | null
+          exchangeRate: number | null
           id: string
           invoicedComplete: boolean
           itemId: string | null
@@ -16627,10 +16629,12 @@ export type Database = {
           addOnCost?: number
           assetId?: string | null
           companyId: string
+          convertedUnitPrice?: number | null
           createdAt?: string
           createdBy: string
           customFields?: Json | null
           description?: string | null
+          exchangeRate?: number | null
           id?: string
           invoicedComplete?: boolean
           itemId?: string | null
@@ -16661,10 +16665,12 @@ export type Database = {
           addOnCost?: number
           assetId?: string | null
           companyId?: string
+          convertedUnitPrice?: number | null
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
           description?: string | null
+          exchangeRate?: number | null
           id?: string
           invoicedComplete?: boolean
           itemId?: string | null
@@ -25519,14 +25525,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27087,12 +27093,14 @@ export type Database = {
           assetId: string | null
           autodeskUrn: string | null
           companyId: string | null
+          convertedUnitPrice: number | null
           createdAt: string | null
           createdBy: string | null
           customerPartId: string | null
           customerPartRevision: string | null
           customFields: Json | null
           description: string | null
+          exchangeRate: number | null
           id: string | null
           invoicedComplete: boolean | null
           itemId: string | null

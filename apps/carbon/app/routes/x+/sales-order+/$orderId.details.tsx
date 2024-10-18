@@ -8,6 +8,7 @@ import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
 import type { Opportunity, SalesOrder } from "~/modules/sales";
 import {
+  getOpportunityBySalesOrder,
   getSalesOrderPayment,
   getSalesOrderShipment,
   OpportunityDocuments,
@@ -76,10 +77,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   //     )
   //   );
   // }
+  const opportunity = await getOpportunityBySalesOrder(client, orderId);
+  const originatedFromQuote = opportunity.data?.quoteId !== null;
 
   return json({
     salesOrderShipment: salesOrderShipment.data,
     salesOrderPayment: salesOrderPayment.data,
+    originatedFromQuote,
     // shippingTerms: shippingTerms.data ?? [],
   });
 }
@@ -130,6 +134,7 @@ export default function SalesOrderRoute() {
   const {
     salesOrderShipment,
     salesOrderPayment,
+    originatedFromQuote,
     // shippingTerms,
   } = useLoaderData<typeof loader>();
   const { orderId } = useParams();
@@ -154,6 +159,9 @@ export default function SalesOrderRoute() {
     receiptPromisedDate: orderData?.salesOrder?.receiptPromisedDate ?? "",
     notes: orderData?.salesOrder?.notes ?? "",
     currencyCode: orderData?.salesOrder?.currencyCode ?? "",
+    exchangeRate: orderData?.salesOrder?.exchangeRate ?? undefined,
+    exchangeRateUpdatedAt: orderData?.salesOrder?.exchangeRateUpdatedAt ?? "",
+    originatedFromQuote: originatedFromQuote,
     ...getCustomFields(orderData?.salesOrder?.customFields),
   };
 
@@ -180,7 +188,6 @@ export default function SalesOrderRoute() {
       salesOrderPayment.invoiceCustomerLocationId ?? "",
     invoiceCustomerContactId: salesOrderPayment.invoiceCustomerContactId ?? "",
     paymentTermId: salesOrderPayment.paymentTermId ?? "",
-    currencyCode: salesOrderPayment.currencyCode as "USD",
     ...getCustomFields(salesOrderPayment.customFields),
   };
 

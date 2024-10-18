@@ -106,6 +106,9 @@ serve(async (req: Request) => {
                   quote.data.currencyCode ??
                   company.data?.baseCurrencyCode ??
                   "USD",
+                exchangeRate: quote.data.exchangeRate ?? 1,
+                exchangeRateUpdatedAt:
+                  quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
               },
             ])
             .returning(["id"])
