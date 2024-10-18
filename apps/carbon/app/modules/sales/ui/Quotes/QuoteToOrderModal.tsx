@@ -258,6 +258,7 @@ const QuoteToOrderDrawer = ({
             ) : null}
             <ScrollArea className="h-[calc(100vh-145px)] flex-grow w-full">
               <LinePricingForm
+                quote={quote}
                 lines={lines}
                 pricing={pricing}
                 setSelectedLines={setSelectedLines}
@@ -338,6 +339,7 @@ const QuoteToOrderDrawer = ({
 export default QuoteToOrderDrawer;
 
 type LinePricingFormProps = {
+  quote: Quotation;
   lines: QuotationLine[];
   pricing: QuotationPrice[];
   setSelectedLines: Dispatch<
@@ -356,6 +358,7 @@ type LinePricingFormProps = {
 };
 
 const LinePricingForm = ({
+  quote,
   lines,
   pricing,
   setSelectedLines,
@@ -368,7 +371,12 @@ const LinePricingForm = ({
       }, {}),
     [lines, pricing]
   );
-  const formatter = useCurrencyFormatter();
+
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const quoteCurrency = quote.currencyCode ?? baseCurrency;
+  const quoteExchangeRate = quote.exchangeRate ?? 1;
+  const formatter = useCurrencyFormatter(quoteCurrency);
 
   return (
     <VStack spacing={8}>
@@ -397,6 +405,8 @@ const LinePricingForm = ({
           <LinePricingOptions
             line={line}
             options={pricingByLine[line.id!]}
+            quoteCurrency={quoteCurrency}
+            quoteExchangeRate={quoteExchangeRate}
             formatter={formatter}
             setSelectedLines={setSelectedLines}
           />
@@ -409,6 +419,8 @@ const LinePricingForm = ({
 type LinePricingOptionsProps = {
   line: QuotationLine;
   options: QuotationPrice[];
+  quoteCurrency: string;
+  quoteExchangeRate: number;
   formatter: Intl.NumberFormat;
   setSelectedLines: Dispatch<
     SetStateAction<
@@ -428,6 +440,8 @@ type LinePricingOptionsProps = {
 const LinePricingOptions = ({
   line,
   options,
+  quoteCurrency,
+  quoteExchangeRate,
   formatter,
   setSelectedLines,
 }: LinePricingOptionsProps) => {
@@ -439,9 +453,6 @@ const LinePricingOptions = ({
     addOn: 0,
     unitPrice: 0,
   });
-
-  const { company } = useUser();
-  const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   useEffect(() => {
     if (selectedValue === "custom") {
@@ -461,7 +472,7 @@ const LinePricingOptions = ({
     line.quantity?.reduce((acc, quantity) => {
       const charges = Object.values(line.additionalCharges ?? {}).reduce(
         (chargeAcc, charge) => {
-          const amount = charge.amounts?.[quantity] ?? 0;
+          const amount = charge.amounts?.[quantity] * quoteExchangeRate;
           return chargeAcc + amount;
         },
         0
@@ -532,16 +543,18 @@ const LinePricingOptions = ({
                         </label>
                       </Td>
                       <Td>{option.quantity}</Td>
-                      <Td>{formatter.format(option.unitPrice)}</Td>
+                      <Td>
+                        {formatter.format(option.convertedNetUnitPrice ?? 0)}
+                      </Td>
                       <Td>
                         {formatter.format(
                           additionalChargesByQuantity[option.quantity]
                         )}
                       </Td>
-                      <Td>{option.leadTime} Days</Td>
+                      <Td>{option.leadTime} days</Td>
                       <Td>
                         {formatter.format(
-                          option.unitPrice * option.quantity +
+                          (option.convertedNetExtendedPrice ?? 0) +
                             additionalChargesByQuantity[option.quantity]
                         )}
                       </Td>
@@ -570,7 +583,7 @@ const LinePricingOptions = ({
                     }
                   >
                     <NumberInput
-                      size="sm"
+                      size="md"
                       className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
                     />
                   </NumberField>
@@ -581,7 +594,7 @@ const LinePricingOptions = ({
                     value={overridePricing.unitPrice}
                     formatOptions={{
                       style: "currency",
-                      currency: baseCurrency,
+                      currency: quoteCurrency,
                     }}
                     onChange={(unitPrice) =>
                       setOverridePricing((v) => ({
@@ -591,7 +604,7 @@ const LinePricingOptions = ({
                     }
                   >
                     <NumberInput
-                      size="sm"
+                      size="md"
                       className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
                     />
                   </NumberField>
@@ -602,7 +615,7 @@ const LinePricingOptions = ({
                     value={overridePricing.addOn}
                     formatOptions={{
                       style: "currency",
-                      currency: baseCurrency,
+                      currency: quoteCurrency,
                     }}
                     onChange={(addOn) =>
                       setOverridePricing((v) => ({
@@ -612,7 +625,7 @@ const LinePricingOptions = ({
                     }
                   >
                     <NumberInput
-                      size="sm"
+                      size="md"
                       className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
                     />
                   </NumberField>
@@ -634,7 +647,7 @@ const LinePricingOptions = ({
                     }
                   >
                     <NumberInput
-                      size="sm"
+                      size="md"
                       className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
                     />
                   </NumberField>
