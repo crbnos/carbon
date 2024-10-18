@@ -121,6 +121,10 @@ DROP POLICY IF EXISTS "Employees with accounting_delete can delete currencies" O
 -- Add exchangeRate and convertedUnitPrice to quoteLinePrice
 ALTER TABLE "quoteLinePrice" ADD COLUMN "exchangeRate" NUMERIC(10,4) DEFAULT 1;
 ALTER TABLE "quoteLinePrice" ADD COLUMN "convertedUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate") STORED;
+ALTER TABLE "quoteLinePrice" ADD COLUMN "netUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * (1 - "discountPercent")) STORED;
+ALTER TABLE "quoteLinePrice" ADD COLUMN "convertedNetUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate" * (1 - "discountPercent")) STORED;
+ALTER TABLE "quoteLinePrice" ADD COLUMN "netExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * (1 - "discountPercent") * "quantity") STORED;
+ALTER TABLE "quoteLinePrice" ADD COLUMN "convertedNetExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate" * (1 - "discountPercent") * "quantity") STORED;
 
 -- Add a trigger to update the exchangeRate on quoteLinePrice when the exchangeRate is updated
 CREATE OR REPLACE FUNCTION update_quote_line_price_exchange_rate()

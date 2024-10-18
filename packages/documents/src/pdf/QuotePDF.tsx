@@ -76,11 +76,7 @@ const QuotePDF = ({
     if (!acc[price.quoteLineId]) {
       acc[price.quoteLineId] = [];
     }
-    const convertedPrice = { ...price };
-    if (shouldConvertCurrency) {
-      convertedPrice.unitPrice = price.unitPrice * exchangeRate;
-    }
-    acc[price.quoteLineId].push(convertedPrice);
+    acc[price.quoteLineId].push(price);
     return acc;
   }, {});
 
@@ -176,7 +172,7 @@ const QuotePDF = ({
               <Text style={tw("w-1/5 text-right")}>Unit Price</Text>
               <Text style={tw("w-1/5 text-right")}>Add-Ons</Text>
               <Text style={tw("w-1/5 text-right")}>Lead Time</Text>
-              <Text style={tw("w-1/5 text-right")}>Extended Price</Text>
+              <Text style={tw("w-1/5 text-right")}>Total Price</Text>
             </View>
           </View>
 
@@ -254,9 +250,9 @@ const QuotePDF = ({
                       const price = prices.find(
                         (price) => price.quantity === quantity
                       );
-                      const netPrice =
-                        price?.unitPrice *
-                        (1 - (price?.discountPercent ?? 0) / 100);
+                      const netUnitPrice = price?.convertedNetUnitPrice ?? 0;
+                      const netExtendedPrice =
+                        price?.convertedNetExtendedPrice ?? 0;
 
                       const additionalCharge =
                         additionalChargesByQuantity[index] ?? 0;
@@ -265,7 +261,9 @@ const QuotePDF = ({
                         <View key={quantity} style={tw("flex flex-row")}>
                           <Text style={tw("w-1/5 text-right")}>{quantity}</Text>
                           <Text style={tw("w-1/5 text-right")}>
-                            {netPrice ? formatter.format(netPrice) : "-"}
+                            {netUnitPrice
+                              ? formatter.format(netUnitPrice)
+                              : "-"}
                           </Text>
                           <Text style={tw("w-1/5 text-right")}>
                             {additionalCharge
@@ -276,9 +274,9 @@ const QuotePDF = ({
                             {price ? `${price.leadTime} days` : "-"}
                           </Text>
                           <Text style={tw("w-1/5 text-right")}>
-                            {netPrice
+                            {netUnitPrice
                               ? formatter.format(
-                                  netPrice * quantity + additionalCharge
+                                  netExtendedPrice + additionalCharge
                                 )
                               : "-"}
                           </Text>

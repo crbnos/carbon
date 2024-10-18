@@ -20611,6 +20611,18 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.netUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedNetUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.netExtendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedNetExtendedPrice",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -20706,6 +20718,18 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.netUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedNetUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.netExtendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedNetExtendedPrice",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -20753,6 +20777,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.netUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedNetUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.netExtendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.convertedNetExtendedPrice",
           },
           {
             $ref: "#/parameters/body.quoteLinePrice",
@@ -45816,6 +45852,22 @@ export default {
           format: "numeric",
           type: "number",
         },
+        netUnitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedNetUnitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        netExtendedPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedNetExtendedPrice: {
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -64418,6 +64470,34 @@ export default {
     },
     "rowFilter.quoteLinePrice.convertedUnitPrice": {
       name: "convertedUnitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrice.netUnitPrice": {
+      name: "netUnitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrice.convertedNetUnitPrice": {
+      name: "convertedNetUnitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrice.netExtendedPrice": {
+      name: "netExtendedPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrice.convertedNetExtendedPrice": {
+      name: "convertedNetExtendedPrice",
       required: false,
       format: "numeric",
       in: "query",
