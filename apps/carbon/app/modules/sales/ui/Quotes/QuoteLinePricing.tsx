@@ -192,6 +192,13 @@ const QuoteLinePricing = ({
     return totalCost;
   });
 
+  const netPricesByQuantity = quantities.map((quantity, index) => {
+    const price = prices[quantity]?.unitPrice ?? 0;
+    const discount = prices[quantity]?.discountPercent ?? 0;
+    const netPrice = price * (1 - discount);
+    return netPrice;
+  });
+
   const onRecalculate = (markup: number) => {
     const formData = new FormData();
     formData.append("markup", markup.toString());
@@ -529,8 +536,7 @@ const QuoteLinePricing = ({
                   <span>Net Unit Price</span>
                 </HStack>
               </Td>
-              {quantities.map((quantity, index) => {
-                const price = prices[quantity]?.netUnitPrice ?? 0;
+              {netPricesByQuantity.map((price, index) => {
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
@@ -555,8 +561,7 @@ const QuoteLinePricing = ({
                   </span>
                 </HStack>
               </Td>
-              {quantities.map((quantity, index) => {
-                const price = prices[quantity]?.netUnitPrice ?? 0;
+              {netPricesByQuantity.map((price, index) => {
                 const cost = unitCostsByQuantity[index];
                 const profit = ((price - cost) / price) * 100;
                 return (
@@ -582,14 +587,13 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const netExtendedPrice =
-                  prices[quantity]?.netExtendedPrice ?? 0;
-                const extendedCost = unitCostsByQuantity[index] * quantity;
-                const profit = netExtendedPrice - extendedCost;
+                const price = netPricesByQuantity[index];
+                const cost = unitCostsByQuantity[index];
+                const profit = (price - cost) * quantity;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
-                      {netExtendedPrice ? (
+                      {price ? (
                         <span className={cn(profit < -0.01 && "text-red-500")}>
                           {formatter.format(profit)}
                         </span>
@@ -746,7 +750,7 @@ const QuoteLinePricing = ({
               </Td>
               {quantities.map((quantity, index) => {
                 const price =
-                  (prices[quantity]?.netExtendedPrice ?? 0) +
+                  netPricesByQuantity[index] * quantity +
                   additionalChargesByQuantity[index];
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
@@ -784,14 +788,17 @@ const QuoteLinePricing = ({
                   </Td>
                   {quantities.map((quantity, index) => {
                     const price =
-                      (prices[quantity]?.convertedNetExtendedPrice ?? 0) +
-                      additionalChargesByQuantity[index] *
-                        (prices[quantity]?.exchangeRate ?? 1);
+                      netPricesByQuantity[index] * quantity +
+                      additionalChargesByQuantity[index];
+                    const exchangeRate = prices[quantity]?.exchangeRate;
+                    const convertedPrice = price * (exchangeRate ?? 1);
                     return (
                       <Td key={index} className="group-hover:bg-muted/50">
                         <VStack spacing={0}>
                           <span>
-                            {presentationCurrencyFormatter.format(price)}
+                            {presentationCurrencyFormatter.format(
+                              convertedPrice
+                            )}
                           </span>
                         </VStack>
                       </Td>
