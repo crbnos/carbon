@@ -458,16 +458,17 @@ const LinePricingOptions = ({
   }, [line.id, overridePricing, selectedValue, setSelectedLines]);
 
   const additionalChargesByQuantity =
-    line.quantity?.map((quantity) => {
+    line.quantity?.reduce((acc, quantity) => {
       const charges = Object.values(line.additionalCharges ?? {}).reduce(
-        (acc, charge) => {
+        (chargeAcc, charge) => {
           const amount = charge.amounts?.[quantity] ?? 0;
-          return acc + amount;
+          return chargeAcc + amount;
         },
         0
       );
-      return charges;
-    }) ?? [];
+      acc[quantity] = charges;
+      return acc;
+    }, {} as Record<number, number>) ?? {};
 
   return (
     <VStack spacing={2}>
@@ -481,16 +482,13 @@ const LinePricingOptions = ({
               : options.find((opt) => opt.quantity.toString() === value);
 
           if (selectedOption) {
-            const index =
-              value === "custom"
-                ? 0
-                : options.findIndex((opt) => opt.quantity.toString() === value);
             setSelectedLines((prev) => ({
               ...prev,
               [line.id!]: {
                 quantity: selectedOption.quantity,
                 unitPrice: selectedOption.unitPrice,
-                addOn: additionalChargesByQuantity[index] || 0,
+                addOn:
+                  additionalChargesByQuantity[selectedOption.quantity] || 0,
                 leadTime: selectedOption.leadTime,
               },
             }));
@@ -517,34 +515,39 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
             ) : (
-              options.map((option, index) => (
-                <Tr key={index}>
-                  <Td>
-                    <RadioGroupItem
-                      value={option.quantity.toString()}
-                      id={`${line.id}:${option.quantity.toString()}`}
-                    />
-                    <label
-                      htmlFor={`${line.id}:${option.quantity.toString()}`}
-                      className="sr-only"
-                    >
-                      {option.quantity}
-                    </label>
-                  </Td>
-                  <Td>{option.quantity}</Td>
-                  <Td>{formatter.format(option.unitPrice)}</Td>
-                  <Td>
-                    {formatter.format(additionalChargesByQuantity[index])}
-                  </Td>
-                  <Td>{option.leadTime} Days</Td>
-                  <Td>
-                    {formatter.format(
-                      option.unitPrice * option.quantity +
-                        additionalChargesByQuantity[index]
-                    )}
-                  </Td>
-                </Tr>
-              ))
+              options.map(
+                (option, index) =>
+                  line?.quantity?.includes(option.quantity) && (
+                    <Tr key={index}>
+                      <Td>
+                        <RadioGroupItem
+                          value={option.quantity.toString()}
+                          id={`${line.id}:${option.quantity.toString()}`}
+                        />
+                        <label
+                          htmlFor={`${line.id}:${option.quantity.toString()}`}
+                          className="sr-only"
+                        >
+                          {option.quantity}
+                        </label>
+                      </Td>
+                      <Td>{option.quantity}</Td>
+                      <Td>{formatter.format(option.unitPrice)}</Td>
+                      <Td>
+                        {formatter.format(
+                          additionalChargesByQuantity[option.quantity]
+                        )}
+                      </Td>
+                      <Td>{option.leadTime} Days</Td>
+                      <Td>
+                        {formatter.format(
+                          option.unitPrice * option.quantity +
+                            additionalChargesByQuantity[option.quantity]
+                        )}
+                      </Td>
+                    </Tr>
+                  )
+              )
             )}
             {showOverride && (
               <Tr>
