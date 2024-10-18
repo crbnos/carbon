@@ -11,11 +11,11 @@ const alertVariants = cva(
       variant: {
         default: "bg-background text-foreground",
         success:
-          "bg-gradient-to-r dark:from-emerald-600/30 dark:via-card dark:to-card from-emerald-100 to-emerald-100 border-emerald-600 text-emerald-600 [&>svg]:text-emerald-600 dark:text-foreground dark:[&>svg]:text-foreground",
+          "bg-gradient-to-tl via-card to-card hover:to-muted/30 hover:via-muted/30 border-emerald-600/30 from-emerald-600/10 text-emerald-600 [&>svg]:text-emerald-600 dark:text-foreground dark:[&>svg]:text-foreground",
         warning:
-          "bg-gradient-to-r dark:from-yellow-700/30 dark:via-card dark:to-card from-yellow-100/10 to-yellow-100/10 border-yellow-700 text-yellow-800 [&>svg]:text-yellow-800 dark:text-foreground  dark:[&>svg]:text-foreground",
+          "bg-gradient-to-tl via-card to-card hover:to-muted/30 hover:via-muted/30 border-yellow-500/30 from-yellow-500/10 text-yellow-800 [&>svg]:text-yellow-800 dark:text-foreground  dark:[&>svg]:text-foreground",
         destructive:
-          "bg-gradient-to-r dark:from-destructive/30 dark:via-card dark:to-card from-destructive/10 to-destructive/10 border-destructive text-destructive [&>svg]:text-destructive dark:text-foreground  dark:[&>svg]:text-foreground",
+          "bg-gradient-to-tl via-card to-card hover:to-muted/30 hover:via-muted/30 border-red-500/30 from-red-500/10 text-destructive [&>svg]:text-destructive dark:text-foreground  dark:[&>svg]:text-foreground",
       },
     },
     defaultVariants: {
