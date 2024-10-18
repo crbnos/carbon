@@ -80,7 +80,7 @@ const QuoteToOrderDrawer = ({
       string,
       {
         quantity: number;
-        unitPrice: number;
+        netUnitPrice: number;
         addOn: number;
         leadTime: number;
       }
@@ -348,7 +348,7 @@ type LinePricingFormProps = {
         string,
         {
           quantity: number;
-          unitPrice: number;
+          netUnitPrice: number;
           addOn: number;
           leadTime: number;
         }
@@ -428,7 +428,7 @@ type LinePricingOptionsProps = {
         string,
         {
           quantity: number;
-          unitPrice: number;
+          netUnitPrice: number;
           addOn: number;
           leadTime: number;
         }
@@ -451,7 +451,7 @@ const LinePricingOptions = ({
     quantity: 1,
     leadTime: 0,
     addOn: 0,
-    unitPrice: 0,
+    netUnitPrice: 0,
   });
 
   useEffect(() => {
@@ -460,7 +460,7 @@ const LinePricingOptions = ({
         ...prev,
         [line.id!]: {
           quantity: overridePricing.quantity,
-          unitPrice: overridePricing.unitPrice,
+          netUnitPrice: overridePricing.netUnitPrice,
           addOn: overridePricing.addOn,
           leadTime: overridePricing.leadTime,
         },
@@ -497,7 +497,7 @@ const LinePricingOptions = ({
               ...prev,
               [line.id!]: {
                 quantity: selectedOption.quantity,
-                unitPrice: selectedOption.unitPrice,
+                netUnitPrice: selectedOption.netUnitPrice ?? 0,
                 addOn:
                   additionalChargesByQuantity[selectedOption.quantity] || 0,
                 leadTime: selectedOption.leadTime,
@@ -591,15 +591,15 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
-                    value={overridePricing.unitPrice}
+                    value={overridePricing.netUnitPrice}
                     formatOptions={{
                       style: "currency",
                       currency: quoteCurrency,
                     }}
-                    onChange={(unitPrice) =>
+                    onChange={(netUnitPrice) =>
                       setOverridePricing((v) => ({
                         ...v,
-                        unitPrice,
+                        netUnitPrice,
                       }))
                     }
                   >
@@ -654,7 +654,7 @@ const LinePricingOptions = ({
                 </Td>
                 <Td>
                   {formatter.format(
-                    overridePricing.unitPrice * overridePricing.quantity +
+                    overridePricing.netUnitPrice * overridePricing.quantity +
                       overridePricing.addOn
                   )}
                 </Td>

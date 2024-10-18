@@ -23,7 +23,7 @@ const payloadValidator = z
         z.string(),
         z.object({
           quantity: z.number(),
-          unitPrice: z.number(),
+          netUnitPrice: z.number(),
           addOn: z.number(),
           leadTime: z.number(),
         })
@@ -59,12 +59,13 @@ serve(async (req: Request) => {
 
     switch (type) {
       case "quoteToSalesOrder": {
-        const [quote, quoteLines, quotePayment, quoteShipping] =
+        const [quote, quoteLines, quotePayment, quoteShipping, company] =
           await Promise.all([
             client.from("quote").select("*").eq("id", id).single(),
             client.from("quoteLine").select("*").eq("quoteId", id),
             client.from("quotePayment").select("*").eq("id", id).single(),
             client.from("quoteShipment").select("*").eq("id", id).single(),
+            client.from("company").select("*").eq("id", companyId).single(),
           ]);
 
         if (quote.error) throw new Error(`Quote with id ${id} not found`);
@@ -99,7 +100,10 @@ serve(async (req: Request) => {
                 status: "Draft",
                 createdBy: userId,
                 companyId: companyId,
-                currencyCode: quote.data.currencyCode ?? undefined,
+                currencyCode:
+                  quote.data.currencyCode ??
+                  company.data?.baseCurrencyCode ??
+                  "USD",
               },
             ])
             .returning(["id"])
@@ -147,7 +151,7 @@ serve(async (req: Request) => {
                   saleQuantity: selectedLines![line.id!].quantity,
                   status: "Ordered",
                   unitOfMeasureCode: line.unitOfMeasureCode,
-                  unitPrice: selectedLines![line.id!].unitPrice,
+                  unitPrice: selectedLines![line.id!].netUnitPrice,
                   promisedDate: format(
                     new Date(
                       Date.now() +
@@ -259,31 +263,28 @@ serve(async (req: Request) => {
           throw new Error(`Sales RFQ Lines with id ${id} not found`);
         }
 
-        const [customerPayment, customerShipping, employee] = await Promise.all(
-          [
-            client
-              .from("customerPayment")
-              .select("*")
-              .eq("customerId", salesRfq.data.customerId)
-              .single(),
-            client
-              .from("customerShipping")
-              .select("*")
-              .eq("customerId", salesRfq.data.customerId)
-              .single(),
-            client
-              .from("employeeJob")
-              .select("*")
-              .eq("employeeId", userId)
-              .eq("companyId", companyId),
-          ]
-        );
+        const [customerPayment, customerShipping] = await Promise.all([
+          client
+            .from("customerPayment")
+            .select("*")
+            .eq("customerId", salesRfq.data.customerId)
+            .single(),
+          client
+            .from("customerShipping")
+            .select("*")
+            .eq("customerId", salesRfq.data.customerId)
+            .single(),
+          client
+            .from("employeeJob")
+            .select("*")
+            .eq("employeeId", userId)
+            .eq("companyId", companyId),
+        ]);
 
         if (customerPayment.error) throw customerPayment.error;
         if (customerShipping.error) throw customerShipping.error;
 
         const {
-          currencyCode,
           paymentTermId,
           invoiceCustomerId,
           invoiceCustomerContactId,
@@ -341,7 +342,6 @@ serve(async (req: Request) => {
             .insertInto("quotePayment")
             .values({
               id: quote.id,
-              currencyCode: currencyCode ?? "USD",
               invoiceCustomerId: invoiceCustomerId,
               invoiceCustomerContactId: invoiceCustomerContactId,
               invoiceCustomerLocationId: invoiceCustomerLocationId,
