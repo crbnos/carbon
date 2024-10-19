@@ -5,6 +5,10 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { getSlackClient } from "~/lib/slack.server";
 import { feedbackValidator } from "~/modules/shared";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function action({ request }: ActionFunctionArgs) {
   const { userId } = await requirePermissions(request, {});
 
@@ -25,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const [user, insertFeedback] = await Promise.all([
     serviceRole
       .from("user")
-      .select("firstName,lastName")
+      .select("firstName,lastName,email")
       .eq("id", userId)
       .single(),
     serviceRole.from("feedback").insert([
@@ -62,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
             type: "mrkdwn",
             text: `*User:*\n${user.data?.firstName ?? ""} ${
               user.data?.lastName ?? ""
-            }`,
+            } <${user.data?.email ?? ""}>`,
           },
           {
             type: "mrkdwn",
