@@ -33,6 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { password } = validation.data;
 
   const { userId } = await requireAuthSession(request, { verify: true });
+
   const updatePassword = await resetPassword(userId, password);
 
   if (updatePassword.error) {

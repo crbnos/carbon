@@ -10,9 +10,7 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { BsEnvelope } from "react-icons/bs";
-import { FaBan } from "react-icons/fa";
-import { LuPencil, LuShield } from "react-icons/lu";
+import { LuBan, LuMailCheck, LuPencil, LuShield } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -156,8 +154,8 @@ const EmployeesTable = memo(
               }}
               disabled={!permissions.can("create", "users")}
             >
-              <BsEnvelope className="mr-2 h-4 w-4" />
-              <span>Send Account Invite</span>
+              <LuMailCheck className="mr-2 h-4 w-4" />
+              <span>Resend Account Invite</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
@@ -166,7 +164,7 @@ const EmployeesTable = memo(
               }}
               disabled={!permissions.can("delete", "users")}
             >
-              <FaBan className="mr-2 h-4 w-4" />
+              <LuBan className="mr-2 h-4 w-4" />
               <span>Deactivate Users</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -195,8 +193,8 @@ const EmployeesTable = memo(
                 resendInviteModal.onOpen();
               }}
             >
-              <MenuIcon icon={<BsEnvelope />} />
-              Send Account Invite
+              <MenuIcon icon={<LuMailCheck />} />
+              Resend Account Invite
             </MenuItem>
             {row.active === true && (
               <MenuItem
@@ -205,7 +203,7 @@ const EmployeesTable = memo(
                   deactivateEmployeeModal.onOpen();
                 }}
               >
-                <MenuIcon icon={<FaBan />} />
+                <MenuIcon icon={<LuBan />} />
                 Deactivate Account
               </MenuItem>
             )}
