@@ -13,12 +13,14 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useLocation } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { refreshAccessToken } from "@carbon/auth/auth.server";
+import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
+import { LuAlertTriangle } from "react-icons/lu";
 import type { FormActionData } from "~/types";
 import { path } from "~/utils/path";
 
@@ -85,6 +87,17 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 export default function AuthCallback() {
   const fetcher = useFetcher<{}>();
   const isAuthenticating = useRef(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    const hashParams = new URLSearchParams(hash.slice(1));
+    const errorDescription = hashParams.get("error_description");
+    if (errorDescription) {
+      setError(decodeURIComponent(errorDescription.replace(/\+/g, " ")));
+    }
+  }, [hash]);
 
   useEffect(() => {
     const {
@@ -96,13 +109,6 @@ export default function AuthCallback() {
       ) {
         isAuthenticating.current = true;
 
-        // supabase sdk has ability to read url fragment that contains your token after third party provider redirects you here
-        // this fragment url looks like https://.....#access_token=evxxxxxxxx&refresh_token=xxxxxx, and it's not readable server-side (Oauth security)
-        // supabase auth listener gives us a user session, based on what it founds in this fragment url
-        // we can't use it directly, client-side, because we can't access sessionStorage from here
-
-        // we should not trust what's happen client side
-        // so, we only pick the refresh token, and let's back-end getting user session from it
         const refreshToken = session?.refresh_token;
         const userId = session?.user.id;
 
@@ -117,7 +123,6 @@ export default function AuthCallback() {
     });
 
     return () => {
-      // prevent memory leak. Listener stays alive 👨‍🎤
       subscription.unsubscribe();
     };
   }, [fetcher]);
@@ -136,7 +141,15 @@ export default function AuthCallback() {
           className="hidden dark:block max-w-[100px] mb-3"
         />
       </div>
-      <p className="text-muted-foreground">Loading...</p>
+      {error ? (
+        <Alert className="mt-8" variant="destructive">
+          <LuAlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : (
+        <p className="text-muted-foreground">Loading...</p>
+      )}
     </div>
   );
 }
