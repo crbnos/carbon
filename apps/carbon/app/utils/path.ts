@@ -320,6 +320,7 @@ export const path = {
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
+    feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
     fixture: (id: string) => generatePath(`${x}/fixture/${id}`),
     fixtures: `${x}/items/fixtures`,

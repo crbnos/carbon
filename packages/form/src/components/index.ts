@@ -24,6 +24,7 @@ import Select from "./Select";
 import SelectControlled from "./SelectControlled";
 import Submit from "./Submit";
 import TextArea from "./Textarea";
+import TextAreaControlled from "./TextareaControlled";
 import TimePicker from "./TimePicker";
 import Timezone from "./Timezone";
 
@@ -49,6 +50,7 @@ export {
   SelectControlled,
   Submit,
   TextArea,
+  TextAreaControlled,
   TimePicker,
   Timezone,
 };

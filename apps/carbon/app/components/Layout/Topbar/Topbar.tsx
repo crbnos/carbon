@@ -3,6 +3,7 @@ import { usePermissions } from "~/hooks";
 import AvatarMenu from "../../AvatarMenu";
 import Breadcrumbs from "./Breadcrumbs";
 import CreateMenu from "./CreateMenu";
+import Feedback from "./Feedback";
 import Search from "./Search";
 
 const Topbar = () => {
@@ -13,6 +14,7 @@ const Topbar = () => {
 
       <HStack spacing={2} className="justify-end py-2">
         {permissions.is("employee") ? <Search /> : <div />}
+        <Feedback />
         <CreateMenu />
         <AvatarMenu />
       </HStack>
