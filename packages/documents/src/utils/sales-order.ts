@@ -37,24 +37,33 @@ export function getLineDescriptionDetails(
 }
 
 export function getLineTotal(
-  line: Database["public"]["Views"]["salesOrderLines"]["Row"]
+  line: Database["public"]["Views"]["salesOrderLines"]["Row"],
+  shouldConvertCurrency: boolean
 ) {
-  if (line?.saleQuantity && line?.unitPrice) {
-    return line.saleQuantity * (line.unitPrice + (line.addOnCost ?? 0));
+  if (shouldConvertCurrency) {
+    if (line?.saleQuantity && line?.convertedUnitPrice) {
+      return (
+        line.saleQuantity * line.convertedUnitPrice +
+        (line.convertedAddOnCost ?? 0)
+      );
+    }
+    return 0;
+  } else {
+    if (line?.saleQuantity && line?.unitPrice) {
+      return line.saleQuantity * line.unitPrice + (line.addOnCost ?? 0);
+    }
   }
-
   return 0;
 }
 
 export function getTotal(
-  lines: Database["public"]["Views"]["salesOrderLines"]["Row"][]
+  lines: Database["public"]["Views"]["salesOrderLines"]["Row"][],
+  shouldConvertCurrency: boolean
 ) {
   let total = 0;
 
   lines.forEach((line) => {
-    if (line?.saleQuantity && line?.unitPrice) {
-      total += line.saleQuantity * (line.unitPrice + (line.addOnCost ?? 0));
-    }
+    total += getLineTotal(line, shouldConvertCurrency);
   });
 
   return total;
