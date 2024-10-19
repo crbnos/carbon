@@ -1,6 +1,6 @@
 INSERT INTO storage.buckets (id, name, public)
 VALUES 
-  ('feedback', 'feedback', true), 
+  ('feedback', 'feedback', true);
 
 CREATE POLICY "Anyone can read the feedback buckets"
 ON storage.objects FOR SELECT USING (
