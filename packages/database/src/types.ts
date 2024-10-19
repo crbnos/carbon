@@ -16593,6 +16593,7 @@ export type Database = {
           addOnCost: number
           assetId: string | null
           companyId: string
+          convertedAddOnCost: number | null
           convertedUnitPrice: number | null
           createdAt: string
           createdBy: string
@@ -16629,6 +16630,7 @@ export type Database = {
           addOnCost?: number
           assetId?: string | null
           companyId: string
+          convertedAddOnCost?: number | null
           convertedUnitPrice?: number | null
           createdAt?: string
           createdBy: string
@@ -16665,6 +16667,7 @@ export type Database = {
           addOnCost?: number
           assetId?: string | null
           companyId?: string
+          convertedAddOnCost?: number | null
           convertedUnitPrice?: number | null
           createdAt?: string
           createdBy?: string
@@ -27093,6 +27096,7 @@ export type Database = {
           assetId: string | null
           autodeskUrn: string | null
           companyId: string | null
+          convertedAddOnCost: number | null
           convertedUnitPrice: number | null
           createdAt: string | null
           createdBy: string | null

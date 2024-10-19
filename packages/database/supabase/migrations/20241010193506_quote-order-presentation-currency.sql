@@ -147,6 +147,7 @@ EXECUTE FUNCTION update_quote_line_price_exchange_rate();
 -- Add exchangeRate and convertedUnitPrice to salesOrderLine
 ALTER TABLE "salesOrderLine" ADD COLUMN "exchangeRate" NUMERIC(10,4) DEFAULT 1;
 ALTER TABLE "salesOrderLine" ADD COLUMN "convertedUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate") STORED;
+ALTER TABLE "salesOrderLine" ADD COLUMN "convertedAddOnCost" NUMERIC(10,5) GENERATED ALWAYS AS ("addOnCost" * "exchangeRate") STORED;
 
 DROP VIEW "salesOrderLines";
 CREATE OR REPLACE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS (

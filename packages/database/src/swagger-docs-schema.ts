@@ -4618,6 +4618,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.convertedUnitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.convertedAddOnCost",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.modelId",
           },
           {
@@ -9385,6 +9388,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -9546,6 +9552,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -9659,6 +9668,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.convertedAddOnCost",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -38193,6 +38205,10 @@ export default {
           format: "numeric",
           type: "number",
         },
+        convertedAddOnCost: {
+          format: "numeric",
+          type: "number",
+        },
         modelId: {
           format: "text",
           type: "string",
@@ -40752,6 +40768,10 @@ export default {
           type: "number",
         },
         convertedUnitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedAddOnCost: {
           format: "numeric",
           type: "number",
         },
@@ -54530,6 +54550,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderLines.convertedAddOnCost": {
+      name: "convertedAddOnCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrderLines.modelId": {
       name: "modelId",
       required: false,
@@ -57789,6 +57816,13 @@ export default {
     },
     "rowFilter.salesOrderLine.convertedUnitPrice": {
       name: "convertedUnitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.convertedAddOnCost": {
+      name: "convertedAddOnCost",
       required: false,
       format: "numeric",
       in: "query",

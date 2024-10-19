@@ -64,7 +64,9 @@ const SalesOrderPDF = ({
     paymentCountryName,
   } = salesOrderLocations;
 
-  const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
+  const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
+  const shouldConvertCurrency = currencyCode !== company.baseCurrencyCode;
+  const formatter = getCurrencyFormatter(currencyCode, locale);
 
   return (
     <Template
@@ -193,17 +195,25 @@ const SalesOrderPDF = ({
               <Text style={tw("w-1/6 text-right")}>
                 {line.salesOrderLineType === "Comment"
                   ? null
-                  : formatter.format(line.unitPrice ?? 0)}
+                  : formatter.format(
+                      shouldConvertCurrency
+                        ? line.convertedUnitPrice ?? 0
+                        : line.unitPrice ?? 0
+                    )}
               </Text>
               <Text style={tw("w-1/6 text-right")}>
                 {line.salesOrderLineType === "Comment"
                   ? null
-                  : formatter.format(line.addOnCost ?? 0)}
+                  : formatter.format(
+                      shouldConvertCurrency
+                        ? line.convertedAddOnCost ?? 0
+                        : line.addOnCost ?? 0
+                    )}
               </Text>
               <Text style={tw("w-1/6 text-right")}>
                 {line.salesOrderLineType === "Comment"
                   ? null
-                  : formatter.format(getLineTotal(line))}
+                  : formatter.format(getLineTotal(line, shouldConvertCurrency))}
               </Text>
             </View>
           ))}
@@ -214,7 +224,9 @@ const SalesOrderPDF = ({
           >
             <Text>Total</Text>
             <Text style={tw("font-bold text-black")}>
-              {formatter.format(getTotal(salesOrderLines))}
+              {formatter.format(
+                getTotal(salesOrderLines, shouldConvertCurrency)
+              )}
             </Text>
           </View>
         </View>
