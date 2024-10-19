@@ -1,52 +1,169 @@
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.33.1";
-import type { Database } from "../types.ts";
-import type { Operation } from "./types.ts";
+import { Kysely } from "https://esm.sh/kysely@0.26.3";
+
+import { DB } from "../database.ts";
+import type { BaseOperation, Job, Operation } from "./types.ts";
 
 class ResourceManager {
-  private client: SupabaseClient<Database>;
+  private db: Kysely<DB>;
   private companyId: string;
+  private job: Job | null;
   private activeJobs: string[];
-  private jobOperationsByProcess: Map<string | null, Operation[]>;
+  private operationsByWorkCenter: Map<string | null, Operation[]>;
+  private durationsByWorkCenter: Map<string | null, number>;
+  private workCentersByProcess: Map<string, string[]>;
 
-  constructor(client: SupabaseClient<Database>, companyId: string) {
-    this.client = client;
+  constructor(db: Kysely<DB>, companyId: string) {
+    this.db = db;
     this.companyId = companyId;
+    this.job = null;
     this.activeJobs = [];
-    this.jobOperationsByProcess = new Map<string | null, Operation[]>();
+    this.operationsByWorkCenter = new Map<string | null, Operation[]>();
+    this.durationsByWorkCenter = new Map<string | null, number>();
+    this.workCentersByProcess = new Map<string, string[]>();
   }
 
-  async setJobOperationsByProcess() {
-    const jobs = await this.client
-      .from("job")
-      .select("id, dueDate, deadlineType, locationId")
-      .eq("companyId", this.companyId)
-      .in("status", ["Ready", "In Progress", "Paused"]);
-    if (jobs.error) {
-      console.error(jobs.error);
+  async initialize(jobId: string) {
+    const [job, jobs] = await Promise.all([
+      this.db
+        .selectFrom("job")
+        .select(["id", "dueDate", "deadlineType", "locationId"])
+        .where("id", "=", jobId)
+        .executeTakeFirst(),
+      this.db
+        .selectFrom("job")
+        .select(["id", "dueDate", "deadlineType", "locationId"])
+        .where("companyId", "=", this.companyId)
+        .where("status", "in", ["Ready", "In Progress", "Paused"])
+        .execute(),
+    ]);
+
+    if (job) {
+      this.job = job;
     }
 
-    this.activeJobs = jobs.data?.map((j) => j.id) ?? [];
+    this.activeJobs =
+      jobs?.map((j) => j.id).filter((id) => id !== undefined) ?? [];
 
-    const operations = await this.client
-      .from("jobOperation")
-      .select(
-        "id, jobId, processId, workCenterId, status, laborTime, laborUnit, machineTime, machineUnit, setupTime, setupUnit, operationQuantity"
-      )
-      .in("jobId", this.activeJobs);
-    if (operations.error) {
-      console.error(operations.error);
+    const processes = await this.db
+      .selectFrom("processes")
+      .select(["id", "workCenters"])
+      .where("companyId", "=", this.companyId)
+      .execute();
+
+    let operations: BaseOperation[] = [];
+    if (this.activeJobs.length > 0) {
+      operations = await this.db
+        .selectFrom("jobOperation")
+        .innerJoin("job", "jobOperation.jobId", "job.id")
+        .select([
+          "jobOperation.id",
+          "jobOperation.jobId",
+          "jobOperation.processId",
+          "jobOperation.workCenterId",
+          "jobOperation.status",
+          "jobOperation.laborTime",
+          "jobOperation.laborUnit",
+          "jobOperation.machineTime",
+          "jobOperation.machineUnit",
+          "jobOperation.setupTime",
+          "jobOperation.setupUnit",
+          "jobOperation.operationQuantity",
+          "job.dueDate",
+          "job.deadlineType",
+        ])
+        .where("jobOperation.jobId", "in", this.activeJobs)
+        .where("job.companyId", "=", this.companyId)
+        .execute();
     }
 
-    this.jobOperationsByProcess = new Map<string, Operation[]>();
+    this.operationsByWorkCenter = new Map<string, Operation[]>();
 
-    operations?.data
+    operations
       ?.map((op) => getDurations(op))
       ?.forEach((operation) => {
-        if (!this.jobOperationsByProcess.has(operation.processId)) {
-          this.jobOperationsByProcess.set(operation.processId, []);
+        if (!this.operationsByWorkCenter.has(operation.workCenterId ?? null)) {
+          this.operationsByWorkCenter.set(operation.workCenterId ?? null, []);
         }
-        this.jobOperationsByProcess.get(operation.processId)?.push(operation);
+        this.operationsByWorkCenter
+          .get(operation.workCenterId ?? null)
+          ?.push(operation);
       });
+
+    this.durationsByWorkCenter = new Map<string, number>();
+
+    for (const [workCenterId, operations] of this.operationsByWorkCenter) {
+      const totalDuration = operations.reduce(
+        (sum, operation) => sum + operation.duration,
+        0
+      );
+      this.durationsByWorkCenter.set(workCenterId, totalDuration);
+    }
+
+    // Handle operations without a specific work center (null key)
+    const unassignedOperations = this.operationsByWorkCenter.get(null) || [];
+    if (unassignedOperations.length > 0) {
+      const totalUnassignedDuration = unassignedOperations.reduce(
+        (sum, operation) => {
+          if (
+            !job?.dueDate ||
+            (operation.dueDate && operation.dueDate < job.dueDate)
+          ) {
+            return sum + operation.duration;
+          }
+          return sum;
+        },
+        0
+      );
+      this.durationsByWorkCenter.set("unassigned", totalUnassignedDuration);
+    }
+
+    // Initialize workCentersByProcess map
+    this.workCentersByProcess = new Map<string, string[]>();
+
+    // Populate workCentersByProcess map
+    processes?.forEach((process) => {
+      if (process.workCenters) {
+        const workCenterIds = (process.workCenters as { id: string }[]).map(
+          (wc: { id: string }) => wc.id
+        );
+        this.workCentersByProcess.set(process.id!, workCenterIds);
+      }
+    });
+  }
+
+  getJob(): Job | null {
+    return this.job;
+  }
+
+  getWorkCenterByProcessWithLeastTime(processId: string): string | null {
+    const workCenters = this.workCentersByProcess.get(processId) ?? [];
+    let leastTime = Infinity;
+    let selectedWorkCenter = null;
+
+    for (const workCenter of workCenters) {
+      const duration = this.durationsByWorkCenter.get(workCenter) ?? 0;
+      if (duration < leastTime) {
+        leastTime = duration;
+        selectedWorkCenter = workCenter;
+      }
+    }
+
+    return selectedWorkCenter;
+  }
+
+  addOperationToWorkCenter(workCenterId: string, operation: BaseOperation) {
+    if (!this.operationsByWorkCenter.has(workCenterId)) {
+      this.operationsByWorkCenter.set(workCenterId, []);
+    }
+
+    this.operationsByWorkCenter
+      .get(workCenterId)
+      ?.push(getDurations(operation));
+
+    const totalDuration = this.operationsByWorkCenter
+      .get(workCenterId)
+      ?.reduce((sum, operation) => sum + operation.duration, 0);
+    this.durationsByWorkCenter.set(workCenterId, totalDuration ?? 0);
   }
 }
 
@@ -60,6 +177,9 @@ function getDurations(operation: BaseOperation): Operation {
   if (!operation.operationQuantity) {
     return {
       ...operation,
+      setupTime: operation.setupTime ?? 0,
+      laborTime: operation.laborTime ?? 0 ?? 0,
+      machineTime: operation.machineTime ?? 0,
       operationQuantity: 0,
       duration: 0,
       setupDuration: 0,
@@ -71,44 +191,54 @@ function getDurations(operation: BaseOperation): Operation {
   // Calculate setup duration
   switch (operation.setupUnit) {
     case "Total Hours":
-      setupDuration = operation.setupTime * 3600000; // Convert hours to milliseconds
+      setupDuration = (operation.setupTime ?? 0) * 3600000; // Convert hours to milliseconds
       break;
     case "Total Minutes":
-      setupDuration = operation.setupTime * 60000; // Convert minutes to milliseconds
+      setupDuration = (operation.setupTime ?? 0) * 60000; // Convert minutes to milliseconds
       break;
     case "Hours/Piece":
       setupDuration =
-        operation.setupTime * operation.operationQuantity * 3600000;
+        (operation.setupTime ?? 0) * operation.operationQuantity * 3600000;
       break;
     case "Hours/100 Pieces":
       setupDuration =
-        (operation.setupTime / 100) * operation.operationQuantity * 3600000;
+        ((operation.setupTime ?? 0) / 100) *
+        operation.operationQuantity *
+        3600000;
       break;
     case "Hours/1000 Pieces":
       setupDuration =
-        (operation.setupTime / 1000) * operation.operationQuantity * 3600000;
+        ((operation.setupTime ?? 0) / 1000) *
+        operation.operationQuantity *
+        3600000;
       break;
     case "Minutes/Piece":
-      setupDuration = operation.setupTime * operation.operationQuantity * 60000;
+      setupDuration =
+        (operation.setupTime ?? 0) * operation.operationQuantity * 60000;
       break;
     case "Minutes/100 Pieces":
       setupDuration =
-        (operation.setupTime / 100) * operation.operationQuantity * 60000;
+        ((operation.setupTime ?? 0) / 100) *
+        operation.operationQuantity *
+        60000;
       break;
     case "Minutes/1000 Pieces":
       setupDuration =
-        (operation.setupTime / 1000) * operation.operationQuantity * 60000;
+        ((operation.setupTime ?? 0) / 1000) *
+        operation.operationQuantity *
+        60000;
       break;
     case "Pieces/Hour":
       setupDuration =
-        (operation.operationQuantity / operation.setupTime) * 3600000;
+        (operation.operationQuantity / (operation.setupTime ?? 0)) * 3600000;
       break;
     case "Pieces/Minute":
       setupDuration =
-        (operation.operationQuantity / operation.setupTime) * 60000;
+        (operation.operationQuantity / (operation.setupTime ?? 0)) * 60000;
       break;
     case "Seconds/Piece":
-      setupDuration = operation.setupTime * operation.operationQuantity * 1000;
+      setupDuration =
+        (operation.setupTime ?? 0) * operation.operationQuantity * 1000;
       break;
   }
 
@@ -116,37 +246,48 @@ function getDurations(operation: BaseOperation): Operation {
   switch (operation.laborUnit) {
     case "Hours/Piece":
       laborDuration =
-        operation.laborTime * operation.operationQuantity * 3600000;
+        (operation.laborTime ?? 0) * operation.operationQuantity * 3600000 ?? 0;
       break;
     case "Hours/100 Pieces":
       laborDuration =
-        (operation.laborTime / 100) * operation.operationQuantity * 3600000;
+        ((operation.laborTime ?? 0) / 100) *
+          operation.operationQuantity *
+          3600000 ?? 0;
       break;
     case "Hours/1000 Pieces":
       laborDuration =
-        (operation.laborTime / 1000) * operation.operationQuantity * 3600000;
+        ((operation.laborTime ?? 0) / 1000) *
+          operation.operationQuantity *
+          3600000 ?? 0;
       break;
     case "Minutes/Piece":
-      laborDuration = operation.laborTime * operation.operationQuantity * 60000;
+      laborDuration =
+        (operation.laborTime ?? 0) * operation.operationQuantity * 60000 ?? 0;
       break;
     case "Minutes/100 Pieces":
       laborDuration =
-        (operation.laborTime / 100) * operation.operationQuantity * 60000;
+        ((operation.laborTime ?? 0) / 100) *
+          operation.operationQuantity *
+          60000 ?? 0;
       break;
     case "Minutes/1000 Pieces":
       laborDuration =
-        (operation.laborTime / 1000) * operation.operationQuantity * 60000;
+        ((operation.laborTime ?? 0) / 1000) *
+          operation.operationQuantity *
+          60000 ?? 0;
       break;
     case "Pieces/Hour":
       laborDuration =
-        (operation.operationQuantity / operation.laborTime) * 3600000;
+        (operation.operationQuantity / (operation.laborTime ?? 0)) * 3600000 ??
+        0;
       break;
     case "Pieces/Minute":
       laborDuration =
-        (operation.operationQuantity / operation.laborTime) * 60000;
+        (operation.operationQuantity / (operation.laborTime ?? 0)) * 60000 ?? 0;
       break;
     case "Seconds/Piece":
-      laborDuration = operation.laborTime * operation.operationQuantity * 1000;
+      laborDuration =
+        (operation.laborTime ?? 0) * operation.operationQuantity * 1000 ?? 0;
       break;
   }
 
@@ -154,39 +295,47 @@ function getDurations(operation: BaseOperation): Operation {
   switch (operation.machineUnit) {
     case "Hours/Piece":
       machineDuration =
-        operation.machineTime * operation.operationQuantity * 3600000;
+        (operation.machineTime ?? 0) * operation.operationQuantity * 3600000;
       break;
     case "Hours/100 Pieces":
       machineDuration =
-        (operation.machineTime / 100) * operation.operationQuantity * 3600000;
+        ((operation.machineTime ?? 0) / 100) *
+        operation.operationQuantity *
+        3600000;
       break;
     case "Hours/1000 Pieces":
       machineDuration =
-        (operation.machineTime / 1000) * operation.operationQuantity * 3600000;
+        ((operation.machineTime ?? 0) / 1000) *
+        operation.operationQuantity *
+        3600000;
       break;
     case "Minutes/Piece":
       machineDuration =
-        operation.machineTime * operation.operationQuantity * 60000;
+        (operation.machineTime ?? 0) * operation.operationQuantity * 60000;
       break;
     case "Minutes/100 Pieces":
       machineDuration =
-        (operation.machineTime / 100) * operation.operationQuantity * 60000;
+        ((operation.machineTime ?? 0) / 100) *
+        operation.operationQuantity *
+        60000;
       break;
     case "Minutes/1000 Pieces":
       machineDuration =
-        (operation.machineTime / 1000) * operation.operationQuantity * 60000;
+        ((operation.machineTime ?? 0) / 1000) *
+        operation.operationQuantity *
+        60000;
       break;
     case "Pieces/Hour":
       machineDuration =
-        (operation.operationQuantity / operation.machineTime) * 3600000;
+        (operation.operationQuantity / (operation.machineTime ?? 0)) * 3600000;
       break;
     case "Pieces/Minute":
       machineDuration =
-        (operation.operationQuantity / operation.machineTime) * 60000;
+        (operation.operationQuantity / (operation.machineTime ?? 0)) * 60000;
       break;
     case "Seconds/Piece":
       machineDuration =
-        operation.machineTime * operation.operationQuantity * 1000;
+        (operation.machineTime ?? 0) * operation.operationQuantity * 1000;
       break;
   }
 
@@ -194,6 +343,9 @@ function getDurations(operation: BaseOperation): Operation {
 
   return {
     ...operation,
+    setupTime: operation.setupTime ?? 0,
+    laborTime: operation.laborTime ?? 0,
+    machineTime: operation.machineTime ?? 0,
     duration: totalDuration,
     setupDuration,
     laborDuration,

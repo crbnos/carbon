@@ -371,7 +371,7 @@ function JobStartModal({
           <fetcher.Form
             onSubmit={onClose}
             method="post"
-            action={path.to.jobStatus(job.id!)}
+            action={`${path.to.jobStatus(job.id!)}?schedule=1`}
           >
             <input type="hidden" name="status" value="Ready" />
             <Button type="submit">Start</Button>

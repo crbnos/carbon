@@ -1,0 +1,4 @@
+ALTER TABLE "jobOperation"
+  ADD COLUMN "priority" NUMERIC(20,4) NOT NULL DEFAULT 0;
+
+
