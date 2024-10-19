@@ -20,6 +20,7 @@
     "@remix-run/eslint-config": "~2.10.2",
     "@remix-run/react": "~2.10.2",
     "@remix-run/serve": "~2.10.2",
+    "@slack/web-api": "~7.6.0",
     "@supabase/functions-js": "2.1.5",
     "@supabase/supabase-js": "^2.40.0",
     "@tailwindcss/container-queries": "^0.1.1",

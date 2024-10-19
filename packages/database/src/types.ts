@@ -5113,6 +5113,66 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          attachmentPath: string | null
+          feedback: string
+          id: string
+          location: string
+          userId: string
+        }
+        Insert: {
+          attachmentPath?: string | null
+          feedback: string
+          id?: string
+          location: string
+          userId: string
+        }
+        Update: {
+          attachmentPath?: string | null
+          feedback?: string
+          id?: string
+          location?: string
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       fiscalYearSettings: {
         Row: {
           companyId: string
@@ -7813,6 +7873,7 @@ export type Database = {
           operationUnitCost: number
           order: number
           overheadRate: number
+          priority: number
           processId: string
           quantityComplete: number | null
           quantityReworked: number | null
@@ -7849,6 +7910,7 @@ export type Database = {
           operationUnitCost?: number
           order?: number
           overheadRate?: number
+          priority?: number
           processId: string
           quantityComplete?: number | null
           quantityReworked?: number | null
@@ -7885,6 +7947,7 @@ export type Database = {
           operationUnitCost?: number
           order?: number
           overheadRate?: number
+          priority?: number
           processId?: string
           quantityComplete?: number | null
           quantityReworked?: number | null
