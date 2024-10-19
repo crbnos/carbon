@@ -2,6 +2,8 @@ import {
   assertIsPost,
   error,
   forgotPasswordValidator,
+  getCarbonServiceRole,
+  getCompaniesForUser,
   success,
 } from "@carbon/auth";
 import { sendMagicLink } from "@carbon/auth/auth.server";
@@ -56,12 +58,17 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const authSession = await sendMagicLink(email);
-
-    if (!authSession) {
-      return json(error(authSession, "Failed to send magic link"), {
-        status: 500,
-      });
+    const companies = await getCompaniesForUser(
+      getCarbonServiceRole(),
+      user.data.id
+    );
+    if (companies.length > 0) {
+      const authSession = await sendMagicLink(email);
+      if (!authSession) {
+        return json(error(authSession, "Failed to send magic link"), {
+          status: 500,
+        });
+      }
     }
   }
 
@@ -88,7 +95,7 @@ export default function ForgotPasswordRoute() {
       {actionData?.success ? (
         <Alert
           variant="success"
-          className="h-[240px] [&>svg]:left-8 [&>svg]:top-8 p-8"
+          className="h-[240px] [&>svg]:left-8 [&>svg]:top-8 p-8 w-[380px]"
         >
           <LuCheckCircle className="w-4 h-4" />
           <AlertTitle>Success</AlertTitle>

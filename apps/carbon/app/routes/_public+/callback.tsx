@@ -13,13 +13,19 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
-import { useFetcher, useLocation } from "@remix-run/react";
+import { Link, useFetcher, useLocation } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useEffect, useRef, useState } from "react";
 
 import { refreshAccessToken } from "@carbon/auth/auth.server";
-import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  VStack,
+} from "@carbon/react";
 import { LuAlertTriangle } from "react-icons/lu";
 import type { FormActionData } from "~/types";
 import { path } from "~/utils/path";
@@ -142,11 +148,26 @@ export default function AuthCallback() {
         />
       </div>
       {error ? (
-        <Alert className="mt-8" variant="destructive">
-          <LuAlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 mt-8 w-[380px]">
+          <VStack spacing={4}>
+            <Alert variant="destructive">
+              <LuAlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            {error.includes("expired") && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  But don't worry. You can use the forgot password flow to
+                  request a new magic link.
+                </p>
+                <Button size="lg" asChild className="w-full">
+                  <Link to={path.to.forgotPassword}>Forgot Password</Link>
+                </Button>
+              </>
+            )}
+          </VStack>
+        </div>
       ) : (
         <p className="text-muted-foreground">Loading...</p>
       )}

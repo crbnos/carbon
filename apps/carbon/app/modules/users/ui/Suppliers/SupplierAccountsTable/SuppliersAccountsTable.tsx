@@ -9,8 +9,7 @@ import {
 } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { BsEnvelope } from "react-icons/bs";
-import { FaBan } from "react-icons/fa";
+import { LuBan, LuMailCheck } from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -166,8 +165,8 @@ const SupplierAccountsTable = memo(
               }}
               disabled={!permissions.can("create", "users")}
             >
-              <BsEnvelope className="mr-2 h-4 w-4" />
-              <span>Send Account Invite</span>
+              <LuMailCheck className="mr-2 h-4 w-4" />
+              <span>Resend Account Invite</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
@@ -176,7 +175,7 @@ const SupplierAccountsTable = memo(
               }}
               disabled={!permissions.can("delete", "users")}
             >
-              <FaBan className="mr-2 h-4 w-4" />
+              <LuBan className="mr-2 h-4 w-4" />
               <span>Deactivate Users</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -199,8 +198,8 @@ const SupplierAccountsTable = memo(
                 resendInviteModal.onOpen();
               }}
             >
-              <MenuIcon icon={<BsEnvelope />} />
-              Send Account Invite
+              <MenuIcon icon={<LuMailCheck />} />
+              Resend Account Invite
             </MenuItem>
             {row.user?.active === true && (
               <MenuItem
@@ -209,7 +208,7 @@ const SupplierAccountsTable = memo(
                   deactivateSupplierModal.onOpen();
                 }}
               >
-                <MenuIcon icon={<FaBan />} />
+                <MenuIcon icon={<LuBan />} />
                 Deactivate Supplier
               </MenuItem>
             )}

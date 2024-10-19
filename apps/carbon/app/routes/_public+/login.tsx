@@ -7,7 +7,13 @@ import {
 import { signInWithEmail, verifyAuthSession } from "@carbon/auth/auth.server";
 import { commitAuthSession, getAuthSession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
-import { Alert, AlertTitle, Button, VStack } from "@carbon/react";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  VStack,
+} from "@carbon/react";
 import { Link, useActionData, useSearchParams } from "@remix-run/react";
 import type {
   ActionFunctionArgs,
@@ -99,7 +105,8 @@ export default function LoginRoute() {
             {result && result?.message && (
               <Alert variant="destructive">
                 <LuAlertCircle className="w-4 h-4" />
-                <AlertTitle>{result?.message}</AlertTitle>
+                <AlertTitle>Authentication Error</AlertTitle>
+                <AlertDescription>{result?.message}</AlertDescription>
               </Alert>
             )}
 
