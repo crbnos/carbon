@@ -22,7 +22,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
   const slackClient = getSlackClient();
 
-  const [{ error }] = await Promise.all([
+  const [user, insertFeedback] = await Promise.all([
+    serviceRole
+      .from("user")
+      .select("firstName,lastName")
+      .eq("id", userId)
+      .single(),
     serviceRole.from("feedback").insert([
       {
         feedback,
@@ -31,39 +36,46 @@ export async function action({ request }: ActionFunctionArgs) {
         userId,
       },
     ]),
-    slackClient.sendMessage({
-      channel: "#feedback",
-      text: `New feedback submitted`,
-      blocks: [
-        {
-          type: "section",
-          text: { type: "mrkdwn", text: `New feedback submitted` },
-        },
-        {
-          type: "section",
-          fields: [
-            { type: "mrkdwn", text: `*Location:*\n${location}` },
-            { type: "mrkdwn", text: `*Feedback:*\n${feedback}` },
-            {
-              type: "mrkdwn",
-              text: `*Attachment:*\n${
-                attachmentPath
-                  ? `${SUPABASE_API_URL}/storage/v1/object/public/feedback/${attachmentPath}`
-                  : "None"
-              }`,
-            },
-          ],
-        },
-      ],
-    }),
   ]);
 
-  if (error) {
+  if (insertFeedback.error) {
     return json({
       success: false,
       message: "Failed to submit feedback",
     });
   }
+
+  slackClient.sendMessage({
+    channel: "#feedback",
+    text: `New feedback submitted`,
+    blocks: [
+      {
+        type: "section",
+        text: { type: "mrkdwn", text: `New feedback submitted` },
+      },
+      {
+        type: "section",
+        fields: [
+          { type: "mrkdwn", text: `*Location:*\n${location}` },
+          { type: "mrkdwn", text: `*Feedback:*\n${feedback}` },
+          {
+            type: "mrkdwn",
+            text: `*User:*\n${user.data?.firstName ?? ""} ${
+              user.data?.lastName ?? ""
+            }`,
+          },
+          {
+            type: "mrkdwn",
+            text: `*Attachment:*\n${
+              attachmentPath
+                ? `${SUPABASE_API_URL}/storage/v1/object/public/feedback/${attachmentPath}`
+                : "None"
+            }`,
+          },
+        ],
+      },
+    ],
+  });
 
   return json({ success: true, message: "Feedback submitted" });
 }
