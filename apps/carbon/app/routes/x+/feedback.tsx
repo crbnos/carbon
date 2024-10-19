@@ -49,6 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
+  console.log("Sending feedback to Slack");
   slackClient.sendMessage({
     channel: "#feedback",
     text: `New feedback submitted`,
@@ -80,6 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     ],
   });
+  console.log("Feedback sent to Slack");
 
   return json({ success: true, message: "Feedback submitted" });
 }
