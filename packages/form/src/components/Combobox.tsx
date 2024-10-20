@@ -30,7 +30,7 @@ const Combobox = ({
   const [value, setValue] = useControlField<string | undefined>(name);
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)
-      setValue(props.value);
+      setValue(props.value ?? "");
   }, [props.value, setValue]);
 
   const onChange = (value: string) => {
