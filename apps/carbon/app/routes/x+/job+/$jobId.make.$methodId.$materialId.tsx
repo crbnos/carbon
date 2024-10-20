@@ -114,7 +114,7 @@ export default function JobMakeMethodRoute() {
         operations={operations}
       />
       <JobBillOfProcess
-        key={`bop:${methodId}:${operations.length}`}
+        key={`bop:${methodId}:${operations.length}:${operations[0]?.workCenterId}`}
         jobMakeMethodId={methodId}
         operations={operations}
       />

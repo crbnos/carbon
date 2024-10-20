@@ -82,7 +82,7 @@ export default function JobMakeMethodRoute() {
     <VStack spacing={2} className="p-2">
       <JobBreadcrumbs />
       <JobBillOfProcess
-        key={`bop:${methodId}:${operations.length}`}
+        key={`bop:${methodId}:${operations.length}:${operations[0]?.workCenterId}`}
         jobMakeMethodId={methodId}
         operations={operations}
       />

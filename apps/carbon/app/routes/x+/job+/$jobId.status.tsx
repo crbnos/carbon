@@ -1,9 +1,14 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  success,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { jobStatus } from "~/modules/production";
+import { jobStatus, updateJobStatus } from "~/modules/production";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -44,35 +49,45 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Ready" && shouldSchedule) {
-    const { error } = await client.functions.invoke("scheduler", {
-      body: {
-        jobId: id,
-        companyId,
-        userId,
-      },
-    });
+    try {
+      const scheduler = await getCarbonServiceRole().functions.invoke(
+        "scheduler",
+        {
+          body: {
+            jobId: id,
+            companyId,
+            userId,
+          },
+        }
+      );
 
-    if (error) {
+      if (scheduler.error) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(request, error(error, "Failed to schedule job"))
+        );
+      }
+    } catch (err) {
+      console.error(err);
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
-        await flash(request, error(error, "Failed to schedule job"))
+        await flash(request, error(err, "Failed to schedule job"))
       );
     }
   }
 
-  // TODO: Uncomment this when we have a working scheduler
-  // const update = await updateJobStatus(client, {
-  //   id,
-  //   status,
-  //   assignee: ["Cancelled"].includes(status) ? null : undefined,
-  //   updatedBy: userId,
-  // });
-  // if (update.error) {
-  //   throw redirect(
-  //     requestReferrer(request) ?? path.to.job(id),
-  //     await flash(request, error(update.error, "Failed to update job status"))
-  //   );
-  // }
+  const update = await updateJobStatus(client, {
+    id,
+    status,
+    assignee: ["Cancelled"].includes(status) ? null : undefined,
+    updatedBy: userId,
+  });
+  if (update.error) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.job(id),
+      await flash(request, error(update.error, "Failed to update job status"))
+    );
+  }
 
   throw redirect(
     requestReferrer(request) ?? path.to.job(id),

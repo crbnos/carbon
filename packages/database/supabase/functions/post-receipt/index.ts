@@ -274,7 +274,6 @@ serve(async (req: Request) => {
                 `${itemPostingGroupId}-${supplierTypeId}`
               ];
           } else {
-            console.log({ itemPostingGroupId, supplierTypeId });
             const purchasingPostingGroup = await getPurchasingPostingGroup(
               client,
               companyId,

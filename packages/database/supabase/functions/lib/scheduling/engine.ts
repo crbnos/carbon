@@ -1,63 +1,167 @@
 import { Kysely } from "https://esm.sh/kysely@0.26.3";
-
+import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
 import { DB } from "../database.ts";
+import { getJobMethodTree, JobMethodTreeItem } from "../methods.ts";
+import { Database } from "../types.ts";
 import { ResourceManager } from "./resource-manager.ts";
-import { Operation, SchedulingStrategy } from "./types.ts";
+import { BaseOperation, Operation, SchedulingStrategy } from "./types.ts";
 
 class SchedulingEngine {
-  private companyId: string;
+  private client: SupabaseClient<Database>;
   private db: Kysely<DB>;
   private jobId: string;
-  private operationsToSchedule: Operation[];
+  private operationsToSchedule: BaseOperation[];
   private resourceManager: ResourceManager;
 
-  constructor(db: Kysely<DB>, jobId: string, companyId: string) {
-    this.companyId = companyId;
+  constructor({
+    client,
+    db,
+    jobId,
+    companyId,
+  }: {
+    client: SupabaseClient<Database>;
+    db: Kysely<DB>;
+    jobId: string;
+    companyId: string;
+  }) {
     this.db = db;
+    this.client = client;
     this.jobId = jobId;
     this.operationsToSchedule = [];
     this.resourceManager = new ResourceManager(db, companyId);
   }
 
   async initialize(): Promise<void> {
-    await this.resourceManager.initialize(this.jobId);
+    if (!this.db) {
+      throw new Error("Database connection is not initialized");
+    }
+    await Promise.all([
+      this.resourceManager.initialize(this.jobId),
+      this.getOperationsToSchedule(),
+    ]);
   }
 
-  async schedule(
+  async prioritize(
     strategy: SchedulingStrategy = SchedulingStrategy.LeastTime
   ): Promise<void> {
-    console.log("Scheduling operations");
-    // await this.db.transaction().execute(async (trx) => {
-    const operations = await this.db
-      .selectFrom("jobOperation")
-      .selectAll()
-      .where("jobId", "=", this.jobId)
-      .execute();
-
     switch (strategy) {
       case SchedulingStrategy.LeastTime: {
-        for await (const operation of operations) {
-          const workCenter =
-            this.resourceManager.getWorkCenterByProcessWithLeastTime(
-              operation.processId
-            );
+        await this.db.transaction().execute(async (trx) => {
+          if (this.operationsToSchedule.length > 0) {
+            for await (const operation of this.operationsToSchedule) {
+              if (
+                !operation.processId ||
+                operation.operationType === "Outside"
+              ) {
+                continue;
+              }
 
-          console.log(`${operation.description} -> ${workCenter}`);
+              const [workCenter, priority] = operation.workCenterId
+                ? this.resourceManager.getWorkCenterById(operation.workCenterId)
+                : this.resourceManager.getWorkCenterByProcessWithLeastTime(
+                    operation.processId
+                  );
 
-          if (workCenter) {
-            this.resourceManager.addOperationToWorkCenter(
-              workCenter,
-              operation
-            );
+              const newPriority = priority + 1;
+
+              console.log(
+                `Updating operation ${operation.id} with priority ${newPriority} and work center ${workCenter}`
+              );
+              await trx
+                .updateTable("jobOperation")
+                .set({
+                  workCenterId: workCenter,
+                  priority: newPriority,
+                })
+                .where("id", "=", operation.id)
+                .execute();
+
+              if (workCenter) {
+                this.resourceManager.addOperationToWorkCenter(workCenter, {
+                  ...operation,
+                  priority: newPriority,
+                });
+              }
+            }
           }
-        }
+
+          trx
+            .updateTable("job")
+            .set({
+              status: "Ready",
+            })
+            .where("id", "=", this.jobId)
+            .execute();
+        });
         break;
       }
       default: {
         throw new Error(`Unsupported scheduling strategy: ${strategy}`);
       }
     }
-    // });
+  }
+
+  async getOperationsToSchedule() {
+    if (!this.db) {
+      throw new Error("Database connection is not initialized");
+    }
+    const [jobMakeMethod, operations] = await Promise.all([
+      this.db
+        .selectFrom("jobMakeMethod")
+        .select(["id"])
+        .where("jobId", "=", this.jobId)
+        .where("parentMaterialId", "is", null)
+        .executeTakeFirst(),
+      this.db
+        .selectFrom("jobOperation")
+        .selectAll()
+        .where("jobId", "=", this.jobId)
+        .where("status", "not in", ["Done", "Canceled"])
+        .where("operationType", "not in", ["Outside"])
+        .execute(),
+    ]);
+
+    const operationsByJobMakeMethodId = operations.reduce<
+      Record<string, BaseOperation[]>
+    >((acc, operation) => {
+      if (!operation.jobMakeMethodId) return acc;
+      if (!acc[operation.jobMakeMethodId]) {
+        acc[operation.jobMakeMethodId] = [];
+      }
+      acc[operation.jobMakeMethodId].push(operation);
+      return acc;
+    }, {});
+
+    if (!jobMakeMethod?.id) {
+      throw new Error("Job make method not found");
+    }
+    const jobMethodTrees = await getJobMethodTree(
+      this.client,
+      jobMakeMethod.id
+    );
+    if (jobMethodTrees.error) {
+      throw new Error("Job method tree not found");
+    }
+
+    const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
+    if (!jobMethodTree) throw new Error("Method tree not found");
+
+    const operationsToSchedule: BaseOperation[] = [];
+    const queue: JobMethodTreeItem[] = [jobMethodTree];
+
+    while (queue.length > 0) {
+      const currentNode = queue.shift();
+      if (!currentNode) continue;
+
+      const operations =
+        operationsByJobMakeMethodId[currentNode.data.jobMaterialMakeMethodId] ||
+        [];
+      operationsToSchedule.unshift(...operations);
+
+      queue.push(...currentNode.children);
+    }
+
+    this.operationsToSchedule = operationsToSchedule;
   }
 }
 

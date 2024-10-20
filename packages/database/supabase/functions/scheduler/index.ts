@@ -5,6 +5,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { SchedulingEngine } from "../lib/scheduling/engine.ts";
 import { SchedulingStrategy } from "../lib/scheduling/types.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -32,9 +33,12 @@ serve(async (req: Request) => {
       userId,
     });
 
-    const engine = new SchedulingEngine(db, jobId, companyId);
+    const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+
+    const engine = new SchedulingEngine({ client, db, jobId, companyId });
+
     await engine.initialize();
-    await engine.schedule(SchedulingStrategy.LeastTime);
+    await engine.prioritize(SchedulingStrategy.LeastTime);
 
     return new Response(
       JSON.stringify({

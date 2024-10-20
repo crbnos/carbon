@@ -73,8 +73,6 @@ serve(async (req: Request) => {
       string
     >[];
 
-    console.log(columnMappings);
-
     let mappedRecords = parsedCsv.map((row) => {
       const record: Record<string, string> = {};
       for (const [key, value] of Object.entries(columnMappings)) {

@@ -23,6 +23,10 @@ class ResourceManager {
   }
 
   async initialize(jobId: string) {
+    if (!this.db) {
+      throw new Error("Database connection is not initialized");
+    }
+
     const [job, jobs] = await Promise.all([
       this.db
         .selectFrom("job")
@@ -34,6 +38,7 @@ class ResourceManager {
         .select(["id", "dueDate", "deadlineType", "locationId"])
         .where("companyId", "=", this.companyId)
         .where("status", "in", ["Ready", "In Progress", "Paused"])
+        .where("id", "!=", jobId)
         .execute(),
     ]);
 
@@ -68,6 +73,7 @@ class ResourceManager {
           "jobOperation.setupTime",
           "jobOperation.setupUnit",
           "jobOperation.operationQuantity",
+          "jobOperation.priority",
           "job.dueDate",
           "job.deadlineType",
         ])
@@ -129,13 +135,33 @@ class ResourceManager {
         this.workCentersByProcess.set(process.id!, workCenterIds);
       }
     });
+
+    console.log({
+      operationsByWorkCenter: this.operationsByWorkCenter,
+      durationsByWorkCenter: this.durationsByWorkCenter,
+      workCentersByProcess: this.workCentersByProcess,
+    });
   }
 
   getJob(): Job | null {
     return this.job;
   }
 
-  getWorkCenterByProcessWithLeastTime(processId: string): string | null {
+  getWorkCenterById(workCenterId: string): [string | null, number] {
+    // Get the priority of the last operation for the selected work center
+    let lastOperationPriority = 0;
+
+    const operations = this.operationsByWorkCenter.get(workCenterId) || [];
+    if (operations.length > 0) {
+      lastOperationPriority = operations[operations.length - 1].priority ?? 0;
+    }
+
+    return [workCenterId, Math.ceil(lastOperationPriority)];
+  }
+
+  getWorkCenterByProcessWithLeastTime(
+    processId: string
+  ): [string | null, number] {
     const workCenters = this.workCentersByProcess.get(processId) ?? [];
     let leastTime = Infinity;
     let selectedWorkCenter = null;
@@ -148,7 +174,17 @@ class ResourceManager {
       }
     }
 
-    return selectedWorkCenter;
+    // Get the priority of the last operation for the selected work center
+    let lastOperationPriority = 0;
+    if (selectedWorkCenter) {
+      const operations =
+        this.operationsByWorkCenter.get(selectedWorkCenter) || [];
+      if (operations.length > 0) {
+        lastOperationPriority = operations[operations.length - 1].priority ?? 0;
+      }
+    }
+
+    return [selectedWorkCenter, Math.ceil(lastOperationPriority)];
   }
 
   addOperationToWorkCenter(workCenterId: string, operation: BaseOperation) {

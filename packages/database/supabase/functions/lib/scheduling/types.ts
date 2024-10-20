@@ -3,18 +3,21 @@ import type { Database } from "../types.ts";
 export type BaseOperation = {
   id?: string;
   jobId: string;
-  processId: string | null;
-  workCenterId?: string | null;
-  status?: Database["public"]["Enums"]["jobOperationStatus"];
+  deadlineType?: Database["public"]["Enums"]["deadlineType"];
+  description?: string | null;
+  dueDate?: string | null;
   laborTime?: number;
   laborUnit?: Database["public"]["Enums"]["factor"];
   machineTime?: number;
   machineUnit?: Database["public"]["Enums"]["factor"];
+  operationQuantity?: number | null;
+  operationType?: Database["public"]["Enums"]["operationType"];
+  priority?: number;
+  processId: string | null;
   setupTime?: number;
   setupUnit?: Database["public"]["Enums"]["factor"];
-  operationQuantity?: number | null;
-  dueDate?: string | null;
-  deadlineType?: Database["public"]["Enums"]["deadlineType"];
+  status?: Database["public"]["Enums"]["jobOperationStatus"];
+  workCenterId?: string | null;
 };
 
 export type Operation = Omit<
@@ -22,12 +25,12 @@ export type Operation = Omit<
   "setupTime" | "laborTime" | "machineTime"
 > & {
   duration: number;
-  setupDuration: number;
   laborDuration: number;
-  machineDuration: number;
-  setupTime: number;
   laborTime: number;
+  machineDuration: number;
   machineTime: number;
+  setupDuration: number;
+  setupTime: number;
 };
 
 export type Job = {
