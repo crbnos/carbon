@@ -268,26 +268,46 @@ serve(async (req: Request) => {
           throw new Error(`Sales RFQ Lines with id ${id} not found`);
         }
 
-        const [customerPayment, customerShipping] = await Promise.all([
-          client
-            .from("customerPayment")
-            .select("*")
-            .eq("customerId", salesRfq.data.customerId)
-            .single(),
-          client
-            .from("customerShipping")
-            .select("*")
-            .eq("customerId", salesRfq.data.customerId)
-            .single(),
-          client
-            .from("employeeJob")
-            .select("*")
-            .eq("employeeId", userId)
-            .eq("companyId", companyId),
-        ]);
+        const [customerPayment, customerShipping, customer, company] =
+          await Promise.all([
+            client
+              .from("customerPayment")
+              .select("*")
+              .eq("customerId", salesRfq.data.customerId)
+              .single(),
+            client
+              .from("customerShipping")
+              .select("*")
+              .eq("customerId", salesRfq.data.customerId)
+              .single(),
+            client
+              .from("customer")
+              .select("*")
+              .eq("id", salesRfq.data.customerId)
+              .single(),
+            client.from("company").select("*").eq("id", companyId).single(),
+            client
+              .from("employeeJob")
+              .select("*")
+              .eq("employeeId", userId)
+              .eq("companyId", companyId),
+          ]);
 
         if (customerPayment.error) throw customerPayment.error;
         if (customerShipping.error) throw customerShipping.error;
+        if (customer.error) throw customer.error;
+        if (company.error) throw company.error;
+
+        const currencyCode =
+          customer.data?.currencyCode ??
+          company.data?.baseCurrencyCode ??
+          "USD";
+        const currency = await client
+          .from("currency")
+          .select("*")
+          .eq("code", currencyCode)
+          .single();
+        const exchangeRate = currency.data?.exchangeRate ?? 1;
 
         const {
           paymentTermId,
@@ -333,6 +353,9 @@ serve(async (req: Request) => {
                 internalNotes: salesRfq.data?.internalNotes,
                 companyId,
                 createdBy: userId,
+                currencyCode,
+                exchangeRate,
+                exchangeRateUpdatedAt: new Date().toISOString(),
               },
             ])
             .returning(["id"])
