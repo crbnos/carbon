@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.customer(customerId),
       await flash(
         request,
-        error(customerPayment.error, "Failed to load customer payment")
+        error(customerPayment.error, "Failed to load customer payment terms")
       )
     );
   }
@@ -66,14 +66,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.customer(customerId),
       await flash(
         request,
-        error(update.error, "Failed to update customer payment")
+        error(update.error, "Failed to update customer payment terms")
       )
     );
   }
 
   throw redirect(
     path.to.customerPayment(customerId),
-    await flash(request, success("Updated customer payment"))
+    await flash(request, success("Updated customer payment terms"))
   );
 }
 
