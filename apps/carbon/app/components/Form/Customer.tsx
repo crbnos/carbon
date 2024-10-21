@@ -2,6 +2,7 @@ import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
+import { useUser } from "~/hooks";
 import { CustomerForm } from "~/modules/sales";
 import { useCustomers } from "~/stores";
 
@@ -21,6 +22,8 @@ const Customer = (props: CustomerSelectProps) => {
       })) ?? [],
     [customers]
   );
+
+  const { company } = useUser();
 
   return (
     <>
@@ -44,6 +47,7 @@ const Customer = (props: CustomerSelectProps) => {
           }}
           initialValues={{
             name: created,
+            currencyCode: company.baseCurrencyCode,
           }}
         />
       )}
