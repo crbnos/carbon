@@ -492,7 +492,7 @@ const LinePricingOptions = ({
     line.quantity?.reduce((acc, quantity) => {
       const charges = Object.values(line.additionalCharges ?? {}).reduce(
         (chargeAcc, charge) => {
-          const amount = charge.amounts?.[quantity] * quoteExchangeRate;
+          const amount = charge.amounts?.[quantity];
           return chargeAcc + amount;
         },
         0
@@ -500,6 +500,13 @@ const LinePricingOptions = ({
       acc[quantity] = charges;
       return acc;
     }, {} as Record<number, number>) ?? {};
+
+  const convertedAdditionalChargesByQuantity = Object.entries(
+    additionalChargesByQuantity
+  ).reduce<Record<number, number>>((acc, [quantity, amount]) => {
+    acc[Number(quantity)] = amount * quoteExchangeRate;
+    return acc;
+  }, {});
 
   return (
     <VStack spacing={2}>
@@ -523,8 +530,9 @@ const LinePricingOptions = ({
                 addOn:
                   additionalChargesByQuantity[selectedOption.quantity] || 0,
                 convertedAddOn:
-                  additionalChargesByQuantity[selectedOption.quantity] *
-                    quoteExchangeRate || 0,
+                  convertedAdditionalChargesByQuantity[
+                    selectedOption.quantity
+                  ] || 0,
                 leadTime: selectedOption.leadTime,
               },
             }));
@@ -573,14 +581,16 @@ const LinePricingOptions = ({
                       </Td>
                       <Td>
                         {formatter.format(
-                          additionalChargesByQuantity[option.quantity]
+                          convertedAdditionalChargesByQuantity[option.quantity]
                         )}
                       </Td>
                       <Td>{option.leadTime} days</Td>
                       <Td>
                         {formatter.format(
                           (option.convertedNetExtendedPrice ?? 0) +
-                            additionalChargesByQuantity[option.quantity]
+                            convertedAdditionalChargesByQuantity[
+                              option.quantity
+                            ]
                         )}
                       </Td>
                     </Tr>
