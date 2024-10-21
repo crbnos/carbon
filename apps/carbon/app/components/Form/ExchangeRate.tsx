@@ -38,7 +38,7 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
 
   return (
     <div className="relative">
-      <HStack spacing={0}>
+      <HStack spacing={0} className="items-end">
         <Input
           label={
             <HStack spacing={1}>
@@ -60,10 +60,10 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
         {onRefresh && (
           <IconButton
             aria-label="Refresh exchange rate"
-            className="bg-transparent flex-shrink-0 h-10 rounded-l-none border-l-0 shadow-sm self-end"
+            className="flex-shrink-0 h-10 w-10 px-3 rounded-l-none border-l-0 shadow-sm"
             icon={<LuRefreshCw />}
             variant="secondary"
-            size="lg"
+            size="md"
             onClick={onRefresh}
           />
         )}

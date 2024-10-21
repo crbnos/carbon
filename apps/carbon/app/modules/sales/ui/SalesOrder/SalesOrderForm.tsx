@@ -166,6 +166,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
               />
 
               {isEditing &&
+                !!customer.currencyCode &&
                 customer.currencyCode !== company.baseCurrencyCode && (
                   <ExchangeRate
                     name="exchangeRate"

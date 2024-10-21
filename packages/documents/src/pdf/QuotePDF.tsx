@@ -67,7 +67,8 @@ const QuotePDF = ({
   } = quoteCustomerDetails;
 
   const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
-  const shouldConvertCurrency = currencyCode !== company.baseCurrencyCode;
+  const shouldConvertCurrency =
+    !!currencyCode && currencyCode !== company.baseCurrencyCode;
   const formatter = getCurrencyFormatter(currencyCode, locale);
 
   const pricesByLine = quoteLinePrices.reduce<
