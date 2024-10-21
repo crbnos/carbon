@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import type { PaymentTermCalculationMethod } from "~/modules/accounting";
@@ -63,6 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewPaymentTermsRoute() {
+  const navigate = useNavigate();
   const initialValues = {
     name: "",
     daysDue: 0,
@@ -71,5 +73,10 @@ export default function NewPaymentTermsRoute() {
     calculationMethod: "Net" as PaymentTermCalculationMethod,
   };
 
-  return <PaymentTermForm initialValues={initialValues} />;
+  return (
+    <PaymentTermForm
+      initialValues={initialValues}
+      onClose={() => navigate(-1)}
+    />
+  );
 }

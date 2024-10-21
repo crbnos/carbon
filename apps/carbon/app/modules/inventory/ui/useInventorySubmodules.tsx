@@ -1,4 +1,4 @@
-import { LuBox } from "react-icons/lu";
+import { LuBox, LuTruck } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -23,16 +23,17 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
       // },
     ],
   },
-  // {
-  //   name: "Configure",
-  //   routes: [
-  //     {
-  //       name: "Shipping Methods",
-  //       to: path.to.shippingMethods,
-  //       role: "employee",
-  //     },
-  //   ],
-  // },
+  {
+    name: "Configure",
+    routes: [
+      {
+        name: "Shipping Methods",
+        to: path.to.shippingMethods,
+        role: "employee",
+        icon: <LuTruck />,
+      },
+    ],
+  },
 ];
 
 export default function useAccountingSubmodules() {

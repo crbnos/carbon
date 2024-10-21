@@ -2,7 +2,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import type { PaymentTermCalculationMethod } from "~/modules/accounting";
@@ -72,6 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditPaymentTermsRoute() {
   const { paymentTerm } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
 
   const initialValues = {
     id: paymentTerm?.id ?? undefined,
@@ -85,6 +86,10 @@ export default function EditPaymentTermsRoute() {
   };
 
   return (
-    <PaymentTermForm key={initialValues.id} initialValues={initialValues} />
+    <PaymentTermForm
+      key={initialValues.id}
+      initialValues={initialValues}
+      onClose={() => navigate(-1)}
+    />
   );
 }

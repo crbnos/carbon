@@ -44,30 +44,16 @@ const useModalDrawerType = () => {
 
 const ModalDrawer = forwardRef<
   ElementRef<typeof Modal> | ElementRef<typeof Drawer>,
-  | (ComponentPropsWithoutRef<typeof Modal> & {
-      onClose?: () => void;
-    })
-  | (ComponentPropsWithoutRef<typeof Drawer> & {
-      onClose?: () => void;
-    })
->(({ onClose, ...props }, ref) => {
+  | ComponentPropsWithoutRef<typeof Modal>
+  | ComponentPropsWithoutRef<typeof Drawer>
+>((props, ref) => {
   const type = useModalDrawerType();
 
   if (type === "drawer") {
     return <Drawer {...props} />;
   }
 
-  return (
-    <Modal
-      {...props}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose?.();
-        }
-      }}
-      open
-    />
-  );
+  return <Modal {...props} />;
 });
 ModalDrawer.displayName = "ModalDrawer";
 

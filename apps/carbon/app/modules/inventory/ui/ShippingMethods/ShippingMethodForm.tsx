@@ -34,7 +34,7 @@ type ShippingMethodFormProps = {
   initialValues: z.infer<typeof shippingMethodValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
-  onClose?: (data?: { id: string; name: string }) => void;
+  onClose: (data?: { id: string; name: string }) => void;
 };
 
 const ShippingMethodForm = ({

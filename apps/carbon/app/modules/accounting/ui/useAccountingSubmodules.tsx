@@ -1,3 +1,4 @@
+import { LuDollarSign, LuList } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -60,6 +61,7 @@ const accountingRoutes: AuthenticatedRouteGroup[] = [
         name: "Currencies",
         to: path.to.currencies,
         role: "employee",
+        icon: <LuDollarSign />,
       },
       // {
       //   name: "Default Accounts",
@@ -71,11 +73,12 @@ const accountingRoutes: AuthenticatedRouteGroup[] = [
       //   to: path.to.fiscalYears,
       //   role: "employee",
       // },
-      // {
-      //   name: "Payment Terms",
-      //   to: path.to.paymentTerms,
-      //   role: "employee",
-      // },
+      {
+        name: "Payment Terms",
+        to: path.to.paymentTerms,
+        role: "employee",
+        icon: <LuList />,
+      },
     ],
   },
 ];

@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import type { ShippingCarrier } from "~/modules/inventory";
@@ -65,10 +66,17 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewShippingMethodsRoute() {
+  const navigate = useNavigate();
+
   const initialValues = {
     name: "",
     carrier: "" as ShippingCarrier,
   };
 
-  return <ShippingMethodForm initialValues={initialValues} />;
+  return (
+    <ShippingMethodForm
+      initialValues={initialValues}
+      onClose={() => navigate(-1)}
+    />
+  );
 }

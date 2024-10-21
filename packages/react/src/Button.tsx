@@ -139,15 +139,15 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           leftIcon &&
           cloneElement(leftIcon, {
             className: !leftIcon.props?.size
-              ? cn("mr-2 h-4 w-4", leftIcon.props.className)
-              : cn("mr-2", leftIcon.props.className),
+              ? cn("mr-2 h-4 w-4 flex-shrink-0", leftIcon.props.className)
+              : cn("mr-2 flex-shrink-0", leftIcon.props.className),
           })}
         <Slottable>{children}</Slottable>
         {rightIcon &&
           cloneElement(rightIcon, {
             className: !rightIcon.props?.size
-              ? cn("ml-2 h-4 w-4", rightIcon.props.className)
-              : cn("ml-2", rightIcon.props.className),
+              ? cn("ml-2 h-4 w-4 flex-shrink-0", rightIcon.props.className)
+              : cn("ml-2 flex-shrink-0", rightIcon.props.className),
           })}
       </Comp>
     );

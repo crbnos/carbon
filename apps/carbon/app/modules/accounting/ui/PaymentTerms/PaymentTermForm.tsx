@@ -35,7 +35,7 @@ type PaymentTermFormProps = {
   initialValues: z.infer<typeof paymentTermValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
-  onClose?: (data?: { id: string; name: string }) => void;
+  onClose: (data?: { id: string; name: string }) => void;
 };
 
 const PaymentTermForm = ({

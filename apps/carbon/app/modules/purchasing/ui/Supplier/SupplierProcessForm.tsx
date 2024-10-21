@@ -33,7 +33,7 @@ type SupplierProcessFormProps = {
   initialValues: z.infer<typeof supplierProcessValidator>;
   type?: "drawer" | "modal";
   open?: boolean;
-  onClose?: () => void;
+  onClose: () => void;
 };
 
 const SupplierProcessForm = ({

@@ -2,7 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
@@ -59,6 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function NewSupplierProcessRoute() {
   const { supplierId } = useParams();
+  const navigate = useNavigate();
 
   if (!supplierId) throw new Error("Could not find supplier id");
 
@@ -70,5 +71,10 @@ export default function NewSupplierProcessRoute() {
     leadTime: 0,
   };
 
-  return <SupplierProcessForm initialValues={initialValues} />;
+  return (
+    <SupplierProcessForm
+      initialValues={initialValues}
+      onClose={() => navigate(-1)}
+    />
+  );
 }
