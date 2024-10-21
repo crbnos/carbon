@@ -18,23 +18,19 @@
     "tsup": "^6.5.0",
     "typescript": "^5.2.2"
   },
-  "files": [
-    "dist/**"
-  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "jest": {
     "preset": "@carbon/jest/node"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
   "private": true,
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --external react",
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external react",
     "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
     "test": "jest"
   },
   "sideEffects": false,
-  "types": "./dist/index.d.ts",
   "version": "*"
 }

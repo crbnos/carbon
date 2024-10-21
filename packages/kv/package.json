@@ -16,14 +16,11 @@
     "tsx": "^4.13.2",
     "typescript": "^5.2.2"
   },
-  "files": [
-    "dist/**"
-  ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "private": true,
   "scripts": {
-    "build": "tsup",
     "clean": "rimraf .turbo node_modules dist",
     "db:kill": "docker-compose down",
     "db:start": "docker-compose up -d",
@@ -31,6 +28,5 @@
     "lint": "TIMING=1 eslint \"src/**/*.ts*\""
   },
   "sideEffects": false,
-  "types": "./dist/index.d.ts",
   "version": "*"
 }
