@@ -90,19 +90,19 @@ const SuppliersTable = memo(
             },
           },
         },
-        {
-          id: "orders",
-          header: "Orders",
-          cell: ({ row }) => (
-            <Button variant="secondary" asChild>
-              <Link
-                to={`${path.to.purchaseOrders}?filter=supplierId:eq:${row.original.id}`}
-              >
-                {row.original.orderCount ?? 0} Orders
-              </Link>
-            </Button>
-          ),
-        },
+        // {
+        //   id: "orders",
+        //   header: "Orders",
+        //   cell: ({ row }) => (
+        //     <Button variant="secondary" asChild>
+        //       <Link
+        //         to={`${path.to.purchaseOrders}?filter=supplierId:eq:${row.original.id}`}
+        //       >
+        //         {row.original.orderCount ?? 0} Orders
+        //       </Link>
+        //     </Button>
+        //   ),
+        // },
         {
           id: "parts",
           header: "Parts",

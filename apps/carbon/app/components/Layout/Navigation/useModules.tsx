@@ -1,6 +1,5 @@
 import {
   LuBox,
-  LuCreditCard,
   LuCrown,
   LuFactory,
   LuFiles,
@@ -47,7 +46,7 @@ export function useModules() {
     {
       permission: "purchasing",
       name: "Purchasing",
-      to: path.to.purchaseOrders,
+      to: path.to.suppliers,
       icon: LuShoppingCart,
     },
 
@@ -63,12 +62,12 @@ export function useModules() {
       to: path.to.currencies,
       icon: LuLandmark,
     },
-    {
-      permission: "invoicing",
-      name: "Invoicing",
-      to: path.to.purchaseInvoices,
-      icon: LuCreditCard,
-    },
+    // {
+    //   permission: "invoicing",
+    //   name: "Invoicing",
+    //   to: path.to.purchaseInvoices,
+    //   icon: LuCreditCard,
+    // },
     {
       permission: "people",
       name: "People",

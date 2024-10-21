@@ -1,4 +1,4 @@
-import { LuContainer, LuLayoutList, LuShapes } from "react-icons/lu";
+import { LuContainer, LuShapes } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -12,11 +12,11 @@ const purchasingRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.suppliers,
         icon: <LuContainer />,
       },
-      {
-        name: "Purchase Orders",
-        to: path.to.purchaseOrders,
-        icon: <LuLayoutList />,
-      },
+      // {
+      //   name: "Purchase Orders",
+      //   to: path.to.purchaseOrders,
+      //   icon: <LuLayoutList />,
+      // },
     ],
   },
   {
