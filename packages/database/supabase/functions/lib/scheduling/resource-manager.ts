@@ -9,7 +9,6 @@ class ResourceManager {
   private job: Job | null;
   private activeJobs: string[];
   private operationsByWorkCenter: Map<string | null, Operation[]>;
-  private durationsByWorkCenter: Map<string | null, number>;
   private workCentersByProcess: Map<string, string[]>;
 
   constructor(db: Kysely<DB>, companyId: string) {
@@ -18,7 +17,6 @@ class ResourceManager {
     this.job = null;
     this.activeJobs = [];
     this.operationsByWorkCenter = new Map<string | null, Operation[]>();
-    this.durationsByWorkCenter = new Map<string | null, number>();
     this.workCentersByProcess = new Map<string, string[]>();
   }
 
@@ -46,14 +44,27 @@ class ResourceManager {
       this.job = job;
     }
 
-    this.activeJobs =
-      jobs?.map((j) => j.id).filter((id) => id !== undefined) ?? [];
+    // ignore jobs that aren't at the same location
+    this.activeJobs = jobs?.reduce<string[]>((acc, j) => {
+      if (j.id && j.locationId === this.job?.locationId) {
+        acc.push(j.id);
+      }
+      return acc;
+    }, []);
 
-    const processes = await this.db
-      .selectFrom("processes")
-      .select(["id", "workCenters"])
-      .where("companyId", "=", this.companyId)
-      .execute();
+    const [processes, workCenters] = await Promise.all([
+      this.db
+        .selectFrom("processes")
+        .select(["id", "workCenters"])
+        .where("companyId", "=", this.companyId)
+        .execute(),
+      this.db
+        .selectFrom("workCenter")
+        .select(["id", "locationId"])
+        .where("locationId", "=", this.job?.locationId)
+        .where("companyId", "=", this.companyId)
+        .execute(),
+    ]);
 
     let operations: BaseOperation[] = [];
     if (this.activeJobs.length > 0) {
@@ -95,33 +106,13 @@ class ResourceManager {
           ?.push(operation);
       });
 
-    this.durationsByWorkCenter = new Map<string, number>();
-
-    for (const [workCenterId, operations] of this.operationsByWorkCenter) {
-      const totalDuration = operations.reduce(
-        (sum, operation) => sum + operation.duration,
-        0
+    // Sort each array in operationsByWorkCenter by priority
+    this.operationsByWorkCenter.forEach((operations, workCenterId) => {
+      this.operationsByWorkCenter.set(
+        workCenterId,
+        operations.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
       );
-      this.durationsByWorkCenter.set(workCenterId, totalDuration);
-    }
-
-    // Handle operations without a specific work center (null key)
-    const unassignedOperations = this.operationsByWorkCenter.get(null) || [];
-    if (unassignedOperations.length > 0) {
-      const totalUnassignedDuration = unassignedOperations.reduce(
-        (sum, operation) => {
-          if (
-            !job?.dueDate ||
-            (operation.dueDate && operation.dueDate < job.dueDate)
-          ) {
-            return sum + operation.duration;
-          }
-          return sum;
-        },
-        0
-      );
-      this.durationsByWorkCenter.set("unassigned", totalUnassignedDuration);
-    }
+    });
 
     // Initialize workCentersByProcess map
     this.workCentersByProcess = new Map<string, string[]>();
@@ -129,16 +120,16 @@ class ResourceManager {
     // Populate workCentersByProcess map
     processes?.forEach((process) => {
       if (process.workCenters) {
-        const workCenterIds = (process.workCenters as { id: string }[]).map(
-          (wc: { id: string }) => wc.id
-        );
+        // only consider work centers at this location
+        const workCenterIds = (process.workCenters as { id: string }[])
+          .map((wc: { id: string }) => wc.id)
+          .filter((wc) => workCenters?.some((w) => w.id === wc));
         this.workCentersByProcess.set(process.id!, workCenterIds);
       }
     });
 
     console.log({
       operationsByWorkCenter: this.operationsByWorkCenter,
-      durationsByWorkCenter: this.durationsByWorkCenter,
       workCentersByProcess: this.workCentersByProcess,
     });
   }
@@ -147,44 +138,93 @@ class ResourceManager {
     return this.job;
   }
 
-  getWorkCenterById(workCenterId: string): [string | null, number] {
-    // Get the priority of the last operation for the selected work center
-    let lastOperationPriority = 0;
+  getPriorityByWorkCenterId(
+    workCenterId: string
+  ): [string | null, { priorityBefore: number; priorityAfter?: number }] {
+    const deadlineType = this.job?.deadlineType ?? "No Deadline";
+    const dueDate = this.job?.dueDate ?? "";
 
     const operations = this.operationsByWorkCenter.get(workCenterId) || [];
-    if (operations.length > 0) {
-      lastOperationPriority = operations[operations.length - 1].priority ?? 0;
+
+    let priorityBefore = 0;
+    let priorityAfter: number | undefined;
+
+    if (operations.length === 0) {
+      // If there are no operations, set priorityBefore to 0 and priorityAfter to undefined
+      return [workCenterId, { priorityBefore: 0, priorityAfter: undefined }];
     }
 
-    return [workCenterId, Math.ceil(lastOperationPriority)];
+    // Iterate backwards over the operations until we find the first operation that matches the deadline type
+    for (let i = operations.length - 1; i >= 0; i--) {
+      const currentOp = operations[i];
+
+      if (deadlineType === "ASAP") {
+        if (currentOp.deadlineType === "ASAP") {
+          priorityBefore = currentOp.priority ?? 0;
+          priorityAfter = operations[i + 1]?.priority;
+          break;
+        }
+      } else if (deadlineType === "Hard Deadline") {
+        if (
+          currentOp.deadlineType === "ASAP" ||
+          (currentOp.deadlineType === "Hard Deadline" &&
+            currentOp.dueDate &&
+            currentOp.dueDate <= dueDate) ||
+          (currentOp.deadlineType === "Soft Deadline" &&
+            currentOp.dueDate &&
+            currentOp.dueDate < dueDate)
+        ) {
+          priorityBefore = currentOp.priority ?? 0;
+          priorityAfter = operations[i + 1]?.priority;
+          break;
+        }
+      } else if (deadlineType === "Soft Deadline") {
+        if (
+          currentOp.deadlineType === "ASAP" ||
+          (currentOp.deadlineType === "Hard Deadline" &&
+            currentOp.dueDate &&
+            currentOp.dueDate <= dueDate) ||
+          (currentOp.deadlineType === "Soft Deadline" &&
+            currentOp.dueDate &&
+            currentOp.dueDate <= dueDate)
+        ) {
+          priorityBefore = currentOp.priority ?? 0;
+          priorityAfter = operations[i + 1]?.priority;
+          break;
+        }
+      } else if (deadlineType === "No Deadline") {
+        priorityAfter = undefined;
+        priorityBefore = currentOp.priority ?? 0;
+        break;
+      }
+    }
+
+    if (
+      priorityBefore === 0 &&
+      priorityAfter === undefined &&
+      deadlineType !== "ASAP"
+    ) {
+      priorityBefore = operations[operations.length - 1]?.priority ?? 0;
+    }
+
+    return [workCenterId, { priorityBefore, priorityAfter }];
   }
 
-  getWorkCenterByProcessWithLeastTime(
+  getWorkCenterAndPriorityByProcessId(
     processId: string
-  ): [string | null, number] {
+  ): [
+    workCenterId: string | null,
+    { priorityBefore: number; priorityAfter?: number }
+  ] {
     const workCenters = this.workCentersByProcess.get(processId) ?? [];
-    let leastTime = Infinity;
-    let selectedWorkCenter = null;
 
-    for (const workCenter of workCenters) {
-      const duration = this.durationsByWorkCenter.get(workCenter) ?? 0;
-      if (duration < leastTime) {
-        leastTime = duration;
-        selectedWorkCenter = workCenter;
-      }
-    }
-
-    // Get the priority of the last operation for the selected work center
-    let lastOperationPriority = 0;
-    if (selectedWorkCenter) {
-      const operations =
-        this.operationsByWorkCenter.get(selectedWorkCenter) || [];
-      if (operations.length > 0) {
-        lastOperationPriority = operations[operations.length - 1].priority ?? 0;
-      }
-    }
-
-    return [selectedWorkCenter, Math.ceil(lastOperationPriority)];
+    return [
+      selectedWorkCenter,
+      {
+        priorityBefore,
+        priorityAfter,
+      },
+    ];
   }
 
   addOperationToWorkCenter(workCenterId: string, operation: BaseOperation) {

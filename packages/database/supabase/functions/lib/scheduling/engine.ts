@@ -46,43 +46,59 @@ class SchedulingEngine {
   ): Promise<void> {
     switch (strategy) {
       case SchedulingStrategy.LeastTime: {
-        await this.db.transaction().execute(async (trx) => {
-          if (this.operationsToSchedule.length > 0) {
-            for await (const operation of this.operationsToSchedule) {
-              if (
-                !operation.processId ||
-                operation.operationType === "Outside"
-              ) {
-                continue;
-              }
+        const workCenterUpdates: Record<
+          string,
+          { workCenterId: string; priority: number }
+        > = {};
 
-              const [workCenter, priority] = operation.workCenterId
-                ? this.resourceManager.getWorkCenterById(operation.workCenterId)
-                : this.resourceManager.getWorkCenterByProcessWithLeastTime(
+        if (this.operationsToSchedule.length > 0) {
+          for await (const operation of this.operationsToSchedule) {
+            if (!operation.processId || operation.operationType === "Outside") {
+              continue;
+            }
+
+            const [workCenter, { priorityBefore, priorityAfter }] =
+              operation.workCenterId
+                ? this.resourceManager.getPriorityByWorkCenterId(
+                    operation.workCenterId
+                  )
+                : this.resourceManager.getWorkCenterAndPriorityByProcessId(
                     operation.processId
                   );
 
-              const newPriority = priority + 1;
+            if (workCenter) {
+              const newPriority = priorityAfter
+                ? (priorityAfter + priorityBefore) / 2
+                : priorityBefore + 1;
 
               console.log(
                 `Updating operation ${operation.id} with priority ${newPriority} and work center ${workCenter}`
               );
-              await trx
-                .updateTable("jobOperation")
-                .set({
-                  workCenterId: workCenter,
-                  priority: newPriority,
-                })
-                .where("id", "=", operation.id)
-                .execute();
+              workCenterUpdates[operation.id!] = {
+                workCenterId: workCenter,
+                priority: newPriority,
+              };
 
-              if (workCenter) {
-                this.resourceManager.addOperationToWorkCenter(workCenter, {
-                  ...operation,
-                  priority: newPriority,
-                });
-              }
+              this.resourceManager.addOperationToWorkCenter(workCenter, {
+                ...operation,
+                priority: newPriority,
+              });
             }
+          }
+        }
+
+        await this.db.transaction().execute(async (trx) => {
+          for await (const [id, { workCenterId, priority }] of Object.entries(
+            workCenterUpdates
+          )) {
+            await trx
+              .updateTable("jobOperation")
+              .set({
+                workCenterId,
+                priority,
+              })
+              .where("id", "=", id)
+              .execute();
           }
 
           trx

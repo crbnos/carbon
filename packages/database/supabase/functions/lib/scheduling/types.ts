@@ -1,9 +1,11 @@
 import type { Database } from "../types.ts";
 
+export type DeadlineType = Database["public"]["Enums"]["deadlineType"];
+
 export type BaseOperation = {
   id?: string;
   jobId: string;
-  deadlineType?: Database["public"]["Enums"]["deadlineType"];
+  deadlineType?: DeadlineType;
   description?: string | null;
   dueDate?: string | null;
   laborTime?: number;
