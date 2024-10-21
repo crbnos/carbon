@@ -71,7 +71,9 @@ export const EXCHANGE_RATES_API_KEY = getEnv("EXCHANGE_RATES_API_KEY", {
   isRequired: false,
   isSecret: true,
 });
-export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN");
+export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
+  isRequired: false,
+});
 export const SUPABASE_SERVICE_ROLE = getEnv("SUPABASE_SERVICE_ROLE");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";

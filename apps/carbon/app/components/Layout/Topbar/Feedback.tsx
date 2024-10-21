@@ -92,6 +92,10 @@ const Feedback = () => {
           action={path.to.feedback}
           validator={feedbackValidator}
           fetcher={fetcher}
+          onSubmit={() => {
+            setFeedback("");
+            setAttachment(null);
+          }}
         >
           <Hidden name="location" value={location.pathname} />
           <Hidden name="attachmentPath" value={attachment?.path ?? ""} />
