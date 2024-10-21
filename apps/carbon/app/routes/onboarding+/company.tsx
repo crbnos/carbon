@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -180,7 +179,6 @@ export default function OnboardingCompany() {
       >
         <CardHeader>
           <CardTitle>Now let's set up your company</CardTitle>
-          <CardDescription>You can always change this later</CardDescription>
         </CardHeader>
         <CardContent>
           <Hidden name="next" value={next} />
