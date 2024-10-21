@@ -166,6 +166,7 @@ serve(async (req: Request) => {
                   ),
                   createdBy: userId,
                   companyId,
+                  exchangeRate: quote.data.exchangeRate ?? 1,
                 };
               });
 
