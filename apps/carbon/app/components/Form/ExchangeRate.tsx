@@ -43,7 +43,7 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
           label={
             <HStack spacing={1}>
               <span>Exchange Rate</span>
-              {exchangeRateUpdatedAt && onRefresh && (
+              {exchangeRateUpdatedAt && (
                 <Tooltip>
                   <TooltipTrigger tabIndex={-1}>
                     <LuInfo className="w-4 h-4" />
