@@ -29430,6 +29430,141 @@ export default {
         tags: ["salesOrderLocations"],
       },
     },
+    "/feedback": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.feedback.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.location",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.feedback",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.attachmentPath",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/feedback",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["feedback"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.feedback",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["feedback"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.feedback.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.location",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.feedback",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.attachmentPath",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["feedback"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.feedback.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.location",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.feedback",
+          },
+          {
+            $ref: "#/parameters/rowFilter.feedback.attachmentPath",
+          },
+          {
+            $ref: "#/parameters/body.feedback",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["feedback"],
+      },
+    },
     "/oauthCode": {
       get: {
         parameters: [
@@ -47454,7 +47589,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -47503,7 +47638,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -49548,6 +49683,36 @@ export default {
           type: "string",
         },
         paymentCountryName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    feedback: {
+      required: ["id", "location", "userId", "feedback"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        location: {
+          format: "text",
+          type: "string",
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        feedback: {
+          format: "text",
+          type: "string",
+        },
+        attachmentPath: {
           format: "text",
           type: "string",
         },
@@ -69327,6 +69492,50 @@ export default {
     },
     "rowFilter.salesOrderLocations.paymentCountryName": {
       name: "paymentCountryName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.feedback": {
+      name: "feedback",
+      description: "feedback",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/feedback",
+      },
+    },
+    "rowFilter.feedback.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.feedback.location": {
+      name: "location",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.feedback.userId": {
+      name: "userId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.feedback.feedback": {
+      name: "feedback",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.feedback.attachmentPath": {
+      name: "attachmentPath",
       required: false,
       format: "text",
       in: "query",
