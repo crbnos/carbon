@@ -2,6 +2,7 @@ import type { ComboboxProps } from "@carbon/form";
 import { Combobox, CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
+import { useUser } from "~/hooks";
 import { SupplierForm } from "~/modules/purchasing";
 import { useSuppliers } from "~/stores";
 
@@ -27,6 +28,8 @@ const Supplier = ({ allowedSuppliers, ...props }: SupplierSelectProps) => {
     return result;
   }, [suppliers, allowedSuppliers]);
 
+  const { company } = useUser();
+
   return allowedSuppliers ? (
     <Combobox options={options} {...props} label={props?.label ?? "Supplier"} />
   ) : (
@@ -51,6 +54,7 @@ const Supplier = ({ allowedSuppliers, ...props }: SupplierSelectProps) => {
           }}
           initialValues={{
             name: created,
+            currencyCode: company.baseCurrencyCode,
           }}
         />
       )}
