@@ -25,7 +25,7 @@ import {
   Input,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import type { Customer } from "~/modules/sales";
 import { customerValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -43,8 +43,6 @@ const CustomerForm = ({
 }: CustomerFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<Customer>>();
-
-  const { company } = useUser();
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -109,11 +107,7 @@ const CustomerForm = ({
 
                   <Employee name="accountManagerId" label="Account Manager" />
 
-                  <Currency
-                    name="currencyCode"
-                    label="Currency"
-                    value={company.baseCurrencyCode}
-                  />
+                  <Currency name="currencyCode" label="Currency" />
 
                   <PhoneInput name="phone" label="Phone" />
                   <PhoneInput name="fax" label="Fax" />
