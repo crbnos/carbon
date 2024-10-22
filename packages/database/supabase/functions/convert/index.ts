@@ -276,8 +276,10 @@ serve(async (req: Request) => {
           (line) => !line.itemId
         );
 
+        const readableIdToLineIdMapping = new Map<string, string>();
+        let itemInserts: Database["public"]["Tables"]["item"]["Insert"][] = [];
         if (linesToCreateItems.length > 0) {
-          const itemInserts = await Promise.all(
+          itemInserts = await Promise.all(
             linesToCreateItems.map(async (line) => {
               const baseReadableId = line.customerPartRevision
                 ? `${line.customerPartId}-${line.customerPartRevision}`
@@ -304,8 +306,8 @@ serve(async (req: Request) => {
                 suffix++;
               }
 
+              readableIdToLineIdMapping.set(readableId, line.id!);
               return {
-                lineId: line.id,
                 readableId,
                 type: "Part" as const,
                 active: false,
@@ -319,70 +321,6 @@ serve(async (req: Request) => {
                 createdBy: userId,
               };
             })
-          );
-
-          // Insert items for any salesRfqLines that do not yet have an itemId
-          const { data: insertedItems, error: insertError } = await client
-            .from("item")
-            .insert(itemInserts.map(({ lineId, ...rest }) => rest))
-            .select("id, readableId");
-
-          if (insertError) {
-            throw new Error(`Failed to create items: ${insertError.message}`);
-          }
-
-          // Create part records for each inserted item
-          const partInserts = insertedItems.map((item) => ({
-            id: item.readableId,
-            itemId: item.id,
-            companyId: companyId,
-            createdBy: userId,
-            customFields: {},
-          }));
-
-          const { error: partInsertError } = await client
-            .from("part")
-            .insert(partInserts);
-
-          if (partInsertError) {
-            throw new Error(
-              `Failed to create part records: ${partInsertError.message}`
-            );
-          }
-
-          // Map the newly created itemIds to the salesRfqLine ids
-          const rfqLineToItemIdMap = new Map<string, string>();
-          for (const item of insertedItems) {
-            const lineToUpdate = itemInserts.find(
-              (insert) => insert.readableId === item.readableId
-            );
-            rfqLineToItemIdMap.set(lineToUpdate?.lineId!, item.id);
-          }
-
-          console.log(
-            "RFQ Line to ItemId mapping:",
-            Object.fromEntries(rfqLineToItemIdMap)
-          );
-
-          // Bulk update salesRfqLines with the newly created itemIds
-          const updatePromises = Array.from(rfqLineToItemIdMap.entries()).map(
-            ([lineId, itemId]) =>
-              client.from("salesRfqLine").update({ itemId }).eq("id", lineId)
-          );
-
-          const updateResults = await Promise.all(updatePromises);
-
-          // Check for any errors in the update operations
-          const updateErrors = updateResults.filter((result) => result.error);
-          if (updateErrors.length > 0) {
-            console.error("Errors updating salesRfqLines:", updateErrors);
-            throw new Error(
-              `Failed to update some salesRfqLines with new itemIds`
-            );
-          }
-
-          console.log(
-            `Successfully updated ${updateResults.length} salesRfqLines with new itemIds`
           );
         }
 
@@ -437,20 +375,6 @@ serve(async (req: Request) => {
 
         const { shippingMethodId, shippingTermId } = customerShipping.data;
 
-        // Refresh the salesRfqLines data
-        const [refreshedSalesRfqLines] = await Promise.all([
-          client.from("salesRfqLines").select("*").eq("salesRfqId", id),
-        ]);
-
-        const validLines = refreshedSalesRfqLines.data?.filter(
-          (line) =>
-            line.itemId &&
-            line.itemType &&
-            line.methodType &&
-            line.quantity &&
-            line.unitOfMeasureCode
-        );
-
         let insertedQuoteId = "";
         let insertedQuoteLines: {
           id?: string;
@@ -458,7 +382,41 @@ serve(async (req: Request) => {
           methodType?: "Buy" | "Make" | "Pick";
         }[] = [];
 
+        console.log({ itemInserts });
         await db.transaction().execute(async (trx) => {
+          // Create the items for any salesRfqLines that do not yet have an itemId
+          if (itemInserts.length > 0) {
+            const itemIds = await trx
+              .insertInto("item")
+              .values(itemInserts)
+              .returning(["id", "readableId"])
+              .execute();
+
+            const partInserts: Database["public"]["Tables"]["part"]["Insert"][] =
+              itemIds.map((item) => ({
+                id: item.readableId!,
+                itemId: item.id!,
+                companyId,
+                createdBy: userId,
+              }));
+            await trx.insertInto("part").values(partInserts).execute();
+
+            const salesRfqLineUpdates: Database["public"]["Tables"]["salesRfqLine"]["Update"][] =
+              itemIds.map((item) => ({
+                itemId: item.id!,
+                id: readableIdToLineIdMapping.get(item.readableId!)!,
+              }));
+            console.log({ salesRfqLineUpdates });
+            for await (const update of salesRfqLineUpdates) {
+              await trx
+                .updateTable("salesRfqLine")
+                .set({ itemId: update.itemId })
+                .where("id", "=", update.id)
+                .execute();
+            }
+          }
+
+          // Create the quote
           const quoteId = await getNextSequence(trx, "quote", companyId);
           const quote = await trx
             .insertInto("quote")
@@ -514,8 +472,13 @@ serve(async (req: Request) => {
             })
             .execute();
 
+          const salesRfqLinesWithItemIds = await trx
+            .selectFrom("salesRfqLines")
+            .selectAll()
+            .where("salesRfqId", "=", id)
+            .execute();
           const quoteLineInserts: Database["public"]["Tables"]["quoteLine"]["Insert"][] =
-            validLines.map((line) => ({
+            salesRfqLinesWithItemIds.map((line) => ({
               id: line.id ?? undefined,
               quoteId: quote.id!,
               itemId: line.itemId!,
@@ -558,7 +521,7 @@ serve(async (req: Request) => {
             .where("salesRfqId", "=", id)
             .execute();
 
-          const customerPartToItemInserts = validLines
+          const customerPartToItemInserts = salesRfqLinesWithItemIds
             .map((line) => ({
               companyId,
               customerId: salesRfq.data?.customerId!,
@@ -588,7 +551,7 @@ serve(async (req: Request) => {
             .where("id", "=", id)
             .execute();
 
-          const updatedItemModels = validLines
+          const updatedItemModels = salesRfqLinesWithItemIds
             .filter((line) => !!line.modelUploadId && !!line.itemId)
             .map((line) => ({
               id: line.itemId!,
