@@ -28,7 +28,7 @@ export const CarbonProvider = ({
 }: PropsWithChildren<{
   session: Partial<AuthSession>;
 }>) => {
-  const { accessToken, refreshToken, expiresIn, expiresAt } = session;
+  const { accessToken, refreshToken, expiresAt } = session;
   const initialLoad = useRef(true);
   const authenticatedClientLoaded = useRef(false);
   const [carbon, setCarbon] = useState<SupabaseClient<Database> | undefined>(
@@ -39,6 +39,25 @@ export const CarbonProvider = ({
     }
   );
   const refresh = useFetcher<{}>();
+
+  useEffect(() => {
+    const handleFocus = () => {
+      refresh.submit(null, {
+        method: "post",
+        action: path.to.refreshSession,
+      });
+    };
+
+    if (isBrowser) {
+      window.addEventListener("focus", handleFocus);
+    }
+
+    return () => {
+      if (isBrowser) {
+        window.removeEventListener("focus", handleFocus);
+      }
+    };
+  }, [refresh]);
 
   useInterval(() => {
     // refresh ten minutes before expiry
@@ -52,7 +71,7 @@ export const CarbonProvider = ({
     }
 
     initialLoad.current = false;
-  }, expiresIn);
+  }, 15000);
 
   if (isBrowser && accessToken && !authenticatedClientLoaded.current) {
     // recreate a carbon client to force provider's consumer to rerender

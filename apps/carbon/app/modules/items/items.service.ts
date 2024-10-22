@@ -160,7 +160,7 @@ export async function getConsumables(
 
   if (args.search) {
     query = query.or(
-      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
     );
   }
 
@@ -228,7 +228,7 @@ export async function getFixtures(
 
   if (args.search) {
     query = query.or(
-      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
     );
   }
 
@@ -481,7 +481,7 @@ export async function getMaterials(
 
   if (args.search) {
     query = query.or(
-      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
     );
   }
 
@@ -790,7 +790,7 @@ export async function getParts(
 
   if (args.search) {
     query = query.or(
-      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
     );
   }
 
@@ -962,7 +962,7 @@ export async function getTools(
 
   if (args.search) {
     query = query.or(
-      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
     );
   }
 

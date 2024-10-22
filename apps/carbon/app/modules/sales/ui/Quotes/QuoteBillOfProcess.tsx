@@ -838,6 +838,7 @@ function OperationForm({
               formatOptions={{
                 style: "currency",
                 currency: baseCurrency,
+                maximumFractionDigits: 4,
               }}
               onChange={(newValue) =>
                 setProcessData((d) => ({
@@ -854,6 +855,7 @@ function OperationForm({
               formatOptions={{
                 style: "currency",
                 currency: baseCurrency,
+                maximumFractionDigits: 4,
               }}
               onChange={(newValue) =>
                 setProcessData((d) => ({
@@ -1131,6 +1133,7 @@ function OperationForm({
                 formatOptions={{
                   style: "currency",
                   currency: baseCurrency,
+                  maximumFractionDigits: 4,
                 }}
                 onChange={(newValue) =>
                   setProcessData((d) => ({
@@ -1147,6 +1150,7 @@ function OperationForm({
                 formatOptions={{
                   style: "currency",
                   currency: baseCurrency,
+                  maximumFractionDigits: 4,
                 }}
                 onChange={(newValue) =>
                   setProcessData((d) => ({
@@ -1163,6 +1167,7 @@ function OperationForm({
                 formatOptions={{
                   style: "currency",
                   currency: baseCurrency,
+                  maximumFractionDigits: 4,
                 }}
                 onChange={(newValue) =>
                   setProcessData((d) => ({

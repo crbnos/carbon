@@ -1,5 +1,5 @@
-import { useCarbon } from "@carbon/auth";
-import { Button, File, VStack, toast } from "@carbon/react";
+import { SUPABASE_API_URL, useCarbon } from "@carbon/auth";
+import { Button, File as FileUpload, VStack, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { Avatar } from "~/components";
@@ -16,10 +16,38 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
-      const avatarFile = e.target.files[0];
+      let avatarFile = e.target.files[0];
       const fileExtension = avatarFile.name.substring(
         avatarFile.name.lastIndexOf(".") + 1
       );
+
+      const formData = new FormData();
+      formData.append("file", avatarFile);
+
+      try {
+        const response = await fetch(
+          `${SUPABASE_API_URL}/functions/v1/image-resizer`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to resize image");
+        }
+
+        const blob = await response.blob();
+        const resizedFile = new File([blob], `${user.id}.${fileExtension}`, {
+          type: "image/png",
+        });
+
+        avatarFile = resizedFile;
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to resize image");
+        return;
+      }
 
       const imageUpload = await carbon.storage
         .from("avatars")
@@ -71,9 +99,9 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
         path={user?.avatarUrl}
         name={user?.fullName ?? undefined}
       />
-      <File accept="image/*" onChange={uploadImage}>
+      <FileUpload accept="image/*" onChange={uploadImage}>
         {user.avatarUrl ? "Change" : "Upload"}
-      </File>
+      </FileUpload>
 
       {user.avatarUrl && (
         <Button variant="secondary" onClick={deleteImage}>

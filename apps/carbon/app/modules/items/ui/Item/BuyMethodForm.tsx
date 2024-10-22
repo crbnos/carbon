@@ -23,7 +23,7 @@ import {
   Supplier,
   UnitOfMeasure,
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
 import { buyMethodValidator } from "~/modules/items";
 import { path } from "~/utils/path";
@@ -36,6 +36,10 @@ type BuyMethodFormProps = {
 const BuyMethodForm = ({ initialValues, type }: BuyMethodFormProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
+
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
@@ -80,7 +84,16 @@ const BuyMethodForm = ({ initialValues, type }: BuyMethodFormProps) => {
             <VStack spacing={4}>
               <Supplier name="supplierId" label="Supplier" />
               <Input name="supplierPartId" label="Supplier Part ID" />
-              <Number name="unitPrice" label="Unit Price" minValue={0} />
+              <Number
+                name="unitPrice"
+                label="Unit Price"
+                minValue={0}
+                formatOptions={{
+                  style: "currency",
+                  currency: baseCurrency,
+                  maximumFractionDigits: 4,
+                }}
+              />
               <UnitOfMeasure
                 name="supplierUnitOfMeasureCode"
                 label="Unit of Measure"
