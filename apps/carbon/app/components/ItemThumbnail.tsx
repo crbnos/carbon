@@ -16,13 +16,35 @@ const itemVariants = cva(
   {
     variants: {
       size: {
-        sm: "w-7 h-7 p-1",
-        md: "w-9 h-9 p-1.5",
-        lg: "w-11 h-11 p-2",
+        sm: "w-7 h-7",
+        md: "w-9 h-9",
+        lg: "w-11 h-11",
+      },
+      withPadding: {
+        true: "",
+        false: "p-0",
       },
     },
+    compoundVariants: [
+      {
+        withPadding: true,
+        size: "sm",
+        class: "p-1",
+      },
+      {
+        withPadding: true,
+        size: "md",
+        class: "p-1.5",
+      },
+      {
+        withPadding: true,
+        size: "lg",
+        class: "p-2",
+      },
+    ],
     defaultVariants: {
       size: "md",
+      withPadding: true,
     },
   }
 );
@@ -49,7 +71,7 @@ const ItemThumbnail = ({
   return thumbnailPath ? (
     <img
       alt="thumbnail"
-      className={itemVariants({ size })}
+      className={itemVariants({ size, withPadding: false })}
       src={`/file/preview/private/${thumbnailPath}`}
     />
   ) : !!modelId && !thumbnailPath ? (

@@ -11,7 +11,7 @@ import {
 
 import z from "https://deno.land/x/zod@v3.23.8/index.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 
 const AWS_REGION = Deno.env.get("AWS_REGION");
 const AWS_ACCESS_KEY_ID = Deno.env.get("AWS_ACCESS_KEY_ID");
@@ -62,7 +62,9 @@ serve(async (req: Request) => {
       path,
     });
 
-    const supabase = getSupabaseServiceRole(req.headers.get("Authorization"));
+    const supabase = getSupabaseServiceRoleFromAuthorizationHeader(
+      req.headers.get("Authorization")
+    );
     const s3Key = `textract/${Date.now()}-${path.split("/").pop()}`;
 
     // Check if file already exists in S3

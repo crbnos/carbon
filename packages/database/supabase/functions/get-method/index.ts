@@ -21,7 +21,7 @@ import {
   traverseJobMethod,
   traverseQuoteMethod,
 } from "../lib/methods.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -64,7 +64,9 @@ serve(async (req: Request) => {
       userId,
     });
 
-    const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+    const client = getSupabaseServiceRoleFromAuthorizationHeader(
+      req.headers.get("Authorization")
+    );
 
     switch (type) {
       case "itemToItem": {

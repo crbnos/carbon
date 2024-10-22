@@ -25,6 +25,7 @@ import {
 } from "~/components";
 import Assignee from "~/components/Assignee";
 import { Enumerable } from "~/components/Enumerable";
+import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { usePermissions, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
@@ -140,13 +141,11 @@ const PartProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.partSummary?.name}</span>
-        {routeData?.partSummary?.thumbnailPath && (
-          <img
-            alt="thumbnail"
-            src={`/file/preview/private/${routeData.partSummary.thumbnailPath}`}
-            className="w-full h-auto bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-border"
-          />
-        )}
+        <ItemThumbnailUpload
+          path={routeData?.partSummary?.thumbnailPath}
+          itemId={itemId}
+          modelId={routeData?.partSummary?.modelId}
+        />
       </VStack>
 
       <VStack spacing={2}>

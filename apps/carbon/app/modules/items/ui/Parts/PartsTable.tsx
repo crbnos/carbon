@@ -65,7 +65,7 @@ const PartsTable = memo(({ data, count }: PartsTableProps) => {
         accessorKey: "id",
         header: "Part ID",
         cell: ({ row }) => (
-          <HStack className="py-1 max-w-[200px] truncate">
+          <HStack className="py-1 min-w-[200px] truncate">
             <ItemThumbnail
               size="sm"
               thumbnailPath={row.original.thumbnailPath}

@@ -19,7 +19,9 @@ export const getSupabase = (authorizationHeader: string | null) => {
   );
 };
 
-export const getSupabaseServiceRole = (authorizationHeader: string | null) => {
+export const getSupabaseServiceRoleFromAuthorizationHeader = (
+  authorizationHeader: string | null
+) => {
   if (!authorizationHeader) throw new Error("Authorization header is required");
 
   // Verify that the request is coming from a service role
@@ -38,6 +40,19 @@ export const getSupabaseServiceRole = (authorizationHeader: string | null) => {
       global: {
         headers: { authorizationHeader },
       },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+};
+
+export const getSupabaseServiceRole = () => {
+  return createClient<Database>(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    {
       auth: {
         autoRefreshToken: false,
         persistSession: false,

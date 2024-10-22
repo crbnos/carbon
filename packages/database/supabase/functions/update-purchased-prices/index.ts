@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { format } from "https://deno.land/std@0.160.0/datetime/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -24,7 +24,9 @@ serve(async (req: Request) => {
   try {
     if (!invoiceId) throw new Error("Payload is missing invoiceId");
 
-    const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+    const client = getSupabaseServiceRoleFromAuthorizationHeader(
+      req.headers.get("Authorization")
+    );
 
     const [purchaseInvoice, purchaseInvoiceLines] = await Promise.all([
       client.from("purchaseInvoice").select("*").eq("id", invoiceId).single(),
