@@ -311,7 +311,7 @@ serve(async (req: Request) => {
                 readableId,
                 type: "Part" as const,
                 active: false,
-                name: "",
+                name: line.itemName ?? "",
                 description: "",
                 itemTrackingType: "Inventory" as const,
                 replenishmentSystem: "Make" as const,
@@ -382,7 +382,6 @@ serve(async (req: Request) => {
           methodType?: "Buy" | "Make" | "Pick";
         }[] = [];
 
-        console.log({ itemInserts });
         await db.transaction().execute(async (trx) => {
           // Create the items for any salesRfqLines that do not yet have an itemId
           if (itemInserts.length > 0) {
@@ -406,7 +405,6 @@ serve(async (req: Request) => {
                 itemId: item.id!,
                 id: readableIdToLineIdMapping.get(item.readableId!)!,
               }));
-            console.log({ salesRfqLineUpdates });
             for await (const update of salesRfqLineUpdates) {
               await trx
                 .updateTable("salesRfqLine")
