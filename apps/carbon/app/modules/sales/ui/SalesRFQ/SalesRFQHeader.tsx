@@ -236,21 +236,27 @@ function ConvertToQuoteModal({
 
         {requiresPartNumbers && (
           <ModalBody>
-            <Alert variant="destructive">
+            <Alert variant="warning">
               <LuAlertTriangle className="h-4 w-4" />
               <AlertTitle>Lines need internal part numbers</AlertTitle>
               <AlertDescription>
                 In order to convert this RFQ to a quote, all lines must have an
-                internal part number.
+                internal part number. <br />
+                <br />
+                Upon clicking Convert, parts will be created with the following
+                internal part numbers:
                 <ul className="list-disc py-2 pl-4">
                   {linesWithoutItems.map((line) => (
                     <li key={line.id}>
-                      {line.customerPartId}{" "}
+                      {line.customerPartId}
                       {line.customerPartRevision &&
-                        `Rev. ${line.customerPartRevision}`}
+                        `-${line.customerPartRevision}`}
                     </li>
                   ))}
                 </ul>
+                <br />
+                If you wish to change the part numbers, please click Cancel and
+                manually assign the parts for each line item before converting.
               </AlertDescription>
             </Alert>
           </ModalBody>
@@ -261,11 +267,7 @@ function ConvertToQuoteModal({
             Cancel
           </Button>
           <fetcher.Form method="post" action={path.to.salesRfqConvert(rfqId)}>
-            <Button
-              isDisabled={isLoading || requiresPartNumbers}
-              type="submit"
-              isLoading={isLoading}
-            >
+            <Button isDisabled={isLoading} type="submit" isLoading={isLoading}>
               Convert
             </Button>
           </fetcher.Form>
