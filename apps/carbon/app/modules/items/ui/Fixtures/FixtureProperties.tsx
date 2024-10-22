@@ -26,6 +26,7 @@ import {
   useOptimisticAssignment,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { usePermissions, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
@@ -141,13 +142,11 @@ const FixtureProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.fixtureSummary?.name}</span>
-        {routeData?.fixtureSummary?.thumbnailPath && (
-          <img
-            alt="thumbnail"
-            src={`/file/preview/private/${routeData.fixtureSummary.thumbnailPath}`}
-            className="w-full h-auto bg-gradient-to-bl from-muted to-muted/40 rounded-lg border border-border"
-          />
-        )}
+        <ItemThumbnailUpload
+          path={routeData?.fixtureSummary?.thumbnailPath}
+          itemId={itemId}
+          modelId={routeData?.fixtureSummary?.modelId}
+        />
       </VStack>
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>

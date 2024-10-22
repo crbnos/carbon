@@ -25,6 +25,7 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   MethodIcon,
   New,
   Table,
@@ -64,7 +65,12 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
         accessorKey: "id",
         header: "Material ID",
         cell: ({ row }) => (
-          <HStack className="py-1 max-w-[200px] truncate">
+          <HStack className="py-1 min-w-[200px] truncate">
+            <ItemThumbnail
+              size="sm"
+              thumbnailPath={row.original.thumbnailPath}
+              type="Material"
+            />
             <Hyperlink to={path.to.materialDetails(row.original.itemId!)}>
               {row.original.id}
             </Hyperlink>

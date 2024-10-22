@@ -19,7 +19,7 @@ import {
   supplierStauses,
   unitOfMeasures,
 } from "../lib/seed.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -42,7 +42,7 @@ serve(async (req: Request) => {
     if (!userId) throw new Error("Payload is missing userId");
 
     const companyId = id as string;
-    const supabaseClient = getSupabaseServiceRole(
+    const supabaseClient = getSupabaseServiceRoleFromAuthorizationHeader(
       req.headers.get("Authorization")
     );
 

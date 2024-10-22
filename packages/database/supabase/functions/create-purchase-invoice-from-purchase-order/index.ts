@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 
@@ -28,7 +28,9 @@ serve(async (req: Request) => {
     if (!companyId) throw new Error("Payload is missing companyId");
     if (!userId) throw new Error("Payload is missing userId");
 
-    const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+    const client = getSupabaseServiceRoleFromAuthorizationHeader(
+      req.headers.get("Authorization")
+    );
 
     const [purchaseOrder, purchaseOrderLines, purchaseOrderPayment] =
       await Promise.all([
@@ -88,7 +90,7 @@ serve(async (req: Request) => {
       const purchaseInvoice = await trx
         .insertInto("purchaseInvoice")
         .values({
-          invoiceId: purchaseInvoiceId,
+          invoiceId: purchaseInvoiceId!,
           status: "Draft",
           supplierId: purchaseOrder.data?.supplierId,
           supplierReference: purchaseOrder.data?.supplierReference,
@@ -98,7 +100,7 @@ serve(async (req: Request) => {
           invoiceSupplierLocationId:
             purchaseOrderPayment.data.invoiceSupplierLocationId,
           paymentTermId: purchaseOrderPayment.data.paymentTermId,
-          currencyCode: purchaseOrderPayment.data.currencyCode,
+          currencyCode: purchaseOrder.data.currencyCode,
           exchangeRate: 1,
           subtotal: uninvoicedSubtotal,
           totalDiscount: 0,

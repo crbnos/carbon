@@ -5,7 +5,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "https://deno.land/x/zod@v3.23.8/index.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { credit, debit, journalReference } from "../lib/utils.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
@@ -39,7 +39,9 @@ serve(async (req: Request) => {
       invoiceId,
       userId,
     });
-    const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+    const client = getSupabaseServiceRoleFromAuthorizationHeader(
+      req.headers.get("Authorization")
+    );
 
     const [purchaseInvoice, purchaseInvoiceLines] = await Promise.all([
       client.from("purchaseInvoice").select("*").eq("id", invoiceId).single(),
@@ -1148,7 +1150,9 @@ serve(async (req: Request) => {
   } catch (err) {
     console.error(err);
     if ("invoiceId" in payload) {
-      const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+      const client = getSupabaseServiceRoleFromAuthorizationHeader(
+        req.headers.get("Authorization")
+      );
       await client
         .from("purchaseInvoice")
         .update({ status: "Draft" })

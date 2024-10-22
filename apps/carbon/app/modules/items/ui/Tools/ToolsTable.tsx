@@ -25,6 +25,7 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   MethodIcon,
   New,
   Table,
@@ -63,7 +64,12 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
         accessorKey: "id",
         header: "Tool ID",
         cell: ({ row }) => (
-          <HStack className="py-1 max-w-[200px] truncate">
+          <HStack className="py-1 min-w-[200px] truncate">
+            <ItemThumbnail
+              size="sm"
+              thumbnailPath={row.original.thumbnailPath}
+              type="Tool"
+            />
             <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
               {row.original.id}
             </Hyperlink>

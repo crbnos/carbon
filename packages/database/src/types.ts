@@ -5681,6 +5681,7 @@ export type Database = {
           name: string
           readableId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -5701,6 +5702,7 @@ export type Database = {
           name: string
           readableId: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath?: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -5721,6 +5723,7 @@ export type Database = {
           name?: string
           readableId?: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath?: string | null
           type?: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -7821,6 +7824,7 @@ export type Database = {
           operationUnitCost: number
           order: number
           overheadRate: number
+          priority: number
           processId: string
           quantityComplete: number | null
           quantityReworked: number | null
@@ -7857,6 +7861,7 @@ export type Database = {
           operationUnitCost?: number
           order?: number
           overheadRate?: number
+          priority?: number
           processId: string
           quantityComplete?: number | null
           quantityReworked?: number | null
@@ -7893,6 +7898,7 @@ export type Database = {
           operationUnitCost?: number
           order?: number
           overheadRate?: number
+          priority?: number
           processId?: string
           quantityComplete?: number | null
           quantityReworked?: number | null
@@ -22423,6 +22429,7 @@ export type Database = {
           customFields: Json | null
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
+          externalId: Json | null
           id: string | null
           itemId: string | null
           itemTrackingType:
@@ -22433,6 +22440,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string[] | null
+          thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -23251,6 +23259,7 @@ export type Database = {
           customFields: Json | null
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
+          externalId: Json | null
           id: string | null
           itemId: string | null
           itemTrackingType:
@@ -24339,6 +24348,7 @@ export type Database = {
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           dimensions: string | null
+          externalId: Json | null
           finish: string | null
           grade: string | null
           id: string | null
@@ -24355,6 +24365,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string[] | null
+          thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -24712,6 +24723,7 @@ export type Database = {
           customFields: Json | null
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
+          externalId: Json | null
           fromDate: string | null
           id: string | null
           itemId: string | null
@@ -25525,14 +25537,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27287,14 +27299,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -28755,6 +28767,7 @@ export type Database = {
           customFields: Json | null
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
+          externalId: Json | null
           id: string | null
           itemId: string | null
           itemTrackingType:
@@ -28765,6 +28778,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string[] | null
+          thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null

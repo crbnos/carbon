@@ -25,6 +25,7 @@ import {
   useOptimisticAssignment,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { usePermissions, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
@@ -137,6 +138,10 @@ const ConsumableProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.consumableSummary?.name}</span>
+        <ItemThumbnailUpload
+          path={routeData?.consumableSummary?.thumbnailPath}
+          itemId={itemId}
+        />
       </VStack>
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>

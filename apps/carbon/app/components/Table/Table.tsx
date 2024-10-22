@@ -800,7 +800,7 @@ function getRowSelectionColumn<T>(): ColumnDef<T>[] {
   return [
     {
       id: "Select",
-      size: 60,
+      size: 50,
       header: ({ table }) => (
         <IndeterminateCheckbox
           {...{

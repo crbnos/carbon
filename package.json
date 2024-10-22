@@ -8,7 +8,7 @@
     "postcss-nesting": "12.1.5",
     "prettier": "^2.8.0",
     "rimraf": "^5.0.5",
-    "supabase": "1.165.0",
+    "supabase": "1.204.3",
     "ts-morph": "^22.0.0",
     "tsx": "^4.13.2",
     "turbo": "^1.13.2"

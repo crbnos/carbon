@@ -25,6 +25,7 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   MethodIcon,
   New,
   Table,
@@ -64,7 +65,12 @@ const ConsumablesTable = memo(
           accessorKey: "id",
           header: "Consumable ID",
           cell: ({ row }) => (
-            <HStack className="py-1 max-w-[200px] truncate">
+            <HStack className="py-1 min-w-[200px] truncate">
+              <ItemThumbnail
+                size="sm"
+                thumbnailPath={row.original.thumbnailPath}
+                type="Consumable"
+              />
               <Hyperlink to={path.to.consumableDetails(row.original.itemId!)}>
                 {row.original.id}
               </Hyperlink>
