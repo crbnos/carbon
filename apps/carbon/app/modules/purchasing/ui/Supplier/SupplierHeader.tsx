@@ -15,12 +15,11 @@ import {
 import { useParams } from "@remix-run/react";
 import { EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useRouteData } from "~/hooks";
 import type { SupplierDetail, SupplierStatus } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
 const SupplierHeader = () => {
-  usePermissions();
   const { supplierId } = useParams();
 
   if (!supplierId) throw new Error("Could not find supplierId");

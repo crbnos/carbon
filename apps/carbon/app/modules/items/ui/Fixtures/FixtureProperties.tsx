@@ -24,7 +24,7 @@ import {
   TrackingTypeIcon,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import type { ListItem } from "~/types";
@@ -38,7 +38,6 @@ import type { BuyMethod, Fixture, ItemFile, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 
 const FixtureProperties = () => {
-  usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 

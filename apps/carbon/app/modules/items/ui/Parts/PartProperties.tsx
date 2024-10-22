@@ -19,7 +19,7 @@ import { useCallback, useEffect } from "react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import type { ListItem } from "~/types";
@@ -33,7 +33,6 @@ import type { BuyMethod, ItemFile, PartSummary, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 
 const PartProperties = () => {
-  usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 

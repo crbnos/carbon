@@ -15,12 +15,11 @@ import {
 import { useParams } from "@remix-run/react";
 import { EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useRouteData } from "~/hooks";
 import type { CustomerDetail, CustomerStatus } from "~/modules/sales";
 import { path } from "~/utils/path";
 
 const CustomerHeader = () => {
-  usePermissions();
   const { customerId } = useParams();
 
   if (!customerId) throw new Error("Could not find customerId");
