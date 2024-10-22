@@ -257,7 +257,7 @@ function SalesRFQLineItem({
               <span className="font-semibold line-clamp-1">
                 {" "}
                 {line.customerPartId}
-                {line.customerPartRevision && ` (${line.customerPartRevision})`}
+                {line.customerPartRevision && `-${line.customerPartRevision}`}
               </span>
               <span className="font-medium text-muted-foreground text-xs line-clamp-1">
                 {line.itemReadableId}

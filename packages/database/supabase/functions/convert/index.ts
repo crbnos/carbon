@@ -271,6 +271,122 @@ serve(async (req: Request) => {
           throw new Error(`Sales RFQ Lines with id ${id} not found`);
         }
 
+        // Create Item records for each line that does not yet have one assigned
+        const linesToCreateItems = salesRfqLines.data.filter(
+          (line) => !line.itemId
+        );
+
+        if (linesToCreateItems.length > 0) {
+          const itemInserts = await Promise.all(
+            linesToCreateItems.map(async (line) => {
+              const baseReadableId = line.customerPartRevision
+                ? `${line.customerPartId}-${line.customerPartRevision}`
+                : `${line.customerPartId}`;
+              let readableId = baseReadableId;
+              let suffix = 1;
+
+              // Check for uniqueness and append a suffix if necessary
+              while (true) {
+                const { data, error } = await client
+                  .from("item")
+                  .select("id")
+                  .eq("readableId", readableId)
+                  .eq("companyId", companyId)
+                  .single();
+
+                if (error || !data) {
+                  // readableId is unique, we can use it
+                  break;
+                }
+
+                // If not unique, append or increment suffix
+                readableId = `${baseReadableId}-${suffix}`;
+                suffix++;
+              }
+
+              return {
+                lineId: line.id,
+                readableId,
+                type: "Part" as const,
+                active: false,
+                name: "",
+                description: "",
+                itemTrackingType: "Inventory" as const,
+                replenishmentSystem: "Make" as const,
+                defaultMethodType: "Make" as const,
+                unitOfMeasureCode: "EA",
+                companyId: companyId,
+                createdBy: userId,
+              };
+            })
+          );
+
+          // Insert items for any salesRfqLines that do not yet have an itemId
+          const { data: insertedItems, error: insertError } = await client
+            .from("item")
+            .insert(itemInserts.map(({ lineId, ...rest }) => rest))
+            .select("id, readableId");
+
+          if (insertError) {
+            throw new Error(`Failed to create items: ${insertError.message}`);
+          }
+
+          // Create part records for each inserted item
+          const partInserts = insertedItems.map((item) => ({
+            id: item.readableId,
+            itemId: item.id,
+            companyId: companyId,
+            createdBy: userId,
+            customFields: {},
+          }));
+
+          const { error: partInsertError } = await client
+            .from("part")
+            .insert(partInserts);
+
+          if (partInsertError) {
+            throw new Error(
+              `Failed to create part records: ${partInsertError.message}`
+            );
+          }
+
+          // Map the newly created itemIds to the salesRfqLine ids
+          const rfqLineToItemIdMap = new Map<string, string>();
+          for (const item of insertedItems) {
+            const lineToUpdate = itemInserts.find(
+              (insert) => insert.readableId === item.readableId
+            );
+            rfqLineToItemIdMap.set(lineToUpdate?.lineId!, item.id);
+          }
+
+          console.log(
+            "RFQ Line to ItemId mapping:",
+            Object.fromEntries(rfqLineToItemIdMap)
+          );
+
+          // Bulk update salesRfqLines with the newly created itemIds
+          const updatePromises = Array.from(rfqLineToItemIdMap.entries()).map(
+            ([lineId, itemId]) =>
+              client.from("salesRfqLine").update({ itemId }).eq("id", lineId)
+          );
+
+          const updateResults = await Promise.all(updatePromises);
+
+          // Check for any errors in the update operations
+          const updateErrors = updateResults.filter((result) => result.error);
+          if (updateErrors.length > 0) {
+            console.error("Errors updating salesRfqLines:", updateErrors);
+            throw new Error(
+              `Failed to update some salesRfqLines with new itemIds`
+            );
+          }
+
+          console.log(
+            `Successfully updated ${updateResults.length} salesRfqLines with new itemIds`
+          );
+        }
+
+        // Handle customer payment terms, shipping, currency codes, etc.
         const [customerPayment, customerShipping, customer, company] =
           await Promise.all([
             client
@@ -321,7 +437,12 @@ serve(async (req: Request) => {
 
         const { shippingMethodId, shippingTermId } = customerShipping.data;
 
-        const validLines = salesRfqLines.data?.filter(
+        // Refresh the salesRfqLines data
+        const [refreshedSalesRfqLines] = await Promise.all([
+          client.from("salesRfqLines").select("*").eq("salesRfqId", id),
+        ]);
+
+        const validLines = refreshedSalesRfqLines.data?.filter(
           (line) =>
             line.itemId &&
             line.itemType &&
