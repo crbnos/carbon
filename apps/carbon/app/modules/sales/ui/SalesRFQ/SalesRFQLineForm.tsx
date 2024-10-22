@@ -282,7 +282,7 @@ const SalesRFQLineForm = ({
                         name="description"
                         label="Short Description"
                         value={itemData.description}
-                        isReadOnly
+                        isReadOnly={!!itemData.itemId}
                       />
                       <UnitOfMeasure
                         name="unitOfMeasureCode"
