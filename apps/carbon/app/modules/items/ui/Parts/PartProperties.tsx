@@ -17,13 +17,7 @@ import {
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useEffect } from "react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
-import {
-  MethodBadge,
-  MethodIcon,
-  TrackingTypeIcon,
-  useOptimisticAssignment,
-} from "~/components";
-import Assignee from "~/components/Assignee";
+import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
@@ -39,7 +33,7 @@ import type { BuyMethod, ItemFile, PartSummary, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 
 const PartProperties = () => {
-  const permissions = usePermissions();
+  usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
@@ -57,14 +51,14 @@ const PartProperties = () => {
   const buyMethods = routeData?.buyMethods ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: itemId,
-    table: "item",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.partSummary?.assignee;
+  // const optimisticAssignment = useOptimisticAssignment({
+  //   id: itemId,
+  //   table: "item",
+  // });
+  // const assignee =
+  //   optimisticAssignment !== undefined
+  //     ? optimisticAssignment
+  //     : routeData?.partSummary?.assignee;
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
@@ -149,7 +143,7 @@ const PartProperties = () => {
         )}
       </VStack>
 
-      <VStack spacing={2}>
+      {/* <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
         <Assignee
           id={itemId}
@@ -157,7 +151,7 @@ const PartProperties = () => {
           value={assignee ?? ""}
           isReadOnly={!permissions.can("update", "parts")}
         />
-      </VStack>
+      </VStack> */}
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Tracking Type</h3>

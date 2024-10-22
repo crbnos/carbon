@@ -17,13 +17,7 @@ import {
 import { useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useEffect } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
-import {
-  Assignee,
-  MethodBadge,
-  MethodIcon,
-  TrackingTypeIcon,
-  useOptimisticAssignment,
-} from "~/components";
+import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
@@ -36,7 +30,7 @@ import type { BuyMethod, Consumable, ItemFile, PickMethod } from "../../types";
 import { FileBadge } from "../Item";
 
 const ConsumableProperties = () => {
-  const permissions = usePermissions();
+  usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
@@ -54,14 +48,14 @@ const ConsumableProperties = () => {
   const buyMethods = routeData?.buyMethods ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: itemId,
-    table: "item",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.consumableSummary?.assignee;
+  // const optimisticAssignment = useOptimisticAssignment({
+  //   id: itemId,
+  //   table: "item",
+  // });
+  // const assignee =
+  //   optimisticAssignment !== undefined
+  //     ? optimisticAssignment
+  //     : routeData?.consumableSummary?.assignee;
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
@@ -138,7 +132,7 @@ const ConsumableProperties = () => {
         </HStack>
         <span className="text-sm">{routeData?.consumableSummary?.name}</span>
       </VStack>
-      <VStack spacing={2}>
+      {/* <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Assignee</h3>
         <Assignee
           id={itemId}
@@ -146,7 +140,7 @@ const ConsumableProperties = () => {
           value={assignee ?? ""}
           isReadOnly={!permissions.can("update", "parts")}
         />
-      </VStack>
+      </VStack> */}
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Tracking Type</h3>
