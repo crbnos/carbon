@@ -58,7 +58,7 @@ export function ItemThumbnailUpload({
     }
 
     toast.success("Thumbnail removed");
-  }, [carbon, itemId]);
+  }, [carbon, itemId, modelId]);
 
   const onFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {

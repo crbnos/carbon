@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.supplier(supplierId),
       await flash(
         request,
-        error(supplierPayment.error, "Failed to load supplier payment")
+        error(supplierPayment.error, "Failed to load supplier payment terms")
       )
     );
   }
@@ -68,14 +68,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.supplier(supplierId),
       await flash(
         request,
-        error(update.error, "Failed to update supplier payment")
+        error(update.error, "Failed to update supplier payment terms")
       )
     );
   }
 
   throw redirect(
     path.to.supplierPayment(supplierId),
-    await flash(request, success("Updated supplier payment"))
+    await flash(request, success("Updated supplier payment terms"))
   );
 }
 

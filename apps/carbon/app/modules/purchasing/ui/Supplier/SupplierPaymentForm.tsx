@@ -41,7 +41,7 @@ const SupplierPaymentForm = ({ initialValues }: SupplierPaymentFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>Supplier Payment</CardTitle>
+          <CardTitle>Supplier Payment Terms</CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="supplierId" />

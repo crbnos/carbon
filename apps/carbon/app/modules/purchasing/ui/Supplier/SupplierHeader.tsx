@@ -13,18 +13,13 @@ import {
 } from "@carbon/react";
 
 import { useParams } from "@remix-run/react";
-import {
-  Assignee,
-  EmployeeAvatar,
-  useOptimisticAssignment,
-} from "~/components";
+import { EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useRouteData } from "~/hooks";
 import type { SupplierDetail, SupplierStatus } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
 const SupplierHeader = () => {
-  const permissions = usePermissions();
   const { supplierId } = useParams();
 
   if (!supplierId) throw new Error("Could not find supplierId");
@@ -40,14 +35,14 @@ const SupplierHeader = () => {
     (status) => status.id === routeData?.supplier?.supplierStatusId
   )?.name;
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: supplierId,
-    table: "supplier",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.supplier?.assignee;
+  // const optimisticAssignment = useOptimisticAssignment({
+  //   id: supplierId,
+  //   table: "supplier",
+  // });
+  // const assignee =
+  //   optimisticAssignment !== undefined
+  //     ? optimisticAssignment
+  //     : routeData?.supplier?.assignee;
 
   return (
     <VStack>
@@ -83,7 +78,7 @@ const SupplierHeader = () => {
               </CardAttributeValue>
             </CardAttribute>
 
-            {permissions.is("employee") && (
+            {/* {permissions.is("employee") && (
               <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
@@ -95,7 +90,7 @@ const SupplierHeader = () => {
                   />
                 </CardAttributeValue>
               </CardAttribute>
-            )}
+            )} */}
           </CardAttributes>
         </CardContent>
       </Card>

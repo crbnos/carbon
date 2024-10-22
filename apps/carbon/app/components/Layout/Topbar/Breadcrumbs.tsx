@@ -15,7 +15,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -185,9 +184,6 @@ function CompanyBreadcrumb() {
               >
                 <ModalHeader>
                   <ModalTitle>Let's set up your new company</ModalTitle>
-                  <ModalDescription>
-                    You can always change this later
-                  </ModalDescription>
                 </ModalHeader>
                 <ModalBody>
                   <VStack spacing={4}>

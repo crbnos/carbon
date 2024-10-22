@@ -157,22 +157,22 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
           pluralHeader: "Active Statuses",
         },
       },
-      {
-        id: "assignee",
-        header: "Assignee",
-        cell: ({ row }) => (
-          <EmployeeAvatar employeeId={row.original.assignee} />
-        ),
-        meta: {
-          filter: {
-            type: "static",
-            options: people.map((employee) => ({
-              value: employee.id,
-              label: employee.name,
-            })),
-          },
-        },
-      },
+      // {
+      //   id: "assignee",
+      //   header: "Assignee",
+      //   cell: ({ row }) => (
+      //     <EmployeeAvatar employeeId={row.original.assignee} />
+      //   ),
+      //   meta: {
+      //     filter: {
+      //       type: "static",
+      //       options: people.map((employee) => ({
+      //         value: employee.id,
+      //         label: employee.name,
+      //       })),
+      //     },
+      //   },
+      // },
       {
         id: "createdBy",
         header: "Created By",

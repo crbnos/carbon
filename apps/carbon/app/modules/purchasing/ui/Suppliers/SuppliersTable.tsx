@@ -74,35 +74,35 @@ const SuppliersTable = memo(
             },
           },
         },
-        {
-          id: "assignee",
-          header: "Assignee",
-          cell: ({ row }) => (
-            <EmployeeAvatar employeeId={row.original.assignee} />
-          ),
-          meta: {
-            filter: {
-              type: "static",
-              options: people.map((employee) => ({
-                value: employee.id,
-                label: employee.name,
-              })),
-            },
-          },
-        },
-        {
-          id: "orders",
-          header: "Orders",
-          cell: ({ row }) => (
-            <Button variant="secondary" asChild>
-              <Link
-                to={`${path.to.purchaseOrders}?filter=supplierId:eq:${row.original.id}`}
-              >
-                {row.original.orderCount ?? 0} Orders
-              </Link>
-            </Button>
-          ),
-        },
+        // {
+        //   id: "assignee",
+        //   header: "Assignee",
+        //   cell: ({ row }) => (
+        //     <EmployeeAvatar employeeId={row.original.assignee} />
+        //   ),
+        //   meta: {
+        //     filter: {
+        //       type: "static",
+        //       options: people.map((employee) => ({
+        //         value: employee.id,
+        //         label: employee.name,
+        //       })),
+        //     },
+        //   },
+        // },
+        // {
+        //   id: "orders",
+        //   header: "Orders",
+        //   cell: ({ row }) => (
+        //     <Button variant="secondary" asChild>
+        //       <Link
+        //         to={`${path.to.purchaseOrders}?filter=supplierId:eq:${row.original.id}`}
+        //       >
+        //         {row.original.orderCount ?? 0} Orders
+        //       </Link>
+        //     </Button>
+        //   ),
+        // },
         {
           id: "parts",
           header: "Parts",

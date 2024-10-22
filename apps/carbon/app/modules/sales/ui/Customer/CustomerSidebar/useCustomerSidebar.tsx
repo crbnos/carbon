@@ -1,12 +1,5 @@
 import { useParams } from "@remix-run/react";
-import {
-  LuBuilding,
-  LuContact,
-  LuCreditCard,
-  LuLandmark,
-  LuMapPin,
-  LuTruck,
-} from "react-icons/lu";
+import { LuBuilding, LuContact, LuCreditCard, LuMapPin } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -44,26 +37,26 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       shortcut: "Command+Shift+l",
     },
     {
-      name: "Payments",
+      name: "Payment Terms",
       to: path.to.customerPayment(customerId),
       role: ["employee"],
       icon: <LuCreditCard />,
       shortcut: "Command+Shift+p",
     },
-    {
-      name: "Shipping",
-      to: path.to.customerShipping(customerId),
-      role: ["employee"],
-      icon: <LuTruck />,
-      shortcut: "Command+Shift+s",
-    },
-    {
-      name: "Accounting",
-      to: path.to.customerAccounting(customerId),
-      role: ["employee"],
-      icon: <LuLandmark />,
-      shortcut: "Command+Shift+a",
-    },
+    // {
+    //   name: "Shipping",
+    //   to: path.to.customerShipping(customerId),
+    //   role: ["employee"],
+    //   icon: <LuTruck />,
+    //   shortcut: "Command+Shift+s",
+    // },
+    // {
+    //   name: "Accounting",
+    //   to: path.to.customerAccounting(customerId),
+    //   role: ["employee"],
+    //   icon: <LuLandmark />,
+    //   shortcut: "Command+Shift+a",
+    // },
   ].filter(
     (item) =>
       item.role === undefined ||

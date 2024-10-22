@@ -1,12 +1,5 @@
 import { useParams } from "@remix-run/react";
-import {
-  LuBuilding,
-  LuContact,
-  LuCreditCard,
-  LuLandmark,
-  LuMapPin,
-  LuTruck,
-} from "react-icons/lu";
+import { LuBuilding, LuContact, LuCreditCard, LuMapPin } from "react-icons/lu";
 import { TbRoute } from "react-icons/tb";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
@@ -46,7 +39,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       shortcut: "Command+Shift+l",
     },
     {
-      name: "Payments",
+      name: "Payment Terms",
       to: path.to.supplierPayment(supplierId),
       role: ["employee"],
       icon: <LuCreditCard />,
@@ -59,20 +52,20 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       icon: <TbRoute />,
       shortcut: "Command+Shift+r",
     },
-    {
-      name: "Shipping",
-      to: path.to.supplierShipping(supplierId),
-      role: ["employee"],
-      icon: <LuTruck />,
-      shortcut: "Command+Shift+s",
-    },
-    {
-      name: "Accounting",
-      to: path.to.supplierAccounting(supplierId),
-      role: ["employee"],
-      icon: <LuLandmark />,
-      shortcut: "Command+Shift+a",
-    },
+    // {
+    //   name: "Shipping",
+    //   to: path.to.supplierShipping(supplierId),
+    //   role: ["employee"],
+    //   icon: <LuTruck />,
+    //   shortcut: "Command+Shift+s",
+    // },
+    // {
+    //   name: "Accounting",
+    //   to: path.to.supplierAccounting(supplierId),
+    //   role: ["employee"],
+    //   icon: <LuLandmark />,
+    //   shortcut: "Command+Shift+a",
+    // },
   ].filter(
     (item) =>
       item.role === undefined ||

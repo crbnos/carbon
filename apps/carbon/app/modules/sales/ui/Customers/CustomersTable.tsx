@@ -74,22 +74,22 @@ const CustomersTable = memo(
             },
           },
         },
-        {
-          id: "assignee",
-          header: "Assignee",
-          cell: ({ row }) => (
-            <EmployeeAvatar employeeId={row.original.assignee} />
-          ),
-          meta: {
-            filter: {
-              type: "static",
-              options: people.map((employee) => ({
-                value: employee.id,
-                label: employee.name,
-              })),
-            },
-          },
-        },
+        // {
+        //   id: "assignee",
+        //   header: "Assignee",
+        //   cell: ({ row }) => (
+        //     <EmployeeAvatar employeeId={row.original.assignee} />
+        //   ),
+        //   meta: {
+        //     filter: {
+        //       type: "static",
+        //       options: people.map((employee) => ({
+        //         value: employee.id,
+        //         label: employee.name,
+        //       })),
+        //     },
+        //   },
+        // },
         {
           accessorKey: "currencyCode",
           header: "Currency",
