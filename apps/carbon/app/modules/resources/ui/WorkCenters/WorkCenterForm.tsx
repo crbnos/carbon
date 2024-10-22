@@ -114,6 +114,7 @@ const WorkCenterForm = ({
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency,
+                    maximumFractionDigits: 4,
                   }}
                 />
                 <Number
@@ -122,6 +123,7 @@ const WorkCenterForm = ({
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency,
+                    maximumFractionDigits: 4,
                   }}
                 />
                 <Number
@@ -130,6 +132,7 @@ const WorkCenterForm = ({
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency,
+                    maximumFractionDigits: 4,
                   }}
                 />
 

@@ -137,10 +137,18 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
   const editableComponents = useMemo(
     () => ({
       minimumCost: EditableNumber(onCellEdit, {
-        formatOptions: { style: "currency", currency: baseCurrency },
+        formatOptions: {
+          style: "currency",
+          currency: baseCurrency,
+          maximumFractionDigits: 4,
+        },
       }),
       unitCost: EditableNumber(onCellEdit, {
-        formatOptions: { style: "currency", currency: baseCurrency },
+        formatOptions: {
+          style: "currency",
+          currency: baseCurrency,
+          maximumFractionDigits: 4,
+        },
       }),
       leadTime: EditableNumber(onCellEdit),
     }),

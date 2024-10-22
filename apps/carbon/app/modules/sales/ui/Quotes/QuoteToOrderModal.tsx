@@ -634,6 +634,7 @@ const LinePricingOptions = ({
                     formatOptions={{
                       style: "currency",
                       currency: quoteCurrency,
+                      maximumFractionDigits: 4,
                     }}
                     onChange={(netUnitPrice) =>
                       setOverridePricing((v) => ({
@@ -664,6 +665,7 @@ const LinePricingOptions = ({
                     formatOptions={{
                       style: "currency",
                       currency: quoteCurrency,
+                      maximumFractionDigits: 4,
                     }}
                     onChange={(addOn) =>
                       setOverridePricing((v) => ({

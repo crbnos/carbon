@@ -4,7 +4,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { credit, debit, journalReference } from "../lib/utils.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
@@ -38,7 +38,9 @@ serve(async (req: Request) => {
       userId,
     });
 
-    const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+    const client = getSupabaseServiceRoleFromAuthorizationHeader(
+      req.headers.get("Authorization")
+    );
 
     const [receipt, receiptLines] = await Promise.all([
       client.from("receipt").select("*").eq("id", receiptId).single(),
@@ -761,7 +763,9 @@ serve(async (req: Request) => {
   } catch (err) {
     console.error(err);
     if ("receiptId" in payload) {
-      const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+      const client = getSupabaseServiceRoleFromAuthorizationHeader(
+        req.headers.get("Authorization")
+      );
       await client
         .from("receipt")
         .update({ status: "Draft" })

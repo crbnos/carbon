@@ -26,6 +26,7 @@ import {
   CustomerAvatar,
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   MethodIcon,
   New,
   Table,
@@ -67,7 +68,12 @@ const FixturesTable = memo(
           accessorKey: "id",
           header: "Fixture ID",
           cell: ({ row }) => (
-            <HStack className="py-1 max-w-[200px] truncate">
+            <HStack className="py-1 min-w-[200px] truncate">
+              <ItemThumbnail
+                size="sm"
+                thumbnailPath={row.original.thumbnailPath}
+                type="Fixture"
+              />
               <Hyperlink to={path.to.fixtureDetails(row.original.itemId!)}>
                 {row.original.id}
               </Hyperlink>

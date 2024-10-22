@@ -190,7 +190,7 @@ const SearchModal = ({
                       // append with : so we're not sharing a value with a static result
                       value={`:${result.to}`}
                     >
-                      <RxMagnifyingGlass className="w-4 h-4 mr-2" />
+                      <RxMagnifyingGlass className="w-4 h-4 flex-shrink-0 mr-2" />
                       {result.name}
                     </CommandItem>
                   ))}
@@ -208,7 +208,7 @@ const SearchModal = ({
                       value={`${module} ${submodule.name}`}
                     >
                       {submodule.icon && (
-                        <submodule.icon className="w-4 h-4 mr-2" />
+                        <submodule.icon className="w-4 h-4 flex-shrink-0 mr-2" />
                       )}
                       <span>{submodule.name}</span>
                     </CommandItem>
@@ -255,33 +255,40 @@ const SearchModal = ({
 function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
   switch (entity) {
     case "Customer":
-      return <LuUserSquare className="w-4 h-4 mr-2" />;
+      return <LuUserSquare className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Document":
-      return <HiOutlineDocumentDuplicate className="w-4 h-4 mr-2" />;
+      return (
+        <HiOutlineDocumentDuplicate className="w-4 h-4 flex-shrink-0 mr-2" />
+      );
     case "Job":
-      return <LuHardHat className="w-4 h-4 mr-2" />;
+      return <LuHardHat className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Part":
     case "Material":
     case "Tool":
     case "Fixture":
     case "Consumable":
-      return <MethodItemTypeIcon type={entity} className="w-4 h-4 mr-2" />;
+      return (
+        <MethodItemTypeIcon
+          type={entity}
+          className="w-4 h-4 flex-shrink-0 mr-2"
+        />
+      );
     case "Person":
-      return <LuUser className="w-4 h-4 mr-2" />;
+      return <LuUser className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Resource":
-      return <LuWrench className="w-4 h-4 mr-2" />;
+      return <LuWrench className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Purchase Order":
-      return <LuShoppingCart className="w-4 h-4 mr-2" />;
+      return <LuShoppingCart className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Opportunity":
     case "Lead":
     case "Sales RFQ":
-      return <RiProgress2Line className="w-4 h-4 mr-2" />;
+      return <RiProgress2Line className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Quotation":
-      return <RiProgress4Line className="w-4 h-4 mr-2" />;
+      return <RiProgress4Line className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Sales Order":
-      return <RiProgress8Line className="w-4 h-4 mr-2" />;
+      return <RiProgress8Line className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Supplier":
-      return <PiShareNetworkFill className="w-4 h-4 mr-2" />;
+      return <PiShareNetworkFill className="w-4 h-4 flex-shrink-0 mr-2" />;
     default:
       return null;
   }

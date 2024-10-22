@@ -11,7 +11,7 @@ serve(async (req: Request) => {
   const loadBalancer = new LoadBalancer(workCenters);
 
   try {
-    // const client = getSupabaseServiceRole(req.headers.get("Authorization"));
+    // const client = getSupabaseServiceRoleFromAuthorizationHeader(req.headers.get("Authorization"));
 
     const operationsByType = jobs.reduce((acc, job) => {
       job.operations.forEach((operation) => {

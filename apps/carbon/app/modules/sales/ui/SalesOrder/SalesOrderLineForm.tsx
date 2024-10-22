@@ -318,6 +318,7 @@ const SalesOrderLineForm = ({
                           formatOptions={{
                             style: "currency",
                             currency: baseCurrency,
+                            maximumFractionDigits: 4,
                           }}
                           onChange={(value) =>
                             setItemData((d) => ({
@@ -332,6 +333,7 @@ const SalesOrderLineForm = ({
                           formatOptions={{
                             style: "currency",
                             currency: baseCurrency,
+                            maximumFractionDigits: 4,
                           }}
                         />
 

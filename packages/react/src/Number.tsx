@@ -31,7 +31,29 @@ const NumberInputStepper = ({
 };
 
 const NumberInput = ({ className, ...props }: InputProps) => {
-  return <Input className={cn("pr-6", className)} {...props} />;
+  return (
+    <Input
+      ref={(input) => {
+        if (input) {
+          const handleFocus = () => input.select();
+
+          // Check if the event listener is already added
+          if (!input.hasAttribute("data-focus-listener")) {
+            input.addEventListener("focus", handleFocus);
+            input.setAttribute("data-focus-listener", "true");
+
+            // Remove the event listener when the component unmounts
+            return () => {
+              input.removeEventListener("focus", handleFocus);
+              input.removeAttribute("data-focus-listener");
+            };
+          }
+        }
+      }}
+      className={cn("pr-6", className)}
+      {...props}
+    />
+  );
 };
 
 const NumberIncrementStepper = ({

@@ -394,6 +394,7 @@ const QuoteLinePricing = ({
                       formatOptions={{
                         style: "currency",
                         currency: baseCurrency,
+                        maximumFractionDigits: 4,
                       }}
                       minValue={0}
                       onChange={(value) => {
@@ -476,6 +477,7 @@ const QuoteLinePricing = ({
                       formatOptions={{
                         style: "currency",
                         currency: baseCurrency,
+                        maximumFractionDigits: 4,
                       }}
                       minValue={0}
                       onChange={(value) => {
@@ -676,6 +678,7 @@ const QuoteLinePricing = ({
                               formatOptions={{
                                 style: "currency",
                                 currency: baseCurrency,
+                                maximumFractionDigits: 4,
                               }}
                               onChange={(value) => {
                                 if (

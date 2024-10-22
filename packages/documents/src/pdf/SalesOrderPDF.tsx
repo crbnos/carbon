@@ -65,7 +65,8 @@ const SalesOrderPDF = ({
   } = salesOrderLocations;
 
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
-  const shouldConvertCurrency = currencyCode !== company.baseCurrencyCode;
+  const shouldConvertCurrency =
+    !!currencyCode && currencyCode !== company.baseCurrencyCode;
   const formatter = getCurrencyFormatter(currencyCode, locale);
 
   return (

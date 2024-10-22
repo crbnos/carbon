@@ -119,6 +119,7 @@ const SupplierProcessForm = ({
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency,
+                    maximumFractionDigits: 4,
                   }}
                   minValue={0}
                 />
@@ -128,6 +129,7 @@ const SupplierProcessForm = ({
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency,
+                    maximumFractionDigits: 4,
                   }}
                   minValue={0}
                 />
