@@ -1677,6 +1677,8 @@ export const postingGroupSales = {
   updatedBy: "system",
 };
 
+export const scrapReasons = ["Defective", "Damaged", "Quality Control"];
+
 export const sequences = [
   {
     table: "job",

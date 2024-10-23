@@ -5,6 +5,7 @@ import type {
   getJobOperations,
   getProductionEvents,
   getProductionQuantities,
+  getScrapReasons,
 } from "./production.service";
 
 export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
@@ -27,4 +28,8 @@ export type ProductionEvent = NonNullable<
 
 export type ProductionQuantity = NonNullable<
   Awaited<ReturnType<typeof getProductionQuantities>>["data"]
+>[number];
+
+export type ScrapReason = NonNullable<
+  Awaited<ReturnType<typeof getScrapReasons>>["data"]
 >[number];

@@ -46,6 +46,7 @@ export const path = {
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
         ),
+      scrapReasons: `${api}/production/scrap-reason-codes`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
       services: `${api}/items/services`,
 
@@ -285,6 +286,8 @@ export const path = {
     deleteSalesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}/delete`),
     deleteSalesRfqLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-rfq/${id}/${lineId}/delete`),
+    deleteScrapReason: (id: string) =>
+      generatePath(`${x}/production/scrap-reasons/delete/${id}`),
     deleteShift: (id: string) =>
       generatePath(`${x}/people/shifts/delete/${id}`),
     deleteShippingMethod: (id: string) =>
@@ -533,6 +536,7 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/new`),
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
+    newScrapReason: `${x}/production/scrap-reasons/new`,
     newShelf: `${x}/inventory/shelves/new`,
     newShift: `${x}/people/shifts/new`,
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
@@ -737,6 +741,9 @@ export const path = {
     salesRfqs: `${x}/sales/rfqs`,
     schedule: `${x}/schedule`,
     scheduleOperationUpdate: `${x}/schedule/operation/update`,
+    scrapReason: (id: string) =>
+      generatePath(`${x}/production/scrap-reasons/${id}`),
+    scrapReasons: `${x}/production/scrap-reasons`,
     service: (id: string) => generatePath(`${x}/service/${id}`),
     services: `${x}/items/services`,
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
