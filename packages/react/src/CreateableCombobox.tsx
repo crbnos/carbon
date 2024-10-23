@@ -57,13 +57,16 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     const [search, setSearch] = useState("");
 
     return (
-      <HStack className="w-full" spacing={1}>
+      <HStack className="min-w-0 flex-grow" spacing={1}>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <CommandTrigger
               size={size}
               role="combobox"
-              className={cn("min-w-[160px]", !value && "text-muted-foreground")}
+              className={cn(
+                "min-w-[160px]",
+                !value && "text-muted-foreground truncate"
+              )}
               ref={ref}
               {...props}
               onClick={() => setOpen(true)}
@@ -238,13 +241,13 @@ function VirtualizedCommand({
                   </>
                 ) : item.helper ? (
                   <div className="flex flex-col">
-                    <p>{item.label}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="line-clamp-1">{item.label}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">
                       {item.helper}
                     </p>
                   </div>
                 ) : (
-                  item.label
+                  <span className="line-clamp-1">{item.label}</span>
                 )}
                 {!isCreateOption && (
                   <LuCheck

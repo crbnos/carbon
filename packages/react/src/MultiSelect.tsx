@@ -212,7 +212,7 @@ function VirtualizedCommand({
                   ) : (
                     <FaRegSquare className="mr-1.5 text-muted-foreground" />
                   )}
-                  {option.label}
+                  <span className="line-clamp-1">{option.label}</span>
                 </div>
               </CommandItem>
             );

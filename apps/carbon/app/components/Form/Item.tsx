@@ -12,7 +12,6 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  HStack,
   IconButton,
   useDisclosure,
 } from "@carbon/react";
@@ -132,10 +131,10 @@ const Item = ({
           id={typeFieldName}
           value={type}
         />
-        <HStack className="w-full" spacing={0}>
+        <div className="flex flex-grow min-w-0">
           <CreatableCombobox
             className={cn(
-              "w-full flex-grow",
+              "flex-grow min-w-0",
               canSwitchItemType && "rounded-r-none"
             )}
             ref={triggerRef}
@@ -191,7 +190,7 @@ const Item = ({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-        </HStack>
+        </div>
         {error ? (
           <FormErrorMessage>{error}</FormErrorMessage>
         ) : (

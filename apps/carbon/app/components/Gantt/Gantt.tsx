@@ -563,7 +563,7 @@ const GanttTimeline = ({
 };
 
 function NodeText({ node }: { node: GanttEvent }) {
-  const className = "truncate";
+  const className = "line-clamp-1";
   return (
     <Paragraph variant="small" className={cn(className)}>
       <SpanTitle {...node.data} size="small" />
