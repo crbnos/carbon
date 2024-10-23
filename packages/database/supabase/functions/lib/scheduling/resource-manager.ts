@@ -164,7 +164,6 @@ class ResourceManager {
             operations[i + 1]?.priority ?? priorityBefore + 1
           );
 
-          console.log({ priorityBefore, priorityAfter });
           return {
             workCenter: workCenterId,
             priority: Number(priorityBefore + priorityAfter) / 2,
@@ -224,6 +223,7 @@ class ResourceManager {
       priorityAfter === undefined &&
       deadlineType !== "ASAP"
     ) {
+      console.error("No priority found for work center", workCenterId);
       return {
         workCenter: workCenterId,
         priority: Number(operations[operations.length - 1]?.priority ?? 0) + 1,
@@ -232,7 +232,7 @@ class ResourceManager {
 
     return {
       workCenter: workCenterId,
-      priority: 1,
+      priority: 0,
     };
   }
 
@@ -260,6 +260,7 @@ class ResourceManager {
   } {
     const workCenters = this.workCentersByProcess.get(processId) ?? [];
     if (workCenters.length === 0) {
+      console.error("No work centers found for process", processId);
       return {
         workCenter: null,
         priority: 0,
@@ -272,6 +273,8 @@ class ResourceManager {
       priorityByWorkCenter.set(workCenter, priority);
     });
 
+    console.log({ workCenters });
+
     // TODO: use cached durations if available
     workCenters.forEach((workCenter) => {
       const duration = this.getDurationByWorkCenterIdAndPriority(
@@ -281,14 +284,24 @@ class ResourceManager {
       this.durationsByWorkCenter.set(workCenter, duration);
     });
 
-    // Find the work center with the lowest duration
-    const selectedWorkCenter = Array.from(
-      this.durationsByWorkCenter.entries()
-    ).reduce(
-      (min, [workCenter, duration]) =>
-        duration < min[1] ? [workCenter, duration] : min,
-      [null, Infinity]
-    )[0];
+    let selectedWorkCenter: string | null = null;
+    let lowestDuration = Infinity;
+
+    for (const workCenter of workCenters) {
+      const duration = this.durationsByWorkCenter.get(workCenter) ?? 0;
+      if (duration < lowestDuration) {
+        lowestDuration = duration;
+        selectedWorkCenter = workCenter;
+      }
+    }
+
+    if (!selectedWorkCenter) {
+      console.error("No work center selected after evaluation");
+      return {
+        workCenter: null,
+        priority: 0,
+      };
+    }
 
     return {
       workCenter: selectedWorkCenter,

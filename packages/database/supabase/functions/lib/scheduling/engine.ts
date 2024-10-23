@@ -50,7 +50,6 @@ class SchedulingEngine {
           string,
           { workCenterId: string; priority: number }
         > = {};
-        let result: { workCenter: string | null; priority: number };
 
         if (this.operationsToSchedule.length > 0) {
           for (const operation of this.operationsToSchedule) {
@@ -58,7 +57,7 @@ class SchedulingEngine {
               continue;
             }
 
-            result = operation.workCenterId
+            const result = operation.workCenterId
               ? this.resourceManager.getPriorityByWorkCenterId(
                   operation.workCenterId
                 )
