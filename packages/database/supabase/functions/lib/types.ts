@@ -11774,8 +11774,9 @@ export type Database = {
           jobOperationId: string
           laborProductionEventId: string | null
           machineProductionEventId: string | null
+          notes: string | null
           quantity: number
-          scrapReason: string | null
+          scrapReasonId: string | null
           setupProductionEventId: string | null
           type: Database["public"]["Enums"]["productionQuantityType"]
           updatedAt: string | null
@@ -11789,8 +11790,9 @@ export type Database = {
           jobOperationId: string
           laborProductionEventId?: string | null
           machineProductionEventId?: string | null
+          notes?: string | null
           quantity: number
-          scrapReason?: string | null
+          scrapReasonId?: string | null
           setupProductionEventId?: string | null
           type?: Database["public"]["Enums"]["productionQuantityType"]
           updatedAt?: string | null
@@ -11804,8 +11806,9 @@ export type Database = {
           jobOperationId?: string
           laborProductionEventId?: string | null
           machineProductionEventId?: string | null
+          notes?: string | null
           quantity?: number
-          scrapReason?: string | null
+          scrapReasonId?: string | null
           setupProductionEventId?: string | null
           type?: Database["public"]["Enums"]["productionQuantityType"]
           updatedAt?: string | null
@@ -11866,6 +11869,13 @@ export type Database = {
             columns: ["machineProductionEventId"]
             isOneToOne: false
             referencedRelation: "productionEvent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productionQuantity_scrapReasonId_fkey"
+            columns: ["scrapReasonId"]
+            isOneToOne: false
+            referencedRelation: "scrapReason"
             referencedColumns: ["id"]
           },
           {

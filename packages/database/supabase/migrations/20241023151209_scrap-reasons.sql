@@ -16,3 +16,7 @@ CREATE TABLE "scrapReason" (
 );
 
 CREATE INDEX "scrapReason_companyId_fkey" ON "scrapReason"("companyId");
+
+ALTER TABLE "productionQuantity" RENAME COLUMN "scrapReason" TO "notes";
+ALTER TABLE "productionQuantity" ADD COLUMN "scrapReasonId" TEXT;
+ALTER TABLE "productionQuantity" ADD CONSTRAINT "productionQuantity_scrapReasonId_fkey" FOREIGN KEY ("scrapReasonId") REFERENCES "scrapReason"("id") ON UPDATE CASCADE ON DELETE SET NULL;

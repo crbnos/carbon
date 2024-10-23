@@ -81,6 +81,8 @@ export default function EditProductionQuantityRoute() {
     type: productionQuantity?.type ?? ("Scrap" as "Scrap"),
     jobOperationId: productionQuantity?.jobOperationId ?? "",
     quantity: productionQuantity?.quantity ?? 0,
+    scrapReasonId: productionQuantity?.scrapReasonId ?? "",
+    notes: productionQuantity?.notes ?? "",
     createdBy: productionQuantity?.createdBy ?? "",
   };
 

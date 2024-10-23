@@ -21,6 +21,7 @@ import {
   Submit,
   TextArea,
 } from "~/components/Form";
+import ScrapReason from "~/components/Form/ScrapReason";
 import { usePermissions } from "~/hooks";
 import { productionQuantityValidator } from "~/modules/production";
 
@@ -68,7 +69,8 @@ const ProductionQuantityForm = ({
                   { label: "Rework", value: "Rework" },
                 ]}
               />
-              <TextArea name="scrapReason" label="Scrap Reason" />
+              <ScrapReason name="scrapReasonId" label="Scrap Reason" />
+              <TextArea name="notes" label="Notes" />
             </VStack>
           </DrawerBody>
           <DrawerFooter>
