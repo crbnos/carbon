@@ -296,13 +296,18 @@ serve(async (req: Request) => {
                   .eq("companyId", companyId)
                   .single();
 
-                if (error || !data) {
+                if (
+                  // If multiple line items in the RFQ have the same customer part number and revision,
+                  // make sure they get assiged different readableIds
+                  !readableIdToLineIdMapping.has(readableId) &&
+                  (error || !data)
+                ) {
                   // readableId is unique, we can use it
                   break;
                 }
 
                 // If not unique, append or increment suffix
-                readableId = `${baseReadableId}-${suffix}`;
+                readableId = `${baseReadableId} (${suffix})`;
                 suffix++;
               }
 
