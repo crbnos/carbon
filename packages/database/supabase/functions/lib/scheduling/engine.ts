@@ -50,40 +50,39 @@ class SchedulingEngine {
           string,
           { workCenterId: string; priority: number }
         > = {};
+        let result: { workCenter: string | null; priority: number };
 
         if (this.operationsToSchedule.length > 0) {
-          for await (const operation of this.operationsToSchedule) {
+          for (const operation of this.operationsToSchedule) {
             if (!operation.processId || operation.operationType === "Outside") {
               continue;
             }
 
-            const [workCenter, { priorityBefore, priorityAfter }] =
-              operation.workCenterId
-                ? this.resourceManager.getPriorityByWorkCenterId(
-                    operation.workCenterId
-                  )
-                : this.resourceManager.getWorkCenterAndPriorityByProcessId(
-                    operation.processId
-                  );
+            result = operation.workCenterId
+              ? this.resourceManager.getPriorityByWorkCenterId(
+                  operation.workCenterId
+                )
+              : this.resourceManager.getWorkCenterAndPriorityByProcessId(
+                  operation.processId
+                );
 
-            if (workCenter) {
-              const newPriority = priorityAfter
-                ? (priorityAfter + priorityBefore) / 2
-                : priorityBefore + 1;
+            console.log(
+              `Updating operation ${operation.id} with priority ${result.priority} and work center ${result.workCenter}`
+            );
 
-              console.log(
-                `Updating operation ${operation.id} with priority ${newPriority} and work center ${workCenter}`
-              );
-              workCenterUpdates[operation.id!] = {
-                workCenterId: workCenter,
-                priority: newPriority,
-              };
-
-              this.resourceManager.addOperationToWorkCenter(workCenter, {
-                ...operation,
-                priority: newPriority,
-              });
+            if (!result.workCenter) {
+              console.error("No work center found for operation", operation);
+              continue;
             }
+            workCenterUpdates[operation.id!] = {
+              workCenterId: result.workCenter,
+              priority: result.priority,
+            };
+
+            this.resourceManager.addOperationToWorkCenter(result.workCenter, {
+              ...operation,
+              priority: result.priority,
+            });
           }
         }
 

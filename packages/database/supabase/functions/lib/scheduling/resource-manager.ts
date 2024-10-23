@@ -10,7 +10,7 @@ class ResourceManager {
   private activeJobs: string[];
   private operationsByWorkCenter: Map<string | null, Operation[]>;
   private workCentersByProcess: Map<string, string[]>;
-
+  private durationsByWorkCenter: Map<string | null, number>;
   constructor(db: Kysely<DB>, companyId: string) {
     this.db = db;
     this.companyId = companyId;
@@ -18,6 +18,7 @@ class ResourceManager {
     this.activeJobs = [];
     this.operationsByWorkCenter = new Map<string | null, Operation[]>();
     this.workCentersByProcess = new Map<string, string[]>();
+    this.durationsByWorkCenter = new Map<string | null, number>();
   }
 
   async initialize(jobId: string) {
@@ -110,7 +111,9 @@ class ResourceManager {
     this.operationsByWorkCenter.forEach((operations, workCenterId) => {
       this.operationsByWorkCenter.set(
         workCenterId,
-        operations.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
+        operations.sort(
+          (a, b) => Number(a.priority ?? 0) - Number(b.priority ?? 0)
+        )
       );
     });
 
@@ -127,20 +130,16 @@ class ResourceManager {
         this.workCentersByProcess.set(process.id!, workCenterIds);
       }
     });
-
-    console.log({
-      operationsByWorkCenter: this.operationsByWorkCenter,
-      workCentersByProcess: this.workCentersByProcess,
-    });
   }
 
   getJob(): Job | null {
     return this.job;
   }
 
-  getPriorityByWorkCenterId(
-    workCenterId: string
-  ): [string | null, { priorityBefore: number; priorityAfter?: number }] {
+  getPriorityByWorkCenterId(workCenterId: string): {
+    workCenter: string;
+    priority: number;
+  } {
     const deadlineType = this.job?.deadlineType ?? "No Deadline";
     const dueDate = this.job?.dueDate ?? "";
 
@@ -151,7 +150,7 @@ class ResourceManager {
 
     if (operations.length === 0) {
       // If there are no operations, set priorityBefore to 0 and priorityAfter to undefined
-      return [workCenterId, { priorityBefore: 0, priorityAfter: undefined }];
+      return { workCenter: workCenterId, priority: 1 };
     }
 
     // Iterate backwards over the operations until we find the first operation that matches the deadline type
@@ -160,9 +159,16 @@ class ResourceManager {
 
       if (deadlineType === "ASAP") {
         if (currentOp.deadlineType === "ASAP") {
-          priorityBefore = currentOp.priority ?? 0;
-          priorityAfter = operations[i + 1]?.priority;
-          break;
+          priorityBefore = Number(currentOp.priority ?? 0);
+          priorityAfter = Number(
+            operations[i + 1]?.priority ?? priorityBefore + 1
+          );
+
+          console.log({ priorityBefore, priorityAfter });
+          return {
+            workCenter: workCenterId,
+            priority: Number(priorityBefore + priorityAfter) / 2,
+          };
         }
       } else if (deadlineType === "Hard Deadline") {
         if (
@@ -174,9 +180,15 @@ class ResourceManager {
             currentOp.dueDate &&
             currentOp.dueDate < dueDate)
         ) {
-          priorityBefore = currentOp.priority ?? 0;
-          priorityAfter = operations[i + 1]?.priority;
-          break;
+          priorityBefore = Number(currentOp.priority ?? 0);
+          priorityAfter = Number(
+            operations[i + 1]?.priority ?? priorityBefore + 1
+          );
+
+          return {
+            workCenter: workCenterId,
+            priority: Number(priorityBefore + priorityAfter) / 2,
+          };
         }
       } else if (deadlineType === "Soft Deadline") {
         if (
@@ -188,14 +200,22 @@ class ResourceManager {
             currentOp.dueDate &&
             currentOp.dueDate <= dueDate)
         ) {
-          priorityBefore = currentOp.priority ?? 0;
-          priorityAfter = operations[i + 1]?.priority;
-          break;
+          priorityBefore = Number(currentOp.priority ?? 0);
+          priorityAfter = Number(
+            operations[i + 1]?.priority ?? priorityBefore + 1
+          );
+
+          return {
+            workCenter: workCenterId,
+            priority: Number(priorityBefore + priorityAfter) / 2,
+          };
         }
       } else if (deadlineType === "No Deadline") {
-        priorityAfter = undefined;
-        priorityBefore = currentOp.priority ?? 0;
-        break;
+        return {
+          workCenter: workCenterId,
+          priority:
+            Number(operations[operations.length - 1]?.priority ?? 0) + 1,
+        };
       }
     }
 
@@ -204,27 +224,76 @@ class ResourceManager {
       priorityAfter === undefined &&
       deadlineType !== "ASAP"
     ) {
-      priorityBefore = operations[operations.length - 1]?.priority ?? 0;
+      return {
+        workCenter: workCenterId,
+        priority: Number(operations[operations.length - 1]?.priority ?? 0) + 1,
+      };
     }
 
-    return [workCenterId, { priorityBefore, priorityAfter }];
+    return {
+      workCenter: workCenterId,
+      priority: 1,
+    };
   }
 
-  getWorkCenterAndPriorityByProcessId(
-    processId: string
-  ): [
-    workCenterId: string | null,
-    { priorityBefore: number; priorityAfter?: number }
-  ] {
-    const workCenters = this.workCentersByProcess.get(processId) ?? [];
+  getDurationByWorkCenterIdAndPriority(
+    workCenterId: string,
+    priority: number
+  ): number {
+    const operations = this.operationsByWorkCenter.get(workCenterId) || [];
+    let duration = 0;
 
-    return [
-      selectedWorkCenter,
-      {
-        priorityBefore,
-        priorityAfter,
-      },
-    ];
+    operations.forEach((operation) => {
+      if (operation.priority && operation.priority < priority) {
+        duration += operation.duration;
+      } else {
+        return duration;
+      }
+    });
+
+    return duration;
+  }
+
+  getWorkCenterAndPriorityByProcessId(processId: string): {
+    workCenter: string | null;
+    priority: number;
+  } {
+    const workCenters = this.workCentersByProcess.get(processId) ?? [];
+    if (workCenters.length === 0) {
+      return {
+        workCenter: null,
+        priority: 0,
+      };
+    }
+
+    const priorityByWorkCenter: Map<string | null, number> = new Map();
+    workCenters.forEach((workCenter) => {
+      const { priority } = this.getPriorityByWorkCenterId(workCenter);
+      priorityByWorkCenter.set(workCenter, priority);
+    });
+
+    // TODO: use cached durations if available
+    workCenters.forEach((workCenter) => {
+      const duration = this.getDurationByWorkCenterIdAndPriority(
+        workCenter,
+        priorityByWorkCenter.get(workCenter) ?? 0
+      );
+      this.durationsByWorkCenter.set(workCenter, duration);
+    });
+
+    // Find the work center with the lowest duration
+    const selectedWorkCenter = Array.from(
+      this.durationsByWorkCenter.entries()
+    ).reduce(
+      (min, [workCenter, duration]) =>
+        duration < min[1] ? [workCenter, duration] : min,
+      [null, Infinity]
+    )[0];
+
+    return {
+      workCenter: selectedWorkCenter,
+      priority: priorityByWorkCenter.get(selectedWorkCenter) ?? 0,
+    };
   }
 
   addOperationToWorkCenter(workCenterId: string, operation: BaseOperation) {
@@ -232,14 +301,25 @@ class ResourceManager {
       this.operationsByWorkCenter.set(workCenterId, []);
     }
 
-    this.operationsByWorkCenter
-      .get(workCenterId)
-      ?.push(getDurations(operation));
+    const operationWithDurations = getDurations({
+      ...operation,
+      deadlineType: this.job?.deadlineType ?? "No Deadline",
+      dueDate: this.job?.dueDate ?? "",
+    });
 
-    const totalDuration = this.operationsByWorkCenter
-      .get(workCenterId)
-      ?.reduce((sum, operation) => sum + operation.duration, 0);
-    this.durationsByWorkCenter.set(workCenterId, totalDuration ?? 0);
+    const operations = this.operationsByWorkCenter.get(workCenterId);
+    if (operations) {
+      operations.push(operationWithDurations);
+      operations.sort(
+        (a, b) => Number(a.priority ?? 0) - Number(b.priority ?? 0)
+      );
+      this.operationsByWorkCenter.set(workCenterId, operations);
+    }
+
+    // Update the duration for the work center
+    const currentDuration = this.durationsByWorkCenter.get(workCenterId) ?? 0;
+    const newDuration = currentDuration + operationWithDurations.duration;
+    this.durationsByWorkCenter.set(workCenterId, newDuration);
   }
 }
 

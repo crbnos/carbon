@@ -109,18 +109,21 @@ const JobForm = ({ initialValues }: JobFormProps) => {
         .single(),
     ]);
 
-    setItemData({
+    setItemData((current) => ({
       itemId,
       description: item.data?.name ?? "",
       uom: item.data?.unitOfMeasureCode ?? "EA",
-      quantity: manufacturing?.data?.lotSize ?? 0,
+      quantity:
+        (manufacturing?.data?.lotSize ?? 0) === 0
+          ? current.quantity
+          : manufacturing?.data?.lotSize ?? 0,
       modelUploadId: item.data?.modelUploadId ?? null,
       scrapPercentage: manufacturing?.data?.scrapPercentage ?? 0,
       scrapQuantity: Math.ceil(
         (manufacturing?.data?.lotSize ?? 0) *
           ((manufacturing?.data?.scrapPercentage ?? 0) / 100)
       ),
-    });
+    }));
   };
 
   return (

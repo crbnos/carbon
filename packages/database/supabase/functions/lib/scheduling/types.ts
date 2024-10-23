@@ -43,5 +43,7 @@ export type Job = {
 };
 
 export enum SchedulingStrategy {
+  PriorityLeastTime,
   LeastTime,
+  Random,
 }

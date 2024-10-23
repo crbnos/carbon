@@ -6,6 +6,8 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteData } from "~/hooks";
+import type { Job } from "~/modules/production";
 import {
   getJobMaterial,
   getJobMaterialsByMethodId,
@@ -99,9 +101,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobMakeMethodRoute() {
-  const { methodId } = useParams();
+  const { methodId, jobId } = useParams();
   if (!methodId) throw new Error("Could not find methodId");
-
+  if (!jobId) throw new Error("Could not find jobId");
+  const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const loaderData = useLoaderData<typeof loader>();
   const { material, materials, operations } = loaderData;
 
@@ -117,6 +120,7 @@ export default function JobMakeMethodRoute() {
         key={`bop:${methodId}:${operations.length}:${operations[0]?.workCenterId}`}
         jobMakeMethodId={methodId}
         operations={operations}
+        locationId={routeData?.job?.locationId ?? ""}
       />
       <JobBillOfMaterial
         key={`bom:${methodId}:${materials.length}`}

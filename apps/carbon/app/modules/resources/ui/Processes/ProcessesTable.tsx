@@ -56,7 +56,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           ) : (
             <HStack onClick={() => navigate(row.original.id!)} spacing={2}>
               <LuAlertTriangle />
-              <span className="text-destructive">{row.original.name}</span>
+              <span>{row.original.name}</span>
             </HStack>
           ),
       },

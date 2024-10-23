@@ -24,6 +24,8 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
     locationId: props?.locationId,
   });
 
+  console.log({ locationId: props?.locationId });
+
   return (
     <>
       <CreatableCombobox
@@ -81,6 +83,14 @@ export const useWorkCenters = (args: {
       workCenterFetcher.data?.data
         ? workCenterFetcher.data?.data
             .filter((f) => {
+              if (processId && locationId) {
+                return (
+                  // @ts-ignore
+                  (f.processes ?? []).map((p) => p.id).includes(processId) &&
+                  f.locationId === locationId
+                );
+              }
+
               if (processId) {
                 // @ts-ignore
                 return (f.processes ?? []).map((p) => p.id).includes(processId);
