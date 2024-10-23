@@ -109,7 +109,8 @@ export const nonScrapQuantityValidator = finishValidator.extend({
 });
 
 export const scrapQuantityValidator = nonScrapQuantityValidator.extend({
-  scrapReason: z.string().min(1, { message: "Scrap reason is required" }),
+  scrapReasonId: zfd.text(z.string()),
+  notes: zfd.text(z.string().optional()),
 });
 
 export async function finishJobOperation(
@@ -319,6 +320,17 @@ export async function getRecentJobOperationsByEmployee(
     employee_id: args.employeeId,
     company_id: args.companyId,
   });
+}
+
+export async function getScrapReasonsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("scrapReason")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
 }
 
 export async function getWorkCenter(

@@ -115,6 +115,7 @@ import {
   LuTimer,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components/Icons";
+import ScrapReason from "./ScrapReason";
 
 type JobOperationProps = {
   backPath: string;
@@ -1242,7 +1243,6 @@ function QuantityModal({
   type: "scrap" | "rework" | "complete" | "finish";
 }) {
   const fetcher = useFetcher<ProductionQuantity>();
-  const [reason, setReason] = useState("");
   const [quantity, setQuantity] = useState(type === "finish" ? 0 : 1);
 
   const titleMap = {
@@ -1332,35 +1332,8 @@ function QuantityModal({
               )}
               {type === "scrap" ? (
                 <>
-                  <TextArea
-                    label="Scrap Reason"
-                    name="scrapReason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
-                  <div className="col-span-2 flex gap-2 mt-2">
-                    <Badge
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => setReason("Defective")}
-                    >
-                      Defective
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => setReason("Damaged")}
-                    >
-                      Damaged
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => setReason("Quality Control")}
-                    >
-                      Quality Control
-                    </Badge>
-                  </div>
+                  <ScrapReason name="scrapReasonId" label="Scrap Reason" />
+                  <TextArea label="Notes" name="notes" />
                 </>
               ) : (
                 <NumberControlled

@@ -3151,7 +3151,7 @@ export default {
             $ref: "#/parameters/rowFilter.productionQuantity.machineProductionEventId",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.scrapReason",
+            $ref: "#/parameters/rowFilter.productionQuantity.notes",
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.companyId",
@@ -3167,6 +3167,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.scrapReasonId",
           },
           {
             $ref: "#/parameters/select",
@@ -3249,7 +3252,7 @@ export default {
             $ref: "#/parameters/rowFilter.productionQuantity.machineProductionEventId",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.scrapReason",
+            $ref: "#/parameters/rowFilter.productionQuantity.notes",
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.companyId",
@@ -3265,6 +3268,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.scrapReasonId",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -3301,7 +3307,7 @@ export default {
             $ref: "#/parameters/rowFilter.productionQuantity.machineProductionEventId",
           },
           {
-            $ref: "#/parameters/rowFilter.productionQuantity.scrapReason",
+            $ref: "#/parameters/rowFilter.productionQuantity.notes",
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.companyId",
@@ -3317,6 +3323,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.productionQuantity.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionQuantity.scrapReasonId",
           },
           {
             $ref: "#/parameters/body.productionQuantity",
@@ -48794,6 +48803,111 @@ export default {
           format: "text",
           type: "string",
         },
+        postingDate: {
+          default: "CURRENT_DATE",
+          format: "date",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+      },
+      type: "object",
+    },
+    documentLabel: {
+      required: ["documentId", "userId", "label"],
+      properties: {
+        documentId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `document.id`.<fk table='document' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        label: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    productionQuantity: {
+      required: [
+        "id",
+        "jobOperationId",
+        "type",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        type: {
+          default: "Production",
+          enum: ["Rework", "Scrap", "Production"],
+          format: 'public."productionQuantityType"',
+          type: "string",
+        },
+        quantity: {
+          format: "integer",
+          type: "integer",
+        },
+        setupProductionEventId: {
+          description:
+            "Note:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        laborProductionEventId: {
+          description:
+            "Note:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        machineProductionEventId: {
+          description:
+            "Note:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        notes: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -48810,10 +48924,28 @@ export default {
           format: "text",
           type: "string",
         },
-        customFields: {
-          format: "jsonb",
+        scrapReasonId: {
+          description:
+            "Note:\nThis is a Foreign Key to `scrapReason.id`.<fk table='scrapReason' column='id'/>",
+          format: "text",
+          type: "string",
         },
-        modelUploadId: {
+      },
+      type: "object",
+    },
+    receipt: {
+      required: [
+        "id",
+        "receiptId",
+        "status",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
         },
@@ -63320,8 +63452,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.productionQuantity.scrapReason": {
-      name: "scrapReason",
+    "rowFilter.productionQuantity.notes": {
+      name: "notes",
       required: false,
       format: "text",
       in: "query",
@@ -63357,6 +63489,13 @@ export default {
     },
     "rowFilter.productionQuantity.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionQuantity.scrapReasonId": {
+      name: "scrapReasonId",
       required: false,
       format: "text",
       in: "query",
