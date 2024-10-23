@@ -4,13 +4,14 @@ import {
   AvatarGroupList,
   AvatarOverflowIndicator,
   Badge,
+  HStack,
   MenuIcon,
   MenuItem,
 } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { LuAlertTriangle, LuPencil, LuTrash } from "react-icons/lu";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -45,13 +46,19 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
       {
         accessorKey: "name",
         header: "Process",
-        cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
-            onClick={() => navigate(row.original.id!)}
-            className="cursor-pointer"
-          />
-        ),
+        cell: ({ row }) =>
+          ((row.original.workCenters as any[]) ?? []).length > 0 ? (
+            <Enumerable
+              value={row.original.name}
+              onClick={() => navigate(row.original.id!)}
+              className="cursor-pointer"
+            />
+          ) : (
+            <HStack onClick={() => navigate(row.original.id!)} spacing={2}>
+              <LuAlertTriangle />
+              <span>{row.original.name}</span>
+            </HStack>
+          ),
       },
       {
         accessorKey: "processType",

@@ -99,6 +99,11 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
         },
       },
       {
+        accessorKey: "quantity",
+        header: "Quantity",
+        cell: (item) => item.getValue<number>(),
+      },
+      {
         id: "customerId",
         header: "Customer",
         cell: ({ row }) => (

@@ -1,4 +1,9 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  success,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -8,12 +13,15 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "production",
   });
 
   const { jobId: id } = params;
   if (!id) throw new Error("Could not find id");
+
+  const url = new URL(request.url);
+  const shouldSchedule = url.searchParams.get("schedule") === "1";
 
   const formData = await request.formData();
   const status = formData.get("status") as (typeof jobStatus)[number];
@@ -36,6 +44,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, "Manufacturing is blocked"))
+      );
+    }
+  }
+
+  if (status === "Ready" && shouldSchedule) {
+    try {
+      const scheduler = await getCarbonServiceRole().functions.invoke(
+        "scheduler",
+        {
+          body: {
+            jobId: id,
+            companyId,
+            userId,
+          },
+        }
+      );
+
+      if (scheduler.error) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(request, error(error, "Failed to schedule job"))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(err, "Failed to schedule job"))
       );
     }
   }

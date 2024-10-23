@@ -69,6 +69,7 @@ type ItemWithData = Item & {
 
 type JobBillOfProcessProps = {
   jobMakeMethodId: string;
+  locationId: string;
   operations: Operation[];
 };
 
@@ -139,6 +140,7 @@ const initialOperation: Omit<Operation, "jobMakeMethodId" | "order"> = {
 
 const JobBillOfProcess = ({
   jobMakeMethodId,
+  locationId,
   operations,
 }: JobBillOfProcessProps) => {
   const { carbon, accessToken } = useCarbon();
@@ -417,6 +419,7 @@ const JobBillOfProcess = ({
                 isDisabled={isDisabled}
                 setItems={setItems}
                 setSelectedItemId={setSelectedItemId}
+                locationId={locationId}
               />
             </motion.div>
           </div>
@@ -634,11 +637,13 @@ function OperationForm({
   isDisabled,
   setItems,
   setSelectedItemId,
+  locationId,
 }: {
   item: ItemWithData;
   isDisabled: boolean;
   setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
+  locationId: string;
 }) {
   const { jobId } = useParams();
   const { id: userId, company } = useUser();
@@ -1004,6 +1009,7 @@ function OperationForm({
           <WorkCenter
             name="workCenterId"
             label="Work Center"
+            locationId={locationId}
             isOptional
             processId={processData.processId}
             onChange={(value) => {

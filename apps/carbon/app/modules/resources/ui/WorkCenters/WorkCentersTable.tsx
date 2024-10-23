@@ -2,8 +2,12 @@ import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { BsFillCheckCircleFill } from "react-icons/bs";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuAlertTriangle,
+  LuCheckCircle,
+  LuPencil,
+  LuTrash,
+} from "react-icons/lu";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
@@ -59,14 +63,21 @@ const WorkCentersTable = memo(
           header: "Work Center",
           cell: ({ row }) => (
             <HStack>
-              <Enumerable
-                value={row.original.name}
-                onClick={() => navigate(row.original.id!)}
-                className="cursor-pointer"
-              />
+              {((row.original.processes as any[]) ?? []).length > 0 ? (
+                <Enumerable
+                  value={row.original.name}
+                  onClick={() => navigate(row.original.id!)}
+                  className="cursor-pointer"
+                />
+              ) : (
+                <HStack onClick={() => navigate(row.original.id!)} spacing={2}>
+                  <LuAlertTriangle />
+                  <span>{row.original.name}</span>
+                </HStack>
+              )}
 
               {row.original.requiredAbilityId && (
-                <BsFillCheckCircleFill
+                <LuCheckCircle
                   className="text-emerald-500"
                   title="Requires ability"
                 />

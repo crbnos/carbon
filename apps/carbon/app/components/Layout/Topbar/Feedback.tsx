@@ -123,7 +123,11 @@ const Feedback = () => {
             <HStack className="w-full justify-between">
               <Button
                 variant="secondary"
-                onClick={() => popoverTriggerRef.current?.click()}
+                onClick={() => {
+                  setFeedback("");
+                  setAttachment(null);
+                  popoverTriggerRef.current?.click();
+                }}
               >
                 Cancel
               </Button>
