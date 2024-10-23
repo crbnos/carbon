@@ -12,6 +12,7 @@ import {
 } from "@carbon/react";
 
 import { useNavigate } from "@remix-run/react";
+import { useState } from "react";
 import type { z } from "zod";
 import {
   Employee,
@@ -35,6 +36,10 @@ const ProductionQuantityForm = ({
   const permissions = usePermissions();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
+
+  const [type, setType] = useState<"Production" | "Scrap" | "Rework">(
+    initialValues.type
+  );
 
   const isDisabled = !permissions.can("update", "production");
   return (
@@ -68,9 +73,16 @@ const ProductionQuantityForm = ({
                   { label: "Scrap", value: "Scrap" },
                   { label: "Rework", value: "Rework" },
                 ]}
+                onChange={(value) =>
+                  setType(value?.value as "Production" | "Scrap" | "Rework")
+                }
               />
-              <ScrapReason name="scrapReasonId" label="Scrap Reason" />
-              <TextArea name="notes" label="Notes" />
+              {type === "Scrap" && (
+                <>
+                  <ScrapReason name="scrapReasonId" label="Scrap Reason" />
+                  <TextArea name="notes" label="Notes" />
+                </>
+              )}
             </VStack>
           </DrawerBody>
           <DrawerFooter>
