@@ -238,7 +238,7 @@ function QuoteLineItem({
             </HStack>
             <span className="font-medium text-muted-foreground text-xs line-clamp-1">
               {line.customerPartId}
-              {line.customerPartRevision && ` (${line.customerPartRevision})`}
+              {line.customerPartRevision && `-${line.customerPartRevision}`}
             </span>
           </VStack>
         </HStack>
