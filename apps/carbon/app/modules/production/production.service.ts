@@ -13,6 +13,7 @@ import type {
   jobValidator,
   productionEventValidator,
   productionQuantityValidator,
+  scrapReasonValidator,
 } from "./production.models";
 import type { Job } from "./types";
 
@@ -67,6 +68,13 @@ export async function getActiveJobOperationsByLocation(
     location_id: locationId,
     work_center_ids: workCenterIds,
   });
+}
+
+export async function deleteScrapReason(
+  client: SupabaseClient<Database>,
+  scrapReasonId: string
+) {
+  return client.from("scrapReason").delete().eq("id", scrapReasonId);
 }
 
 export async function getJobDocuments(
@@ -438,6 +446,51 @@ export async function getProductionQuantities(
   return query;
 }
 
+export async function getScrapReasonsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("scrapReason")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function getScrapReason(
+  client: SupabaseClient<Database>,
+  scrapReasonId: string
+) {
+  return client
+    .from("scrapReason")
+    .select("*")
+    .eq("id", scrapReasonId)
+    .single();
+}
+
+export async function getScrapReasons(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("scrapReason")
+    .select("id, name, customFields", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
   params: {
@@ -788,4 +841,28 @@ export async function upsertMakeMethodFromJobMethod(
   }
 
   return { data: null, error: null };
+}
+
+export async function upsertScrapReason(
+  client: SupabaseClient<Database>,
+  scrapReason:
+    | (Omit<z.infer<typeof scrapReasonValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof scrapReasonValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in scrapReason) {
+    return client.from("scrapReason").insert([scrapReason]).select("id");
+  } else {
+    return client
+      .from("scrapReason")
+      .update(sanitize(scrapReason))
+      .eq("id", scrapReason.id);
+  }
 }

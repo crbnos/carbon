@@ -431,3 +431,8 @@ export const scheduleOperationUpdateValidator = z.object({
   columnId: z.string().min(1, { message: "Column is required" }),
   priority: zfd.numeric(z.number().min(0).optional()),
 });
+
+export const scrapReasonValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+});

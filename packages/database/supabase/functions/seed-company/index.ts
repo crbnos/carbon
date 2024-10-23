@@ -15,6 +15,7 @@ import {
   postingGroupInventory,
   postingGroupPurchasing,
   postingGroupSales,
+  scrapReasons,
   sequences,
   supplierStauses,
   unitOfMeasures,
@@ -141,6 +142,18 @@ serve(async (req: Request) => {
         .insertInto("customerStatus")
         .values(
           customerStatuses.map((name) => ({
+            name,
+            companyId,
+            createdBy: "system",
+          }))
+        )
+        .execute();
+
+      // scrap reason codes
+      await trx
+        .insertInto("scrapReason")
+        .values(
+          scrapReasons.map((name) => ({
             name,
             companyId,
             createdBy: "system",
