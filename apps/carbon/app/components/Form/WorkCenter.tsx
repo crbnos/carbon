@@ -24,8 +24,6 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
     locationId: props?.locationId,
   });
 
-  console.log({ locationId: props?.locationId });
-
   return (
     <>
       <CreatableCombobox
