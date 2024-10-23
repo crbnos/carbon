@@ -422,6 +422,8 @@ export const productionQuantityValidator = z.object({
   type: z.enum(["Rework", "Scrap", "Production"], {
     errorMap: () => ({ message: "Quantity type is required" }),
   }),
+  scrapReasonId: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional()),
   createdBy: zfd.text(z.string().optional()),
   quantity: zfd.numeric(z.number().min(0)),
 });

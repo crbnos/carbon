@@ -50,6 +50,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id, ...data } = validation.data;
   if (!id) throw new Error("id not found");
 
+  // If the type is not Scrap, set the scrapReasonId and notes to null
+  if (data.type !== "Scrap") {
+    data.scrapReasonId = undefined;
+    data.notes = undefined;
+  }
+
   const update = await updateProductionQuantity(client, {
     id,
     ...data,

@@ -8,9 +8,9 @@ import { json, redirect } from "@vercel/remix";
 import {
   getJobOperationsList,
   getProductionQuantities,
+  getScrapReasons,
   ProductionQuantitiesTable,
 } from "~/modules/production";
-import { getWorkCentersList } from "~/modules/resources";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -44,10 +44,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       count: 0,
       events: [],
       operations: [],
+      scrapReasons: [],
     });
   }
 
-  const [events] = await Promise.all([
+  const [events, scrapReasons] = await Promise.all([
     getProductionQuantities(client, operations.data?.map((o) => o.id) ?? [], {
       search,
       limit,
@@ -55,7 +56,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getWorkCentersList(client, companyId),
+    getScrapReasons(client, companyId),
   ]);
 
   if (events.error) {
@@ -69,11 +70,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     count: events.count ?? 0,
     events: events.data ?? [],
     operations: operations.data ?? [],
+    scrapReasons: scrapReasons.data ?? [],
   });
 }
 
 export default function ProductionQuantitiesRoute() {
-  const { count, events, operations } = useLoaderData<typeof loader>();
+  const { count, events, operations, scrapReasons } =
+    useLoaderData<typeof loader>();
 
   return (
     <>
@@ -82,6 +85,7 @@ export default function ProductionQuantitiesRoute() {
           data={events}
           count={count}
           operations={operations}
+          scrapReasons={scrapReasons}
         />
       </VStack>
       <Outlet />

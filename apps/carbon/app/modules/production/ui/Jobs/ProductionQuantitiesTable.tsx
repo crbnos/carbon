@@ -9,16 +9,22 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
-import type { ProductionQuantity } from "../../types";
+import type { ProductionQuantity, ScrapReason } from "../../types";
 
 type ProductionQuantitiesTableProps = {
   data: ProductionQuantity[];
   count: number;
   operations: { id: string; description: string | null }[];
+  scrapReasons: ScrapReason[];
 };
 
 const ProductionQuantitiesTable = memo(
-  ({ data, count, operations }: ProductionQuantitiesTableProps) => {
+  ({
+    data,
+    count,
+    operations,
+    scrapReasons,
+  }: ProductionQuantitiesTableProps) => {
     const { jobId } = useParams();
     if (!jobId) throw new Error("Job ID is required");
     const [people] = usePeople();
@@ -109,8 +115,36 @@ const ProductionQuantitiesTable = memo(
           header: "Quantity",
           cell: ({ row }) => row.original.quantity,
         },
+        {
+          accessorKey: "scrapReasonId",
+          header: "Scrap Reason",
+          cell: ({ row }) => {
+            const scrapReason = scrapReasons.find(
+              (reason) => reason.id === row.original.scrapReasonId
+            );
+            return <Enumerable value={scrapReason?.name ?? ""} />;
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: scrapReasons?.map((reason) => ({
+                value: reason.id,
+                label: <Enumerable value={reason.name ?? ""} />,
+              })),
+            },
+          },
+        },
+        {
+          accessorKey: "notes",
+          header: "Notes",
+          cell: ({ row }) => (
+            <span className="max-w-[200px] truncate block">
+              {row.original.notes}
+            </span>
+          ),
+        },
       ];
-    }, [operations, people]);
+    }, [operations, people, scrapReasons]);
 
     const permissions = usePermissions();
 
