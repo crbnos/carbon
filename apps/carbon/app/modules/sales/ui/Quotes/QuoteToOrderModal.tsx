@@ -133,11 +133,12 @@ const QuoteToOrderDrawer = ({
         console.error("Error updating opportunity:", error);
         toast.error("Failed to update opportunity with purchase order");
       } else {
-        setPurchaseOrder(file);
+        setTimeout(() => {
+          setPurchaseOrder(file);
+          setUploading(false);
+        }, 2000);
         setStep(1);
       }
-
-      setUploading(false);
     }
   };
 
