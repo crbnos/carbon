@@ -120,7 +120,12 @@ export default function LoginRoute() {
           <Input name="email" label="Email" />
           <Password name="password" label="Password" type="password" />
           <Hidden name="redirectTo" value={redirectTo} type="hidden" />
-          <Submit size="lg" className="w-full" onClick={handleClick}>
+          <Submit
+            size="lg"
+            className="w-full"
+            onClick={handleClick}
+            withBlocker={false}
+          >
             Sign In
           </Submit>
           <Button variant="link" asChild className="w-full">

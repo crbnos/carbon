@@ -118,7 +118,7 @@ export default function ForgotPasswordRoute() {
                 </Alert>
               )}
               <Input name="email" label="Email" />
-              <Submit size="lg" className="w-full">
+              <Submit size="lg" className="w-full" withBlocker={false}>
                 Reset Password
               </Submit>
               <Button variant="link" asChild className="w-full">

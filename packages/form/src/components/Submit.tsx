@@ -13,10 +13,13 @@ import { useBlocker, useNavigation } from "@remix-run/react";
 import { forwardRef } from "react";
 import { useIsSubmitting } from "../hooks";
 
-type SubmitProps = ButtonProps & { formId?: string; text?: string };
+type SubmitProps = ButtonProps & {
+  formId?: string;
+  withBlocker?: boolean;
+};
 
 export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
-  ({ formId, children, isDisabled, ...props }, ref) => {
+  ({ formId, children, isDisabled, withBlocker = true, ...props }, ref) => {
     const isSubmitting = useIsSubmitting(formId);
     const transition = useNavigation();
     const isIdle = transition.state === "idle";
@@ -25,7 +28,9 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
 
     const blocker = useBlocker(
       ({ currentLocation, nextLocation }) =>
-        isTouched && currentLocation.pathname !== nextLocation.pathname
+        withBlocker &&
+        isTouched &&
+        currentLocation.pathname !== nextLocation.pathname
     );
 
     return (
@@ -36,7 +41,9 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
           type="submit"
           disabled={isDisabled || isSubmitting}
           isLoading={isSubmitting}
-          isDisabled={isDisabled || isSubmitting || !isIdle || !isTouched}
+          isDisabled={
+            isDisabled || isSubmitting || !isIdle || (withBlocker && !isTouched)
+          }
           {...props}
         >
           {children}

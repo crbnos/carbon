@@ -55,7 +55,9 @@ const PasswordForm = () => {
           </VStack>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!passwordsMatch}>Update Password</Submit>
+          <Submit isDisabled={!passwordsMatch} withBlocker={false}>
+            Update Password
+          </Submit>
         </CardFooter>
       </ValidatedForm>
     </Card>
