@@ -23,8 +23,6 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
     const formState = useFormState(formId);
     const isTouched = Object.keys(formState.touchedFields).length > 0;
 
-    console.log({ formState });
-
     const blocker = useBlocker(
       ({ currentLocation, nextLocation }) =>
         isTouched && currentLocation.pathname !== nextLocation.pathname
