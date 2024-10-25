@@ -29209,6 +29209,7 @@ export type Database = {
           id: string
           jobId: string
           operationOrder: number
+          priority: number
           processId: string
           workCenterId: string
           description: string

@@ -16,8 +16,10 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useFetchers } from "@remix-run/react";
+import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
 import type { Column, DisplaySettings, Item } from "./types";
@@ -34,7 +36,21 @@ const Kanban = ({
   ...displaySettings
 }: KanbanProps) => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const [items, setItems] = useState<Item[]>(initialItems);
+
+  const itemsById = new Map<string, Item>(
+    initialItems.map((item) => [item.id, item])
+  );
+  const pendingItems = usePendingItems();
+
+  // merge pending items and existing items
+  for (let pendingItem of pendingItems) {
+    let item = itemsById.get(pendingItem.id);
+    if (item) {
+      itemsById.set(pendingItem.id, { ...item, ...pendingItem });
+    }
+  }
+
+  const items = Array.from(itemsById.values());
 
   const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
 
@@ -49,10 +65,6 @@ const Kanban = ({
       coordinateGetter,
     })
   );
-
-  useEffect(() => {
-    setItems(initialItems);
-  }, [initialItems]);
 
   function getDraggingItemData(itemId: UniqueIdentifier, columnId: string) {
     const itemsInColumn = items.filter((item) => item.columnId === columnId);
@@ -311,5 +323,26 @@ const Kanban = ({
     }
   }
 };
+
+function usePendingItems() {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return fetcher.formAction === path.to.updateScheduledOperation;
+    })
+    .map((fetcher) => {
+      let columnId = String(fetcher.formData.get("columnId"));
+      let id = String(fetcher.formData.get("id"));
+      let priority = Number(fetcher.formData.get("priority"));
+      let item: { id: string; priority: number; columnId: string } = {
+        id,
+        priority,
+        columnId,
+      };
+      return item;
+    });
+}
 
 export default Kanban;

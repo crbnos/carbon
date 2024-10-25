@@ -87,6 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         id: op.id,
         columnId: op.workCenterId,
         columnType: op.processId,
+        priority: op.priority,
         title: op.jobReadableId,
         subtitle: op.itemReadableId,
         description: op.description,
