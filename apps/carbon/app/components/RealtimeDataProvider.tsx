@@ -17,6 +17,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     company: { id: companyId },
   } = useUser();
 
+  useEffect(() => {
+    hydratedFromServer = false;
+  }, [companyId]);
+
   const [, setItems] = useItems();
   const [, setSuppliers] = useSuppliers();
   const [, setCustomers] = useCustomers();
