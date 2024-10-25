@@ -1,17 +1,10 @@
 import type { Database } from "@carbon/database";
-import { useInterval, useMount } from "@carbon/react";
+import { useInterval } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PropsWithChildren } from "react";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 
 import type { AuthSession } from "../../types";
 import { path } from "../../utils/path";
@@ -28,37 +21,11 @@ export const CarbonProvider = ({
 }: PropsWithChildren<{
   session: Partial<AuthSession>;
 }>) => {
-  const { accessToken, refreshToken, expiresAt } = session;
+  const { accessToken, expiresAt } = session;
   const initialLoad = useRef(true);
 
-  const [carbon, setCarbon] = useState<SupabaseClient<Database> | undefined>(
-    undefined
-  );
+  const carbon = useMemo(() => getCarbon(accessToken), [accessToken]);
   const refresh = useFetcher<{}>();
-
-  useEffect(() => {
-    if (!carbon || !accessToken || !refreshToken) return;
-
-    carbon.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-  }, [carbon, accessToken, refreshToken]);
-
-  useMount(() => {
-    const supabase = getCarbon(accessToken);
-    setCarbon(supabase);
-
-    // Enable auto-refresh of the session
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "TOKEN_REFRESHED" && session) {
-        refresh.submit(null, {
-          method: "post",
-          action: path.to.refreshSession,
-        });
-      }
-    });
-  });
 
   useEffect(() => {
     const handleFocus = () => {
@@ -80,17 +47,13 @@ export const CarbonProvider = ({
   }, [refresh]);
 
   useInterval(() => {
-    // refresh five minutes before expiry
-    const shouldRefresh = expiresAt - 60 * 5 < Date.now() / 1000;
+    // refresh ten minutes before expiry
+    const shouldRefresh = expiresAt - 60 * 10 < Date.now() / 1000;
 
     if (!initialLoad.current && shouldRefresh && carbon) {
-      carbon.auth.refreshSession().then(({ data, error }) => {
-        if (!error && data.session) {
-          refresh.submit(null, {
-            method: "post",
-            action: path.to.refreshSession,
-          });
-        }
+      refresh.submit(null, {
+        method: "post",
+        action: path.to.refreshSession,
       });
     }
 
