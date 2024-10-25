@@ -190,7 +190,6 @@ function SalesOrderLineItem({
         >
           <HStack spacing={2}>
             <ItemThumbnail
-              modelId={line.modelId}
               thumbnailPath={line.thumbnailPath}
               type="Part" // TODO
             />

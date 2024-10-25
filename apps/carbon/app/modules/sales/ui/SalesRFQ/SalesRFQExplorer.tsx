@@ -248,7 +248,6 @@ function SalesRFQLineItem({
         >
           <HStack spacing={2}>
             <ItemThumbnail
-              modelId={line.modelId}
               thumbnailPath={line.thumbnailPath}
               type={line.itemType as MethodItemType}
             />
