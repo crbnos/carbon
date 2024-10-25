@@ -7824,6 +7824,7 @@ export type Database = {
           operationUnitCost: number
           order: number
           overheadRate: number
+          priority: number
           processId: string
           quantityComplete: number | null
           quantityReworked: number | null
@@ -7860,6 +7861,7 @@ export type Database = {
           operationUnitCost?: number
           order?: number
           overheadRate?: number
+          priority?: number
           processId: string
           quantityComplete?: number | null
           quantityReworked?: number | null
@@ -7896,6 +7898,7 @@ export type Database = {
           operationUnitCost?: number
           order?: number
           overheadRate?: number
+          priority?: number
           processId?: string
           quantityComplete?: number | null
           quantityReworked?: number | null
@@ -22436,7 +22439,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string | null
+          supplierIds: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -23270,7 +23273,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string | null
+          supplierIds: string[] | null
           thumbnailPath: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -24361,7 +24364,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string | null
+          supplierIds: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -24735,7 +24738,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string | null
+          supplierIds: string[] | null
           thumbnailPath: string | null
           toDate: string | null
           unitOfMeasure: string | null
@@ -25534,14 +25537,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27296,14 +27299,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -28774,7 +28777,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string | null
+          supplierIds: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -29321,6 +29324,69 @@ export type Database = {
           workInstruction: Json
         }[]
       }
+      get_job_operations_by_location:
+        | {
+            Args: {
+              location_id: string
+            }
+            Returns: {
+              id: string
+              jobId: string
+              operationOrder: number
+              processId: string
+              workCenterId: string
+              description: string
+              setupTime: number
+              setupUnit: Database["public"]["Enums"]["factor"]
+              laborTime: number
+              laborUnit: Database["public"]["Enums"]["factor"]
+              machineTime: number
+              machineUnit: Database["public"]["Enums"]["factor"]
+              operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+              jobReadableId: string
+              jobStatus: Database["public"]["Enums"]["jobStatus"]
+              jobDueDate: string
+              jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+              parentMaterialId: string
+              itemReadableId: string
+              operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+              operationQuantity: number
+              quantityComplete: number
+              quantityScrapped: number
+            }[]
+          }
+        | {
+            Args: {
+              location_id: string
+              work_center_ids: string[]
+            }
+            Returns: {
+              id: string
+              jobId: string
+              operationOrder: number
+              processId: string
+              workCenterId: string
+              description: string
+              setupTime: number
+              setupUnit: Database["public"]["Enums"]["factor"]
+              laborTime: number
+              laborUnit: Database["public"]["Enums"]["factor"]
+              machineTime: number
+              machineUnit: Database["public"]["Enums"]["factor"]
+              operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+              jobReadableId: string
+              jobStatus: Database["public"]["Enums"]["jobStatus"]
+              jobDueDate: string
+              jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+              jobCustomerId: string
+              parentMaterialId: string
+              itemReadableId: string
+              operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+              operationQuantity: number
+              quantityComplete: number
+              quantityScrapped: number
+            }[]
+          }
       get_job_operations_by_work_center: {
         Args: {
           work_center_id: string
@@ -29975,7 +30041,6 @@ export type Database = {
           owner_id: string | null
           path_tokens: string[] | null
           updated_at: string | null
-          user_metadata: Json | null
           version: string | null
         }
         Insert: {
@@ -29989,7 +30054,6 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
-          user_metadata?: Json | null
           version?: string | null
         }
         Update: {
@@ -30003,7 +30067,6 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
-          user_metadata?: Json | null
           version?: string | null
         }
         Relationships: [
@@ -30025,7 +30088,6 @@ export type Database = {
           key: string
           owner_id: string | null
           upload_signature: string
-          user_metadata: Json | null
           version: string
         }
         Insert: {
@@ -30036,7 +30098,6 @@ export type Database = {
           key: string
           owner_id?: string | null
           upload_signature: string
-          user_metadata?: Json | null
           version: string
         }
         Update: {
@@ -30047,7 +30108,6 @@ export type Database = {
           key?: string
           owner_id?: string | null
           upload_signature?: string
-          user_metadata?: Json | null
           version?: string
         }
         Relationships: [
@@ -30183,10 +30243,6 @@ export type Database = {
           metadata: Json
           updated_at: string
         }[]
-      }
-      operation: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       search: {
         Args: {

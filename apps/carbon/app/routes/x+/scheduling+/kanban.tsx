@@ -21,30 +21,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
     columns: [
       {
         id: "1",
-        type: "assembly",
+        type: ["assembly"],
         title: "Assembly Station 1",
         active: true,
       },
       {
         id: "2",
-        type: "assembly",
+        type: ["assembly", "saw"],
         title: "Assembly Station 2",
       },
       {
         id: "3",
-        type: "saw",
+        type: ["saw"],
         title: "Band Saw",
       },
       {
         id: "4",
-        type: "grinder",
+        type: ["grinder"],
         title: "Bench Grinder",
         active: true,
       },
       {
         id: "5",
         title: "CNC Mill 1",
-        type: "cnc",
+        type: ["cnc"],
       },
     ] satisfies Column[],
     items: [
@@ -60,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         duration: 30 * 60 * 1000,
         deadlineType: "Hard Deadline",
         progress: 5 * 60 * 1000,
-        status: "IN_PROGRESS",
+        status: "In Progress",
       },
       {
         id: "item1",
@@ -72,7 +72,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         dueDate: "2024-05-30",
         duration: 2 * 60 * 60 * 1000,
         deadlineType: "Soft Deadline",
-        status: "PAUSED",
+        status: "Paused",
         progress: 1.3 * 60 * 60 * 1000,
       },
       {
@@ -86,7 +86,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         duration: 2 * 60 * 60 * 1000,
         deadlineType: "ASAP",
         customerId: "ca2f11f8-1464-4753-9690-00107f141f3a",
-        status: "READY",
+        status: "Ready",
       },
       {
         id: "item3",
@@ -97,7 +97,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         description: "Cut",
         duration: 10 * 60 * 1000,
         deadlineType: "No Deadline",
-        status: "READY",
+        status: "Ready",
       },
       {
         id: "item6",
@@ -109,7 +109,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         deadlineType: "No Deadline",
         duration: 2 * 60 * 60 * 1000,
         employeeIds: ["52cdefed-f4b7-45b1-9ec8-701473671fb7"],
-        status: "IN_PROGRESS",
+        status: "In Progress",
         progress: 35 * 60 * 1000,
       },
       {
@@ -121,7 +121,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         description: "Assemble",
         duration: 4 * 60 * 60 * 1000,
         deadlineType: "No Deadline",
-        status: "WAITING",
+        status: "Waiting",
       },
       {
         id: "item5",
@@ -133,7 +133,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         dueDate: "2024-05-20",
         duration: 4 * 60 * 60 * 1000,
         deadlineType: "Soft Deadline",
-        status: "WAITING",
+        status: "Waiting",
       },
 
       {
@@ -147,7 +147,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         duration: 20 * 60 * 1000,
         deadlineType: "Hard Deadline",
         customerId: "bcbe0bca-6516-4a6c-bb8a-b3942f1a9a33",
-        status: "TODO",
+        status: "Todo",
       },
       {
         id: "item8",
@@ -160,7 +160,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         duration: 2 * 60 * 60 * 1000,
         deadlineType: "Soft Deadline",
         customerId: "ca2f11f8-1464-4753-9690-00107f141f3a",
-        status: "TODO",
+        status: "Todo",
       },
       {
         id: "item9",
@@ -172,7 +172,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         dueDate: "2024-05-20",
         duration: 32 * 1000,
         deadlineType: "ASAP",
-        status: "TODO",
+        status: "Todo",
       },
       {
         id: "item10",
@@ -185,7 +185,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         duration: 6 * 60 * 60 * 1000,
         deadlineType: "No Deadline",
         customerId: "bcbe0bca-6516-4a6c-bb8a-b3942f1a9a33",
-        status: "TODO",
+        status: "Todo",
       },
     ] satisfies Item[],
   });

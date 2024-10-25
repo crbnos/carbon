@@ -359,6 +359,13 @@ export async function getWorkCenters(
   return query;
 }
 
+export async function getWorkCentersByLocation(
+  client: SupabaseClient<Database>,
+  locationId: string
+) {
+  return client.from("workCenters").select("*").eq("locationId", locationId);
+}
+
 export async function getWorkCentersList(
   client: SupabaseClient<Database>,
   companyId: string

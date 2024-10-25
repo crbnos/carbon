@@ -262,12 +262,18 @@ const Kanban = ({
 
     const activeData = active.data.current;
     const overData = over.data.current;
+    const overColumn =
+      overData?.type === "item"
+        ? columns.find((col) => col.id === overData.item.columnId)
+        : overData?.column;
 
     const isActiveAItem = activeData?.type === "item";
     const isOverAItem = overData?.type === "item";
 
     if (!isActiveAItem) return;
-    if (activeData?.item.columnType !== overData?.item?.columnType) return; // only allow drop if both columns are same type
+    // only allow drop if column type array includes item's column type
+    console.log(overColumn?.type, activeData?.item.columnType);
+    if (!overColumn?.type.includes(activeData?.item.columnType)) return;
 
     // Im dropping a Item over another Item
     if (isActiveAItem && isOverAItem) {

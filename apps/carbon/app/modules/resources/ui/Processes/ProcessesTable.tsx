@@ -47,6 +47,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         accessorKey: "name",
         header: "Process",
         cell: ({ row }) =>
+          row.original.processType === "Outside" ||
           ((row.original.workCenters as any[]) ?? []).length > 0 ? (
             <Enumerable
               value={row.original.name}
