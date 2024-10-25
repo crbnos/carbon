@@ -16,7 +16,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
-import { useFetchers } from "@remix-run/react";
+import { useFetchers, useSubmit } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { path } from "~/utils/path";
@@ -35,6 +35,7 @@ const Kanban = ({
   items: initialItems,
   ...displaySettings
 }: KanbanProps) => {
+  const submit = useSubmit();
   const [columns, setColumns] = useState<Column[]>(initialColumns);
 
   const itemsById = new Map<string, Item>(
@@ -289,37 +290,27 @@ const Kanban = ({
 
     // Im dropping a Item over another Item
     if (isActiveAItem && isOverAItem) {
-      setItems((items) => {
-        const activeIndex = items.findIndex((t) => t.id === activeId);
-        const overIndex = items.findIndex((t) => t.id === overId);
-        const activeItem = items[activeIndex];
-        const overItem = items[overIndex];
-        if (
-          activeItem &&
-          overItem &&
-          activeItem.columnId !== overItem.columnId
-        ) {
-          activeItem.columnId = overItem.columnId;
-          return arrayMove(items, activeIndex, overIndex - 1);
-        }
+      const activeItem = itemsById.get(activeId.toString());
+      const overItem = itemsById.get(overId.toString());
 
-        return arrayMove(items, activeIndex, overIndex);
-      });
+      if (activeItem && overItem && activeItem.columnId !== overItem.columnId) {
+        // TODO: submit form update to columnId and priority
+        return;
+      }
+
+      // TODO: submit form update to priority
+      return;
     }
 
     const isOverAColumn = overData?.type === "column";
 
     // Im dropping a Item over a column
     if (isActiveAItem && isOverAColumn) {
-      setItems((items) => {
-        const activeIndex = items.findIndex((t) => t.id === activeId);
-        const activeItem = items[activeIndex];
-        if (activeItem) {
-          activeItem.columnId = overId as string;
-          return arrayMove(items, activeIndex, activeIndex);
-        }
-        return items;
-      });
+      const activeItem = itemsById.get(activeId.toString());
+      const columnId = overId as string;
+      if (activeItem) {
+        // TODO: submit form update to columnId and priority
+      }
     }
   }
 };
