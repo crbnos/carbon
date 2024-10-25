@@ -56,9 +56,17 @@ export const useControllableValue = (
     context.formId,
     (state) => state.controlledFields.setValue
   );
+  const setTouched = useFormStore(context.formId, (state) => state.setTouched);
+  const defaultValue = useFieldDefaultValue(field, context);
+
   const setValue = useCallback(
-    (value: unknown) => setControlledFieldValue(field, value),
-    [field, setControlledFieldValue]
+    (value: unknown) => {
+      setControlledFieldValue(field, value);
+      if (value !== defaultValue) {
+        setTouched(field, true);
+      }
+    },
+    [field, setControlledFieldValue, setTouched, defaultValue]
   );
 
   const value = useControlledFieldValue(context, field);

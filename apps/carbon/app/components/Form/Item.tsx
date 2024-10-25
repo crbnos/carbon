@@ -131,7 +131,7 @@ const Item = ({
           id={typeFieldName}
           value={type}
         />
-        <div className="flex flex-grow min-w-0">
+        <div className="flex flex-grow items-start min-w-0">
           <CreatableCombobox
             className={cn(
               "flex-grow min-w-0",

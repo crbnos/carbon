@@ -174,6 +174,7 @@ const createFormState = (
   endSubmit: () =>
     set((state) => {
       state.isSubmitting = false;
+      state.touchedFields = {};
     }),
   setTouched: (fieldName, touched) =>
     set((state) => {
