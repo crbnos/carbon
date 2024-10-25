@@ -49,6 +49,11 @@ export const CarbonProvider = ({
   useInterval(() => {
     // refresh ten minutes before expiry
     const shouldRefresh = expiresAt - 60 * 10 < Date.now() / 1000;
+    const shouldReload = expiresAt < Date.now() / 1000;
+
+    if (shouldReload) {
+      window.location.reload();
+    }
 
     if (!initialLoad.current && shouldRefresh && carbon) {
       refresh.submit(null, {
