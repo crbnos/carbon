@@ -43,11 +43,21 @@ export const CarbonProvider = ({
       access_token: accessToken,
       refresh_token: refreshToken,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, refreshToken]);
+  }, [carbon, accessToken, refreshToken]);
 
   useMount(() => {
-    setCarbon(getCarbon(accessToken));
+    const supabase = getCarbon(accessToken);
+    setCarbon(supabase);
+
+    // Enable auto-refresh of the session
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "TOKEN_REFRESHED" && session) {
+        refresh.submit(null, {
+          method: "post",
+          action: path.to.refreshSession,
+        });
+      }
+    });
   });
 
   useEffect(() => {
@@ -70,21 +80,22 @@ export const CarbonProvider = ({
   }, [refresh]);
 
   useInterval(() => {
-    // refresh ten minutes before expiry
-    const shouldRefresh = expiresAt - 60 * 10 < Date.now() / 1000;
+    // refresh five minutes before expiry
+    const shouldRefresh = expiresAt - 60 * 5 < Date.now() / 1000;
 
-    if (!initialLoad.current && shouldRefresh) {
-      carbon.auth.refreshSession({
-        refresh_token: refreshToken,
-      });
-      refresh.submit(null, {
-        method: "post",
-        action: path.to.refreshSession,
+    if (!initialLoad.current && shouldRefresh && carbon) {
+      carbon.auth.refreshSession().then(({ data, error }) => {
+        if (!error && data.session) {
+          refresh.submit(null, {
+            method: "post",
+            action: path.to.refreshSession,
+          });
+        }
       });
     }
 
     initialLoad.current = false;
-  }, 15000);
+  }, 60000); // Check every minute
 
   const value = useMemo(() => ({ carbon, accessToken }), [carbon, accessToken]);
 
