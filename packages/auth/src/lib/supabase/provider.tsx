@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { useInterval } from "@carbon/react";
+import { useInterval, useMount } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -30,15 +30,25 @@ export const CarbonProvider = ({
 }>) => {
   const { accessToken, refreshToken, expiresAt } = session;
   const initialLoad = useRef(true);
-  const authenticatedClientLoaded = useRef(false);
+
   const [carbon, setCarbon] = useState<SupabaseClient<Database> | undefined>(
-    () => {
-      // prevents server side initial state
-      // init a default anonymous client in browser until we have an auth token
-      if (isBrowser) return getCarbon();
-    }
+    undefined
   );
   const refresh = useFetcher<{}>();
+
+  useEffect(() => {
+    if (!carbon || !accessToken || !refreshToken) return;
+
+    carbon.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, refreshToken]);
+
+  useMount(() => {
+    setCarbon(getCarbon(accessToken));
+  });
 
   useEffect(() => {
     const handleFocus = () => {
@@ -64,6 +74,9 @@ export const CarbonProvider = ({
     const shouldRefresh = expiresAt - 60 * 10 < Date.now() / 1000;
 
     if (!initialLoad.current && shouldRefresh) {
+      carbon.auth.refreshSession({
+        refresh_token: refreshToken,
+      });
       refresh.submit(null, {
         method: "post",
         action: path.to.refreshSession,
@@ -72,21 +85,6 @@ export const CarbonProvider = ({
 
     initialLoad.current = false;
   }, 15000);
-
-  if (isBrowser && accessToken && !authenticatedClientLoaded.current) {
-    // recreate a carbon client to force provider's consumer to rerender
-    setCarbon(getCarbon(accessToken));
-    authenticatedClientLoaded.current = true;
-  }
-
-  useEffect(() => {
-    if (!carbon || !accessToken || !refreshToken) return;
-
-    carbon.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-  }, [accessToken, refreshToken, carbon]);
 
   const value = useMemo(() => ({ carbon, accessToken }), [carbon, accessToken]);
 
