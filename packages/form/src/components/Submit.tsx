@@ -1,6 +1,15 @@
+import { useFormState } from "@carbon/form";
 import type { ButtonProps } from "@carbon/react";
-import { Button } from "@carbon/react";
-import { useNavigation } from "@remix-run/react";
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from "@carbon/react";
+import { useBlocker, useNavigation } from "@remix-run/react";
 import { forwardRef } from "react";
 import { useIsSubmitting } from "../hooks";
 
@@ -11,18 +20,50 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
     const isSubmitting = useIsSubmitting(formId);
     const transition = useNavigation();
     const isIdle = transition.state === "idle";
+    const formState = useFormState(formId);
+    const isTouched = Object.keys(formState.touchedFields).length > 0;
+
+    console.log({ formState });
+
+    const blocker = useBlocker(
+      ({ currentLocation, nextLocation }) =>
+        isTouched && currentLocation.pathname !== nextLocation.pathname
+    );
+
     return (
-      <Button
-        ref={ref}
-        form={formId}
-        type="submit"
-        disabled={isDisabled || isSubmitting}
-        isLoading={isSubmitting}
-        isDisabled={isDisabled || isSubmitting || !isIdle}
-        {...props}
-      >
-        {children}
-      </Button>
+      <>
+        <Button
+          ref={ref}
+          form={formId}
+          type="submit"
+          disabled={isDisabled || isSubmitting}
+          isLoading={isSubmitting}
+          isDisabled={isDisabled || isSubmitting || !isIdle || !isTouched}
+          {...props}
+        >
+          {children}
+        </Button>
+        {blocker.state === "blocked" && (
+          <Modal open onOpenChange={(open) => !open && blocker.reset()}>
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>Unsaved changes</ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <p>Are you sure you want to leave this page?</p>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="secondary" onClick={() => blocker.reset()}>
+                  Stay on this page
+                </Button>
+                <Button onClick={() => blocker.proceed()}>
+                  Leave this page
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        )}
+      </>
     );
   }
 );
