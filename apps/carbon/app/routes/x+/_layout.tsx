@@ -30,7 +30,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 }) => {
   if (
     currentUrl.pathname.startsWith("/x/settings") ||
-    currentUrl.pathname.startsWith("/x/users")
+    currentUrl.pathname.startsWith("/x/users") ||
+    currentUrl.pathname.startsWith("/refresh-session")
   ) {
     return true;
   }
