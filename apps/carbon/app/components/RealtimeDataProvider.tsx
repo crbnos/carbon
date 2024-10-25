@@ -41,7 +41,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
 
-    if (!carbon || !accessToken) return;
+    if (!carbon || !accessToken || hydratedFromServer) return;
 
     const [items, suppliers, customers, people] = await Promise.all([
       carbon
