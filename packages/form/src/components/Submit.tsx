@@ -41,9 +41,7 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
           type="submit"
           disabled={isDisabled || isSubmitting}
           isLoading={isSubmitting}
-          isDisabled={
-            isDisabled || isSubmitting || !isIdle || (withBlocker && !isTouched)
-          }
+          isDisabled={isDisabled || isSubmitting || !isIdle}
           {...props}
         >
           {children}

@@ -1,4 +1,4 @@
-import { Spinner, cn } from "@carbon/react";
+import { cn } from "@carbon/react";
 import { cva } from "class-variance-authority";
 import { LuSquareStack } from "react-icons/lu";
 import type { MethodItemType } from "~/modules/shared";
@@ -6,7 +6,6 @@ import { MethodItemTypeIcon } from "./Icons";
 
 interface ItemThumbnailProps {
   thumbnailPath?: string | null;
-  modelId?: string | null;
   type?: MethodItemType;
   size?: "sm" | "md" | "lg";
 }
@@ -74,10 +73,6 @@ const ItemThumbnail = ({
       className={itemVariants({ size, withPadding: false })}
       src={`/file/preview/private/${thumbnailPath}`}
     />
-  ) : !!modelId && !thumbnailPath ? (
-    <div className={cn(itemVariants({ size }))}>
-      <Spinner className={iconVariants({ size })} />
-    </div>
   ) : (
     <div className={cn(itemVariants({ size }))}>
       {type ? (
