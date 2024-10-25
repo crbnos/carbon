@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_job_operations_by_location(
+CREATE OR REPLACE FUNCTION get_active_job_operations_by_location(
   location_id TEXT,
   work_center_ids TEXT[]
 )
@@ -73,6 +73,7 @@ BEGIN
   WHERE CASE
     WHEN array_length(work_center_ids, 1) > 0 THEN jo."workCenterId" = ANY(work_center_ids)
     ELSE TRUE
-  END;
+  END
+  ORDER BY jo."priority";
 END;
 $$ LANGUAGE plpgsql;

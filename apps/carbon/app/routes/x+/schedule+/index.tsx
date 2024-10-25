@@ -4,15 +4,20 @@ import { path } from "~/utils/path";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { Button, HStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import type { Column } from "~/components/Kanban";
-import { getJobOperationsByLocation } from "~/modules/production";
+import { LuListFilter } from "react-icons/lu";
+import { SearchFilter } from "~/components";
+import type { Column, Item } from "~/components/Kanban";
+import { Kanban } from "~/components/Kanban";
+import { getActiveJobOperationsByLocation } from "~/modules/production";
 import {
   getLocationsList,
   getWorkCentersByLocation,
 } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { makeDurations } from "~/utils/duration";
 
 export const handle: Handle = {
   breadcrumb: "Schedule",
@@ -62,23 +67,77 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [workCenters, operations] = await Promise.all([
     getWorkCentersByLocation(client, locationId),
-    getJobOperationsByLocation(client, locationId),
+    getActiveJobOperationsByLocation(client, locationId),
   ]);
 
   return json({
-    columns: (workCenters.data?.map((wc) => ({
-      id: wc.id!,
-      title: wc.name!,
-      type:
-        (wc.processes as { id: string; name: string }[] | undefined)?.map(
-          (p) => p.id
-        ) ?? [],
-    })) ?? []) satisfies Column[],
-    operations: operations.data ?? [],
+    columns: (
+      workCenters.data?.map((wc) => ({
+        id: wc.id!,
+        title: wc.name!,
+        type:
+          (wc.processes as { id: string; name: string }[] | undefined)?.map(
+            (p) => p.id
+          ) ?? [],
+      })) ?? []
+    ).sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
+    items: (operations.data?.map((op) => {
+      const operation = makeDurations(op);
+      return {
+        id: op.id,
+        columnId: op.workCenterId,
+        columnType: op.processId,
+        title: op.jobReadableId,
+        subtitle: op.itemReadableId,
+        description: op.description,
+        dueDate: op.jobDueDate,
+        duration:
+          operation.setupDuration +
+          Math.max(operation.laborDuration, operation.machineDuration),
+        deadlineType: op.jobDeadlineType,
+        customerId: op.jobCustomerId,
+        status: op.operationStatus,
+      };
+    }) ?? []) satisfies Item[],
   });
 }
 
 export default function ScheduleRoute() {
-  const loaderData = useLoaderData<typeof loader>();
-  return <pre>{JSON.stringify(loaderData, null, 2)}</pre>;
+  const { columns, items } = useLoaderData<typeof loader>();
+
+  return (
+    <div className="flex flex-col h-full max-h-full  overflow-auto relative">
+      <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
+        <HStack>
+          <SearchFilter param="search" size="sm" placeholder="Search" />
+
+          <Button
+            rightIcon={<LuListFilter />}
+            role="combobox"
+            variant="secondary"
+            className={"!border-dashed border-border"}
+          >
+            Filter
+          </Button>
+        </HStack>
+      </HStack>
+      <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
+        <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
+          <div className="flex flex-1 min-h-0 w-full relative">
+            <Kanban
+              columns={columns}
+              items={items}
+              showDescription
+              showCustomer
+              showEmployee
+              showDueDate
+              showDuration
+              showProgress
+              showStatus
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

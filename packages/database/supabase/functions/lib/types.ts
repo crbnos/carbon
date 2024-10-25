@@ -29200,6 +29200,38 @@ export type Database = {
           quantityScrapped: number
         }[]
       }
+      get_active_job_operations_by_location: {
+        Args: {
+          location_id: string
+          work_center_ids: string[]
+        }
+        Returns: {
+          id: string
+          jobId: string
+          operationOrder: number
+          processId: string
+          workCenterId: string
+          description: string
+          setupTime: number
+          setupUnit: Database["public"]["Enums"]["factor"]
+          laborTime: number
+          laborUnit: Database["public"]["Enums"]["factor"]
+          machineTime: number
+          machineUnit: Database["public"]["Enums"]["factor"]
+          operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          jobDueDate: string
+          jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          jobCustomerId: string
+          parentMaterialId: string
+          itemReadableId: string
+          operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationQuantity: number
+          quantityComplete: number
+          quantityScrapped: number
+        }[]
+      }
       get_claims: {
         Args: {
           uid: string

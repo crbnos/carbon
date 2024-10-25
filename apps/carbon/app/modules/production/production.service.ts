@@ -58,12 +58,12 @@ export async function deleteProductionQuantity(
     .eq("id", productionQuantityId);
 }
 
-export async function getJobOperationsByLocation(
+export async function getActiveJobOperationsByLocation(
   client: SupabaseClient<Database>,
   locationId: string,
   workCenterIds: string[] = []
 ) {
-  return client.rpc("get_job_operations_by_location", {
+  return client.rpc("get_active_job_operations_by_location", {
     location_id: locationId,
     work_center_ids: workCenterIds,
   });

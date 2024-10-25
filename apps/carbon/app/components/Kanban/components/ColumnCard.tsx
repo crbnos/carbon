@@ -60,7 +60,7 @@ export function ColumnCard({
   };
 
   const variants = cva(
-    "w-[350px] max-w-full bg-primary-foreground flex flex-col flex-shrink-0 snap-center",
+    "w-[350px] max-w-full bg-primary-foreground flex flex-col flex-shrink-0 snap-center rounded-none",
     {
       variants: {
         dragging: {
@@ -76,11 +76,11 @@ export function ColumnCard({
     <Card
       ref={setNodeRef}
       style={style}
-      className={variants({
+      className={`${variants({
         dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
-      })}
+      })} h-[calc(100dvh-98px)] flex flex-col`}
     >
-      <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center">
+      <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-10">
         <div className="flex flex-grow items-start space-x-2">
           {column.active && <PulsingDot />}
           <div className="flex flex-col flex-grow">
@@ -96,14 +96,14 @@ export function ColumnCard({
           variant={"ghost"}
           {...attributes}
           {...listeners}
-          className=" p-1 text-foreground/50 -ml-2 h-auto cursor-grab relative"
+          className="p-1 text-foreground/50 -ml-2 h-auto cursor-grab relative"
         >
           <span className="sr-only">{`Move column: ${column.title}`}</span>
           <LuGripVertical />
         </Button>
       </CardHeader>
-      <ScrollArea>
-        <CardContent className="flex flex-grow flex-col gap-2 p-2">
+      <ScrollArea className="flex-grow">
+        <CardContent className="flex flex-col gap-2 p-2">
           <SortableContext items={itemsIds}>
             {items.map((item) => (
               <ItemCard key={item.id} item={item} {...displaySettings} />
@@ -118,7 +118,7 @@ export function ColumnCard({
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
 
-  const variations = cva("px-2 md:px-0 flex lg:justify-center pb-4", {
+  const variations = cva("px-0 flex lg:justify-center", {
     variants: {
       dragging: {
         default: "snap-x snap-mandatory",
@@ -133,7 +133,7 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
         dragging: dndContext.active ? "active" : "default",
       })}
     >
-      <div className="flex gap-0.5 items-start flex-row justify-start p-0.5">
+      <div className="flex gap-0 items-start flex-row justify-start p-0">
         {children}
       </div>
       <ScrollBar orientation="horizontal" />
