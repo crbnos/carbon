@@ -4,17 +4,15 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
-  toast,
   VStack,
   type JSONContent,
 } from "@carbon/react";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
-import { Outlet, useFetcher, useParams } from "@remix-run/react";
+import { Outlet, useParams, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { useCallback, useEffect } from "react";
 import { supportedFileTypes } from "~/components/CadModel";
 import type { SalesRFQLine } from "~/modules/sales";
 import {
@@ -101,48 +99,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function SalesRFQRoute() {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
-  const fetcher = useFetcher<{ error: string }>();
+  const submit = useSubmit();
 
   const pendingItems = useOptimisticDocumentDrag();
 
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data?.error);
-    }
-  }, [fetcher.data]);
+  const handleDrop = (
+    document: FileObject & { path: string },
+    targetId: string
+  ) => {
+    if (pendingItems.find((item) => item.id === document.id)) return;
 
-  const handleDrop = useCallback(
-    (document: FileObject & { path: string }, targetId: string) => {
-      if (pendingItems.find((item) => item.id === document.id)) return;
+    const fileName = document.name.split(".").slice(0, -1).join(".");
+    const fileExtension = document.name.split(".").pop()?.toLowerCase();
+    const is3DModel = fileExtension
+      ? supportedFileTypes.includes(fileExtension)
+      : false;
 
-      const fileName = document.name.split(".").slice(0, -1).join(".");
-      const fileExtension = document.name.split(".").pop()?.toLowerCase();
-      const is3DModel = fileExtension
-        ? supportedFileTypes.includes(fileExtension)
-        : false;
+    const formData = new FormData();
 
-      const formData = new FormData();
+    const payload = {
+      id: document.id,
+      customerPartId: fileName,
+      is3DModel: is3DModel ? true : undefined,
+      lineId: targetId.startsWith("sales-rfq-line-")
+        ? targetId.replace("sales-rfq-line-", "")
+        : undefined,
+      path: document.path,
+      salesRfqId: rfqId,
+    };
 
-      const payload = {
-        id: document.id,
-        customerPartId: fileName,
-        is3DModel: is3DModel ? true : undefined,
-        lineId: targetId.startsWith("sales-rfq-line-")
-          ? targetId.replace("sales-rfq-line-", "")
-          : undefined,
-        path: document.path,
-        salesRfqId: rfqId,
-      };
+    formData.append("payload", JSON.stringify(payload));
 
-      formData.append("payload", JSON.stringify(payload));
-
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.salesRfqDrag(rfqId),
-      });
-    },
-    [fetcher, rfqId]
-  );
+    submit(formData, {
+      method: "post",
+      action: path.to.salesRfqDrag(rfqId),
+      navigate: false,
+      fetcherKey: `drag-${document.id}`,
+    });
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { over, active } = event;

@@ -103,7 +103,12 @@ const OpportunityDocuments = ({
               {attachmentsToRender.length ? (
                 attachmentsToRender.map((attachment) => (
                   <Tr key={attachment.id}>
-                    <DraggableCell attachment={attachment} getPath={getPath} />
+                    <DraggableCell
+                      attachment={attachment}
+                      opportunity={opportunity}
+                      download={download}
+                      getPath={getPath}
+                    />
                     <Td className="text-xs font-mono">
                       {convertKbToString(
                         Math.floor((attachment.metadata?.size ?? 0) / 1024)
@@ -160,9 +165,13 @@ const OpportunityDocuments = ({
 
 const DraggableCell = ({
   attachment,
+  opportunity,
+  download,
   getPath,
 }: {
   attachment: FileObject;
+  opportunity: Opportunity;
+  download: (attachment: FileObject) => void;
   getPath: (attachment: FileObject) => string;
 }) => {
   const context = useDndContext();
@@ -311,6 +320,7 @@ export const useOpportunityDocuments = ({
         method: "post",
         action: path.to.newDocument,
         navigate: false,
+        fetcherKey: `new-document-${id}`,
       });
     },
     [id, submit, type]

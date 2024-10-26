@@ -90,22 +90,22 @@ export default function SalesRFQExplorer() {
     id: "sales-rfq-explorer",
   });
 
-  const linesById = new Map<
+  const linesByCustomerPartId = new Map<
     string,
     SalesRFQLine | z.infer<typeof salesRfqDragValidator>
-  >(salesRfqData?.lines.map((line) => [line.id!, line]));
+  >(salesRfqData?.lines.map((line) => [line.customerPartId!, line]));
   const pendingItems = useOptimisticDocumentDrag();
 
   // merge pending items and existing items
   for (let pendingItem of pendingItems) {
-    let item = linesById.get(pendingItem.id);
+    let item = linesByCustomerPartId.get(pendingItem.customerPartId!);
     let merged = item
       ? { ...item, ...pendingItem }
       : { ...pendingItem, salesRfqId: rfqId };
-    linesById.set(pendingItem.id, merged);
+    linesByCustomerPartId.set(pendingItem.customerPartId!, merged);
   }
 
-  const lines = Array.from(linesById.values());
+  const lines = Array.from(linesByCustomerPartId.values());
 
   return (
     <div
@@ -121,7 +121,7 @@ export default function SalesRFQExplorer() {
           {(salesRfqData?.lines && salesRfqData?.lines?.length > 0) ||
           lines.length > 0 ? (
             lines.map((line) =>
-              isOptimistic(line) ? (
+              !isSalesRFQLine(line) ? (
                 <OptimisticSalesRFQLineItem
                   key={line.id}
                   line={line as z.infer<typeof salesRfqDragValidator>}
@@ -187,10 +187,10 @@ export default function SalesRFQExplorer() {
   );
 }
 
-function isOptimistic(
+function isSalesRFQLine(
   line: SalesRFQLine | z.infer<typeof salesRfqDragValidator>
 ) {
-  return "path" in line && line.path === null;
+  return "id" in line && "order" in line && "unitOfMeasureCode" in line;
 }
 
 type DroppableSalesRFQLineItemProps = {
