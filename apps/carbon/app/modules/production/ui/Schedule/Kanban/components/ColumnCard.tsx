@@ -100,7 +100,7 @@ export function ColumnCard({
               </span>
             ) : (
               <span className="text-muted-foreground text-xs">
-                No scheduled operations
+                No scheduled time
               </span>
             )}
           </div>

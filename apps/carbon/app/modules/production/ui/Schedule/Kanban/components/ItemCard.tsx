@@ -196,7 +196,7 @@ export function ItemCard({
             <span className="text-sm">{item.status}</span>
           </HStack>
         )}
-        {showDuration && item.duration && (
+        {showDuration && typeof item.duration === "number" && (
           <HStack className="justify-start space-x-2">
             <LuTimer className="text-muted-foreground" />
             <span className="text-sm">
