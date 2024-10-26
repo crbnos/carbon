@@ -64,6 +64,7 @@ class ResourceManager {
         .select(["id", "locationId"])
         .where("locationId", "=", this.job?.locationId)
         .where("companyId", "=", this.companyId)
+        .where("active", "=", true)
         .execute(),
     ]);
 
@@ -307,6 +308,10 @@ class ResourceManager {
       workCenter: selectedWorkCenter,
       priority: priorityByWorkCenter.get(selectedWorkCenter) ?? 0,
     };
+  }
+
+  hasWorkCenter(workCenterId: string): boolean {
+    return this.operationsByWorkCenter.has(workCenterId);
   }
 
   addOperationToWorkCenter(workCenterId: string, operation: BaseOperation) {

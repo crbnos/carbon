@@ -425,3 +425,9 @@ export const productionQuantityValidator = z.object({
   createdBy: zfd.text(z.string().optional()),
   quantity: zfd.numeric(z.number().min(0)),
 });
+
+export const scheduleOperationUpdateValidator = z.object({
+  id: z.string().min(1, { message: "ID is required" }),
+  columnId: z.string().min(1, { message: "Column is required" }),
+  priority: zfd.numeric(z.number().min(0).optional()),
+});

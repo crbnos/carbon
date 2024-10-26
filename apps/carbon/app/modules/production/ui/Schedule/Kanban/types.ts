@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { deadlineTypes } from "~/modules/production";
+import { deadlineTypes, jobOperationStatus } from "~/modules/production";
 
 export const columnValidator = z.object({
   id: z.string(),
   title: z.string(),
   active: z.boolean().optional(),
-  type: z.string(),
+  type: z.array(z.string()),
 });
 
 export type Column = z.infer<typeof columnValidator>;
@@ -33,6 +33,7 @@ const itemValidator = z.object({
   columnType: z.string(),
   title: z.string(),
   subtitle: z.string().optional(),
+  priority: z.number(),
   customerId: z.string().optional(),
   employeeIds: z.array(z.string()).optional(),
   description: z.string().optional(),
@@ -40,17 +41,7 @@ const itemValidator = z.object({
   duration: z.number().optional(), // miliseconds
   deadlineType: z.enum(deadlineTypes).optional(),
   progress: z.number().optional(), // miliseconds
-  status: z
-    .enum([
-      "CANCELED",
-      "DONE",
-      "IN_PROGRESS",
-      "PAUSED",
-      "READY",
-      "TODO",
-      "WAITING",
-    ])
-    .optional(),
+  status: z.enum(jobOperationStatus).optional(),
 });
 
 export type Item = z.infer<typeof itemValidator>;

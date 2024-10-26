@@ -50,17 +50,17 @@ const cardVariants = cva(
           "ring-2 ring-primary hover:from-muted hover:via-muted hover:to-muted",
       },
       status: {
-        IN_PROGRESS: "border-emerald-600/30 from-emerald-600/10",
-        READY: "",
-        DONE: "",
-        PAUSED: "",
-        CANCELED: "",
-        WAITING: "border-red-500/30 from-red-500/10",
-        TODO: "border-border",
+        "In Progress": "border-emerald-600/30 from-emerald-600/10",
+        Ready: "",
+        Done: "",
+        Paused: "border-yellow-500/30 from-yellow-500/10",
+        Canceled: "border-red-500/30 from-red-500/10",
+        Waiting: "border-yellow-500/30 from-yellow-500/10",
+        Todo: "border-border",
       },
     },
     defaultVariants: {
-      status: "TODO",
+      status: "Todo",
     },
   }
 );
@@ -68,17 +68,17 @@ const cardVariants = cva(
 const cardHeaderVariants = cva("border-b", {
   variants: {
     status: {
-      IN_PROGRESS: "border-emerald-600/30",
-      READY: "",
-      DONE: "",
-      PAUSED: "",
-      CANCELED: "",
-      WAITING: "border-red-500/30",
-      TODO: "border-border",
+      "In Progress": "border-emerald-600/10",
+      Ready: "",
+      Done: "",
+      Paused: "border-yellow-500/10",
+      Canceled: "border-red-500/10",
+      Waiting: "border-yellow-500/10",
+      Todo: "border-border",
     },
   },
   defaultVariants: {
-    status: "TODO",
+    status: "Todo",
   },
 });
 
@@ -144,11 +144,13 @@ export function ItemCard({
         <div className="flex w-full max-w-full justify-between">
           <div className="flex flex-col space-y-0">
             {item.subtitle && (
-              <span className="text-xs text-muted-foreground truncate">
+              <span className="text-xs text-muted-foreground line-clamp-1">
                 {item.subtitle}
               </span>
             )}
-            <span className="mr-auto font-semibold truncate">{item.title}</span>
+            <span className="mr-auto font-semibold line-clamp-1">
+              {item.title}
+            </span>
           </div>
           <Button
             variant={"ghost"}
@@ -162,10 +164,10 @@ export function ItemCard({
         </div>
 
         {showProgress &&
-          ["PAUSED", "DONE", "IN_PROGRESS"].includes(item.status!) && (
+          ["Paused", "Done", "In Progress"].includes(item.status!) && (
             <Progress
               indicatorClassName={
-                item.status === "PAUSED" ? "bg-yellow-500" : ""
+                item.status === "Paused" ? "bg-yellow-500" : ""
               }
               numerator={
                 item.progress ? formatDurationMilliseconds(item.progress) : ""
@@ -185,16 +187,16 @@ export function ItemCard({
         {showDescription && item.description && (
           <HStack className="justify-start space-x-2">
             <LuClipboardCheck className="text-muted-foreground" />
-            <span className="text-sm">{item.description}</span>
+            <span className="text-sm line-clamp-1">{item.description}</span>
           </HStack>
         )}
         {showStatus && item.status && (
           <HStack className="justify-start space-x-2">
             {getStatusIcon(item.status)}
-            <span className="text-sm">{getStatusText(item.status)}</span>
+            <span className="text-sm">{item.status}</span>
           </HStack>
         )}
-        {showDuration && item.duration && (
+        {showDuration && typeof item.duration === "number" && (
           <HStack className="justify-start space-x-2">
             <LuTimer className="text-muted-foreground" />
             <span className="text-sm">
@@ -246,38 +248,19 @@ export function ItemCard({
 
 function getStatusIcon(status: Item["status"]) {
   switch (status) {
-    case "READY":
-    case "TODO":
+    case "Ready":
+    case "Todo":
       return <TodoStatusIcon className="text-foreground" />;
-    case "WAITING":
-    case "CANCELED":
+    case "Waiting":
+    case "Canceled":
       return <LuXCircle className="text-muted-foreground" />;
-    case "DONE":
+    case "Done":
       return <LuCheckCircle className="text-blue-600" />;
-    case "IN_PROGRESS":
+    case "In Progress":
       return <AlmostDoneIcon />;
-    case "PAUSED":
+    case "Paused":
       return <InProgressStatusIcon />;
     default:
       return null;
-  }
-}
-
-function getStatusText(status: Item["status"], overdue: boolean = false) {
-  switch (status) {
-    case "READY":
-      return "Ready";
-    case "TODO":
-      return "Todo";
-    case "WAITING":
-      return "Waiting";
-    case "CANCELED":
-      return "Canceled";
-    case "DONE":
-      return "Done";
-    case "IN_PROGRESS":
-      return "In progress";
-    case "PAUSED":
-      return "Paused";
   }
 }

@@ -57,13 +57,15 @@ class SchedulingEngine {
               continue;
             }
 
-            const result = operation.workCenterId
-              ? this.resourceManager.getPriorityByWorkCenterId(
-                  operation.workCenterId
-                )
-              : this.resourceManager.getWorkCenterAndPriorityByProcessId(
-                  operation.processId
-                );
+            const result =
+              operation.workCenterId &&
+              this.resourceManager.hasWorkCenter(operation.workCenterId)
+                ? this.resourceManager.getPriorityByWorkCenterId(
+                    operation.workCenterId
+                  )
+                : this.resourceManager.getWorkCenterAndPriorityByProcessId(
+                    operation.processId
+                  );
 
             console.log(
               `Updating operation ${operation.id} with priority ${result.priority} and work center ${result.workCenter}`

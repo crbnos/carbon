@@ -27,7 +27,7 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
-        name: "Shipping Methods",
+        name: "Shipping",
         to: path.to.shippingMethods,
         role: "employee",
         icon: <LuTruck />,
