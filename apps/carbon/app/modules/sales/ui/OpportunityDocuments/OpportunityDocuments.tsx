@@ -23,7 +23,12 @@ import {
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import { useDndContext, useDraggable } from "@dnd-kit/core";
-import { Outlet, useRevalidator, useSubmit } from "@remix-run/react";
+import {
+  Outlet,
+  useFetchers,
+  useRevalidator,
+  useSubmit,
+} from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -62,8 +67,6 @@ const OpportunityDocuments = ({
       type,
     });
 
-  const optimisticData = useOptimisticDocumentDrag();
-
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       upload(acceptedFiles);
@@ -71,56 +74,21 @@ const OpportunityDocuments = ({
     [upload]
   );
 
-  const DraggableCell = ({ attachment }: { attachment: FileObject }) => {
-    const context = useDndContext();
-    const { attributes, listeners, setNodeRef, transform } = useDraggable({
-      id: attachment.id,
-      data: {
-        ...attachment,
-        path: getPath(attachment),
-      },
-    });
+  const optimisticDrags = useOptimisticDocumentDrag();
 
-    const style = transform
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-          zIndex: 1000,
-        }
-      : undefined;
+  const attachmentsByName = new Map<string, FileObject | OptimisticFileObject>(
+    attachments.map((file) => [file.name, file])
+  );
+  const pendingItems = usePendingItems();
+  for (let pendingItem of pendingItems) {
+    let item = attachmentsByName.get(pendingItem.name);
+    let merged = item ? { ...item, ...pendingItem } : pendingItem;
+    attachmentsByName.set(pendingItem.name, merged);
+  }
 
-    return (
-      <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
-        <HStack>
-          {context.droppableContainers.size > 0 && <LuGripVertical />}
-          <DocumentIcon type={getDocumentType(attachment.name)} />
-          <span className="font-medium" onClick={() => download(attachment)}>
-            {["PDF", "Image"].includes(getDocumentType(attachment.name)) ? (
-              <DocumentPreview
-                bucket="private"
-                pathToFile={getPath(attachment)}
-                // @ts-ignore
-                type={getDocumentType(attachment.name)}
-              >
-                {attachment.name}
-              </DocumentPreview>
-            ) : (
-              attachment.name
-            )}
-          </span>
-          {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
-            <Badge variant="secondary">
-              <LuShoppingCart />
-            </Badge>
-          )}
-          {opportunity?.requestForQuoteDocumentPath === getPath(attachment) && (
-            <Badge variant="secondary">
-              <LuRadioTower />
-            </Badge>
-          )}
-        </HStack>
-      </Td>
-    );
-  };
+  const attachmentsToRender = Array.from(attachmentsByName.values())
+    .filter((d) => !optimisticDrags?.find((o) => o.id === d.id))
+    .sort((a, b) => a.name.localeCompare(b.name)) as FileObject[];
 
   return (
     <>
@@ -147,45 +115,48 @@ const OpportunityDocuments = ({
               </Tr>
             </Thead>
             <Tbody>
-              {attachments.length ? (
-                attachments
-                  .filter((d) => d.id !== optimisticData?.id)
-                  .map((attachment) => (
-                    <Tr key={attachment.id}>
-                      <DraggableCell attachment={attachment} />
-                      <Td className="text-xs font-mono">
-                        {convertKbToString(
-                          Math.floor((attachment.metadata?.size ?? 0) / 1024)
-                        )}
-                      </Td>
-                      <Td>
-                        <div className="flex justify-end gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <IconButton
-                                aria-label="More"
-                                icon={<MdMoreVert />}
-                                variant="secondary"
-                              />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() => download(attachment)}
-                              >
-                                Download
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={!canDelete}
-                                onClick={() => deleteAttachment(attachment)}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </Td>
-                    </Tr>
-                  ))
+              {attachmentsToRender.length ? (
+                attachmentsToRender.map((attachment) => (
+                  <Tr key={attachment.id}>
+                    <DraggableCell
+                      attachment={attachment}
+                      opportunity={opportunity}
+                      download={download}
+                      getPath={getPath}
+                    />
+                    <Td className="text-xs font-mono">
+                      {convertKbToString(
+                        Math.floor((attachment.metadata?.size ?? 0) / 1024)
+                      )}
+                    </Td>
+                    <Td>
+                      <div className="flex justify-end gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <IconButton
+                              aria-label="More"
+                              icon={<MdMoreVert />}
+                              variant="secondary"
+                            />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem
+                              onClick={() => download(attachment)}
+                            >
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!canDelete}
+                              onClick={() => deleteAttachment(attachment)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </Td>
+                  </Tr>
+                ))
               ) : (
                 <Tr>
                   <Td
@@ -204,6 +175,69 @@ const OpportunityDocuments = ({
 
       <Outlet />
     </>
+  );
+};
+
+const DraggableCell = ({
+  attachment,
+  opportunity,
+  download,
+  getPath,
+}: {
+  attachment: FileObject;
+  opportunity: Opportunity;
+  download: (attachment: FileObject) => void;
+  getPath: (attachment: FileObject) => string;
+}) => {
+  const context = useDndContext();
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: attachment.id,
+    data: {
+      ...attachment,
+      path: getPath(attachment),
+    },
+  });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: 1000,
+      }
+    : undefined;
+
+  return (
+    <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <HStack>
+        {context.droppableContainers.size > 0 && (
+          <LuGripVertical className="w-4 h-4 flex-shrink-0" />
+        )}
+        <DocumentIcon type={getDocumentType(attachment.name)} />
+        <span className="font-medium" onClick={() => download(attachment)}>
+          {["PDF", "Image"].includes(getDocumentType(attachment.name)) ? (
+            <DocumentPreview
+              bucket="private"
+              pathToFile={getPath(attachment)}
+              // @ts-ignore
+              type={getDocumentType(attachment.name)}
+            >
+              {attachment.name}
+            </DocumentPreview>
+          ) : (
+            attachment.name
+          )}
+        </span>
+        {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
+          <Badge variant="secondary">
+            <LuShoppingCart />
+          </Badge>
+        )}
+        {opportunity?.requestForQuoteDocumentPath === getPath(attachment) && (
+          <Badge variant="secondary">
+            <LuRadioTower />
+          </Badge>
+        )}
+      </HStack>
+    </Td>
   );
 };
 
@@ -300,6 +334,8 @@ export const useOpportunityDocuments = ({
       submit(formData, {
         method: "post",
         action: path.to.newDocument,
+        navigate: false,
+        fetcherKey: `opportunity:${name}`,
       });
     },
     [id, submit, type]
@@ -373,3 +409,37 @@ const OpportunityDocumentForm = (props: OpportunityDocumentFormProps) => {
 };
 
 export default OpportunityDocuments;
+
+type OptimisticFileObject = Omit<
+  FileObject,
+  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
+>;
+export const usePendingItems = () => {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return fetcher.formAction === path.to.newDocument;
+    })
+    .reduce<OptimisticFileObject[]>((acc, fetcher) => {
+      const path = fetcher.formData.get("path") as string;
+      const name = fetcher.formData.get("name") as string;
+      const size = parseInt(fetcher.formData.get("size") as string, 10) * 1024;
+
+      if (path && name && size) {
+        const newItem: OptimisticFileObject = {
+          id: path,
+          name: name,
+          bucket_id: "private",
+          metadata: {
+            size,
+            mimetype: getDocumentType(name),
+          },
+        };
+        return [...acc, newItem];
+      }
+      return acc;
+    }, []);
+};

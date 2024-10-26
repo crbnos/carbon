@@ -19,14 +19,16 @@ import {
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
-import { Link, useParams } from "@remix-run/react";
+import { Link, useFetchers, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
+import type { z } from "zod";
 import { Empty, ItemThumbnail } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { salesRfqDragValidator } from "../../sales.models";
 import type { SalesRFQ, SalesRFQLine } from "../../types";
 import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
 import SalesRFQLineForm from "./SalesRFQLineForm";
@@ -80,8 +82,6 @@ export default function SalesRFQExplorer() {
     unitOfMeasureCode: "EA",
   };
 
-  const optimisticData = useOptimisticDocumentDrag();
-
   const isDisabled = ["Ready for Quote"].includes(
     salesRfqData?.rfqSummary.status ?? ""
   );
@@ -90,7 +90,22 @@ export default function SalesRFQExplorer() {
     id: "sales-rfq-explorer",
   });
 
-  const hasOptimisticData = optimisticData && !optimisticData.lineId;
+  const linesByCustomerPartId = new Map<
+    string,
+    SalesRFQLine | z.infer<typeof salesRfqDragValidator>
+  >(salesRfqData?.lines.map((line) => [line.customerPartId!, line]));
+  const pendingItems = useOptimisticDocumentDrag();
+
+  // merge pending items and existing items
+  for (let pendingItem of pendingItems) {
+    let item = linesByCustomerPartId.get(pendingItem.customerPartId!);
+    let merged = item
+      ? { ...item, ...pendingItem }
+      : { ...pendingItem, salesRfqId: rfqId };
+    linesByCustomerPartId.set(pendingItem.customerPartId!, merged);
+  }
+
+  const lines = Array.from(linesByCustomerPartId.values());
 
   return (
     <div
@@ -104,15 +119,22 @@ export default function SalesRFQExplorer() {
       <VStack className="w-full h-[calc(100vh-99px)] justify-between">
         <VStack className="flex-1 overflow-y-auto" spacing={0}>
           {(salesRfqData?.lines && salesRfqData?.lines?.length > 0) ||
-          hasOptimisticData ? (
-            salesRfqData?.lines.map((line) => (
-              <DroppableSalesRFQLineItem
-                key={line.id}
-                line={line}
-                isDisabled={isDisabled}
-                onDelete={onDeleteLine}
-              />
-            ))
+          lines.length > 0 ? (
+            lines.map((line) =>
+              !isSalesRFQLine(line) ? (
+                <OptimisticSalesRFQLineItem
+                  key={line.id}
+                  line={line as z.infer<typeof salesRfqDragValidator>}
+                />
+              ) : (
+                <DroppableSalesRFQLineItem
+                  key={line.id}
+                  line={line as SalesRFQLine}
+                  isDisabled={isDisabled}
+                  onDelete={onDeleteLine}
+                />
+              )
+            )
           ) : (
             <Empty>
               {permissions.can("update", "sales") && (
@@ -126,24 +148,6 @@ export default function SalesRFQExplorer() {
                 </Button>
               )}
             </Empty>
-          )}
-          {hasOptimisticData && (
-            <VStack spacing={0} className="border-b border-border">
-              <HStack className="w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer">
-                <HStack spacing={2}>
-                  <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
-                    <Spinner className="w-6 h-6 text-muted-foreground" />
-                  </div>
-
-                  <VStack spacing={0}>
-                    <span className="font-semibold line-clamp-1">
-                      {optimisticData.customerPartId}
-                    </span>
-                  </VStack>
-                </HStack>
-                <HStack spacing={0}></HStack>
-              </HStack>
-            </VStack>
           )}
         </VStack>
         <div className="w-full flex flex-0 sm:flex-row border-t border-border p-4 sm:justify-start sm:space-x-2">
@@ -183,11 +187,42 @@ export default function SalesRFQExplorer() {
   );
 }
 
+function isSalesRFQLine(
+  line: SalesRFQLine | z.infer<typeof salesRfqDragValidator>
+) {
+  return "id" in line && "order" in line && "unitOfMeasureCode" in line;
+}
+
 type DroppableSalesRFQLineItemProps = {
   line: SalesRFQLine;
   isDisabled: boolean;
   onDelete: (line: SalesRFQLine) => void;
 };
+
+function OptimisticSalesRFQLineItem({
+  line,
+}: {
+  line: z.infer<typeof salesRfqDragValidator>;
+}) {
+  return (
+    <VStack spacing={0} className="border-b border-border">
+      <HStack className="w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer">
+        <HStack spacing={2}>
+          <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+            <Spinner className="w-6 h-6 text-muted-foreground" />
+          </div>
+
+          <VStack spacing={0}>
+            <span className="font-semibold line-clamp-1">
+              {line.customerPartId}
+            </span>
+          </VStack>
+        </HStack>
+        <HStack spacing={0}></HStack>
+      </HStack>
+    </VStack>
+  );
+}
 
 function DroppableSalesRFQLineItem({
   line,
@@ -291,4 +326,29 @@ function SalesRFQLineItem({
       </Link>
     </VStack>
   );
+}
+
+export function useOptimisticSalesRFQLineDrag() {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+  const { rfqId } = useParams();
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return fetcher.formAction === path.to.salesRfqDrag(rfqId!);
+    })
+    .reduce<z.infer<typeof salesRfqDragValidator>[]>((acc, fetcher) => {
+      const payload = fetcher?.formData?.get("payload");
+      if (payload) {
+        try {
+          const parsedPayload = salesRfqDragValidator.parse(
+            JSON.parse(payload as string)
+          );
+          return [...acc, parsedPayload];
+        } catch {
+          // nothing
+        }
+      }
+      return acc;
+    }, []);
 }

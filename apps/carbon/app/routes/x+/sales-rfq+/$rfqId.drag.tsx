@@ -154,5 +154,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  throw redirect(path.to.salesRfqDetails(rfqId));
+  return json({ success: true });
 }

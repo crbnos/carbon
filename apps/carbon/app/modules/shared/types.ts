@@ -1,3 +1,4 @@
+import type { StorageItem } from "~/types";
 import type { methodItemType, methodType } from "./shared.models";
 import type { getNotes } from "./shared.service";
 
@@ -35,6 +36,11 @@ export type MethodType = (typeof methodType)[number];
 export type Note = NonNullable<
   Awaited<ReturnType<typeof getNotes>>["data"]
 >[number];
+
+export type OptimisticFileObject = Omit<
+  StorageItem,
+  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
+>;
 
 export const standardFactorType = [
   "Hours/Piece",
