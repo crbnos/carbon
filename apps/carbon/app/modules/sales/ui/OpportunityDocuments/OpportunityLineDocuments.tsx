@@ -272,17 +272,19 @@ const OpportunityLineDocuments = ({
     [upload]
   );
 
-  const attachmentsByPath = new Map<string, FileObject | OptimisticFileObject>(
-    files.map((file) => [file.id, file])
+  const attachmentsByName = new Map<string, FileObject | OptimisticFileObject>(
+    files.map((file) => [file.name, file])
   );
   const pendingItems = usePendingItems();
   for (let pendingItem of pendingItems) {
-    let item = attachmentsByPath.get(pendingItem.id);
+    let item = attachmentsByName.get(pendingItem.name);
     let merged = item ? { ...item, ...pendingItem } : pendingItem;
-    attachmentsByPath.set(pendingItem.id, merged);
+    attachmentsByName.set(pendingItem.name, merged);
   }
 
-  const allFiles = Array.from(attachmentsByPath.values()) as FileObject[];
+  const allFiles = Array.from(attachmentsByName.values()).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  ) as FileObject[];
 
   return (
     <>
@@ -478,7 +480,7 @@ const usePendingItems = () => {
     .reduce<OptimisticFileObject[]>((acc, fetcher) => {
       const path = fetcher.formData.get("path") as string;
       const name = fetcher.formData.get("name") as string;
-      const size = parseInt(fetcher.formData.get("size") as string, 10);
+      const size = parseInt(fetcher.formData.get("size") as string, 10) * 1024;
 
       if (path && name && size) {
         const newItem: OptimisticFileObject = {

@@ -75,12 +75,20 @@ const OpportunityDocuments = ({
   );
 
   const optimisticDrags = useOptimisticDocumentDrag();
-  const pendingItems = usePendingItems();
 
-  const attachmentsToRender = attachments
+  const attachmentsByName = new Map<string, FileObject | OptimisticFileObject>(
+    attachments.map((file) => [file.name, file])
+  );
+  const pendingItems = usePendingItems();
+  for (let pendingItem of pendingItems) {
+    let item = attachmentsByName.get(pendingItem.name);
+    let merged = item ? { ...item, ...pendingItem } : pendingItem;
+    attachmentsByName.set(pendingItem.name, merged);
+  }
+
+  const attachmentsToRender = Array.from(attachmentsByName.values())
     .filter((d) => !optimisticDrags?.find((o) => o.id === d.id))
-    .concat(...(pendingItems as FileObject[]))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name)) as FileObject[];
 
   return (
     <>
@@ -418,7 +426,7 @@ export const usePendingItems = () => {
     .reduce<OptimisticFileObject[]>((acc, fetcher) => {
       const path = fetcher.formData.get("path") as string;
       const name = fetcher.formData.get("name") as string;
-      const size = parseInt(fetcher.formData.get("size") as string, 10);
+      const size = parseInt(fetcher.formData.get("size") as string, 10) * 1024;
 
       if (path && name && size) {
         const newItem: OptimisticFileObject = {
