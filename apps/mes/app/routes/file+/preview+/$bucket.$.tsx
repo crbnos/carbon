@@ -43,7 +43,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const headers = new Headers({
     "Content-Type": contentType,
-    "Cache-Control": "public, max-age=31536000", // Cache for a year
+    "Cache-Control": "private, max-age=31536000, immutable", // Cache for a year
   });
   return new Response(result.data, { status: 200, headers });
 };
