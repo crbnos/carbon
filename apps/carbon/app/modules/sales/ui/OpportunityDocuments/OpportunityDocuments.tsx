@@ -62,7 +62,7 @@ const OpportunityDocuments = ({
       type,
     });
 
-  const optimisticData = useOptimisticDocumentDrag();
+  const pendingItems = useOptimisticDocumentDrag();
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -91,7 +91,9 @@ const OpportunityDocuments = ({
     return (
       <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
         <HStack>
-          {context.droppableContainers.size > 0 && <LuGripVertical />}
+          {context.droppableContainers.size > 0 && (
+            <LuGripVertical className="w-4 h-4 flex-shrink-0" />
+          )}
           <DocumentIcon type={getDocumentType(attachment.name)} />
           <span className="font-medium" onClick={() => download(attachment)}>
             {["PDF", "Image"].includes(getDocumentType(attachment.name)) ? (
@@ -149,7 +151,7 @@ const OpportunityDocuments = ({
             <Tbody>
               {attachments.length ? (
                 attachments
-                  .filter((d) => d.id !== optimisticData?.id)
+                  .filter((d) => !pendingItems?.find((o) => o.id === d.id))
                   .map((attachment) => (
                     <Tr key={attachment.id}>
                       <DraggableCell attachment={attachment} />
