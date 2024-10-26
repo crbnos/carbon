@@ -368,6 +368,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
           submit(formData, {
             method: "post",
             action: path.to.newDocument,
+            navigate: false,
           });
         }
       }

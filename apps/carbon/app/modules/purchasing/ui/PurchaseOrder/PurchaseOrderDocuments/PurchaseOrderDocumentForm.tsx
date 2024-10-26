@@ -68,6 +68,7 @@ const PurchaseOrderDocumentForm = ({
     submit(formData, {
       method: "post",
       action: path.to.newDocument,
+      navigate: false,
     });
   };
 

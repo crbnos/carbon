@@ -179,6 +179,7 @@ const useOpportunityLineDocuments = ({
       submit(formData, {
         method: "post",
         action: path.to.newDocument,
+        navigate: false,
       });
     },
     [id, submit, type]

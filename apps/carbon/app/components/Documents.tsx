@@ -189,6 +189,7 @@ const Documents = ({
           submit(formData, {
             method: "post",
             action: path.to.newDocument,
+            navigate: false,
           });
         }
       }
