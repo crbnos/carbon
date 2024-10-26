@@ -71,58 +71,9 @@ const OpportunityDocuments = ({
     [upload]
   );
 
-  const DraggableCell = ({ attachment }: { attachment: FileObject }) => {
-    const context = useDndContext();
-    const { attributes, listeners, setNodeRef, transform } = useDraggable({
-      id: attachment.id,
-      data: {
-        ...attachment,
-        path: getPath(attachment),
-      },
-    });
-
-    const style = transform
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-          zIndex: 1000,
-        }
-      : undefined;
-
-    return (
-      <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
-        <HStack>
-          {context.droppableContainers.size > 0 && (
-            <LuGripVertical className="w-4 h-4 flex-shrink-0" />
-          )}
-          <DocumentIcon type={getDocumentType(attachment.name)} />
-          <span className="font-medium" onClick={() => download(attachment)}>
-            {["PDF", "Image"].includes(getDocumentType(attachment.name)) ? (
-              <DocumentPreview
-                bucket="private"
-                pathToFile={getPath(attachment)}
-                // @ts-ignore
-                type={getDocumentType(attachment.name)}
-              >
-                {attachment.name}
-              </DocumentPreview>
-            ) : (
-              attachment.name
-            )}
-          </span>
-          {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
-            <Badge variant="secondary">
-              <LuShoppingCart />
-            </Badge>
-          )}
-          {opportunity?.requestForQuoteDocumentPath === getPath(attachment) && (
-            <Badge variant="secondary">
-              <LuRadioTower />
-            </Badge>
-          )}
-        </HStack>
-      </Td>
-    );
-  };
+  const attachmentsToRender = attachments.filter(
+    (d) => !pendingItems?.find((o) => o.id === d.id)
+  );
 
   return (
     <>
@@ -149,45 +100,43 @@ const OpportunityDocuments = ({
               </Tr>
             </Thead>
             <Tbody>
-              {attachments.length ? (
-                attachments
-                  .filter((d) => !pendingItems?.find((o) => o.id === d.id))
-                  .map((attachment) => (
-                    <Tr key={attachment.id}>
-                      <DraggableCell attachment={attachment} />
-                      <Td className="text-xs font-mono">
-                        {convertKbToString(
-                          Math.floor((attachment.metadata?.size ?? 0) / 1024)
-                        )}
-                      </Td>
-                      <Td>
-                        <div className="flex justify-end gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <IconButton
-                                aria-label="More"
-                                icon={<MdMoreVert />}
-                                variant="secondary"
-                              />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() => download(attachment)}
-                              >
-                                Download
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={!canDelete}
-                                onClick={() => deleteAttachment(attachment)}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </Td>
-                    </Tr>
-                  ))
+              {attachmentsToRender.length ? (
+                attachmentsToRender.map((attachment) => (
+                  <Tr key={attachment.id}>
+                    <DraggableCell attachment={attachment} getPath={getPath} />
+                    <Td className="text-xs font-mono">
+                      {convertKbToString(
+                        Math.floor((attachment.metadata?.size ?? 0) / 1024)
+                      )}
+                    </Td>
+                    <Td>
+                      <div className="flex justify-end gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <IconButton
+                              aria-label="More"
+                              icon={<MdMoreVert />}
+                              variant="secondary"
+                            />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem
+                              onClick={() => download(attachment)}
+                            >
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!canDelete}
+                              onClick={() => deleteAttachment(attachment)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </Td>
+                  </Tr>
+                ))
               ) : (
                 <Tr>
                   <Td
@@ -206,6 +155,65 @@ const OpportunityDocuments = ({
 
       <Outlet />
     </>
+  );
+};
+
+const DraggableCell = ({
+  attachment,
+  getPath,
+}: {
+  attachment: FileObject;
+  getPath: (attachment: FileObject) => string;
+}) => {
+  const context = useDndContext();
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: attachment.id,
+    data: {
+      ...attachment,
+      path: getPath(attachment),
+    },
+  });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: 1000,
+      }
+    : undefined;
+
+  return (
+    <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <HStack>
+        {context.droppableContainers.size > 0 && (
+          <LuGripVertical className="w-4 h-4 flex-shrink-0" />
+        )}
+        <DocumentIcon type={getDocumentType(attachment.name)} />
+        <span className="font-medium" onClick={() => download(attachment)}>
+          {["PDF", "Image"].includes(getDocumentType(attachment.name)) ? (
+            <DocumentPreview
+              bucket="private"
+              pathToFile={getPath(attachment)}
+              // @ts-ignore
+              type={getDocumentType(attachment.name)}
+            >
+              {attachment.name}
+            </DocumentPreview>
+          ) : (
+            attachment.name
+          )}
+        </span>
+        {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
+          <Badge variant="secondary">
+            <LuShoppingCart />
+          </Badge>
+        )}
+        {opportunity?.requestForQuoteDocumentPath === getPath(attachment) && (
+          <Badge variant="secondary">
+            <LuRadioTower />
+          </Badge>
+        )}
+      </HStack>
+    </Td>
   );
 };
 

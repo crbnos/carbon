@@ -30,6 +30,7 @@ import {
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useOptimisticDocumentDrag } from "~/modules/sales/ui/SalesRFQ/useOptimiticDocumentDrag";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -102,6 +103,8 @@ export default function SalesRFQRoute() {
   if (!rfqId) throw new Error("Could not find rfqId");
   const fetcher = useFetcher<{ error: string }>();
 
+  const pendingItems = useOptimisticDocumentDrag();
+
   useEffect(() => {
     if (fetcher.data?.error) {
       toast.error(fetcher.data?.error);
@@ -110,6 +113,8 @@ export default function SalesRFQRoute() {
 
   const handleDrop = useCallback(
     (document: FileObject & { path: string }, targetId: string) => {
+      if (pendingItems.find((item) => item.id === document.id)) return;
+
       const fileName = document.name.split(".").slice(0, -1).join(".");
       const fileExtension = document.name.split(".").pop()?.toLowerCase();
       const is3DModel = fileExtension
