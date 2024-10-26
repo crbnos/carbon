@@ -70,11 +70,12 @@ export const createGetInputProps = ({
       onChange: (...args: unknown[]) => {
         if (behavior === "onChange") validate();
         else clearError();
+        setTouched(true);
         return props?.onChange?.(...args);
       },
       onBlur: (...args: unknown[]) => {
         if (behavior === "onBlur") validate();
-        setTouched(true);
+
         return props?.onBlur?.(...args);
       },
       name,
