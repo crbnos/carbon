@@ -363,7 +363,11 @@ export async function getWorkCentersByLocation(
   client: SupabaseClient<Database>,
   locationId: string
 ) {
-  return client.from("workCenters").select("*").eq("locationId", locationId);
+  return client
+    .from("workCenters")
+    .select("*")
+    .eq("locationId", locationId)
+    .eq("active", true);
 }
 
 export async function getWorkCentersList(
