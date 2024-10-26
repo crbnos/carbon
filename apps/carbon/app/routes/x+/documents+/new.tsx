@@ -2,9 +2,9 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { upsertDocument } from "~/modules/documents";
-import { path, requestReferrer } from "~/utils/path";
+import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -49,5 +49,5 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(requestReferrer(request) ?? path.to.documents);
+  return json({ document: createDocument.data });
 }

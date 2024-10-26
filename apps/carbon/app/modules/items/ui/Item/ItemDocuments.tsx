@@ -26,9 +26,14 @@ import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { ItemFile } from "~/modules/items";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType, OptimisticFileObject } from "~/modules/shared";
 
-import { useNavigate, useRevalidator, useSubmit } from "@remix-run/react";
+import {
+  useFetchers,
+  useNavigate,
+  useRevalidator,
+  useSubmit,
+} from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -69,6 +74,18 @@ const ItemDocuments = ({
     },
     [upload]
   );
+
+  const attachmentsByPath = new Map<string, FileObject | OptimisticFileObject>(
+    files.map((file) => [file.id, file])
+  );
+  const pendingItems = usePendingItems();
+  for (let pendingItem of pendingItems) {
+    let item = attachmentsByPath.get(pendingItem.id);
+    let merged = item ? { ...item, ...pendingItem } : pendingItem;
+    attachmentsByPath.set(pendingItem.id, merged);
+  }
+
+  const allFiles = Array.from(attachmentsByPath.values()) as FileObject[];
 
   return (
     <Card className="flex-grow">
@@ -140,7 +157,7 @@ const ItemDocuments = ({
                 </Td>
               </Tr>
             )}
-            {files.map((file) => {
+            {allFiles.map((file) => {
               const type = getDocumentType(file.name);
               return (
                 <Tr key={file.id}>
@@ -198,7 +215,7 @@ const ItemDocuments = ({
                 </Tr>
               );
             })}
-            {files.length === 0 && !modelUpload && (
+            {allFiles.length === 0 && !modelUpload && (
               <Tr>
                 <Td
                   colSpan={24}
@@ -369,6 +386,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
             method: "post",
             action: path.to.newDocument,
             navigate: false,
+            fetcherKey: `item:${file.name}`,
           });
         }
       }
@@ -386,4 +404,35 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
     viewModel,
     upload,
   };
+};
+
+const usePendingItems = () => {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return fetcher.formAction === path.to.newDocument;
+    })
+    .reduce<OptimisticFileObject[]>((acc, fetcher) => {
+      const path = fetcher.formData.get("path") as string;
+      const name = fetcher.formData.get("name") as string;
+      const size = parseInt(fetcher.formData.get("size") as string, 10);
+
+      if (path && name && size) {
+        const newItem: OptimisticFileObject = {
+          id: path,
+          name: name,
+          bucket_id: "private",
+          bucket: "private",
+          metadata: {
+            size,
+            mimetype: getDocumentType(name),
+          },
+        };
+        return [...acc, newItem];
+      }
+      return acc;
+    }, []);
 };

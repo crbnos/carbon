@@ -21,7 +21,12 @@ import {
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
-import { useNavigate, useRevalidator, useSubmit } from "@remix-run/react";
+import {
+  useFetchers,
+  useNavigate,
+  useRevalidator,
+  useSubmit,
+} from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuUpload } from "react-icons/lu";
@@ -29,6 +34,7 @@ import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
+import type { OptimisticFileObject } from "~/modules/shared";
 import type { ModelUpload, StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -61,6 +67,18 @@ const Documents = ({
 
   const canDelete = permissions.can("delete", writeBucketPermission);
   const canUpdate = permissions.can("update", writeBucketPermission);
+
+  const attachmentsByPath = new Map<string, StorageItem | OptimisticFileObject>(
+    files.map((file) => [file.id, file])
+  );
+  const pendingItems = usePendingItems();
+  for (let pendingItem of pendingItems) {
+    let item = attachmentsByPath.get(pendingItem.id);
+    let merged = item ? { ...item, ...pendingItem } : pendingItem;
+    attachmentsByPath.set(pendingItem.id, merged);
+  }
+
+  const allFiles = Array.from(attachmentsByPath.values()) as StorageItem[];
 
   const getReadPath = useCallback(
     (file: StorageItem) => {
@@ -190,6 +208,7 @@ const Documents = ({
             method: "post",
             action: path.to.newDocument,
             navigate: false,
+            fetcherKey: `${sourceDocument}:${file.name}`,
           });
         }
       }
@@ -293,7 +312,7 @@ const Documents = ({
                 </Td>
               </Tr>
             )}
-            {files.map((file) => {
+            {allFiles.map((file) => {
               const type = getDocumentType(file.name);
               return (
                 <Tr key={file.id}>
@@ -351,7 +370,7 @@ const Documents = ({
                 </Tr>
               );
             })}
-            {files.length === 0 && !modelUpload && (
+            {allFiles.length === 0 && !modelUpload && (
               <Tr>
                 <Td
                   colSpan={24}
@@ -370,3 +389,34 @@ const Documents = ({
 };
 
 export default Documents;
+
+const usePendingItems = () => {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return fetcher.formAction === path.to.newDocument;
+    })
+    .reduce<OptimisticFileObject[]>((acc, fetcher) => {
+      const path = fetcher.formData.get("path") as string;
+      const name = fetcher.formData.get("name") as string;
+      const size = parseInt(fetcher.formData.get("size") as string, 10);
+
+      if (path && name && size) {
+        const newItem: OptimisticFileObject = {
+          id: path,
+          name: name,
+          bucket_id: "private",
+          bucket: "private",
+          metadata: {
+            size,
+            mimetype: getDocumentType(name),
+          },
+        };
+        return [...acc, newItem];
+      }
+      return acc;
+    }, []);
+};

@@ -69,6 +69,7 @@ const PurchaseOrderDocumentForm = ({
       method: "post",
       action: path.to.newDocument,
       navigate: false,
+      fetcherKey: `purchase-order:${name}`,
     });
   };
 

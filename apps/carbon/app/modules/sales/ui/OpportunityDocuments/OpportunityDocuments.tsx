@@ -23,7 +23,12 @@ import {
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import { useDndContext, useDraggable } from "@dnd-kit/core";
-import { Outlet, useRevalidator, useSubmit } from "@remix-run/react";
+import {
+  Outlet,
+  useFetchers,
+  useRevalidator,
+  useSubmit,
+} from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -62,8 +67,6 @@ const OpportunityDocuments = ({
       type,
     });
 
-  const pendingItems = useOptimisticDocumentDrag();
-
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       upload(acceptedFiles);
@@ -71,9 +74,13 @@ const OpportunityDocuments = ({
     [upload]
   );
 
-  const attachmentsToRender = attachments.filter(
-    (d) => !pendingItems?.find((o) => o.id === d.id)
-  );
+  const optimisticDrags = useOptimisticDocumentDrag();
+  const pendingItems = usePendingItems();
+
+  const attachmentsToRender = attachments
+    .filter((d) => !optimisticDrags?.find((o) => o.id === d.id))
+    .concat(...(pendingItems as FileObject[]))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <>
@@ -320,7 +327,7 @@ export const useOpportunityDocuments = ({
         method: "post",
         action: path.to.newDocument,
         navigate: false,
-        fetcherKey: `new-document-${id}`,
+        fetcherKey: `opportunity:${name}`,
       });
     },
     [id, submit, type]
@@ -394,3 +401,37 @@ const OpportunityDocumentForm = (props: OpportunityDocumentFormProps) => {
 };
 
 export default OpportunityDocuments;
+
+type OptimisticFileObject = Omit<
+  FileObject,
+  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
+>;
+export const usePendingItems = () => {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return fetcher.formAction === path.to.newDocument;
+    })
+    .reduce<OptimisticFileObject[]>((acc, fetcher) => {
+      const path = fetcher.formData.get("path") as string;
+      const name = fetcher.formData.get("name") as string;
+      const size = parseInt(fetcher.formData.get("size") as string, 10);
+
+      if (path && name && size) {
+        const newItem: OptimisticFileObject = {
+          id: path,
+          name: name,
+          bucket_id: "private",
+          metadata: {
+            size,
+            mimetype: getDocumentType(name),
+          },
+        };
+        return [...acc, newItem];
+      }
+      return acc;
+    }, []);
+};
