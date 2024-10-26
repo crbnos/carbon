@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { useFetchers, useSubmit } from "@remix-run/react";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
@@ -31,12 +31,14 @@ type KanbanProps = {
 } & DisplaySettings;
 
 const Kanban = ({
-  columns: initialColumns,
+  columns,
   items: initialItems,
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
-  const [columns, setColumns] = useState<Column[]>(initialColumns);
+  const [columnOrder, setColumnOrder] = useState<string[]>(
+    columns.map((col) => col.id)
+  );
 
   const itemsById = new Map<string, Item>(
     initialItems.map((item) => [item.id, item])
@@ -51,9 +53,9 @@ const Kanban = ({
     }
   }
 
-  const items = Array.from(itemsById.values());
-
-  const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
+  const items = Array.from(itemsById.values()).sort(
+    (a, b) => a.priority - b.priority
+  );
 
   const pickedUpItemColumn = useRef<string | null>(null);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
@@ -82,11 +84,11 @@ const Kanban = ({
     onDragStart({ active }) {
       if (!hasDraggableData(active)) return;
       if (active.data.current?.type === "column") {
-        const startstringx = columnIds.findIndex((id) => id === active.id);
-        const startColumn = columns[startstringx];
+        const startIndex = columnOrder.findIndex((id) => id === active.id);
+        const startColumn = columns.find((col) => col.id === active.id);
         return `Picked up Column ${startColumn?.title} at position: ${
-          startstringx + 1
-        } of ${columnIds.length}`;
+          startIndex + 1
+        } of ${columnOrder.length}`;
       } else if (active.data.current?.type === "item") {
         pickedUpItemColumn.current = active.data.current.item.columnId;
         const { itemsInColumn, itemPosition, column } = getDraggingItemData(
@@ -105,10 +107,10 @@ const Kanban = ({
         active.data.current?.type === "column" &&
         over.data.current?.type === "column"
       ) {
-        const overstringx = columnIds.findIndex((id) => id === over.id);
+        const overIndex = columnOrder.findIndex((id) => id === over.id);
         return `Column ${active.data.current.column.title} was moved over ${
           over.data.current.column.title
-        } at position ${overstringx + 1} of ${columnIds.length}`;
+        } at position ${overIndex + 1} of ${columnOrder.length}`;
       } else if (
         active.data.current?.type === "item" &&
         over.data.current?.type === "item"
@@ -138,12 +140,14 @@ const Kanban = ({
         active.data.current?.type === "column" &&
         over.data.current?.type === "column"
       ) {
-        const overColumnPosition = columnIds.findIndex((id) => id === over.id);
+        const overColumnPosition = columnOrder.findIndex(
+          (id) => id === over.id
+        );
 
         return `Column ${
           active.data.current.column.title
         } was dropped into position ${overColumnPosition + 1} of ${
-          columnIds.length
+          columnOrder.length
         }`;
       } else if (
         active.data.current?.type === "item" &&
@@ -182,15 +186,19 @@ const Kanban = ({
       onDragOver={onDragOver}
     >
       <BoardContainer>
-        <SortableContext items={columnIds}>
-          {columns.map((col) => (
-            <ColumnCard
-              key={col.id}
-              column={col}
-              items={items.filter((item) => item.columnId === col.id)}
-              {...displaySettings}
-            />
-          ))}
+        <SortableContext items={columnOrder}>
+          {columnOrder.map((colId) => {
+            const col = columns.find((c) => c.id === colId);
+            if (!col) return null;
+            return (
+              <ColumnCard
+                key={col.id}
+                column={col}
+                items={items.filter((item) => item.columnId === col.id)}
+                {...displaySettings}
+              />
+            );
+          })}
         </SortableContext>
       </BoardContainer>
 
@@ -253,11 +261,11 @@ const Kanban = ({
     const isActiveAColumn = activeData?.type === "column";
     if (!isActiveAColumn) return;
 
-    setColumns((columns) => {
-      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
-      const overColumnIndex = columns.findIndex((col) => col.id === overId);
+    setColumnOrder((prevOrder) => {
+      const activeColumnIndex = prevOrder.findIndex((id) => id === activeId);
+      const overColumnIndex = prevOrder.findIndex((id) => id === overId);
 
-      return arrayMove(columns, activeColumnIndex, overColumnIndex);
+      return arrayMove(prevOrder, activeColumnIndex, overColumnIndex);
     });
   }
 
@@ -280,36 +288,113 @@ const Kanban = ({
         ? columns.find((col) => col.id === overData.item.columnId)
         : overData?.column;
 
-    const isActiveAItem = activeData?.type === "item";
-    const isOverAItem = overData?.type === "item";
+    const isActiveAnItem = activeData?.type === "item";
+    const isOverAnItem = overData?.type === "item";
 
-    if (!isActiveAItem) return;
+    const activeItem = itemsById.get(activeId.toString());
+    const overItem = itemsById.get(overId.toString());
+
+    if (!isActiveAnItem) return;
+
     // only allow drop if column type array includes item's column type
-    console.log(overColumn?.type, activeData?.item.columnType);
     if (!overColumn?.type.includes(activeData?.item.columnType)) return;
 
     // Im dropping a Item over another Item
-    if (isActiveAItem && isOverAItem) {
-      const activeItem = itemsById.get(activeId.toString());
-      const overItem = itemsById.get(overId.toString());
+    if (isActiveAnItem && isOverAnItem && activeItem && overItem) {
+      let priorityBefore = 0;
+      let priorityAfter = 0;
+      if (
+        activeItem.priority > overItem.priority ||
+        activeItem.columnId !== overItem.columnId
+      ) {
+        priorityAfter = overItem.priority;
 
-      if (activeItem && overItem && activeItem.columnId !== overItem.columnId) {
-        // TODO: submit form update to columnId and priority
+        for (let i = items.length - 1; i >= 0; i--) {
+          const item = items[i];
+          if (
+            item.columnId === overItem.columnId &&
+            item.priority < priorityAfter
+          ) {
+            priorityBefore = item.priority ?? 0;
+            break;
+          }
+        }
+      } else {
+        priorityBefore = overItem.priority;
+        priorityAfter =
+          items.find(
+            (item) =>
+              item.columnId === overItem.columnId &&
+              item.priority > priorityBefore
+          )?.priority ?? priorityBefore + 1;
+      }
+
+      const newPriority = (priorityBefore + priorityAfter) / 2;
+
+      if (activeItem.columnId !== overItem.columnId) {
+        submit(
+          {
+            id: activeItem.id,
+            columnId: overItem.columnId,
+            priority: newPriority,
+          },
+          {
+            method: "post",
+            action: path.to.scheduleOperationUpdate,
+            navigate: false,
+            fetcherKey: `item:${activeItem.id}`,
+          }
+        );
         return;
       }
 
-      // TODO: submit form update to priority
+      if (activeItem && overItem) {
+        submit(
+          {
+            id: activeItem.id,
+            columnId: activeItem.columnId,
+            priority: newPriority,
+          },
+          {
+            method: "post",
+            action: path.to.scheduleOperationUpdate,
+            navigate: false,
+            fetcherKey: `item:${activeItem.id}`,
+          }
+        );
+      }
       return;
     }
 
     const isOverAColumn = overData?.type === "column";
 
     // Im dropping a Item over a column
-    if (isActiveAItem && isOverAColumn) {
+    if (isActiveAnItem && isOverAColumn) {
       const activeItem = itemsById.get(activeId.toString());
       const columnId = overId as string;
+
       if (activeItem) {
-        // TODO: submit form update to columnId and priority
+        const firstItemInColumn = items.find(
+          (item) => item.columnId === columnId
+        );
+        const priorityBefore = 0;
+        const priorityAfter = firstItemInColumn?.priority ?? 1;
+
+        const newPriority = (priorityBefore + priorityAfter) / 2;
+
+        submit(
+          {
+            id: activeItem.id,
+            columnId,
+            priority: newPriority,
+          },
+          {
+            method: "post",
+            action: path.to.scheduleOperationUpdate,
+            navigate: false,
+            fetcherKey: `item:${activeItem.id}`,
+          }
+        );
       }
     }
   }
@@ -321,7 +406,7 @@ function usePendingItems() {
   };
   return useFetchers()
     .filter((fetcher): fetcher is PendingItem => {
-      return fetcher.formAction === path.to.updateScheduledOperation;
+      return fetcher.formAction === path.to.scheduleOperationUpdate;
     })
     .map((fetcher) => {
       let columnId = String(fetcher.formData.get("columnId"));

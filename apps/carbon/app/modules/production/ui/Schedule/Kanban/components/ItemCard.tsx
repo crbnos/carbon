@@ -144,11 +144,13 @@ export function ItemCard({
         <div className="flex w-full max-w-full justify-between">
           <div className="flex flex-col space-y-0">
             {item.subtitle && (
-              <span className="text-xs text-muted-foreground truncate">
+              <span className="text-xs text-muted-foreground line-clamp-1">
                 {item.subtitle}
               </span>
             )}
-            <span className="mr-auto font-semibold truncate">{item.title}</span>
+            <span className="mr-auto font-semibold line-clamp-1">
+              {item.title}
+            </span>
           </div>
           <Button
             variant={"ghost"}
@@ -185,7 +187,7 @@ export function ItemCard({
         {showDescription && item.description && (
           <HStack className="justify-start space-x-2">
             <LuClipboardCheck className="text-muted-foreground" />
-            <span className="text-sm">{item.description}</span>
+            <span className="text-sm line-clamp-1">{item.description}</span>
           </HStack>
         )}
         {showStatus && item.status && (

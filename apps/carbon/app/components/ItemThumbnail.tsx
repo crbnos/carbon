@@ -63,7 +63,6 @@ const iconVariants = cva("text-muted-foreground", {
 
 const ItemThumbnail = ({
   thumbnailPath,
-  modelId,
   type,
   size = "md",
 }: ItemThumbnailProps) => {

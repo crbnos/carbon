@@ -22439,7 +22439,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string[] | null
+          supplierIds: string | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -23273,7 +23273,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string[] | null
+          supplierIds: string | null
           thumbnailPath: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -24364,7 +24364,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string[] | null
+          supplierIds: string | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -24738,7 +24738,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string[] | null
+          supplierIds: string | null
           thumbnailPath: string | null
           toDate: string | null
           unitOfMeasure: string | null
@@ -28777,7 +28777,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
-          supplierIds: string[] | null
+          supplierIds: string | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
