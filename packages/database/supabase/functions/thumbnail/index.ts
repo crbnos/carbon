@@ -22,7 +22,9 @@ serve(async (req: Request) => {
     });
 
     const browser = await puppeteer.connect({
-      browserWSEndpoint: `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`,
+      browserWSEndpoint: `ws://${Deno.env.get(
+        "BROWSERLESS_IP"
+      )}?token=${Deno.env.get("BROWSERLESS_TOKEN")}`,
     });
     const page = await browser.newPage();
     await page.setViewport({ width: 400, height: 400 });
