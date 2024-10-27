@@ -97,6 +97,10 @@
   border-radius: var(--radius);
 }
 
+canvas#viewer {
+  border-radius: var(--radius);
+}
+
 p.is-editor-empty:first-child:before {
   color: var(--muted-foreground);
   content: attr(data-placeholder);

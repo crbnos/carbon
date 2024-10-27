@@ -47,7 +47,7 @@ import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { methodOperationOrders, operationTypes } from "~/modules/shared";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 import { quoteOperationValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
 
@@ -286,7 +286,7 @@ const QuoteBillOfProcess = ({
       throw new Error("Failed to upload image");
     }
 
-    return `/file/preview/private/${result.data.path}`;
+    return getPrivateUrl(result.data.path);
   };
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);

@@ -2,6 +2,7 @@ import { cn } from "@carbon/react";
 import { cva } from "class-variance-authority";
 import { LuSquareStack } from "react-icons/lu";
 import type { MethodItemType } from "~/modules/shared";
+import { getPrivateUrl } from "~/utils/path";
 import { MethodItemTypeIcon } from "./Icons";
 
 interface ItemThumbnailProps {
@@ -70,7 +71,7 @@ const ItemThumbnail = ({
     <img
       alt="thumbnail"
       className={itemVariants({ size, withPadding: false })}
-      src={`/file/preview/private/${thumbnailPath}`}
+      src={getPrivateUrl(thumbnailPath)}
     />
   ) : (
     <div className={cn(itemVariants({ size }))}>

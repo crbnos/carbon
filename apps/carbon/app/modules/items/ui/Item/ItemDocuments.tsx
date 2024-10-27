@@ -109,7 +109,7 @@ const ItemDocuments = ({
             </Tr>
           </Thead>
           <Tbody>
-            {modelUpload?.autodeskUrn && (
+            {modelUpload?.modelId && (
               <Tr>
                 <Td>
                   <HStack>
@@ -118,9 +118,7 @@ const ItemDocuments = ({
                       target="_blank"
                       onClick={() => viewModel(modelUpload)}
                     >
-                      {modelUpload?.autodeskUrn
-                        ? modelUpload.modelName
-                        : "Uploading..."}
+                      {modelUpload.modelName}
                     </Hyperlink>
                   </HStack>
                 </Td>
@@ -347,11 +345,11 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 
   const viewModel = useCallback(
     (model: ModelUpload) => {
-      if (!model?.autodeskUrn) {
-        toast.error("Autodesk URN not found");
+      if (!model?.modelId) {
+        toast.error("Model ID not found");
         return;
       }
-      navigate(path.to.file.cadModel(model?.autodeskUrn));
+      navigate(path.to.file.cadModel(model.modelId));
     },
     [navigate]
   );

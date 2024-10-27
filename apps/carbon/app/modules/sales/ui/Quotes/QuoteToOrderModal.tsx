@@ -49,7 +49,7 @@ import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { getDocumentType } from "~/modules/documents";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 import type {
   Quotation,
   QuotationLine,
@@ -393,7 +393,7 @@ const LinePricingForm = ({
               <img
                 alt={line.itemReadableId!}
                 className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
-                src={`/file/preview/private/${line.thumbnailPath}`}
+                src={getPrivateUrl(line.thumbnailPath)}
               />
             ) : (
               <div className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">

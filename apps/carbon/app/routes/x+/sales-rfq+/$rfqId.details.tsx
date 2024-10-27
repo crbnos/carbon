@@ -35,7 +35,7 @@ import {
   upsertSalesRFQ,
 } from "~/modules/sales";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -149,7 +149,7 @@ const SalesRFQNotes = ({ salesRfq }: { salesRfq: SalesRFQ }) => {
       throw new Error("Failed to upload image");
     }
 
-    return `/file/preview/private/${result.data.path}`;
+    return getPrivateUrl(result.data.path);
   };
 
   const onUpdateExternalNotes = useThrottle(async (content: JSONContent) => {

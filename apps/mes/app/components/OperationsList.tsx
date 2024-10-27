@@ -121,7 +121,7 @@ function OperationCard({
               <span className="text-sm">{operation.operationStatus}</span>
             </HStack>
           )}
-          {showDuration && operation.duration && (
+          {showDuration && typeof operation.duration === "number" && (
             <HStack className="justify-start space-x-2">
               <LuTimer className="text-muted-foreground" />
               <span className="text-sm">

@@ -1,27 +1,27 @@
 import { useCarbon } from "@carbon/auth";
 import {
-  AutodeskViewer,
   CardHeader,
   CardTitle,
   ClientOnly,
   cn,
+  ModelViewer,
   Spinner,
+  supportedModelTypes,
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuUploadCloud } from "react-icons/lu";
 import { useUser } from "~/hooks";
-
-import { path } from "~/utils/path";
+import { useMode } from "~/hooks/useMode";
+import { getPrivateUrl, path } from "~/utils/path";
 
 const fileSizeLimitMb = 50;
 
 type CadModelProps = {
-  autodeskUrn: string | null;
   modelPath: string | null;
   metadata?: {
     itemId?: string;
@@ -37,7 +37,6 @@ type CadModelProps = {
 };
 
 const CadModel = ({
-  autodeskUrn,
   isReadOnly,
   metadata,
   modelPath,
@@ -48,24 +47,22 @@ const CadModel = ({
   const {
     company: { id: companyId },
   } = useUser();
-
+  const mode = useMode();
   const { carbon } = useCarbon();
 
   const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
-  const loading = (!!file && !autodeskUrn) || (!!modelPath && !autodeskUrn);
-
-  useEffect(() => {
-    if (!loading) setFile(null);
-  }, [loading]);
 
   const onFileChange = async (file: File | null) => {
     setFile(file);
     if (file) {
-      if (!carbon) throw new Error("Failed to initialize carbon client");
-      const fileId = nanoid();
+      if (!carbon) {
+        toast.error("Failed to initialize carbon client");
+        return;
+      }
+      const modelId = nanoid();
       const fileExtension = file.name.split(".").pop();
-      const fileName = `${companyId}/models/${fileId}.${fileExtension}`;
+      const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
 
       const modelUpload = await carbon.storage
         .from("private")
@@ -79,8 +76,9 @@ const CadModel = ({
 
       const formData = new FormData();
       formData.append("name", file.name);
-      formData.append("fileId", fileId);
+      formData.append("modelId", modelId);
       formData.append("modelPath", modelUpload.data!.path);
+      formData.append("size", file.size.toString());
       if (metadata) {
         if (metadata.itemId) {
           formData.append("itemId", metadata.itemId);
@@ -101,7 +99,7 @@ const CadModel = ({
 
       fetcher.submit(formData, {
         method: "post",
-        action: path.to.api.autodeskUpload,
+        action: path.to.api.modelUpload,
       });
     }
   };
@@ -115,17 +113,16 @@ const CadModel = ({
       }
     >
       {() => {
-        return autodeskUrn ? (
-          <AutodeskViewer
-            className={viewerClassName}
-            showDefaultToolbar
-            urn={autodeskUrn}
+        return file || modelPath ? (
+          <ModelViewer
+            file={file}
+            url={modelPath ? getPrivateUrl(modelPath) : null}
+            mode={mode}
           />
-        ) : isReadOnly ? null : (
+        ) : (
           <CadModelUpload
             className={uploadClassName}
             file={file}
-            loading={loading}
             title={title}
             onFileChange={onFileChange}
           />
@@ -140,40 +137,20 @@ export default CadModel;
 type CadModelUploadProps = {
   title?: string;
   file: File | null;
-  loading: boolean;
   className?: string;
   onFileChange: (file: File | null) => void;
 };
 
-export const supportedFileTypes = [
-  "step",
-  "stp",
-  "stl",
-  "obj",
-  "fbx",
-  "amf",
-  "iges",
-  "ipt",
-  "prt",
-  "sldprt",
-  "sldasm",
-  "asm",
-  "iam",
-  "3dm",
-  "3ds",
-];
-
 const CadModelUpload = ({
   title,
   file,
-  loading,
   onFileChange,
   className,
 }: CadModelUploadProps) => {
   const hasFile = !!file;
 
   const { getRootProps, getInputProps } = useDropzone({
-    disabled: loading || hasFile,
+    disabled: hasFile,
     multiple: false,
     maxSize: fileSizeLimitMb * 1024 * 1024, // 50 MB
     onDropAccepted: (acceptedFiles) => {
@@ -181,7 +158,7 @@ const CadModelUpload = ({
       const fileSizeLimit = fileSizeLimitMb * 1024 * 1024;
 
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
-      if (!fileExtension || !supportedFileTypes.includes(fileExtension)) {
+      if (!fileExtension || !supportedModelTypes.includes(fileExtension)) {
         toast.error("File type not supported");
 
         return;
@@ -225,9 +202,7 @@ const CadModelUpload = ({
         </CardHeader>
 
         <div className="flex flex-col flex-grow items-center justify-center gap-2 p-6">
-          {(file || loading) && (
-            <Spinner className={cn("h-16 w-16", title && "-mt-16")} />
-          )}
+          {file && <Spinner className={cn("h-16 w-16", title && "-mt-16")} />}
           {file && (
             <>
               <p className="text-lg text-card-foreground mt-8">{file.name}</p>
@@ -236,7 +211,7 @@ const CadModelUpload = ({
               </p>
             </>
           )}
-          {!file && !loading && (
+          {!file && (
             <>
               <div
                 className={cn(
@@ -250,7 +225,7 @@ const CadModelUpload = ({
                 Choose file to upload or drag and drop
               </p>
               <p className="text-xs text-muted-foreground group-hover:text-foreground">
-                Supports {supportedFileTypes.join(", ")} files
+                Supports {supportedModelTypes.join(", ")} files
               </p>
             </>
           )}

@@ -10,6 +10,7 @@ import {
   BsFileWordFill,
   BsFileZipFill,
 } from "react-icons/bs";
+import { LuAxis3D } from "react-icons/lu";
 import type { documentTypes } from "~/modules/documents";
 
 type DocumentIconProps = {
@@ -67,6 +68,12 @@ const DocumentIcon = ({ type, className }: DocumentIconProps) => {
       return (
         <BsFileEarmarkPlayFill
           className={cn(documentIconBaseClass, "text-cyan-400", className)}
+        />
+      );
+    case "Model":
+      return (
+        <LuAxis3D
+          className={cn(documentIconBaseClass, "text-emerald-500", className)}
         />
       );
     case "Other":

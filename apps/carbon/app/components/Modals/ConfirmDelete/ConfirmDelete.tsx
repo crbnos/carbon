@@ -8,7 +8,8 @@ import {
   ModalOverlay,
   ModalTitle,
 } from "@carbon/react";
-import { Form } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
+import { useEffect, useRef } from "react";
 
 type ConfirmDeleteProps = {
   action?: string;
@@ -27,6 +28,14 @@ const ConfirmDelete = ({
   onCancel,
   onSubmit,
 }: ConfirmDeleteProps) => {
+  const fetcher = useFetcher<{}>();
+  const submitted = useRef(false);
+  useEffect(() => {
+    if (fetcher.state === "idle" && submitted.current) {
+      onSubmit?.();
+      submitted.current = false;
+    }
+  }, [fetcher.state, onSubmit]);
   return (
     <Modal
       open={isOpen}
@@ -46,11 +55,20 @@ const ConfirmDelete = ({
           <Button variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
-          <Form method="post" action={action} onSubmit={onSubmit}>
-            <Button variant="destructive" type="submit">
+          <fetcher.Form
+            method="post"
+            action={action}
+            onSubmit={() => (submitted.current = true)}
+          >
+            <Button
+              variant="destructive"
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              type="submit"
+            >
               Delete
             </Button>
-          </Form>
+          </fetcher.Form>
         </ModalFooter>
       </ModalContent>
     </Modal>

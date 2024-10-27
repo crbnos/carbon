@@ -87,7 +87,6 @@ export default function PartDetailsRoute() {
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
-            autodeskUrn={partData?.partSummary?.autodeskUrn ?? null}
             isReadOnly={!permissions.can("update", "parts")}
             metadata={{ itemId }}
             modelPath={partData?.partSummary?.modelPath ?? null}

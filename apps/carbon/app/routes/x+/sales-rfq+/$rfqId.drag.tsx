@@ -5,11 +5,9 @@ import { tasks } from "@trigger.dev/sdk/v3";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { salesRfqDragValidator, upsertSalesRFQLine } from "~/modules/sales";
-import { upsertModelUpload } from "~/modules/shared";
-import type { autodeskUploadTask } from "~/trigger/autodesk-upload"; // Assuming the task is defined in this file
+import type { modelThumbnailTask } from "~/trigger/model-thumbnail";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
 export const config = { runtime: "nodejs" };
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -38,6 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     is3DModel,
     lineId,
     path: documentPath,
+    size,
     salesRfqId,
   } = validation.data;
 
@@ -80,18 +79,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const fileName = documentPath.split("/").pop();
   let newPath = "";
   if (is3DModel) {
-    const fileId = nanoid();
+    const modelId = nanoid();
     const fileExtension = fileName?.split(".").pop();
-    newPath = `${companyId}/models/${fileId}.${fileExtension}`;
+    newPath = `${companyId}/models/${modelId}.${fileExtension}`;
 
     const [recordUpdate, recordCreate] = await Promise.all([
       client
         .from("salesRfqLine")
-        .update({ modelUploadId: fileId })
+        .update({ modelUploadId: modelId })
         .eq("id", targetLineId),
-      upsertModelUpload(client, {
-        id: fileId,
+      client.from("modelUpload").insert({
+        id: modelId,
         modelPath: newPath,
+        name: fileName!,
+        size: size ?? 0,
         companyId,
         createdBy: userId,
       }),
@@ -129,15 +130,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    // Trigger the Autodesk upload task
-    await tasks.trigger<typeof autodeskUploadTask>("autodesk-upload", {
+    await tasks.trigger<typeof modelThumbnailTask>("model-thumbnail", {
       companyId,
-      fileId,
-      itemId: null,
-      modelPath: newPath,
-      name: fileName!,
-      quoteLineId: null,
-      salesRfqLineId: targetLineId,
+      modelId,
     });
   } else {
     newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;

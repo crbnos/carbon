@@ -24661,14 +24661,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -27299,14 +27299,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -29348,7 +29348,7 @@ export type Database = {
           itemReadableId: string
           itemDescription: string
           itemUnitOfMeasure: string
-          itemAutodeskUrn: string
+          itemModelPath: string
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
           operationQuantity: number
           quantityComplete: number
@@ -29357,69 +29357,6 @@ export type Database = {
           workInstruction: Json
         }[]
       }
-      get_job_operations_by_location:
-        | {
-            Args: {
-              location_id: string
-            }
-            Returns: {
-              id: string
-              jobId: string
-              operationOrder: number
-              processId: string
-              workCenterId: string
-              description: string
-              setupTime: number
-              setupUnit: Database["public"]["Enums"]["factor"]
-              laborTime: number
-              laborUnit: Database["public"]["Enums"]["factor"]
-              machineTime: number
-              machineUnit: Database["public"]["Enums"]["factor"]
-              operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
-              jobReadableId: string
-              jobStatus: Database["public"]["Enums"]["jobStatus"]
-              jobDueDate: string
-              jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
-              parentMaterialId: string
-              itemReadableId: string
-              operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
-              operationQuantity: number
-              quantityComplete: number
-              quantityScrapped: number
-            }[]
-          }
-        | {
-            Args: {
-              location_id: string
-              work_center_ids: string[]
-            }
-            Returns: {
-              id: string
-              jobId: string
-              operationOrder: number
-              processId: string
-              workCenterId: string
-              description: string
-              setupTime: number
-              setupUnit: Database["public"]["Enums"]["factor"]
-              laborTime: number
-              laborUnit: Database["public"]["Enums"]["factor"]
-              machineTime: number
-              machineUnit: Database["public"]["Enums"]["factor"]
-              operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
-              jobReadableId: string
-              jobStatus: Database["public"]["Enums"]["jobStatus"]
-              jobDueDate: string
-              jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
-              jobCustomerId: string
-              parentMaterialId: string
-              itemReadableId: string
-              operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
-              operationQuantity: number
-              quantityComplete: number
-              quantityScrapped: number
-            }[]
-          }
       get_job_operations_by_work_center: {
         Args: {
           work_center_id: string
@@ -29734,6 +29671,7 @@ export type Database = {
         | "Video"
         | "Audio"
         | "Other"
+        | "Model"
       factor:
         | "Hours/Piece"
         | "Hours/100 Pieces"
