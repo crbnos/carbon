@@ -173,7 +173,10 @@ export function ModelViewer({
             <Spinner className="w-10 h-10" />
           </div>
         ) : (
-          <span id="model-viewer-canvas" />
+          <span
+            id="model-viewer-canvas"
+            className="w-[1px] h-[1px] bg-transparent"
+          />
         )}
       </div>
     </>
