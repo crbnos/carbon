@@ -44,7 +44,7 @@ serve(async (req: Request) => {
       browserWSEndpoint,
     });
     const page = await browser.newPage();
-    await page.setViewport({ width: 400, height: 400 });
+    await page.setViewport({ width: 1000, height: 1000 });
     await page.goto(url);
 
     // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
@@ -52,9 +52,10 @@ serve(async (req: Request) => {
       timeout: 10000,
     });
 
+    // Capture just the center portion of the viewport to avoid the ring
     const screenshot = await page.screenshot({
       encoding: "binary",
-      clip: { x: 0, y: 0, width: 1000, height: 1000 },
+      clip: { x: 15, y: 15, width: 960, height: 960 },
     });
     await browser.close();
 
@@ -66,8 +67,7 @@ serve(async (req: Request) => {
 
     const result = await ImageMagick.read(screenshotArray, (img) => {
       img.transparent(new MagickColor("white"));
-      img.trim(); // Remove any excess transparent space
-      img.sharpen(0, 1.0); // Subtle sharpening for better details
+
       img.resize(300, 300);
       return img.write((data) => data);
     });
