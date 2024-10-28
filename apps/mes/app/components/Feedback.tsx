@@ -82,7 +82,7 @@ const Feedback = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <Button variant="secondary" size="lg" className="text-muted-foreground">
+        <Button variant="secondary" size="lg">
           Feedback
         </Button>
       </PopoverTrigger>
