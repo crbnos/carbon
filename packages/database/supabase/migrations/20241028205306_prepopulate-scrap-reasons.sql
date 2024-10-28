@@ -4,12 +4,13 @@ DECLARE
     scrap_reason TEXT;
 BEGIN
     FOR company_record IN SELECT id FROM companies LOOP
-        FOR scrap_reason IN SELECT unnest(ARRAY['Defective', 'Damaged', 'Quality']) LOOP
-            INSERT INTO "scrapReason" ("companyId", name)
-            VALUES (company_record.id, scrap_reason);
+        FOR scrap_reason IN SELECT unnest(ARRAY['Defective', 'Damaged', 'Quality Control']) LOOP
+            INSERT INTO "scrapReason" ("companyId", "name", "createdBy")
+            VALUES (company_record.id, scrap_reason, 'system');
         END LOOP;
     END LOOP;
 END $$;
+
 
 ALTER TABLE "scrapReason" ENABLE ROW LEVEL SECURITY;
 
