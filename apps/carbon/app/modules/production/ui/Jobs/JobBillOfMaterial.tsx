@@ -101,7 +101,7 @@ const initialMethodMaterial: Omit<Material, "jobMakeMethodId" | "order"> & {
 } = {
   itemId: "",
   itemReadableId: "",
-  itemType: "Part" as const,
+  itemType: "Material" as const,
   methodType: "Buy" as const,
   description: "",
   quantity: 1,

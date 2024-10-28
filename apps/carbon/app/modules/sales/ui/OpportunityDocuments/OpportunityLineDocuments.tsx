@@ -1,4 +1,5 @@
 import {
+  Badge,
   Card,
   CardAction,
   CardContent,
@@ -21,7 +22,7 @@ import {
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
-import { LuAxis3D, LuUpload } from "react-icons/lu";
+import { LuUpload } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
@@ -311,13 +312,14 @@ const OpportunityLineDocuments = ({
                 <Tr>
                   <Td>
                     <HStack>
-                      <LuAxis3D className="text-emerald-500 w-6 h-6 flex-shrink-0" />
+                      <DocumentIcon type="Model" />
                       <Hyperlink
                         target="_blank"
                         onClick={() => viewModel(modelUpload)}
                       >
                         {modelUpload.modelName}
                       </Hyperlink>
+                      <Badge variant="secondary">Model</Badge>
                     </HStack>
                   </Td>
                   <Td>
