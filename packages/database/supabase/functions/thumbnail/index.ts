@@ -21,19 +21,19 @@ serve(async (req: Request) => {
       url,
     });
 
+    const browserWSEndpoint = `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`;
+
     const browser = await puppeteer.connect({
-      browserWSEndpoint: `ws://${Deno.env.get(
-        "BROWSERLESS_IP"
-      )}?token=${Deno.env.get("BROWSERLESS_TOKEN")}`,
+      browserWSEndpoint: `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`,
     });
     const page = await browser.newPage();
     await page.setViewport({ width: 400, height: 400 });
-    await page.goto(url, { waitUntil: "networkidle0" });
+    await page.goto(url);
 
-    // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
-    await page.waitForSelector("#model-viewer-canvas", {
-      timeout: 10000,
-    });
+    // // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
+    // await page.waitForSelector("#model-viewer-canvas", {
+    //   timeout: 10000,
+    // });
 
     const screenshot = await page.screenshot({
       encoding: "binary",
