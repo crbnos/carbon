@@ -193,7 +193,6 @@ export default function EditSalesOrderLineRoute() {
       )}
       <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
         <CadModel
-          autodeskUrn={line?.autodeskUrn ?? null}
           isReadOnly={!permissions.can("update", "sales")}
           metadata={{ salesOrderLineId: line?.id ?? undefined }}
           modelPath={line?.modelPath ?? null}

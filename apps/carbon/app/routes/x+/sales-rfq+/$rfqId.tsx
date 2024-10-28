@@ -4,6 +4,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
+  supportedModelTypes,
   VStack,
   type JSONContent,
 } from "@carbon/react";
@@ -13,7 +14,7 @@ import { Outlet, useParams, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { supportedFileTypes } from "~/components/CadModel";
+
 import type { SalesRFQLine } from "~/modules/sales";
 import {
   getOpportunityBySalesRFQ,
@@ -112,7 +113,7 @@ export default function SalesRFQRoute() {
     const fileName = document.name.split(".").slice(0, -1).join(".");
     const fileExtension = document.name.split(".").pop()?.toLowerCase();
     const is3DModel = fileExtension
-      ? supportedFileTypes.includes(fileExtension)
+      ? supportedModelTypes.includes(fileExtension)
       : false;
 
     const formData = new FormData();
@@ -125,6 +126,7 @@ export default function SalesRFQRoute() {
         ? targetId.replace("sales-rfq-line-", "")
         : undefined,
       path: document.path,
+      size: document.metadata?.size,
       salesRfqId: rfqId,
     };
 

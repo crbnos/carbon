@@ -1,5 +1,4 @@
 import {
-  AutodeskViewer,
   Badge,
   Button,
   cn,
@@ -14,6 +13,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  ModelViewer,
   Progress,
   ScrollArea,
   Separator,
@@ -58,7 +58,7 @@ import {
   OperationStatusIcon,
   OptionallyFullscreen,
 } from "~/components";
-import { useRealtime, useUser } from "~/hooks";
+import { useMode, useRealtime, useUser } from "~/hooks";
 import type {
   Job,
   JobMaterial,
@@ -158,6 +158,8 @@ export const JobOperation = ({
     progress,
   } = useActiveEvents(originalOperation, events);
 
+  const mode = useMode();
+
   return (
     <OptionallyFullscreen
       isFullScreen={fullscreen.isOpen}
@@ -219,7 +221,7 @@ export const JobOperation = ({
                   </span>
                 </HStack>
               )}
-              {operation.duration && (
+              {typeof operation.duration === "number" && (
                 <HStack className="justify-start space-x-2">
                   <LuTimer className="text-muted-foreground" />
                   <span className="text-sm truncate">
@@ -545,9 +547,12 @@ export const JobOperation = ({
         </TabsContent>
         <TabsContent value="model">
           <div className="h-[calc(100vh-156px)] md:h-[calc(100vh-104px)] p-4">
-            <AutodeskViewer
-              urn={operation.itemAutodeskUrn ?? job.autodeskUrn}
-              showDefaultToolbar
+            <ModelViewer
+              file={null}
+              url={`/file/preview/private/${
+                operation.itemModelPath ?? job.modelPath
+              }`}
+              mode={mode}
             />
           </div>
         </TabsContent>
@@ -1404,7 +1409,7 @@ function Navigation({
       <TabsList className="md:ml-auto">
         <TabsTrigger value="details">Details</TabsTrigger>
         <TabsTrigger
-          disabled={!job.autodeskUrn && !operation.itemAutodeskUrn}
+          disabled={!job.modelPath && !operation.itemModelPath}
           value="model"
         >
           Model

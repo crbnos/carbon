@@ -53,7 +53,7 @@ import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { methodOperationOrders, operationTypes } from "~/modules/shared";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 import { jobOperationValidator } from "../../production.models";
 import { getProductionEventsPage } from "../../production.service";
 import type { Job, JobOperation } from "../../types";
@@ -302,7 +302,7 @@ const JobBillOfProcess = ({
       throw new Error("Failed to upload image");
     }
 
-    return `/file/preview/private/${result.data.path}`;
+    return getPrivateUrl(result.data.path);
   };
 
   const [productionEvents, setProductionEvents] = useState<

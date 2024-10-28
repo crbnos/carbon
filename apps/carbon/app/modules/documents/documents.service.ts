@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { supportedModelTypes } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -138,6 +139,10 @@ export function getDocumentType(
 
   if (["mp3", "wav", "wma", "aac", "ogg", "flac"].includes(extension)) {
     return "Audio";
+  }
+
+  if (supportedModelTypes.includes(extension)) {
+    return "Model";
   }
 
   return "Other";

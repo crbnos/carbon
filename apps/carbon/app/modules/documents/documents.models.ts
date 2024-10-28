@@ -11,6 +11,7 @@ export const documentTypes = [
   "Image",
   "Video",
   "Audio",
+  "Model",
   "Other",
 ] as const;
 

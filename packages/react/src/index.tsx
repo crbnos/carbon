@@ -1,3 +1,4 @@
+import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
 import type { JSONContent } from "novel";
 import {
   Accordion,
@@ -5,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "./Accordion";
+import ActionBar, { ActionBarButton } from "./ActionBar";
 import { ActionMenu } from "./ActionMenu";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
 import {
@@ -78,6 +80,10 @@ import {
   ContextMenuTrigger,
 } from "./Context";
 import { Count } from "./Count";
+import type { CreatableComboboxProps } from "./CreateableCombobox";
+import { CreatableCombobox } from "./CreateableCombobox";
+import type { CreatableMultiSelectProps } from "./CreateableMultiSelect";
+import { CreatableMultiSelect } from "./CreateableMultiSelect";
 import {
   DatePicker,
   DateRangePicker,
@@ -113,6 +119,7 @@ import {
   DropdownMenuTrigger,
 } from "./Dropdown";
 import { Editor } from "./Editor";
+import { defaultExtensions } from "./Editor/extensions";
 import { File } from "./File";
 import {
   FormControl,
@@ -124,15 +131,6 @@ import { HStack } from "./HStack";
 import { HTML } from "./HTML";
 import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
-import { RichText, useRichText } from "./RichText";
-
-import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
-import ActionBar, { ActionBarButton } from "./ActionBar";
-import type { CreatableComboboxProps } from "./CreateableCombobox";
-import { CreatableCombobox } from "./CreateableCombobox";
-import type { CreatableMultiSelectProps } from "./CreateableMultiSelect";
-import { CreatableMultiSelect } from "./CreateableMultiSelect";
-import { defaultExtensions } from "./Editor/extensions";
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
 import {
@@ -199,6 +197,7 @@ import {
   ModalDrawerTypeProvider,
   useModalDrawerType,
 } from "./ModalDrawer";
+import { ModelViewer, supportedModelTypes } from "./ModelViewer";
 import type { MultiSelectProps } from "./MultiSelect";
 import { MultiSelect } from "./MultiSelect";
 import type { NumberFieldProps } from "./Number";
@@ -231,6 +230,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "./Resizable";
+import { RichText, useRichText } from "./RichText";
 import { ScrollArea, ScrollBar } from "./ScrollArea";
 import {
   Select,
@@ -444,6 +444,7 @@ export {
   ModalPortal,
   ModalTitle,
   ModalTrigger,
+  ModelViewer,
   MultiSelect,
   NumberDecrementStepper,
   NumberField,
@@ -515,6 +516,7 @@ export {
   multiSelectTriggerVariants,
   reactNodeToString,
   shortcutKeyVariants,
+  supportedModelTypes,
   toast,
   useAutodesk,
   useModalCardType,

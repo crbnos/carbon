@@ -37,6 +37,7 @@ export const path = {
       itemPostingGroups: `${api}/items/groups`,
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
+      modelUpload: `${api}/model/upload`,
       processes: `${api}/resources/processes`,
       quotes: `${api}/sales/quotes`,
       quoteLines: (quoteId: string) =>
@@ -68,7 +69,7 @@ export const path = {
       shippingMethods: `${api}/inventory/shipping-methods`,
     },
     file: {
-      cadModel: (urn: string) => generatePath(`${file}/autodesk/${urn}`),
+      cadModel: (id: string) => generatePath(`${file}/model/${id}`),
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
@@ -834,4 +835,8 @@ export const getParams = (request: Request) => {
   const url = new URL(requestReferrer(request) ?? "");
   const searchParams = new URLSearchParams(url.search);
   return searchParams.toString();
+};
+
+export const getPrivateUrl = (path: string) => {
+  return `/file/preview/private/${path}`;
 };

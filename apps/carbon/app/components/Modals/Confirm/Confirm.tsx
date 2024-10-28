@@ -5,10 +5,11 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  ModalOverlay,
   ModalTitle,
 } from "@carbon/react";
-
-import { Form } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
+import { useEffect, useRef } from "react";
 
 type ConfirmProps = {
   action?: string;
@@ -27,6 +28,16 @@ const Confirm = ({
   onCancel,
   onSubmit,
 }: ConfirmProps) => {
+  const fetcher = useFetcher<{}>();
+  const submitted = useRef(false);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && submitted.current) {
+      onSubmit?.();
+      submitted.current = false;
+    }
+  }, [fetcher.state, onSubmit]);
+
   return (
     <Modal
       open={isOpen}
@@ -34,18 +45,29 @@ const Confirm = ({
         if (!open) onCancel();
       }}
     >
+      <ModalOverlay />
       <ModalContent>
         <ModalHeader>
           <ModalTitle>{name}</ModalTitle>
         </ModalHeader>
         <ModalBody>{text}</ModalBody>
         <ModalFooter>
-          <Button variant="secondary" className="mr-3" onClick={onCancel}>
+          <Button variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
-          <Form method="post" action={action} onSubmit={onSubmit}>
-            <Button type="submit">Confirm</Button>
-          </Form>
+          <fetcher.Form
+            method="post"
+            action={action}
+            onSubmit={() => (submitted.current = true)}
+          >
+            <Button
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              type="submit"
+            >
+              Confirm
+            </Button>
+          </fetcher.Form>
         </ModalFooter>
       </ModalContent>
     </Modal>

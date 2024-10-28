@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { supportedModelTypes } from "@carbon/react";
 import { type LoaderFunctionArgs } from "@vercel/remix";
 
 const supportedFileTypes: Record<string, string> = {
@@ -32,7 +33,12 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!path) throw new Error("Path not found");
 
   const fileType = path.split(".").pop()?.toLowerCase();
-  if (!fileType || !(fileType in supportedFileTypes))
+
+  if (
+    !fileType ||
+    (!(fileType in supportedFileTypes) &&
+      !supportedModelTypes.includes(fileType))
+  )
     throw new Error("File type not supported");
   const contentType = supportedFileTypes[fileType];
 

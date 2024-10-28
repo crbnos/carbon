@@ -269,7 +269,7 @@ const PartProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Files</h3>
         </HStack>
-        {routeData?.partSummary?.autodeskUrn && (
+        {routeData?.partSummary?.modelId && (
           <HStack className="group" spacing={1}>
             <Badge variant="secondary">
               <LuMove3D className="w-3 h-3 mr-1 text-emerald-500" />
@@ -277,7 +277,7 @@ const PartProperties = () => {
             </Badge>
             <Link
               className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-              to={path.to.file.cadModel(routeData?.partSummary.autodeskUrn!)}
+              to={path.to.file.cadModel(routeData?.partSummary.modelId)}
               target="_blank"
             >
               <LuExternalLink />

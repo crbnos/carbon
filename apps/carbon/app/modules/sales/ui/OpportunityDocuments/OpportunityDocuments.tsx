@@ -194,6 +194,7 @@ const DraggableCell = ({
     id: attachment.id,
     data: {
       ...attachment,
+      size: attachment.metadata?.size,
       path: getPath(attachment),
     },
   });

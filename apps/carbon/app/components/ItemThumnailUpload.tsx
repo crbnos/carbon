@@ -2,8 +2,9 @@ import { SUPABASE_API_URL, useCarbon } from "@carbon/auth";
 import { Button, File as FileUpload, HStack, toast } from "@carbon/react";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useUser } from "~/hooks";
+import { getPrivateUrl } from "~/utils/path";
 export function ItemThumbnailUpload({
   path,
   itemId,
@@ -18,10 +19,14 @@ export function ItemThumbnailUpload({
 
   const [thumbnailPath, setThumbnailPath] = useState<string | null>(() => {
     if (path) {
-      return `/file/preview/private/${path}`;
+      return getPrivateUrl(path);
     }
     return null;
   });
+
+  useEffect(() => {
+    setThumbnailPath(path ? getPrivateUrl(path) : null);
+  }, [path]);
 
   const onFileRemove = useCallback(async () => {
     if (!carbon) {
@@ -125,7 +130,7 @@ export function ItemThumbnailUpload({
           }
 
           if (data) {
-            setThumbnailPath(`/file/preview/private/${data.path}`);
+            setThumbnailPath(getPrivateUrl(data.path));
             toast.success("Thumbnail uploaded");
           }
         } catch {

@@ -277,7 +277,7 @@ const FixtureProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Files</h3>
         </HStack>
-        {routeData?.fixtureSummary?.autodeskUrn && (
+        {routeData?.fixtureSummary?.modelId && (
           <HStack className="group" spacing={1}>
             <Badge variant="secondary">
               <LuMove3D className="w-3 h-3 mr-1 text-emerald-500" />
@@ -285,7 +285,7 @@ const FixtureProperties = () => {
             </Badge>
             <Link
               className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-              to={path.to.file.cadModel(routeData?.fixtureSummary.autodeskUrn!)}
+              to={path.to.file.cadModel(routeData?.fixtureSummary.modelId)}
               target="_blank"
             >
               <LuExternalLink />

@@ -50,6 +50,7 @@
     "dompurify": "3.0.5",
     "intl-parse-accept-language": "^1.0.0",
     "is-hotkey": "^0.2.0",
+    "online-3d-viewer": "0.15.0",
     "novel": "0.4.2",
     "prism-react-renderer": "^2.3.1",
     "react-aria-components": "1.0.1",

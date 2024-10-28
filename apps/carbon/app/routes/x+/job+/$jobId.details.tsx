@@ -122,7 +122,6 @@ export default function JobDetailsRoute() {
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
-            autodeskUrn={jobData?.job?.autodeskUrn ?? null}
             isReadOnly={!permissions.can("update", "production")}
             metadata={{ jobId: jobData?.job?.id ?? undefined }}
             modelPath={jobData?.job?.modelPath ?? null}
