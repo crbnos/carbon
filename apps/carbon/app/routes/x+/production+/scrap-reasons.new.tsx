@@ -6,7 +6,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { scrapReasonValidator, upsertScrapReason } from "~/modules/production";
-import ScrapReasonForm from "~/modules/production/ui/ScrapReasonCodes/ScrapReasonForm";
+import ScrapReasonForm from "~/modules/production/ui/ScrapReasons/ScrapReasonForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path, requestReferrer } from "~/utils/path";
 

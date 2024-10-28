@@ -48,12 +48,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     scrapReasonId
   );
   if (deleteScrapReasonError) {
+    const errorMessage =
+      deleteScrapReasonError.code === "23503"
+        ? "Scrap reason is used elsewhere, cannot delete"
+        : "Failed to delete scrap reason";
+
     throw redirect(
       `${path.to.scrapReasons}?${getParams(request)}`,
-      await flash(
-        request,
-        error(deleteScrapReasonError, "Failed to delete scrap reason")
-      )
+      await flash(request, error(deleteScrapReasonError, errorMessage))
     );
   }
 
