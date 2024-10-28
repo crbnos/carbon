@@ -840,3 +840,7 @@ export const getParams = (request: Request) => {
 export const getPrivateUrl = (path: string) => {
   return `/file/preview/private/${path}`;
 };
+
+export const getPublicModelUrl = (path: string) => {
+  return `/file/model/private/${path}`;
+};

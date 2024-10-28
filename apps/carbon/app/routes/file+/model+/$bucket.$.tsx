@@ -1,4 +1,4 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole, notFound } from "@carbon/auth";
 import { supportedModelTypes } from "@carbon/react";
 import { type LoaderFunctionArgs } from "@vercel/remix";
 
@@ -22,13 +22,17 @@ const supportedFileTypes: Record<string, string> = {
   flac: "audio/flac",
 };
 
-export let loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client } = await requirePermissions(request, {});
+export let loader = async ({ params }: LoaderFunctionArgs) => {
+  const client = getCarbonServiceRole();
   const { bucket } = params;
   const path = params["*"];
 
   if (!bucket) throw new Error("Bucket not found");
   if (!path) throw new Error("Path not found");
+
+  if (!path.includes("models")) {
+    throw notFound("Invalid path");
+  }
 
   const fileType = path.split(".").pop()?.toLowerCase();
 

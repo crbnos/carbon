@@ -7,7 +7,9 @@ const payloadSchema = z.object({
   url: z.string(),
 });
 
-const browserWSEndpoint = `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`;
+const browserWSEndpoint = `ws://${Deno.env.get(
+  "BROWSERLESS_IP"
+)}?token=${Deno.env.get("BROWSERLESS_TOKEN")}`;
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -30,7 +32,7 @@ serve(async (req: Request) => {
     await page.setViewport({ width: 400, height: 400 });
     await page.goto(url);
 
-    // // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
+    // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
     await page.waitForSelector("#model-viewer-canvas", {
       timeout: 10000,
     });

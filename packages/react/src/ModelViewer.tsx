@@ -116,24 +116,20 @@ export function ModelViewer({
   });
 
   function loadFile(file: File) {
-    console.log("load file called");
     if (!file) return;
     if (!viewerRef.current) return;
     const viewer = viewerRef.current;
     if (!viewer) return;
 
     viewer.LoadModelFromFileList([file]);
-    console.log("load file done");
   }
 
   function loadUrl(url: string) {
-    console.log("load url called");
     if (!url) return;
     if (!viewerRef.current) return;
     const viewer = viewerRef.current;
     if (!viewer) return;
     viewer.LoadModelFromUrlList([url]);
-    console.log("load url done");
   }
 
   useEffect(() => {
@@ -166,7 +162,7 @@ export function ModelViewer({
         ref={parentDiv}
         role={"img"}
         aria-label="Canvas showing the model in the 3D Viewer"
-        className="h-full w-full items-center justify-center rounded-lg relative border border-border dark:border-0 dark:shadow-[0px_1px_0px_0px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_rgba(0,0,0,.1),0px_2px_2px_0px_rgba(0,0,0,.1),0px_4px_4px_0px_rgba(0,0,0,.1),0px_8px_8px_0px_rgba(0,0,0,.1)] bg-gradient-to-bl from-card from-50% via-card to-background min-h-[400px] shadow-md"
+        className="h-full w-full items-center justify-center rounded-lg relative border border-border dark:border-0 dark:shadow-[0px_1px_0px_0px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_rgba(0,0,0,.1),0px_2px_2px_0px_rgba(0,0,0,.1),0px_4px_4px_0px_rgba(0,0,0,.1),0px_8px_8px_0px_rgba(0,0,0,.1)] bg-red-500 min-h-[400px] shadow-md"
       >
         {isLoading ? (
           <div className="absolute inset-0 bg-card h-full w-full flex items-center justify-center">

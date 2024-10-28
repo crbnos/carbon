@@ -3,7 +3,7 @@ import { json, useLoaderData } from "@remix-run/react";
 
 import { getCarbonServiceRole, notFound } from "@carbon/auth";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { getPrivateUrl } from "~/utils/path";
+import { getPublicModelUrl } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const client = getCarbonServiceRole();
@@ -28,7 +28,7 @@ export default function ModelRoute() {
       <ModelViewer
         mode="light"
         file={null}
-        url={getPrivateUrl(model.modelPath)}
+        url={getPublicModelUrl(model.modelPath)}
       />
     </div>
   );

@@ -23,9 +23,7 @@ const supportedFileTypes: Record<string, string> = {
 };
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client } = await requirePermissions(request, {
-    view: "documents",
-  });
+  const { client } = await requirePermissions(request, {});
   const { bucket } = params;
   const path = params["*"];
 
