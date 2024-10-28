@@ -10,7 +10,7 @@ import {
   scrapReasonValidator,
   upsertScrapReason,
 } from "~/modules/production";
-import ScrapReasonForm from "~/modules/production/ui/ScrapReasonCodes/ScrapReasonForm";
+import ScrapReasonForm from "~/modules/production/ui/ScrapReasons/ScrapReasonForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

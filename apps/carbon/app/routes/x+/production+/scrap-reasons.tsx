@@ -4,7 +4,7 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { getScrapReasons } from "~/modules/production";
-import ScrapReasonsTable from "~/modules/production/ui/ScrapReasonCodes/ScrapReasonsTable";
+import ScrapReasonsTable from "~/modules/production/ui/ScrapReasons/ScrapReasonsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
