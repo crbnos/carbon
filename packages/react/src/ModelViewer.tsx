@@ -28,10 +28,12 @@ export function ModelViewer({
   file,
   url,
   mode = "dark",
+  onDataUrl,
 }: {
   file: File | null;
   url: string | null;
   mode?: "dark" | "light";
+  onDataUrl?: (dataUrl: string) => void;
 }) {
   const parentDiv = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<OV.EmbeddedViewer | null>(null);
@@ -79,6 +81,9 @@ export function ModelViewer({
                 camera.up = new OV.Coord3D(0, 1, 0);
                 viewer3D.SetCamera(camera);
               }
+
+              const dataUrl = viewer3D.GetImageAsDataUrl(300, 300, true);
+              onDataUrl?.(dataUrl);
             }
 
             setIsLoading(false);
@@ -162,17 +167,14 @@ export function ModelViewer({
         ref={parentDiv}
         role={"img"}
         aria-label="Canvas showing the model in the 3D Viewer"
-        className="h-full w-full items-center justify-center rounded-lg relative border border-border dark:border-0 dark:shadow-[0px_1px_0px_0px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_rgba(0,0,0,.1),0px_2px_2px_0px_rgba(0,0,0,.1),0px_4px_4px_0px_rgba(0,0,0,.1),0px_8px_8px_0px_rgba(0,0,0,.1)] bg-red-500 min-h-[400px] shadow-md"
+        className="h-full w-full items-center justify-center rounded-lg relative border border-border dark:border-0 dark:shadow-[0px_1px_0px_0px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_rgba(0,0,0,.1),0px_2px_2px_0px_rgba(0,0,0,.1),0px_4px_4px_0px_rgba(0,0,0,.1),0px_8px_8px_0px_rgba(0,0,0,.1)] bg-gradient-to-bl from-card from-50% via-card to-background min-h-[400px] shadow-md"
       >
         {isLoading ? (
           <div className="absolute inset-0 bg-card h-full w-full flex items-center justify-center">
             <Spinner className="w-10 h-10" />
           </div>
         ) : (
-          <span
-            id="model-viewer-canvas"
-            className="w-[1px] h-[1px] bg-transparent"
-          />
+          <pre id="model-viewer-canvas" aria-hidden className="sr-only" />
         )}
       </div>
     </>

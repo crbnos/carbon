@@ -13,6 +13,7 @@ import { convertKbToString } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import { LuUploadCloud } from "react-icons/lu";
 import { useUser } from "~/hooks";
@@ -52,15 +53,68 @@ const CadModel = ({
 
   const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
+  const [id, setId] = useState<string | null>(null);
+
+  const onDataUrl = async (dataUrl: string) => {
+    if (!id || !file) return;
+
+    const base64Data = dataUrl.split(",")[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+
+    const byteArray = new Uint8Array(byteNumbers);
+    const thumbnailFile = new File([byteArray], "thumbnail.png", {
+      type: "image/png",
+    });
+
+    if (!carbon) {
+      toast.error("Failed to initialize carbon client");
+      return;
+    }
+
+    const thumbnailId = nanoid();
+    const thumbnailPath = `${companyId}/thumbnails/${thumbnailId}.png`;
+
+    const thumbnailUpload = await carbon.storage
+      .from("private")
+      .upload(thumbnailPath, thumbnailFile, {
+        upsert: true,
+        contentType: "image/png",
+      });
+
+    if (thumbnailUpload.error) {
+      toast.error("Failed to upload thumbnail");
+    }
+
+    const update = await carbon
+      .from("modelUpload")
+      .update({
+        thumbnailPath: thumbnailUpload.data!.path,
+      })
+      .eq("id", id);
+
+    if (update.error) {
+      toast.error("Failed to update model upload");
+    }
+  };
 
   const onFileChange = async (file: File | null) => {
+    const modelId = nanoid();
+    flushSync(() => {
+      setId(modelId);
+    });
+
     setFile(file);
+
     if (file) {
       if (!carbon) {
         toast.error("Failed to initialize carbon client");
         return;
       }
-      const modelId = nanoid();
       const fileExtension = file.name.split(".").pop();
       const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
 
@@ -118,6 +172,7 @@ const CadModel = ({
             file={file}
             url={modelPath ? getPrivateUrl(modelPath) : null}
             mode={mode}
+            onDataUrl={onDataUrl}
           />
         ) : (
           <CadModelUpload

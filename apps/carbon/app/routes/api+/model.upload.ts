@@ -1,10 +1,6 @@
 // import { error } from "@carbon/auth";
-import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import type { modelThumbnailTask } from "~/trigger/model-thumbnail";
 
 export const config = { runtime: "nodejs" };
 
@@ -74,18 +70,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (modelRecord.error) {
     throw new Error("Failed to record upload: " + modelRecord.error.message);
-  }
-
-  try {
-    await tasks.trigger<typeof modelThumbnailTask>("model-thumbnail", {
-      modelId,
-      companyId,
-    });
-  } catch (err) {
-    return json(
-      {},
-      await flash(request, error(err, "Failed to generate thumbnail for model"))
-    );
   }
 
   return json({
