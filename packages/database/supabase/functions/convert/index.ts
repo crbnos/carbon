@@ -368,6 +368,7 @@ serve(async (req: Request) => {
           .from("currency")
           .select("*")
           .eq("code", currencyCode)
+          .eq("companyId", companyId)
           .single();
         const exchangeRate = currency.data?.exchangeRate ?? 1;
 
