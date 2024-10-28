@@ -188,7 +188,6 @@ export default function AuthenticatedRoute() {
                         location={location}
                         locations={locations}
                       />
-                      <Feedback />
                     </div>
                   </div>
                   <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto bg-background">
@@ -215,6 +214,9 @@ export default function AuthenticatedRoute() {
                           },
                         ]}
                       />
+                    </div>
+                    <div className="flex flex-col">
+                      <Feedback />
                     </div>
                   </div>
                 </ResizablePanel>
