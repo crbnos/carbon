@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import { LuActivity, LuClock, LuInbox } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { AvatarMenu, Nav } from "~/components";
+import Feedback from "~/components/Feedback";
 import { useMediaQuery } from "~/hooks";
 import {
   getActiveJobCount,
@@ -187,6 +188,7 @@ export default function AuthenticatedRoute() {
                         location={location}
                         locations={locations}
                       />
+                      <Feedback />
                     </div>
                   </div>
                   <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto bg-background">
