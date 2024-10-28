@@ -33,7 +33,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!path) throw new Error("Path not found");
 
   const fileType = path.split(".").pop()?.toLowerCase();
-  console.log(fileType);
+
   if (
     !fileType ||
     (!(fileType in supportedFileTypes) &&
