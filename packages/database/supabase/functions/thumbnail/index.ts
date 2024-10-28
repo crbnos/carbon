@@ -1,7 +1,22 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { Buffer } from "node:buffer";
 import { corsHeaders } from "../lib/headers.ts";
+
+import {
+  ImageMagick,
+  MagickColor,
+  initializeImageMagick,
+} from "npm:@imagemagick/magick-wasm@0.0.30";
+
+const wasmBytes = await Deno.readFile(
+  new URL(
+    "magick.wasm",
+    import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.30")
+  )
+);
+await initializeImageMagick(wasmBytes);
 
 const payloadSchema = z.object({
   url: z.string(),
@@ -39,11 +54,25 @@ serve(async (req: Request) => {
 
     const screenshot = await page.screenshot({
       encoding: "binary",
-      clip: { x: 0, y: 0, width: 400, height: 400 },
+      clip: { x: 0, y: 0, width: 1000, height: 1000 },
     });
     await browser.close();
 
-    return new Response(screenshot, {
+    const screenshotArray = new Uint8Array(
+      typeof screenshot === "string"
+        ? Buffer.from(screenshot, "utf-8")
+        : screenshot
+    );
+
+    const result = await ImageMagick.read(screenshotArray, (img) => {
+      img.transparent(new MagickColor("white"));
+      img.trim(); // Remove any excess transparent space
+      img.sharpen(0, 1.0); // Subtle sharpening for better details
+      img.resize(300, 300);
+      return img.write((data) => data);
+    });
+
+    return new Response(result, {
       headers: { ...corsHeaders, "Content-Type": "image/png" },
       status: 200,
     });
