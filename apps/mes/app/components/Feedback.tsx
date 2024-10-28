@@ -82,11 +82,11 @@ const Feedback = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <Button variant="secondary" className="text-muted-foreground">
+        <Button variant="secondary" size="lg" className="text-muted-foreground">
           Feedback
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[380px] ">
+      <PopoverContent className="w-[380px] ">
         <ValidatedForm
           method="post"
           action={path.to.feedback}

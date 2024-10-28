@@ -215,7 +215,7 @@ export default function AuthenticatedRoute() {
                         ]}
                       />
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col p-2">
                       <Feedback />
                     </div>
                   </div>
