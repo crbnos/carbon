@@ -1,5 +1,4 @@
-import { FaTrash } from "react-icons/fa";
-import { LuCalendarClock, LuHardHat } from "react-icons/lu";
+import { LuCalendarClock, LuHardHat, LuTrash } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -27,7 +26,7 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
         name: "Scrap Reasons",
         to: path.to.scrapReasons,
         role: "employee",
-        icon: <FaTrash />,
+        icon: <LuTrash />,
       },
     ],
   },
