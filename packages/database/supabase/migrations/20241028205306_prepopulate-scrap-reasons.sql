@@ -4,10 +4,11 @@ DECLARE
     company_record RECORD;
     scrap_reason TEXT;
 BEGIN
-    FOR company_record IN SELECT id FROM companies LOOP
+    FOR company_record IN SELECT id FROM "company" LOOP
         FOR scrap_reason IN SELECT unnest(ARRAY['Defective', 'Damaged', 'Quality']) LOOP
             INSERT INTO "scrapReason" ("companyId", "name", "createdBy")
-            VALUES (company_record.id, scrap_reason, 'system');
+            VALUES (company_record.id, scrap_reason, 'system')
+            ON CONFLICT ON CONSTRAINT "scrapReason_name_unique" DO NOTHING;
         END LOOP;
     END LOOP;
 END $$;
