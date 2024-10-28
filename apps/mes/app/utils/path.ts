@@ -25,6 +25,7 @@ export const path = {
     authenticatedRoot: x,
     callback: "/callback",
     complete: `${x}/complete`,
+    feedback: `${x}/feedback`,
     finish: `${x}/finish`,
     forgotPassword: "/forgot-password",
     healthcheck: "/healthcheck",
