@@ -1677,7 +1677,7 @@ export const postingGroupSales = {
   updatedBy: "system",
 };
 
-export const scrapReasons = ["Defective", "Damaged", "Quality Control"];
+export const scrapReasons = ["Defective", "Damaged", "Quality"];
 
 export const sequences = [
   {
