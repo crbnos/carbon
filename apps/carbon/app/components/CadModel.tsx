@@ -12,7 +12,7 @@ import {
 import { convertKbToString } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import { LuUploadCloud } from "react-icons/lu";
@@ -54,9 +54,12 @@ const CadModel = ({
   const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
   const [id, setId] = useState<string | null>(null);
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
 
-  const onDataUrl = async (dataUrl: string) => {
-    if (!id || !file) return;
+  const uploadThumbnail = async () => {
+    if (!dataUrl) return;
+    if (!id) return;
+    if (!carbon) return;
 
     const base64Data = dataUrl.split(",")[1];
     const byteCharacters = atob(base64Data);
@@ -100,6 +103,18 @@ const CadModel = ({
     if (update.error) {
       toast.error("Failed to update model upload");
     }
+  };
+
+  // we want to upload the thumbnail after the file is uploaded
+  useEffect(() => {
+    if (file && modelPath && dataUrl && id) {
+      uploadThumbnail();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataUrl, file, id, modelPath]);
+
+  const onDataUrl = (dataUrl: string) => {
+    setDataUrl(dataUrl);
   };
 
   const onFileChange = async (file: File | null) => {
