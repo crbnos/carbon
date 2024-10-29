@@ -1,9 +1,9 @@
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
   cn,
+  IconButton,
   ScrollArea,
   ScrollBar,
 } from "@carbon/react";
@@ -105,15 +105,14 @@ export function ColumnCard({
             )}
           </div>
         </div>
-        <Button
+        <IconButton
+          aria-label={`Move column: ${column.title}`}
+          icon={<LuGripVertical />}
           variant={"ghost"}
           {...attributes}
           {...listeners}
-          className="p-1 text-foreground/50 -ml-2 h-auto cursor-grab relative"
-        >
-          <span className="sr-only">{`Move column: ${column.title}`}</span>
-          <LuGripVertical />
-        </Button>
+          className="cursor-grab relative"
+        />
       </CardHeader>
       <ScrollArea className="flex-grow">
         <CardContent className="flex flex-col gap-2 p-2">

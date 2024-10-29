@@ -158,6 +158,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
         columnType: op.processId,
         priority: op.priority,
         title: op.jobReadableId,
+        link: op.parentMaterialId
+          ? path.to.jobMakeMethod(
+              op.jobId,
+              op.jobMakeMethodId,
+              op.parentMaterialId
+            )
+          : path.to.jobMethod(op.jobId, op.jobMakeMethodId),
         subtitle: op.itemReadableId,
         description: op.description,
         dueDate: op.jobDueDate,

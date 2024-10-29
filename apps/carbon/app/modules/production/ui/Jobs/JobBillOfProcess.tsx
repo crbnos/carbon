@@ -51,7 +51,7 @@ import { OperationStatusIcon } from "~/components/Icons";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
 import { methodOperationOrders, operationTypes } from "~/modules/shared";
 import { getPrivateUrl, path } from "~/utils/path";
 import { jobOperationValidator } from "../../production.models";
@@ -154,7 +154,11 @@ const JobBillOfProcess = ({
   const [items, setItems] = useState<ItemWithData[]>(
     makeItems(operations ?? [])
   );
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [params] = useUrlParams();
+  const selected = params.get("selectedOperation");
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(
+    selected ? selected : null
+  );
 
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");

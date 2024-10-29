@@ -32,6 +32,7 @@ const itemValidator = z.object({
   columnId: z.string(),
   columnType: z.string(),
   title: z.string(),
+  link: z.string().optional(),
   subtitle: z.string().optional(),
   priority: z.number(),
   customerId: z.string().optional(),

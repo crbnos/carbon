@@ -1,9 +1,9 @@
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
   HStack,
+  IconButton,
   Progress,
   Tooltip,
   TooltipContent,
@@ -21,6 +21,7 @@ import { cva } from "class-variance-authority";
 import {
   LuCheckCircle,
   LuClipboardCheck,
+  LuExternalLink,
   LuFactory,
   LuGripVertical,
   LuTimer,
@@ -28,6 +29,7 @@ import {
   LuXCircle,
 } from "react-icons/lu";
 
+import { Link } from "@remix-run/react";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
@@ -152,15 +154,26 @@ export function ItemCard({
               {item.title}
             </span>
           </div>
-          <Button
-            variant={"ghost"}
-            {...attributes}
-            {...listeners}
-            className="p-1 text-secondary-foreground/50 -ml-2 h-auto cursor-grab"
-          >
-            <span className="sr-only">Move item</span>
-            <LuGripVertical />
-          </Button>
+          <HStack spacing={0} className="-mr-4">
+            <IconButton
+              aria-label="Move item"
+              icon={<LuGripVertical />}
+              variant={"ghost"}
+              {...attributes}
+              {...listeners}
+              className="cursor-grab"
+            />
+            {item.link && (
+              <Link to={`${item.link}?selectedOperation=${item.id}`}>
+                <IconButton
+                  aria-label="Link to job operation"
+                  icon={<LuExternalLink />}
+                  variant={"ghost"}
+                  className="cursor-grab"
+                />
+              </Link>
+            )}
+          </HStack>
         </div>
 
         {showProgress &&
