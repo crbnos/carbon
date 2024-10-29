@@ -1,7 +1,8 @@
 import * as OV from "online-3d-viewer";
 import { useEffect, useRef, useState } from "react";
-import { Spinner } from "./Spinner";
 import { useMount } from "./hooks";
+import { IconButton } from "./IconButton";
+import { Spinner } from "./Spinner";
 
 export const supportedModelTypes = [
   "3dm",
@@ -120,6 +121,33 @@ export function ModelViewer({
     };
   });
 
+  function resetZoom() {
+    if (!viewerRef.current) return;
+
+    const viewer3D = viewerRef.current.GetViewer();
+    viewer3D.Resize(
+      parentDiv.current?.clientWidth,
+      parentDiv.current?.clientHeight
+    );
+
+    const boundingSphere = viewer3D.GetBoundingSphere((meshUserData) => true);
+    if (boundingSphere) {
+      const center = boundingSphere.center;
+      const radius = boundingSphere.radius;
+      const camera = viewer3D.GetCamera();
+      const direction = new OV.Coord3D(0, 0, 1);
+      const eye = new OV.Coord3D(
+        center.x + direction.x * radius * 2.5,
+        center.y + direction.y * radius * 2.5,
+        center.z + direction.z * radius * 2.5
+      );
+      camera.center = center;
+      camera.eye = eye;
+      camera.up = new OV.Coord3D(0, 1, 0);
+      viewer3D.SetCamera(camera);
+    }
+  }
+
   function loadFile(file: File) {
     if (!file) return;
     if (!viewerRef.current) return;
@@ -174,7 +202,34 @@ export function ModelViewer({
             <Spinner className="w-10 h-10" />
           </div>
         ) : (
-          <pre id="model-viewer-canvas" aria-hidden className="sr-only" />
+          <>
+            <pre id="model-viewer-canvas" aria-hidden className="sr-only" />
+            <IconButton
+              aria-label="Reset zoom"
+              className="absolute top-2 right-2"
+              icon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                  <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                  <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                  <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                  <rect width="10" height="8" x="7" y="8" rx="1" />
+                </svg>
+              }
+              variant="ghost"
+              onClick={resetZoom}
+            />
+          </>
         )}
       </div>
     </>
