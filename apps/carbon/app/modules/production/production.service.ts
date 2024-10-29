@@ -331,7 +331,7 @@ export async function getJobOperationsByMethodId(
     .from("jobOperation")
     .select("*")
     .eq("jobMakeMethodId", jobMakeMethodId)
-    .order("createdAt", { ascending: true });
+    .order("order", { ascending: true });
 }
 
 export async function getProductionEvent(
