@@ -9,7 +9,7 @@ const itemTrackingTypes = ["Inventory", "Non-Inventory"] as const;
 export const fieldMappings = {
   customer: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
@@ -59,7 +59,7 @@ export const fieldMappings = {
   },
   customerContact: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
@@ -116,7 +116,7 @@ export const fieldMappings = {
   },
   supplier: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
@@ -171,7 +171,7 @@ export const fieldMappings = {
   },
   supplierContact: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
@@ -228,12 +228,12 @@ export const fieldMappings = {
   },
   part: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
     readableId: {
-      label: "Readable ID",
+      label: "Part Number",
       required: true,
       type: "string",
     },
@@ -316,12 +316,12 @@ export const fieldMappings = {
   },
   tool: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
     readableId: {
-      label: "Readable ID",
+      label: "Part Number",
       required: true,
       type: "string",
     },
@@ -404,12 +404,12 @@ export const fieldMappings = {
   },
   fixture: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
     readableId: {
-      label: "Readable ID",
+      label: "Part Number",
       required: true,
       type: "string",
     },
@@ -492,12 +492,12 @@ export const fieldMappings = {
   },
   consumable: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
     readableId: {
-      label: "Readable ID",
+      label: "Part Number",
       required: true,
       type: "string",
     },
@@ -580,12 +580,12 @@ export const fieldMappings = {
   },
   material: {
     id: {
-      label: "External ID",
+      label: "Unique ID",
       required: true,
       type: "string",
     },
     readableId: {
-      label: "Readable ID",
+      label: "Part Number",
       required: true,
       type: "string",
     },
@@ -881,7 +881,7 @@ export const importSchemas: Record<
       ),
     readableId: z
       .string()
-      .min(1, { message: "Readable ID is required" })
+      .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),
@@ -920,7 +920,7 @@ export const importSchemas: Record<
       ),
     readableId: z
       .string()
-      .min(1, { message: "Readable ID is required" })
+      .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the tool. Usually a number or set of alphanumeric characters."
       ),
@@ -959,7 +959,7 @@ export const importSchemas: Record<
       ),
     readableId: z
       .string()
-      .min(1, { message: "Readable ID is required" })
+      .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the fixture. Usually a number or set of alphanumeric characters."
       ),
@@ -998,7 +998,7 @@ export const importSchemas: Record<
       ),
     readableId: z
       .string()
-      .min(1, { message: "Readable ID is required" })
+      .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),
@@ -1037,7 +1037,7 @@ export const importSchemas: Record<
       ),
     readableId: z
       .string()
-      .min(1, { message: "Readable ID is required" })
+      .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the material. Usually a number or set of alphanumeric characters."
       ),
