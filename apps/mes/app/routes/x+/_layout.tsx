@@ -34,15 +34,6 @@ import {
 import { defaultLayout } from "~/utils/layout";
 import { path } from "~/utils/path";
 
-export function links() {
-  return [
-    {
-      rel: "stylesheet",
-      href: "https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.min.css",
-    },
-  ];
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
     await requireAuthSession(request, { verify: true });

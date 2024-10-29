@@ -113,10 +113,6 @@ function Document({
         <title>{title}</title>
         <link rel="manifest" href="/site.webmanifest" />
         <Links />
-        <script
-          defer
-          src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"
-        ></script>
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
         {children}
