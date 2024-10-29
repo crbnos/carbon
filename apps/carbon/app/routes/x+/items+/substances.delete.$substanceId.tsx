@@ -5,28 +5,28 @@ import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteMaterialForm, getMaterialForm } from "~/modules/items";
+import { deleteMaterialSubstance, getMaterialSubstance } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
     view: "parts",
   });
-  const { formId } = params;
-  if (!formId) throw notFound("formId not found");
+  const { substanceId } = params;
+  if (!substanceId) throw notFound("substanceId not found");
 
-  const materialForm = await getMaterialForm(client, formId);
-  if (materialForm.error) {
+  const materialSubstance = await getMaterialSubstance(client, substanceId);
+  if (materialSubstance.error) {
     throw redirect(
-      path.to.materialForms,
+      path.to.materialSubstances,
       await flash(
         request,
-        error(materialForm.error, "Failed to get material form")
+        error(materialSubstance.error, "Failed to get material substance")
       )
     );
   }
 
-  return json({ materialForm: materialForm.data });
+  return json({ materialSubstance: materialSubstance.data });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -34,47 +34,53 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "parts",
   });
 
-  const { formId } = params;
-  if (!formId) {
+  const { substanceId } = params;
+  if (!substanceId) {
     throw redirect(
-      path.to.materialForms,
-      await flash(request, error(params, "Failed to get an material form id"))
+      path.to.materialSubstances,
+      await flash(
+        request,
+        error(params, "Failed to get an material substance id")
+      )
     );
   }
 
-  const { error: deleteTypeError } = await deleteMaterialForm(client, formId);
+  const { error: deleteTypeError } = await deleteMaterialSubstance(
+    client,
+    substanceId
+  );
   if (deleteTypeError) {
     throw redirect(
-      `${path.to.materialForms}?${getParams(request)}`,
+      `${path.to.materialSubstances}?${getParams(request)}`,
       await flash(
         request,
-        error(deleteTypeError, "Failed to delete material form")
+        error(deleteTypeError, "Failed to delete material substance")
       )
     );
   }
 
   throw redirect(
-    path.to.materialForms,
-    await flash(request, success("Successfully deleted material form"))
+    path.to.materialSubstances,
+    await flash(request, success("Successfully deleted material substance"))
   );
 }
 
-export default function DeleteMaterialFormRoute() {
-  const { formId } = useParams();
-  if (!formId) throw new Error("formId not found");
+export default function DeleteMaterialSubstanceRoute() {
+  const { substanceId } = useParams();
+  if (!substanceId) throw new Error("substanceId not found");
 
-  const { materialForm } = useLoaderData<typeof loader>();
+  const { materialSubstance } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  if (!materialForm) return null;
+  if (!materialSubstance) return null;
 
   const onCancel = () => navigate(-1);
 
   return (
     <ConfirmDelete
-      action={path.to.deleteMaterialForm(formId)}
-      name={materialForm.name}
-      text={`Are you sure you want to delete the material form: ${materialForm.name}? This cannot be undone.`}
+      action={path.to.deleteMaterialSubstance(substanceId)}
+      name={materialSubstance.name}
+      text={`Are you sure you want to delete the material substance: ${materialSubstance.name}? This cannot be undone.`}
       onCancel={onCancel}
     />
   );
