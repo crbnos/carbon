@@ -2,15 +2,12 @@ import { AiOutlinePartition } from "react-icons/ai";
 import { GiWoodBeam } from "react-icons/gi";
 import {
   LuAtom,
-  LuClock,
   LuGrip,
   LuHammer,
-  LuPackage,
   LuPizza,
   LuRuler,
   LuShapes,
 } from "react-icons/lu";
-import { PiPiggyBank } from "react-icons/pi";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -51,21 +48,21 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       // },
     ],
   },
-  {
-    name: "Methods",
-    routes: [
-      {
-        name: "Materials",
-        to: path.to.methodMaterials,
-        icon: <LuPackage />,
-      },
-      {
-        name: "Operations",
-        to: path.to.methodOperations,
-        icon: <LuClock />,
-      },
-    ],
-  },
+  // {
+  //   name: "Methods",
+  //   routes: [
+  //     {
+  //       name: "Materials",
+  //       to: path.to.methodMaterials,
+  //       icon: <LuPackage />,
+  //     },
+  //     {
+  //       name: "Operations",
+  //       to: path.to.methodOperations,
+  //       icon: <LuClock />,
+  //     },
+  //   ],
+  // },
   {
     name: "Configure",
     routes: [
@@ -81,12 +78,12 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         icon: <GiWoodBeam />,
         role: "employee",
       },
-      {
-        name: "Posting Groups",
-        to: path.to.itemPostingGroups,
-        role: "employee",
-        icon: <PiPiggyBank />,
-      },
+      // {
+      //   name: "Posting Groups",
+      //   to: path.to.itemPostingGroups,
+      //   role: "employee",
+      //   icon: <PiPiggyBank />,
+      // },
       {
         name: "Units of Measure",
         to: path.to.uoms,

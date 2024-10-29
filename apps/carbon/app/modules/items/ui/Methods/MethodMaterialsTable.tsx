@@ -43,7 +43,7 @@ const MethodMaterialsTable = memo(
         },
         {
           accessorKey: "itemReadableId",
-          header: "Item ID",
+          header: "Material ID",
           cell: (item) => item.getValue(),
           meta: {
             filter: {
