@@ -4,14 +4,16 @@ import { path } from "~/utils/path";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { HStack } from "@carbon/react";
-import { useLoaderData } from "@remix-run/react";
+import { Button, HStack } from "@carbon/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { useMemo } from "react";
+import { LuAlertTriangle, LuPlus } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
+import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
 import type { Column, Item } from "~/modules/production";
 import { getActiveJobOperationsByLocation, Kanban } from "~/modules/production";
@@ -183,6 +185,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function ScheduleRoute() {
   const { columns, items, processes } = useLoaderData<typeof loader>();
   const [params] = useUrlParams();
+  const { hasFilters, clearFilters } = useFilters();
   const currentFilters = params.getAll("filter");
   const filters = useMemo<ColumnFilter[]>(() => {
     return [
@@ -228,8 +231,8 @@ export default function ScheduleRoute() {
         </HStack>
       )}
       <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
-        <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
-          <div className="flex flex-1 min-h-0 w-full relative">
+        <div className="flex flex-1 min-h-0 w-full relative">
+          {columns.length > 0 ? (
             <Kanban
               columns={columns}
               items={items}
@@ -241,7 +244,29 @@ export default function ScheduleRoute() {
               showProgress={false}
               showStatus
             />
-          </div>
+          ) : hasFilters ? (
+            <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+                <LuAlertTriangle className="h-6 w-6" />
+              </div>
+              <span className="text-xs font-mono font-light text-foreground uppercase">
+                No results
+              </span>
+              <Button onClick={clearFilters}>Clear Filters</Button>
+            </div>
+          ) : (
+            <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+                <LuAlertTriangle className="h-6 w-6" />
+              </div>
+              <span className="text-xs font-mono font-light text-foreground uppercase">
+                No work centers exist
+              </span>
+              <Button leftIcon={<LuPlus />} asChild>
+                <Link to={path.to.newWorkCenter}>Create Work Center</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
