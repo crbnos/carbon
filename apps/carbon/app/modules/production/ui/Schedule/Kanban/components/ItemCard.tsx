@@ -41,7 +41,7 @@ type ItemCardProps = {
 } & DisplaySettings;
 
 const cardVariants = cva(
-  "bg-gradient-to-tl via-card to-card hover:to-muted/30 hover:via-muted/30",
+  "bg-gradient-to-bl via-card to-card hover:to-muted/30 hover:via-muted/30",
   {
     variants: {
       dragging: {
