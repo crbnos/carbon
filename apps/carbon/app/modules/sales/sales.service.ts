@@ -674,6 +674,18 @@ export async function getSalesOrderExternalDocuments(
     .list(`${companyId}/sales/external/${salesOrderId}`);
 }
 
+export async function getQuoteByExternalId(
+  client: SupabaseClient<Database>,
+  externalId: string
+) {
+  return client
+    .from("externalLink")
+    .select("*")
+    .eq("externalId", externalId)
+    .eq("documentType", "Quote")
+    .single();
+}
+
 export async function getQuoteLinePrices(
   client: SupabaseClient<Database>,
   quoteLineId: string
