@@ -6,7 +6,7 @@ import { CollapsibleSidebar } from "./CollapsibleSidebar";
 
 const GroupedContentSidebar = ({
   groups,
-  width,
+  width = 200,
   exactMatch = false,
 }: {
   groups: RouteGroup[];
