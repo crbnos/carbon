@@ -70,6 +70,8 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
         });
       }
     }
+  } else {
+    console.error(`No user found for email: ${email}`);
   }
 
   return json(success("Success"));

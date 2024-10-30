@@ -12,7 +12,7 @@ export async function getUserByEmail(email: string) {
   return getCarbonServiceRole()
     .from("user")
     .select("*")
-    .eq("email", email)
+    .eq("email", email.toLowerCase())
     .maybeSingle();
 }
 

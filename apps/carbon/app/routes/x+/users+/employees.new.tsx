@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { email, firstName, lastName, locationId, employeeType } =
     validation.data;
   const result = await createEmployeeAccount(client, {
-    email,
+    email: email.toLowerCase(),
     firstName,
     lastName,
     employeeType,

@@ -79,7 +79,7 @@ export async function createCustomerAccount(
 
     const insertUser = await createUser(client, {
       id: userId,
-      email,
+      email: email.toLowerCase(),
       firstName: firstName ?? "",
       lastName: lastName ?? "",
       avatarUrl: null,
@@ -185,7 +185,7 @@ export async function createEmployeeAccount(
 
     const insertUser = await createUser(client, {
       id: userId,
-      email,
+      email: email.toLowerCase(),
       firstName,
       lastName,
       avatarUrl: null,
@@ -281,7 +281,7 @@ export async function createSupplierAccount(
 
     const insertUser = await createUser(client, {
       id: userId,
-      email,
+      email: email.toLowerCase(),
       firstName: firstName ?? "",
       lastName: lastName ?? "",
       avatarUrl: null,
