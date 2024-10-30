@@ -1915,6 +1915,7 @@ export type Database = {
           baseCurrencyCode: string
           city: string | null
           countryCode: string | null
+          digitalQuoteEnabled: boolean
           email: string | null
           fax: string | null
           id: string
@@ -1933,6 +1934,7 @@ export type Database = {
           baseCurrencyCode: string
           city?: string | null
           countryCode?: string | null
+          digitalQuoteEnabled?: boolean
           email?: string | null
           fax?: string | null
           id?: string
@@ -1951,6 +1953,7 @@ export type Database = {
           baseCurrencyCode?: string
           city?: string | null
           countryCode?: string | null
+          digitalQuoteEnabled?: boolean
           email?: string | null
           fax?: string | null
           id?: string
@@ -5085,6 +5088,184 @@ export type Database = {
             columns: ["employeeTypeId"]
             isOneToOne: false
             referencedRelation: "employeeType"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      externalLink: {
+        Row: {
+          companyId: string
+          createdAt: string
+          customerId: string | null
+          documentId: string
+          documentType: Database["public"]["Enums"]["externalLinkDocumentType"]
+          expiresAt: string | null
+          id: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          customerId?: string | null
+          documentId: string
+          documentType: Database["public"]["Enums"]["externalLinkDocumentType"]
+          expiresAt?: string | null
+          id?: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          customerId?: string | null
+          documentId?: string
+          documentType?: Database["public"]["Enums"]["externalLinkDocumentType"]
+          expiresAt?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "externalLinks_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinks_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinks_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "externalLinks_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "externalLinks_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinks_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinks_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      externalLinkMessage: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string | null
+          externalLinkId: string
+          id: string
+          message: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy?: string | null
+          externalLinkId: string
+          id?: string
+          message: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string | null
+          externalLinkId?: string
+          id?: string
+          message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "externalLinkMessages_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "externalLinkMessages_externalLinkId_fkey"
+            columns: ["externalLinkId"]
+            isOneToOne: false
+            referencedRelation: "externalLink"
             referencedColumns: ["id"]
           },
         ]
@@ -29815,6 +29996,7 @@ export type Database = {
         | "Audio"
         | "Other"
         | "Model"
+      externalLinkDocumentType: "Quote"
       factor:
         | "Hours/Piece"
         | "Hours/100 Pieces"
