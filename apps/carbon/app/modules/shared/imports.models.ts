@@ -1050,8 +1050,11 @@ export const importSchemas: Record<
       .optional()
       .describe("The long description of the material"),
     active: z.string().optional().describe("Whether the material is active"),
-    substance: z.string().optional().describe("The substance of the material"),
-    form: z.string().optional().describe("The form of the material"),
+    materialSubstanceId: z
+      .string()
+      .optional()
+      .describe("The substance of the material"),
+    materialFormId: z.string().optional().describe("The form of the material"),
     defaultMethodType: z
       .string()
       .optional()

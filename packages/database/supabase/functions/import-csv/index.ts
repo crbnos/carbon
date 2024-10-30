@@ -58,6 +58,8 @@ serve(async (req: Request) => {
       userId,
     });
 
+    console.log({ enumMappings });
+
     const client = getSupabaseServiceRoleFromAuthorizationHeader(
       req.headers.get("Authorization")
     );
@@ -90,6 +92,8 @@ serve(async (req: Request) => {
       }
       return record;
     });
+
+    console.log({ mappedRecords });
 
     // Determine which enum keys are missing from the first record
     const missingEnumKeys = Object.keys(enumMappings).filter(
@@ -360,8 +364,8 @@ serve(async (req: Request) => {
           });
 
           const materialValidator = itemValidator.extend({
-            materialSubstanceId: z.string(),
-            materialFormId: z.string(),
+            materialSubstanceId: z.string().optional(),
+            materialFormId: z.string().optional(),
             finish: z.string().optional(),
             dimensions: z.string().optional(),
             grade: z.string().optional(),
@@ -444,7 +448,7 @@ serve(async (req: Request) => {
                   continue;
                 }
                 if (material.success) {
-                  materialPartialInserts[rest.readableId] = {
+                  materialPartialInserts[rest.readableId!] = {
                     ...material.data,
                     id: rest.readableId,
                     companyId,
