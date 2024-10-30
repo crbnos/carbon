@@ -186,7 +186,7 @@ const SalesOrderLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard onClose={onClose}>
-          <ModalCardContent>
+          <ModalCardContent size="xxlarge">
             <ValidatedForm
               defaultValues={initialValues}
               validator={salesOrderLineValidator}

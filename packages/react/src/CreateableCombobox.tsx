@@ -210,8 +210,7 @@ function VirtualizedCommand({
                 key={item.value}
                 value={
                   typeof item.label === "string"
-                    ? item.label.replace(/"/g, '\\"') +
-                      item.helper?.replace(/"/g, '\\"')
+                    ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
                     : undefined
                 }
                 onSelect={() => {
