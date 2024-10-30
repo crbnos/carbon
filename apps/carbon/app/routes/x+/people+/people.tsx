@@ -60,7 +60,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     attributeCategories: attributeCategories.data,
     employeeTypes: employeeTypes.data ?? [],
-    people: people.data,
+    people:
+      people.data?.filter((p) => !p.email?.includes("@carbonos.dev")) ?? [],
     count: people.count,
   });
 }

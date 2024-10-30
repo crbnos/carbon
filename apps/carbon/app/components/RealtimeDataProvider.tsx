@@ -65,7 +65,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         .order("name"),
       carbon
         .from("employees")
-        .select("id, name, avatarUrl")
+        .select("id, name, email, avatarUrl")
         .eq("companyId", companyId)
         .order("name"),
     ]);
@@ -89,8 +89,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     setItems(items.data ?? []);
     setSuppliers(suppliers.data ?? []);
     setCustomers(customers.data ?? []);
-    // @ts-ignore
-    setPeople(people.data ?? []);
+    setPeople(
+      // @ts-ignore
+      people.data?.filter((p) => !p.email?.includes("@carbonos.dev")) ?? []
+    );
   };
 
   useEffect(() => {
