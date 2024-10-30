@@ -1,4 +1,10 @@
-import { LuFactory, LuFileText, LuSheet, LuWorkflow } from "react-icons/lu";
+import {
+  LuCrown,
+  LuFactory,
+  LuFileText,
+  LuSheet,
+  LuWorkflow,
+} from "react-icons/lu";
 import { MdOutlineDashboardCustomize } from "react-icons/md";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -13,6 +19,12 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.company,
         role: "employee",
         icon: <LuFactory />,
+      },
+      {
+        name: "Sales",
+        to: path.to.salesSettings,
+        role: "employee",
+        icon: <LuCrown />,
       },
       {
         name: "Standard Terms",
