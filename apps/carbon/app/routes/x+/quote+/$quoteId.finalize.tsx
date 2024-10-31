@@ -16,6 +16,7 @@ import {
   quoteFinalizeValidator,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
+import { upsertExternalLink } from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
 import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have this task defined
@@ -57,6 +58,22 @@ export async function action(args: ActionFunctionArgs) {
         error(opportunity.error, "Failed to get opportunity")
       )
     );
+  }
+
+  const externalLink = await upsertExternalLink(client, {
+    id: quote.data.externalLinkId ?? undefined, // TODO
+    documentType: "Quote",
+    documentId: quoteId,
+    customerId: quote.data.customerId,
+    expiresAt: quote.data.expirationDate,
+    companyId,
+  });
+
+  if (externalLink.data && quote.data.externalLinkId !== externalLink.data.id) {
+    await client
+      .from("quote")
+      .update({ externalLinkId: externalLink.data.id })
+      .eq("id", quoteId);
   }
 
   try {

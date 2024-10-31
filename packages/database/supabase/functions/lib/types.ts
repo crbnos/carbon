@@ -8625,8 +8625,8 @@ export type Database = {
           grade: string | null
           id: string
           itemId: string | null
-          materialFormId: string
-          materialSubstanceId: string
+          materialFormId: string | null
+          materialSubstanceId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8643,8 +8643,8 @@ export type Database = {
           grade?: string | null
           id: string
           itemId?: string | null
-          materialFormId: string
-          materialSubstanceId: string
+          materialFormId?: string | null
+          materialSubstanceId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8661,8 +8661,8 @@ export type Database = {
           grade?: string | null
           id?: string
           itemId?: string | null
-          materialFormId?: string
-          materialSubstanceId?: string
+          materialFormId?: string | null
+          materialSubstanceId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -14138,6 +14138,7 @@ export type Database = {
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
           expirationDate: string | null
+          externalLinkId: string | null
           externalNotes: Json | null
           id: string
           internalNotes: Json | null
@@ -14165,6 +14166,7 @@ export type Database = {
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
           expirationDate?: string | null
+          externalLinkId?: string | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
@@ -14192,6 +14194,7 @@ export type Database = {
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
           expirationDate?: string | null
+          externalLinkId?: string | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
@@ -14378,6 +14381,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quote_externalLinkId_fkey"
+            columns: ["externalLinkId"]
+            isOneToOne: false
+            referencedRelation: "externalLink"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quote_locationId_fkey"
@@ -26862,6 +26872,7 @@ export type Database = {
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
           expirationDate: string | null
+          externalLinkId: string | null
           externalNotes: Json | null
           favorite: boolean | null
           id: string | null
@@ -27088,6 +27099,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quote_externalLinkId_fkey"
+            columns: ["externalLinkId"]
+            isOneToOne: false
+            referencedRelation: "externalLink"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quote_locationId_fkey"

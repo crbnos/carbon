@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 // import { getCarbonServiceRole, notFound } from "@carbon/auth";
 import {
   Avatar,
@@ -10,23 +11,54 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@carbon/react";
+import { useLoaderData } from "@remix-run/react";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
-// import { getQuoteByExternalId } from "~/modules/sales";
+import { getQuoteByExternalId } from "~/modules/sales";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  // const { id } = params;
-  // if (!id) throw notFound("Quote not found");
+enum QuoteState {
+  Valid,
+  Expired,
+  NotFound,
+}
 
-  // const serviceRole = getCarbonServiceRole();
-  // const document = await getQuoteByExternalId(serviceRole, id);
-  // if (!document.data || !document.data.documentId)
-  //   throw notFound("Quote not found");
-  // const quoteId = document.data.documentId;
+export async function loader({ params }: LoaderFunctionArgs) {
+  const { id } = params;
+  if (!id) {
+    return json({
+      state: QuoteState.NotFound,
+      data: null,
+    });
+  }
 
-  return json({});
+  const serviceRole = getCarbonServiceRole();
+  const quote = await getQuoteByExternalId(serviceRole, id);
+
+  if (quote.error) {
+    return json({
+      state: QuoteState.NotFound,
+      data: null,
+    });
+  }
+
+  if (
+    quote.data.expirationDate &&
+    new Date(quote.data.expirationDate) < new Date()
+  ) {
+    return json({
+      state: QuoteState.Expired,
+      data: null,
+    });
+  }
+
+  return json({
+    state: QuoteState.Valid,
+    data: {
+      quote: quote.data,
+    },
+  });
 }
 
 type OptionType = {
@@ -200,7 +232,7 @@ const LineItems = ({
 };
 
 // Main Quote Component
-export default function Quote({
+const Quote = ({
   companyName = "Acme Inc.",
   companyLogo = "/placeholder.svg?height=50&width=50",
   customerName = "John Doe",
@@ -231,7 +263,7 @@ export default function Quote({
       ],
     },
   ],
-}: QuoteProps) {
+}: QuoteProps) => {
   const [selectedOptions, setSelectedOptions] = useState<
     Record<number, number>
   >(() =>
@@ -289,4 +321,129 @@ export default function Quote({
       </CardContent>
     </Card>
   );
+};
+
+const ErrorMessage = ({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) => {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        delay: 0.3,
+        when: "beforeChildren",
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+    },
+  };
+
+  return (
+    <motion.div
+      className="flex min-h-screen flex-col items-center justify-center p-4 text-center"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.div
+        className="w-full max-w-md space-y-8"
+        variants={containerVariants}
+      >
+        <motion.div
+          className="relative mx-auto h-24 w-24"
+          variants={itemVariants}
+        >
+          <svg
+            className="absolute inset-0"
+            viewBox="0 0 100 100"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <motion.circle
+              cx="50"
+              cy="50"
+              r="45"
+              stroke="hsl(var(--muted))"
+              strokeWidth="10"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 2, ease: "easeInOut" }}
+            />
+            <motion.path
+              d="M50 5 A45 45 0 0 1 95 50"
+              stroke="hsl(var(--primary))"
+              strokeWidth="10"
+              strokeLinecap="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{
+                duration: 2,
+                ease: "easeInOut",
+              }}
+            />
+          </svg>
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{
+              delay: 0.5,
+              type: "spring",
+              stiffness: 200,
+              damping: 10,
+            }}
+          >
+            <span className="text-2xl font-bold text-muted-foreground">!</span>
+          </motion.div>
+        </motion.div>
+        <motion.h1
+          className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+          variants={itemVariants}
+        >
+          {title}
+        </motion.h1>
+        <motion.p
+          className="text-lg text-muted-foreground"
+          variants={itemVariants}
+        >
+          {message}
+        </motion.p>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+export default function ExternalQuote() {
+  const { state, data } = useLoaderData<typeof loader>();
+
+  switch (state) {
+    case QuoteState.Valid:
+      return <pre>{JSON.stringify(data, null, 2)}</pre>;
+    case QuoteState.Expired:
+      return (
+        <ErrorMessage
+          title="Quote expired"
+          message="Oops! The link you're trying to access has expired or is no longer valid."
+        />
+      );
+    case QuoteState.NotFound:
+      return (
+        <ErrorMessage
+          title="Quote not found"
+          message="Oops! The link you're trying to access is not valid."
+        />
+      );
+  }
 }

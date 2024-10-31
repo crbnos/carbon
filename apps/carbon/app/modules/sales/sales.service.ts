@@ -679,10 +679,9 @@ export async function getQuoteByExternalId(
   externalId: string
 ) {
   return client
-    .from("externalLink")
+    .from("quote")
     .select("*")
-    .eq("externalId", externalId)
-    .eq("documentType", "Quote")
+    .eq("externalLinkId", externalId)
     .single();
 }
 
