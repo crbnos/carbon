@@ -71,6 +71,21 @@ export async function insertNote(
   return client.from("note").insert([note]).select("*").single();
 }
 
+export async function upsertExternalLink(
+  client: SupabaseClient<Database>,
+  externalLink: Database["public"]["Tables"]["externalLink"]["Insert"]
+) {
+  if ("id" in externalLink && externalLink.id) {
+    return client
+      .from("externalLink")
+      .update(externalLink)
+      .eq("id", externalLink.id)
+      .select("id")
+      .single();
+  }
+  return client.from("externalLink").insert(externalLink).select("id").single();
+}
+
 export async function updateNote(
   client: SupabaseClient<Database>,
   id: string,
