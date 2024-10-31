@@ -87,7 +87,7 @@
 .ray {
   --gradient-opacity: 0.85;
   --ray-gradient: radial-gradient(
-    rgba(83, 255, 231, var(--gradient-opacity)) 0%,
+    rgba(220, 255, 231, var(--gradient-opacity)) 0%,
     rgba(43, 166, 255, 0) 100%
   );
   transition: opacity 0.25s linear;

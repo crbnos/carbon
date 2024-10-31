@@ -16,7 +16,7 @@ export default function Route() {
           rel="noreferrer"
         >
           CarbonOS
-          <span className="hidden md:inline-flex">: Now in Private Beta</span>
+          <span className="hidden md:inline-flex">: now in private beta</span>
           <LuMoveUpRight className="ml-2" />
           <span className="absolute -top-px left-[2.5rem] h-px w-[calc(100%-5rem)] bg-gradient-to-r from-emerald-600/0 via-emerald-600/80 to-emerald-600/0 opacity-0 group-hover:opacity-100 transition-opacity transition-theme"></span>
           <span className="absolute -top-px left-1/2 -translate-x-1/2 h-px w-[60px] bg-gradient-to-r from-emerald-300/0 via-emerald-300/50 to-emerald-300/0 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity transition-theme"></span>
