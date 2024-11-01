@@ -7,6 +7,7 @@ import {
   CardTitle,
   HStack,
 } from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
@@ -29,6 +30,7 @@ type SalesOrderPaymentFormProps = {
 const SalesOrderPaymentForm = ({
   initialValues,
 }: SalesOrderPaymentFormProps) => {
+  const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
   const [customer, setCustomer] = useState<string | undefined>(
     initialValues.invoiceCustomerId
@@ -43,6 +45,7 @@ const SalesOrderPaymentForm = ({
         action={path.to.salesOrderPayment(initialValues.id)}
         validator={salesOrderPaymentValidator}
         defaultValues={initialValues}
+        fetcher={fetcher}
       >
         <CardHeader>
           <CardTitle>Payment</CardTitle>

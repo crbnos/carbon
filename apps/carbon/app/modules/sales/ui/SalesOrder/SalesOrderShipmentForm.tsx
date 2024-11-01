@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
@@ -34,6 +35,7 @@ const SalesOrderShipmentForm = ({
 }: // shippingTerms,
 SalesOrderShipmentFormProps) => {
   const permissions = usePermissions();
+  const fetcher = useFetcher<{}>();
   const [dropShip, setDropShip] = useState<boolean>(
     initialValues.dropShipment ?? false
   );
@@ -55,6 +57,7 @@ SalesOrderShipmentFormProps) => {
         method="post"
         validator={salesOrderShipmentValidator}
         defaultValues={initialValues}
+        fetcher={fetcher}
       >
         <CardHeader>
           <CardTitle>Shipping</CardTitle>

@@ -11,7 +11,7 @@ export default function Route() {
         <a
           id="announcement"
           href="https://app.carbonos.dev"
-          className="fixed top-10 left-1/2 -translate-x-1/2 group items-center border border-input rounded-full px-4 py-1.5 flex mb-4.5 text-xs hover:bg-alpha-gray-2 dark:hover:bg-gray-900 transition-theme"
+          className="fixed top-10 left-1/2 -translate-x-1/2 group items-center border border-input rounded-full px-4 py-1.5 flex mb-4.5 text-xs hover:bg-alpha-gray-2 dark:hover:bg-background transition-theme"
           target="_blank"
           rel="noreferrer"
         >
