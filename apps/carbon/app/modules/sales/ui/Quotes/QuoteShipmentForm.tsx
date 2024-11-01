@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import type { z } from "zod";
 import {
   DatePicker,
@@ -30,6 +30,7 @@ const QuoteShipmentForm = ({
 }: // shippingTerms,
 QuoteShipmentFormProps) => {
   const permissions = usePermissions();
+  const fetcher = useFetcher<{}>();
 
   // const shippingTermOptions = shippingTerms.map((term) => ({
   //   label: term.name,
@@ -55,6 +56,7 @@ QuoteShipmentFormProps) => {
         method="post"
         validator={quoteShipmentValidator}
         defaultValues={initialValues}
+        fetcher={fetcher}
       >
         <CardHeader>
           <CardTitle>Shipping</CardTitle>

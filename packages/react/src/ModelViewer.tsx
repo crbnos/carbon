@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMount } from "./hooks";
 import { IconButton } from "./IconButton";
 import { Spinner } from "./Spinner";
+import { cn } from "./utils/cn";
 
 export const supportedModelTypes = [
   "3dm",
@@ -29,12 +30,16 @@ export function ModelViewer({
   file,
   url,
   mode = "dark",
+  className,
   onDataUrl,
+  resetZoomButton = true,
 }: {
   file: File | null;
   url: string | null;
   mode?: "dark" | "light";
   onDataUrl?: (dataUrl: string) => void;
+  resetZoomButton?: boolean;
+  className?: string;
 }) {
   const parentDiv = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<OV.EmbeddedViewer | null>(null);
@@ -195,7 +200,10 @@ export function ModelViewer({
         ref={parentDiv}
         role={"img"}
         aria-label="Canvas showing the model in the 3D Viewer"
-        className="h-full w-full items-center justify-center rounded-lg relative border border-border dark:border-0 dark:shadow-[0px_1px_0px_0px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_rgba(0,0,0,.1),0px_2px_2px_0px_rgba(0,0,0,.1),0px_4px_4px_0px_rgba(0,0,0,.1),0px_8px_8px_0px_rgba(0,0,0,.1)] bg-gradient-to-bl from-card from-50% via-card to-background min-h-[400px] shadow-md"
+        className={cn(
+          "h-full w-full items-center justify-center rounded-lg relative border border-border dark:border-0 dark:shadow-[0px_1px_0px_0px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_rgba(0,0,0,.1),0px_2px_2px_0px_rgba(0,0,0,.1),0px_4px_4px_0px_rgba(0,0,0,.1),0px_8px_8px_0px_rgba(0,0,0,.1)] bg-gradient-to-bl from-card from-50% via-card to-background min-h-[400px] shadow-md",
+          className
+        )}
       >
         {isLoading ? (
           <div className="absolute inset-0 bg-card h-full w-full flex items-center justify-center">
@@ -204,31 +212,33 @@ export function ModelViewer({
         ) : (
           <>
             <pre id="model-viewer-canvas" aria-hidden className="sr-only" />
-            <IconButton
-              aria-label="Reset zoom"
-              className="absolute top-2 right-2"
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                  <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                  <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                  <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                  <rect width="10" height="8" x="7" y="8" rx="1" />
-                </svg>
-              }
-              variant="ghost"
-              onClick={resetZoom}
-            />
+            {resetZoomButton && (
+              <IconButton
+                aria-label="Reset zoom"
+                className="absolute top-2 right-2"
+                icon={
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                    <rect width="10" height="8" x="7" y="8" rx="1" />
+                  </svg>
+                }
+                variant="ghost"
+                onClick={resetZoom}
+              />
+            )}
           </>
         )}
       </div>

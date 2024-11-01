@@ -7,7 +7,7 @@ import {
   CardTitle,
   HStack,
 } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
@@ -29,6 +29,7 @@ type QuotePaymentFormProps = {
 
 const QuotePaymentForm = ({ initialValues }: QuotePaymentFormProps) => {
   const permissions = usePermissions();
+  const fetcher = useFetcher<{}>();
   const [customer, setCustomer] = useState<string | undefined>(
     initialValues.invoiceCustomerId
   );
@@ -51,6 +52,7 @@ const QuotePaymentForm = ({ initialValues }: QuotePaymentFormProps) => {
         action={path.to.quotePayment(initialValues.id)}
         validator={quotePaymentValidator}
         defaultValues={initialValues}
+        fetcher={fetcher}
       >
         <CardHeader>
           <CardTitle>Payment</CardTitle>
