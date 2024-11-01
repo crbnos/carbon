@@ -1,14 +1,14 @@
 import { error, getBrowserEnv } from "@carbon/auth";
 import { getSessionFlash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { Button, Heading, toast } from "@carbon/react";
+import { Button, Heading, toast, Toaster } from "@carbon/react";
 import {
+  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
-  isRouteErrorResponse,
   useLoaderData,
   useRouteError,
 } from "@remix-run/react";
@@ -116,7 +116,7 @@ function Document({
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
         {children}
-
+        <Toaster position="bottom-right" />
         <ScrollRestoration />
         <Scripts />
         <Analytics />
@@ -144,6 +144,7 @@ export default function App() {
   return (
     <Document mode={mode}>
       <Outlet />
+
       <script
         dangerouslySetInnerHTML={{
           __html: `window.env = ${JSON.stringify(env)}`,

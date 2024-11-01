@@ -1,4 +1,4 @@
-import { Toaster, TooltipProvider } from "@carbon/react";
+import { TooltipProvider } from "@carbon/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -142,7 +142,6 @@ export default function AuthenticatedRoute() {
               </div>
             </div>
           </div>
-          <Toaster position="bottom-right" />
         </TooltipProvider>
       </RealtimeDataProvider>
     </CarbonProvider>
