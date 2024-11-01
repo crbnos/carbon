@@ -4,11 +4,12 @@ import {
   FormErrorMessage,
   FormLabel,
 } from "@carbon/react";
-import type { CalendarDateTime, DateValue } from "@internationalized/date";
+import type { CalendarDateTime } from "@internationalized/date";
 import {
   getLocalTimeZone,
   parseAbsolute,
   toCalendarDateTime,
+  toZoned,
 } from "@internationalized/date";
 import { useState } from "react";
 import { useField } from "../hooks";
@@ -37,16 +38,21 @@ const DateTimePicker = ({
       : undefined
   );
 
-  const handleChange = (date: DateValue) => {
+  const handleChange = (date: CalendarDateTime) => {
     setDate(toCalendarDateTime(date));
     onChange?.(toCalendarDateTime(date));
     validate();
   };
 
+  // Convert local time to UTC for storage
+  const utcValue = date
+    ? toZoned(date, getLocalTimeZone()).toAbsoluteString()
+    : "";
+
   return (
     <FormControl isInvalid={!!error}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
-      <input type="hidden" name={name} value={date?.toString()} />
+      <input type="hidden" name={name} value={utcValue} />
       <DateTimePickerBase
         value={date}
         onChange={handleChange}

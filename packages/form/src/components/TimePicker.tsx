@@ -18,28 +18,28 @@ type TimePickerProps = {
   label?: string;
   minValue?: TimeValue;
   maxValue?: TimeValue;
-  onChange?: (date: TimeValue) => void;
+  onChange?: (time: TimeValue) => void;
 };
 type TimeValue = Time | CalendarDateTime | ZonedDateTime;
 
 const TimePicker = ({ name, label, onChange }: TimePickerProps) => {
   const { error, defaultValue, validate } = useField(name);
-  const [date, setDate] = useState<TimeValue | null>(
+  const [time, setDate] = useState<TimeValue | null>(
     defaultValue ? parseTime(defaultValue) : null
   );
 
-  const handleChange = (date: TimeValue) => {
-    setDate(date);
+  const handleChange = (time: TimeValue) => {
+    setDate(time);
     validate();
-    onChange?.(date);
+    onChange?.(time);
   };
 
   return (
     <FormControl isInvalid={!!error}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
-      <input type="hidden" name={name} value={date?.toString()} />
+      <input type="hidden" name={name} value={time?.toString()} />
       <TimePickerBase
-        value={date ?? undefined}
+        value={time ?? undefined}
         //@ts-ignore
         onChange={handleChange}
       />

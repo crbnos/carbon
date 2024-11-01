@@ -348,6 +348,7 @@ export async function getWorkCentersByLocation(
     .from("workCenter")
     .select("*")
     .eq("locationId", locationId)
+    .eq("active", true)
     .order("name", { ascending: true });
 }
 

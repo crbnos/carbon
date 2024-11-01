@@ -1,15 +1,13 @@
+import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import {
-  ProductionEventForm,
   getJobOperations,
-  getProductionEvent,
+  ProductionEventForm,
   productionEventValidator,
   upsertProductionEvent,
 } from "~/modules/production";
@@ -21,14 +19,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     create: "production",
   });
 
-  const { id, jobId } = params;
-  if (!id) throw notFound("id not found");
+  const { jobId } = params;
   if (!jobId) throw notFound("jobId not found");
 
-  const [jobOperations, workCenters, productionEvent] = await Promise.all([
+  const [jobOperations, workCenters] = await Promise.all([
     getJobOperations(client, jobId),
     getWorkCentersList(client, companyId),
-    getProductionEvent(client, id),
   ]);
 
   const operationOptions = jobOperations.data?.map((operation) => ({
@@ -39,23 +35,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     value: operation.id,
   }));
 
-  if (productionEvent.error) {
-    throw notFound("Failed to fetch production event");
-  }
-
-  return json({ productionEvent: productionEvent.data, operationOptions });
+  return json({ operationOptions });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting",
+    create: "production",
   });
 
   const { jobId } = params;
-  if (!jobId) throw notFound("jobId or id not found");
+  if (!jobId) {
+    throw notFound("jobId not found");
+  }
 
   const formData = await request.formData();
+  const modal = formData.get("type") === "modal";
+
   const validation = await validator(productionEventValidator).validate(
     formData
   );
@@ -65,47 +61,42 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id, ...data } = validation.data;
-  if (!id) throw new Error("id not found");
 
-  const update = await upsertProductionEvent(client, {
-    id,
+  const insert = await upsertProductionEvent(client, {
     ...data,
     companyId,
-    updatedBy: userId,
+    createdBy: userId,
   });
-
-  if (update.error) {
+  if (insert.error) {
     return json(
       {},
       await flash(
         request,
-        error(update.error, "Failed to update production event")
+        error(insert.error, "Failed to insert production event")
       )
     );
   }
 
-  throw redirect(
-    `${path.to.jobProductionEvents(jobId)}?${getParams(request)}`,
-    await flash(request, success("Updated production event"))
-  );
+  return modal
+    ? json(insert, { status: 201 })
+    : redirect(
+        `${path.to.jobProductionEvents(jobId)}?${getParams(request)}`,
+        await flash(request, success("Production event created"))
+      );
 }
 
-export default function EditProductionEventRoute() {
-  const { productionEvent, operationOptions } = useLoaderData<typeof loader>();
-
+export default function NewProductionEventRoute() {
+  const { operationOptions } = useLoaderData<typeof loader>();
   const initialValues = {
-    id: productionEvent?.id!,
-    type: productionEvent?.type ?? ("Setup" as "Setup"),
-    jobOperationId: productionEvent?.jobOperationId ?? "",
-    startTime: productionEvent?.startTime ?? "",
-    employeeId: productionEvent?.employeeId ?? "",
-    workCenterId: productionEvent?.workCenterId ?? "",
-    endTime: productionEvent?.endTime ?? "",
+    type: "Labor" as const,
+    jobOperationId: "",
+    startTime: new Date(new Date().setHours(8, 0, 0, 0)).toISOString(),
+    employeeId: "",
+    workCenterId: "",
   };
 
   return (
     <ProductionEventForm
-      key={initialValues.id}
       initialValues={initialValues}
       operationOptions={operationOptions ?? []}
     />

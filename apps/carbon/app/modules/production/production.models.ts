@@ -393,7 +393,7 @@ export const getJobMethodValidator = z.object({
 
 export const productionEventValidator = z
   .object({
-    id: z.string().min(0, { message: "ID is required" }),
+    id: zfd.text(z.string().optional()),
     jobOperationId: z.string().min(1, { message: "Operation is required" }),
     type: z.enum(["Labor", "Machine", "Setup"], {
       errorMap: () => ({ message: "Event type is required" }),

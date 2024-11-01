@@ -5,7 +5,7 @@ import {
   FormLabel,
 } from "@carbon/react";
 import type { CalendarDate } from "@internationalized/date";
-import { parseDate } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, toZoned } from "@internationalized/date";
 import { useState } from "react";
 import { useField } from "../hooks";
 
@@ -37,10 +37,15 @@ const DatePicker = ({
     validate();
   };
 
+  // Convert local time to UTC for storage
+  const utcValue = date
+    ? toZoned(date, getLocalTimeZone()).toAbsoluteString()
+    : "";
+
   return (
     <FormControl isInvalid={!!error}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
-      <input type="hidden" name={name} value={date?.toString()} />
+      <input type="hidden" name={name} value={utcValue} />
       <DatePickerBase
         value={date}
         isDisabled={isDisabled}

@@ -93,8 +93,6 @@ serve(async (req: Request) => {
       return record;
     });
 
-    console.log({ mappedRecords });
-
     // Determine which enum keys are missing from the first record
     const missingEnumKeys = Object.keys(enumMappings).filter(
       (key) => !(key in mappedRecords[0])

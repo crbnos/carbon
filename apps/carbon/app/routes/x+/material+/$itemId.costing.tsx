@@ -88,14 +88,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export default function MaterialostingRoute() {
+export default function MaterialCostingRoute() {
   const { itemCost } = useLoaderData<typeof loader>();
   return (
     <ItemCostingForm
       key={itemCost.itemId}
       initialValues={{
         ...itemCost,
-        itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
+        // itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
         ...getCustomFields(itemCost.customFields),
       }}
     />

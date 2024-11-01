@@ -56,6 +56,7 @@ const JobHeader = () => {
   const location = useOptimisticLocation();
 
   const releaseModal = useDisclosure();
+  const cancelModal = useDisclosure();
 
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const optimisticAssignment = useOptimisticAssignment({
@@ -195,24 +196,21 @@ const JobHeader = () => {
           )}
 
           {!["Cancelled", "Completed"].includes(status ?? "") && (
-            <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
-              <input type="hidden" name="status" value="Cancelled" />
-              <Button
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Cancelled"
-                }
-                isDisabled={
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "production")
-                }
-                leftIcon={<LuStopCircle />}
-                type="submit"
-                variant="secondary"
-              >
-                Cancel
-              </Button>
-            </statusFetcher.Form>
+            <Button
+              onClick={cancelModal.onOpen}
+              isLoading={
+                statusFetcher.state !== "idle" &&
+                statusFetcher.formData?.get("status") === "Cancelled"
+              }
+              isDisabled={
+                statusFetcher.state !== "idle" ||
+                !permissions.can("update", "production")
+              }
+              leftIcon={<LuStopCircle />}
+              variant="secondary"
+            >
+              Cancel
+            </Button>
           )}
 
           {["Ready", "In Progress"].includes(status ?? "") && (
@@ -282,6 +280,13 @@ const JobHeader = () => {
         <JobStartModal
           job={routeData?.job}
           onClose={releaseModal.onClose}
+          fetcher={statusFetcher}
+        />
+      )}
+      {cancelModal.isOpen && (
+        <JobCancelModal
+          job={routeData?.job}
+          onClose={cancelModal.onClose}
           fetcher={statusFetcher}
         />
       )}
@@ -374,7 +379,61 @@ function JobStartModal({
             action={`${path.to.jobStatus(job.id!)}?schedule=1`}
           >
             <input type="hidden" name="status" value="Ready" />
-            <Button type="submit">Start</Button>
+            <Button
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              type="submit"
+            >
+              Start
+            </Button>
+          </fetcher.Form>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function JobCancelModal({
+  job,
+  onClose,
+  fetcher,
+}: {
+  job?: Job;
+  fetcher: FetcherWithComponents<{}>;
+  onClose: () => void;
+}) {
+  if (!job) return null;
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Cancel {job?.jobId}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          Are you sure you want to cancel this job? It will no longer be
+          available on the shop floor.
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Don't Cancel
+          </Button>
+          <fetcher.Form
+            onSubmit={onClose}
+            method="post"
+            action={path.to.jobStatus(job.id!)}
+          >
+            <input type="hidden" name="status" value="Cancelled" />
+            <Button variant="destructive" type="submit">
+              Cancel Job
+            </Button>
           </fetcher.Form>
         </ModalFooter>
       </ModalContent>

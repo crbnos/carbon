@@ -32,9 +32,17 @@ import { productionEventValidator } from "~/modules/production";
 
 type ProductionEventFormProps = {
   initialValues: z.infer<typeof productionEventValidator>;
+  operationOptions: {
+    label: string;
+    value: string;
+    helperText?: string;
+  }[];
 };
 
-const ProductionEventForm = ({ initialValues }: ProductionEventFormProps) => {
+const ProductionEventForm = ({
+  initialValues,
+  operationOptions,
+}: ProductionEventFormProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
@@ -51,8 +59,10 @@ const ProductionEventForm = ({ initialValues }: ProductionEventFormProps) => {
         )
       : undefined
   );
-
-  const isDisabled = !permissions.can("update", "production");
+  const isEditing = initialValues.id !== undefined;
+  const isDisabled = isEditing
+    ? !permissions.can("update", "production")
+    : !permissions.can("create", "production");
   return (
     <Drawer
       open
@@ -68,12 +78,19 @@ const ProductionEventForm = ({ initialValues }: ProductionEventFormProps) => {
           className="flex flex-col h-full"
         >
           <DrawerHeader>
-            <DrawerTitle>Edit Production Event</DrawerTitle>
+            <DrawerTitle>
+              {isEditing ? "Edit Production Event" : "Create Production Event"}
+            </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
             <Hidden name="id" />
-            <Hidden name="jobOperationId" />
+
             <VStack spacing={4}>
+              <Select
+                name="jobOperationId"
+                label="Operation"
+                options={operationOptions ?? []}
+              />
               <Employee name="employeeId" label="Employee" />
               <Select
                 name="type"

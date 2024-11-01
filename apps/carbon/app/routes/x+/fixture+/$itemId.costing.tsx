@@ -97,7 +97,7 @@ export default function FixtureCostingRoute() {
         key={itemCost.itemId}
         initialValues={{
           ...itemCost,
-          itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
+          // itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
           ...getCustomFields(itemCost.customFields),
         }}
       />

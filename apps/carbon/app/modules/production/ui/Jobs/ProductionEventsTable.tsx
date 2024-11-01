@@ -4,10 +4,16 @@ import { useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, Table, TimeTypeIcon } from "~/components";
+import {
+  EmployeeAvatar,
+  Hyperlink,
+  New,
+  Table,
+  TimeTypeIcon,
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import type { WorkCenter } from "~/modules/resources";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -193,6 +199,7 @@ const ProductionEventsTable = memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [permissions]
     );
+    const [params] = useUrlParams();
 
     return (
       <>
@@ -200,6 +207,11 @@ const ProductionEventsTable = memo(
           count={count}
           columns={columns}
           data={data}
+          primaryAction={
+            permissions.can("update", "accounting") && (
+              <New label="Production Event" to={`new?${params.toString()}`} />
+            )
+          }
           renderContextMenu={renderContextMenu}
         />
         {deleteModal.isOpen && selectedEvent && (

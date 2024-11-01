@@ -591,27 +591,40 @@ export async function updateJobOperationStatus(
     .single();
 }
 
-export async function updateProductionEvent(
+export async function upsertProductionEvent(
   client: SupabaseClient<Database>,
-  productionEvent: z.infer<typeof productionEventValidator> & {
-    id: string;
-    updatedBy: string;
-    companyId: string;
-  }
+  productionEvent:
+    | (Omit<z.infer<typeof productionEventValidator>, "id"> & {
+        createdBy: string;
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof productionEventValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        companyId: string;
+      })
 ) {
-  const { id, updatedBy, companyId, ...updateData } = productionEvent;
+  if ("createdBy" in productionEvent) {
+    return client
+      .from("productionEvent")
+      .insert([productionEvent])
+      .select("id")
+      .single();
+  } else {
+    const { id, updatedBy, companyId, ...updateData } = productionEvent;
 
-  return client
-    .from("productionEvent")
-    .update({
-      ...sanitize(updateData),
-      updatedBy,
-      updatedAt: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select()
-    .single();
+    return client
+      .from("productionEvent")
+      .update({
+        ...sanitize(updateData),
+        updatedBy,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select()
+      .single();
+  }
 }
 
 export async function updateProductionQuantity(
