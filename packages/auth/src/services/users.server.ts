@@ -23,9 +23,12 @@ export async function getUserClaims(userId: string, companyId: string) {
   } | null = null;
 
   try {
-    claims = JSON.parse(
-      (await redis.get(getPermissionCacheKey(userId))) || "null"
-    );
+    claims = (await redis.get(getPermissionCacheKey(userId))) as {
+      permissions: Record<string, Permission>;
+      role: string | null;
+    };
+  } catch (e) {
+    console.error("Failed to get claims from redis", e);
   } finally {
     // if we don't have permissions from redis, get them from the database
     if (!claims) {

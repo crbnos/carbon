@@ -85,7 +85,7 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       //   icon: <PiPiggyBank />,
       // },
       {
-        name: "Units of Measure",
+        name: "Units",
         to: path.to.uoms,
         role: "employee",
         icon: <LuRuler />,
