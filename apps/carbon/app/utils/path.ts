@@ -324,6 +324,7 @@ export const path = {
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
+    externalQuote: (id: string) => generatePath(`/external/quote/${id}`),
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
     fixture: (id: string) => generatePath(`${x}/fixture/${id}`),
@@ -418,6 +419,7 @@ export const path = {
     locations: `${x}/resources/locations`,
     login: "/login",
     logout: "/logout",
+    logos: `${x}/settings/logos`,
     makeMethodGet: `${x}/items/methods/get`,
     makeMethodSave: `${x}/items/methods/save`,
     material: (id: string) => generatePath(`${x}/material/${id}`),

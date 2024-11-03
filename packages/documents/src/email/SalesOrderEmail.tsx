@@ -59,6 +59,8 @@ const SalesOrderEmail = ({
   const reSubject = `Re: ${salesOrder.salesOrderId} from ${company.name}`;
 
   const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
+  const shouldConvertCurrency =
+    company.baseCurrencyCode !== salesOrder.currencyCode;
 
   return (
     <Html>
@@ -70,9 +72,9 @@ const SalesOrderEmail = ({
             <Section>
               <Row>
                 <Column>
-                  {company.logo ? (
+                  {company.logoLightIcon ? (
                     <Img
-                      src={company.logo}
+                      src={company.logoLightIcon}
                       width="auto"
                       height="42"
                       alt={`${company.name} Logo`}
@@ -194,7 +196,9 @@ const SalesOrderEmail = ({
                     <Text className="text-xs font-semibold">
                       {line.salesOrderLineType === "Comment"
                         ? "-"
-                        : formatter.format(getLineTotal(line))}
+                        : formatter.format(
+                            getLineTotal(line, shouldConvertCurrency)
+                          )}
                     </Text>
                   </Column>
                 </Row>
@@ -211,7 +215,9 @@ const SalesOrderEmail = ({
                 <Column className="border-l border-gray-200 h-12"></Column>
                 <Column className="w-[90px] pr-5">
                   <Text className="text-base font-semibold whitespace-nowrap">
-                    {formatter.format(getTotal(salesOrderLines))}
+                    {formatter.format(
+                      getTotal(salesOrderLines, shouldConvertCurrency)
+                    )}
                   </Text>
                 </Column>
               </Row>
@@ -220,9 +226,9 @@ const SalesOrderEmail = ({
             <Section>
               <Row>
                 <Column className="text-center">
-                  {company.logo ? (
+                  {company.logoLightIcon ? (
                     <Img
-                      src={company.logo}
+                      src={company.logoLightIcon}
                       width="60"
                       height="auto"
                       alt={`${company.name} Logo`}

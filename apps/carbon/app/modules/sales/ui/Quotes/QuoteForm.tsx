@@ -133,15 +133,17 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
               <CustomerLocation
                 name="customerLocationId"
                 label="Customer Location"
+                isOptional
                 customer={customer.id}
               />
               <CustomerContact
                 name="customerContactId"
                 label="Customer Contact"
+                isOptional
                 customer={customer.id}
               />
-              <Employee name="salesPersonId" label="Sales Person" />
-              <Employee name="estimatorId" label="Estimator" />
+              <Employee name="salesPersonId" label="Sales Person" isOptional />
+              <Employee name="estimatorId" label="Estimator" isOptional />
               <Location name="locationId" label="Quote Location" />
 
               <DatePicker

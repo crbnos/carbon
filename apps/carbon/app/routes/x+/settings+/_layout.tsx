@@ -23,7 +23,7 @@ export default function SettingsRoute() {
   const { groups } = useSettingsSubmodules();
 
   if (permissions.can("update", "users") && permissions.is("employee")) {
-    groups?.[1]?.routes.unshift({
+    groups?.[2]?.routes.unshift({
       name: "API Keys",
       to: path.to.apiKeys,
       role: "employee",

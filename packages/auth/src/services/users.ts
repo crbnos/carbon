@@ -32,8 +32,17 @@ export async function getCompanies(
   return {
     data: companies.data.map((company) => ({
       ...company,
-      logo: company.logo
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logo}`
+      logoLightIcon: company.logoLightIcon
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoLightIcon}`
+        : null,
+      logoDarkIcon: company.logoDarkIcon
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoDarkIcon}`
+        : null,
+      logoLight: company.logoLight
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoLight}`
+        : null,
+      logoDark: company.logoDark
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoDark}`
         : null,
     })),
     error: null,

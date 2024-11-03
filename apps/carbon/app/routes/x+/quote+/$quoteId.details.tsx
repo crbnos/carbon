@@ -93,6 +93,7 @@ export default function QuoteDetailsRoute() {
   const initialValues = {
     id: quoteData?.quote?.id ?? "",
     customerId: quoteData?.quote?.customerId ?? "",
+    customerLocationId: quoteData?.quote?.customerLocationId ?? "",
     customerContactId: quoteData?.quote?.customerContactId ?? "",
     customerReference: quoteData?.quote?.customerReference ?? "",
     dueDate: quoteData?.quote?.dueDate ?? "",

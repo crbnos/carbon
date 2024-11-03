@@ -1919,7 +1919,10 @@ export type Database = {
           email: string | null
           fax: string | null
           id: string
-          logo: string | null
+          logoDark: string | null
+          logoDarkIcon: string | null
+          logoLight: string | null
+          logoLightIcon: string | null
           name: string
           phone: string | null
           postalCode: string | null
@@ -1938,7 +1941,10 @@ export type Database = {
           email?: string | null
           fax?: string | null
           id?: string
-          logo?: string | null
+          logoDark?: string | null
+          logoDarkIcon?: string | null
+          logoLight?: string | null
+          logoLightIcon?: string | null
           name: string
           phone?: string | null
           postalCode?: string | null
@@ -1957,7 +1963,10 @@ export type Database = {
           email?: string | null
           fax?: string | null
           id?: string
-          logo?: string | null
+          logoDark?: string | null
+          logoDarkIcon?: string | null
+          logoLight?: string | null
+          logoLightIcon?: string | null
           name?: string
           phone?: string | null
           postalCode?: string | null
@@ -22627,11 +22636,15 @@ export type Database = {
           city: string | null
           companyId: string | null
           countryCode: string | null
+          digitalQuoteEnabled: boolean | null
           email: string | null
           employeeType: string | null
           fax: string | null
           id: string | null
-          logo: string | null
+          logoDark: string | null
+          logoDarkIcon: string | null
+          logoLight: string | null
+          logoLightIcon: string | null
           name: string | null
           phone: string | null
           postalCode: string | null
@@ -26185,6 +26198,8 @@ export type Database = {
       }
       quoteCustomerDetails: {
         Row: {
+          contactEmail: string | null
+          contactName: string | null
           customerAddressLine1: string | null
           customerAddressLine2: string | null
           customerCity: string | null

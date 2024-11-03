@@ -30,9 +30,9 @@ const Header = ({ title, company }: HeaderProps) => {
   return (
     <View style={styles.header}>
       <View>
-        {company.logo && (
+        {company.logoLightIcon && (
           <View>
-            <Image src={company.logo} style={styles.logo} />
+            <Image src={company.logoLightIcon} style={styles.logo} />
           </View>
         )}
       </View>

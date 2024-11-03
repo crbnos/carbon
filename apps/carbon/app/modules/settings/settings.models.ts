@@ -66,6 +66,10 @@ export const customFieldValidator = z
     return true;
   });
 
+export const digitalQuoteValidator = z.object({
+  digitalQuoteEnabled: zfd.checkbox(),
+});
+
 export const sequenceValidator = z.object({
   table: z.string().min(1, { message: "Table is required" }),
   prefix: zfd.text(z.string().optional()),
