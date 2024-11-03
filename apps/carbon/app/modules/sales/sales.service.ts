@@ -7,6 +7,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting";
+import { upsertExternalLink } from "../shared/shared.service";
 import type {
   customerAccountingValidator,
   customerContactValidator,
@@ -1535,7 +1536,7 @@ export async function upsertQuote(
     const quoteId = insert.data?.[0]?.id;
     if (!quoteId) return insert;
 
-    const [shipment, payment, opportunity] = await Promise.all([
+    const [shipment, payment, opportunity, externalLink] = await Promise.all([
       client.from("quoteShipment").insert([
         {
           id: quoteId,
@@ -1558,6 +1559,13 @@ export async function upsertQuote(
       client
         .from("opportunity")
         .insert([{ quoteId, companyId: quote.companyId }]),
+      upsertExternalLink(client, {
+        documentType: "Quote",
+        documentId: quoteId,
+        customerId: quote.customerId,
+        expiresAt: quote.expirationDate,
+        companyId: quote.companyId,
+      }),
     ]);
 
     if (shipment.error) {
@@ -1571,6 +1579,12 @@ export async function upsertQuote(
     if (opportunity.error) {
       await deleteQuote(client, quoteId);
       return opportunity;
+    }
+    if (externalLink.data) {
+      await client
+        .from("quote")
+        .update({ externalLinkId: externalLink.data.id })
+        .eq("id", quoteId);
     }
 
     return insert;

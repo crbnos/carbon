@@ -96,7 +96,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   if (
     quote.data.expirationDate &&
-    new Date(quote.data.expirationDate) < new Date()
+    new Date(quote.data.expirationDate) < new Date() &&
+    quote.data.status === "Sent"
   ) {
     return json({
       state: QuoteState.Expired,
