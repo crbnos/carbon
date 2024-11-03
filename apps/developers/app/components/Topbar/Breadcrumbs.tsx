@@ -23,7 +23,7 @@ import {
   Breadcrumbs as BreadcrumbsBase,
 } from "~/components/Breadcrumbs";
 
-import { useRouteData } from "~/hooks";
+import { useMode, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 
 export const BreadcrumbHandle = z.object({
@@ -83,6 +83,7 @@ const Breadcrumbs = () => {
 };
 
 function CompanyBreadcrumb() {
+  const mode = useMode();
   const routeData = useRouteData<{ company: Company; companies: Company[] }>(
     path.to.authenticatedRoot
   );
@@ -116,32 +117,36 @@ function CompanyBreadcrumb() {
                 <DropdownMenuLabel>Companies</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  {routeData?.companies.map((c) => (
-                    <Form
-                      key={c.companyId}
-                      method="post"
-                      action={path.to.companySwitch(c.companyId!)}
-                    >
-                      <DropdownMenuItem
-                        className="flex items-center justify-between w-full"
-                        asChild
+                  {routeData?.companies.map((c) => {
+                    const logo =
+                      mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+                    return (
+                      <Form
+                        key={c.companyId}
+                        method="post"
+                        action={path.to.companySwitch(c.companyId!)}
                       >
-                        <button type="submit">
-                          <HStack>
-                            <Avatar
-                              size="xs"
-                              name={c.name ?? undefined}
-                              src={c.logo ?? undefined}
-                            />
-                            <span>{c.name}</span>
-                          </HStack>
-                          <Badge variant="secondary" className="ml-2">
-                            {c.employeeType}
-                          </Badge>
-                        </button>
-                      </DropdownMenuItem>
-                    </Form>
-                  ))}
+                        <DropdownMenuItem
+                          className="flex items-center justify-between w-full"
+                          asChild
+                        >
+                          <button type="submit">
+                            <HStack>
+                              <Avatar
+                                size="xs"
+                                name={c.name ?? undefined}
+                                src={logo ?? undefined}
+                              />
+                              <span>{c.name}</span>
+                            </HStack>
+                            <Badge variant="secondary" className="ml-2">
+                              {c.employeeType}
+                            </Badge>
+                          </button>
+                        </DropdownMenuItem>
+                      </Form>
+                    );
+                  })}
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>

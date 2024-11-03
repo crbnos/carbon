@@ -52,6 +52,7 @@ const AvatarMenu = ({
   const name = `${user.firstName} ${user.lastName}`;
 
   const mode = useMode();
+  const logo = mode === "dark" ? company.logoDarkIcon : company.logoLightIcon;
 
   const nextMode = mode === "dark" ? "light" : "dark";
   const modeSubmitRef = useRef<HTMLButtonElement>(null);
@@ -127,7 +128,7 @@ const AvatarMenu = ({
                         <Avatar
                           size="xs"
                           name={c.name ?? undefined}
-                          src={c.logo ?? undefined}
+                          src={logo ?? undefined}
                         />
                         <span>{c.name}</span>
                       </HStack>
