@@ -11,15 +11,13 @@ import {
   VStack,
 } from "@carbon/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { Company as CompanyType } from "~/modules/settings";
 import {
   CompanyForm,
-  CompanyLogoForm,
   companyValidator,
   updateCompany,
-  updateLogo,
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -36,58 +34,23 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   const formData = await request.formData();
 
-  if (formData.get("intent") === "about") {
-    const validation = await validator(companyValidator).validate(formData);
+  const validation = await validator(companyValidator).validate(formData);
 
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const update = await updateCompany(client, companyId, {
-      ...validation.data,
-      updatedBy: userId,
-    });
-    if (update.error)
-      return json(
-        {},
-        await flash(request, error(update.error, "Failed to update company"))
-      );
-
-    return json({}, await flash(request, success("Updated company")));
+  if (validation.error) {
+    return validationError(validation.error);
   }
 
-  if (formData.get("intent") === "logo") {
-    const logoPath = formData.get("path");
-    if (logoPath === null || typeof logoPath === "string") {
-      const logoUpdate = await updateLogo(client, companyId, logoPath);
+  const update = await updateCompany(client, companyId, {
+    ...validation.data,
+    updatedBy: userId,
+  });
+  if (update.error)
+    return json(
+      {},
+      await flash(request, error(update.error, "Failed to update company"))
+    );
 
-      if (logoUpdate.error) {
-        throw redirect(
-          path.to.company,
-          await flash(request, error(logoUpdate.error, "Failed to update logo"))
-        );
-      }
-
-      throw redirect(
-        path.to.company,
-        await flash(
-          request,
-          success(
-            logoPath === null
-              ? "Removed logo. Please refresh the page"
-              : "Updated logo"
-          )
-        )
-      );
-    } else {
-      throw redirect(
-        path.to.company,
-        await flash(request, error(null, "Invalid logo path"))
-      );
-    }
-  }
-
-  return null;
+  return json({}, await flash(request, success("Updated company")));
 }
 
 export default function Company() {
@@ -123,11 +86,8 @@ export default function Company() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 w-full">
-            {/* @ts-ignore */}
-            <CompanyForm company={initialValues} />
-            <CompanyLogoForm company={company} />
-          </div>
+          {/* @ts-ignore */}
+          <CompanyForm company={initialValues} />
         </CardContent>
       </Card>
     </VStack>

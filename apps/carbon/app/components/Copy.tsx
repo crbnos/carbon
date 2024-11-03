@@ -5,11 +5,20 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@carbon/react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { LuCheck, LuCopy } from "react-icons/lu";
 import { copyToClipboard } from "~/utils/string";
 
-const Copy = ({ text, className }: { text: string; className?: string }) => {
+const Copy = ({
+  text,
+  icon,
+  className,
+}: {
+  text: string;
+  icon?: ReactNode;
+  className?: string;
+}) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
@@ -35,7 +44,7 @@ const Copy = ({ text, className }: { text: string; className?: string }) => {
           {isCopied ? (
             <LuCheck className="w-3 h-3" />
           ) : (
-            <LuCopy className="w-3 h-3" />
+            icon ?? <LuCopy className="w-3 h-3" />
           )}
         </Button>
       </TooltipTrigger>

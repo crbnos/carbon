@@ -7,6 +7,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  toast,
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef } from "react";
@@ -14,8 +15,9 @@ import { useEffect, useRef } from "react";
 type ConfirmProps = {
   action?: string;
   isOpen?: boolean;
-  name: string;
+  title: string;
   text: string;
+  confirmText: string;
   onCancel: () => void;
   onSubmit?: () => void;
 };
@@ -23,12 +25,13 @@ type ConfirmProps = {
 const Confirm = ({
   action,
   isOpen = true,
-  name,
+  title,
   text,
+  confirmText = "Confirm",
   onCancel,
   onSubmit,
 }: ConfirmProps) => {
-  const fetcher = useFetcher<{}>();
+  const fetcher = useFetcher<{ success: boolean; message: string }>();
   const submitted = useRef(false);
 
   useEffect(() => {
@@ -37,6 +40,16 @@ const Confirm = ({
       submitted.current = false;
     }
   }, [fetcher.state, onSubmit]);
+
+  useEffect(() => {
+    if (fetcher.data?.success === true && fetcher?.data?.message) {
+      toast.success(fetcher.data.message);
+    }
+
+    if (fetcher.data?.success === false && fetcher?.data?.message) {
+      toast.error(fetcher.data.message);
+    }
+  }, [fetcher.data?.message, fetcher.data?.success]);
 
   return (
     <Modal
@@ -48,7 +61,7 @@ const Confirm = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>{name}</ModalTitle>
+          <ModalTitle>{title}</ModalTitle>
         </ModalHeader>
         <ModalBody>{text}</ModalBody>
         <ModalFooter>
@@ -65,7 +78,7 @@ const Confirm = ({
               isDisabled={fetcher.state !== "idle"}
               type="submit"
             >
-              Confirm
+              {confirmText}
             </Button>
           </fetcher.Form>
         </ModalFooter>

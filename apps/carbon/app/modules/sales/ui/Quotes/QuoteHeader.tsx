@@ -1,9 +1,22 @@
-import { Button, HStack, Heading, useDisclosure } from "@carbon/react";
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  HStack,
+  Heading,
+  useDisclosure,
+} from "@carbon/react";
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
+  LuChevronDown,
+  LuExternalLink,
   LuEye,
+  LuFile,
   LuRefreshCw,
   LuSend,
   LuStopCircle,
@@ -77,15 +90,39 @@ const QuoteHeader = () => {
               className="h-8"
               isReadOnly={!permissions.can("update", "sales")}
             />
-            <Button leftIcon={<LuEye />} variant="secondary" asChild>
-              <a
-                target="_blank"
-                href={path.to.file.quote(quoteId)}
-                rel="noreferrer"
-              >
-                Preview
-              </a>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  leftIcon={<LuEye />}
+                  variant="secondary"
+                  rightIcon={<LuChevronDown />}
+                >
+                  Preview
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <a
+                    target="_blank"
+                    href={path.to.file.quote(quoteId)}
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuFile />} />
+                    PDF
+                  </a>
+                </DropdownMenuItem>
+                {routeData?.quote.externalLinkId && (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={path.to.externalQuote(routeData.quote.externalLinkId)}
+                    >
+                      <DropdownMenuIcon icon={<LuExternalLink />} />
+                      Digital Quote
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             {routeData?.quote?.status === "Draft" && (
               <>
                 <statusFetcher.Form

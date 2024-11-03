@@ -13,7 +13,10 @@ type PersonalData = {
 type Company = {
   id: string;
   name: string;
-  logo: string | null;
+  logoDarkIcon: string | null;
+  logoLightIcon: string | null;
+  logoDark: string | null;
+  logoLight: string | null;
   countryCode: string | null;
   baseCurrencyCode: string;
 };
@@ -64,7 +67,10 @@ function isCompany(value: any): value is Company {
   return (
     typeof value.id === "string" &&
     typeof value.name === "string" &&
-    (typeof value.logo === "string" || value.logo === null) &&
+    (typeof value.logoDarkIcon === "string" || value.logoDarkIcon === null) &&
+    (typeof value.logoLightIcon === "string" || value.logoLightIcon === null) &&
+    (typeof value.logoDark === "string" || value.logoDark === null) &&
+    (typeof value.logoLight === "string" || value.logoLight === null) &&
     (typeof value.countryCode === "string" || value.countryCode === null) &&
     typeof value.baseCurrencyCode === "string"
   );

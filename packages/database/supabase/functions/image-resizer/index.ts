@@ -27,6 +27,8 @@ serve(async (req: Request) => {
 
     const formData = await req.formData();
     const file = formData.get("file") as File;
+    const targetHeight = formData.get("height") as string | null;
+
     if (!file) {
       throw new Error("No file provided");
     }
@@ -38,18 +40,26 @@ serve(async (req: Request) => {
       const width = img.width;
       const height = img.height;
 
-      // Calculate the size for cropping
-      const size = Math.min(width, height);
+      if (targetHeight) {
+        const targetHeightInt = parseInt(targetHeight, 10);
 
-      // Calculate offsets for centering the crop
-      const x = Math.floor((width - size) / 2);
-      const y = Math.floor((height - size) / 2);
+        const ratio = img.width / img.height;
+        const targetWidthInt = Math.round(targetHeightInt * ratio);
+        img.resize(targetWidthInt, targetHeightInt);
+      } else {
+        // Calculate the size for cropping
+        const size = Math.min(width, height);
 
-      // Crop to square
-      img.crop(new MagickGeometry(x, y, size, size));
+        // Calculate offsets for centering the crop
+        const x = Math.floor((width - size) / 2);
+        const y = Math.floor((height - size) / 2);
 
-      // Resize to 400x400
-      img.resize(300, 300);
+        // Crop to square
+        img.crop(new MagickGeometry(x, y, size, size));
+
+        // Resize to 400x400
+        img.resize(300, 300);
+      }
 
       return img.write((data) => data);
     });

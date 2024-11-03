@@ -108,3 +108,27 @@ CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
     ON l.id = q."locationId"
   LEFT JOIN "opportunity" opp
     ON opp."quoteId" = q.id;
+
+
+DROP VIEW IF EXISTS "quoteCustomerDetails";
+CREATE OR REPLACE VIEW "quoteCustomerDetails" WITH(SECURITY_INVOKER=true) AS
+SELECT 
+  q.id as "quoteId",
+  c.name as "customerName",
+  contact."fullName" as "contactName", 
+  contact."email" as "contactEmail",
+  ca."addressLine1" AS "customerAddressLine1",
+  ca."addressLine2" AS "customerAddressLine2",
+  ca."city" AS "customerCity",
+  ca."stateProvince" AS "customerStateProvince",
+  ca."postalCode" AS "customerPostalCode",
+  ca."countryCode" AS "customerCountryCode",
+  country."name" AS "customerCountryName"
+  
+FROM "quote" q
+INNER JOIN "customer" c ON c."id" = q."customerId"
+LEFT JOIN "customerContact" cc ON cc."id" = q."customerContactId"
+LEFT JOIN "contact" contact ON contact.id = cc."contactId"
+LEFT JOIN "customerLocation" cl ON cl."id" = q."customerLocationId"
+LEFT JOIN "address" ca ON ca."id" = cl."addressId"
+LEFT OUTER JOIN "country" country ON country.alpha2 = ca."countryCode";

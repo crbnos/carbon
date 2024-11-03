@@ -4,6 +4,7 @@ import { forwardRef, type AnchorHTMLAttributes } from "react";
 import { BsFillHexagonFill } from "react-icons/bs";
 import { z } from "zod";
 import { useOptimisticLocation, useUser } from "~/hooks";
+import { useMode } from "~/hooks/useMode";
 import type { Authenticated, NavItem } from "~/types";
 import { useModules } from "./useModules";
 
@@ -13,6 +14,8 @@ export const ModuleHandle = z.object({
 
 const PrimaryNavigation = () => {
   const { company } = useUser();
+  const mode = useMode();
+  const logo = mode === "dark" ? company?.logoDarkIcon : company?.logoLightIcon;
 
   const navigationPanel = useDisclosure();
   const location = useOptimisticLocation();
@@ -49,9 +52,9 @@ const PrimaryNavigation = () => {
           <VStack spacing={1}>
             <Button isIcon asChild variant="ghost" size="lg">
               <Link to="/">
-                {company?.logo ? (
+                {logo ? (
                   <img
-                    src={company.logo}
+                    src={logo}
                     alt={`${company.name} logo`}
                     className="w-full h-auto rounded"
                   />

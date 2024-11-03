@@ -66,9 +66,9 @@ const PurchaseOrderEmail = ({
             <Section>
               <Row>
                 <Column>
-                  {company.logo ? (
+                  {company.logoLightIcon ? (
                     <Img
-                      src={company.logo}
+                      src={company.logoLightIcon}
                       width="auto"
                       height="42"
                       alt={`${company.name} Logo`}
@@ -238,9 +238,9 @@ const PurchaseOrderEmail = ({
             <Section>
               <Row>
                 <Column className="text-center">
-                  {company.logo ? (
+                  {company.logoLightIcon ? (
                     <Img
-                      src={company.logo}
+                      src={company.logoLightIcon}
                       width="60"
                       height="auto"
                       alt={`${company.name} Logo`}

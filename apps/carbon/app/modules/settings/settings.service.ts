@@ -83,8 +83,17 @@ export async function getCompanies(
   return {
     data: companies.data.map((company) => ({
       ...company,
-      logo: company.logo
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logo}`
+      logoLightIcon: company.logoLightIcon
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoLightIcon}`
+        : null,
+      logoDarkIcon: company.logoDarkIcon
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoDarkIcon}`
+        : null,
+      logoDark: company.logoDark
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoDark}`
+        : null,
+      logoLight: company.logoLight
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoLight}`
         : null,
     })),
     error: null,
@@ -107,8 +116,17 @@ export async function getCompany(
   return {
     data: {
       ...company.data,
-      logo: company.data.logo
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logo}`
+      logoLightIcon: company.data.logoLightIcon
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logoLightIcon}`
+        : null,
+      logoDarkIcon: company.data.logoDarkIcon
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logoDarkIcon}`
+        : null,
+      logoDark: company.data.logoDark
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logoDark}`
+        : null,
+      logoLight: company.data.logoLight
+        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logoLight}`
         : null,
     },
     error: null,
@@ -378,18 +396,62 @@ export async function upsertIntegration(
   return client.from("companyIntegration").upsert([update]);
 }
 
-export async function updateLogo(
+export async function updateDigitalQuoteSetting(
   client: SupabaseClient<Database>,
   companyId: string,
-  logo: string | null
+  digitalQuoteEnabled: boolean
+) {
+  return client
+    .from("company")
+    .update(sanitize({ digitalQuoteEnabled }))
+    .eq("id", companyId);
+}
+
+export async function updateLogoDark(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  logoDark: string | null
 ) {
   return client
     .from("company")
     .update(
       sanitize({
-        logo,
+        logoDark,
       })
     )
+    .eq("id", companyId);
+}
+
+export async function updateLogoLight(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  logoLight: string | null
+) {
+  return client
+    .from("company")
+    .update(sanitize({ logoLight }))
+    .eq("id", companyId);
+}
+
+export async function updateLogoDarkIcon(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  logoDarkIcon: string | null
+) {
+  return client
+    .from("company")
+    .update(sanitize({ logoDarkIcon }))
+    .eq("id", companyId);
+}
+
+export async function updateLogoLightIcon(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  logoLightIcon: string | null
+) {
+  return client
+    .from("company")
+    .update(sanitize({ logoLightIcon }))
     .eq("id", companyId);
 }
 

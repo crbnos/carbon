@@ -89,6 +89,15 @@ serve(async (req: Request) => {
             companyId
           );
 
+          // Check if any selected lines have quantity 0
+          const hasZeroQuantityLines = quoteLines.data.some(
+            (line) =>
+              line.id &&
+              selectedLines &&
+              line.id in selectedLines &&
+              selectedLines[line.id].quantity === 0
+          );
+
           const salesOrder = await trx
             .insertInto("salesOrder")
             .values([
@@ -101,7 +110,7 @@ serve(async (req: Request) => {
                 customerLocationId: quote.data.customerLocationId,
                 customerReference: quote.data.customerReference,
                 locationId: quote.data.locationId,
-                status: "Draft",
+                status: "Confirmed",
                 createdBy: userId,
                 companyId: companyId,
                 currencyCode:
@@ -142,7 +151,11 @@ serve(async (req: Request) => {
           const salesOrderLineInserts: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
             quoteLines.data
               .filter(
-                (line) => line.id && selectedLines && line.id in selectedLines
+                (line) =>
+                  line.id &&
+                  selectedLines &&
+                  line.id in selectedLines &&
+                  selectedLines[line.id].quantity > 0
               )
               .map((line) => {
                 return {
@@ -189,10 +202,9 @@ serve(async (req: Request) => {
               .execute();
           }
 
-          const newQuoteStatus: "Ordered" | "Partial" =
-            quoteLines.data.length === salesOrderLineInserts.length
-              ? "Ordered"
-              : "Partial";
+          const newQuoteStatus: "Ordered" | "Partial" = hasZeroQuantityLines
+            ? "Partial"
+            : "Ordered";
           await trx
             .updateTable("quote")
             .set({ status: newQuoteStatus })

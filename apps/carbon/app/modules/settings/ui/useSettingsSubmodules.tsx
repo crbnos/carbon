@@ -2,6 +2,7 @@ import {
   LuCrown,
   LuFactory,
   LuFileText,
+  LuImage,
   LuSheet,
   LuWorkflow,
 } from "react-icons/lu";
@@ -21,16 +22,28 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuFactory />,
       },
       {
-        name: "Sales",
-        to: path.to.salesSettings,
+        name: "Logos",
+        to: path.to.logos,
         role: "employee",
-        icon: <LuCrown />,
+        icon: <LuImage />,
       },
+
       {
         name: "Standard Terms",
         to: path.to.terms,
         role: "employee",
         icon: <LuFileText />,
+      },
+    ],
+  },
+  {
+    name: "Modules",
+    routes: [
+      {
+        name: "Sales",
+        to: path.to.salesSettings,
+        role: "employee",
+        icon: <LuCrown />,
       },
     ],
   },
