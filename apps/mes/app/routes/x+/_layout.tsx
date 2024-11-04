@@ -13,6 +13,7 @@ import {
   Toaster,
   TooltipProvider,
 } from "@carbon/react";
+import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -21,6 +22,7 @@ import { useEffect, useRef, useState } from "react";
 import { LuActivity, LuClock, LuInbox } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { AvatarMenu, Nav } from "~/components";
+import { EndShift } from "~/components/EndShift";
 import Feedback from "~/components/Feedback";
 import { useMediaQuery } from "~/hooks";
 import {
@@ -33,6 +35,20 @@ import {
 } from "~/services/location.server";
 import { defaultLayout } from "~/utils/layout";
 import { path } from "~/utils/path";
+
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  currentUrl,
+  defaultShouldRevalidate,
+}) => {
+  if (
+    currentUrl.pathname.startsWith("/refresh-session") ||
+    currentUrl.pathname.startsWith("/switch-company")
+  ) {
+    return true;
+  }
+
+  return defaultShouldRevalidate;
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
@@ -206,8 +222,16 @@ export default function AuthenticatedRoute() {
                         ]}
                       />
                     </div>
-                    <div className="flex flex-col p-2">
-                      <Feedback />
+                    <div
+                      className={cn(
+                        "flex flex-col gap-2",
+                        isCollapsed ? "p-1" : "p-2"
+                      )}
+                    >
+                      {activeEvents > 0 && (
+                        <EndShift isCollapsed={isCollapsed} />
+                      )}
+                      <Feedback isCollapsed={isCollapsed} />
                     </div>
                   </div>
                 </ResizablePanel>

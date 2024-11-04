@@ -432,6 +432,19 @@ export async function endProductionEvent(
     .select("*");
 }
 
+export async function endProductionEvents(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; employeeId: string; endTime: string }
+) {
+  return client
+    .from("productionEvent")
+    .update({
+      endTime: args.endTime,
+    })
+    .eq("employeeId", args.employeeId)
+    .eq("companyId", args.companyId);
+}
+
 export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
