@@ -16441,9 +16441,10 @@ export type Database = {
           customFields: Json | null
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
+          externalNotes: Json | null
           id: string
+          internalNotes: Json | null
           locationId: string | null
-          notes: string | null
           orderDate: string
           revisionId: number
           salesOrderId: string
@@ -16466,9 +16467,10 @@ export type Database = {
           customFields?: Json | null
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           locationId?: string | null
-          notes?: string | null
           orderDate?: string
           revisionId?: number
           salesOrderId: string
@@ -16491,9 +16493,10 @@ export type Database = {
           customFields?: Json | null
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           locationId?: string | null
-          notes?: string | null
           orderDate?: string
           revisionId?: number
           salesOrderId?: string
@@ -27691,11 +27694,12 @@ export type Database = {
           dropShipment: boolean | null
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
+          externalNotes: Json | null
           favorite: boolean | null
           id: string | null
+          internalNotes: Json | null
           locationId: string | null
           locationName: string | null
-          notes: string | null
           orderDate: string | null
           paymentTermName: string | null
           receiptPromisedDate: string | null
