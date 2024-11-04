@@ -1,3 +1,4 @@
+import { notFound } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as cookie from "cookie";
@@ -67,7 +68,7 @@ export async function getLocationAndWorkCenter(
     }
   }
 
-  if (!location) throw new Error("Failed to get a valid location");
+  if (!location) throw notFound("Failed to get a valid location");
 
   if (!workCenter) {
     const workCenters = await client
@@ -81,7 +82,7 @@ export async function getLocationAndWorkCenter(
     }
   }
 
-  if (!workCenter) throw new Error("Failed to get a valid work center");
+  if (!workCenter) throw notFound("Failed to get a valid work center");
   if (updated) {
     setLocationAndWorkCenter(companyId, location, workCenter);
   }

@@ -11,6 +11,7 @@ import {
   Button,
   File,
   HStack,
+  IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -22,13 +23,14 @@ import { useFetcher, useLocation } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { LuImage } from "react-icons/lu";
+import { LuImage, LuMessageCircle } from "react-icons/lu";
 import { feedbackValidator } from "~/models/feedback";
 import type { action } from "~/routes/x+/feedback";
 import { path } from "~/utils/path";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
-const Feedback = () => {
+
+const Feedback = ({ isCollapsed }: { isCollapsed: boolean }) => {
   const fetcher = useFetcher<typeof action>();
   const location = useLocation();
   const popoverTriggerRef = useRef<HTMLButtonElement>(null);
@@ -82,9 +84,18 @@ const Feedback = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <Button variant="secondary" size="lg">
-          Feedback
-        </Button>
+        {isCollapsed ? (
+          <IconButton
+            variant="secondary"
+            icon={<LuMessageCircle className="h-4 w-4" />}
+            size="lg"
+            aria-label="Feedback"
+          />
+        ) : (
+          <Button variant="secondary" size="lg">
+            Feedback
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-[380px] ">
         <ValidatedForm
