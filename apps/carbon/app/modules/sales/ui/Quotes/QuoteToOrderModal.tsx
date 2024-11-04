@@ -57,7 +57,7 @@ import type {
   QuotationPrice,
   QuotationShipment,
 } from "../../types";
-import { useOpportunityDocuments } from "../OpportunityDocuments/OpportunityDocuments";
+import { useOpportunityDocuments } from "../Opportunity/OpportunityDocuments";
 
 type QuoteToOrderDrawerProps = {
   isOpen: boolean;

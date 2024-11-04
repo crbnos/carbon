@@ -12,6 +12,7 @@ import {
   getSalesOrderPayment,
   getSalesOrderShipment,
   OpportunityDocuments,
+  OpportunityNotes,
   SalesOrderForm,
   SalesOrderPaymentForm,
   SalesOrderShipmentForm,
@@ -22,6 +23,7 @@ import {
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { JSONContent } from "@carbon/react";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -157,7 +159,8 @@ export default function SalesOrderRoute() {
     status: orderData?.salesOrder?.status ?? ("Draft" as "Draft"),
     receiptRequestedDate: orderData?.salesOrder?.receiptRequestedDate ?? "",
     receiptPromisedDate: orderData?.salesOrder?.receiptPromisedDate ?? "",
-    notes: orderData?.salesOrder?.notes ?? "",
+    externalNotes: orderData?.salesOrder?.externalNotes ?? {},
+    internalNotes: orderData?.salesOrder?.internalNotes ?? {},
     currencyCode: orderData?.salesOrder?.currencyCode ?? "",
     exchangeRate: orderData?.salesOrder?.exchangeRate ?? undefined,
     exchangeRateUpdatedAt: orderData?.salesOrder?.exchangeRateUpdatedAt ?? "",
@@ -195,20 +198,28 @@ export default function SalesOrderRoute() {
     <>
       <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
       <OpportunityDocuments
+        key={`documents-${initialValues.id}`}
         opportunity={orderData?.opportunity!}
         attachments={orderData?.files ?? []}
         id={orderId}
         type="Sales Order"
       />
+      <OpportunityNotes
+        key={`notes-${orderId}`}
+        id={orderData.salesOrder.id}
+        table="salesOrder"
+        internalNotes={orderData.salesOrder.internalNotes as JSONContent}
+        externalNotes={orderData.salesOrder.externalNotes as JSONContent}
+      />
       <SalesOrderShipmentForm
-        key={initialValues.id}
+        key={`shipment-${initialValues.id}`}
         initialValues={shipmentInitialValues}
 
         // shippingTerms={shippingTerms as ListItem[]}
       />
 
       <SalesOrderPaymentForm
-        key={initialValues.id}
+        key={`payment-${initialValues.id}`}
         initialValues={paymentInitialValues}
       />
     </>

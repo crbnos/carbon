@@ -231,17 +231,13 @@ const SalesOrderPDF = ({
             </Text>
           </View>
         </View>
-        {salesOrder?.notes && (
-          <View style={tw("flex flex-row mb-5")}>
-            <View style={tw("w-1/2")}>
-              <Text style={tw("text-gray-500 text-xs")}>Notes</Text>
-              <Text style={tw("text-sm")}>{salesOrder?.notes}</Text>
-            </View>
-          </View>
-        )}
-      </View>
-      <View style={tw("flex flex-col gap-4 w-full")}>
-        <Note title="Standard Terms & Conditions" content={terms} />
+        <View style={tw("flex flex-col gap-4 w-full")}>
+          <Note
+            title="Notes"
+            content={(salesOrder.externalNotes ?? {}) as JSONContent}
+          />
+          <Note title="Standard Terms & Conditions" content={terms} />
+        </View>
       </View>
     </Template>
   );
