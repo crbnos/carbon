@@ -139,14 +139,14 @@ const CompanyLogoForm = ({
       <div
         className={cn(
           "flex items-center justify-center h-[156px] w-[156px] rounded-lg",
-          mode === "dark" ? "bg-black text-white" : "bg-white text-black"
+          mode === "dark" ? "bg-black text-white" : "bg-zinc-200/90 text-black"
         )}
       >
         {currentLogoPath ? (
           <img
             alt={getLogoTitle()}
             src={currentLogoPath}
-            className="h-32 w-auto mx-auto"
+            className="h-32 w-auto mx-auto rounded-lg"
           />
         ) : (
           <Avatar name={company?.name ?? undefined} size="2xl" />
@@ -170,7 +170,9 @@ const CompanyLogoForm = ({
       <div
         className={cn(
           "flex items-center justify-center w-full h-[156px] rounded-lg bg-[url('/grid.svg')] bg-repeat border border-input",
-          mode === "dark" ? "bg-black/90 text-white" : "bg-white/90 text-black"
+          mode === "dark"
+            ? "bg-black/90 text-white"
+            : "bg-zinc-200/90 text-black"
         )}
       >
         {currentLogoPath ? (
