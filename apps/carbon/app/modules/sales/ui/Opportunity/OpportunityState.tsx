@@ -1,6 +1,7 @@
 import { Card, cn } from "@carbon/react";
-import { Link, useLocation } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { LuCheckCircle2, LuCircle } from "react-icons/lu";
+import { useOptimisticLocation } from "~/hooks/useOptimisticLocation";
 import { path } from "~/utils/path";
 import type { Opportunity } from "../../types";
 
@@ -65,7 +66,7 @@ function getIsCurrent(
 const states = ["RFQ", "Quote", "Order", "Shipped"];
 
 const OpportunityState = ({ opportunity }: { opportunity: Opportunity }) => {
-  const { pathname } = useLocation();
+  const { pathname } = useOptimisticLocation();
   return (
     <Card>
       <div className="relative flex items-center justify-between">

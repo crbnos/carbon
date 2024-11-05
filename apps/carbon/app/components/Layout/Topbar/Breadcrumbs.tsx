@@ -36,6 +36,7 @@ import {
 import { Currency, Input, Submit } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { useRouteData, useUser } from "~/hooks";
+import { useMode } from "~/hooks/useMode";
 import { companyValidator, type Company } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -109,6 +110,8 @@ function CompanyBreadcrumb() {
   const hasCompanyMenu = canCreateCompany || hasMultipleCompanies;
   const companyForm = useDisclosure();
 
+  const mode = useMode();
+
   return (
     <BreadcrumbItem isFirstChild>
       {hasCompanyMenu ? (
@@ -128,32 +131,36 @@ function CompanyBreadcrumb() {
               <DropdownMenuLabel>Companies</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                {routeData?.companies.map((c) => (
-                  <Form
-                    key={c.companyId}
-                    method="post"
-                    action={path.to.companySwitch(c.companyId!)}
-                  >
-                    <DropdownMenuItem
-                      className="flex items-center justify-between w-full"
-                      asChild
+                {routeData?.companies.map((c) => {
+                  const logo =
+                    mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+                  return (
+                    <Form
+                      key={c.companyId}
+                      method="post"
+                      action={path.to.companySwitch(c.companyId!)}
                     >
-                      <button type="submit">
-                        <HStack>
-                          <Avatar
-                            size="xs"
-                            name={c.name ?? undefined}
-                            src={c.logo ?? undefined}
-                          />
-                          <span>{c.name}</span>
-                        </HStack>
-                        <Badge variant="secondary" className="ml-2">
-                          {c.employeeType}
-                        </Badge>
-                      </button>
-                    </DropdownMenuItem>
-                  </Form>
-                ))}
+                      <DropdownMenuItem
+                        className="flex items-center justify-between w-full"
+                        asChild
+                      >
+                        <button type="submit">
+                          <HStack>
+                            <Avatar
+                              size="xs"
+                              name={c.name ?? undefined}
+                              src={logo ?? undefined}
+                            />
+                            <span>{c.name}</span>
+                          </HStack>
+                          <Badge variant="secondary" className="ml-2">
+                            {c.employeeType}
+                          </Badge>
+                        </button>
+                      </DropdownMenuItem>
+                    </Form>
+                  );
+                })}
               </DropdownMenuGroup>
 
               {canCreateCompany && (
