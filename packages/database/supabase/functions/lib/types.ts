@@ -2829,6 +2829,7 @@ export type Database = {
           name: string
           phone: string | null
           taxId: string | null
+          taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
           website: string | null
@@ -2850,6 +2851,7 @@ export type Database = {
           name: string
           phone?: string | null
           taxId?: string | null
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
           website?: string | null
@@ -2871,6 +2873,7 @@ export type Database = {
           name?: string
           phone?: string | null
           taxId?: string | null
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
           website?: string | null
@@ -14839,6 +14842,7 @@ export type Database = {
         Row: {
           convertedNetExtendedPrice: number | null
           convertedNetUnitPrice: number | null
+          convertedShippingCost: number | null
           convertedUnitPrice: number | null
           createdAt: string
           createdBy: string
@@ -14850,6 +14854,8 @@ export type Database = {
           quantity: number
           quoteId: string
           quoteLineId: string
+          shippingCost: number
+          taxPercent: number
           unitPrice: number
           updatedAt: string | null
           updatedBy: string | null
@@ -14857,6 +14863,7 @@ export type Database = {
         Insert: {
           convertedNetExtendedPrice?: number | null
           convertedNetUnitPrice?: number | null
+          convertedShippingCost?: number | null
           convertedUnitPrice?: number | null
           createdAt?: string
           createdBy: string
@@ -14868,6 +14875,8 @@ export type Database = {
           quantity?: number
           quoteId: string
           quoteLineId: string
+          shippingCost?: number
+          taxPercent?: number
           unitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -14875,6 +14884,7 @@ export type Database = {
         Update: {
           convertedNetExtendedPrice?: number | null
           convertedNetUnitPrice?: number | null
+          convertedShippingCost?: number | null
           convertedUnitPrice?: number | null
           createdAt?: string
           createdBy?: string
@@ -14886,6 +14896,8 @@ export type Database = {
           quantity?: number
           quoteId?: string
           quoteLineId?: string
+          shippingCost?: number
+          taxPercent?: number
           unitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -16825,6 +16837,7 @@ export type Database = {
           assetId: string | null
           companyId: string
           convertedAddOnCost: number | null
+          convertedShippingCost: number | null
           convertedUnitPrice: number | null
           createdAt: string
           createdBy: string
@@ -16850,7 +16863,9 @@ export type Database = {
           sentComplete: boolean
           setupPrice: number | null
           shelfId: string | null
+          shippingCost: number
           status: Database["public"]["Enums"]["salesOrderLineStatus"]
+          taxPercent: number
           unitOfMeasureCode: string | null
           unitPrice: number | null
           updatedAt: string | null
@@ -16862,6 +16877,7 @@ export type Database = {
           assetId?: string | null
           companyId: string
           convertedAddOnCost?: number | null
+          convertedShippingCost?: number | null
           convertedUnitPrice?: number | null
           createdAt?: string
           createdBy: string
@@ -16887,7 +16903,9 @@ export type Database = {
           sentComplete?: boolean
           setupPrice?: number | null
           shelfId?: string | null
+          shippingCost?: number
           status?: Database["public"]["Enums"]["salesOrderLineStatus"]
+          taxPercent?: number
           unitOfMeasureCode?: string | null
           unitPrice?: number | null
           updatedAt?: string | null
@@ -16899,6 +16917,7 @@ export type Database = {
           assetId?: string | null
           companyId?: string
           convertedAddOnCost?: number | null
+          convertedShippingCost?: number | null
           convertedUnitPrice?: number | null
           createdAt?: string
           createdBy?: string
@@ -16924,7 +16943,9 @@ export type Database = {
           sentComplete?: boolean
           setupPrice?: number | null
           shelfId?: string | null
+          shippingCost?: number
           status?: Database["public"]["Enums"]["salesOrderLineStatus"]
+          taxPercent?: number
           unitOfMeasureCode?: string | null
           unitPrice?: number | null
           updatedAt?: string | null
@@ -23141,6 +23162,7 @@ export type Database = {
           customerStatusId: string | null
           customerTypeId: string | null
           customFields: Json | null
+          externalId: Json | null
           fax: string | null
           id: string | null
           logo: string | null
@@ -23149,6 +23171,7 @@ export type Database = {
           phone: string | null
           status: string | null
           taxId: string | null
+          taxPercent: number | null
           type: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -25026,14 +25049,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -27481,6 +27504,7 @@ export type Database = {
           autodeskUrn: string | null
           companyId: string | null
           convertedAddOnCost: number | null
+          convertedShippingCost: number | null
           convertedUnitPrice: number | null
           createdAt: string | null
           createdBy: string | null
@@ -27514,7 +27538,9 @@ export type Database = {
           sentComplete: boolean | null
           setupPrice: number | null
           shelfId: string | null
+          shippingCost: number | null
           status: Database["public"]["Enums"]["salesOrderLineStatus"] | null
+          taxPercent: number | null
           thumbnailPath: string | null
           unitCost: number | null
           unitOfMeasureCode: string | null
@@ -30390,6 +30416,7 @@ export type Database = {
           owner_id: string | null
           path_tokens: string[] | null
           updated_at: string | null
+          user_metadata: Json | null
           version: string | null
         }
         Insert: {
@@ -30403,6 +30430,7 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
+          user_metadata?: Json | null
           version?: string | null
         }
         Update: {
@@ -30416,6 +30444,7 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
+          user_metadata?: Json | null
           version?: string | null
         }
         Relationships: [
@@ -30437,6 +30466,7 @@ export type Database = {
           key: string
           owner_id: string | null
           upload_signature: string
+          user_metadata: Json | null
           version: string
         }
         Insert: {
@@ -30447,6 +30477,7 @@ export type Database = {
           key: string
           owner_id?: string | null
           upload_signature: string
+          user_metadata?: Json | null
           version: string
         }
         Update: {
@@ -30457,6 +30488,7 @@ export type Database = {
           key?: string
           owner_id?: string | null
           upload_signature?: string
+          user_metadata?: Json | null
           version?: string
         }
         Relationships: [
@@ -30592,6 +30624,10 @@ export type Database = {
           metadata: Json
           updated_at: string
         }[]
+      }
+      operation: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       search: {
         Args: {
