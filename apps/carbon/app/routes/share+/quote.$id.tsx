@@ -771,7 +771,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
       acc + line.convertedNetUnitPrice * line.quantity + line.convertedAddOn
     );
   }, 0);
-  const tax = 0;
+  const tax = subtotal * (quote.taxPercent ?? 0);
   const total = subtotal + tax;
 
   const termsHTML = generateHTML(terms as JSONContent);
@@ -833,10 +833,10 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 locales={locale}
               />
             </HStack>
-            {/* <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>Tax:</span>
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
+              <span>Tax ({(quote.taxPercent * 100).toFixed(2)}%):</span>
               <span>{formatter.format(tax)}</span>
-            </HStack> */}
+            </HStack>
             <Separator />
             <HStack className="justify-between text-xl font-bold w-full">
               <span>Total:</span>
