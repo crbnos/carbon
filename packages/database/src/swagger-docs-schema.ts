@@ -2251,6 +2251,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.internalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.taxPercent",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -2382,6 +2385,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.internalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.taxPercent",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -2465,6 +2471,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.taxPercent",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -12095,6 +12104,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quotes.externalLinkId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotes.taxPercent",
           },
           {
             $ref: "#/parameters/rowFilter.quotes.locationName",
@@ -34793,6 +34805,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.internalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrders.taxPercent",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrders.shippingMethodName",
           },
           {
@@ -38498,6 +38513,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.externalLinkId",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.taxPercent",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -38590,6 +38608,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.externalLinkId",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.taxPercent",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -38679,6 +38700,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quote.externalLinkId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.taxPercent",
           },
           {
             $ref: "#/parameters/body.quote",
@@ -50174,6 +50198,7 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "taxPercent",
       ],
       properties: {
         id: {
@@ -50304,6 +50329,11 @@ export default {
         },
         internalNotes: {
           format: "json",
+        },
+        taxPercent: {
+          default: 0,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -53948,6 +53978,10 @@ export default {
             "Note:\nThis is a Foreign Key to `externalLink.id`.<fk table='externalLink' column='id'/>",
           format: "uuid",
           type: "string",
+        },
+        taxPercent: {
+          format: "numeric",
+          type: "number",
         },
         locationName: {
           format: "text",
@@ -58758,6 +58792,10 @@ export default {
         },
         internalNotes: {
           format: "json",
+        },
+        taxPercent: {
+          format: "numeric",
+          type: "number",
         },
         shippingMethodName: {
           format: "text",
@@ -65317,6 +65355,7 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "taxPercent",
       ],
       properties: {
         id: {
@@ -65457,6 +65496,11 @@ export default {
             "Note:\nThis is a Foreign Key to `externalLink.id`.<fk table='externalLink' column='id'/>",
           format: "uuid",
           type: "string",
+        },
+        taxPercent: {
+          default: 0,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -74003,6 +74047,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrder.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "body.employeeAbility": {
       name: "employeeAbility",
       description: "employeeAbility",
@@ -77423,6 +77474,13 @@ export default {
       name: "externalLinkId",
       required: false,
       format: "uuid",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotes.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -82718,6 +82776,13 @@ export default {
       name: "internalNotes",
       required: false,
       format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrders.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -91190,16 +91255,16 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quote.digitalQuoteAcceptedBy": {
-      name: "digitalQuoteAcceptedBy",
+    "rowFilter.quote.taxPercent": {
+      name: "taxPercent",
       required: false,
-      format: "text",
+      format: "numeric",
       in: "query",
       type: "string",
     },
-    "body.user": {
-      name: "user",
-      description: "user",
+    "body.customFieldTables": {
+      name: "customFieldTables",
+      description: "customFieldTables",
       required: false,
       in: "body",
       schema: {

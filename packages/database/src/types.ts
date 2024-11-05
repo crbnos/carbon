@@ -14172,6 +14172,7 @@ export type Database = {
           revisionId: number
           salesPersonId: string | null
           status: Database["public"]["Enums"]["quoteStatus"]
+          taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -14201,6 +14202,7 @@ export type Database = {
           revisionId?: number
           salesPersonId?: string | null
           status?: Database["public"]["Enums"]["quoteStatus"]
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -14230,6 +14232,7 @@ export type Database = {
           revisionId?: number
           salesPersonId?: string | null
           status?: Database["public"]["Enums"]["quoteStatus"]
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -16476,6 +16479,7 @@ export type Database = {
           revisionId: number
           salesOrderId: string
           status: Database["public"]["Enums"]["salesOrderStatus"]
+          taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -16502,6 +16506,7 @@ export type Database = {
           revisionId?: number
           salesOrderId: string
           status?: Database["public"]["Enums"]["salesOrderStatus"]
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -16528,6 +16533,7 @@ export type Database = {
           revisionId?: number
           salesOrderId?: string
           status?: Database["public"]["Enums"]["salesOrderStatus"]
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -25049,14 +25055,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -26943,6 +26949,7 @@ export type Database = {
           salesPersonId: string | null
           salesRfqId: string | null
           status: Database["public"]["Enums"]["quoteStatus"] | null
+          taxPercent: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -27751,6 +27758,7 @@ export type Database = {
           shippingMethodName: string | null
           shippingTermName: string | null
           status: Database["public"]["Enums"]["salesOrderStatus"] | null
+          taxPercent: number | null
           updatedAt: string | null
           updatedBy: string | null
           updatedByAvatar: string | null

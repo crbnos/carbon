@@ -258,6 +258,12 @@ const QuotePDF = ({
                       const additionalCharge =
                         additionalChargesByQuantity[index] ?? 0;
 
+                      const taxPercent = price?.taxPercent ?? 0;
+
+                      const totalPrice =
+                        (netExtendedPrice + additionalCharge) *
+                        (1 + taxPercent);
+
                       return (
                         <View key={quantity} style={tw("flex flex-row")}>
                           <Text style={tw("w-1/5 text-right")}>{quantity}</Text>
@@ -275,11 +281,7 @@ const QuotePDF = ({
                             {price ? `${price.leadTime} days` : "-"}
                           </Text>
                           <Text style={tw("w-1/5 text-right")}>
-                            {netUnitPrice
-                              ? formatter.format(
-                                  netExtendedPrice + additionalCharge
-                                )
-                              : "-"}
+                            {netUnitPrice ? formatter.format(totalPrice) : "-"}
                           </Text>
                         </View>
                       );

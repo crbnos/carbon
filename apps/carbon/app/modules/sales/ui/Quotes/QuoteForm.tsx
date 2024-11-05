@@ -26,6 +26,7 @@ import {
   Hidden,
   Input,
   Location,
+  Number,
   Submit,
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
@@ -46,9 +47,11 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
   const [customer, setCustomer] = useState<{
     id: string | undefined;
     currencyCode: string | undefined;
+    taxPercent: number;
   }>({
     id: initialValues.customerId,
     currencyCode: initialValues.currencyCode,
+    taxPercent: initialValues.taxPercent,
   });
   const isCustomer = permissions.is("customer");
   const isDisabled = initialValues?.status !== "Draft";
@@ -73,12 +76,13 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
         setCustomer({
           id: newValue?.value,
           currencyCode: undefined,
+          taxPercent: 0,
         });
       });
 
       const { data, error } = await carbon
         ?.from("customer")
-        .select("currencyCode")
+        .select("currencyCode, taxPercent")
         .eq("id", newValue.value)
         .single();
       if (error) {
@@ -87,12 +91,14 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
         setCustomer((prev) => ({
           ...prev,
           currencyCode: data.currencyCode ?? undefined,
+          taxPercent: data.taxPercent ?? 0,
         }));
       }
     } else {
       setCustomer({
         id: undefined,
         currencyCode: undefined,
+        taxPercent: 0,
       });
     }
   };
@@ -175,6 +181,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                   }
                 }}
               />
+
               {isEditing &&
                 !!customer.currencyCode &&
                 customer.currencyCode !== company.baseCurrencyCode && (
@@ -198,6 +205,26 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                     }}
                   />
                 )}
+
+              <Number
+                name="taxPercent"
+                label="Tax Percent"
+                minValue={0}
+                maxValue={1}
+                step={0.0001}
+                value={customer.taxPercent}
+                formatOptions={{
+                  style: "percent",
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 2,
+                }}
+                onChange={(newValue) => {
+                  setCustomer((prevCustomer) => ({
+                    ...prevCustomer,
+                    taxPercent: newValue,
+                  }));
+                }}
+              />
 
               <CustomFormFields table="quote" />
             </div>

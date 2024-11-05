@@ -1694,9 +1694,9 @@ export async function upsertQuoteLinePrices(
     return deletePrices;
   }
 
-  const quoteExchangeRate = await client
+  const quoteDetails = await client
     .from("quote")
-    .select("id, exchangeRate")
+    .select("id, exchangeRate, taxPercent")
     .eq("id", quoteId)
     .single();
 
@@ -1720,13 +1720,15 @@ export async function upsertQuoteLinePrices(
         discountPercent: pricesByQuantity[p.quantity].discountPercent,
         leadTime: pricesByQuantity[p.quantity].leadTime,
         quoteId: quoteId,
-        exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
+        exchangeRate: quoteDetails.data?.exchangeRate ?? 1,
+        taxPercent: quoteDetails.data?.taxPercent ?? 0,
       };
     }
     return {
       ...p,
       quoteId: quoteId,
-      exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
+      exchangeRate: quoteDetails.data?.exchangeRate ?? 1,
+      taxPercent: quoteDetails.data?.taxPercent ?? 0,
     };
   });
 

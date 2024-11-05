@@ -228,7 +228,7 @@ const QuoteLinePricing = ({
     if (!carbon) return;
     const quoteExchangeRate = await carbon
       .from("quote")
-      .select("id, exchangeRate")
+      .select("id, exchangeRate, taxPercent")
       .eq("id", quoteId)
       .single();
 
@@ -244,6 +244,7 @@ const QuoteLinePricing = ({
         unitPrice: 0,
         discountPercent: 0,
         exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
+        taxPercent: quoteExchangeRate.data?.taxPercent ?? 0,
         createdBy: userId,
       } as unknown as QuotationPrice;
     }
@@ -745,6 +746,50 @@ const QuoteLinePricing = ({
                 return <Td key={quantity.toString()}></Td>;
               })}
             </Tr>
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
+                <HStack className="w-full justify-between ">
+                  <span>Subtotal</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity, index) => {
+                const price =
+                  netPricesByQuantity[index] * quantity +
+                  additionalChargesByQuantity[index];
+                return (
+                  <Td key={index} className="group-hover:bg-muted/50">
+                    <VStack spacing={0}>
+                      <span>{formatter.format(price)}</span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
+                <HStack className="w-full justify-between ">
+                  <span>Tax Percent</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity, index) => {
+                const taxPercent = prices[quantity]?.taxPercent;
+                return (
+                  <Td key={index} className="group-hover:bg-muted/50">
+                    <NumberField
+                      value={taxPercent}
+                      formatOptions={{
+                        style: "percent",
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                        size="sm"
+                      />
+                    </NumberField>
+                  </Td>
+                );
+              })}
+            </Tr>
             <Tr className="font-bold [&>td]:bg-muted/60">
               <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
@@ -752,9 +797,11 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const price =
+                const subtotal =
                   netPricesByQuantity[index] * quantity +
                   additionalChargesByQuantity[index];
+                const tax = subtotal * (prices[quantity]?.taxPercent ?? 0);
+                const price = subtotal + tax;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
@@ -790,9 +837,11 @@ const QuoteLinePricing = ({
                     </HStack>
                   </Td>
                   {quantities.map((quantity, index) => {
-                    const price =
+                    const subtotal =
                       netPricesByQuantity[index] * quantity +
                       additionalChargesByQuantity[index];
+                    const tax = subtotal * (prices[quantity]?.taxPercent ?? 0);
+                    const price = subtotal + tax;
                     const exchangeRate = prices[quantity]?.exchangeRate;
                     const convertedPrice = price * (exchangeRate ?? 1);
                     return (
