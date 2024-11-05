@@ -39,7 +39,14 @@ import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuChevronDown, LuCreditCard, LuImage, LuTruck } from "react-icons/lu";
+import {
+  LuCheck,
+  LuChevronDown,
+  LuCreditCard,
+  LuImage,
+  LuTruck,
+  LuX,
+} from "react-icons/lu";
 import { useMode } from "~/hooks/useMode";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
@@ -346,7 +353,11 @@ const LineItems = ({
   const { company, quote, quoteLines, quoteLinePrices, thumbnails } =
     useLoaderData<typeof loader>().data!;
 
-  const [openItems, setOpenItems] = useState<string[]>([]);
+  const [openItems, setOpenItems] = useState<string[]>(() =>
+    Array.isArray(quoteLines) && quoteLines.length > 0
+      ? [quoteLines[0].id!]
+      : []
+  );
 
   const pricingByLine = useMemo(
     () =>
@@ -551,9 +562,11 @@ const LinePricingOptions = ({
       <RadioGroup
         className="w-full"
         value={selectedValue}
-        disabled={["Ordered", "Partial", "Expired", "Cancelled"].includes(
-          quote.status
-        )}
+        disabled={
+          ["Ordered", "Partial", "Expired", "Cancelled"].includes(
+            quote.status
+          ) || selectedLine.quantity === 0
+        }
         onValueChange={(value) => {
           const selectedOption =
             value === "0"
@@ -600,7 +613,7 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
             ) : (
-              [...options, deselectedLine].map(
+              options.map(
                 (option, index) =>
                   (line?.quantity?.includes(option.quantity) ||
                     option.quantity === 0) && (
@@ -669,6 +682,32 @@ const LinePricingOptions = ({
             </Tbody>
           </Table>
         </div>
+      )}
+      {selectedLine.quantity !== 0 ? (
+        <Button
+          variant="secondary"
+          leftIcon={<LuX />}
+          onClick={() => {
+            setSelectedValue("0");
+            // @ts-ignore
+            setSelectedLines((prev) => ({
+              ...prev,
+              [line.id!]: deselectedLine,
+            }));
+          }}
+        >
+          Don't Buy
+        </Button>
+      ) : (
+        <Button
+          variant="secondary"
+          leftIcon={<LuCheck />}
+          onClick={() => {
+            alert("todo");
+          }}
+        >
+          Buy
+        </Button>
       )}
     </VStack>
   );
