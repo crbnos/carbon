@@ -48,6 +48,7 @@ const Customer = (props: CustomerSelectProps) => {
           initialValues={{
             name: created,
             currencyCode: company.baseCurrencyCode,
+            taxPercent: 0,
           }}
         />
       )}

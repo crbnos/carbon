@@ -41,6 +41,9 @@ export const customerValidator = z.object({
   customerStatusId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
+  taxPercent: zfd.numeric(
+    z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
+  ),
   phone: zfd.text(z.string().optional()),
   fax: zfd.text(z.string().optional()),
   website: zfd.text(z.string().optional()),
