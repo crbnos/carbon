@@ -437,6 +437,16 @@ serve(async (req: Request) => {
 
           // Create the quote
           const quoteId = await getNextSequence(trx, "quote", companyId);
+          const externalLinkId = await trx
+            .insertInto("externalLink")
+            .values({
+              documentId: quoteId,
+              documentType: "Quote",
+              companyId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
           const quote = await trx
             .insertInto("quote")
             .values([
@@ -457,6 +467,7 @@ serve(async (req: Request) => {
                 currencyCode,
                 exchangeRate,
                 exchangeRateUpdatedAt: new Date().toISOString(),
+                externalLinkId: externalLinkId.id,
               },
             ])
             .returning(["id"])
