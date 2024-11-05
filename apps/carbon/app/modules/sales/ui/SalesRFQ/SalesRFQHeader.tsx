@@ -17,12 +17,7 @@ import {
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
-import {
-  LuAlertTriangle,
-  LuRefreshCw,
-  LuSend,
-  LuXCircle,
-} from "react-icons/lu";
+import { LuAlertTriangle, LuRefreshCw, LuXCircle } from "react-icons/lu";
 import { RiProgress2Line, RiProgress4Line } from "react-icons/ri";
 import {
   Assignee,
@@ -165,22 +160,6 @@ const SalesRFQHeader = () => {
                 Quote
               </Button>
             </>
-          )}
-
-          {status === "Quoted" && (
-            <Button
-              isDisabled={!routeData?.rfqSummary.quoteId}
-              leftIcon={<LuSend />}
-              variant="primary"
-              asChild
-            >
-              <Link
-                to={path.to.quoteDetails(routeData?.rfqSummary.quoteId!)}
-                prefetch="intent"
-              >
-                View Quote
-              </Link>
-            </Button>
           )}
         </HStack>
       </HStack>

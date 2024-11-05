@@ -217,6 +217,7 @@ serve(async (req: Request) => {
             .updateTable("opportunity")
             .set({
               salesOrderId: insertedSalesOrderId,
+              salesOrderCompletedDate: new Date().toISOString(),
             })
             .where("quoteId", "=", quote.data.id)
             .execute();

@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLocalTimeZone, now } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { salesRFQStatusType, updateSalesRFQStatus } from "~/modules/sales";
@@ -25,12 +26,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updateSalesRFQStatus(client, {
-    id,
-    status,
-    assignee: status === "Closed" ? null : undefined,
-    updatedBy: userId,
-  });
+  const [update] = await Promise.all([
+    updateSalesRFQStatus(client, {
+      id,
+      status,
+      assignee: status === "Closed" ? null : undefined,
+      updatedBy: userId,
+    }),
+    client
+      .from("opportunity")
+      .update({
+        salesRfqCompletedDate:
+          status !== "Draft"
+            ? now(getLocalTimeZone()).toAbsoluteString()
+            : null,
+      })
+      .eq("salesRfqId", id),
+  ]);
   if (update.error) {
     throw redirect(
       path.to.salesRfq(id),

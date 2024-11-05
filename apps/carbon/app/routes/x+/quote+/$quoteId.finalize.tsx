@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents";
 import { validationError, validator } from "@carbon/form";
+import { getLocalTimeZone, now } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
@@ -60,14 +61,22 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const externalLink = await upsertExternalLink(client, {
-    id: quote.data.externalLinkId ?? undefined, // TODO
-    documentType: "Quote",
-    documentId: quoteId,
-    customerId: quote.data.customerId,
-    expiresAt: quote.data.expirationDate,
-    companyId,
-  });
+  const [externalLink] = await Promise.all([
+    upsertExternalLink(client, {
+      id: quote.data.externalLinkId ?? undefined, // TODO
+      documentType: "Quote",
+      documentId: quoteId,
+      customerId: quote.data.customerId,
+      expiresAt: quote.data.expirationDate,
+      companyId,
+    }),
+    client
+      .from("opportunity")
+      .update({
+        quoteCompletedDate: now(getLocalTimeZone()).toAbsoluteString(),
+      })
+      .eq("quoteId", quoteId),
+  ]);
 
   if (externalLink.data && quote.data.externalLinkId !== externalLink.data.id) {
     await client

@@ -13,6 +13,7 @@ import {
   getSalesOrderShipment,
   OpportunityDocuments,
   OpportunityNotes,
+  OpportunityState,
   SalesOrderForm,
   SalesOrderPaymentForm,
   SalesOrderShipmentForm,
@@ -196,6 +197,10 @@ export default function SalesOrderRoute() {
 
   return (
     <>
+      <OpportunityState
+        key={`state-${initialValues.id}`}
+        opportunity={orderData?.opportunity!}
+      />
       <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
       <OpportunityDocuments
         key={`documents-${initialValues.id}`}

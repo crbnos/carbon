@@ -18,7 +18,6 @@ import {
   LuEye,
   LuFile,
   LuRefreshCw,
-  LuSend,
   LuStopCircle,
   LuTrophy,
   LuXCircle,
@@ -241,47 +240,31 @@ const QuoteHeader = () => {
                 </statusFetcher.Form>
               </>
             )}
-            {["Ordered", "Partial"].includes(routeData?.quote?.status ?? "") ? (
-              routeData?.quote?.salesOrderId ? (
+            {["Ordered", "Partial"].includes(
+              routeData?.quote?.status ?? ""
+            ) && (
+              <statusFetcher.Form
+                method="post"
+                action={path.to.quoteStatus(quoteId)}
+              >
+                <input type="hidden" name="status" value="Draft" />
                 <Button
-                  isDisabled={!routeData?.quote.salesOrderId}
-                  leftIcon={<LuSend />}
-                  variant="primary"
-                  asChild
+                  isDisabled={
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "sales")
+                  }
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") === "Draft"
+                  }
+                  leftIcon={<LuRefreshCw />}
+                  type="submit"
+                  variant="secondary"
                 >
-                  <Link
-                    to={path.to.salesOrderDetails(
-                      routeData?.quote.salesOrderId!
-                    )}
-                    prefetch="intent"
-                  >
-                    View Order
-                  </Link>
+                  Reopen
                 </Button>
-              ) : (
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.quoteStatus(quoteId)}
-                >
-                  <input type="hidden" name="status" value="Draft" />
-                  <Button
-                    isDisabled={
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "sales")
-                    }
-                    isLoading={
-                      statusFetcher.state !== "idle" &&
-                      statusFetcher.formData?.get("status") === "Draft"
-                    }
-                    leftIcon={<LuRefreshCw />}
-                    type="submit"
-                    variant="secondary"
-                  >
-                    Reopen
-                  </Button>
-                </statusFetcher.Form>
-              )
-            ) : null}
+              </statusFetcher.Form>
+            )}
           </HStack>
         </HStack>
       </div>

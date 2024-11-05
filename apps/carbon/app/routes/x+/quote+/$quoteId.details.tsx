@@ -2,7 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { JSONContent } from "@carbon/react";
+import { type JSONContent } from "@carbon/react";
 import { useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -17,6 +17,7 @@ import type {
 import {
   OpportunityDocuments,
   OpportunityNotes,
+  OpportunityState,
   QuoteForm,
   QuotePaymentForm,
   QuoteShipmentForm,
@@ -115,6 +116,10 @@ export default function QuoteDetailsRoute() {
 
   return (
     <>
+      <OpportunityState
+        key={`state-${initialValues.id}`}
+        opportunity={quoteData?.opportunity!}
+      />
       <QuoteForm key={initialValues.id} initialValues={initialValues} />
       <OpportunityDocuments
         opportunity={quoteData?.opportunity!}

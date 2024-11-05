@@ -10119,27 +10119,36 @@ export type Database = {
           companyId: string
           id: string
           purchaseOrderDocumentPath: string | null
+          quoteCompletedDate: string | null
           quoteId: string | null
           requestForQuoteDocumentPath: string | null
+          salesOrderCompletedDate: string | null
           salesOrderId: string | null
+          salesRfqCompletedDate: string | null
           salesRfqId: string | null
         }
         Insert: {
           companyId: string
           id?: string
           purchaseOrderDocumentPath?: string | null
+          quoteCompletedDate?: string | null
           quoteId?: string | null
           requestForQuoteDocumentPath?: string | null
+          salesOrderCompletedDate?: string | null
           salesOrderId?: string | null
+          salesRfqCompletedDate?: string | null
           salesRfqId?: string | null
         }
         Update: {
           companyId?: string
           id?: string
           purchaseOrderDocumentPath?: string | null
+          quoteCompletedDate?: string | null
           quoteId?: string | null
           requestForQuoteDocumentPath?: string | null
+          salesOrderCompletedDate?: string | null
           salesOrderId?: string | null
+          salesRfqCompletedDate?: string | null
           salesRfqId?: string | null
         }
         Relationships: [

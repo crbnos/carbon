@@ -169,8 +169,8 @@ const CompanyLogoForm = ({
     <VStack className="items-center py-4" spacing={4}>
       <div
         className={cn(
-          "flex items-center justify-center w-full h-[156px]  rounded-lg",
-          mode === "dark" ? "bg-black text-white" : "bg-white text-black"
+          "flex items-center justify-center w-full h-[156px] rounded-lg bg-[url('/grid.svg')] bg-repeat border border-input",
+          mode === "dark" ? "bg-black/90 text-white" : "bg-white/90 text-black"
         )}
       >
         {currentLogoPath ? (

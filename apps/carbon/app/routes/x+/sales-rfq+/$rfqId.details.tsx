@@ -19,6 +19,7 @@ import type {
 import {
   OpportunityDocuments,
   OpportunityNotes,
+  OpportunityState,
   SalesRFQForm,
   salesRfqValidator,
   upsertSalesRFQ,
@@ -98,6 +99,10 @@ export default function SalesRFQDetailsRoute() {
 
   return (
     <VStack spacing={2}>
+      <OpportunityState
+        key={`state-${initialValues.id}`}
+        opportunity={rfqData?.opportunity!}
+      />
       <SalesRFQForm
         key={`${initialValues.id}:${initialValues.status}`}
         initialValues={initialValues}
