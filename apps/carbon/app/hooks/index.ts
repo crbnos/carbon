@@ -4,6 +4,7 @@ import { useNanoStore } from "./useNanoStore";
 import { useNextItemId } from "./useNextItemId";
 import { useOnboarding } from "./useOnboarding";
 import { useOptimisticLocation } from "./useOptimisticLocation";
+import { usePercentFormatter } from "./usePercentFormatter";
 import { usePermissions } from "./usePermissions";
 import { useRealtime } from "./useRealtime";
 import { useRouteData } from "./useRouteData";
@@ -18,6 +19,7 @@ export {
   useNextItemId,
   useOnboarding,
   useOptimisticLocation,
+  usePercentFormatter,
   usePermissions,
   useRealtime,
   useRouteData,

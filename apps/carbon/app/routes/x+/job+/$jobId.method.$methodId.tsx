@@ -1,18 +1,34 @@
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
-import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+  VStack,
+} from "@carbon/react";
+import {
+  Await,
+  defer,
+  redirect,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
+  getProductionDataByOperations,
   JobBillOfMaterial,
   JobBillOfProcess,
+  JobEstimatesVsActuals,
 } from "~/modules/production";
 import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
 import { path } from "~/utils/path";
@@ -51,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     materials:
       materials?.data.map((m) => ({
         ...m,
@@ -70,6 +86,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         jobMakeMethodId: o.jobMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent,
       })) ?? [],
+    productionData: getProductionDataByOperations(
+      client,
+      operations?.data?.map((o) => o.id)
+    ),
   });
 }
 
@@ -80,23 +100,48 @@ export default function JobMakeMethodRoute() {
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   const loaderData = useLoaderData<typeof loader>();
-  const { materials, operations } = loaderData;
+  const { materials, operations, productionData } = loaderData;
 
   return (
-    <VStack spacing={2} className="p-2">
-      <JobBreadcrumbs />
-      <JobBillOfProcess
-        key={`bop:${methodId}:${operations.length}:${operations[0]?.workCenterId}`}
-        jobMakeMethodId={methodId}
-        operations={operations}
-        locationId={routeData?.job?.locationId ?? ""}
-      />
-      <JobBillOfMaterial
-        key={`bom:${methodId}:${materials.length}`}
-        jobMakeMethodId={methodId}
-        materials={materials}
-        operations={operations}
-      />
-    </VStack>
+    <div className="h-[calc(100vh-49px)] w-full items-start overflow-y-auto">
+      <VStack spacing={2} className="p-2">
+        <JobBreadcrumbs />
+        <JobBillOfProcess
+          key={`bop:${methodId}:${operations.length}:${operations[0]?.workCenterId}`}
+          jobMakeMethodId={methodId}
+          operations={operations}
+          locationId={routeData?.job?.locationId ?? ""}
+        />
+        <JobBillOfMaterial
+          key={`bom:${methodId}:${materials.length}`}
+          jobMakeMethodId={methodId}
+          materials={materials}
+          operations={operations}
+        />
+
+        <Suspense
+          fallback={
+            <Card>
+              <CardHeader>
+                <CardTitle>Estimates vs Actual</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center justify-center min-h-[200px]">
+                <Spinner />
+              </CardContent>
+            </Card>
+          }
+        >
+          <Await resolve={productionData}>
+            {(resolvedProductionData) => (
+              <JobEstimatesVsActuals
+                operations={operations}
+                productionEvents={resolvedProductionData.events}
+                productionQuantities={resolvedProductionData.quantities}
+              />
+            )}
+          </Await>
+        </Suspense>
+      </VStack>
+    </div>
   );
 }

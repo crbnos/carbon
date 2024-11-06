@@ -407,6 +407,19 @@ export async function getProductionEventsPage(
   };
 }
 
+export async function getProductionEventsByOperations(
+  client: SupabaseClient<Database>,
+  jobOperationIds: string[]
+) {
+  return client
+    .from("productionEvent")
+    .select(
+      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))"
+    )
+    .in("jobOperationId", jobOperationIds)
+    .order("startTime", { ascending: true });
+}
+
 export async function getProductionQuantity(
   client: SupabaseClient<Database>,
   id: string
@@ -444,6 +457,31 @@ export async function getProductionQuantities(
   }
 
   return query;
+}
+
+export async function getProductionDataByOperations(
+  client: SupabaseClient<Database>,
+  jobOperationIds: string[]
+) {
+  const [quantities, events] = await Promise.all([
+    client
+      .from("productionQuantity")
+      .select(
+        "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))"
+      )
+      .in("jobOperationId", jobOperationIds),
+    client
+      .from("productionEvent")
+      .select(
+        "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))"
+      )
+      .in("jobOperationId", jobOperationIds),
+  ]);
+
+  return {
+    quantities: quantities.data ?? [],
+    events: events.data ?? [],
+  };
 }
 
 export async function getScrapReasonsList(
