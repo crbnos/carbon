@@ -6,6 +6,7 @@ import {
   CardTitle,
   cn,
   HStack,
+  IconButton,
   Switch,
   Table,
   Tbody,
@@ -19,7 +20,7 @@ import {
   Tr,
   useDisclosure,
 } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 import type { z } from "zod";
 import { OperationStatusIcon, TimeTypeIcon } from "~/components/Icons";
 
@@ -30,8 +31,10 @@ import {
   parseAbsolute,
   toZoned,
 } from "@internationalized/date";
+import { LuExternalLink } from "react-icons/lu";
 import { usePercentFormatter } from "~/hooks";
 import { makeDurations } from "~/utils/duration";
+import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
 import type {
   JobOperation,
@@ -155,6 +158,7 @@ const JobEstimatesVsActuals = ({
               <Th>%</Th>
               <Th>Complete</Th>
               <Th>Scrap</Th>
+              <Th />
             </Tr>
           </Thead>
           <Tbody>
@@ -163,7 +167,7 @@ const JobEstimatesVsActuals = ({
               const actual = getActualTime(operation);
               return (
                 <>
-                  <Tr key={operation.id}>
+                  <Tr key={operation.id} className="border-b border-border">
                     <Td className="border-r border-border min-w-[200px]">
                       <HStack className="w-full justify-between ">
                         <span>{operation.description}</span>
@@ -184,7 +188,7 @@ const JobEstimatesVsActuals = ({
                       <span
                         className={cn(
                           "line-clamp-1",
-                          actual.total > estimated.total && "text-destructive"
+                          actual.total > estimated.total && "text-red-500"
                         )}
                       >
                         {formatDurationMilliseconds(actual.total)}
@@ -194,7 +198,7 @@ const JobEstimatesVsActuals = ({
                       <span
                         className={cn(
                           "line-clamp-1",
-                          actual.total > estimated.total && "text-destructive"
+                          actual.total > estimated.total && "text-red-500"
                         )}
                       >
                         {percentFormatter.format(
@@ -206,6 +210,19 @@ const JobEstimatesVsActuals = ({
                       operation.operationQuantity
                     }`}</Td>
                     <Td>{getScrapQuantity(operation)}</Td>
+                    <Td>
+                      <Link
+                        to={`${path.to.jobProductionEvents(
+                          jobId
+                        )}?filter=jobOperationId:eq:${operation.id}`}
+                      >
+                        <IconButton
+                          variant="ghost"
+                          icon={<LuExternalLink />}
+                          aria-label="View Production Events"
+                        />
+                      </Link>
+                    </Td>
                   </Tr>
                   {detailsDisclosure.isOpen && (
                     <>
@@ -218,8 +235,8 @@ const JobEstimatesVsActuals = ({
                           return null;
                         }
                         return (
-                          <Tr key={type}>
-                            <Td className="border-r border-border pl-8">
+                          <Tr key={type} className="border-b border-border">
+                            <Td className="border-r border-border pl-10">
                               <HStack>
                                 <TimeTypeIcon type={type} />
                                 <span>{type}</span>
@@ -251,6 +268,21 @@ const JobEstimatesVsActuals = ({
                             </Td>
                             <Td />
                             <Td />
+                            <Td>
+                              <Link
+                                to={`${path.to.jobProductionEvents(
+                                  jobId
+                                )}?filter=jobOperationId:eq:${
+                                  operation.id
+                                }&filter=type:eq:${type}`}
+                              >
+                                <IconButton
+                                  variant="ghost"
+                                  icon={<LuExternalLink />}
+                                  aria-label="View Production Events"
+                                />
+                              </Link>
+                            </Td>
                           </Tr>
                         );
                       })}
