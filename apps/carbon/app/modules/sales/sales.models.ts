@@ -693,9 +693,11 @@ const selectedLineSchema = z.object({
   addOn: z.number(),
   convertedAddOn: z.number(),
   convertedNetUnitPrice: z.number(),
+  convertedShippingCost: z.number(),
   leadTime: z.number(),
   netUnitPrice: z.number(),
   quantity: z.number(),
+  shippingCost: z.number(),
 });
 
 export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);

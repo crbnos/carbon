@@ -84,6 +84,8 @@ const QuoteToOrderDrawer = ({
         convertedNetUnitPrice: number;
         addOn: number;
         convertedAddOn: number;
+        shippingCost: number;
+        convertedShippingCost: number;
         leadTime: number;
       }
     >
@@ -357,6 +359,8 @@ type LinePricingFormProps = {
           convertedNetUnitPrice: number;
           addOn: number;
           convertedAddOn: number;
+          shippingCost: number;
+          convertedShippingCost: number;
           leadTime: number;
         }
       >
@@ -442,6 +446,8 @@ type LinePricingOptionsProps = {
           convertedNetUnitPrice: number;
           addOn: number;
           convertedAddOn: number;
+          shippingCost: number;
+          convertedShippingCost: number;
           leadTime: number;
         }
       >
@@ -467,6 +473,8 @@ const LinePricingOptions = ({
     convertedAddOn: 0,
     netUnitPrice: 0,
     convertedNetUnitPrice: 0,
+    shippingCost: 0,
+    convertedShippingCost: 0,
   });
 
   useEffect(() => {
@@ -479,6 +487,8 @@ const LinePricingOptions = ({
           convertedNetUnitPrice: overridePricing.convertedNetUnitPrice,
           addOn: overridePricing.addOn,
           convertedAddOn: overridePricing.convertedAddOn,
+          shippingCost: overridePricing.shippingCost,
+          convertedShippingCost: overridePricing.convertedShippingCost,
           leadTime: overridePricing.leadTime,
         },
       }));
@@ -536,6 +546,9 @@ const LinePricingOptions = ({
                   convertedAdditionalChargesByQuantity[
                     selectedOption.quantity
                   ] || 0,
+                shippingCost: selectedOption.shippingCost ?? 0,
+                convertedShippingCost:
+                  selectedOption.convertedShippingCost ?? 0,
                 leadTime: selectedOption.leadTime,
               },
             }));
@@ -549,6 +562,7 @@ const LinePricingOptions = ({
               <Th></Th>
               <Th>Quantity</Th>
               <Th>Unit Price</Th>
+              <Th>Shipping</Th>
               <Th>Add-Ons</Th>
               <Th>Lead Time</Th>
               <Th>Total Price</Th>
@@ -583,6 +597,9 @@ const LinePricingOptions = ({
                         {formatter.format(option.convertedNetUnitPrice ?? 0)}
                       </Td>
                       <Td>
+                        {formatter.format(option.convertedShippingCost ?? 0)}
+                      </Td>
+                      <Td>
                         {formatter.format(
                           convertedAdditionalChargesByQuantity[option.quantity]
                         )}
@@ -591,6 +608,7 @@ const LinePricingOptions = ({
                       <Td>
                         {formatter.format(
                           (option.convertedNetExtendedPrice ?? 0) +
+                            (option.convertedShippingCost ?? 0) +
                             convertedAdditionalChargesByQuantity[
                               option.quantity
                             ]
@@ -662,6 +680,37 @@ const LinePricingOptions = ({
                     className="w-[120px]"
                     value={
                       shouldConvertCurrency
+                        ? overridePricing.convertedShippingCost
+                        : overridePricing.shippingCost
+                    }
+                    formatOptions={{
+                      style: "currency",
+                      currency: quoteCurrency,
+                      maximumFractionDigits: 4,
+                    }}
+                    onChange={(shippingCost) =>
+                      setOverridePricing((v) => ({
+                        ...v,
+                        shippingCost: shouldConvertCurrency
+                          ? shippingCost / quoteExchangeRate
+                          : shippingCost,
+                        convertedShippingCost: shouldConvertCurrency
+                          ? shippingCost
+                          : shippingCost * quoteExchangeRate,
+                      }))
+                    }
+                  >
+                    <NumberInput
+                      size="md"
+                      className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                    />
+                  </NumberField>
+                </Td>
+                <Td>
+                  <NumberField
+                    className="w-[120px]"
+                    value={
+                      shouldConvertCurrency
                         ? overridePricing.convertedAddOn
                         : overridePricing.addOn
                     }
@@ -715,9 +764,11 @@ const LinePricingOptions = ({
                     shouldConvertCurrency
                       ? overridePricing.convertedNetUnitPrice *
                           overridePricing.quantity +
+                          (overridePricing.convertedShippingCost ?? 0) +
                           overridePricing.convertedAddOn
                       : overridePricing.netUnitPrice *
                           overridePricing.quantity +
+                          (overridePricing.shippingCost ?? 0) +
                           overridePricing.addOn
                   )}
                 </Td>
