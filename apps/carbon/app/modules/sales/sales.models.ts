@@ -137,7 +137,7 @@ export const quoteLineValidator = z.object({
     errorMap: () => ({ message: "Status is required" }),
   }),
   estimatorId: zfd.text(z.string().optional()),
-  description: zfd.text(z.string().optional()),
+  description: z.string().min(1, { message: "Description is required" }),
   methodType: z.enum(methodType, {
     errorMap: () => ({ message: "Method is required" }),
   }),
@@ -668,7 +668,7 @@ export const salesRfqLineValidator = z.object({
   customerPartId: z.string().min(1, { message: "Part Number is required" }),
   customerPartRevision: zfd.text(z.string().optional()),
   itemId: zfd.text(z.string().optional()),
-  description: zfd.text(z.string().optional()),
+  description: z.string().min(1, { message: "Description is required" }),
   quantity: z.array(
     zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
   ),

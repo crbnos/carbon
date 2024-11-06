@@ -331,7 +331,7 @@ serve(async (req: Request) => {
                 readableId,
                 type: "Part" as const,
                 active: false,
-                name: line.itemName ?? "",
+                name: line.description ?? line.itemName ?? "",
                 description: "",
                 itemTrackingType: "Inventory" as const,
                 replenishmentSystem: "Make" as const,

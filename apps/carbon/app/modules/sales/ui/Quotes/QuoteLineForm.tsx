@@ -268,7 +268,6 @@ const QuoteLineForm = ({
                         name="description"
                         label="Short Description"
                         value={itemData.description}
-                        isReadOnly
                       />
 
                       <SelectControlled
