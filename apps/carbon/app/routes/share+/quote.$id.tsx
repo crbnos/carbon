@@ -295,7 +295,7 @@ const LineItems = ({
 
   const [openItems, setOpenItems] = useState<string[]>(() =>
     Array.isArray(quoteLines) && quoteLines.length > 0
-      ? [quoteLines[0].id!]
+      ? quoteLines.map((line) => line.id!).filter(Boolean)
       : []
   );
 
