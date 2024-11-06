@@ -40,12 +40,11 @@ import MotionNumber from "motion-number";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  LuCheck,
   LuChevronDown,
   LuCreditCard,
   LuImage,
   LuTruck,
-  LuX,
+  LuXCircle,
 } from "react-icons/lu";
 import { useMode } from "~/hooks/useMode";
 import { getPaymentTermsList } from "~/modules/accounting";
@@ -319,22 +318,13 @@ type SelectedLine = {
   leadTime: number;
 };
 
-const deselectedLine: Omit<QuotationPrice, "id" | "quoteLineId"> = {
-  convertedNetExtendedPrice: 0,
-  convertedNetUnitPrice: 0,
-  convertedUnitPrice: 0,
-  createdAt: "",
-  createdBy: "",
-  discountPercent: 0,
-  exchangeRate: 1,
-  leadTime: 0,
-  netExtendedPrice: 0,
+const deselectedLine: SelectedLine = {
+  addOn: 0,
+  convertedAddOn: 0,
   netUnitPrice: 0,
+  convertedNetUnitPrice: 0,
   quantity: 0,
-  quoteId: "",
-  unitPrice: 0,
-  updatedAt: null,
-  updatedBy: null,
+  leadTime: 0,
 };
 
 const LineItems = ({
@@ -358,6 +348,15 @@ const LineItems = ({
       ? [quoteLines[0].id!]
       : []
   );
+
+  useEffect(() => {
+    Object.entries(selectedLines).forEach(([lineId, line]) => {
+      if (line.quantity === 0 && openItems.includes(lineId)) {
+        setOpenItems((prev) => prev.filter((item) => item !== lineId));
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLines]);
 
   const pricingByLine = useMemo(
     () =>
@@ -518,7 +517,10 @@ const LinePricingOptions = ({
   selectedLine,
   setSelectedLines,
 }: LinePricingOptionsProps) => {
-  const { quote } = useLoaderData<typeof loader>().data!;
+  const { quote, salesOrderLines } = useLoaderData<typeof loader>().data!;
+
+  const hasSalesOrder =
+    Array.isArray(salesOrderLines) && salesOrderLines.length > 0;
   const [selectedValue, setSelectedValue] = useState(
     selectedLine.quantity.toString()
   );
@@ -562,11 +564,9 @@ const LinePricingOptions = ({
       <RadioGroup
         className="w-full"
         value={selectedValue}
-        disabled={
-          ["Ordered", "Partial", "Expired", "Cancelled"].includes(
-            quote.status
-          ) || selectedLine.quantity === 0
-        }
+        disabled={["Ordered", "Partial", "Expired", "Cancelled"].includes(
+          quote.status
+        )}
         onValueChange={(value) => {
           const selectedOption =
             value === "0"
@@ -683,31 +683,22 @@ const LinePricingOptions = ({
           </Table>
         </div>
       )}
-      {selectedLine.quantity !== 0 ? (
-        <Button
-          variant="secondary"
-          leftIcon={<LuX />}
-          onClick={() => {
-            setSelectedValue("0");
-            // @ts-ignore
-            setSelectedLines((prev) => ({
-              ...prev,
-              [line.id!]: deselectedLine,
-            }));
-          }}
-        >
-          Don't Buy
-        </Button>
-      ) : (
-        <Button
-          variant="secondary"
-          leftIcon={<LuCheck />}
-          onClick={() => {
-            alert("todo");
-          }}
-        >
-          Buy
-        </Button>
+      {selectedLine.quantity !== 0 && !hasSalesOrder && (
+        <HStack spacing={2} className="w-full justify-start items-center">
+          <Button
+            variant="secondary"
+            leftIcon={<LuXCircle />}
+            onClick={() => {
+              setSelectedValue("0");
+              setSelectedLines((prev) => ({
+                ...prev,
+                [line.id!]: deselectedLine,
+              }));
+            }}
+          >
+            Don't Buy
+          </Button>
+        </HStack>
       )}
     </VStack>
   );
@@ -769,6 +760,16 @@ const Quote = ({ data }: { data: QuoteData }) => {
         const salesOrderLine = salesOrderLines?.find(
           (salesOrderLine) => salesOrderLine.id === line.id
         );
+
+        if (
+          Array.isArray(salesOrderLines) &&
+          salesOrderLines.length > 0 &&
+          !salesOrderLine
+        ) {
+          acc[line.id!] = deselectedLine;
+          return acc;
+        }
+
         const price = salesOrderLine
           ? quoteLinePrices?.find(
               (price) =>
