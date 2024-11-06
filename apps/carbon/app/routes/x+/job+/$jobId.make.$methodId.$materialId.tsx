@@ -1,19 +1,35 @@
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
-import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+  VStack,
+} from "@carbon/react";
+import {
+  Await,
+  defer,
+  redirect,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
   getJobMaterial,
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
+  getProductionDataByOperations,
   JobBillOfMaterial,
   JobBillOfProcess,
+  JobEstimatesVsActuals,
   JobMaterialForm,
 } from "~/modules/production";
 import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
@@ -34,7 +50,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
   ]);
-
   if (material.error) {
     throw redirect(
       path.to.job(jobId),
@@ -62,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     material: {
       ...material.data,
       id: material.data.id ?? "",
@@ -97,6 +112,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         jobMakeMethodId: o.jobMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent | null,
       })) ?? [],
+    productionData: getProductionDataByOperations(
+      client,
+      operations?.data?.map((o) => o.id)
+    ),
   });
 }
 
@@ -106,7 +125,7 @@ export default function JobMakeMethodRoute() {
   if (!jobId) throw new Error("Could not find jobId");
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const loaderData = useLoaderData<typeof loader>();
-  const { material, materials, operations } = loaderData;
+  const { material, materials, operations, productionData } = loaderData;
 
   return (
     <VStack spacing={2} className="p-2">
@@ -128,6 +147,28 @@ export default function JobMakeMethodRoute() {
         materials={materials}
         operations={operations}
       />
+      <Suspense
+        fallback={
+          <Card>
+            <CardHeader>
+              <CardTitle>Estimates vs Actual</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center min-h-[200px]">
+              <Spinner />
+            </CardContent>
+          </Card>
+        }
+      >
+        <Await resolve={productionData}>
+          {(resolvedProductionData) => (
+            <JobEstimatesVsActuals
+              operations={operations}
+              productionEvents={resolvedProductionData.events}
+              productionQuantities={resolvedProductionData.quantities}
+            />
+          )}
+        </Await>
+      </Suspense>
     </VStack>
   );
 }
