@@ -225,8 +225,15 @@ const QuotePDF = ({
                     Object.keys(additionalCharges).length > 0 && (
                       <View style={tw("mt-2.5")}>
                         <Text style={tw("text-[9px] font-bold")}>
-                          Additional Charges
+                          Shipping & Add'l Charges
                         </Text>
+                        {pricesByLine[line.id]?.some(
+                          (price) => (price.shippingCost ?? 0) > 0
+                        ) && (
+                          <Text style={tw("text-[9px] opacity-80")}>
+                            - Shipping
+                          </Text>
+                        )}
                         {Object.values(additionalCharges)
                           .sort((a, b) =>
                             a.description.localeCompare(b.description)
@@ -258,10 +265,13 @@ const QuotePDF = ({
                       const additionalCharge =
                         additionalChargesByQuantity[index] ?? 0;
 
+                      const additionalChargePlusShipping =
+                        additionalCharge + (price?.convertedShippingCost ?? 0);
+
                       const taxPercent = price?.taxPercent ?? 0;
 
                       const totalPrice =
-                        (netExtendedPrice + additionalCharge) *
+                        (netExtendedPrice + additionalChargePlusShipping) *
                         (1 + taxPercent);
 
                       return (
@@ -273,8 +283,8 @@ const QuotePDF = ({
                               : "-"}
                           </Text>
                           <Text style={tw("w-1/5 text-right")}>
-                            {additionalCharge
-                              ? formatter.format(additionalCharge)
+                            {additionalChargePlusShipping
+                              ? formatter.format(additionalChargePlusShipping)
                               : "-"}
                           </Text>
                           <Text style={tw("w-1/5 text-right")}>

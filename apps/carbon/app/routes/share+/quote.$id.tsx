@@ -266,6 +266,7 @@ type SelectedLine = {
   addOn: number;
   convertedAddOn: number;
   leadTime: number;
+  convertedShippingCost: number;
 };
 
 const deselectedLine: SelectedLine = {
@@ -275,6 +276,7 @@ const deselectedLine: SelectedLine = {
   convertedNetUnitPrice: 0,
   quantity: 0,
   leadTime: 0,
+  convertedShippingCost: 0,
 };
 
 const LineItems = ({
@@ -502,6 +504,12 @@ const LinePricingOptions = ({
   );
 
   const additionalCharges: { name: string; amount: number }[] = [];
+  if (selectedLine.convertedShippingCost) {
+    additionalCharges.push({
+      name: "Shipping",
+      amount: selectedLine.convertedShippingCost,
+    });
+  }
   Object.entries(line.additionalCharges ?? {}).forEach(([name, charge]) => {
     additionalCharges.push({
       name: charge.description ?? "Additional Charge",
@@ -538,6 +546,8 @@ const LinePricingOptions = ({
                     selectedOption.quantity
                   ] || 0,
                 leadTime: selectedOption.leadTime,
+                convertedShippingCost:
+                  selectedOption.convertedShippingCost ?? 0,
               },
             }));
             setSelectedValue(value);
@@ -586,7 +596,9 @@ const LinePricingOptions = ({
                       </Td>
                       <Td>
                         {formatter.format(
-                          convertedAdditionalChargesByQuantity[option.quantity]
+                          convertedAdditionalChargesByQuantity[
+                            option.quantity
+                          ] + (option.convertedShippingCost ?? 0)
                         )}
                       </Td>
                       <Td>{option.leadTime} days</Td>
@@ -612,7 +624,7 @@ const LinePricingOptions = ({
           <Table>
             <Thead>
               <Tr>
-                <Th>Additional Charge</Th>
+                <Th>Shipping and Additional Charges</Th>
                 <Th>Amount</Th>
               </Tr>
             </Thead>
@@ -760,6 +772,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
           convertedAddOn:
             convertedAdditionalChargesByQuantity[price.quantity] || 0,
           leadTime: price.leadTime,
+          convertedShippingCost: price.convertedShippingCost ?? 0,
         };
         return acc;
       }, {}) ?? {}
@@ -768,7 +781,10 @@ const Quote = ({ data }: { data: QuoteData }) => {
 
   const subtotal = Object.values(selectedLines).reduce((acc, line) => {
     return (
-      acc + line.convertedNetUnitPrice * line.quantity + line.convertedAddOn
+      acc +
+      line.convertedNetUnitPrice * line.quantity +
+      line.convertedAddOn +
+      line.convertedShippingCost
     );
   }, 0);
   const tax = subtotal * (quote.taxPercent ?? 0);

@@ -221,7 +221,7 @@ const QuoteLinePricing = ({
   };
 
   const onUpdatePrice = async (
-    key: "leadTime" | "unitPrice" | "discountPercent",
+    key: "leadTime" | "unitPrice" | "discountPercent" | "shippingCost",
     quantity: number,
     value: number
   ) => {
@@ -245,6 +245,7 @@ const QuoteLinePricing = ({
         discountPercent: 0,
         exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
         taxPercent: quoteExchangeRate.data?.taxPercent ?? 0,
+        shippingCost: 0,
         createdBy: userId,
       } as unknown as QuotationPrice;
     }
@@ -608,6 +609,41 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
+            <Tr>
+              <Td className="border-r border-border">
+                <HStack className="w-full justify-between ">
+                  <span>Shipping Cost</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity) => {
+                const shippingCost = prices[quantity]?.shippingCost;
+                return (
+                  <Td key={quantity.toString()}>
+                    <NumberField
+                      value={shippingCost}
+                      formatOptions={{
+                        style: "currency",
+                        currency: baseCurrency,
+                        maximumFractionDigits: 4,
+                      }}
+                      minValue={0}
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== shippingCost) {
+                          onUpdatePrice("shippingCost", quantity, value);
+                        }
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                        isDisabled={!isEditable}
+                        size="sm"
+                        min={0}
+                      />
+                    </NumberField>
+                  </Td>
+                );
+              })}
+            </Tr>
             {Object.entries(additionalCharges)
               .sort((a, b) => {
                 return a[1].description.localeCompare(b[1].description);
@@ -755,6 +791,7 @@ const QuoteLinePricing = ({
               {quantities.map((quantity, index) => {
                 const price =
                   netPricesByQuantity[index] * quantity +
+                  prices[quantity]?.shippingCost +
                   additionalChargesByQuantity[index];
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
@@ -799,6 +836,7 @@ const QuoteLinePricing = ({
               {quantities.map((quantity, index) => {
                 const subtotal =
                   netPricesByQuantity[index] * quantity +
+                  prices[quantity]?.shippingCost +
                   additionalChargesByQuantity[index];
                 const tax = subtotal * (prices[quantity]?.taxPercent ?? 0);
                 const price = subtotal + tax;
@@ -839,6 +877,7 @@ const QuoteLinePricing = ({
                   {quantities.map((quantity, index) => {
                     const subtotal =
                       netPricesByQuantity[index] * quantity +
+                      prices[quantity]?.shippingCost +
                       additionalChargesByQuantity[index];
                     const tax = subtotal * (prices[quantity]?.taxPercent ?? 0);
                     const price = subtotal + tax;
