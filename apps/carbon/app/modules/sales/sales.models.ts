@@ -137,7 +137,7 @@ export const quoteLineValidator = z.object({
     errorMap: () => ({ message: "Status is required" }),
   }),
   estimatorId: zfd.text(z.string().optional()),
-  description: z.string().min(1, { message: "Description is required" }),
+  description: zfd.text(z.string().optional()),
   methodType: z.enum(methodType, {
     errorMap: () => ({ message: "Method is required" }),
   }),
