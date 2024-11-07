@@ -29,6 +29,7 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  let browser;
   try {
     const payload = await req.json();
     const { url } = payloadSchema.parse(payload);
@@ -38,7 +39,7 @@ serve(async (req: Request) => {
       url,
     });
 
-    const browser = await puppeteer.connect({
+    browser = await puppeteer.connect({
       browserWSEndpoint,
     });
     console.log("browser connected");
@@ -58,7 +59,6 @@ serve(async (req: Request) => {
       encoding: "binary",
       clip: { x: 15, y: 15, width: 960, height: 960 },
     });
-    await browser.close();
 
     const screenshotArray = new Uint8Array(
       typeof screenshot === "string"
@@ -83,5 +83,10 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     });
+  } finally {
+    if (browser) {
+      await browser.close();
+      console.log("browser closed");
+    }
   }
 });
