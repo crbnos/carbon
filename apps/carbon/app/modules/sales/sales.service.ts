@@ -86,6 +86,13 @@ export async function convertQuoteToOrder(
   });
 }
 
+export async function deleteCustomer(
+  client: SupabaseClient<Database>,
+  customerId: string
+) {
+  return client.from("customer").delete().eq("id", customerId);
+}
+
 export async function deleteCustomerContact(
   client: SupabaseClient<Database>,
   customerId: string,

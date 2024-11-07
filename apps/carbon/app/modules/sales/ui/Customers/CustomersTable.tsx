@@ -1,9 +1,9 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
-import { LuPencil } from "react-icons/lu";
+import { memo, useMemo, useState } from "react";
+import { LuPencil, LuTrash } from "react-icons/lu";
 import {
   CustomerAvatar,
   EmployeeAvatar,
@@ -12,6 +12,7 @@ import {
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Customer, CustomerStatus } from "~/modules/sales";
@@ -29,6 +30,10 @@ const CustomersTable = memo(
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [people] = usePeople();
+    const deleteModal = useDisclosure();
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+      null
+    );
 
     const customColumns = useCustomColumns<Customer>("customer");
     const columns = useMemo<ColumnDef<Customer>[]>(() => {
@@ -161,12 +166,24 @@ const CustomersTable = memo(
       // eslint-disable-next-line react/display-name
       () => (row: Customer) =>
         (
-          <MenuItem onClick={() => navigate(path.to.customer(row.id!))}>
-            <MenuIcon icon={<LuPencil />} />
-            Edit Customer
-          </MenuItem>
+          <>
+            <MenuItem onClick={() => navigate(path.to.customer(row.id!))}>
+              <MenuIcon icon={<LuPencil />} />
+              Edit
+            </MenuItem>
+            <MenuItem
+              disabled={!permissions.can("delete", "sales")}
+              onClick={() => {
+                setSelectedCustomer(row);
+                deleteModal.onOpen();
+              }}
+            >
+              <MenuIcon icon={<LuTrash />} />
+              Delete
+            </MenuItem>
+          </>
         ),
-      [navigate]
+      [navigate, deleteModal, permissions]
     );
 
     return (
@@ -205,6 +222,22 @@ const CustomersTable = memo(
           }
           renderContextMenu={renderContextMenu}
         />
+        {selectedCustomer && selectedCustomer.id && (
+          <ConfirmDelete
+            action={path.to.deleteCustomer(selectedCustomer.id)}
+            isOpen={deleteModal.isOpen}
+            name={selectedCustomer.name!}
+            text={`Are you sure you want to delete ${selectedCustomer.name!}? This cannot be undone.`}
+            onCancel={() => {
+              deleteModal.onClose();
+              setSelectedCustomer(null);
+            }}
+            onSubmit={() => {
+              deleteModal.onClose();
+              setSelectedCustomer(null);
+            }}
+          />
+        )}
       </>
     );
   }

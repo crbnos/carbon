@@ -210,6 +210,7 @@ export const path = {
       generatePath(`${x}/resources/contractors/delete/${id}`),
     deleteCurrency: (id: string) =>
       generatePath(`${x}/accounting/currencies/delete/${id}`),
+    deleteCustomer: (id: string) => generatePath(`${x}/customer/${id}/delete`),
     deleteCustomerContact: (customerId: string, id: string) =>
       generatePath(`${x}/customer/${customerId}/contacts/delete/${id}`),
     deleteCustomerLocation: (customerId: string, id: string) =>
