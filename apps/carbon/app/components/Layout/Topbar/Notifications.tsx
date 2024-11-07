@@ -146,7 +146,7 @@ const Notifications = () => {
           className="rounded-full w-8 h-8 flex items-center relative"
         >
           {hasUnseenNotifications && (
-            <div className="w-1.5 h-1.5 bg-[#FFD02B] rounded-full absolute top-0 right-0" />
+            <div className="w-2 h-2 bg-red-500 rounded-full absolute top-0 right-0" />
           )}
           <LuBell size={16} />
         </Button>
@@ -157,7 +157,7 @@ const Notifications = () => {
         sideOffset={10}
       >
         <Tabs defaultValue="inbox">
-          <TabsList className="w-full justify-start bg-transparent border-b-[1px] rounded-none py-6">
+          <TabsList className="w-full border-b-[1px] py-6 rounded-none">
             <TabsTrigger value="inbox" className="font-normal">
               Inbox
             </TabsTrigger>
