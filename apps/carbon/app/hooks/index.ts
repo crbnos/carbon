@@ -1,4 +1,5 @@
 import { useCurrencyFormatter } from "./useCurrencyFormatter";
+import { useModules } from "./useModules";
 import { useMovingCellRef } from "./useMovingCellRef";
 import { useNanoStore } from "./useNanoStore";
 import { useNextItemId } from "./useNextItemId";
@@ -14,6 +15,7 @@ import { useUser } from "./useUser";
 
 export {
   useCurrencyFormatter,
+  useModules,
   useMovingCellRef,
   useNanoStore,
   useNextItemId,

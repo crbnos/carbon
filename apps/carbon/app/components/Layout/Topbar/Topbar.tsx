@@ -4,6 +4,7 @@ import AvatarMenu from "../../AvatarMenu";
 import Breadcrumbs from "./Breadcrumbs";
 import CreateMenu from "./CreateMenu";
 import Feedback from "./Feedback";
+import Notifications from "./Notifications";
 import Search from "./Search";
 
 const Topbar = () => {
@@ -16,6 +17,7 @@ const Topbar = () => {
         {permissions.is("employee") ? <Search /> : <div />}
         <Feedback />
         <CreateMenu />
+        <Notifications />
         <AvatarMenu />
       </HStack>
     </div>

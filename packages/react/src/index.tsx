@@ -9,11 +9,7 @@ import {
 import ActionBar, { ActionBarButton } from "./ActionBar";
 import { ActionMenu } from "./ActionMenu";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
-import {
-  AutodeskProvider,
-  AutodeskViewer,
-  useAutodesk,
-} from "./AutodeskViewer";
+import { AutodeskProvider, AutodeskViewer } from "./AutodeskViewer";
 import type { AvatarProps } from "./Avatar";
 import {
   Avatar,
@@ -265,6 +261,7 @@ import {
   TooltipTrigger,
 } from "./Tooltip";
 import { VStack } from "./VStack";
+import { useNotifications } from "./hooks/useNotifications";
 import type {
   Modifier,
   Shortcut,
@@ -518,9 +515,9 @@ export {
   shortcutKeyVariants,
   supportedModelTypes,
   toast,
-  useAutodesk,
   useModalCardType,
   useModalDrawerType,
+  useNotifications,
   useOperatingSystem,
   useRichText,
 };

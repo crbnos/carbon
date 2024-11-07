@@ -41,8 +41,7 @@ import {
 } from "react-icons/ri";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { MethodItemTypeIcon } from "~/components/Icons";
-import { useModules } from "~/components/Layout/Navigation/useModules";
-import { useUser } from "~/hooks";
+import { useModules, useUser } from "~/hooks";
 import { useAccountSubmodules } from "~/modules/account";
 import { useAccountingSubmodules } from "~/modules/accounting";
 import { useDocumentsSubmodules } from "~/modules/documents";

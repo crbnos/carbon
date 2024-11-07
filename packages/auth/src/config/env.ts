@@ -15,10 +15,8 @@ declare global {
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      AUTODESK_BUCKET_NAME?: string;
-      AUTODESK_CLIENT_ID?: string;
-      AUTODESK_CLIENT_SECRET?: string;
       DOMAIN: string;
+      NOVU_SECRET_KEY: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       SESSION_SECRET: string;
@@ -71,6 +69,7 @@ export const EXCHANGE_RATES_API_KEY = getEnv("EXCHANGE_RATES_API_KEY", {
   isRequired: false,
   isSecret: true,
 });
+export const NOVU_SECRET_KEY = getEnv("NOVU_SECRET_KEY");
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false,
 });

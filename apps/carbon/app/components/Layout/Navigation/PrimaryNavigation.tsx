@@ -3,10 +3,9 @@ import { Link, useMatches } from "@remix-run/react";
 import { forwardRef, type AnchorHTMLAttributes } from "react";
 import { BsFillHexagonFill } from "react-icons/bs";
 import { z } from "zod";
-import { useOptimisticLocation, useUser } from "~/hooks";
+import { useModules, useOptimisticLocation, useUser } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
 import type { Authenticated, NavItem } from "~/types";
-import { useModules } from "./useModules";
 
 export const ModuleHandle = z.object({
   module: z.string(),
