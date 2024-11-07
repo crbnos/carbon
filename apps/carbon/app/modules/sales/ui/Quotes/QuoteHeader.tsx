@@ -112,12 +112,16 @@ const QuoteHeader = () => {
                 </DropdownMenuItem>
                 {routeData?.quote.externalLinkId && (
                   <DropdownMenuItem asChild>
-                    <Link
-                      to={path.to.externalQuote(routeData.quote.externalLinkId)}
+                    <a
+                      target="_blank"
+                      href={path.to.externalQuote(
+                        routeData.quote.externalLinkId
+                      )}
+                      rel="noreferrer"
                     >
                       <DropdownMenuIcon icon={<LuExternalLink />} />
                       Digital Quote
-                    </Link>
+                    </a>
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

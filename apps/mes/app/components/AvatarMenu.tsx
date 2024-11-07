@@ -52,7 +52,6 @@ const AvatarMenu = ({
   const name = `${user.firstName} ${user.lastName}`;
 
   const mode = useMode();
-  const logo = mode === "dark" ? company.logoDarkIcon : company.logoLightIcon;
 
   const nextMode = mode === "dark" ? "light" : "dark";
   const modeSubmitRef = useRef<HTMLButtonElement>(null);
@@ -111,29 +110,33 @@ const AvatarMenu = ({
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
                 <DropdownMenuRadioGroup value={company.companyId!}>
-                  {companies.map((c) => (
-                    <DropdownMenuRadioItem
-                      key={c.companyId}
-                      value={c.companyId!}
-                      onSelect={() => {
-                        const form = new FormData();
-                        form.append("companyId", c.companyId!);
-                        fetcher.submit(form, {
-                          method: "post",
-                          action: path.to.switchCompany(c.companyId!),
-                        });
-                      }}
-                    >
-                      <HStack>
-                        <Avatar
-                          size="xs"
-                          name={c.name ?? undefined}
-                          src={logo ?? undefined}
-                        />
-                        <span>{c.name}</span>
-                      </HStack>
-                    </DropdownMenuRadioItem>
-                  ))}
+                  {companies.map((c) => {
+                    const logo =
+                      mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+                    return (
+                      <DropdownMenuRadioItem
+                        key={c.companyId}
+                        value={c.companyId!}
+                        onSelect={() => {
+                          const form = new FormData();
+                          form.append("companyId", c.companyId!);
+                          fetcher.submit(form, {
+                            method: "post",
+                            action: path.to.switchCompany(c.companyId!),
+                          });
+                        }}
+                      >
+                        <HStack>
+                          <Avatar
+                            size="xs"
+                            name={c.name ?? undefined}
+                            src={logo ?? undefined}
+                          />
+                          <span>{c.name}</span>
+                        </HStack>
+                      </DropdownMenuRadioItem>
+                    );
+                  })}
                 </DropdownMenuRadioGroup>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
