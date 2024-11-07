@@ -3,8 +3,7 @@ import { getLocalTimeZone } from "@internationalized/date";
 import { useLocale } from "@react-aria/i18n";
 import { Link } from "@remix-run/react";
 import { useMemo, type ComponentProps } from "react";
-import { useModules } from "~/components/Layout/Navigation/useModules";
-import { useUser } from "~/hooks";
+import { useModules, useUser } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 
 export default function AppIndexRoute() {

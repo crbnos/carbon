@@ -561,6 +561,7 @@ export const path = {
       generatePath(`${x}/tool/${id}/purchasing/new`),
     newUom: `${x}/items/uom/new`,
     newWorkCenter: `${x}/resources/work-centers/new`,
+    notificationSettings: `${x}/account/notifications`,
     part: (id: string) => generatePath(`${x}/part/${id}`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/costing`),
     partDetails: (id: string) => generatePath(`${x}/part/${id}/details`),
