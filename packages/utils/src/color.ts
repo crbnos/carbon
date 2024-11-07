@@ -18,7 +18,7 @@ const colorIndex = {
 export type Color = keyof typeof colorIndex;
 
 const colors = [
-  { background: "#e3e2e080", color: "#32302c" },
+  { background: "#a6a5a5", color: "#32302c" },
   { background: "#e3e2e0", color: "#32302c" },
   { background: "#eee0da", color: "#442a1e" },
   { background: "#fadec9", color: "#49290e" },

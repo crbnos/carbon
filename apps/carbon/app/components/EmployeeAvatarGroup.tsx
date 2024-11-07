@@ -9,11 +9,13 @@ import Avatar from "./Avatar";
 
 type EmployeeAvatarProps = AvatarProps & {
   employeeIds: string[];
+  limit?: number;
 };
 
 const EmployeeAvatarGroup = ({
   employeeIds,
   size,
+  limit = 5,
   ...props
 }: EmployeeAvatarProps) => {
   const [people] = usePeople();
@@ -25,7 +27,7 @@ const EmployeeAvatarGroup = ({
   }
 
   return (
-    <AvatarGroup size={size ?? "xs"} limit={5}>
+    <AvatarGroup size={size ?? "xs"} limit={limit}>
       <AvatarGroupList>
         {employees.map((employee, index: number) => (
           <Avatar

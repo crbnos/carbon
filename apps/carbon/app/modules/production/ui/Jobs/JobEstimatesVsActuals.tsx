@@ -32,6 +32,7 @@ import {
   toZoned,
 } from "@internationalized/date";
 import { LuExternalLink } from "react-icons/lu";
+import { EmployeeAvatarGroup } from "~/components";
 import { usePercentFormatter } from "~/hooks";
 import { makeDurations } from "~/utils/duration";
 import { path } from "~/utils/path";
@@ -126,6 +127,22 @@ const JobEstimatesVsActuals = ({
       .filter((pq) => pq.jobOperationId === operation.id && pq.type === "Scrap")
       .reduce((acc, pq) => acc + pq.quantity, 0);
     return quantity ?? 0;
+  };
+
+  const getEmployeeIds = (
+    operation: Operation,
+    type: "Setup" | "Labor" | "Machine"
+  ) => {
+    const operationEvents = productionEvents.filter(
+      (pe) => pe.jobOperationId === operation.id && pe.type === type
+    );
+    const employeeIds = operationEvents.reduce((acc, pe) => {
+      if (pe.employeeId) {
+        acc.add(pe.employeeId);
+      }
+      return acc;
+    }, new Set<string>());
+    return Array.from(employeeIds);
   };
 
   return (
@@ -234,12 +251,22 @@ const JobEstimatesVsActuals = ({
                         ) {
                           return null;
                         }
+                        const employeeIds = getEmployeeIds(operation, type);
                         return (
                           <Tr key={type} className="border-b border-border">
                             <Td className="border-r border-border pl-10">
-                              <HStack>
-                                <TimeTypeIcon type={type} />
-                                <span>{type}</span>
+                              <HStack className="justify-between w-full">
+                                <HStack>
+                                  <TimeTypeIcon type={type} />
+                                  <span>{type}</span>
+                                </HStack>
+                                {employeeIds.length > 0 && (
+                                  <EmployeeAvatarGroup
+                                    employeeIds={employeeIds}
+                                    size="xs"
+                                    limit={3}
+                                  />
+                                )}
                               </HStack>
                             </Td>
                             <Td>
