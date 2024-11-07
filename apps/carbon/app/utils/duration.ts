@@ -80,6 +80,12 @@ export function makeDurations<
 
   // Calculate labor duration
   switch (operation.laborUnit) {
+    case "Total Hours":
+      laborDuration = (operation.laborTime ?? 0) * 3600000;
+      break;
+    case "Total Minutes":
+      laborDuration = (operation.laborTime ?? 0) * 60000;
+      break;
     case "Hours/Piece":
       laborDuration =
         (operation.laborTime ?? 0) *
@@ -132,6 +138,12 @@ export function makeDurations<
 
   // Calculate machine duration
   switch (operation.machineUnit) {
+    case "Total Hours":
+      machineDuration = (operation.machineTime ?? 0) * 3600000;
+      break;
+    case "Total Minutes":
+      machineDuration = (operation.machineTime ?? 0) * 60000;
+      break;
     case "Hours/Piece":
       machineDuration =
         (operation.machineTime ?? 0) *
