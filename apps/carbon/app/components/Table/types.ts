@@ -6,6 +6,7 @@ declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends unknown, TValue> {
     filter?: ColumnFilterData;
     pluralHeader?: string;
+    icon?: React.ReactNode;
   }
 }
 

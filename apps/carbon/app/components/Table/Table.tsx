@@ -676,12 +676,13 @@ const Table = <T extends object>({
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div className="flex justify-start items-center">
+                                  <div className="flex justify-start items-center gap-2">
+                                    {header.column.columnDef.meta?.icon}
                                     {flexRender(
                                       header.column.columnDef.header,
                                       header.getContext()
                                     )}
-                                    <span className="pl-2">
+                                    <span>
                                       {sorted ? (
                                         sorted === -1 ? (
                                           <LuArrowDown
@@ -726,7 +727,8 @@ const Table = <T extends object>({
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             ) : (
-                              <div className="flex justify-start items-center text-xs text-foreground">
+                              <div className="flex justify-start items-center text-xs text-foreground flex gap-2">
+                                {header.column.columnDef.meta?.icon}
                                 {flexRender(
                                   header.column.columnDef.header,
                                   header.getContext()
