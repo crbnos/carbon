@@ -22,9 +22,7 @@ const payloadSchema = z.object({
   url: z.string(),
 });
 
-const browserWSEndpoint = `ws://${Deno.env.get(
-  "BROWSERLESS_IP"
-)}?token=${Deno.env.get("BROWSERLESS_TOKEN")}`;
+const browserWSEndpoint = `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`;
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -43,15 +41,18 @@ serve(async (req: Request) => {
     const browser = await puppeteer.connect({
       browserWSEndpoint,
     });
+    console.log("browser connected");
     const page = await browser.newPage();
+    console.log("page created");
     await page.setViewport({ width: 1000, height: 1000 });
+    console.log("viewport set");
     await page.goto(url);
-
+    console.log(`navigated to ${url}`);
     // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
     await page.waitForSelector("#model-viewer-canvas", {
       timeout: 10000,
     });
-
+    console.log("model-viewer-canvas visible");
     // Capture just the center portion of the viewport to avoid the ring
     const screenshot = await page.screenshot({
       encoding: "binary",
