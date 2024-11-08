@@ -1,0 +1,24 @@
+{
+  "name": "@carbon/notifications",
+  "type": "module",
+  "dependencies": {
+    "@novu/node": "^2.0.1",
+    "nanoid": "5.0.4"
+  },
+  "devDependencies": {
+    "@carbon/tsconfig": "*",
+    "eslint-config-carbon": "*",
+    "typescript": "^5.2.2"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "dev": "tsup --watch",
+    "lint": "TIMING=1 eslint \"src/**/*.ts*\""
+  },
+  "sideEffects": false,
+  "version": "*"
+}

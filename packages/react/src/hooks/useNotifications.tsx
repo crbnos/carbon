@@ -1,7 +1,17 @@
 import type { IMessage } from "@novu/headless";
 import { HeadlessService } from "@novu/headless";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useMount } from ".";
+import useMount from "./useMount";
+
+export function getSubscriberId({
+  companyId,
+  userId,
+}: {
+  companyId: string;
+  userId: string;
+}) {
+  return `${companyId}:${userId}`;
+}
 
 export function useNotifications({
   userId,
@@ -92,7 +102,7 @@ export function useNotifications({
   };
 
   useMount(() => {
-    setSubscriberId(`${companyId}:${userId}`);
+    setSubscriberId(getSubscriberId({ companyId, userId }));
   });
 
   useEffect(() => {
