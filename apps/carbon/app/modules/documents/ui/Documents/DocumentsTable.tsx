@@ -20,11 +20,17 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 import {
+  LuBookMarked,
   LuDownload,
   LuExternalLink,
+  LuFileText,
   LuPencil,
   LuPin,
+  LuRuler,
+  LuTag,
   LuTrash,
+  LuUser,
+  LuUsers,
   LuXCircle,
 } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
@@ -188,6 +194,9 @@ const DocumentsTable = memo(
               </Hyperlink>
             </HStack>
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           accessorKey: "sourceDocument",
@@ -211,6 +220,7 @@ const DocumentsTable = memo(
               </HStack>
             ),
           meta: {
+            icon: <LuFileText />,
             filter: {
               type: "static",
               options: documentSourceTypes?.map((type) => ({
@@ -269,6 +279,7 @@ const DocumentsTable = memo(
             </HStack>
           ),
           meta: {
+            icon: <LuTag />,
             filter: {
               type: "static",
               options: labelOptions,
@@ -280,12 +291,16 @@ const DocumentsTable = memo(
           accessorKey: "size",
           header: "Size",
           cell: ({ row }) => convertKbToString(row.original.size ?? 0),
+          meta: {
+            icon: <LuRuler />,
+          },
         },
         {
           accessorKey: "type",
           header: "Type",
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            icon: <LuFileText />,
             filter: {
               type: "static",
               options: documentTypes.map((type) => ({
@@ -305,6 +320,7 @@ const DocumentsTable = memo(
           header: "File Extension",
           cell: (item) => item.getValue(),
           meta: {
+            icon: <LuFileText />,
             filter: {
               type: "static",
               options: filterEmpty(extensions).map((extension) => ({
@@ -321,6 +337,7 @@ const DocumentsTable = memo(
             <EmployeeAvatar employeeId={row.original.createdBy} />
           ),
           meta: {
+            icon: <LuUser />,
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -334,6 +351,9 @@ const DocumentsTable = memo(
           accessorKey: "createdAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuFileText />,
+          },
         },
         {
           id: "updatedBy",
@@ -342,6 +362,7 @@ const DocumentsTable = memo(
             <EmployeeAvatar employeeId={row.original.updatedBy} />
           ),
           meta: {
+            icon: <LuUsers />,
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -355,6 +376,9 @@ const DocumentsTable = memo(
           accessorKey: "updatedAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuFileText />,
+          },
         },
       ];
       // Don't put the revalidator in the deps array
@@ -468,8 +492,9 @@ const DocumentsTable = memo(
               <Confirm
                 action={path.to.documentRestore(selectedDocument.id)}
                 isOpen
-                name={`Restore ${selectedDocument.name}`}
+                title={`Restore ${selectedDocument.name}`}
                 text={`Are you sure you want to restore ${selectedDocument.name} from the trash?`}
+                confirmText="Restore"
                 onCancel={() => {
                   moveDocumentModal.onClose();
                   setSelectedDocument(null);

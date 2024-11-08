@@ -2,7 +2,7 @@ import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil } from "react-icons/lu";
+import { LuBookMarked, LuEuro, LuPencil, LuPercent } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -30,16 +30,25 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
             {row.original.name}
           </Hyperlink>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         accessorKey: "code",
         header: "Code",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuEuro />,
+        },
       },
       {
         accessorKey: "exchangeRate",
         header: "Exchange Rate",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuPercent />,
+        },
       },
     ];
     return [...defaultColumns, ...customColumns];

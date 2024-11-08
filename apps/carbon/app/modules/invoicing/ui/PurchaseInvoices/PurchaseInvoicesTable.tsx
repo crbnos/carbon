@@ -3,7 +3,17 @@ import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuContainer,
+  LuCreditCard,
+  LuPencil,
+  LuQrCode,
+  LuStar,
+  LuTrash,
+  LuUser,
+} from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -56,6 +66,9 @@ const PurchaseInvoicesTable = memo(
               {row.original?.invoiceId}
             </Hyperlink>
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           id: "supplierId",
@@ -71,6 +84,7 @@ const PurchaseInvoicesTable = memo(
                 label: supplier.name,
               })),
             },
+            icon: <LuContainer />,
           },
         },
         {
@@ -87,12 +101,16 @@ const PurchaseInvoicesTable = memo(
                 label: supplier.name,
               })),
             },
+            icon: <LuContainer />,
           },
         },
         {
           accessorKey: "supplierReference",
           header: "Supplier Ref.",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuQrCode />,
+          },
         },
         {
           accessorKey: "status",
@@ -111,6 +129,7 @@ const PurchaseInvoicesTable = memo(
               })),
             },
             pluralHeader: "Statuses",
+            icon: <LuStar />,
           },
         },
         {
@@ -127,27 +146,40 @@ const PurchaseInvoicesTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "dateIssued",
           header: "Issued Date",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           accessorKey: "dateDue",
           header: "Due Date",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           accessorKey: "datePaid",
           header: "Paid Date",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           accessorKey: "paymentTermName",
           header: "Payment Method",
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
+          meta: {
+            icon: <LuCreditCard />,
+          },
         },
         {
           id: "createdBy",
@@ -163,12 +195,16 @@ const PurchaseInvoicesTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "createdAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           id: "updatedBy",
@@ -184,12 +220,16 @@ const PurchaseInvoicesTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "updatedAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
       ];
 

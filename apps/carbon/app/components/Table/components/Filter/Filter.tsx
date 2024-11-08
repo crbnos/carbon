@@ -10,6 +10,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  reactNodeToString,
+  ScrollArea,
   VStack,
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
@@ -71,7 +73,12 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
     }, [fetcher.data, activeFilter]);
 
     const columnFilters = useMemo(
-      () => filters.map((f) => ({ value: f.accessorKey, label: f.header })),
+      () =>
+        filters.map((f) => ({
+          value: f.accessorKey,
+          label: f.header,
+          icon: f.icon,
+        })),
       [filters]
     );
 
@@ -166,52 +173,56 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                       key={option.value}
                       value={`${option.label}:${option.value}`}
                       onSelect={updateActiveOptions}
+                      className="flex items-center gap-2"
                     >
+                      {option.icon}
                       {option.label}
                     </CommandItem>
                   ))}
               </CommandGroup>
             ) : (
-              <CommandGroup>
-                {activeOptions.map((option) => {
-                  const isChecked = hasFilter(
-                    activeFilter.accessorKey,
-                    option.value
-                  );
-                  return (
-                    <CommandItem
-                      value={option.value}
-                      key={option.value}
-                      onSelect={() => {
-                        toggleFilter(
-                          activeFilter.accessorKey,
-                          option.value,
-                          activeFilter.filter.isArray
-                        );
-                        if (trigger === "icon") {
-                          setOpen(false);
-                        } else {
-                          setInput("");
-                        }
-                      }}
-                    >
-                      <HStack spacing={2}>
-                        <Checkbox id={option.value} isChecked={isChecked} />
-                        <label htmlFor={option.value}>
-                          <VStack spacing={0}>
-                            <span>{option.label}</span>
-                            {option.helperText && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {option.helperText}
-                              </p>
-                            )}
-                          </VStack>
-                        </label>
-                      </HStack>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
+              <ScrollArea className="max-h-[300px]">
+                <CommandGroup>
+                  {activeOptions.map((option) => {
+                    const isChecked = hasFilter(
+                      activeFilter.accessorKey,
+                      option.value
+                    );
+                    return (
+                      <CommandItem
+                        value={reactNodeToString(option.label)}
+                        key={option.value}
+                        onSelect={() => {
+                          toggleFilter(
+                            activeFilter.accessorKey,
+                            option.value,
+                            activeFilter.filter.isArray
+                          );
+                          if (trigger === "icon") {
+                            setOpen(false);
+                          } else {
+                            setInput("");
+                          }
+                        }}
+                      >
+                        <HStack spacing={2}>
+                          <Checkbox id={option.value} isChecked={isChecked} />
+                          <label htmlFor={option.value}>
+                            <VStack spacing={0}>
+                              <span>{option.label}</span>
+                              {option.helperText && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {option.helperText}
+                                </p>
+                              )}
+                            </VStack>
+                          </label>
+                        </HStack>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </ScrollArea>
             )}
           </Command>
         </PopoverContent>

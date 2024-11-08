@@ -9,7 +9,19 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useFetchers } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
-import { LuPencil, LuPin, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuContainer,
+  LuCreditCard,
+  LuPencil,
+  LuPin,
+  LuQrCode,
+  LuStar,
+  LuTrash,
+  LuTruck,
+  LuUser,
+} from "react-icons/lu";
 import { MdCallReceived } from "react-icons/md";
 import {
   EmployeeAvatar,
@@ -115,6 +127,9 @@ const PurchaseOrdersTable = memo(
               </Hyperlink>
             </HStack>
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           id: "supplierId",
@@ -130,17 +145,24 @@ const PurchaseOrdersTable = memo(
                 label: supplier.name,
               })),
             },
+            icon: <LuContainer />,
           },
         },
         {
           accessorKey: "supplierReference",
           header: "Supplier Ref.",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuQrCode />,
+          },
         },
         {
           accessorKey: "orderDate",
           header: "Order Date",
-          cell: (item) => item.getValue(),
+          cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           accessorKey: "status",
@@ -159,6 +181,7 @@ const PurchaseOrdersTable = memo(
               })),
             },
             pluralHeader: "Statuses",
+            icon: <LuStar />,
           },
         },
         {
@@ -175,17 +198,24 @@ const PurchaseOrdersTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "receiptPromisedDate",
           header: "Promised Date",
-          cell: (item) => item.getValue(),
+          cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           accessorKey: "shippingMethodName",
           header: "Shipping Method",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuTruck />,
+          },
         },
         // {
         //   accessorKey: "shippingTermName",
@@ -196,6 +226,9 @@ const PurchaseOrdersTable = memo(
           accessorKey: "paymentTermName",
           header: "Payment Method",
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
+          meta: {
+            icon: <LuCreditCard />,
+          },
         },
         {
           accessorKey: "dropShipment",
@@ -210,6 +243,7 @@ const PurchaseOrdersTable = memo(
               ],
             },
             pluralHeader: "Drop Shipment Statuses",
+            icon: <LuTruck />,
           },
         },
         {
@@ -226,12 +260,16 @@ const PurchaseOrdersTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "createdAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           id: "updatedBy",
@@ -247,12 +285,16 @@ const PurchaseOrdersTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "updatedAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
       ];
 

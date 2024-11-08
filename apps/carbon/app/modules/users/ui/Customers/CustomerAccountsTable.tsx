@@ -9,7 +9,15 @@ import {
 } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { LuBan, LuMailCheck } from "react-icons/lu";
+import {
+  LuBan,
+  LuMail,
+  LuMailCheck,
+  LuStar,
+  LuUser,
+  LuUserCheck,
+  LuUserSquare,
+} from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -81,28 +89,41 @@ const CustomerAccountsTable = memo(
               </span>
             </HStack>
           ),
+          meta: {
+            icon: <LuUser />,
+          },
         },
 
         {
           accessorKey: "user.firstName",
           header: "First Name",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuUserCheck />,
+          },
         },
         {
           accessorKey: "user.lastName",
           header: "Last Name",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuUserCheck />,
+          },
         },
         {
           accessorKey: "user.email",
           header: "Email",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuMail />,
+          },
         },
         {
           accessorKey: "customer.name",
           header: "Customer",
           cell: (item) => item.getValue(),
           meta: {
+            icon: <LuUserSquare />,
             filter: {
               type: "static",
               options: customers.map(({ name }) => ({
@@ -120,6 +141,7 @@ const CustomerAccountsTable = memo(
             <Enumerable value={row.original.customer?.customerType?.name} />
           ),
           meta: {
+            icon: <LuStar />,
             filter: {
               type: "static",
               options: customerTypes.map((type) => ({
@@ -134,6 +156,7 @@ const CustomerAccountsTable = memo(
           header: "Active",
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: {
+            icon: <LuUserCheck />,
             filter: {
               type: "static",
               options: [

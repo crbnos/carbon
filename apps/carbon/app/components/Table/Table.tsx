@@ -459,6 +459,7 @@ const Table = <T extends object>({
             header: column.header,
             pluralHeader: column.meta.pluralHeader,
             filter: column.meta.filter,
+            icon: column.meta.icon,
           };
           return [...acc, filter];
         }
@@ -727,7 +728,7 @@ const Table = <T extends object>({
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             ) : (
-                              <div className="flex justify-start items-center text-xs text-foreground flex gap-2">
+                              <div className="flex justify-start items-center gap-2">
                                 {header.column.columnDef.meta?.icon}
                                 {flexRender(
                                   header.column.columnDef.header,

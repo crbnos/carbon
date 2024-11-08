@@ -8,7 +8,7 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { LuBookMarked, LuPencil, LuTrash, LuUsers } from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Group } from "~/modules/users";
@@ -46,6 +46,9 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
         accessorKey: "name",
         header: "Group Name",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         header: "Members",
@@ -70,6 +73,9 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
             <AvatarOverflowIndicator />
           </AvatarGroup>
         ),
+        meta: {
+          icon: <LuUsers />,
+        },
       },
     ];
   }, []);

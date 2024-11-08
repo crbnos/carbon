@@ -2,7 +2,22 @@ import { Button, Checkbox, Combobox, HStack } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
-import { LuAlertTriangle, LuPlus } from "react-icons/lu";
+import {
+  LuAlertTriangle,
+  LuAlignLeft,
+  LuBookMarked,
+  LuBox,
+  LuCheck,
+  LuFactory,
+  LuGlassWater,
+  LuMapPin,
+  LuPackage,
+  LuPlus,
+  LuRuler,
+  LuShapes,
+  LuShoppingBag,
+  LuShoppingCart,
+} from "react-icons/lu";
 import {
   Hyperlink,
   ItemThumbnail,
@@ -61,23 +76,32 @@ const InventoryTable = memo(
               />
               <Hyperlink
                 to={`${path.to.inventoryItem(row.original.itemId!)}/?${params}`}
-                className="max-w-[260px] truncate"
+                className="min-w-[200px] max-w-[260px] truncate"
               >
                 <>{row.original.readableId}</>
               </Hyperlink>
             </HStack>
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
 
         {
           accessorKey: "name",
           header: "Short Description",
           cell: ({ row }) => row.original.name,
+          meta: {
+            icon: <LuAlignLeft />,
+          },
         },
         {
           accessorKey: "locationName",
           header: "Location",
           cell: ({ row }) => <Enumerable value={row.original.locationName} />,
+          meta: {
+            icon: <LuMapPin />,
+          },
         },
 
         {
@@ -97,6 +121,7 @@ const InventoryTable = memo(
                 value: form.id,
               })),
             },
+            icon: <LuShapes />,
           },
         },
         {
@@ -116,28 +141,41 @@ const InventoryTable = memo(
                 value: substance.id,
               })),
             },
+            icon: <LuGlassWater />,
           },
         },
         {
           accessorKey: "quantityOnHand",
           header: "On Hand",
           cell: ({ row }) => row.original.quantityOnHand,
+          meta: {
+            icon: <LuPackage />,
+          },
         },
 
         {
           accessorKey: "quantityOnPurchaseOrder",
           header: "On Purchase Order",
           cell: ({ row }) => row.original.quantityOnPurchaseOrder,
+          meta: {
+            icon: <LuShoppingCart />,
+          },
         },
         {
           accessorKey: "quantityOnProdOrder",
           header: "On Prod Order",
           cell: ({ row }) => row.original.quantityOnProdOrder,
+          meta: {
+            icon: <LuFactory />,
+          },
         },
         {
           accessorKey: "quantityOnSalesOrder",
           header: "On Sales Order",
           cell: ({ row }) => row.original.quantityOnSalesOrder,
+          meta: {
+            icon: <LuShoppingBag />,
+          },
         },
         {
           accessorKey: "unitOfMeasureCode",
@@ -149,6 +187,9 @@ const InventoryTable = memo(
             return unitOfMeasure
               ? unitOfMeasure.name
               : row.original.unitOfMeasureCode;
+          },
+          meta: {
+            icon: <LuRuler />,
           },
         },
         {
@@ -174,6 +215,7 @@ const InventoryTable = memo(
                 value: type,
               })),
             },
+            icon: <LuBox />,
           },
         },
         {
@@ -189,6 +231,7 @@ const InventoryTable = memo(
               ],
             },
             pluralHeader: "Active Statuses",
+            icon: <LuCheck />,
           },
         },
       ];
@@ -197,6 +240,10 @@ const InventoryTable = memo(
     const defaultColumnVisibility = {
       active: false,
       type: false,
+    };
+
+    const defaultColumnPinning = {
+      left: ["readableId"],
     };
 
     return (
@@ -220,6 +267,7 @@ const InventoryTable = memo(
               columns={columns}
               data={data}
               defaultColumnVisibility={defaultColumnVisibility}
+              defaultColumnPinning={defaultColumnPinning}
               primaryAction={
                 <Combobox
                   size="sm"

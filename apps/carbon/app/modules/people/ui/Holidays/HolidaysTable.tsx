@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsFillPenFill } from "react-icons/bs";
 import { IoMdTrash } from "react-icons/io";
+import { LuCalendar, LuCalendarDays, LuCalendarRange } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -32,6 +33,9 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
         cell: ({ row }) => (
           <Hyperlink to={row.original.id}>{row.original.name}</Hyperlink>
         ),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         accessorKey: "year",
@@ -40,6 +44,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
           <Enumerable value={item.getValue<number>().toString()} />
         ),
         meta: {
+          icon: <LuCalendarRange />,
           filter: {
             type: "static",
             options: years.map((year) => ({
@@ -53,6 +58,9 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
         accessorKey: "date",
         header: "Date",
         cell: (item) => item.getValue<string>(),
+        meta: {
+          icon: <LuCalendarDays />,
+        },
       },
     ];
     return [...defaultColumns, ...customColumns];

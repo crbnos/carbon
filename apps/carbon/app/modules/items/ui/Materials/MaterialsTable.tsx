@@ -21,7 +21,23 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuAlignJustify,
+  LuAlignLeft,
+  LuBookMarked,
+  LuCalendar,
+  LuCheck,
+  LuExpand,
+  LuGlassWater,
+  LuPaintBucket,
+  LuPencil,
+  LuShapes,
+  LuStar,
+  LuTrash,
+  LuUser,
+} from "react-icons/lu";
+import { RxCodesandboxLogo } from "react-icons/rx";
+import { TbTargetArrow } from "react-icons/tb";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -76,6 +92,9 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
             </Hyperlink>
           </HStack>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         accessorKey: "name",
@@ -85,6 +104,9 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
             {item.getValue<string>()}
           </div>
         ),
+        meta: {
+          icon: <LuAlignLeft />,
+        },
       },
       {
         accessorKey: "description",
@@ -94,6 +116,9 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
             {item.getValue<string>()}
           </div>
         ),
+        meta: {
+          icon: <LuAlignJustify />,
+        },
       },
       {
         accessorKey: "materialSubstance",
@@ -109,6 +134,7 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
                 label: <Enumerable value={name} />,
               })) ?? [],
           },
+          icon: <LuGlassWater />,
         },
       },
       {
@@ -125,22 +151,32 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
                 label: <Enumerable value={name} />,
               })) ?? [],
           },
+          icon: <LuShapes />,
         },
       },
       {
         accessorKey: "finish",
         header: "Finish",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuPaintBucket />,
+        },
       },
       {
         accessorKey: "grade",
         header: "Grade",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuStar />,
+        },
       },
       {
         accessorKey: "dimensions",
         header: "Dimensions",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuExpand />,
+        },
       },
       {
         accessorKey: "itemTrackingType",
@@ -164,6 +200,7 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
               ),
             })),
           },
+          icon: <TbTargetArrow />,
         },
       },
       {
@@ -188,6 +225,7 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
               ),
             })),
           },
+          icon: <RxCodesandboxLogo />,
         },
       },
       {
@@ -203,24 +241,9 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
             ],
           },
           pluralHeader: "Active Statuses",
+          icon: <LuCheck />,
         },
       },
-      // {
-      //   id: "assignee",
-      //   header: "Assignee",
-      //   cell: ({ row }) => (
-      //     <EmployeeAvatar employeeId={row.original.assignee} />
-      //   ),
-      //   meta: {
-      //     filter: {
-      //       type: "static",
-      //       options: people.map((employee) => ({
-      //         value: employee.id,
-      //         label: employee.name,
-      //       })),
-      //     },
-      //   },
-      // },
       {
         id: "createdBy",
         header: "Created By",
@@ -235,12 +258,16 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "createdAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         id: "updatedBy",
@@ -256,12 +283,16 @@ const MaterialsTable = memo(({ data, count }: MaterialsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "updatedAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
     ];
     return [...defaultColumns, ...customColumns];

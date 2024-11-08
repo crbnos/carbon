@@ -2,7 +2,14 @@ import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBanknote,
+  LuBookMarked,
+  LuGlobe,
+  LuPencil,
+  LuTrash,
+  LuTruck,
+} from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -42,6 +49,9 @@ const ShippingMethodsTable = memo(
               {row.original.name}
             </Hyperlink>
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           accessorKey: "carrier",
@@ -55,12 +65,16 @@ const ShippingMethodsTable = memo(
                 value: v,
               })),
             },
+            icon: <LuTruck />,
           },
         },
         {
           accessorKey: "trackingUrl",
           header: "Tracking URL",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuGlobe />,
+          },
         },
       ];
       result = [...result, ...customColumns];
@@ -71,6 +85,9 @@ const ShippingMethodsTable = memo(
               accessorKey: "carrierAccountId",
               header: "Carrier Account",
               cell: (item) => item.getValue(),
+              meta: {
+                icon: <LuBanknote />,
+              },
             },
           ])
         : result;

@@ -11,7 +11,17 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuAlertTriangle, LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuAlertTriangle,
+  LuBuilding2,
+  LuCog,
+  LuFactory,
+  LuPencil,
+  LuRuler,
+  LuTrash,
+  LuUser,
+  LuUsers,
+} from "react-icons/lu";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -60,6 +70,9 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
               <span>{row.original.name}</span>
             </HStack>
           ),
+        meta: {
+          icon: <LuCog />,
+        },
       },
       {
         accessorKey: "processType",
@@ -70,6 +83,9 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           ) : (
             <Badge variant="secondary">{item.getValue<string>()}</Badge>
           ),
+        meta: {
+          icon: <LuFactory />,
+        },
       },
       {
         id: "workCenters",
@@ -88,12 +104,16 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             ))}
           </span>
         ),
+        meta: {
+          icon: <LuBuilding2 />,
+        },
       },
       {
         accessorKey: "defaultStandardFactor",
         header: "Default Unit",
         cell: (item) => item.getValue(),
         meta: {
+          icon: <LuRuler />,
           filter: {
             type: "static",
             options: standardFactorType.map((type) => ({
@@ -118,6 +138,9 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             <AvatarOverflowIndicator />
           </AvatarGroup>
         ),
+        meta: {
+          icon: <LuUsers />,
+        },
       },
       {
         id: "createdBy",
@@ -126,6 +149,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           <EmployeeAvatar employeeId={row.original.createdBy} />
         ),
         meta: {
+          icon: <LuUser />,
           filter: {
             type: "static",
             options: people.map((employee) => ({
@@ -142,6 +166,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           <EmployeeAvatar employeeId={row.original.updatedBy} />
         ),
         meta: {
+          icon: <LuUser />,
           filter: {
             type: "static",
             options: people.map((employee) => ({

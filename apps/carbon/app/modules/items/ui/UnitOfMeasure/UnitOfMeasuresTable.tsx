@@ -2,7 +2,7 @@ import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { LuBookMarked, LuCode, LuPencil, LuTrash } from "react-icons/lu";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -34,11 +34,17 @@ const UnitOfMeasuresTable = memo(
               className="cursor-pointer"
             />
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           accessorKey: "code",
           header: "Code",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuCode />,
+          },
         },
       ];
       return [...defaultColumns, ...customColumns];

@@ -2,7 +2,17 @@ import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBuilding2,
+  LuClock,
+  LuGlobe,
+  LuHome,
+  LuMap,
+  LuMapPin,
+  LuPencil,
+  LuTrash,
+  LuUser,
+} from "react-icons/lu";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -39,26 +49,41 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
             className="cursor-pointer"
           />
         ),
+        meta: {
+          icon: <LuMapPin />,
+        },
       },
       {
         accessorKey: "addressLine1",
         header: "Address",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuHome />,
+        },
       },
       {
         accessorKey: "city",
         header: "City",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuBuilding2 />,
+        },
       },
       {
         accessorKey: "stateProvince",
         header: "State / Province",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuMap />,
+        },
       },
       {
         accessorKey: "countryCode",
         header: "Country",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuGlobe />,
+        },
       },
       // {
       //   accessorKey: "timezone",
@@ -72,6 +97,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
           <EmployeeAvatar employeeId={row.original.createdBy} />
         ),
         meta: {
+          icon: <LuUser />,
           filter: {
             type: "static",
             options: people.map((employee) => ({
@@ -88,6 +114,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
           <EmployeeAvatar employeeId={row.original.updatedBy} />
         ),
         meta: {
+          icon: <LuClock />,
           filter: {
             type: "static",
             options: people.map((employee) => ({

@@ -3,7 +3,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { LuPencil, LuStar, LuTrash } from "react-icons/lu";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -37,6 +37,9 @@ const SupplierStatusesTable = memo(
               className="cursor-pointer"
             />
           ),
+          meta: {
+            icon: <LuStar />,
+          },
         },
       ];
       return [...defaultColumns, ...customColumns];

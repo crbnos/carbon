@@ -10,7 +10,17 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { LuBan, LuMailCheck, LuPencil, LuShield } from "react-icons/lu";
+import {
+  LuBan,
+  LuBriefcase,
+  LuMail,
+  LuMailCheck,
+  LuPencil,
+  LuShield,
+  LuToggleRight,
+  LuUser,
+  LuUserCheck,
+} from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -72,22 +82,34 @@ const EmployeesTable = memo(
               </Hyperlink>
             </HStack>
           ),
+          meta: {
+            icon: <LuUser />,
+          },
         },
 
         {
           accessorKey: "firstName",
           header: "First Name",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuUserCheck />,
+          },
         },
         {
           accessorKey: "lastName",
           header: "Last Name",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuUserCheck />,
+          },
         },
         {
           accessorKey: "email",
           header: "Email",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuMail />,
+          },
         },
         {
           id: "employeeTypeId",
@@ -107,6 +129,7 @@ const EmployeesTable = memo(
                 label: <Enumerable value={type.name} />,
               })),
             },
+            icon: <LuBriefcase />,
           },
         },
         {
@@ -127,6 +150,7 @@ const EmployeesTable = memo(
                 },
               ],
             },
+            icon: <LuToggleRight />,
           },
         },
       ];

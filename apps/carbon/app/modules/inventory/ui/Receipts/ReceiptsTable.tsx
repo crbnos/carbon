@@ -3,7 +3,18 @@ import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuCheck,
+  LuClock,
+  LuFileText,
+  LuHash,
+  LuMapPin,
+  LuPencil,
+  LuTrash,
+  LuUser,
+} from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -53,6 +64,9 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
             {row.original.receiptId}
           </Hyperlink>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         accessorKey: "sourceDocument",
@@ -66,6 +80,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               label: <Enumerable value={type} />,
             })),
           },
+          icon: <LuFileText />,
         },
       },
       {
@@ -96,6 +111,9 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               return null;
           }
         },
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "locationName",
@@ -109,6 +127,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               label: <Enumerable value={name} />,
             })),
           },
+          icon: <LuMapPin />,
         },
       },
       {
@@ -127,6 +146,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
             })),
           },
           pluralHeader: "Statuses",
+          icon: <LuClock />,
         },
       },
       {
@@ -143,12 +163,16 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "postingDate",
         header: "Posting Date",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         id: "supplierId",
@@ -164,6 +188,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               label: supplier.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
@@ -179,12 +204,16 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
             ],
           },
           pluralHeader: "Invoiced Statuses",
+          icon: <LuCheck />,
         },
       },
       {
         accessorKey: "externalDocumentId",
         header: "External Ref.",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         id: "createdBy",
@@ -200,12 +229,16 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "createdAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         id: "updatedBy",
@@ -221,12 +254,16 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "updatedAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
     ];
 

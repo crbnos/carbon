@@ -3,7 +3,18 @@ import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { AiOutlinePartition } from "react-icons/ai";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuClock,
+  LuHash,
+  LuPencil,
+  LuTrash,
+  LuUser,
+  LuUsers,
+  LuUserSquare,
+} from "react-icons/lu";
 import {
   CustomerAvatar,
   EmployeeAvatar,
@@ -83,6 +94,9 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
             {row.original?.jobId}
           </Hyperlink>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         accessorKey: "itemReadableId",
@@ -96,12 +110,16 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
               label: item.readableId,
             })),
           },
+          icon: <AiOutlinePartition />,
         },
       },
       {
         accessorKey: "quantity",
         header: "Quantity",
         cell: (item) => item.getValue<number>(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         id: "customerId",
@@ -117,6 +135,7 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
               label: customer.name,
             })),
           },
+          icon: <LuUserSquare />,
         },
       },
       {
@@ -133,6 +152,9 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
               {row.original?.salesOrderReadableId}
             </Hyperlink>
           ) : null,
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         accessorKey: "status",
@@ -150,6 +172,7 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
             })),
           },
           pluralHeader: "Statuses",
+          icon: <LuUsers />,
         },
       },
       {
@@ -166,12 +189,16 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "dueDate",
         header: "Due Date",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         accessorKey: "deadlineType",
@@ -209,42 +236,64 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
               ),
             })),
           },
+          icon: <LuClock />,
         },
       },
       {
         accessorKey: "orderQuantity",
         header: "Order Qty",
         cell: (item) => item.getValue<number>(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "inventoryQuantity",
         header: "Inventory Qty",
         cell: (item) => item.getValue<number>(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "productionQuantity",
         header: "Production Qty",
         cell: (item) => item.getValue<number>(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "scrapQuantity",
         header: "Scrap Qty",
         cell: (item) => item.getValue<number>(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "quantityComplete",
         header: "Completed Qty",
         cell: (item) => item.getValue<number>(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "quantityShipped",
         header: "Shipped Qty",
         cell: (item) => item.getValue<number>(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "quantityReceivedToInventory",
         header: "Received Qty",
         cell: (item) => item.getValue<number>(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         id: "createdBy",
@@ -260,12 +309,16 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "createdAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         id: "updatedBy",
@@ -281,12 +334,16 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "updatedAt",
         header: "Updated At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
     ];
     return [...defaultColumns, ...customColumns];

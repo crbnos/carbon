@@ -3,7 +3,18 @@ import { formatDate } from "@carbon/utils";
 import { Link, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
-import { LuPencil } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuEuro,
+  LuGlobe,
+  LuPackage,
+  LuPencil,
+  LuPhone,
+  LuPrinter,
+  LuStar,
+  LuUser,
+} from "react-icons/lu";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -43,6 +54,9 @@ const SuppliersTable = memo(
               </Hyperlink>
             </div>
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           accessorKey: "status",
@@ -56,6 +70,7 @@ const SuppliersTable = memo(
                 label: <Enumerable value={status.name ?? ""} />,
               })),
             },
+            icon: <LuStar />,
           },
         },
         {
@@ -72,6 +87,7 @@ const SuppliersTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         // {
@@ -113,26 +129,41 @@ const SuppliersTable = memo(
               </Link>
             </Button>
           ),
+          meta: {
+            icon: <LuPackage />,
+          },
         },
         {
           accessorKey: "currencyCode",
           header: "Currency",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuEuro />,
+          },
         },
         {
           accessorKey: "phone",
           header: "Phone",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuPhone />,
+          },
         },
         {
           accessorKey: "fax",
           header: "Fax",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuPrinter />,
+          },
         },
         {
           accessorKey: "website",
           header: "Website",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuGlobe />,
+          },
         },
         {
           id: "createdBy",
@@ -148,12 +179,16 @@ const SuppliersTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "createdAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           id: "updatedBy",
@@ -169,12 +204,16 @@ const SuppliersTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "updatedAt",
           header: "Updated At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
       ];
 

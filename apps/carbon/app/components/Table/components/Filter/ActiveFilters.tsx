@@ -120,7 +120,12 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
 
   return (
     <HStack spacing={0}>
-      <Button className="rounded-r-none" size="sm" variant="secondary">
+      <Button
+        leftIcon={filter.icon ?? undefined}
+        className="rounded-r-none"
+        size="sm"
+        variant="secondary"
+      >
         {filter.header}
       </Button>
       <Button className="rounded-none border-l-0" size="sm" variant="secondary">

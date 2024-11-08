@@ -2,7 +2,14 @@ import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuCalendarDays,
+  LuCalendarRange,
+  LuClock,
+  LuMapPin,
+  LuPencil,
+  LuTrash,
+} from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -50,22 +57,32 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         cell: ({ row }) => (
           <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
         ),
+        meta: {
+          icon: <LuCalendarRange />,
+        },
       },
       {
         accessorKey: "startTime",
         header: "Start Time",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuClock />,
+        },
       },
       {
         accessorKey: "endTime",
         header: "End Time",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuClock />,
+        },
       },
       {
         accessorKey: "locationName",
         header: "Location",
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          icon: <LuMapPin />,
           filter: {
             type: "static",
             options: locations.map((location) => ({
@@ -80,6 +97,9 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         header: "Days",
         // @ts-ignore
         cell: ({ row }) => renderDays(row.original),
+        meta: {
+          icon: <LuCalendarDays />,
+        },
       },
     ];
 
