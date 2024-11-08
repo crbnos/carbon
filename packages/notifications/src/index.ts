@@ -1,0 +1,163 @@
+import { Novu } from "@novu/node";
+import { nanoid } from "nanoid";
+
+const novu = new Novu(process.env.NOVU_SECRET_KEY!);
+
+const API_ENDPOINT = "https://api.novu.co/v1";
+
+export enum TriggerEvents {
+  SalesRfqAssignmentInApp = "sales-rfq-assignment-in-app",
+  QuoteAssignmentInApp = "quote-assignment-in-app",
+  SalesOrderAssignmentInApp = "sales-order-assignment-in-app",
+  JobAssignmentInApp = "job-assignment-in-app",
+  DigitalQuoteResponseInApp = "digital-quote-response-in-app",
+}
+
+export enum NotificationTypes {
+  SalesRfqAssignment = "sales-rfq-assignment",
+  QuoteAssignment = "quote-assignment",
+  SalesOrderAssignment = "sales-order-assignment",
+  JobAssignment = "job-assignment",
+  DigitalQuoteResponse = "digital-quote-response",
+}
+
+type TriggerUser = {
+  subscriberId: string;
+  email: string;
+  fullName: string;
+  avatarUrl?: string;
+  companyId: string;
+};
+
+type TriggerPayload = {
+  name: TriggerEvents;
+  payload: any;
+  user: TriggerUser;
+  replyTo?: string;
+  tenant?: string; // NOTE: Currently no way to listen for messages with tenant, we use user id + company id for unique
+};
+
+export function getSubscriberId({
+  companyId,
+  userId,
+}: {
+  companyId: string;
+  userId: string;
+}) {
+  return `${companyId}:${userId}`;
+}
+
+export async function trigger(data: TriggerPayload) {
+  try {
+    await novu.trigger(data.name, {
+      to: {
+        ...data.user,
+        //   Prefix subscriber id with team id
+        subscriberId: getSubscriberId({
+          companyId: data.user.companyId,
+          userId: data.user.subscriberId,
+        }),
+      },
+      payload: data.payload,
+      tenant: data.tenant,
+      overrides: {
+        email: {
+          replyTo: data.replyTo,
+          // @ts-ignore
+          headers: {
+            "X-Entity-Ref-ID": nanoid(),
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function triggerBulk(events: TriggerPayload[]) {
+  try {
+    await novu.bulkTrigger(
+      events.map((data) => ({
+        name: data.name,
+        to: {
+          ...data.user,
+          //   Prefix subscriber id with team id
+          subscriberId: getSubscriberId({
+            companyId: data.user.companyId,
+            userId: data.user.subscriberId,
+          }),
+        },
+        payload: data.payload,
+        tenant: data.tenant,
+        overrides: {
+          email: {
+            replyTo: data.replyTo,
+            headers: {
+              "X-Entity-Ref-ID": nanoid(),
+            },
+          },
+        },
+      }))
+    );
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+type GetSubscriberPreferencesParams = {
+  teamId: string;
+  subscriberId: string;
+};
+
+export async function getSubscriberPreferences({
+  subscriberId,
+  teamId,
+}: GetSubscriberPreferencesParams) {
+  const response = await fetch(
+    `${API_ENDPOINT}/subscribers/${teamId}_${subscriberId}/preferences`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `ApiKey ${process.env.NOVU_API_KEY!}`,
+      },
+    }
+  );
+
+  return response.json();
+}
+
+type UpdateSubscriberPreferenceParams = {
+  subscriberId: string;
+  teamId: string;
+  templateId: string;
+  type: string;
+  enabled: boolean;
+};
+
+export async function updateSubscriberPreference({
+  subscriberId,
+  teamId,
+  templateId,
+  type,
+  enabled,
+}: UpdateSubscriberPreferenceParams) {
+  const response = await fetch(
+    `${API_ENDPOINT}/subscribers/${teamId}_${subscriberId}/preferences/${templateId}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `ApiKey ${process.env.NOVU_API_KEY!}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        channel: {
+          type,
+          enabled,
+        },
+      }),
+    }
+  );
+
+  return response.json();
+}
