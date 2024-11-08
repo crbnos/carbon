@@ -1,7 +1,7 @@
 import { AiOutlinePartition } from "react-icons/ai";
-import { GiWoodBeam } from "react-icons/gi";
 import {
   LuAtom,
+  LuGlassWater,
   LuGrip,
   LuHammer,
   LuPizza,
@@ -75,7 +75,7 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Substances",
         to: path.to.materialSubstances,
-        icon: <GiWoodBeam />,
+        icon: <LuGlassWater />,
         role: "employee",
       },
       // {

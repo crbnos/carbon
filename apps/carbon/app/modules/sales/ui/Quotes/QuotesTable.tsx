@@ -9,7 +9,18 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useFetchers, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
-import { LuPencil, LuPin, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuMap,
+  LuPencil,
+  LuPin,
+  LuQrCode,
+  LuStar,
+  LuTrash,
+  LuUser,
+  LuUserSquare,
+} from "react-icons/lu";
 import {
   CustomerAvatar,
   EmployeeAvatar,
@@ -111,6 +122,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             </Hyperlink>
           </HStack>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         id: "customerId",
@@ -126,6 +140,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
               label: customer.name,
             })),
           },
+          icon: <LuUserSquare />,
         },
       },
 
@@ -155,12 +170,16 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             })),
           },
           pluralHeader: "Statuses",
+          icon: <LuStar />,
         },
       },
       {
         accessorKey: "customerReference",
         header: "Customer Reference",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuQrCode />,
+        },
       },
       {
         accessorKey: "salesPersonId",
@@ -173,6 +192,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             type: "static",
             options: employeeOptions,
           },
+          icon: <LuUser />,
         },
       },
       {
@@ -186,6 +206,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             type: "static",
             options: employeeOptions,
           },
+          icon: <LuUser />,
         },
       },
       {
@@ -199,17 +220,24 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             type: "static",
             options: employeeOptions,
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "dueDate",
         header: "Due Date",
-        cell: (item) => item.getValue(),
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         accessorKey: "expirationDate",
         header: "Expiration Date",
-        cell: (item) => item.getValue(),
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         accessorKey: "locationName",
@@ -225,6 +253,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
                 label: <Enumerable value={name} />,
               })) ?? [],
           },
+          icon: <LuMap />,
         },
       },
 
@@ -242,12 +271,16 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "createdAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         id: "updatedBy",
@@ -263,12 +296,16 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "updatedAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
     ];
 

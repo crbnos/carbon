@@ -21,7 +21,19 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuAlignJustify,
+  LuAlignLeft,
+  LuBookMarked,
+  LuCalendar,
+  LuCheck,
+  LuPencil,
+  LuRefreshCw,
+  LuTrash,
+  LuUser,
+} from "react-icons/lu";
+import { RxCodesandboxLogo } from "react-icons/rx";
+import { TbTargetArrow } from "react-icons/tb";
 import {
   CustomerAvatar,
   EmployeeAvatar,
@@ -79,6 +91,9 @@ const FixturesTable = memo(
               </Hyperlink>
             </HStack>
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           accessorKey: "name",
@@ -88,6 +103,9 @@ const FixturesTable = memo(
               {item.getValue<string>()}
             </div>
           ),
+          meta: {
+            icon: <LuAlignLeft />,
+          },
         },
         {
           accessorKey: "description",
@@ -97,6 +115,9 @@ const FixturesTable = memo(
               {item.getValue<string>()}
             </div>
           ),
+          meta: {
+            icon: <LuAlignJustify />,
+          },
         },
         {
           accessorKey: "itemTrackingType",
@@ -123,6 +144,7 @@ const FixturesTable = memo(
                 ),
               })),
             },
+            icon: <TbTargetArrow />,
           },
         },
 
@@ -148,6 +170,7 @@ const FixturesTable = memo(
                 ),
               })),
             },
+            icon: <RxCodesandboxLogo />,
           },
         },
         {
@@ -162,6 +185,7 @@ const FixturesTable = memo(
                 label: <Enumerable value={type} />,
               })),
             },
+            icon: <LuRefreshCw />,
           },
         },
         {
@@ -178,6 +202,7 @@ const FixturesTable = memo(
                 label: customer.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
@@ -193,24 +218,9 @@ const FixturesTable = memo(
               ],
             },
             pluralHeader: "Active Statuses",
+            icon: <LuCheck />,
           },
         },
-        // {
-        //   id: "assignee",
-        //   header: "Assignee",
-        //   cell: ({ row }) => (
-        //     <EmployeeAvatar employeeId={row.original.assignee} />
-        //   ),
-        //   meta: {
-        //     filter: {
-        //       type: "static",
-        //       options: people.map((employee) => ({
-        //         value: employee.id,
-        //         label: employee.name,
-        //       })),
-        //     },
-        //   },
-        // },
         {
           id: "createdBy",
           header: "Created By",
@@ -225,12 +235,16 @@ const FixturesTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "createdAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           id: "updatedBy",
@@ -246,12 +260,16 @@ const FixturesTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "updatedAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
       ];
       return [...defaultColumns, ...customColumns];

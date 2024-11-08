@@ -3,7 +3,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { LuPencil, LuTrash, LuUsers } from "react-icons/lu";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -38,6 +38,9 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
               className="cursor-pointer"
             />
           ),
+        meta: {
+          icon: <LuUsers />,
+        },
       },
     ];
   }, [navigate]);

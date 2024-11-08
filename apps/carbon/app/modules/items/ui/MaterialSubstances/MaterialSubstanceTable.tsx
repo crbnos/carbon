@@ -2,7 +2,7 @@ import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { LuBookMarked, LuGlobe, LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -40,6 +40,9 @@ const MaterialSubstancesTable = memo(
                 {row.original.name}
               </Hyperlink>
             ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           header: "Type",
@@ -51,6 +54,9 @@ const MaterialSubstancesTable = memo(
             ) : (
               <Badge>Company</Badge>
             ),
+          meta: {
+            icon: <LuGlobe />,
+          },
         },
       ];
       return [...defaultColumns, ...customColumns];

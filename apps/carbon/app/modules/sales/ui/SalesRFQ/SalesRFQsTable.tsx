@@ -3,7 +3,18 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useFetchers, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
-import { LuPencil, LuPin, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuMap,
+  LuPencil,
+  LuPin,
+  LuQrCode,
+  LuStar,
+  LuTrash,
+  LuUser,
+  LuUserSquare,
+} from "react-icons/lu";
 import {
   CustomerAvatar,
   EmployeeAvatar,
@@ -100,6 +111,9 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
             </Hyperlink>
           </HStack>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
 
       {
@@ -116,6 +130,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
               label: customer.name,
             })),
           },
+          icon: <LuUserSquare />,
         },
       },
       {
@@ -134,22 +149,32 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
             })),
           },
           pluralHeader: "Statuses",
+          icon: <LuStar />,
         },
       },
       {
         accessorKey: "customerReference",
         header: "Customer Reference",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuQrCode />,
+        },
       },
       {
         accessorKey: "rfqDate",
         header: "RFQ Date",
-        cell: (item) => item.getValue(),
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         accessorKey: "expirationDate",
         header: "Due Date",
-        cell: (item) => item.getValue(),
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
 
       {
@@ -166,6 +191,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
@@ -182,6 +208,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
@@ -198,12 +225,16 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
                 label: <Enumerable value={name} />,
               })) ?? [],
           },
+          icon: <LuMap />,
         },
       },
       {
         accessorKey: "createdAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         id: "updatedBy",
@@ -219,12 +250,16 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "updatedAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
     ];
 

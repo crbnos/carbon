@@ -2,7 +2,14 @@ import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCalendar,
+  LuClock,
+  LuPencil,
+  LuPercent,
+  LuTrash,
+} from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -34,21 +41,33 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
             {row.original.name}
           </Hyperlink>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         accessorKey: "daysDue",
         header: "Days Due",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         accessorKey: "daysDiscount",
         header: "Days Discount",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         accessorKey: "discountPercentage",
         header: "Discount Percentage",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuPercent />,
+        },
       },
       {
         accessorKey: "calculationMethod",
@@ -62,6 +81,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
               value: v,
             })),
           },
+          icon: <LuClock />,
         },
       },
     ];

@@ -21,7 +21,18 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuAlignJustify,
+  LuAlignLeft,
+  LuBookMarked,
+  LuCalendar,
+  LuCheck,
+  LuPencil,
+  LuTrash,
+  LuUser,
+} from "react-icons/lu";
+import { RxCodesandboxLogo } from "react-icons/rx";
+import { TbTargetArrow } from "react-icons/tb";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -75,6 +86,9 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
             </Hyperlink>
           </HStack>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         accessorKey: "name",
@@ -84,6 +98,9 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
             {item.getValue<string>()}
           </div>
         ),
+        meta: {
+          icon: <LuAlignLeft />,
+        },
       },
       {
         accessorKey: "description",
@@ -93,6 +110,9 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
             {item.getValue<string>()}
           </div>
         ),
+        meta: {
+          icon: <LuAlignJustify />,
+        },
       },
       {
         accessorKey: "itemTrackingType",
@@ -116,6 +136,7 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
               ),
             })),
           },
+          icon: <TbTargetArrow />,
         },
       },
       {
@@ -140,6 +161,7 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
               ),
             })),
           },
+          icon: <RxCodesandboxLogo />,
         },
       },
       {
@@ -155,6 +177,7 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
             ],
           },
           pluralHeader: "Active Statuses",
+          icon: <LuCheck />,
         },
       },
       // {
@@ -187,12 +210,16 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "createdAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
       {
         id: "updatedBy",
@@ -208,12 +235,16 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
               label: employee.name,
             })),
           },
+          icon: <LuUser />,
         },
       },
       {
         accessorKey: "updatedAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
     ];
     return [...defaultColumns, ...customColumns];

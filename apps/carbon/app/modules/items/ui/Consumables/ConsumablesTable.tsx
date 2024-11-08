@@ -21,7 +21,18 @@ import { formatDate } from "@carbon/utils";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuAlignJustify,
+  LuAlignLeft,
+  LuBookMarked,
+  LuCalendar,
+  LuCheck,
+  LuPencil,
+  LuTrash,
+  LuUser,
+} from "react-icons/lu";
+import { RxCodesandboxLogo } from "react-icons/rx";
+import { TbTargetArrow } from "react-icons/tb";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -76,6 +87,9 @@ const ConsumablesTable = memo(
               </Hyperlink>
             </HStack>
           ),
+          meta: {
+            icon: <LuBookMarked />,
+          },
         },
         {
           accessorKey: "name",
@@ -85,6 +99,9 @@ const ConsumablesTable = memo(
               {item.getValue<string>()}
             </div>
           ),
+          meta: {
+            icon: <LuAlignLeft />,
+          },
         },
         {
           accessorKey: "description",
@@ -94,6 +111,9 @@ const ConsumablesTable = memo(
               {item.getValue<string>()}
             </div>
           ),
+          meta: {
+            icon: <LuAlignJustify />,
+          },
         },
         {
           accessorKey: "itemTrackingType",
@@ -120,6 +140,7 @@ const ConsumablesTable = memo(
                 ),
               })),
             },
+            icon: <TbTargetArrow />,
           },
         },
         {
@@ -144,6 +165,7 @@ const ConsumablesTable = memo(
                 ),
               })),
             },
+            icon: <RxCodesandboxLogo />,
           },
         },
         {
@@ -159,6 +181,7 @@ const ConsumablesTable = memo(
               ],
             },
             pluralHeader: "Active Statuses",
+            icon: <LuCheck />,
           },
         },
         // {
@@ -191,12 +214,16 @@ const ConsumablesTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "createdAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
         {
           id: "updatedBy",
@@ -212,12 +239,16 @@ const ConsumablesTable = memo(
                 label: employee.name,
               })),
             },
+            icon: <LuUser />,
           },
         },
         {
           accessorKey: "updatedAt",
           header: "Created At",
           cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
         },
       ];
       return [...defaultColumns, ...customColumns];

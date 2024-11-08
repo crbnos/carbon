@@ -20,10 +20,13 @@ export function useNextItemId(
           ?.from("item")
           .select("readableId")
           .eq("companyId", company.id)
+          .eq("type", table)
           .ilike("readableId", `${prefix}%`)
           .order("readableId", { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        console.log({ data });
         if (data?.readableId) {
           const sequence = data.readableId.slice(prefix.length);
           const currentSequence = parseInt(sequence);

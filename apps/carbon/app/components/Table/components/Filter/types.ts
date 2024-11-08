@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 export type ColumnFilter = {
   accessorKey: string;
   header: string;
   pluralHeader?: string;
   filter: ColumnFilterData;
+  icon?: ReactElement;
 };
 
 export type Option = {

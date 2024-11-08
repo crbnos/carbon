@@ -9,7 +9,15 @@ import {
 } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { LuBan, LuMailCheck } from "react-icons/lu";
+import {
+  LuBan,
+  LuContainer,
+  LuMail,
+  LuMailCheck,
+  LuStar,
+  LuUser,
+  LuUserCheck,
+} from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -76,28 +84,41 @@ const SupplierAccountsTable = memo(
               <span>{row.original.user?.fullName ?? ""}</span>
             </HStack>
           ),
+          meta: {
+            icon: <LuUser />,
+          },
         },
 
         {
           accessorKey: "user.firstName",
           header: "First Name",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuUserCheck />,
+          },
         },
         {
           accessorKey: "user.lastName",
           header: "Last Name",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuUserCheck />,
+          },
         },
         {
           accessorKey: "user.email",
           header: "Email",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuMail />,
+          },
         },
         {
           accessorKey: "supplier.name",
           header: "Supplier",
           cell: (item) => item.getValue(),
           meta: {
+            icon: <LuContainer />,
             filter: {
               type: "static",
               options: suppliers.map(({ name }) => ({
@@ -115,6 +136,7 @@ const SupplierAccountsTable = memo(
             <Enumerable value={row.original.supplier?.supplierType?.name} />
           ),
           meta: {
+            icon: <LuStar />,
             filter: {
               type: "static",
               options: supplierTypes.map((type) => ({
@@ -129,6 +151,7 @@ const SupplierAccountsTable = memo(
           header: "Active",
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: {
+            icon: <LuUserCheck />,
             filter: {
               type: "static",
               options: [

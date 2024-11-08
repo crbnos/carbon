@@ -3,7 +3,14 @@ import { formatDate } from "@carbon/utils";
 import { Outlet, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuCalendar,
+  LuKey,
+  LuPencil,
+  LuTag,
+  LuTrash,
+  LuUser,
+} from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { type ApiKey } from "~/modules/settings";
@@ -29,6 +36,9 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
         cell: ({ row }) => (
           <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
         ),
+        meta: {
+          icon: <LuTag />,
+        },
       },
       {
         accessorKey: "key",
@@ -36,6 +46,9 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
         cell: (item) => (
           <Badge variant="secondary">{item.getValue<string>()}</Badge>
         ),
+        meta: {
+          icon: <LuKey />,
+        },
       },
       {
         id: "createdBy",
@@ -44,6 +57,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           <EmployeeAvatar employeeId={row.original.createdBy} />
         ),
         meta: {
+          icon: <LuUser />,
           filter: {
             type: "static",
             options: people.map((employee) => ({
@@ -57,6 +71,9 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
         accessorKey: "createdAt",
         header: "Created At",
         cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
       },
     ];
   }, [people]);

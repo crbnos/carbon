@@ -2,7 +2,14 @@ import { Checkbox, HStack, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil } from "react-icons/lu";
+import {
+  LuBriefcase,
+  LuMail,
+  LuPencil,
+  LuToggleRight,
+  LuUser,
+  LuUsers,
+} from "react-icons/lu";
 import { Avatar, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -94,22 +101,34 @@ const PeopleTable = memo(
               </Hyperlink>
             </HStack>
           ),
+          meta: {
+            icon: <LuUsers />,
+          },
         },
 
         {
           accessorKey: "firstName",
           header: "First Name",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuUser />,
+          },
         },
         {
           accessorKey: "lastName",
           header: "Last Name",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuUser />,
+          },
         },
         {
           accessorKey: "email",
           header: "Email",
           cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuMail />,
+          },
         },
         {
           id: "employeeTypeId",
@@ -129,6 +148,7 @@ const PeopleTable = memo(
                 label: <Enumerable value={type.name!} />,
               })),
             },
+            icon: <LuBriefcase />,
           },
         },
         {
@@ -143,6 +163,7 @@ const PeopleTable = memo(
                 { value: "false", label: "Inactive" },
               ],
             },
+            icon: <LuToggleRight />,
           },
         },
       ];

@@ -4,9 +4,15 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuAlertTriangle,
+  LuAlignLeft,
+  LuBuilding2,
   LuCheckCircle,
+  LuCog,
+  LuDollarSign,
   LuPencil,
   LuTrash,
+  LuUser,
+  LuWrench,
 } from "react-icons/lu";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -84,6 +90,9 @@ const WorkCentersTable = memo(
               )}
             </HStack>
           ),
+          meta: {
+            icon: <LuWrench />,
+          },
         },
         {
           id: "processes",
@@ -102,12 +111,16 @@ const WorkCentersTable = memo(
               )}
             </span>
           ),
+          meta: {
+            icon: <LuCog />,
+          },
         },
         {
           accessorKey: "locationName",
           header: "Location",
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            icon: <LuBuilding2 />,
             filter: {
               type: "static",
               options: locations.map(({ name }) => ({
@@ -125,6 +138,9 @@ const WorkCentersTable = memo(
               {row.original.description}
             </span>
           ),
+          meta: {
+            icon: <LuAlignLeft />,
+          },
         },
         {
           accessorKey: "laborRate",
@@ -132,6 +148,9 @@ const WorkCentersTable = memo(
           cell: ({ row }) => (
             <span>{formatter.format(row.original.laborRate ?? 0)}</span>
           ),
+          meta: {
+            icon: <LuDollarSign />,
+          },
         },
         {
           accessorKey: "machineRate",
@@ -139,6 +158,9 @@ const WorkCentersTable = memo(
           cell: ({ row }) => (
             <span>{formatter.format(row.original.machineRate ?? 0)}</span>
           ),
+          meta: {
+            icon: <LuDollarSign />,
+          },
         },
         {
           accessorKey: "overheadRate",
@@ -146,6 +168,9 @@ const WorkCentersTable = memo(
           cell: ({ row }) => (
             <span>{formatter.format(row.original.overheadRate ?? 0)}</span>
           ),
+          meta: {
+            icon: <LuDollarSign />,
+          },
         },
         {
           id: "createdBy",
@@ -154,6 +179,7 @@ const WorkCentersTable = memo(
             <EmployeeAvatar employeeId={row.original.createdBy} />
           ),
           meta: {
+            icon: <LuUser />,
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -170,6 +196,7 @@ const WorkCentersTable = memo(
             <EmployeeAvatar employeeId={row.original.updatedBy} />
           ),
           meta: {
+            icon: <LuUser />,
             filter: {
               type: "static",
               options: people.map((employee) => ({

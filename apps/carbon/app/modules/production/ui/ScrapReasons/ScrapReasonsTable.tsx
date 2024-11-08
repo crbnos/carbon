@@ -33,6 +33,9 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
             className="cursor-pointer"
           />
         ),
+        meta: {
+          icon: <LuTrash />,
+        },
       },
     ];
     return [...defaultColumns, ...customColumns];

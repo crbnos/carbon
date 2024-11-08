@@ -66,7 +66,8 @@ const Columns = <T extends object>({
                         icon={<MdOutlineDragIndicator />}
                         variant="ghost"
                       />
-                      <span className="text-sm flex-grow">
+                      <span className="text-sm flex-grow flex items-center gap-2">
+                        {column.columnDef.meta?.icon}
                         <>{column.columnDef.header}</>
                       </span>
                       <IconButton

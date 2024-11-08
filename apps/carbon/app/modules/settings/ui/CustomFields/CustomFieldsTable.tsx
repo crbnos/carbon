@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BiAddToQueue } from "react-icons/bi";
 import { BsListUl } from "react-icons/bs";
+import { LuDatabase, LuLayoutGrid, LuList } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -28,12 +29,16 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         cell: ({ row }) => (
           <Hyperlink to={row.original.table!}>{row.original.name}</Hyperlink>
         ),
+        meta: {
+          icon: <LuDatabase />,
+        },
       },
       {
         accessorKey: "module",
         header: "Module",
         cell: ({ row }) => <Enumerable value={row.original.module} />,
         meta: {
+          icon: <LuLayoutGrid />,
           filter: {
             type: "static",
             options: modulesType.map((m) => ({
@@ -59,6 +64,9 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
             </Link>
           </Button>
         ),
+        meta: {
+          icon: <LuList />,
+        },
       },
     ];
   }, [params]);

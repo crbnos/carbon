@@ -9,7 +9,14 @@ import {
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBrain,
+  LuClock,
+  LuPencil,
+  LuTrash,
+  LuTrendingUp,
+  LuUsers,
+} from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
@@ -78,6 +85,9 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
             {row.original.name}
           </Badge>
         ),
+        meta: {
+          icon: <LuBrain />,
+        },
       },
       {
         header: "Employees",
@@ -98,10 +108,16 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
             <AvatarOverflowIndicator />
           </AvatarGroup>
         ),
+        meta: {
+          icon: <LuUsers />,
+        },
       },
       {
         header: "Time to Learn",
         cell: ({ row }) => `${row.original.weeks} weeks`,
+        meta: {
+          icon: <LuClock />,
+        },
       },
       {
         header: "Efficiency Curve",
@@ -115,6 +131,9 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
             margin={{ top: 0, right: 0, bottom: 0, left: 2 }}
           />
         ),
+        meta: {
+          icon: <LuTrendingUp />,
+        },
       },
     ];
   }, [navigate]);

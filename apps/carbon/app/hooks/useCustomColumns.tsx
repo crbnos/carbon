@@ -1,6 +1,14 @@
 import type { Json } from "@carbon/database";
 import { Checkbox, HStack } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
+import {
+  LuCalendar,
+  LuCaseSensitive,
+  LuEuro,
+  LuList,
+  LuToggleLeft,
+  LuUser,
+} from "react-icons/lu";
 import { Avatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { DataType } from "~/modules/shared";
@@ -20,6 +28,9 @@ export function useCustomColumns<T extends { customFields: Json }>(
     customColumns.push({
       accessorKey: `customFields.${field.id}`,
       header: field.name,
+      meta: {
+        icon: <ColumnIcon dataTypeId={field.dataTypeId} />,
+      },
       cell: (item) => {
         switch (field.dataTypeId) {
           case DataType.Boolean:
@@ -88,4 +99,23 @@ export function useCustomColumns<T extends { customFields: Json }>(
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object";
+}
+
+function ColumnIcon({ dataTypeId }: { dataTypeId: DataType }) {
+  switch (dataTypeId) {
+    case DataType.Boolean:
+      return <LuToggleLeft />;
+    case DataType.Date:
+      return <LuCalendar />;
+    case DataType.List:
+      return <LuList />;
+    case DataType.Numeric:
+      return <LuEuro />;
+    case DataType.Text:
+      return <LuCaseSensitive />;
+    case DataType.User:
+      return <LuUser />;
+    default:
+      return null;
+  }
 }
