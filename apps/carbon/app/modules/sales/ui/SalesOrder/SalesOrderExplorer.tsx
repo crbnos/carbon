@@ -31,7 +31,7 @@ import {
   useUser,
 } from "~/hooks";
 import { path } from "~/utils/path";
-import type { SalesOrder, SalesOrderLine } from "../../types";
+import type { Customer, SalesOrder, SalesOrderLine } from "../../types";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
 import SalesOrderLineForm from "./SalesOrderLineForm";
 
@@ -42,6 +42,7 @@ export default function SalesOrderExplorer() {
   const salesOrderData = useRouteData<{
     salesOrder: SalesOrder;
     lines: SalesOrderLine[];
+    customer: Customer;
   }>(path.to.salesOrder(orderId));
   const permissions = usePermissions();
 
@@ -53,6 +54,8 @@ export default function SalesOrderExplorer() {
     addOnCost: 0,
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
+    taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    shippingCost: 0,
   };
 
   const newSalesOrderLineDisclosure = useDisclosure();

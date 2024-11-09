@@ -13,6 +13,7 @@ import { Outlet, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
+  getCustomer,
   getOpportunityBySalesOrder,
   getOpportunityDocuments,
   getSalesOrder,
@@ -58,11 +59,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const customer = salesOrder.data?.customerId
+    ? await getCustomer(client, salesOrder.data.customerId)
+    : null;
+
   return json({
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
     files: files.data ?? [],
     opportunity: opportunity.data,
+    customer: customer?.data ?? null,
   });
 }
 

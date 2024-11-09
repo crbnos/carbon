@@ -228,7 +228,7 @@ const QuoteLinePricing = ({
     if (!carbon) return;
     const quoteExchangeRate = await carbon
       .from("quote")
-      .select("id, exchangeRate, taxPercent")
+      .select("id, exchangeRate")
       .eq("id", quoteId)
       .single();
 
@@ -244,7 +244,6 @@ const QuoteLinePricing = ({
         unitPrice: 0,
         discountPercent: 0,
         exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
-        taxPercent: quoteExchangeRate.data?.taxPercent ?? 0,
         shippingCost: 0,
         createdBy: userId,
       } as unknown as QuotationPrice;
@@ -809,7 +808,7 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const taxPercent = prices[quantity]?.taxPercent;
+                const taxPercent = line.taxPercent ?? 0;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <NumberField
@@ -838,7 +837,7 @@ const QuoteLinePricing = ({
                   netPricesByQuantity[index] * quantity +
                   prices[quantity]?.shippingCost +
                   additionalChargesByQuantity[index];
-                const tax = subtotal * (prices[quantity]?.taxPercent ?? 0);
+                const tax = subtotal * (line.taxPercent ?? 0);
                 const price = subtotal + tax;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
@@ -879,7 +878,7 @@ const QuoteLinePricing = ({
                       netPricesByQuantity[index] * quantity +
                       prices[quantity]?.shippingCost +
                       additionalChargesByQuantity[index];
-                    const tax = subtotal * (prices[quantity]?.taxPercent ?? 0);
+                    const tax = subtotal * (line.taxPercent ?? 0);
                     const price = subtotal + tax;
                     const exchangeRate = prices[quantity]?.exchangeRate;
                     const convertedPrice = price * (exchangeRate ?? 1);

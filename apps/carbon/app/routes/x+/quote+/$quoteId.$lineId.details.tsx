@@ -150,6 +150,7 @@ export default function QuoteLine() {
     status: line.status ?? "Not Started",
     quantity: line.quantity ?? [1],
     unitOfMeasureCode: line.unitOfMeasureCode ?? "",
+    taxPercent: line.taxPercent ?? 0,
   };
 
   return (

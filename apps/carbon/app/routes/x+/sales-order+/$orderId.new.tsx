@@ -6,7 +6,7 @@ import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useRouteData, useUser } from "~/hooks";
-import type { SalesOrder, SalesOrderLineType } from "~/modules/sales";
+import type { Customer, SalesOrder, SalesOrderLineType } from "~/modules/sales";
 import {
   SalesOrderLineForm,
   salesOrderLineValidator,
@@ -63,6 +63,7 @@ export default function NewSalesOrderLineRoute() {
   if (!orderId) throw new Error("Could not find orderId");
   const salesOrderData = useRouteData<{
     salesOrder: SalesOrder;
+    customer: Customer;
   }>(path.to.salesOrder(orderId));
 
   const initialValues = {
@@ -76,6 +77,8 @@ export default function NewSalesOrderLineRoute() {
     unitPrice: 0,
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
+    taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    shippingCost: 0,
   };
 
   return (

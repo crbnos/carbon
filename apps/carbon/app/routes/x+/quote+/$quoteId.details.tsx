@@ -95,7 +95,6 @@ export default function QuoteDetailsRoute() {
     currencyCode: quoteData?.quote?.currencyCode ?? undefined,
     exchangeRate: quoteData?.quote?.exchangeRate ?? undefined,
     exchangeRateUpdatedAt: quoteData?.quote?.exchangeRateUpdatedAt ?? "",
-    taxPercent: quoteData?.quote?.taxPercent ?? 0,
   };
 
   const shipmentInitialValues = {

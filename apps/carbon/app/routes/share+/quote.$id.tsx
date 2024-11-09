@@ -267,6 +267,7 @@ type SelectedLine = {
   convertedAddOn: number;
   leadTime: number;
   convertedShippingCost: number;
+  taxPercent: number;
 };
 
 const deselectedLine: SelectedLine = {
@@ -277,6 +278,7 @@ const deselectedLine: SelectedLine = {
   quantity: 0,
   leadTime: 0,
   convertedShippingCost: 0,
+  taxPercent: 0,
 };
 
 const LineItems = ({
@@ -548,6 +550,7 @@ const LinePricingOptions = ({
                 leadTime: selectedOption.leadTime,
                 convertedShippingCost:
                   selectedOption.convertedShippingCost ?? 0,
+                taxPercent: line.taxPercent ?? 0,
               },
             }));
             setSelectedValue(value);
@@ -773,6 +776,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
             convertedAdditionalChargesByQuantity[price.quantity] || 0,
           leadTime: price.leadTime,
           convertedShippingCost: price.convertedShippingCost ?? 0,
+          taxPercent: line.taxPercent ?? 0,
         };
         return acc;
       }, {}) ?? {}
@@ -787,7 +791,15 @@ const Quote = ({ data }: { data: QuoteData }) => {
       line.convertedShippingCost
     );
   }, 0);
-  const tax = subtotal * (quote.taxPercent ?? 0);
+  const tax = Object.values(selectedLines).reduce((acc, line) => {
+    return (
+      acc +
+      (line.convertedNetUnitPrice * line.quantity +
+        line.convertedAddOn +
+        line.convertedShippingCost) *
+        (line.taxPercent ?? 0)
+    );
+  }, 0);
   const total = subtotal + tax;
 
   const termsHTML = generateHTML(terms as JSONContent);
@@ -850,7 +862,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               />
             </HStack>
             <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>Tax ({(quote.taxPercent * 100).toFixed(2)}%):</span>
+              <span>Tax:</span>
               <span>{formatter.format(tax)}</span>
             </HStack>
             <Separator />

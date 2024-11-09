@@ -126,9 +126,6 @@ export const quoteValidator = z.object({
   currencyCode: zfd.text(z.string().optional()),
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional()),
-  taxPercent: zfd.numeric(
-    z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
-  ),
 });
 
 export const quoteLineAdditionalChargesValidator = z.record(
@@ -161,6 +158,9 @@ export const quoteLineValidator = z.object({
   ),
   modelUploadId: zfd.text(z.string().optional()),
   noQuoteReason: zfd.text(z.string().optional()),
+  taxPercent: zfd.numeric(
+    z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
+  ),
 });
 
 export const quoteMaterialValidator = z

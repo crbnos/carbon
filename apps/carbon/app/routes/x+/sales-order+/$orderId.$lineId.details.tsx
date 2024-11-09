@@ -150,6 +150,8 @@ export default function EditSalesOrderLineRoute() {
     shelfId: line?.shelfId ?? "",
     unitOfMeasureCode: line?.unitOfMeasureCode ?? "",
     unitPrice: line?.unitPrice ?? 0,
+    taxPercent: line?.taxPercent ?? 0,
+    shippingCost: line?.shippingCost ?? 0,
     ...getCustomFields(line?.customFields),
   };
 

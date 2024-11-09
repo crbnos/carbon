@@ -83,7 +83,6 @@ export default function QuoteNewRoute() {
     currencyCode: undefined,
     exchangeRate: undefined,
     exchangeRateUpdatedAt: "",
-    taxPercent: 0,
   };
 
   return (

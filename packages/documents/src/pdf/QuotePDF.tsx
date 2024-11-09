@@ -268,7 +268,7 @@ const QuotePDF = ({
                       const additionalChargePlusShipping =
                         additionalCharge + (price?.convertedShippingCost ?? 0);
 
-                      const taxPercent = price?.taxPercent ?? 0;
+                      const taxPercent = line.taxPercent ?? 0;
 
                       const totalPrice =
                         (netExtendedPrice + additionalChargePlusShipping) *

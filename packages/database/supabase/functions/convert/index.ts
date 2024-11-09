@@ -136,7 +136,6 @@ serve(async (req: Request) => {
                 exchangeRate: quote.data.exchangeRate ?? 1,
                 exchangeRateUpdatedAt:
                   quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
-                taxPercent: quote.data.taxPercent,
               },
             ])
             .returning(["id"])
@@ -199,7 +198,7 @@ serve(async (req: Request) => {
                   createdBy: userId,
                   companyId,
                   exchangeRate: quote.data.exchangeRate ?? 1,
-                  taxPercent: quote.data.taxPercent,
+                  taxPercent: line.taxPercent,
                   shippingCost: selectedLines![line.id!].shippingCost,
                 };
               });
