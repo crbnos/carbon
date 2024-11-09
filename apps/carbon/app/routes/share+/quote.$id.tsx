@@ -266,6 +266,7 @@ type SelectedLine = {
   addOn: number;
   convertedAddOn: number;
   leadTime: number;
+  shippingCost: number;
   convertedShippingCost: number;
   taxPercent: number;
 };
@@ -277,6 +278,7 @@ const deselectedLine: SelectedLine = {
   convertedNetUnitPrice: 0,
   quantity: 0,
   leadTime: 0,
+  shippingCost: 0,
   convertedShippingCost: 0,
   taxPercent: 0,
 };
@@ -551,6 +553,7 @@ const LinePricingOptions = ({
                     selectedOption.quantity
                   ] || 0,
                 leadTime: selectedOption.leadTime,
+                shippingCost: selectedOption.shippingCost ?? 0,
                 convertedShippingCost:
                   selectedOption.convertedShippingCost ?? 0,
                 taxPercent: line.taxPercent ?? 0,
@@ -851,6 +854,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
           convertedAddOn:
             convertedAdditionalChargesByQuantity[price.quantity] || 0,
           leadTime: price.leadTime,
+          shippingCost: price.shippingCost ?? 0,
           convertedShippingCost: price.convertedShippingCost ?? 0,
           taxPercent: line.taxPercent ?? 0,
         };
