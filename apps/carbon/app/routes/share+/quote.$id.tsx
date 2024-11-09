@@ -385,10 +385,13 @@ const LineItems = ({
                       <MotionNumber
                         className="font-bold text-xl"
                         value={
-                          (selectedLines[line.id!]?.convertedNetUnitPrice ??
+                          ((selectedLines[line.id!]?.convertedNetUnitPrice ??
                             0) *
                             (selectedLines[line.id!]?.quantity ?? 0) +
-                          (selectedLines[line.id!]?.convertedAddOn ?? 0)
+                            (selectedLines[line.id!]?.convertedAddOn ?? 0) +
+                            (selectedLines[line.id!]?.convertedShippingCost ??
+                              0)) *
+                          (1 + selectedLines[line.id!]?.taxPercent ?? 0)
                         }
                         format={{
                           style: "currency",
@@ -515,7 +518,7 @@ const LinePricingOptions = ({
   Object.entries(line.additionalCharges ?? {}).forEach(([name, charge]) => {
     additionalCharges.push({
       name: charge.description ?? "Additional Charge",
-      amount: charge.amounts?.[selectedLine.quantity] ?? 0,
+      amount: charge.amounts?.[selectedLine.quantity] * quoteExchangeRate ?? 0,
     });
   });
 
@@ -565,7 +568,7 @@ const LinePricingOptions = ({
               <Th>Unit Price</Th>
               <Th>Add-Ons</Th>
               <Th>Lead Time</Th>
-              <Th>Total Price</Th>
+              <Th>Subtotal</Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -622,34 +625,86 @@ const LinePricingOptions = ({
         </Table>
       </RadioGroup>
 
-      {selectedLine.quantity !== 0 && additionalCharges.length > 0 && (
-        <div className="w-full">
+      {selectedLine.quantity !== 0 && (
+        <div className="w-1/2 ml-auto">
           <Table>
-            <Thead>
-              <Tr>
-                <Th>Shipping and Additional Charges</Th>
-                <Th>Amount</Th>
-              </Tr>
-            </Thead>
             <Tbody>
-              {additionalCharges.map((charge) => (
-                <Tr key={charge.name}>
-                  <Td>{charge.name}</Td>
-                  <Td>
-                    <MotionNumber
-                      value={charge.amount}
-                      format={{ style: "currency", currency: quoteCurrency }}
-                      locales={locale}
-                    />
-                  </Td>
-                </Tr>
-              ))}
+              <Tr key="extended-price">
+                <Td>Subtotal</Td>
+                <Td className="text-right">
+                  <MotionNumber
+                    value={
+                      (selectedLine.convertedNetUnitPrice ?? 0) *
+                      selectedLine.quantity
+                    }
+                    format={{ style: "currency", currency: quoteCurrency }}
+                    locales={locale}
+                  />
+                </Td>
+              </Tr>
+
+              <Separator className="w-full" />
+
+              {additionalCharges.length > 0 &&
+                additionalCharges.map((charge) => (
+                  <Tr key={charge.name}>
+                    <Td>{charge.name}</Td>
+                    <Td className="text-right">
+                      <MotionNumber
+                        value={charge.amount}
+                        format={{ style: "currency", currency: quoteCurrency }}
+                        locales={locale}
+                      />
+                    </Td>
+                  </Tr>
+                ))}
+              <Separator className="w-full" />
+
+              <Tr key="tax">
+                <Td>Tax ({selectedLine.taxPercent * 100}%)</Td>
+                <Td className="text-right">
+                  <MotionNumber
+                    value={
+                      ((selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                        selectedLine.convertedAddOn +
+                        selectedLine.convertedShippingCost) *
+                      selectedLine.taxPercent
+                    }
+                    format={{
+                      style: "currency",
+                      currency: quoteCurrency,
+                    }}
+                    locales={locale}
+                  />
+                </Td>
+              </Tr>
+
+              <Tr key="total" className="font-bold">
+                <Td>Total</Td>
+                <Td className="text-right">
+                  <MotionNumber
+                    value={
+                      ((selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                        selectedLine.convertedAddOn +
+                        selectedLine.convertedShippingCost) *
+                      (1 + selectedLine.taxPercent)
+                    }
+                    format={{
+                      style: "currency",
+                      currency: quoteCurrency,
+                    }}
+                    locales={locale}
+                  />
+                </Td>
+              </Tr>
             </Tbody>
           </Table>
         </div>
       )}
       {selectedLine.quantity !== 0 && !hasSalesOrder && (
-        <HStack spacing={2} className="w-full justify-start items-center">
+        <HStack spacing={2} className="w-full justify-end items-center">
           <Button
             variant="secondary"
             leftIcon={<LuXCircle />}
@@ -850,22 +905,6 @@ const Quote = ({ data }: { data: QuoteData }) => {
             )}
             {(shippingMethod || paymentTerm) && <Separator />}
 
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>Subtotal:</span>
-              <MotionNumber
-                value={subtotal}
-                format={{
-                  style: "currency",
-                  currency: quote.currencyCode ?? "USD",
-                }}
-                locales={locale}
-              />
-            </HStack>
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>Tax:</span>
-              <span>{formatter.format(tax)}</span>
-            </HStack>
-            <Separator />
             <HStack className="justify-between text-xl font-bold w-full">
               <span>Total:</span>
               <MotionNumber
