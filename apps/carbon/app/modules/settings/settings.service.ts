@@ -399,11 +399,12 @@ export async function upsertIntegration(
 export async function updateDigitalQuoteSetting(
   client: SupabaseClient<Database>,
   companyId: string,
-  digitalQuoteEnabled: boolean
+  digitalQuoteEnabled: boolean,
+  digitalQuoteNotificationGroup: string[]
 ) {
   return client
     .from("company")
-    .update(sanitize({ digitalQuoteEnabled }))
+    .update(sanitize({ digitalQuoteEnabled, digitalQuoteNotificationGroup }))
     .eq("id", companyId);
 }
 

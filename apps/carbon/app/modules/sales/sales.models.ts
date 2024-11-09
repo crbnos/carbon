@@ -73,6 +73,10 @@ export const customerTypeValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
 });
 
+export const externalQuoteValidator = z.object({
+  digitalQuoteAcceptedBy: z.string().min(1, { message: "Name is required" }),
+});
+
 export const getLineMethodValidator = z.object({
   type: z.enum(["line"]),
   itemId: z.string().min(1, { message: "Please select a source method" }),

@@ -1916,6 +1916,7 @@ export type Database = {
           city: string | null
           countryCode: string | null
           digitalQuoteEnabled: boolean
+          digitalQuoteNotificationGroup: string[]
           email: string | null
           fax: string | null
           id: string
@@ -1938,6 +1939,7 @@ export type Database = {
           city?: string | null
           countryCode?: string | null
           digitalQuoteEnabled?: boolean
+          digitalQuoteNotificationGroup?: string[]
           email?: string | null
           fax?: string | null
           id?: string
@@ -1960,6 +1962,7 @@ export type Database = {
           city?: string | null
           countryCode?: string | null
           digitalQuoteEnabled?: boolean
+          digitalQuoteNotificationGroup?: string[]
           email?: string | null
           fax?: string | null
           id?: string
@@ -14151,6 +14154,7 @@ export type Database = {
           customerLocationId: string | null
           customerReference: string | null
           customFields: Json | null
+          digitalQuoteAcceptedBy: string | null
           dueDate: string | null
           estimatorId: string | null
           exchangeRate: number | null
@@ -14179,6 +14183,7 @@ export type Database = {
           customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
+          digitalQuoteAcceptedBy?: string | null
           dueDate?: string | null
           estimatorId?: string | null
           exchangeRate?: number | null
@@ -14207,6 +14212,7 @@ export type Database = {
           customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
+          digitalQuoteAcceptedBy?: string | null
           dueDate?: string | null
           estimatorId?: string | null
           exchangeRate?: number | null
@@ -22649,6 +22655,7 @@ export type Database = {
           companyId: string | null
           countryCode: string | null
           digitalQuoteEnabled: boolean | null
+          digitalQuoteNotificationGroup: string[] | null
           email: string | null
           employeeType: string | null
           fax: string | null
@@ -25895,14 +25902,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27667,14 +27674,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

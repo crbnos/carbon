@@ -1,23 +1,26 @@
 import {
   Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   HStack,
   Heading,
+  Input,
+  InputGroup,
+  InputRightElement,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   useDisclosure,
 } from "@carbon/react";
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
-  LuChevronDown,
-  LuExternalLink,
-  LuEye,
   LuFile,
   LuRefreshCw,
+  LuShare,
   LuStopCircle,
   LuTrophy,
   LuXCircle,
@@ -54,6 +57,7 @@ const QuoteHeader = () => {
 
   const finalizeModal = useDisclosure();
   const convertToOrderModal = useDisclosure();
+  const shareModal = useDisclosure();
 
   const optimisticAssignment = useOptimisticAssignment({
     id: quoteId,
@@ -89,43 +93,16 @@ const QuoteHeader = () => {
               className="h-8"
               isReadOnly={!permissions.can("update", "sales")}
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  leftIcon={<LuEye />}
-                  variant="secondary"
-                  rightIcon={<LuChevronDown />}
-                >
-                  Preview
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <a
-                    target="_blank"
-                    href={path.to.file.quote(quoteId)}
-                    rel="noreferrer"
-                  >
-                    <DropdownMenuIcon icon={<LuFile />} />
-                    PDF
-                  </a>
-                </DropdownMenuItem>
-                {routeData?.quote.externalLinkId && (
-                  <DropdownMenuItem asChild>
-                    <a
-                      target="_blank"
-                      href={path.to.externalQuote(
-                        routeData.quote.externalLinkId
-                      )}
-                      rel="noreferrer"
-                    >
-                      <DropdownMenuIcon icon={<LuExternalLink />} />
-                      Digital Quote
-                    </a>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {routeData?.quote.externalLinkId && (
+              <Button
+                onClick={shareModal.onOpen}
+                leftIcon={<LuShare />}
+                variant="secondary"
+              >
+                Share
+              </Button>
+            )}
+
             {routeData?.quote?.status === "Draft" && (
               <>
                 <statusFetcher.Form
@@ -279,6 +256,13 @@ const QuoteHeader = () => {
           fetcher={finalizeFetcher}
         />
       )}
+      {shareModal.isOpen && (
+        <ShareQuoteModal
+          id={quoteId}
+          externalLinkId={routeData?.quote.externalLinkId ?? undefined}
+          onClose={shareModal.onClose}
+        />
+      )}
       {/* we use isOpen so we don't lose state */}
       <QuoteToOrderModal
         isOpen={convertToOrderModal.isOpen}
@@ -292,3 +276,59 @@ const QuoteHeader = () => {
 };
 
 export default QuoteHeader;
+
+function ShareQuoteModal({
+  id,
+  externalLinkId,
+  onClose,
+}: {
+  id?: string;
+  externalLinkId?: string;
+  onClose: () => void;
+}) {
+  if (!externalLinkId) return null;
+  if (typeof window === "undefined") return null;
+
+  const digitalQuoteUrl = `${window.location.origin}${path.to.externalQuote(
+    externalLinkId
+  )}`;
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Share Quote</ModalTitle>
+          <ModalDescription>
+            Copy this link to share the quote with a customer
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <InputGroup>
+            <Input value={digitalQuoteUrl} />
+            <InputRightElement>
+              <Copy text={digitalQuoteUrl} />
+            </InputRightElement>
+          </InputGroup>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+          {id && (
+            <Button leftIcon={<LuFile />} asChild>
+              <a target="_blank" href={path.to.file.quote(id)} rel="noreferrer">
+                Preview PDF
+              </a>
+            </Button>
+          )}
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}

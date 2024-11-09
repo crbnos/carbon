@@ -1,5 +1,6 @@
 import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
 import type { JSONContent } from "novel";
+
 import {
   Accordion,
   AccordionContent,
@@ -261,7 +262,6 @@ import {
   TooltipTrigger,
 } from "./Tooltip";
 import { VStack } from "./VStack";
-import { useNotifications } from "./hooks/useNotifications";
 import type {
   Modifier,
   Shortcut,
@@ -517,7 +517,6 @@ export {
   toast,
   useModalCardType,
   useModalDrawerType,
-  useNotifications,
   useOperatingSystem,
   useRichText,
 };

@@ -1,11 +1,18 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { NotificationEvent } from "@carbon/notifications";
+import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { assign } from "~/modules/shared/shared.server";
+import type { notifyTask } from "~/trigger/notify";
+
+export const config = {
+  runtime: "nodejs",
+};
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const id = formData.get("id") as string;
@@ -21,11 +28,48 @@ export async function action({ request }: ActionFunctionArgs) {
         await flash(request, error(result.error, "Failed to assign"))
       );
     }
+
+    const notificationEvent = getNotificationEvent(table);
+
+    if (notificationEvent) {
+      try {
+        await tasks.trigger<typeof notifyTask>("notify", {
+          companyId,
+          documentId: id,
+          event: notificationEvent,
+          recipient: {
+            type: "user",
+            userId: assignee,
+          },
+        });
+      } catch (err) {
+        return json(
+          {},
+          await flash(request, error(err, "Failed to notify user"))
+        );
+      }
+    }
+
     return json({ success: true });
   } else {
     return json(
       { success: false },
       await flash(request, error(null, "Failed to assign"))
     );
+  }
+}
+
+function getNotificationEvent(table: string): NotificationEvent | null {
+  switch (table) {
+    case "salesRfq":
+      return NotificationEvent.SalesRfqAssignment;
+    case "quote":
+      return NotificationEvent.QuoteAssignment;
+    case "salesOrder":
+      return NotificationEvent.SalesOrderAssignment;
+    case "job":
+      return NotificationEvent.JobAssignment;
+    default:
+      return null;
   }
 }

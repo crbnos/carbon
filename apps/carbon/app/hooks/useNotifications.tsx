@@ -1,7 +1,7 @@
 import type { IMessage } from "@novu/headless";
 import { HeadlessService } from "@novu/headless";
 import { useCallback, useEffect, useRef, useState } from "react";
-import useMount from "./useMount";
+import useMount from "../../../../packages/react/src/hooks/useMount";
 
 export function getSubscriberId({
   companyId,
@@ -120,7 +120,7 @@ export function useNotifications({
   useEffect(() => {
     if (subscriberId && !headlessServiceRef.current) {
       const headlessService = new HeadlessService({
-        applicationIdentifier: "QJrtAikHM3x0",
+        applicationIdentifier: window.env.NOVU_APPLICATION_ID!,
         subscriberId,
       });
 

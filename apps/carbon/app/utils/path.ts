@@ -26,6 +26,8 @@ export const path = {
       customerStatuses: `${api}/sales/customer-statuses`,
       customerTypes: `${api}/sales/customer-types`,
       departments: `${api}/people/departments`,
+      digitalQuote: (id: string) =>
+        generatePath(`${api}/sales/digital-quote/${id}`),
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       generateCsvColumns: (table: string) =>
@@ -325,7 +327,7 @@ export const path = {
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
-    externalQuote: (id: string) => generatePath(`/external/quote/${id}`),
+    externalQuote: (id: string) => generatePath(`/share/quote/${id}`),
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
     fixture: (id: string) => generatePath(`${x}/fixture/${id}`),

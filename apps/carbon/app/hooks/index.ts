@@ -3,6 +3,7 @@ import { useModules } from "./useModules";
 import { useMovingCellRef } from "./useMovingCellRef";
 import { useNanoStore } from "./useNanoStore";
 import { useNextItemId } from "./useNextItemId";
+import { useNotifications } from "./useNotifications";
 import { useOnboarding } from "./useOnboarding";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import { usePercentFormatter } from "./usePercentFormatter";
@@ -19,6 +20,7 @@ export {
   useMovingCellRef,
   useNanoStore,
   useNextItemId,
+  useNotifications,
   useOnboarding,
   useOptimisticLocation,
   usePercentFormatter,

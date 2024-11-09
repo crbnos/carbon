@@ -3,6 +3,7 @@ import { isBrowser } from "@carbon/utils";
 declare global {
   interface Window {
     env: {
+      NOVU_APPLICATION_ID: string;
       SUPABASE_URL: string;
       SUPABASE_ANON_PUBLIC: string;
       POSTHOG_API_HOST: string;
@@ -69,6 +70,10 @@ export const EXCHANGE_RATES_API_KEY = getEnv("EXCHANGE_RATES_API_KEY", {
   isRequired: false,
   isSecret: true,
 });
+export const NOVU_APPLICATION_ID = getEnv("NOVU_APPLICATION_ID", {
+  isRequired: false,
+  isSecret: false,
+});
 export const NOVU_SECRET_KEY = getEnv("NOVU_SECRET_KEY");
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false,
@@ -105,6 +110,7 @@ export function getBrowserEnv() {
     SUPABASE_ANON_PUBLIC,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
+    NOVU_APPLICATION_ID,
   };
 }
 

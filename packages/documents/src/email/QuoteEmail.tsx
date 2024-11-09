@@ -24,7 +24,7 @@ const QuoteEmail = ({ company, quote, recipient, sender }: QuoteEmailProps) => {
   const reSubject = `Re: ${quote.quoteId} from ${company.name}`;
   const digitalQuoteUrl =
     company.digitalQuoteEnabled && !!quote.externalLinkId && VERCEL_URL
-      ? `${VERCEL_URL}/external/quote/${quote.externalLinkId}`
+      ? `${VERCEL_URL}/share/quote/${quote.externalLinkId}`
       : undefined;
 
   return (
