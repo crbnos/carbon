@@ -1,19 +1,9 @@
-import { Novu } from "@novu/node";
+import type { Novu } from "@novu/node";
 import { nanoid } from "nanoid";
-
-const novu = new Novu(process.env.NOVU_SECRET_KEY!);
 
 const API_ENDPOINT = "https://api.novu.co/v1";
 
-export enum TriggerEvents {
-  SalesRfqAssignmentInApp = "sales-rfq-assignment-in-app",
-  QuoteAssignmentInApp = "quote-assignment-in-app",
-  SalesOrderAssignmentInApp = "sales-order-assignment-in-app",
-  JobAssignmentInApp = "job-assignment-in-app",
-  DigitalQuoteResponseInApp = "digital-quote-response-in-app",
-}
-
-export enum NotificationTypes {
+export enum NotificationEvent {
   SalesRfqAssignment = "sales-rfq-assignment",
   QuoteAssignment = "quote-assignment",
   SalesOrderAssignment = "sales-order-assignment",
@@ -21,7 +11,15 @@ export enum NotificationTypes {
   DigitalQuoteResponse = "digital-quote-response",
 }
 
-type TriggerUser = {
+export enum NotificationType {
+  SalesRfqAssignmentInApp = "sales-rfq-assignment-in-app",
+  QuoteAssignmentInApp = "quote-assignment-in-app",
+  SalesOrderAssignmentInApp = "sales-order-assignment-in-app",
+  JobAssignmentInApp = "job-assignment-in-app",
+  DigitalQuoteResponseInApp = "digital-quote-response-in-app",
+}
+
+export type TriggerUser = {
   subscriberId: string;
   email: string;
   fullName: string;
@@ -29,9 +27,16 @@ type TriggerUser = {
   companyId: string;
 };
 
-type TriggerPayload = {
-  name: TriggerEvents;
-  payload: any;
+export type NotificationPayload = {
+  recordId: string;
+  description: string;
+  event: NotificationEvent;
+  from?: string;
+};
+
+export type TriggerPayload = {
+  name: NotificationType;
+  payload: NotificationPayload;
   user: TriggerUser;
   replyTo?: string;
   tenant?: string; // NOTE: Currently no way to listen for messages with tenant, we use user id + company id for unique
@@ -47,7 +52,7 @@ export function getSubscriberId({
   return `${companyId}:${userId}`;
 }
 
-export async function trigger(data: TriggerPayload) {
+export async function trigger(novu: Novu, data: TriggerPayload) {
   try {
     await novu.trigger(data.name, {
       to: {
@@ -75,7 +80,7 @@ export async function trigger(data: TriggerPayload) {
   }
 }
 
-export async function triggerBulk(events: TriggerPayload[]) {
+export async function triggerBulk(novu: Novu, events: TriggerPayload[]) {
   try {
     await novu.bulkTrigger(
       events.map((data) => ({
@@ -119,7 +124,7 @@ export async function getSubscriberPreferences({
     {
       method: "GET",
       headers: {
-        Authorization: `ApiKey ${process.env.NOVU_API_KEY!}`,
+        Authorization: `ApiKey ${process.env.NOVU_SECRET_KEY!}`,
       },
     }
   );
@@ -147,7 +152,7 @@ export async function updateSubscriberPreference({
     {
       method: "PATCH",
       headers: {
-        Authorization: `ApiKey ${process.env.NOVU_API_KEY!}`,
+        Authorization: `ApiKey ${process.env.NOVU_SECRET_KEY!}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

@@ -1,5 +1,6 @@
 "use client";
 
+import { NotificationEvent } from "@carbon/notifications";
 import {
   Button,
   IconButton,
@@ -11,20 +12,17 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  useNotifications,
 } from "@carbon/react";
 import { formatTimeAgo } from "@carbon/utils";
 import { Link } from "@remix-run/react";
 import { useEffect, useState } from "react";
+import { LuBell, LuHammer, LuInbox, LuMailCheck } from "react-icons/lu";
 import {
-  LuBell,
-  LuClipboardCheck,
-  LuInbox,
-  LuMailCheck,
-  LuSettings,
-} from "react-icons/lu";
-import { useUser } from "~/hooks";
-import { path } from "~/utils/path";
+  RiProgress2Line,
+  RiProgress4Line,
+  RiProgress8Line,
+} from "react-icons/ri";
+import { useNotifications, useUser } from "~/hooks";
 
 function EmptyState({ description }: { description: string }) {
   return (
@@ -32,7 +30,7 @@ function EmptyState({ description }: { description: string }) {
       <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center">
         <LuInbox size={18} />
       </div>
-      <p className="text-[#606060] text-sm">{description}</p>
+      <p className="text-muted-foreground text-sm">{description}</p>
     </div>
   );
 }
@@ -86,21 +84,26 @@ function Notification({
   );
 }
 
-function NotificationType({
-  type,
+function GenericNotification({
+  event,
   ...props
 }: {
   id: string;
   createdAt: string;
   description: string;
-  type: string;
+  event: NotificationEvent;
   markMessageAsRead?: () => void;
   onClose: () => void;
 }) {
-  switch (type) {
-    case "assignment":
-      return <Notification icon={<LuClipboardCheck />} to="#" {...props} />;
-
+  switch (event) {
+    case NotificationEvent.SalesRfqAssignment:
+      return <Notification icon={<RiProgress2Line />} to="#" {...props} />;
+    case NotificationEvent.QuoteAssignment:
+      return <Notification icon={<RiProgress4Line />} to="#" {...props} />;
+    case NotificationEvent.SalesOrderAssignment:
+      return <Notification icon={<RiProgress8Line />} to="#" {...props} />;
+    case NotificationEvent.JobAssignment:
+      return <Notification icon={<LuHammer />} to="#" {...props} />;
     default:
       return null;
   }
@@ -166,7 +169,7 @@ const Notifications = () => {
             </TabsTrigger>
           </TabsList>
 
-          <Link
+          {/* <Link
             to={path.to.notificationSettings}
             className="absolute right-[11px] top-1.5"
           >
@@ -178,7 +181,7 @@ const Notifications = () => {
               className="rounded-full"
               onClick={() => setOpen(false)}
             />
-          </Link>
+          </Link> */}
 
           <TabsContent value="inbox" className="relative mt-0">
             {!unreadNotifications.length && (
@@ -190,12 +193,12 @@ const Notifications = () => {
                 <div className="divide-y">
                   {unreadNotifications.map((notification) => {
                     return (
-                      <NotificationType
+                      <GenericNotification
                         key={notification._id}
                         id={notification.payload.recordId as string}
                         createdAt={notification.createdAt}
                         description={notification.payload.description as string}
-                        type={notification.payload.type as string}
+                        event={notification.payload.event as NotificationEvent}
                         markMessageAsRead={() =>
                           markMessageAsRead(notification._id)
                         }
@@ -230,12 +233,12 @@ const Notifications = () => {
                 <div className="divide-y">
                   {archivedNotifications.map((notification) => {
                     return (
-                      <NotificationType
+                      <GenericNotification
                         key={notification._id}
                         id={notification.payload.recordId as string}
                         createdAt={notification.createdAt}
                         description={notification.payload.description as string}
-                        type={notification.payload.type as string}
+                        event={notification.payload.event as NotificationEvent}
                         onClose={() => setOpen(false)}
                       />
                     );

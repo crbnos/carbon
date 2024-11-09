@@ -23,6 +23,7 @@ export interface UserSelectProps {
   alwaysSelected?: string[];
   accessibilityLabel?: string;
   checkedSelections?: boolean;
+  className?: string;
   disabled?: boolean;
   hideSelections?: boolean;
   id?: string;

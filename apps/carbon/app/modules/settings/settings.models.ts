@@ -68,6 +68,9 @@ export const customFieldValidator = z
 
 export const digitalQuoteValidator = z.object({
   digitalQuoteEnabled: zfd.checkbox(),
+  digitalQuoteNotificationGroup: z
+    .array(z.string().min(36, { message: "Invalid selection" }))
+    .optional(),
 });
 
 export const sequenceValidator = z.object({

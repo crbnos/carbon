@@ -31,6 +31,7 @@ const payloadValidator = z
         })
       )
       .optional(),
+    digitalQuoteAcceptedBy: z.string().optional(),
   })
   .refine((data) => {
     if (data.type === "quoteToSalesOrder") {
@@ -46,8 +47,14 @@ serve(async (req: Request) => {
   const payload = await req.json();
   let convertedId = "";
   try {
-    const { type, id, companyId, userId, selectedLines } =
-      payloadValidator.parse(payload);
+    const {
+      type,
+      id,
+      companyId,
+      userId,
+      selectedLines,
+      digitalQuoteAcceptedBy,
+    } = payloadValidator.parse(payload);
 
     console.log({
       function: "convert",
@@ -209,7 +216,10 @@ serve(async (req: Request) => {
             : "Ordered";
           await trx
             .updateTable("quote")
-            .set({ status: newQuoteStatus })
+            .set({
+              status: newQuoteStatus,
+              digitalQuoteAcceptedBy: digitalQuoteAcceptedBy ?? null,
+            })
             .where("id", "=", quote.data.id)
             .execute();
 

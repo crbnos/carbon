@@ -16,6 +16,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { Boolean, Submit, ValidatedForm, validator } from "@carbon/form";
 import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
+import { Users } from "~/components/Form";
 import { useRouteData } from "~/hooks";
 import {
   digitalQuoteValidator,
@@ -50,7 +51,8 @@ export async function action({ request }: ActionFunctionArgs) {
       const { error } = await updateDigitalQuoteSetting(
         client,
         companyId,
-        validation.data.digitalQuoteEnabled
+        validation.data.digitalQuoteEnabled,
+        validation.data.digitalQuoteNotificationGroup ?? []
       );
       if (error) return json({ success: false, message: error.message });
   }
@@ -84,7 +86,11 @@ export default function SalesSettingsRoute() {
           <ValidatedForm
             method="post"
             validator={digitalQuoteValidator}
-            defaultValues={{ digitalQuoteEnabled: company.digitalQuoteEnabled }}
+            defaultValues={{
+              digitalQuoteEnabled: company.digitalQuoteEnabled ?? false,
+              digitalQuoteNotificationGroup:
+                company.digitalQuoteNotificationGroup ?? [],
+            }}
             fetcher={fetcher}
           >
             <input type="hidden" name="intent" value="digitalQuote" />
@@ -99,7 +105,13 @@ export default function SalesSettingsRoute() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Boolean name="digitalQuoteEnabled" description="Enabled" />
+              <div className="flex flex-col gap-4 max-w-[400px]">
+                <Boolean name="digitalQuoteEnabled" description="Enabled" />
+                <Users
+                  name="digitalQuoteNotificationGroup"
+                  label="Who should receive notifications when a digital quote is submitted?"
+                />
+              </div>
             </CardContent>
             <CardFooter>
               <Submit>Save</Submit>

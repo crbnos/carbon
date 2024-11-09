@@ -54,6 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_API_URL,
     SUPABASE_ANON_PUBLIC,
+    NOVU_APPLICATION_ID,
   } = getBrowserEnv();
 
   const sessionFlash = await getSessionFlash(request);
@@ -65,6 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_API_URL,
         SUPABASE_ANON_PUBLIC,
+        NOVU_APPLICATION_ID,
       },
       mode: getMode(request),
       theme: getTheme(request),

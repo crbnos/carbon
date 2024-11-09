@@ -76,6 +76,7 @@ export async function convertQuoteToOrder(
     selectedLines: z.infer<typeof selectedLinesValidator>;
     companyId: string;
     userId: string;
+    digitalQuoteAcceptedBy?: string;
   }
 ) {
   return client.functions.invoke<{ convertedId: string }>("convert", {

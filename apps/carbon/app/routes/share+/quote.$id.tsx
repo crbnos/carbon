@@ -1,4 +1,5 @@
-import { assertIsPost, getCarbonServiceRole, notFound } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth";
+import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -12,6 +13,7 @@ import {
   Modal,
   ModalBody,
   ModalContent,
+  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalOverlay,
@@ -33,7 +35,7 @@ import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
@@ -55,7 +57,7 @@ import type {
   SalesOrderLine,
 } from "~/modules/sales";
 import {
-  convertQuoteToOrder,
+  externalQuoteValidator,
   getOpportunityByQuote,
   getQuoteByExternalId,
   getQuoteCustomerDetails,
@@ -65,11 +67,12 @@ import {
   getQuoteShipment,
   getSalesOrderLines,
   getSalesTerms,
-  selectedLinesValidator,
 } from "~/modules/sales";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
 import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
+import type { action } from "~/routes/api+/sales.digital-quote.$id";
+import { path } from "~/utils/path";
 
 export const meta = () => {
   return [{ title: "Digital Quote" }];
@@ -196,59 +199,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
       )?.name,
       salesOrderLines: salesOrderLines?.data ?? null,
     },
-  });
-}
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-
-  const { id } = params;
-  if (!id) throw notFound("id not found");
-
-  const formData = await request.formData();
-  const selectedLinesRaw = formData.get("selectedLines") ?? "{}";
-
-  if (typeof selectedLinesRaw !== "string") {
-    return json({ success: false, message: "Invalid selected lines data" });
-  }
-
-  const parseResult = selectedLinesValidator.safeParse(
-    JSON.parse(selectedLinesRaw)
-  );
-
-  if (!parseResult.success) {
-    console.error("Validation error:", parseResult.error);
-    return json({ success: false, message: "Invalid selected lines data" });
-  }
-
-  const selectedLines = parseResult.data;
-
-  const serviceRole = getCarbonServiceRole();
-  const quote = await getQuoteByExternalId(serviceRole, id);
-
-  if (quote.error) {
-    return json({
-      success: false,
-      message: "Quote not found",
-    });
-  }
-  const convert = await convertQuoteToOrder(serviceRole, {
-    id: quote.data.id,
-    companyId: quote.data.companyId,
-    userId: quote.data.createdBy,
-    selectedLines,
-  });
-
-  if (convert.error) {
-    return json({
-      success: false,
-      message: "Failed to convert quote to order",
-    });
-  }
-
-  return json({
-    success: true,
-    message: "Quote accepted!",
   });
 }
 
@@ -929,16 +879,27 @@ const Quote = ({ data }: { data: QuoteData }) => {
         >
           <ModalOverlay />
           <ModalContent>
-            <fetcher.Form
+            <ValidatedForm
+              action={path.to.api.digitalQuote(id)}
+              validator={externalQuoteValidator}
               method="post"
-              onSubmit={() => (submitted.current = true)}
+              fetcher={fetcher}
+              onSubmit={() => {
+                submitted.current = true;
+              }}
             >
               <ModalHeader>
                 <ModalTitle>Accept Quote</ModalTitle>
+                <ModalDescription>{`Are you sure you want to accept quote ${
+                  quote.quoteId
+                } for ${formatter.format(total)}?`}</ModalDescription>
               </ModalHeader>
-              <ModalBody>{`Are you sure you want to accept quote ${
-                quote.quoteId
-              } for ${formatter.format(total)}?`}</ModalBody>
+              <ModalBody>
+                <Input
+                  name="digitalQuoteAcceptedBy"
+                  label="Please enter your name"
+                />
+              </ModalBody>
               <ModalFooter>
                 <Button variant="secondary" onClick={confirmQuoteModal.onClose}>
                   Cancel
@@ -956,7 +917,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
                   Yes, Accept
                 </Button>
               </ModalFooter>
-            </fetcher.Form>
+            </ValidatedForm>
           </ModalContent>
         </Modal>
       )}
