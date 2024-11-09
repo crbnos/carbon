@@ -3,9 +3,9 @@ import { isBrowser } from "@carbon/utils";
 declare global {
   interface Window {
     env: {
-      NOVU_APPLICATION_ID: string;
       SUPABASE_URL: string;
       SUPABASE_ANON_PUBLIC: string;
+      // NOVU_APPLICATION_ID: string; // for some reason this causes typescript errors
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       VERCEL_URL: string;
