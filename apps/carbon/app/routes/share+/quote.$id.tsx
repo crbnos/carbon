@@ -614,7 +614,8 @@ const LinePricingOptions = ({
                             option.quantity +
                             convertedAdditionalChargesByQuantity[
                               option.quantity
-                            ]
+                            ] +
+                            (option.convertedShippingCost ?? 0)
                         )}
                       </Td>
                     </Tr>
@@ -630,7 +631,7 @@ const LinePricingOptions = ({
           <Table>
             <Tbody>
               <Tr key="extended-price">
-                <Td>Subtotal</Td>
+                <Td>Extended Price</Td>
                 <Td className="text-right">
                   <MotionNumber
                     value={
@@ -659,6 +660,24 @@ const LinePricingOptions = ({
                   </Tr>
                 ))}
               <Separator className="w-full" />
+              <Tr key="subtotal">
+                <Td>Subtotal</Td>
+                <Td className="text-right">
+                  <MotionNumber
+                    value={
+                      (selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                      selectedLine.convertedAddOn +
+                      selectedLine.convertedShippingCost
+                    }
+                    format={{
+                      style: "currency",
+                      currency: quoteCurrency,
+                    }}
+                    locales={locale}
+                  />
+                </Td>
+              </Tr>
 
               <Tr key="tax">
                 <Td>Tax ({selectedLine.taxPercent * 100}%)</Td>
@@ -679,6 +698,8 @@ const LinePricingOptions = ({
                   />
                 </Td>
               </Tr>
+
+              <Separator className="w-full" />
 
               <Tr key="total" className="font-bold">
                 <Td>Total</Td>
