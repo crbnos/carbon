@@ -15,6 +15,7 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@internationalized/date": "^3.5.2",
     "@nanostores/react": "^0.7.1",
+    "@novu/headless": "^2.0.0",
     "@novu/node": "^2.0.0",
     "@react-aria/i18n": "^3.11.0",
     "@react-email/components": "0.0.16",
