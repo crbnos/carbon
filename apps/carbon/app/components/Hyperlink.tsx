@@ -14,7 +14,7 @@ const Hyperlink = ({
     <Link
       prefetch="intent"
       className={cn(
-        "text-foreground font-medium text-sm cursor-pointer ",
+        "text-foreground font-semibold text-sm cursor-pointer",
         className
       )}
       {...props}
