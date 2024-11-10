@@ -519,7 +519,7 @@ const LinePricingOptions = ({
   }
   Object.entries(line.additionalCharges ?? {}).forEach(([name, charge]) => {
     additionalCharges.push({
-      name: charge.description ?? "Additional Charge",
+      name: charge.description,
       amount: charge.amounts?.[selectedLine.quantity] * quoteExchangeRate ?? 0,
     });
   });
@@ -630,10 +630,10 @@ const LinePricingOptions = ({
       </RadioGroup>
 
       {selectedLine.quantity !== 0 && (
-        <div className="w-1/2 ml-auto">
+        <div className="w-full">
           <Table>
             <Tbody>
-              <Tr key="extended-price">
+              <Tr key="extended-price border-b border-border">
                 <Td>Extended Price</Td>
                 <Td className="text-right">
                   <MotionNumber
@@ -647,11 +647,9 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
 
-              <Separator className="w-full" />
-
               {additionalCharges.length > 0 &&
                 additionalCharges.map((charge) => (
-                  <Tr key={charge.name}>
+                  <Tr key={charge.name} className="border-b border-border">
                     <Td>{charge.name}</Td>
                     <Td className="text-right">
                       <MotionNumber
@@ -662,8 +660,8 @@ const LinePricingOptions = ({
                     </Td>
                   </Tr>
                 ))}
-              <Separator className="w-full" />
-              <Tr key="subtotal">
+
+              <Tr key="subtotal" className="border-b border-border">
                 <Td>Subtotal</Td>
                 <Td className="text-right">
                   <MotionNumber
@@ -682,7 +680,7 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
 
-              <Tr key="tax">
+              <Tr key="tax" className="border-b border-border">
                 <Td>Tax ({selectedLine.taxPercent * 100}%)</Td>
                 <Td className="text-right">
                   <MotionNumber

@@ -211,7 +211,7 @@ export function ModelViewer({
       const viewer3D = viewerRef.current.GetViewer();
       viewer3D.SetBackgroundColor(
         isDarkMode
-          ? new OV.RGBAColor(26, 22, 19, 255)
+          ? new OV.RGBAColor(21, 22, 25, 255)
           : new OV.RGBAColor(255, 255, 255, 255)
       );
 
