@@ -30,6 +30,7 @@ export function ModelViewer({
   file,
   url,
   mode = "dark",
+  color,
   className,
   onDataUrl,
   resetZoomButton = true,
@@ -37,6 +38,7 @@ export function ModelViewer({
   file: File | null;
   url: string | null;
   mode?: "dark" | "light";
+  color?: `#${string}`;
   onDataUrl?: (dataUrl: string) => void;
   resetZoomButton?: boolean;
   className?: string;
@@ -64,14 +66,14 @@ export function ModelViewer({
           onModelLoaded: () => {
             if (viewerRef.current) {
               const viewer3D = viewerRef.current.GetViewer();
+              updateColor(isDarkMode ? "#9797a5" : "#8c8a8a");
+
               viewer3D.Resize(
                 parentDiv.current?.clientWidth,
                 parentDiv.current?.clientHeight
               );
 
-              const boundingSphere = viewer3D.GetBoundingSphere(
-                (meshUserData) => true
-              );
+              const boundingSphere = viewer3D.GetBoundingSphere(() => true);
               if (boundingSphere) {
                 const center = boundingSphere.center;
                 const radius = boundingSphere.radius;
@@ -170,6 +172,27 @@ export function ModelViewer({
     viewer.LoadModelFromUrlList([url]);
   }
 
+  function updateColor(color: string) {
+    if (!viewerRef.current) return;
+
+    const viewer3D = viewerRef.current.GetViewer();
+    viewer3D.mainModel.EnumerateMeshes((mesh) => {
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((material) => {
+          if (material) {
+            (material as THREE.MeshStandardMaterial).color.set(color);
+          }
+        });
+      }
+    });
+  }
+
+  useEffect(() => {
+    if (color) {
+      updateColor(color);
+    }
+  }, [color]);
+
   useEffect(() => {
     if (!file || !viewerRef.current) return;
     setIsLoading(true);
@@ -188,11 +211,15 @@ export function ModelViewer({
       const viewer3D = viewerRef.current.GetViewer();
       viewer3D.SetBackgroundColor(
         isDarkMode
-          ? new OV.RGBAColor(20, 22, 25, 255)
+          ? new OV.RGBAColor(26, 22, 19, 255)
           : new OV.RGBAColor(255, 255, 255, 255)
       );
+
+      if (!color) {
+        updateColor(isDarkMode ? "#9797a5" : "#8c8a8a");
+      }
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, color]);
 
   return (
     <>
