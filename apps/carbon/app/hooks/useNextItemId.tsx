@@ -26,7 +26,6 @@ export function useNextItemId(
           .limit(1)
           .maybeSingle();
 
-        console.log({ data });
         if (data?.readableId) {
           const sequence = data.readableId.slice(prefix.length);
           const currentSequence = parseInt(sequence);
