@@ -211,7 +211,7 @@ export function ModelViewer({
       const viewer3D = viewerRef.current.GetViewer();
       viewer3D.SetBackgroundColor(
         isDarkMode
-          ? new OV.RGBAColor(26, 22, 19, 255)
+          ? new OV.RGBAColor(21, 22, 25, 255)
           : new OV.RGBAColor(255, 255, 255, 255)
       );
 
@@ -251,9 +251,9 @@ export function ModelViewer({
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
                     <path d="M3 7V5a2 2 0 0 1 2-2h2" />
                     <path d="M17 3h2a2 2 0 0 1 2 2v2" />
