@@ -1,6 +1,6 @@
 import { ValidatedForm } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
 import { accountProfileValidator } from "~/modules/account";
 import type { User } from "~/modules/users";
@@ -13,6 +13,7 @@ type ProfileFormProps = {
 const ProfileForm = ({ user }: ProfileFormProps) => {
   const { personId } = useParams();
   const isSelf = !personId;
+  const fetcher = useFetcher<{}>();
 
   return (
     <ValidatedForm
@@ -20,6 +21,7 @@ const ProfileForm = ({ user }: ProfileFormProps) => {
       action={isSelf ? path.to.profile : path.to.person(personId)}
       validator={accountProfileValidator}
       defaultValues={user}
+      fetcher={fetcher}
       className="w-full"
     >
       <VStack spacing={4}>
