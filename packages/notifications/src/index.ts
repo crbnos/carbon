@@ -1,4 +1,3 @@
-import type { Novu } from "@novu/node";
 import { nanoid } from "nanoid";
 
 const API_ENDPOINT = "https://api.novu.co/v1";
@@ -52,7 +51,7 @@ export function getSubscriberId({
   return `${companyId}:${userId}`;
 }
 
-export async function trigger(novu: Novu, data: TriggerPayload) {
+export async function trigger(novu, data: TriggerPayload) {
   try {
     await novu.trigger(data.workflow, {
       to: data.user,
@@ -73,7 +72,7 @@ export async function trigger(novu: Novu, data: TriggerPayload) {
   }
 }
 
-export async function triggerBulk(novu: Novu, events: TriggerPayload[]) {
+export async function triggerBulk(novu, events: TriggerPayload[]) {
   try {
     await novu.bulkTrigger(
       events.map((data) => ({
