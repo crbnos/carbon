@@ -16,7 +16,8 @@
     "@internationalized/date": "^3.5.2",
     "@nanostores/react": "^0.7.1",
     "@novu/headless": "^2.0.0",
-    "@novu/node": "^2.0.0",
+    "@novu/framework": "^2.3.0",
+    "@novu/node": "^2.0.1",
     "@react-aria/i18n": "^3.11.0",
     "@react-email/components": "0.0.16",
     "@remix-run/dev": "~2.10.2",
@@ -112,6 +113,7 @@
     "dev": "run-p dev:remix dev:trigger",
     "dev:remix": "remix vite:dev",
     "dev:trigger": "npx --yes trigger.dev@3.0.12 dev",
+    "dev:novu": "npx novu@latest dev --port 3000",
     "lint": "TIMING=1 eslint \"app/**/*.ts*\"",
     "start": "remix-serve ./build/server/index.js",
     "types": "tsc"

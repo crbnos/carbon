@@ -1,5 +1,5 @@
 import { HStack } from "@carbon/react";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import AvatarMenu from "../../AvatarMenu";
 import Breadcrumbs from "./Breadcrumbs";
 import CreateMenu from "./CreateMenu";
@@ -9,6 +9,8 @@ import Search from "./Search";
 
 const Topbar = () => {
   const permissions = usePermissions();
+  const user = useUser();
+
   return (
     <div className="flex bg-background text-foreground border-b border-border px-4 top-0 sticky z-10 space-x-4 justify-between items-center">
       <Breadcrumbs />
@@ -17,7 +19,7 @@ const Topbar = () => {
         {permissions.is("employee") ? <Search /> : <div />}
         <Feedback />
         <CreateMenu />
-        <Notifications />
+        {user.admin === true && <Notifications />}
         <AvatarMenu />
       </HStack>
     </div>

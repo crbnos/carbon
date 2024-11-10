@@ -2,7 +2,6 @@ import { getCarbonServiceRole, NOVU_SECRET_KEY } from "@carbon/auth";
 import {
   getSubscriberId,
   NotificationEvent,
-  NotificationType,
   trigger,
   triggerBulk,
   type TriggerPayload,
@@ -27,30 +26,9 @@ export const notifyTask = task({
           type: "group";
           groupIds: string[];
         };
+    from?: string;
   }) => {
     const client = getCarbonServiceRole();
-
-    async function getNotificationTypesFromEvent(event: NotificationEvent) {
-      switch (event) {
-        case NotificationEvent.SalesRfqAssignment:
-          return [NotificationType.SalesRfqAssignmentInApp];
-        case NotificationEvent.QuoteAssignment:
-          return [NotificationType.QuoteAssignmentInApp];
-        case NotificationEvent.SalesOrderAssignment:
-          return [NotificationType.SalesOrderAssignmentInApp];
-        case NotificationEvent.JobAssignment:
-          return [NotificationType.JobAssignmentInApp];
-        case NotificationEvent.DigitalQuoteResponse:
-          return [NotificationType.DigitalQuoteResponseInApp];
-
-        default:
-          return [];
-      }
-    }
-
-    const notificationEvents = await getNotificationTypesFromEvent(
-      payload.event
-    );
 
     async function getDescription(type: NotificationEvent, documentId: string) {
       switch (type) {
@@ -62,10 +40,11 @@ export const notifyTask = task({
             .single();
 
           if (salesRfq.error) {
+            console.error("Failed to get salesRfq", salesRfq.error);
             throw salesRfq.error;
           }
 
-          return `Sales RFQ ${salesRfq?.data?.rfqId} assigned to you`;
+          return `RFQ ${salesRfq?.data?.rfqId} assigned to you`;
 
         case NotificationEvent.QuoteAssignment:
           const quote = await client
@@ -74,6 +53,7 @@ export const notifyTask = task({
             .eq("id", documentId)
             .single();
           if (quote.error) {
+            console.error("Failed to get quote", quote.error);
             throw quote.error;
           }
           return `Quote ${quote?.data?.quoteId} assigned to you`;
@@ -86,6 +66,7 @@ export const notifyTask = task({
             .single();
 
           if (salesOrder.error) {
+            console.error("Failed to get salesOrder", salesOrder.error);
             throw salesOrder.error;
           }
 
@@ -99,6 +80,7 @@ export const notifyTask = task({
             .single();
 
           if (job.error) {
+            console.error("Failed to get job", job.error);
             throw job.error;
           }
 
@@ -112,6 +94,7 @@ export const notifyTask = task({
             .single();
 
           if (digitalQuote.error) {
+            console.error("Failed to get digital quote", digitalQuote.error);
             throw digitalQuote.error;
           }
 
@@ -128,6 +111,9 @@ export const notifyTask = task({
     const description = await getDescription(payload.event, payload.documentId);
 
     if (!description) {
+      console.error(
+        `No description found for notification type ${payload.event} with documentId ${payload.documentId}`
+      );
       throw new Error(
         `No description found for notification type ${payload.event} with documentId ${payload.documentId}`
       );
@@ -141,40 +127,44 @@ export const notifyTask = task({
         .single();
 
       if (user.error) {
+        console.error("Failed to get user", user.error);
         throw user.error;
       }
 
       try {
-        for await (const name of notificationEvents) {
-          await trigger(novu, {
-            name,
-            payload: {
-              recordId: payload.documentId,
-              description,
-              event: payload.event,
-            },
-            user: {
-              subscriberId: getSubscriberId({
-                companyId: payload.companyId,
-                userId: user.data.id,
-              }),
-              email: user.data.email,
-              fullName: user.data.fullName ?? "",
-              avatarUrl: user.data.avatarUrl ?? undefined,
+        await trigger(novu, {
+          workflow: payload.event,
+          payload: {
+            recordId: payload.documentId,
+            description,
+            event: payload.event,
+            from: payload.from,
+          },
+          user: {
+            subscriberId: getSubscriberId({
               companyId: payload.companyId,
-            },
-          });
-        }
+              userId: user.data.id,
+            }),
+            email: user.data.email,
+            fullName: user.data.fullName ?? "",
+            avatarUrl: user.data.avatarUrl ?? undefined,
+            companyId: payload.companyId,
+          },
+        });
       } catch (error) {
         console.error("Error triggering notifications");
         console.error(error);
       }
     } else if (payload.recipient.type === "group") {
+      console.log(
+        `triggering notification for group ${payload.recipient.groupIds}`
+      );
       const userIds = await client.rpc("users_for_groups", {
         groups: payload.recipient.groupIds,
       });
 
       if (userIds.error) {
+        console.error("Failed to get userIds", userIds.error);
         throw userIds.error;
       }
 
@@ -183,6 +173,9 @@ export const notifyTask = task({
         !Array.isArray(userIds.data) ||
         userIds.data.length === 0
       ) {
+        console.error(
+          `No userIds found for group ${payload.recipient.groupIds}`
+        );
         return;
       }
 
@@ -192,27 +185,26 @@ export const notifyTask = task({
         .in("id", [...new Set(userIds.data as string[])]);
 
       const notificationPayloads: TriggerPayload[] =
-        users.data?.flatMap((user) => {
-          return notificationEvents.map((name) => ({
-            name,
-            payload: {
-              recordId: payload.documentId,
-              description,
-              event: payload.event,
-              link: "#",
-            },
-            user: {
-              subscriberId: getSubscriberId({
-                companyId: payload.companyId,
-                userId: user.id,
-              }),
-              email: user.email,
-              fullName: user.fullName ?? "",
-              avatarUrl: user.avatarUrl ?? undefined,
+        users.data?.map((user) => ({
+          workflow: payload.event,
+          payload: {
+            recordId: payload.documentId,
+            description,
+            event: payload.event,
+            link: "#",
+            from: payload.from,
+          },
+          user: {
+            subscriberId: getSubscriberId({
               companyId: payload.companyId,
-            },
-          }));
-        }) ?? [];
+              userId: user.id,
+            }),
+            email: user.email,
+            fullName: user.fullName ?? "",
+            avatarUrl: user.avatarUrl ?? undefined,
+            companyId: payload.companyId,
+          },
+        })) ?? [];
 
       if (notificationPayloads.length > 0) {
         try {

@@ -16,13 +16,21 @@ import {
 import { formatTimeAgo } from "@carbon/utils";
 import { Link } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { LuBell, LuHammer, LuInbox, LuMailCheck } from "react-icons/lu";
+import {
+  LuBell,
+  LuDollarSign,
+  LuHammer,
+  LuInbox,
+  LuMailCheck,
+} from "react-icons/lu";
 import {
   RiProgress2Line,
   RiProgress4Line,
   RiProgress8Line,
 } from "react-icons/ri";
 import { useNotifications, useUser } from "~/hooks";
+import { usePeople } from "~/stores";
+import { path } from "~/utils/path";
 
 function EmptyState({ description }: { description: string }) {
   return (
@@ -41,15 +49,27 @@ function Notification({
   description,
   createdAt,
   markMessageAsRead,
+  from,
   onClose,
 }: {
   icon: React.ReactNode;
   to: string;
   description: string;
   createdAt: string;
+  from?: string;
   markMessageAsRead?: () => void;
   onClose: () => void;
 }) {
+  const { id: userId } = useUser();
+  const [people] = usePeople();
+  let byUser = "";
+  if (from) {
+    if (from === userId) {
+      byUser = "yourself";
+    } else {
+      byUser = people.find((p) => p.id === from)?.name ?? "";
+    }
+  }
   return (
     <div className="flex items-between justify-between gap-x-4 px-3 py-3 hover:bg-secondary">
       <Link
@@ -63,7 +83,9 @@ function Notification({
           </div>
         </div>
         <div>
-          <p className="text-sm">{description}</p>
+          <p className="text-sm">
+            {description} {byUser && <span>by {byUser}</span>}
+          </p>
           <span className="text-xs text-muted-foreground">
             {formatTimeAgo(createdAt)}
           </span>
@@ -85,6 +107,7 @@ function Notification({
 }
 
 function GenericNotification({
+  id,
   event,
   ...props
 }: {
@@ -92,18 +115,51 @@ function GenericNotification({
   createdAt: string;
   description: string;
   event: NotificationEvent;
+  from?: string;
   markMessageAsRead?: () => void;
   onClose: () => void;
 }) {
   switch (event) {
     case NotificationEvent.SalesRfqAssignment:
-      return <Notification icon={<RiProgress2Line />} to="#" {...props} />;
+      return (
+        <Notification
+          icon={<RiProgress2Line />}
+          to={path.to.salesRfq(id)}
+          {...props}
+        />
+      );
     case NotificationEvent.QuoteAssignment:
-      return <Notification icon={<RiProgress4Line />} to="#" {...props} />;
+      return (
+        <Notification
+          icon={<RiProgress4Line />}
+          to={path.to.quoteDetails(id)}
+          {...props}
+        />
+      );
     case NotificationEvent.SalesOrderAssignment:
-      return <Notification icon={<RiProgress8Line />} to="#" {...props} />;
+      return (
+        <Notification
+          icon={<RiProgress8Line />}
+          to={path.to.salesOrderDetails(id)}
+          {...props}
+        />
+      );
     case NotificationEvent.JobAssignment:
-      return <Notification icon={<LuHammer />} to="#" {...props} />;
+      return (
+        <Notification
+          icon={<LuHammer />}
+          to={path.to.jobDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.DigitalQuoteResponse:
+      return (
+        <Notification
+          icon={<LuDollarSign />}
+          to={path.to.quoteDetails(id)}
+          {...props}
+        />
+      );
     default:
       return null;
   }
@@ -160,7 +216,7 @@ const Notifications = () => {
         sideOffset={10}
       >
         <Tabs defaultValue="inbox">
-          <TabsList className="w-full border-b-[1px] py-6 rounded-none">
+          <TabsList className="w-full border-b-[1px] py-6 rounded-none bg-muted/[0.5]">
             <TabsTrigger value="inbox" className="font-normal">
               Inbox
             </TabsTrigger>
@@ -199,6 +255,7 @@ const Notifications = () => {
                         createdAt={notification.createdAt}
                         description={notification.payload.description as string}
                         event={notification.payload.event as NotificationEvent}
+                        from={notification.payload.from as string | undefined}
                         markMessageAsRead={() =>
                           markMessageAsRead(notification._id)
                         }
@@ -239,6 +296,7 @@ const Notifications = () => {
                         createdAt={notification.createdAt}
                         description={notification.payload.description as string}
                         event={notification.payload.event as NotificationEvent}
+                        from={notification.payload.from as string | undefined}
                         onClose={() => setOpen(false)}
                       />
                     );

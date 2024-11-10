@@ -35,7 +35,7 @@ export type NotificationPayload = {
 };
 
 export type TriggerPayload = {
-  name: NotificationType;
+  workflow: NotificationEvent;
   payload: NotificationPayload;
   user: TriggerUser;
   replyTo?: string;
@@ -54,15 +54,8 @@ export function getSubscriberId({
 
 export async function trigger(novu: Novu, data: TriggerPayload) {
   try {
-    await novu.trigger(data.name, {
-      to: {
-        ...data.user,
-        //   Prefix subscriber id with team id
-        subscriberId: getSubscriberId({
-          companyId: data.user.companyId,
-          userId: data.user.subscriberId,
-        }),
-      },
+    await novu.trigger(data.workflow, {
+      to: data.user,
       payload: data.payload,
       tenant: data.tenant,
       overrides: {
@@ -84,15 +77,8 @@ export async function triggerBulk(novu: Novu, events: TriggerPayload[]) {
   try {
     await novu.bulkTrigger(
       events.map((data) => ({
-        name: data.name,
-        to: {
-          ...data.user,
-          //   Prefix subscriber id with team id
-          subscriberId: getSubscriberId({
-            companyId: data.user.companyId,
-            userId: data.user.subscriberId,
-          }),
-        },
+        name: data.workflow,
+        to: data.user,
         payload: data.payload,
         tenant: data.tenant,
         overrides: {

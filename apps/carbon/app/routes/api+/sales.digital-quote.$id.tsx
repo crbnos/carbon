@@ -43,6 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const quote = await getQuoteByExternalId(serviceRole, id);
 
   if (quote.error) {
+    console.error("Quote not found", quote.error);
     return json({
       success: false,
       message: "Quote not found",
@@ -60,6 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ]);
 
   if (convert.error) {
+    console.error("Failed to convert quote to order", convert.error);
     return json({
       success: false,
       message: "Failed to convert quote to order",
@@ -67,17 +69,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (company.error) {
+    console.error("Failed to get company", company.error);
     return json({
       success: false,
       message: "Failed to send notification",
     });
   }
 
+  console.log(
+    digitalQuoteAcceptedBy,
+    "notificationGroup: ",
+    company.data?.digitalQuoteNotificationGroup
+  );
+
   if (company.data?.digitalQuoteNotificationGroup?.length) {
     try {
       await tasks.trigger<typeof notifyTask>("notify", {
         companyId: company.data.id,
-        documentId: id,
+        documentId: quote.data.id,
         event: NotificationEvent.DigitalQuoteResponse,
         recipient: {
           type: "group",
@@ -85,6 +94,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         },
       });
     } catch (err) {
+      console.error("Failed to trigger notification", err);
       return json({
         success: false,
         message: "Failed to send notification",
