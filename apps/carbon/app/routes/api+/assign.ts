@@ -12,7 +12,7 @@ export const config = {
 };
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const id = formData.get("id") as string;
@@ -29,24 +29,26 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const notificationEvent = getNotificationEvent(table);
-
-    if (notificationEvent) {
-      try {
-        await tasks.trigger<typeof notifyTask>("notify", {
-          companyId,
-          documentId: id,
-          event: notificationEvent,
-          recipient: {
-            type: "user",
-            userId: assignee,
-          },
-        });
-      } catch (err) {
-        return json(
-          {},
-          await flash(request, error(err, "Failed to notify user"))
-        );
+    if (assignee) {
+      const notificationEvent = getNotificationEvent(table);
+      if (notificationEvent) {
+        try {
+          await tasks.trigger<typeof notifyTask>("notify", {
+            companyId,
+            documentId: id,
+            event: notificationEvent,
+            recipient: {
+              type: "user",
+              userId: assignee,
+            },
+            from: userId,
+          });
+        } catch (err) {
+          return json(
+            {},
+            await flash(request, error(err, "Failed to notify user"))
+          );
+        }
       }
     }
 
