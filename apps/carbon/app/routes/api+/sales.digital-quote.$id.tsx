@@ -76,12 +76,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  console.log(
-    digitalQuoteAcceptedBy,
-    "notificationGroup: ",
-    company.data?.digitalQuoteNotificationGroup
-  );
-
   if (company.data?.digitalQuoteNotificationGroup?.length) {
     try {
       await tasks.trigger<typeof notifyTask>("notify", {
