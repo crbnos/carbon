@@ -1,7 +1,12 @@
-import { getCarbonServiceRole, NOVU_SECRET_KEY } from "@carbon/auth";
+import {
+  getCarbonServiceRole,
+  NOVU_SECRET_KEY,
+  VERCEL_URL,
+} from "@carbon/auth";
 import {
   getSubscriberId,
   NotificationEvent,
+  NotificationWorkflow,
   trigger,
   triggerBulk,
   type TriggerPayload,
@@ -10,6 +15,7 @@ import { Novu } from "@novu/node";
 import { task } from "@trigger.dev/sdk/v3";
 
 const novu = new Novu(NOVU_SECRET_KEY!);
+const isLocal = VERCEL_URL === undefined || VERCEL_URL.includes("localhost");
 
 export const notifyTask = task({
   id: "notify",
@@ -28,7 +34,26 @@ export const notifyTask = task({
         };
     from?: string;
   }) => {
+    if (isLocal) {
+      console.log("Skipping notify task on local", { payload });
+      return;
+    }
+
     const client = getCarbonServiceRole();
+
+    function getWorkflow(type: NotificationEvent) {
+      switch (type) {
+        case NotificationEvent.SalesRfqAssignment:
+        case NotificationEvent.QuoteAssignment:
+        case NotificationEvent.SalesOrderAssignment:
+        case NotificationEvent.JobAssignment:
+          return NotificationWorkflow.Assignment;
+        case NotificationEvent.DigitalQuoteResponse:
+          return NotificationWorkflow.DigitalQuoteResponse;
+        default:
+          return null;
+      }
+    }
 
     async function getDescription(type: NotificationEvent, documentId: string) {
       switch (type) {
@@ -108,6 +133,15 @@ export const notifyTask = task({
       }
     }
 
+    const workflow = getWorkflow(payload.event);
+
+    if (!workflow) {
+      console.error(`No workflow found for notification type ${payload.event}`);
+      throw new Error(
+        `No workflow found for notification type ${payload.event}`
+      );
+    }
+
     const description = await getDescription(payload.event, payload.documentId);
 
     if (!description) {
@@ -133,7 +167,7 @@ export const notifyTask = task({
 
       try {
         await trigger(novu, {
-          workflow: payload.event,
+          workflow,
           payload: {
             recordId: payload.documentId,
             description,
@@ -186,7 +220,7 @@ export const notifyTask = task({
 
       const notificationPayloads: TriggerPayload[] =
         users.data?.map((user) => ({
-          workflow: payload.event,
+          workflow,
           payload: {
             recordId: payload.documentId,
             description,

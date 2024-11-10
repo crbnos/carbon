@@ -1,4 +1,8 @@
-import { NotificationEvent, NotificationType } from "@carbon/notifications";
+import {
+  NotificationEvent,
+  NotificationType,
+  NotificationWorkflow,
+} from "@carbon/notifications";
 import { workflow } from "@novu/framework";
 import { z } from "zod";
 
@@ -15,50 +19,11 @@ const payloadSchema = z.object({
   from: z.string().optional(),
 });
 
-export const salesRfqAssignmentWorkflow = workflow(
-  NotificationEvent.SalesRfqAssignment,
+export const assignmentWorkflow = workflow(
+  NotificationWorkflow.Assignment,
   async ({ payload, step }) => {
-    await step.inApp(NotificationType.SalesRfqAssignmentInApp, () => ({
-      body: "New Sales RFQ Assignment",
-      payload,
-    }));
-  },
-  {
-    payloadSchema,
-  }
-);
-
-export const quoteAssignmentWorkflow = workflow(
-  NotificationEvent.QuoteAssignment,
-  async ({ payload, step }) => {
-    await step.inApp(NotificationType.QuoteAssignmentInApp, () => ({
-      body: "New Quote Assignment",
-      payload,
-    }));
-  },
-  {
-    payloadSchema,
-  }
-);
-
-export const salesOrderAssignmentWorkflow = workflow(
-  NotificationEvent.SalesOrderAssignment,
-  async ({ payload, step }) => {
-    await step.inApp(NotificationType.SalesOrderAssignmentInApp, () => ({
-      body: "New Sales Order Assignment",
-      payload,
-    }));
-  },
-  {
-    payloadSchema,
-  }
-);
-
-export const jobAssignmentWorkflow = workflow(
-  NotificationEvent.JobAssignment,
-  async ({ payload, step }) => {
-    await step.inApp(NotificationType.JobAssignmentInApp, () => ({
-      body: "New Job Assignment",
+    await step.inApp(NotificationType.AssignmentInApp, () => ({
+      body: "New Assignment",
       payload,
     }));
   },
@@ -68,7 +33,7 @@ export const jobAssignmentWorkflow = workflow(
 );
 
 export const digitalQuoteResponseWorkflow = workflow(
-  NotificationEvent.DigitalQuoteResponse,
+  NotificationWorkflow.DigitalQuoteResponse,
   async ({ payload, step }) => {
     await step.inApp(NotificationType.DigitalQuoteResponseInApp, () => ({
       body: "New Digital Quote Response",

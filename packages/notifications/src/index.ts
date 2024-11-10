@@ -2,6 +2,11 @@ import { nanoid } from "nanoid";
 
 const API_ENDPOINT = "https://api.novu.co/v1";
 
+export enum NotificationWorkflow {
+  Assignment = "assignment",
+  DigitalQuoteResponse = "digital-quote-response",
+}
+
 export enum NotificationEvent {
   SalesRfqAssignment = "sales-rfq-assignment",
   QuoteAssignment = "quote-assignment",
@@ -11,10 +16,7 @@ export enum NotificationEvent {
 }
 
 export enum NotificationType {
-  SalesRfqAssignmentInApp = "sales-rfq-assignment-in-app",
-  QuoteAssignmentInApp = "quote-assignment-in-app",
-  SalesOrderAssignmentInApp = "sales-order-assignment-in-app",
-  JobAssignmentInApp = "job-assignment-in-app",
+  AssignmentInApp = "assignment-in-app",
   DigitalQuoteResponseInApp = "digital-quote-response-in-app",
 }
 
@@ -34,7 +36,7 @@ export type NotificationPayload = {
 };
 
 export type TriggerPayload = {
-  workflow: NotificationEvent;
+  workflow: NotificationWorkflow;
   payload: NotificationPayload;
   user: TriggerUser;
   replyTo?: string;
