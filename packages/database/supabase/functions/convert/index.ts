@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import {
+  getLocalTimeZone,
+  now,
+  toCalendarDate,
+} from "npm:@internationalized/date";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
@@ -467,7 +472,9 @@ serve(async (req: Request) => {
                 customerLocationId: salesRfq.data?.customerLocationId,
                 customerReference: salesRfq.data?.customerReference,
                 locationId: salesRfq.data?.locationId,
-                expirationDate: salesRfq.data?.expirationDate,
+                expirationDate: toCalendarDate(
+                  now(getLocalTimeZone()).add({ days: 30 })
+                ).toString(),
                 salesPersonId: salesRfq.data?.createdBy,
                 status: "Draft",
                 externalNotes: salesRfq.data?.externalNotes,
