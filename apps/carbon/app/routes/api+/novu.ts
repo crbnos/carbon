@@ -17,4 +17,8 @@ const handler = serve({
   ],
 });
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export { handler as action, handler as loader };
