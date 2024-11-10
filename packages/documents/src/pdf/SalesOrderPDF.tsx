@@ -65,8 +65,6 @@ const SalesOrderPDF = ({
   } = salesOrderLocations;
 
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
-  const shouldConvertCurrency =
-    !!currencyCode && currencyCode !== company.baseCurrencyCode;
   const formatter = getCurrencyFormatter(currencyCode, locale);
 
   return (
@@ -170,54 +168,51 @@ const SalesOrderPDF = ({
             <Text style={tw("w-5/12 text-left")}>Description</Text>
             <Text style={tw("w-1/6 text-right")}>Qty</Text>
             <Text style={tw("w-1/6 text-right")}>Price</Text>
-            <Text style={tw("w-1/6 text-right")}>Add-On Cost</Text>
+            <Text style={tw("w-1/6 text-right")}>Tax & Fees</Text>
             <Text style={tw("w-1/6 text-right")}>Total</Text>
           </View>
-          {salesOrderLines.map((line) => (
-            <View
-              style={tw(
-                "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300"
-              )}
-              key={line.id}
-            >
-              <View style={tw("w-5/12")}>
-                <Text style={tw("font-bold mb-1")}>
-                  {getLineDescription(line)}
+          {salesOrderLines.map((line) => {
+            return (
+              <View
+                style={tw(
+                  "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300"
+                )}
+                key={line.id}
+              >
+                <View style={tw("w-5/12")}>
+                  <Text style={tw("font-bold mb-1")}>
+                    {getLineDescription(line)}
+                  </Text>
+                  <Text style={tw("text-[9px] opacity-80")}>
+                    {getLineDescriptionDetails(line)}
+                  </Text>
+                </View>
+                <Text style={tw("w-1/6 text-right")}>
+                  {line.salesOrderLineType === "Comment"
+                    ? ""
+                    : `${line.saleQuantity} ${line.unitOfMeasureCode}`}
                 </Text>
-                <Text style={tw("text-[9px] opacity-80")}>
-                  {getLineDescriptionDetails(line)}
+                <Text style={tw("w-1/6 text-right")}>
+                  {line.salesOrderLineType === "Comment"
+                    ? null
+                    : formatter.format(line.convertedUnitPrice ?? 0)}
+                </Text>
+                <Text style={tw("w-1/6 text-right")}>
+                  {line.salesOrderLineType === "Comment"
+                    ? null
+                    : formatter.format(
+                        (line.convertedAddOnCost ?? 0) +
+                          (line.convertedShippingCost ?? 0)
+                      )}
+                </Text>
+                <Text style={tw("w-1/6 text-right")}>
+                  {line.salesOrderLineType === "Comment"
+                    ? null
+                    : formatter.format(getLineTotal(line))}
                 </Text>
               </View>
-              <Text style={tw("w-1/6 text-right")}>
-                {line.salesOrderLineType === "Comment"
-                  ? ""
-                  : `${line.saleQuantity} ${line.unitOfMeasureCode}`}
-              </Text>
-              <Text style={tw("w-1/6 text-right")}>
-                {line.salesOrderLineType === "Comment"
-                  ? null
-                  : formatter.format(
-                      shouldConvertCurrency
-                        ? line.convertedUnitPrice ?? 0
-                        : line.unitPrice ?? 0
-                    )}
-              </Text>
-              <Text style={tw("w-1/6 text-right")}>
-                {line.salesOrderLineType === "Comment"
-                  ? null
-                  : formatter.format(
-                      shouldConvertCurrency
-                        ? line.convertedAddOnCost ?? 0
-                        : line.addOnCost ?? 0
-                    )}
-              </Text>
-              <Text style={tw("w-1/6 text-right")}>
-                {line.salesOrderLineType === "Comment"
-                  ? null
-                  : formatter.format(getLineTotal(line, shouldConvertCurrency))}
-              </Text>
-            </View>
-          ))}
+            );
+          })}
           <View
             style={tw(
               "flex flex-row justify-between items-center py-1.5 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
@@ -225,9 +220,7 @@ const SalesOrderPDF = ({
           >
             <Text>Total</Text>
             <Text style={tw("font-bold text-black")}>
-              {formatter.format(
-                getTotal(salesOrderLines, shouldConvertCurrency)
-              )}
+              {formatter.format(getTotal(salesOrderLines))}
             </Text>
           </View>
         </View>

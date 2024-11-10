@@ -36,34 +36,34 @@ export function getLineDescriptionDetails(
   }
 }
 
-export function getLineTotal(
-  line: Database["public"]["Views"]["salesOrderLines"]["Row"],
-  shouldConvertCurrency: boolean
+export function getLineSubtotal(
+  line: Database["public"]["Views"]["salesOrderLines"]["Row"]
 ) {
-  if (shouldConvertCurrency) {
-    if (line?.saleQuantity && line?.convertedUnitPrice) {
-      return (
-        line.saleQuantity * line.convertedUnitPrice +
-        (line.convertedAddOnCost ?? 0)
-      );
-    }
-    return 0;
-  } else {
-    if (line?.saleQuantity && line?.unitPrice) {
-      return line.saleQuantity * line.unitPrice + (line.addOnCost ?? 0);
-    }
+  if (line?.saleQuantity && line?.convertedUnitPrice) {
+    return (
+      line.saleQuantity * line.convertedUnitPrice +
+      (line.convertedAddOnCost ?? 0) +
+      (line.convertedShippingCost ?? 0)
+    );
   }
   return 0;
 }
 
+export function getLineTotal(
+  line: Database["public"]["Views"]["salesOrderLines"]["Row"]
+) {
+  const taxPercent = line.taxPercent ?? 0;
+  const tax = getLineSubtotal(line) * taxPercent;
+  return getLineSubtotal(line) + tax;
+}
+
 export function getTotal(
-  lines: Database["public"]["Views"]["salesOrderLines"]["Row"][],
-  shouldConvertCurrency: boolean
+  lines: Database["public"]["Views"]["salesOrderLines"]["Row"][]
 ) {
   let total = 0;
 
   lines.forEach((line) => {
-    total += getLineTotal(line, shouldConvertCurrency);
+    total += getLineTotal(line);
   });
 
   return total;
