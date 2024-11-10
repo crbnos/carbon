@@ -17,6 +17,7 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
       let avatarFile = e.target.files[0];
+      toast.info(`Uploading ${avatarFile.name}`);
       const fileExtension = avatarFile.name.substring(
         avatarFile.name.lastIndexOf(".") + 1
       );

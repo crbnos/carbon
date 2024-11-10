@@ -1,7 +1,7 @@
 import { HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { Copy, MethodItemTypeIcon, ModuleIcon } from "~/components";
+import { Copy } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import type { Material } from "~/modules/items";
@@ -23,7 +23,7 @@ const MaterialHeader = () => {
         <HStack>
           <Link to={path.to.materialDetails(itemId)}>
             <Heading size="h3" className="flex items-center gap-2">
-              <ModuleIcon icon={<MethodItemTypeIcon type="Material" />} />
+              {/* <ModuleIcon icon={<MethodItemTypeIcon type="Material" />} /> */}
               <span>{routeData?.materialSummary?.id}</span>
             </Heading>
           </Link>

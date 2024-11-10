@@ -362,6 +362,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
       }
 
       for (const file of files) {
+        toast.info(`Uploading ${file.name}`);
         const fileName = getPath(file);
 
         const fileUpload = await carbon.storage

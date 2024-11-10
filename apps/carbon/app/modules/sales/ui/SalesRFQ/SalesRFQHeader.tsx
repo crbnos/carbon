@@ -18,13 +18,8 @@ import {
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
 import { LuAlertTriangle, LuRefreshCw, LuXCircle } from "react-icons/lu";
-import { RiProgress2Line, RiProgress4Line } from "react-icons/ri";
-import {
-  Assignee,
-  Copy,
-  ModuleIcon,
-  useOptimisticAssignment,
-} from "~/components";
+import { RiProgress4Line } from "react-icons/ri";
+import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -61,7 +56,7 @@ const SalesRFQHeader = () => {
         <HStack>
           <Link to={path.to.salesRfqDetails(rfqId)}>
             <Heading size="h3" className="flex items-center gap-2">
-              <ModuleIcon icon={<RiProgress2Line />} />
+              {/* <ModuleIcon icon={<RiProgress2Line />} /> */}
               <span>{routeData?.rfqSummary?.rfqId}</span>
             </Heading>
           </Link>

@@ -36,12 +36,7 @@ import {
   LuTable,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import {
-  Assignee,
-  Copy,
-  ModuleIcon,
-  useOptimisticAssignment,
-} from "~/components";
+import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Job } from "../../types";
@@ -91,7 +86,7 @@ const JobHeader = () => {
         <HStack>
           <Link to={path.to.jobDetails(jobId)}>
             <Heading size="h3" className="flex items-center gap-2">
-              <ModuleIcon icon={<LuHardHat />} />
+              {/* <ModuleIcon icon={<LuHardHat />} /> */}
               <span>{routeData?.job?.jobId}</span>
             </Heading>
           </Link>

@@ -73,6 +73,7 @@ export function ItemThumbnailUpload({
       }
       const file = e.target.files?.[0];
       if (file) {
+        toast.info(`Uploading ${file.name}`);
         const formData = new FormData();
         formData.append("file", file);
 

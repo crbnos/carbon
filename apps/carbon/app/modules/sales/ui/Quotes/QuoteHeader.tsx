@@ -25,13 +25,7 @@ import {
   LuTrophy,
   LuXCircle,
 } from "react-icons/lu";
-import { RiProgress4Line } from "react-icons/ri";
-import {
-  Assignee,
-  Copy,
-  ModuleIcon,
-  useOptimisticAssignment,
-} from "~/components";
+import { Assignee, Copy, useOptimisticAssignment } from "~/components";
 
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Quotation, QuotationLine, QuotationPrice } from "~/modules/sales";
@@ -78,7 +72,7 @@ const QuoteHeader = () => {
           <HStack>
             <Link to={path.to.quoteDetails(quoteId)}>
               <Heading size="h3" className="flex items-center gap-2">
-                <ModuleIcon icon={<RiProgress4Line />} />
+                {/* <ModuleIcon icon={<RiProgress4Line />} /> */}
                 <span>{routeData?.quote?.quoteId}</span>
               </Heading>
             </Link>

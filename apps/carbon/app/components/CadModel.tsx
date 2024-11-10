@@ -129,6 +129,8 @@ const CadModel = ({
       if (!carbon) {
         toast.error("Failed to initialize carbon client");
         return;
+      } else {
+        toast.info(`Uploading ${file.name}`);
       }
       const fileExtension = file.name.split(".").pop();
       const fileName = `${companyId}/models/${modelId}.${fileExtension}`;

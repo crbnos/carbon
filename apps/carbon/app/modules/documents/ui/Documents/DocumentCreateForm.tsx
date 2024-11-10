@@ -15,6 +15,7 @@ const DocumentCreateForm = () => {
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
       const file = e.target.files[0];
+      toast.info(`Uploading ${file.name}`);
       const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const fileName = `${user.id}/${nanoid()}.${fileExtension}`;
 

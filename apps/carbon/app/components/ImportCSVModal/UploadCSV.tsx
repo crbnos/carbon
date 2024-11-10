@@ -71,6 +71,7 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
   };
 
   const uploadFile = async (file: File) => {
+    toast.info(`Uploading ${file.name}`);
     const fileName = `${company.id}/imports/${nanoid()}.csv`;
 
     if (!carbon) {

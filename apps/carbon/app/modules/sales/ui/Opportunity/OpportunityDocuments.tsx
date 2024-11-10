@@ -351,6 +351,7 @@ export const useOpportunityDocuments = ({
 
       for (const file of files) {
         const fileName = getPath(file);
+        toast.info(`Uploading ${file.name}`);
 
         const fileUpload = await carbon.storage
           .from("private")
