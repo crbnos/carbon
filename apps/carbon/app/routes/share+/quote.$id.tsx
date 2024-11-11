@@ -994,10 +994,16 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 } for ${formatter.format(total)}?`}</ModalDescription>
               </ModalHeader>
               <ModalBody>
-                <Input
-                  name="digitalQuoteAcceptedBy"
-                  label="Please enter your name"
-                />
+                <div className="space-y-4 py-4">
+                  <Input
+                    name="digitalQuoteAcceptedBy"
+                    label="Please enter your name"
+                  />
+                  <Input
+                    name="digitalQuoteAcceptedByEmail"
+                    label="Please enter your email address"
+                  />
+                </div>
               </ModalBody>
               <ModalFooter>
                 <Button variant="secondary" onClick={confirmQuoteModal.onClose}>

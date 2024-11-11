@@ -88,6 +88,8 @@ export default function SalesOrderNewRoute() {
     exchangeRate: undefined,
     exchangeRateUpdatedAt: "",
     originatedFromQuote: false,
+    digitalQuoteAcceptedBy: undefined,
+    digitalQuoteAcceptedByEmail: undefined,
   };
 
   return (

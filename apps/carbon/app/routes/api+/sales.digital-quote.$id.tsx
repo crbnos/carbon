@@ -24,6 +24,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const selectedLinesRaw = formData.get("selectedLines") ?? "{}";
   const digitalQuoteAcceptedBy = String(formData.get("digitalQuoteAcceptedBy"));
+  const digitalQuoteAcceptedByEmail = String(
+    formData.get("digitalQuoteAcceptedByEmail")
+  );
   if (typeof selectedLinesRaw !== "string") {
     return json({ success: false, message: "Invalid selected lines data" });
   }
@@ -56,6 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       userId: quote.data.createdBy,
       selectedLines,
       digitalQuoteAcceptedBy,
+      digitalQuoteAcceptedByEmail,
     }),
     getCompany(serviceRole, quote.data.companyId),
   ]);

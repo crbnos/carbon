@@ -14158,6 +14158,7 @@ export type Database = {
           customerReference: string | null
           customFields: Json | null
           digitalQuoteAcceptedBy: string | null
+          digitalQuoteAcceptedByEmail: string | null
           dueDate: string | null
           estimatorId: string | null
           exchangeRate: number | null
@@ -14187,6 +14188,7 @@ export type Database = {
           customerReference?: string | null
           customFields?: Json | null
           digitalQuoteAcceptedBy?: string | null
+          digitalQuoteAcceptedByEmail?: string | null
           dueDate?: string | null
           estimatorId?: string | null
           exchangeRate?: number | null
@@ -14216,6 +14218,7 @@ export type Database = {
           customerReference?: string | null
           customFields?: Json | null
           digitalQuoteAcceptedBy?: string | null
+          digitalQuoteAcceptedByEmail?: string | null
           dueDate?: string | null
           estimatorId?: string | null
           exchangeRate?: number | null
@@ -25931,14 +25934,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -26931,6 +26934,8 @@ export type Database = {
           customerLocationId: string | null
           customerReference: string | null
           customFields: Json | null
+          digitalQuoteAcceptedBy: string | null
+          digitalQuoteAcceptedByEmail: string | null
           dueDate: string | null
           estimatorId: string | null
           exchangeRate: number | null
