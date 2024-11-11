@@ -114,6 +114,12 @@ serve(async (req: Request) => {
               selectedLines[line.id].quantity === 0
           );
 
+          const originatedFromDigitalQuote =
+            digitalQuoteAcceptedBy && digitalQuoteAcceptedByEmail;
+          const salesOrderStatus = originatedFromDigitalQuote
+            ? "Needs Approval"
+            : "Confirmed";
+
           const salesOrder = await trx
             .insertInto("salesOrder")
             .values([
@@ -127,7 +133,7 @@ serve(async (req: Request) => {
                 customerReference: quote.data.customerReference,
                 locationId: quote.data.locationId,
                 salesPersonId: quote.data.salesPersonId ?? userId,
-                status: "Confirmed",
+                status: salesOrderStatus,
                 createdBy: userId,
                 companyId: companyId,
                 currencyCode:
