@@ -78,6 +78,9 @@ export const customerTypeValidator = z.object({
 
 export const externalQuoteValidator = z.object({
   digitalQuoteAcceptedBy: z.string().min(1, { message: "Name is required" }),
+  digitalQuoteAcceptedByEmail: z
+    .string()
+    .email({ message: "Email is invalid" }),
 });
 
 export const getLineMethodValidator = z.object({
@@ -126,6 +129,8 @@ export const quoteValidator = z.object({
   currencyCode: zfd.text(z.string().optional()),
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional()),
+  digitalQuoteAcceptedBy: zfd.text(z.string().optional()),
+  digitalQuoteAcceptedByEmail: zfd.text(z.string().optional()),
 });
 
 export const quoteLineAdditionalChargesValidator = z.record(

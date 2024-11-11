@@ -39,6 +39,7 @@ const payloadValidator = z
       )
       .optional(),
     digitalQuoteAcceptedBy: z.string().optional(),
+    digitalQuoteAcceptedByEmail: z.string().optional(),
   })
   .refine((data) => {
     if (data.type === "quoteToSalesOrder") {
@@ -61,6 +62,7 @@ serve(async (req: Request) => {
       userId,
       selectedLines,
       digitalQuoteAcceptedBy,
+      digitalQuoteAcceptedByEmail,
     } = payloadValidator.parse(payload);
 
     console.log({
@@ -229,6 +231,7 @@ serve(async (req: Request) => {
             .set({
               status: newQuoteStatus,
               digitalQuoteAcceptedBy: digitalQuoteAcceptedBy ?? null,
+              digitalQuoteAcceptedByEmail: digitalQuoteAcceptedByEmail ?? null,
             })
             .where("id", "=", quote.data.id)
             .execute();

@@ -36,7 +36,11 @@ import { path } from "~/utils/path";
 type SalesOrderFormValues = z.infer<typeof salesOrderValidator>;
 
 type SalesOrderFormProps = {
-  initialValues: SalesOrderFormValues & { originatedFromQuote: boolean };
+  initialValues: SalesOrderFormValues & {
+    originatedFromQuote: boolean;
+    digitalQuoteAcceptedBy: string | undefined;
+    digitalQuoteAcceptedByEmail: string | undefined;
+  };
 };
 
 const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
@@ -142,6 +146,23 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                 label="Customer Contact"
                 customer={customer.id}
               />
+
+              {initialValues.originatedFromQuote &&
+                initialValues.digitalQuoteAcceptedBy &&
+                initialValues.digitalQuoteAcceptedByEmail && (
+                  <>
+                    <Input
+                      name="digitalQuoteAcceptedBy"
+                      label="Quote Accepted By"
+                      isDisabled
+                    />
+                    <Input
+                      name="digitalQuoteAcceptedByEmail"
+                      label="Quote Accepted By Email"
+                      isDisabled
+                    />
+                  </>
+                )}
 
               <DatePicker
                 name="orderDate"

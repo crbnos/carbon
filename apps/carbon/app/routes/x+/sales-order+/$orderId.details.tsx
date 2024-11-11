@@ -9,6 +9,7 @@ import { getShippingMethodsList } from "~/modules/inventory";
 import type { Opportunity, SalesOrder } from "~/modules/sales";
 import {
   getOpportunityBySalesOrder,
+  getQuote,
   getSalesOrderPayment,
   getSalesOrderShipment,
   OpportunityDocuments,
@@ -74,11 +75,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const opportunity = await getOpportunityBySalesOrder(client, orderId);
   const originatedFromQuote = opportunity.data?.quoteId !== null;
+  const quote = opportunity.data?.quoteId
+    ? await getQuote(client, opportunity.data.quoteId)
+    : null;
 
   return json({
     salesOrderShipment: salesOrderShipment.data,
     salesOrderPayment: salesOrderPayment.data,
     originatedFromQuote,
+    quote,
     // shippingTerms: shippingTerms.data ?? [],
   });
 }
@@ -130,6 +135,7 @@ export default function SalesOrderRoute() {
     salesOrderShipment,
     salesOrderPayment,
     originatedFromQuote,
+    quote,
     // shippingTerms,
   } = useLoaderData<typeof loader>();
   const { orderId } = useParams();
@@ -159,6 +165,9 @@ export default function SalesOrderRoute() {
     exchangeRateUpdatedAt: orderData?.salesOrder?.exchangeRateUpdatedAt ?? "",
     originatedFromQuote: originatedFromQuote,
     salesPersonId: orderData?.salesOrder?.salesPersonId ?? "",
+    digitalQuoteAcceptedBy: quote?.data?.digitalQuoteAcceptedBy ?? undefined,
+    digitalQuoteAcceptedByEmail:
+      quote?.data?.digitalQuoteAcceptedByEmail ?? undefined,
     ...getCustomFields(orderData?.salesOrder?.customFields),
   };
 

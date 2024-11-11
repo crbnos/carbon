@@ -77,6 +77,7 @@ export async function convertQuoteToOrder(
     companyId: string;
     userId: string;
     digitalQuoteAcceptedBy?: string;
+    digitalQuoteAcceptedByEmail?: string;
   }
 ) {
   return client.functions.invoke<{ convertedId: string }>("convert", {
