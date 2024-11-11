@@ -26,6 +26,9 @@ export const supportedModelTypes = [
   "stp",
 ];
 
+const darkColor = "#9797a5";
+const lightColor = "#8c8a8a";
+
 export function ModelViewer({
   file,
   url,
@@ -63,10 +66,10 @@ export function ModelViewer({
             ? new OV.RGBAColor(20, 22, 25, 0)
             : new OV.RGBAColor(255, 255, 255, 0),
           defaultColor: new OV.RGBColor(0, 125, 125),
-          onModelLoaded: () => {
+          onModelLoaded: (model) => {
             if (viewerRef.current) {
               const viewer3D = viewerRef.current.GetViewer();
-              updateColor(isDarkMode ? "#9797a5" : "#8c8a8a");
+              updateColor(isDarkMode ? darkColor : lightColor);
 
               viewer3D.Resize(
                 parentDiv.current?.clientWidth,
@@ -90,8 +93,10 @@ export function ModelViewer({
                 viewer3D.SetCamera(camera);
               }
 
-              const dataUrl = viewer3D.GetImageAsDataUrl(300, 300, true);
-              onDataUrl?.(dataUrl);
+              if (onDataUrl) {
+                const dataUrl = viewer3D.GetImageAsDataUrl(300, 300, true);
+                onDataUrl?.(dataUrl);
+              }
             }
 
             setIsLoading(false);
@@ -216,7 +221,7 @@ export function ModelViewer({
       );
 
       if (!color) {
-        updateColor(isDarkMode ? "#9797a5" : "#8c8a8a");
+        updateColor(isDarkMode ? darkColor : lightColor);
       }
     }
   }, [isDarkMode, color]);

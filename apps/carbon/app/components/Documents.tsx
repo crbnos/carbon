@@ -21,12 +21,7 @@ import {
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
-import {
-  useFetchers,
-  useNavigate,
-  useRevalidator,
-  useSubmit,
-} from "@remix-run/react";
+import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuUpload } from "react-icons/lu";
@@ -63,7 +58,6 @@ const Documents = ({
   const { carbon } = useCarbon();
   const { company } = useUser();
   const submit = useSubmit();
-  const navigate = useNavigate();
 
   const canDelete = permissions.can("delete", writeBucketPermission);
   const canUpdate = permissions.can("update", writeBucketPermission);
@@ -167,17 +161,6 @@ const Documents = ({
     [carbon?.storage, getReadPath]
   );
 
-  const viewModel = useCallback(
-    (model: ModelUpload) => {
-      if (!model?.modelId) {
-        toast.error("Model ID not found");
-        return;
-      }
-      navigate(path.to.file.cadModel(model.modelId));
-    },
-    [navigate]
-  );
-
   const upload = useCallback(
     async (files: File[]) => {
       if (!carbon) {
@@ -271,7 +254,11 @@ const Documents = ({
                     <LuAxis3D className="text-emerald-500 w-6 h-6" />
                     <Hyperlink
                       target="_blank"
-                      onClick={() => viewModel(modelUpload)}
+                      to={
+                        modelUpload.modelId
+                          ? path.to.file.cadModel(modelUpload.modelId)
+                          : ""
+                      }
                     >
                       {modelUpload.modelName}
                     </Hyperlink>
@@ -295,10 +282,16 @@ const Documents = ({
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem
-                          onClick={() => viewModel(modelUpload)}
-                        >
-                          View
+                        <DropdownMenuItem asChild>
+                          <Link
+                            to={
+                              modelUpload.modelId
+                                ? path.to.file.cadModel(modelUpload.modelId)
+                                : ""
+                            }
+                          >
+                            View
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!canDelete}

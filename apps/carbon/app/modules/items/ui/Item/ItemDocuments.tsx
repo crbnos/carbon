@@ -28,12 +28,7 @@ import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { ItemFile } from "~/modules/items";
 import type { MethodItemType, OptimisticFileObject } from "~/modules/shared";
 
-import {
-  useFetchers,
-  useNavigate,
-  useRevalidator,
-  useSubmit,
-} from "@remix-run/react";
+import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -61,7 +56,7 @@ const ItemDocuments = ({
     deleteFile,
     deleteModel,
     getPath,
-    viewModel,
+    getModelPath,
     upload,
   } = useItemDocuments({
     itemId,
@@ -114,10 +109,7 @@ const ItemDocuments = ({
                 <Td>
                   <HStack>
                     <LuAxis3D className="text-emerald-500 w-6 h-6" />
-                    <Hyperlink
-                      target="_blank"
-                      onClick={() => viewModel(modelUpload)}
-                    >
+                    <Hyperlink target="_blank" to={getModelPath(modelUpload)}>
                       {modelUpload.modelName}
                     </Hyperlink>
                   </HStack>
@@ -140,10 +132,8 @@ const ItemDocuments = ({
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem
-                          onClick={() => viewModel(modelUpload)}
-                        >
-                          View
+                        <DropdownMenuItem asChild>
+                          <Link to={getModelPath(modelUpload)}>View</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!canDelete}
@@ -268,7 +258,6 @@ type Props = {
 };
 
 export const useItemDocuments = ({ itemId, type }: Props) => {
-  const navigate = useNavigate();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
   const { carbon } = useCarbon();
@@ -343,16 +332,12 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
     [carbon?.storage, getPath]
   );
 
-  const viewModel = useCallback(
-    (model: ModelUpload) => {
-      if (!model?.modelId) {
-        toast.error("Model ID not found");
-        return;
-      }
-      navigate(path.to.file.cadModel(model.modelId));
-    },
-    [navigate]
-  );
+  const getModelPath = useCallback((model: ModelUpload) => {
+    if (!model?.modelId) {
+      return "";
+    }
+    return path.to.file.cadModel(model.modelId);
+  }, []);
 
   const upload = useCallback(
     async (files: File[]) => {
@@ -402,7 +387,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
     deleteModel,
     download,
     getPath,
-    viewModel,
+    getModelPath,
     upload,
   };
 };

@@ -115,7 +115,10 @@ export default function SalesRFQLine() {
       <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
         <CadModel
           isReadOnly={!permissions.can("update", "sales")}
-          metadata={{ salesRfqLineId: line.id ?? undefined }}
+          metadata={{
+            salesRfqLineId: line.id ?? undefined,
+            itemId: line.itemId ?? undefined,
+          }}
           modelPath={line?.modelPath ?? null}
           title="CAD Model"
           uploadClassName="min-h-[420px]"

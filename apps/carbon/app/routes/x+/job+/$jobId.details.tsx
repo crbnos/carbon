@@ -123,7 +123,10 @@ export default function JobDetailsRoute() {
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel
             isReadOnly={!permissions.can("update", "production")}
-            metadata={{ jobId: jobData?.job?.id ?? undefined }}
+            metadata={{
+              jobId: jobData?.job?.id ?? undefined,
+              itemId: jobData?.job?.itemId ?? undefined,
+            }}
             modelPath={jobData?.job?.modelPath ?? null}
             title="CAD Model"
             uploadClassName="min-h-[420px]"

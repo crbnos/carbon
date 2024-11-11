@@ -2,8 +2,6 @@ import type { Redis as RedisType } from "@upstash/redis";
 import { Redis } from "@upstash/redis";
 import type { Redis as IoRedisType } from "ioredis";
 
-// const USE_LOCAL_REDIS = !!process.env.USE_LOCAL_REDIS;
-// const REDIS_URL = process.env.REDIS_URL;
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 

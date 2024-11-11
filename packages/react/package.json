@@ -37,6 +37,7 @@
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/typography": "^0.5.10",
     "@tanstack/react-table": "^8.9.3",
+    "@tanstack/react-virtual": "^3.5.0",
     "@tiptap/extension-color": "^2.0.4",
     "@tiptap/extension-list-item": "^2.0.4",
     "@tiptap/extension-text-style": "^2.0.4",

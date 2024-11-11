@@ -28,12 +28,7 @@ import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { ItemFile } from "~/modules/items";
 
-import {
-  useFetchers,
-  useNavigate,
-  useRevalidator,
-  useSubmit,
-} from "@remix-run/react";
+import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
@@ -53,7 +48,6 @@ const useOpportunityLineDocuments = ({
   lineId: string;
   type: "Request for Quote" | "Sales Order" | "Quote";
 }) => {
-  const navigate = useNavigate();
   const permissions = usePermissions();
   const revalidator = useRevalidator();
   const { carbon } = useCarbon();
@@ -155,16 +149,12 @@ const useOpportunityLineDocuments = ({
     [carbon?.storage, getPath]
   );
 
-  const viewModel = useCallback(
-    (model: ModelUpload) => {
-      if (!model?.modelId) {
-        toast.error("Model ID not found");
-        return;
-      }
-      navigate(path.to.file.cadModel(model.modelId));
-    },
-    [navigate]
-  );
+  const getModelPath = useCallback((model: ModelUpload) => {
+    if (!model?.modelId) {
+      return "";
+    }
+    return path.to.file.cadModel(model.modelId);
+  }, []);
 
   const createDocumentRecord = useCallback(
     ({
@@ -232,7 +222,7 @@ const useOpportunityLineDocuments = ({
     deleteModel,
     download,
     getPath,
-    viewModel,
+    getModelPath,
     upload,
   };
 };
@@ -258,7 +248,7 @@ const OpportunityLineDocuments = ({
     deleteFile,
     deleteModel,
     getPath,
-    viewModel,
+    getModelPath,
     upload,
   } = useOpportunityLineDocuments({
     id,
@@ -313,10 +303,7 @@ const OpportunityLineDocuments = ({
                   <Td>
                     <HStack>
                       <DocumentIcon type="Model" />
-                      <Hyperlink
-                        target="_blank"
-                        onClick={() => viewModel(modelUpload)}
-                      >
+                      <Hyperlink target="_blank" to={getModelPath(modelUpload)}>
                         {modelUpload.modelName}
                       </Hyperlink>
                       <Badge variant="secondary">Model</Badge>
@@ -340,10 +327,8 @@ const OpportunityLineDocuments = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem
-                            onClick={() => viewModel(modelUpload)}
-                          >
-                            View
+                          <DropdownMenuItem asChild>
+                            <Link to={getModelPath(modelUpload)}>View</Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={!canDelete}
