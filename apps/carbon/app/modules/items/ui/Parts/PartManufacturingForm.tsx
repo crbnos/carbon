@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import type { z } from "zod";
 import {
   Boolean,
@@ -19,6 +19,7 @@ import {
 import { usePermissions, useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
 import { partManufacturingValidator } from "~/modules/items";
+import type { action } from "~/routes/x+/part+/$itemId.manufacturing.method";
 import { path } from "~/utils/path";
 
 type PartManufacturingFormProps = {
@@ -28,6 +29,7 @@ type PartManufacturingFormProps = {
 const PartManufacturingForm = ({
   initialValues,
 }: PartManufacturingFormProps) => {
+  const fetcher = useFetcher<typeof action>();
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -42,6 +44,7 @@ const PartManufacturingForm = ({
         method="post"
         validator={partManufacturingValidator}
         defaultValues={initialValues}
+        fetcher={fetcher}
       >
         <CardHeader>
           <CardTitle>Manufacturing</CardTitle>
@@ -82,7 +85,12 @@ const PartManufacturingForm = ({
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
+          <Submit
+            withBlocker={false}
+            isDisabled={!permissions.can("update", "parts")}
+          >
+            Save
+          </Submit>
         </CardFooter>
       </ValidatedForm>
     </Card>
