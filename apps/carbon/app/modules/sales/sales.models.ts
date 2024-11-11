@@ -41,6 +41,9 @@ export const customerValidator = z.object({
   customerStatusId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
+  taxPercent: zfd.numeric(
+    z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
+  ),
   phone: zfd.text(z.string().optional()),
   fax: zfd.text(z.string().optional()),
   website: zfd.text(z.string().optional()),
@@ -155,6 +158,9 @@ export const quoteLineValidator = z.object({
   ),
   modelUploadId: zfd.text(z.string().optional()),
   noQuoteReason: zfd.text(z.string().optional()),
+  taxPercent: zfd.numeric(
+    z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
+  ),
 });
 
 export const quoteMaterialValidator = z
@@ -687,9 +693,11 @@ const selectedLineSchema = z.object({
   addOn: z.number(),
   convertedAddOn: z.number(),
   convertedNetUnitPrice: z.number(),
+  convertedShippingCost: z.number(),
   leadTime: z.number(),
   netUnitPrice: z.number(),
   quantity: z.number(),
+  shippingCost: z.number(),
 });
 
 export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);

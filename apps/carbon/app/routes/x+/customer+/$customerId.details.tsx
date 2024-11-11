@@ -70,6 +70,7 @@ export default function CustomerEditRoute() {
     accountManagerId: routeData?.customer?.accountManagerId ?? undefined,
     taxId: routeData?.customer?.taxId ?? "",
     currencyCode: routeData?.customer?.currencyCode ?? undefined,
+    taxPercent: routeData?.customer?.taxPercent ?? 0,
     phone: routeData?.customer?.phone ?? "",
     fax: routeData?.customer?.fax ?? "",
     website: routeData?.customer?.website ?? "",

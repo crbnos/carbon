@@ -221,7 +221,7 @@ const QuoteLinePricing = ({
   };
 
   const onUpdatePrice = async (
-    key: "leadTime" | "unitPrice" | "discountPercent",
+    key: "leadTime" | "unitPrice" | "discountPercent" | "shippingCost",
     quantity: number,
     value: number
   ) => {
@@ -244,6 +244,7 @@ const QuoteLinePricing = ({
         unitPrice: 0,
         discountPercent: 0,
         exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
+        shippingCost: 0,
         createdBy: userId,
       } as unknown as QuotationPrice;
     }
@@ -607,6 +608,41 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
+            <Tr>
+              <Td className="border-r border-border">
+                <HStack className="w-full justify-between ">
+                  <span>Shipping Cost</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity) => {
+                const shippingCost = prices[quantity]?.shippingCost;
+                return (
+                  <Td key={quantity.toString()}>
+                    <NumberField
+                      value={shippingCost}
+                      formatOptions={{
+                        style: "currency",
+                        currency: baseCurrency,
+                        maximumFractionDigits: 4,
+                      }}
+                      minValue={0}
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== shippingCost) {
+                          onUpdatePrice("shippingCost", quantity, value);
+                        }
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                        isDisabled={!isEditable}
+                        size="sm"
+                        min={0}
+                      />
+                    </NumberField>
+                  </Td>
+                );
+              })}
+            </Tr>
             {Object.entries(additionalCharges)
               .sort((a, b) => {
                 return a[1].description.localeCompare(b[1].description);
@@ -745,6 +781,51 @@ const QuoteLinePricing = ({
                 return <Td key={quantity.toString()}></Td>;
               })}
             </Tr>
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
+                <HStack className="w-full justify-between ">
+                  <span>Subtotal</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity, index) => {
+                const price =
+                  netPricesByQuantity[index] * quantity +
+                  prices[quantity]?.shippingCost +
+                  additionalChargesByQuantity[index];
+                return (
+                  <Td key={index} className="group-hover:bg-muted/50">
+                    <VStack spacing={0}>
+                      <span>{formatter.format(price)}</span>
+                    </VStack>
+                  </Td>
+                );
+              })}
+            </Tr>
+            <Tr className="[&>td]:bg-muted/60">
+              <Td className="border-r border-border group-hover:bg-muted/50">
+                <HStack className="w-full justify-between ">
+                  <span>Tax Percent</span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity, index) => {
+                const taxPercent = line.taxPercent ?? 0;
+                return (
+                  <Td key={index} className="group-hover:bg-muted/50">
+                    <NumberField
+                      value={taxPercent}
+                      formatOptions={{
+                        style: "percent",
+                      }}
+                    >
+                      <NumberInput
+                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                        size="sm"
+                      />
+                    </NumberField>
+                  </Td>
+                );
+              })}
+            </Tr>
             <Tr className="font-bold [&>td]:bg-muted/60">
               <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
@@ -752,9 +833,12 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const price =
+                const subtotal =
                   netPricesByQuantity[index] * quantity +
+                  prices[quantity]?.shippingCost +
                   additionalChargesByQuantity[index];
+                const tax = subtotal * (line.taxPercent ?? 0);
+                const price = subtotal + tax;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
@@ -790,9 +874,12 @@ const QuoteLinePricing = ({
                     </HStack>
                   </Td>
                   {quantities.map((quantity, index) => {
-                    const price =
+                    const subtotal =
                       netPricesByQuantity[index] * quantity +
+                      prices[quantity]?.shippingCost +
                       additionalChargesByQuantity[index];
+                    const tax = subtotal * (line.taxPercent ?? 0);
+                    const price = subtotal + tax;
                     const exchangeRate = prices[quantity]?.exchangeRate;
                     const convertedPrice = price * (exchangeRate ?? 1);
                     return (

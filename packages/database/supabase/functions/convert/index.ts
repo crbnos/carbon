@@ -32,6 +32,8 @@ const payloadValidator = z
           convertedNetUnitPrice: z.number(),
           addOn: z.number(),
           convertedAddOn: z.number(),
+          shippingCost: z.number(),
+          convertedShippingCost: z.number(),
           leadTime: z.number(),
         })
       )
@@ -196,6 +198,8 @@ serve(async (req: Request) => {
                   createdBy: userId,
                   companyId,
                   exchangeRate: quote.data.exchangeRate ?? 1,
+                  taxPercent: line.taxPercent,
+                  shippingCost: selectedLines![line.id!].shippingCost,
                 };
               });
 

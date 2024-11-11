@@ -14,6 +14,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { getCurrencyByCode } from "~/modules/accounting";
 import {
+  getCustomer,
   getOpportunityByQuote,
   getOpportunityDocuments,
   getQuote,
@@ -97,6 +98,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
+  const customer = quote.data?.customerId
+    ? await getCustomer(client, quote.data.customerId)
+    : null;
+
   return defer({
     quote: quote.data,
     lines: lines.data ?? [],
@@ -107,6 +112,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     payment: payment.data,
     opportunity: opportunity.data,
     exchangeRate,
+    customer: customer?.data ?? null,
   });
 }
 

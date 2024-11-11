@@ -328,12 +328,34 @@ const SalesOrderLineForm = ({
                           }
                         />
                         <Number
+                          name="shippingCost"
+                          label="Shipping Cost"
+                          formatOptions={{
+                            style: "currency",
+                            currency: baseCurrency,
+                            maximumFractionDigits: 4,
+                          }}
+                        />
+                        <Number
                           name="addOnCost"
                           label="Add-On Cost"
                           formatOptions={{
                             style: "currency",
                             currency: baseCurrency,
                             maximumFractionDigits: 4,
+                          }}
+                        />
+
+                        <Number
+                          name="taxPercent"
+                          label="Tax Percent"
+                          minValue={0}
+                          maxValue={1}
+                          step={0.0001}
+                          formatOptions={{
+                            style: "percent",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
                           }}
                         />
 

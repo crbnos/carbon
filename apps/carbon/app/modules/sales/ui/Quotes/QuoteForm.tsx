@@ -175,6 +175,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                   }
                 }}
               />
+
               {isEditing &&
                 !!customer.currencyCode &&
                 customer.currencyCode !== company.baseCurrencyCode && (

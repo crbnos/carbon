@@ -23,6 +23,7 @@ import {
   Employee,
   Hidden,
   Input,
+  Number,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -108,6 +109,19 @@ const CustomerForm = ({
                   <Employee name="accountManagerId" label="Account Manager" />
 
                   <Currency name="currencyCode" label="Currency" />
+
+                  <Number
+                    name="taxPercent"
+                    label="Tax Percent"
+                    minValue={0}
+                    maxValue={1}
+                    step={0.0001}
+                    formatOptions={{
+                      style: "percent",
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 2,
+                    }}
+                  />
 
                   <PhoneInput name="phone" label="Phone" />
                   <PhoneInput name="fax" label="Fax" />

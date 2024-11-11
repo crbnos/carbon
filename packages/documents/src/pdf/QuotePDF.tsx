@@ -171,7 +171,7 @@ const QuotePDF = ({
             <View style={tw("w-2/3 flex flex-row")}>
               <Text style={tw("w-1/5 text-right")}>Qty</Text>
               <Text style={tw("w-1/5 text-right")}>Unit Price</Text>
-              <Text style={tw("w-1/5 text-right")}>Add-Ons</Text>
+              <Text style={tw("w-1/5 text-right")}>Tax & Fees</Text>
               <Text style={tw("w-1/5 text-right")}>Lead Time</Text>
               <Text style={tw("w-1/5 text-right")}>Total Price</Text>
             </View>
@@ -222,11 +222,22 @@ const QuotePDF = ({
                   )}
 
                   {line.status !== "No Quote" &&
-                    Object.keys(additionalCharges).length > 0 && (
+                    (Object.keys(additionalCharges).length > 0 ||
+                      pricesByLine[line.id]?.some(
+                        (price) => (price.shippingCost ?? 0) > 0
+                      ) ||
+                      line.taxPercent) && (
                       <View style={tw("mt-2.5")}>
                         <Text style={tw("text-[9px] font-bold")}>
-                          Additional Charges
+                          Tax & Fees
                         </Text>
+                        {pricesByLine[line.id]?.some(
+                          (price) => (price.shippingCost ?? 0) > 0
+                        ) && (
+                          <Text style={tw("text-[9px] opacity-80")}>
+                            - Shipping
+                          </Text>
+                        )}
                         {Object.values(additionalCharges)
                           .sort((a, b) =>
                             a.description.localeCompare(b.description)
@@ -241,6 +252,11 @@ const QuotePDF = ({
                               </Text>
                             ) : null;
                           })}
+                        {line.taxPercent && (
+                          <Text style={tw("text-[9px] opacity-80")}>
+                            - Tax ({line.taxPercent * 100}%)
+                          </Text>
+                        )}
                       </View>
                     )}
                 </View>
@@ -258,6 +274,15 @@ const QuotePDF = ({
                       const additionalCharge =
                         additionalChargesByQuantity[index] ?? 0;
 
+                      const additionalChargePlusShipping =
+                        additionalCharge + (price?.convertedShippingCost ?? 0);
+
+                      const taxPercent = line.taxPercent ?? 0;
+
+                      const totalPrice =
+                        (netExtendedPrice + additionalChargePlusShipping) *
+                        (1 + taxPercent);
+
                       return (
                         <View key={quantity} style={tw("flex flex-row")}>
                           <Text style={tw("w-1/5 text-right")}>{quantity}</Text>
@@ -267,19 +292,15 @@ const QuotePDF = ({
                               : "-"}
                           </Text>
                           <Text style={tw("w-1/5 text-right")}>
-                            {additionalCharge
-                              ? formatter.format(additionalCharge)
+                            {additionalChargePlusShipping
+                              ? formatter.format(additionalChargePlusShipping)
                               : "-"}
                           </Text>
                           <Text style={tw("w-1/5 text-right")}>
                             {price ? `${price.leadTime} days` : "-"}
                           </Text>
                           <Text style={tw("w-1/5 text-right")}>
-                            {netUnitPrice
-                              ? formatter.format(
-                                  netExtendedPrice + additionalCharge
-                                )
-                              : "-"}
+                            {netUnitPrice ? formatter.format(totalPrice) : "-"}
                           </Text>
                         </View>
                       );

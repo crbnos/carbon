@@ -43,7 +43,12 @@ import {
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { quoteLineStatusType } from "../../sales.models";
-import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
+import type {
+  Customer,
+  Quotation,
+  QuotationLine,
+  QuoteMethod,
+} from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
 import QuoteLineForm from "./QuoteLineForm";
@@ -56,9 +61,11 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   const { defaults } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
-  const quoteData = useRouteData<{ quote: Quotation; lines: QuotationLine[] }>(
-    path.to.quote(quoteId)
-  );
+  const quoteData = useRouteData<{
+    quote: Quotation;
+    lines: QuotationLine[];
+    customer: Customer;
+  }>(path.to.quote(quoteId));
 
   const permissions = usePermissions();
   const { id: userId } = useUser();
@@ -73,6 +80,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     status: "Not Started" as const,
     quantity: [1],
     unitOfMeasureCode: "",
+    taxPercent: quoteData?.customer?.taxPercent ?? 0,
   };
 
   useRealtime(

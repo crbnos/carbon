@@ -33,6 +33,7 @@ import {
   Hidden,
   InputControlled,
   Item,
+  Number,
   Select,
   SelectControlled,
   Submit,
@@ -323,6 +324,18 @@ const QuoteLineForm = ({
                         onBlur={(e) =>
                           onCustomerPartRevisionChange(e.target.value)
                         }
+                      />
+                      <Number
+                        name="taxPercent"
+                        label="Tax Percent"
+                        minValue={0}
+                        maxValue={1}
+                        step={0.0001}
+                        formatOptions={{
+                          style: "percent",
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 2,
+                        }}
                       />
 
                       <CustomFormFields table="quoteLine" />

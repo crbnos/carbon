@@ -109,7 +109,7 @@ export default function SalesSettingsRoute() {
                 <Boolean name="digitalQuoteEnabled" description="Enabled" />
                 <Users
                   name="digitalQuoteNotificationGroup"
-                  label="Who should receive notifications when a digital quote is submitted?"
+                  label="Who should receive notifications when a digital quote is accepted?"
                 />
               </div>
             </CardContent>

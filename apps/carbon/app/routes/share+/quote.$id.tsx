@@ -266,6 +266,9 @@ type SelectedLine = {
   addOn: number;
   convertedAddOn: number;
   leadTime: number;
+  shippingCost: number;
+  convertedShippingCost: number;
+  taxPercent: number;
 };
 
 const deselectedLine: SelectedLine = {
@@ -275,6 +278,9 @@ const deselectedLine: SelectedLine = {
   convertedNetUnitPrice: 0,
   quantity: 0,
   leadTime: 0,
+  shippingCost: 0,
+  convertedShippingCost: 0,
+  taxPercent: 0,
 };
 
 const LineItems = ({
@@ -295,7 +301,7 @@ const LineItems = ({
 
   const [openItems, setOpenItems] = useState<string[]>(() =>
     Array.isArray(quoteLines) && quoteLines.length > 0
-      ? [quoteLines[0].id!]
+      ? quoteLines.map((line) => line.id!).filter(Boolean)
       : []
   );
 
@@ -381,10 +387,12 @@ const LineItems = ({
                       <MotionNumber
                         className="font-bold text-xl"
                         value={
-                          (selectedLines[line.id!]?.convertedNetUnitPrice ??
+                          ((selectedLines[line.id!]?.convertedNetUnitPrice ??
                             0) *
                             (selectedLines[line.id!]?.quantity ?? 0) +
-                          (selectedLines[line.id!]?.convertedAddOn ?? 0)
+                            (selectedLines[line.id!]?.convertedAddOn ?? 0) +
+                            selectedLines[line.id!]?.convertedShippingCost) *
+                          (1 + selectedLines[line.id!]?.taxPercent)
                         }
                         format={{
                           style: "currency",
@@ -471,8 +479,8 @@ const LinePricingOptions = ({
 
   const hasSalesOrder =
     Array.isArray(salesOrderLines) && salesOrderLines.length > 0;
-  const [selectedValue, setSelectedValue] = useState(
-    selectedLine.quantity.toString()
+  const [selectedValue, setSelectedValue] = useState<string | null>(
+    selectedLine?.quantity?.toString() ?? null
   );
 
   const additionalChargesByQuantity =
@@ -502,10 +510,16 @@ const LinePricingOptions = ({
   );
 
   const additionalCharges: { name: string; amount: number }[] = [];
+  if (selectedLine.convertedShippingCost) {
+    additionalCharges.push({
+      name: "Shipping",
+      amount: selectedLine.convertedShippingCost,
+    });
+  }
   Object.entries(line.additionalCharges ?? {}).forEach(([name, charge]) => {
     additionalCharges.push({
-      name: charge.description ?? "Additional Charge",
-      amount: charge.amounts?.[selectedLine.quantity] ?? 0,
+      name: charge.description,
+      amount: charge.amounts?.[selectedLine.quantity] * quoteExchangeRate,
     });
   });
 
@@ -513,7 +527,7 @@ const LinePricingOptions = ({
     <VStack spacing={4}>
       <RadioGroup
         className="w-full"
-        value={selectedValue}
+        value={selectedValue ?? undefined}
         disabled={["Ordered", "Partial", "Expired", "Cancelled"].includes(
           quote.status
         )}
@@ -538,6 +552,10 @@ const LinePricingOptions = ({
                     selectedOption.quantity
                   ] || 0,
                 leadTime: selectedOption.leadTime,
+                shippingCost: selectedOption.shippingCost ?? 0,
+                convertedShippingCost:
+                  selectedOption.convertedShippingCost ?? 0,
+                taxPercent: line.taxPercent ?? 0,
               },
             }));
             setSelectedValue(value);
@@ -552,7 +570,7 @@ const LinePricingOptions = ({
               <Th>Unit Price</Th>
               <Th>Add-Ons</Th>
               <Th>Lead Time</Th>
-              <Th>Total Price</Th>
+              <Th>Subtotal</Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -586,7 +604,9 @@ const LinePricingOptions = ({
                       </Td>
                       <Td>
                         {formatter.format(
-                          convertedAdditionalChargesByQuantity[option.quantity]
+                          convertedAdditionalChargesByQuantity[
+                            option.quantity
+                          ] + (option.convertedShippingCost ?? 0)
                         )}
                       </Td>
                       <Td>{option.leadTime} days</Td>
@@ -596,7 +616,8 @@ const LinePricingOptions = ({
                             option.quantity +
                             convertedAdditionalChargesByQuantity[
                               option.quantity
-                            ]
+                            ] +
+                            (option.convertedShippingCost ?? 0)
                         )}
                       </Td>
                     </Tr>
@@ -607,34 +628,109 @@ const LinePricingOptions = ({
         </Table>
       </RadioGroup>
 
-      {selectedLine.quantity !== 0 && additionalCharges.length > 0 && (
+      {selectedLine.quantity !== 0 && (
         <div className="w-full">
           <Table>
-            <Thead>
-              <Tr>
-                <Th>Additional Charge</Th>
-                <Th>Amount</Th>
-              </Tr>
-            </Thead>
             <Tbody>
-              {additionalCharges.map((charge) => (
-                <Tr key={charge.name}>
-                  <Td>{charge.name}</Td>
-                  <Td>
-                    <MotionNumber
-                      value={charge.amount}
-                      format={{ style: "currency", currency: quoteCurrency }}
-                      locales={locale}
-                    />
-                  </Td>
-                </Tr>
-              ))}
+              <Tr key="extended-price" className="border-b border-border">
+                <Td>Extended Price</Td>
+                <Td className="text-right">
+                  <MotionNumber
+                    value={
+                      (selectedLine.convertedNetUnitPrice ?? 0) *
+                      selectedLine.quantity
+                    }
+                    format={{ style: "currency", currency: quoteCurrency }}
+                    locales={locale}
+                  />
+                </Td>
+              </Tr>
+
+              {additionalCharges.length > 0 &&
+                additionalCharges.map((charge) => (
+                  <Tr
+                    key={charge.name}
+                    className={
+                      additionalCharges[additionalCharges.length - 1] === charge
+                        ? "border-b border-border"
+                        : ""
+                    }
+                  >
+                    <Td>{charge.name}</Td>
+                    <Td className="text-right">
+                      <MotionNumber
+                        value={charge.amount}
+                        format={{ style: "currency", currency: quoteCurrency }}
+                        locales={locale}
+                      />
+                    </Td>
+                  </Tr>
+                ))}
+
+              <Tr key="subtotal">
+                <Td>Subtotal</Td>
+                <Td className="text-right">
+                  <MotionNumber
+                    value={
+                      (selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                      selectedLine.convertedAddOn +
+                      selectedLine.convertedShippingCost
+                    }
+                    format={{
+                      style: "currency",
+                      currency: quoteCurrency,
+                    }}
+                    locales={locale}
+                  />
+                </Td>
+              </Tr>
+
+              <Tr key="tax" className="border-b border-border">
+                <Td>Tax ({selectedLine.taxPercent * 100}%)</Td>
+                <Td className="text-right">
+                  <MotionNumber
+                    value={
+                      ((selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                        selectedLine.convertedAddOn +
+                        selectedLine.convertedShippingCost) *
+                      selectedLine.taxPercent
+                    }
+                    format={{
+                      style: "currency",
+                      currency: quoteCurrency,
+                    }}
+                    locales={locale}
+                  />
+                </Td>
+              </Tr>
+
+              <Tr key="total" className="font-bold">
+                <Td>Total</Td>
+                <Td className="text-right">
+                  <MotionNumber
+                    value={
+                      ((selectedLine.convertedNetUnitPrice ?? 0) *
+                        selectedLine.quantity +
+                        selectedLine.convertedAddOn +
+                        selectedLine.convertedShippingCost) *
+                      (1 + selectedLine.taxPercent)
+                    }
+                    format={{
+                      style: "currency",
+                      currency: quoteCurrency,
+                    }}
+                    locales={locale}
+                  />
+                </Td>
+              </Tr>
             </Tbody>
           </Table>
         </div>
       )}
       {selectedLine.quantity !== 0 && !hasSalesOrder && (
-        <HStack spacing={2} className="w-full justify-start items-center">
+        <HStack spacing={2} className="w-full justify-end items-center">
           <Button
             variant="secondary"
             leftIcon={<LuXCircle />}
@@ -727,7 +823,12 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 price.quantity === salesOrderLine.saleQuantity
             )
           : quoteLinePrices?.find((price) => price.quoteLineId === line.id);
-        if (!line.id || !price) {
+        if (!line.id) {
+          return acc;
+        }
+
+        if (!price) {
+          acc[line.id] = deselectedLine;
           return acc;
         }
 
@@ -760,6 +861,9 @@ const Quote = ({ data }: { data: QuoteData }) => {
           convertedAddOn:
             convertedAdditionalChargesByQuantity[price.quantity] || 0,
           leadTime: price.leadTime,
+          shippingCost: price.shippingCost ?? 0,
+          convertedShippingCost: price.convertedShippingCost ?? 0,
+          taxPercent: line.taxPercent ?? 0,
         };
         return acc;
       }, {}) ?? {}
@@ -768,10 +872,21 @@ const Quote = ({ data }: { data: QuoteData }) => {
 
   const subtotal = Object.values(selectedLines).reduce((acc, line) => {
     return (
-      acc + line.convertedNetUnitPrice * line.quantity + line.convertedAddOn
+      acc +
+      line.convertedNetUnitPrice * line.quantity +
+      line.convertedAddOn +
+      line.convertedShippingCost
     );
   }, 0);
-  const tax = 0;
+  const tax = Object.values(selectedLines).reduce((acc, line) => {
+    return (
+      acc +
+      (line.convertedNetUnitPrice * line.quantity +
+        line.convertedAddOn +
+        line.convertedShippingCost) *
+        (line.taxPercent ?? 0)
+    );
+  }, 0);
   const total = subtotal + tax;
 
   const termsHTML = generateHTML(terms as JSONContent);
@@ -822,22 +937,6 @@ const Quote = ({ data }: { data: QuoteData }) => {
             )}
             {(shippingMethod || paymentTerm) && <Separator />}
 
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>Subtotal:</span>
-              <MotionNumber
-                value={subtotal}
-                format={{
-                  style: "currency",
-                  currency: quote.currencyCode ?? "USD",
-                }}
-                locales={locale}
-              />
-            </HStack>
-            {/* <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>Tax:</span>
-              <span>{formatter.format(tax)}</span>
-            </HStack> */}
-            <Separator />
             <HStack className="justify-between text-xl font-bold w-full">
               <span>Total:</span>
               <MotionNumber
