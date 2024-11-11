@@ -778,7 +778,13 @@ const LinePricingOptions = ({
         </Table>
       </RadioGroup>
       {!showOverride && (
-        <Button variant="secondary" onClick={() => setShowOverride(true)}>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setShowOverride(true);
+            setSelectedValue("custom");
+          }}
+        >
           Add Adjustment
         </Button>
       )}
