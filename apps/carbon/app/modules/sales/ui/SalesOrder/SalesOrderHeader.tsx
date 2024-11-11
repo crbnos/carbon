@@ -69,7 +69,8 @@ const SalesOrderHeader = () => {
                 Preview
               </a>
             </Button>
-            {routeData?.salesOrder?.status === "Draft" && (
+            {(routeData?.salesOrder?.status === "Draft" ||
+              routeData?.salesOrder?.status === "Needs Approval") && (
               <>
                 <statusFetcher.Form
                   method="post"
