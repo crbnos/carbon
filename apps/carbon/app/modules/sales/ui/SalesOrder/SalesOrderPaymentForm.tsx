@@ -11,7 +11,6 @@ import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
-  Currency,
   Customer,
   CustomerContact,
   CustomerLocation,
@@ -70,7 +69,6 @@ const SalesOrderPaymentForm = ({
             />
 
             <PaymentTerm name="paymentTermId" label="Payment Term" />
-            <Currency name="currencyCode" label="Currency" />
           </div>
         </CardContent>
         <CardFooter>
