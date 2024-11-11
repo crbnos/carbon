@@ -391,9 +391,8 @@ const LineItems = ({
                             0) *
                             (selectedLines[line.id!]?.quantity ?? 0) +
                             (selectedLines[line.id!]?.convertedAddOn ?? 0) +
-                            (selectedLines[line.id!]?.convertedShippingCost ??
-                              0)) *
-                          (1 + selectedLines[line.id!]?.taxPercent ?? 0)
+                            selectedLines[line.id!]?.convertedShippingCost) *
+                          (1 + selectedLines[line.id!]?.taxPercent)
                         }
                         format={{
                           style: "currency",
@@ -480,8 +479,8 @@ const LinePricingOptions = ({
 
   const hasSalesOrder =
     Array.isArray(salesOrderLines) && salesOrderLines.length > 0;
-  const [selectedValue, setSelectedValue] = useState(
-    selectedLine.quantity.toString()
+  const [selectedValue, setSelectedValue] = useState<string | null>(
+    selectedLine?.quantity?.toString() ?? null
   );
 
   const additionalChargesByQuantity =
@@ -520,7 +519,7 @@ const LinePricingOptions = ({
   Object.entries(line.additionalCharges ?? {}).forEach(([name, charge]) => {
     additionalCharges.push({
       name: charge.description,
-      amount: charge.amounts?.[selectedLine.quantity] * quoteExchangeRate ?? 0,
+      amount: charge.amounts?.[selectedLine.quantity] * quoteExchangeRate,
     });
   });
 
@@ -528,7 +527,7 @@ const LinePricingOptions = ({
     <VStack spacing={4}>
       <RadioGroup
         className="w-full"
-        value={selectedValue}
+        value={selectedValue ?? undefined}
         disabled={["Ordered", "Partial", "Expired", "Cancelled"].includes(
           quote.status
         )}
@@ -633,7 +632,7 @@ const LinePricingOptions = ({
         <div className="w-full">
           <Table>
             <Tbody>
-              <Tr key="extended-price border-b border-border">
+              <Tr key="extended-price" className="border-b border-border">
                 <Td>Extended Price</Td>
                 <Td className="text-right">
                   <MotionNumber
@@ -649,7 +648,14 @@ const LinePricingOptions = ({
 
               {additionalCharges.length > 0 &&
                 additionalCharges.map((charge) => (
-                  <Tr key={charge.name} className="border-b border-border">
+                  <Tr
+                    key={charge.name}
+                    className={
+                      additionalCharges[additionalCharges.length - 1] === charge
+                        ? "border-b border-border"
+                        : ""
+                    }
+                  >
                     <Td>{charge.name}</Td>
                     <Td className="text-right">
                       <MotionNumber
@@ -661,7 +667,7 @@ const LinePricingOptions = ({
                   </Tr>
                 ))}
 
-              <Tr key="subtotal" className="border-b border-border">
+              <Tr key="subtotal">
                 <Td>Subtotal</Td>
                 <Td className="text-right">
                   <MotionNumber
@@ -699,8 +705,6 @@ const LinePricingOptions = ({
                   />
                 </Td>
               </Tr>
-
-              <Separator className="w-full" />
 
               <Tr key="total" className="font-bold">
                 <Td>Total</Td>
@@ -819,7 +823,12 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 price.quantity === salesOrderLine.saleQuantity
             )
           : quoteLinePrices?.find((price) => price.quoteLineId === line.id);
-        if (!line.id || !price) {
+        if (!line.id) {
+          return acc;
+        }
+
+        if (!price) {
+          acc[line.id] = deselectedLine;
           return acc;
         }
 
