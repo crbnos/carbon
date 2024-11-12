@@ -673,16 +673,6 @@ export async function getSalesOrderCustomerDetails(
     .single();
 }
 
-export async function getSalesOrderExternalDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  salesOrderId: string
-) {
-  return client.storage
-    .from("private")
-    .list(`${companyId}/sales/external/${salesOrderId}`);
-}
-
 export async function getQuoteByExternalId(
   client: SupabaseClient<Database>,
   externalId: string

@@ -8,7 +8,6 @@ import type {
   getCustomerStatuses,
   getCustomerTypes,
   getOpportunityByQuote,
-  getQuoteDocuments,
   getQuoteLinePrices,
   getQuoteLines,
   getQuoteMakeMethod,
@@ -18,7 +17,6 @@ import type {
   getQuotePayment,
   getQuotes,
   getQuoteShipment,
-  getSalesOrderExternalDocuments,
   getSalesOrderLines,
   getSalesOrders,
   getSalesRFQLines,
@@ -93,10 +91,6 @@ export type QuotationMakeMethod = NonNullable<
   Awaited<ReturnType<typeof getQuoteMakeMethod>>["data"]
 >;
 
-export type QuotationAttachment = NonNullable<
-  Awaited<ReturnType<typeof getQuoteDocuments>>["data"]
->[number];
-
 export type Quotation = NonNullable<
   Awaited<ReturnType<typeof getQuotes>>["data"]
 >[number];
@@ -129,11 +123,6 @@ export type QuotationShipment = NonNullable<
 
 export type SalesOrder = NonNullable<
   Awaited<ReturnType<typeof getSalesOrders>>["data"]
->[number];
-
-// TODO: we should just use the FileObject type from supabase
-export type SalesOrderAttachment = NonNullable<
-  Awaited<ReturnType<typeof getSalesOrderExternalDocuments>>["data"]
 >[number];
 
 export type SalesOrderLine = NonNullable<

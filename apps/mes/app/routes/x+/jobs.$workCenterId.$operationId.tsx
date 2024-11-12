@@ -81,6 +81,7 @@ export default function OperationRoute() {
 
   return (
     <JobOperation
+      key={operationId}
       backPath={path.to.workCenter(workCenterId)}
       events={events}
       files={files}

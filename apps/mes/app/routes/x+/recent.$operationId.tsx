@@ -80,6 +80,7 @@ export default function OperationRoute() {
 
   return (
     <JobOperation
+      key={operationId}
       backPath={path.to.recent}
       events={events}
       files={files}
