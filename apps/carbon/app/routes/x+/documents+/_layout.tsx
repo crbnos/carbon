@@ -1,7 +1,10 @@
 import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
-import { ContentSidebar } from "~/components/Layout/Navigation";
+import {
+  CollapsibleSidebarProvider,
+  ContentSidebar,
+} from "~/components/Layout/Navigation";
 import { useDocumentsSubmodules } from "~/modules/documents";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -20,11 +23,13 @@ export default function DocumentsRoute() {
   const { links } = useDocumentsSubmodules();
 
   return (
-    <div className="grid grid-cols-[auto_1fr] w-full h-full">
-      <ContentSidebar links={links} />
-      <VStack spacing={0} className="h-full">
-        <Outlet />
-      </VStack>
-    </div>
+    <CollapsibleSidebarProvider>
+      <div className="grid grid-cols-[auto_1fr] w-full h-full">
+        <ContentSidebar links={links} />
+        <VStack spacing={0} className="h-full">
+          <Outlet />
+        </VStack>
+      </div>
+    </CollapsibleSidebarProvider>
   );
 }

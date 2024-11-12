@@ -1,20 +1,66 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  useDisclosure,
-} from "@carbon/react";
+import { cn, IconButton, useDisclosure } from "@carbon/react";
 import { motion } from "framer-motion";
-import { useMemo, type PropsWithChildren } from "react";
-import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
+import type { ComponentProps, PropsWithChildren } from "react";
+import { createContext, forwardRef, useContext, useMemo } from "react";
+import { LuPanelLeft } from "react-icons/lu";
+
+interface CollapsibleSidebarContextValue {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const CollapsibleSidebarContext = createContext<
+  CollapsibleSidebarContextValue | undefined
+>(undefined);
+
+function useCollapsibleSidebar() {
+  const context = useContext(CollapsibleSidebarContext);
+  if (!context) {
+    throw new Error(
+      "useCollapsibleSidebar must be used within CollapsibleSidebarProvider"
+    );
+  }
+  return context;
+}
+
+export function CollapsibleSidebarProvider({ children }: PropsWithChildren) {
+  const disclosure = useDisclosure({ defaultIsOpen: true });
+
+  return (
+    <CollapsibleSidebarContext.Provider
+      value={{ isOpen: disclosure.isOpen, onToggle: disclosure.onToggle }}
+    >
+      {children}
+    </CollapsibleSidebarContext.Provider>
+  );
+}
+
+export const CollapsibleSidebarTrigger = forwardRef<
+  HTMLButtonElement,
+  Omit<ComponentProps<typeof IconButton>, "aria-label" | "icon">
+>(({ className, ...props }, ref) => {
+  const { isOpen, onToggle } = useCollapsibleSidebar();
+
+  return (
+    <IconButton
+      variant="ghost"
+      ref={ref}
+      onClick={onToggle}
+      {...props}
+      aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+      icon={<LuPanelLeft />}
+      className={cn("-ml-1", className)}
+    />
+  );
+});
+
+CollapsibleSidebarTrigger.displayName = "CollapsibleSidebarTrigger";
 
 export const CollapsibleSidebar = ({
   children,
   width = 180,
 }: PropsWithChildren<{ width?: number }>) => {
-  const sidebar = useDisclosure({
-    defaultIsOpen: true,
-  });
+  const { isOpen } = useCollapsibleSidebar();
 
   const variants = useMemo(() => {
     return {
@@ -29,34 +75,14 @@ export const CollapsibleSidebar = ({
 
   return (
     <motion.div
-      animate={sidebar.isOpen ? "visible" : "hidden"}
+      animate={isOpen ? "visible" : "hidden"}
       initial={variants.visible}
       transition={{ duration: 0.2, ease: "easeInOut" }}
       variants={variants}
       className="relative flex h-[calc(100vh-49px)]"
     >
       <div className="h-full w-full overflow-y-scroll bg-card border-r border-border">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={sidebar.onToggle}
-              aria-label="Toggle sidebar"
-              className="bg-transparent inline-block absolute top-[calc(100vh-135px)] text-muted-foreground right-[-31px] left-auto rounded-l-none z-[3] shadow-none w-8 h-8"
-            >
-              {sidebar.isOpen ? (
-                <LuPanelLeftClose className="w-5 h-5 ml-1.5" />
-              ) : (
-                <LuPanelLeftOpen className="w-5 h-5 ml-1.5" />
-              )}
-            </button>
-          </TooltipTrigger>
-
-          <TooltipContent side="right">
-            {<span>{sidebar.isOpen ? "Collapse" : "Expand"}</span>}
-          </TooltipContent>
-        </Tooltip>
-
-        {sidebar.isOpen ? children : null}
+        {isOpen ? children : null}
       </div>
     </motion.div>
   );

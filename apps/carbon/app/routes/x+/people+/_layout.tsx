@@ -2,6 +2,7 @@ import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
+import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import { usePeopleSubmodules } from "~/modules/people";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -20,11 +21,13 @@ export default function PeopleRoute() {
   const { groups } = usePeopleSubmodules();
 
   return (
-    <div className="grid grid-cols-[auto_1fr] w-full h-full">
-      <GroupedContentSidebar groups={groups} />
-      <VStack spacing={0} className="h-full">
-        <Outlet />
-      </VStack>
-    </div>
+    <CollapsibleSidebarProvider>
+      <div className="grid grid-cols-[auto_1fr] w-full h-full">
+        <GroupedContentSidebar groups={groups} />
+        <VStack spacing={0} className="h-full">
+          <Outlet />
+        </VStack>
+      </div>
+    </CollapsibleSidebarProvider>
   );
 }

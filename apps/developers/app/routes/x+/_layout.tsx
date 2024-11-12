@@ -1,4 +1,9 @@
-import { Toaster, TooltipProvider } from "@carbon/react";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+  Toaster,
+} from "@carbon/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -16,8 +21,9 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import { PrimaryNavigation, Topbar } from "~/components";
 
+import { AppSidebar } from "~/components/AppSidebar";
+import Breadcrumbs from "~/components/Breadcrumbs";
 import { path } from "~/utils/path";
 
 export const ERP_URL = VERCEL_URL?.includes("localhost")
@@ -81,31 +87,23 @@ export default function AuthenticatedRoute() {
 
   return (
     <CarbonProvider session={session}>
-      <TooltipProvider>
-        <div className="min-h-full flex flex-col">
-          <div className="flex-none" />
-          <div className="h-screen min-h-[0px] basis-0 flex-1">
-            <div className="flex h-full">
-              <div className="flex w-full h-full">
-                <div className="w-full h-full flex-1 overflow-hidden">
-                  <main className="h-full flex flex-col flex-1 max-w-screen sm:max-w-screen overflow-x-hidden bg-background">
-                    <Topbar />
-                    <main className="grid grid-cols-[auto_1fr] overflow-hidden h-[calc(100vh-49px)]">
-                      <PrimaryNavigation />
-                      <main className="flex-1 h-[calc(100vh-49px)] w-full overflow-hidden p-2 pt-0">
-                        <div className="flex-1 h-full w-full overflow-y-auto border-border border bg-muted rounded-lg">
-                          <Outlet />
-                        </div>
-                      </main>
-                    </main>
-                  </main>
-                </div>
-              </div>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Breadcrumbs />
+            </div>
+          </header>
+          <div className="flex flex-1 flex-col">
+            <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min">
+              <Outlet />
             </div>
           </div>
-        </div>
+        </SidebarInset>
         <Toaster position="bottom-right" />
-      </TooltipProvider>
+      </SidebarProvider>
     </CarbonProvider>
   );
 }

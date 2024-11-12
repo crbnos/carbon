@@ -20,7 +20,7 @@ import {
   ModalTitle,
   VStack,
   useDisclosure,
-  useWindowSize,
+  useIsMobile,
 } from "@carbon/react";
 import { Form, Link, useMatches } from "@remix-run/react";
 import { BsFillHexagonFill } from "react-icons/bs";
@@ -65,12 +65,12 @@ const Breadcrumbs = () => {
     })
     .filter(Boolean);
 
-  const { width } = useWindowSize();
+  const isMobile = useIsMobile();
 
   return (
     <HStack className="items-center h-full -ml-2" spacing={0}>
       <BreadcrumbsBase className="line-clamp-1">
-        {width && width <= 640 ? (
+        {isMobile ? (
           <BreadcrumbItem>
             <Button isIcon asChild variant="ghost">
               <Link to="/">

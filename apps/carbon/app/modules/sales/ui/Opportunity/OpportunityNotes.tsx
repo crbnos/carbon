@@ -7,7 +7,6 @@ import {
   CardTitle,
   Editor,
   generateHTML,
-  HStack,
   toast,
   useThrottle,
 } from "@carbon/react";
@@ -77,28 +76,7 @@ const OpportunityNotes = ({
   if (!id) return null;
 
   return (
-    <HStack className="w-full justify-between items-stretch">
-      <Card>
-        <CardHeader>
-          <CardTitle>External Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {permissions.can("update", "sales") ? (
-            <Editor
-              initialValue={(externalNotes ?? {}) as JSONContent}
-              onUpload={onUploadImage}
-              onChange={onUpdateExternalNotes}
-            />
-          ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(externalNotes as JSONContent),
-              }}
-            />
-          )}
-        </CardContent>
-      </Card>
+    <>
       <Card>
         <CardHeader>
           <CardTitle>Internal Notes</CardTitle>
@@ -120,7 +98,28 @@ const OpportunityNotes = ({
           )}
         </CardContent>
       </Card>
-    </HStack>
+      <Card>
+        <CardHeader>
+          <CardTitle>External Notes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {permissions.can("update", "sales") ? (
+            <Editor
+              initialValue={(externalNotes ?? {}) as JSONContent}
+              onUpload={onUploadImage}
+              onChange={onUpdateExternalNotes}
+            />
+          ) : (
+            <div
+              className="prose dark:prose-invert"
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(externalNotes as JSONContent),
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 };
 

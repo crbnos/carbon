@@ -3,6 +3,7 @@ import { Outlet } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
 import { LuKey } from "react-icons/lu";
 import { GroupedContentSidebar } from "~/components/Layout";
+import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import { usePermissions } from "~/hooks";
 import { useSettingsSubmodules } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -32,11 +33,13 @@ export default function SettingsRoute() {
   }
 
   return (
-    <div className="grid grid-cols-[auto_1fr] w-full h-full">
-      <GroupedContentSidebar groups={groups} />
-      <VStack spacing={0} className="h-full">
-        <Outlet />
-      </VStack>
-    </div>
+    <CollapsibleSidebarProvider>
+      <div className="grid grid-cols-[auto_1fr] w-full h-full">
+        <GroupedContentSidebar groups={groups} />
+        <VStack spacing={0} className="h-full">
+          <Outlet />
+        </VStack>
+      </div>
+    </CollapsibleSidebarProvider>
   );
 }

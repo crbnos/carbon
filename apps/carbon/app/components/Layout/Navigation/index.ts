@@ -1,4 +1,8 @@
-import { CollapsibleSidebar } from "./CollapsibleSidebar";
+import {
+  CollapsibleSidebar,
+  CollapsibleSidebarProvider,
+  CollapsibleSidebarTrigger,
+} from "./CollapsibleSidebar";
 import ContentSidebar from "./ContentSidebar";
 import DetailSidebar from "./DetailSidebar";
 import DetailsTopbar from "./DetailsTopbar";
@@ -7,6 +11,8 @@ import PrimaryNavigation from "./PrimaryNavigation";
 
 export {
   CollapsibleSidebar,
+  CollapsibleSidebarProvider,
+  CollapsibleSidebarTrigger,
   ContentSidebar,
   DetailSidebar,
   DetailsTopbar,

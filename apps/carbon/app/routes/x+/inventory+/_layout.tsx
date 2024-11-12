@@ -3,6 +3,7 @@ import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
+import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import { getShelvesList, useInventorySubmodules } from "~/modules/inventory";
 import { getUnitOfMeasuresList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
@@ -41,11 +42,13 @@ export default function InventoryRoute() {
   const { groups } = useInventorySubmodules();
 
   return (
-    <div className="grid grid-cols-[auto_1fr] w-full h-full">
-      <GroupedContentSidebar groups={groups} />
-      <VStack spacing={0} className="h-full">
-        <Outlet />
-      </VStack>
-    </div>
+    <CollapsibleSidebarProvider>
+      <div className="grid grid-cols-[auto_1fr] w-full h-full">
+        <GroupedContentSidebar groups={groups} />
+        <VStack spacing={0} className="h-full">
+          <Outlet />
+        </VStack>
+      </div>
+    </CollapsibleSidebarProvider>
   );
 }

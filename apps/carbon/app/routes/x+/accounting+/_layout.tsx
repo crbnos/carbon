@@ -6,6 +6,7 @@ import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
+import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import {
   getAccountsList,
   getBaseCurrency,
@@ -56,11 +57,13 @@ export default function AccountingRoute() {
   const { groups } = useAccountingSubmodules();
 
   return (
-    <div className="grid grid-cols-[auto_1fr] w-full h-full">
-      <GroupedContentSidebar groups={groups} />
-      <VStack spacing={0} className="h-full">
-        <Outlet />
-      </VStack>
-    </div>
+    <CollapsibleSidebarProvider>
+      <div className="grid grid-cols-[auto_1fr] w-full h-full">
+        <GroupedContentSidebar groups={groups} />
+        <VStack spacing={0} className="h-full">
+          <Outlet />
+        </VStack>
+      </div>
+    </CollapsibleSidebarProvider>
   );
 }

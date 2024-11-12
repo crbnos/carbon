@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
 import { LuEye, LuTable2 } from "react-icons/lu";
 import { GroupedContentSidebar } from "~/components/Layout";
+import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import type { ValidLang } from "~/modules/api";
 import { useSelectedLang } from "~/modules/api";
 import DocsStyle from "~/styles/docs.css?url";
@@ -49,32 +50,34 @@ export default function ApiDocsRoute() {
   };
 
   return (
-    <div className="relative grid grid-cols-[auto_1fr] w-full h-full">
-      <div className="flex absolute top-4 right-4 z-50 gap-2">
-        <Button
-          variant={selectedLang === "js" ? "primary" : "secondary"}
-          onClick={() => {
-            onChangeLanguage("js");
-          }}
-        >
-          JS
-        </Button>
-        <Button
-          variant={selectedLang === "bash" ? "primary" : "secondary"}
-          onClick={() => {
-            onChangeLanguage("bash");
-          }}
-        >
-          Bash
-        </Button>
-      </div>
-      <GroupedContentSidebar groups={groups} width={270} exactMatch />
-      <div className="Docs Docs--api-page w-full h-full overflow-y-auto">
-        <div className="Docs--inner-wrapper pt-4">
-          <Outlet />
+    <CollapsibleSidebarProvider>
+      <div className="relative grid grid-cols-[auto_1fr] w-full h-full">
+        <div className="flex absolute top-4 right-4 z-50 gap-2">
+          <Button
+            variant={selectedLang === "js" ? "primary" : "secondary"}
+            onClick={() => {
+              onChangeLanguage("js");
+            }}
+          >
+            JS
+          </Button>
+          <Button
+            variant={selectedLang === "bash" ? "primary" : "secondary"}
+            onClick={() => {
+              onChangeLanguage("bash");
+            }}
+          >
+            Bash
+          </Button>
+        </div>
+        <GroupedContentSidebar groups={groups} width={270} exactMatch />
+        <div className="Docs Docs--api-page w-full h-full overflow-y-auto">
+          <div className="Docs--inner-wrapper pt-4">
+            <Outlet />
+          </div>
         </div>
       </div>
-    </div>
+    </CollapsibleSidebarProvider>
   );
 }
 

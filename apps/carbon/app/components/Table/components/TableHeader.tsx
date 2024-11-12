@@ -17,6 +17,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuFileEdit, LuImport, LuLock, LuZap } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
+import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
 import { useUrlParams } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import Columns from "./Columns";
@@ -76,6 +77,7 @@ const TableHeader = <T extends object>({
     <>
       <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full">
         <HStack>
+          <CollapsibleSidebarTrigger />
           {withSearch && (
             <SearchFilter param="search" size="sm" placeholder="Search" />
           )}
