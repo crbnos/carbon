@@ -41,7 +41,7 @@ import {
   VStack,
   type JSONContent,
 } from "@carbon/react";
-import { Await, Link, useFetcher } from "@remix-run/react";
+import { Await, Link, useFetcher, useParams } from "@remix-run/react";
 import type { ComponentProps, ReactNode } from "react";
 import {
   Suspense,
@@ -160,6 +160,7 @@ export const JobOperation = ({
   } = useActiveEvents(originalOperation, events);
 
   const mode = useMode();
+  const { operationId } = useParams();
 
   return (
     <OptionallyFullscreen
@@ -418,7 +419,7 @@ export const JobOperation = ({
             <div className="flex flex-col items-start justify-between w-full">
               <div className="flex flex-col gap-4 p-4 w-full">
                 <Heading size="h3">Materials</Heading>
-                <Suspense fallback={<TableSkeleton />}>
+                <Suspense key={operationId} fallback={<TableSkeleton />}>
                   <Await resolve={materials}>
                     {(resolvedMaterials) => (
                       <Table className="w-full">
@@ -477,7 +478,7 @@ export const JobOperation = ({
             <div className="flex flex-col items-start justify-between w-full">
               <div className="flex flex-col gap-4 p-4 w-full">
                 <Heading size="h3">Files</Heading>
-                <Suspense fallback={<TableSkeleton />}>
+                <Suspense key={operationId} fallback={<TableSkeleton />}>
                   <Await resolve={files}>
                     {(resolvedFiles) => (
                       <Table className="w-full">
@@ -1196,9 +1197,9 @@ function StartStopButton({
       <Hidden name="type" value={eventType} />
       <Hidden name="workCenterId" value={operation.workCenterId ?? undefined} />
       {isActive ? (
-        <PauseButton disabled={fetcher.state === "submitting"} type="submit" />
+        <PauseButton disabled={fetcher.state !== "idle"} type="submit" />
       ) : (
-        <PlayButton disabled={fetcher.state === "submitting"} type="submit" />
+        <PlayButton disabled={fetcher.state !== "idle"} type="submit" />
       )}
     </ValidatedForm>
   );
