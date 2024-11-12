@@ -96,6 +96,12 @@ function makeItem(operation: Operation): ItemWithData {
           <Badge>Outside</Badge>
         ) : (
           <>
+            {(operation?.setupTime ?? 0) > 0 && (
+              <Badge variant="secondary">
+                <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
+                {operation.setupTime} {operation.setupUnit}
+              </Badge>
+            )}
             {(operation?.laborTime ?? 0) > 0 && (
               <Badge variant="secondary">
                 <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />

@@ -1196,9 +1196,9 @@ function StartStopButton({
       <Hidden name="type" value={eventType} />
       <Hidden name="workCenterId" value={operation.workCenterId ?? undefined} />
       {isActive ? (
-        <PauseButton disabled={fetcher.state !== "idle"} type="submit" />
+        <PauseButton disabled={fetcher.state === "submitting"} type="submit" />
       ) : (
-        <PlayButton disabled={fetcher.state !== "idle"} type="submit" />
+        <PlayButton disabled={fetcher.state === "submitting"} type="submit" />
       )}
     </ValidatedForm>
   );
