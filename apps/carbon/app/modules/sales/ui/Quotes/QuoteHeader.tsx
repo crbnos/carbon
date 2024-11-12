@@ -1,5 +1,10 @@
 import {
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   Heading,
   Input,
@@ -18,6 +23,9 @@ import {
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
+  LuChevronDown,
+  LuExternalLink,
+  LuEye,
   LuFile,
   LuRefreshCw,
   LuShare,
@@ -87,15 +95,53 @@ const QuoteHeader = () => {
               className="h-8"
               isReadOnly={!permissions.can("update", "sales")}
             />
-            {routeData?.quote.externalLinkId && (
-              <Button
-                onClick={shareModal.onOpen}
-                leftIcon={<LuShare />}
-                variant="secondary"
-              >
-                Share
-              </Button>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  leftIcon={<LuEye />}
+                  variant="secondary"
+                  rightIcon={<LuChevronDown />}
+                >
+                  Preview
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {routeData?.quote.externalLinkId && (
+                  <DropdownMenuItem asChild>
+                    <a
+                      target="_blank"
+                      href={path.to.externalQuote(
+                        routeData.quote.externalLinkId
+                      )}
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuExternalLink />} />
+                      Digital Quote
+                    </a>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild>
+                  <a
+                    target="_blank"
+                    href={path.to.file.quote(quoteId)}
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuFile />} />
+                    PDF
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {routeData?.quote.externalLinkId &&
+              routeData?.quote.status === "Sent" && (
+                <Button
+                  onClick={shareModal.onOpen}
+                  leftIcon={<LuShare />}
+                  variant="secondary"
+                >
+                  Share
+                </Button>
+              )}
 
             {routeData?.quote?.status === "Draft" && (
               <>
@@ -314,13 +360,6 @@ function ShareQuoteModal({
           <Button variant="secondary" onClick={onClose}>
             Close
           </Button>
-          {id && (
-            <Button leftIcon={<LuFile />} asChild>
-              <a target="_blank" href={path.to.file.quote(id)} rel="noreferrer">
-                Preview PDF
-              </a>
-            </Button>
-          )}
         </ModalFooter>
       </ModalContent>
     </Modal>
