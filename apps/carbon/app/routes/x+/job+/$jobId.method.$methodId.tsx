@@ -1,12 +1,5 @@
 import type { JSONContent } from "@carbon/react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Spinner,
-  VStack,
-} from "@carbon/react";
+import { Spinner, VStack } from "@carbon/react";
 import {
   Await,
   defer,
@@ -121,14 +114,9 @@ export default function JobMakeMethodRoute() {
 
         <Suspense
           fallback={
-            <Card>
-              <CardHeader>
-                <CardTitle>Estimates vs Actual</CardTitle>
-              </CardHeader>
-              <CardContent className="flex items-center justify-center min-h-[200px]">
-                <Spinner />
-              </CardContent>
-            </Card>
+            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+              <Spinner className="h-10 w-10" />
+            </div>
           }
         >
           <Await resolve={productionData}>

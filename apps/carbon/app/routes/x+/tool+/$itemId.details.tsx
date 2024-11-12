@@ -2,7 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { Card, CardHeader, CardTitle, VStack } from "@carbon/react";
+import { Spinner, VStack } from "@carbon/react";
 import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
@@ -87,11 +87,9 @@ export default function ToolDetailsRoute() {
       {permissions.is("employee") && (
         <Suspense
           fallback={
-            <Card className="flex-grow">
-              <CardHeader>
-                <CardTitle>Files</CardTitle>
-              </CardHeader>
-            </Card>
+            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+              <Spinner className="h-10 w-10" />
+            </div>
           }
         >
           <Await resolve={toolData?.files}>

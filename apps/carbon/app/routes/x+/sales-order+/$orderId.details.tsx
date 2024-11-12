@@ -24,14 +24,7 @@ import {
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Spinner,
-  type JSONContent,
-} from "@carbon/react";
+import { Spinner, type JSONContent } from "@carbon/react";
 import { Suspense } from "react";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -205,16 +198,9 @@ export default function SalesOrderRoute() {
       <Suspense
         key={`documents-${orderId}`}
         fallback={
-          <Card>
-            <CardHeader>
-              <CardTitle>Files</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="min-h-[100px] flex items-center justify-center">
-                <Spinner />
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
         }
       >
         <Await resolve={orderData.files}>

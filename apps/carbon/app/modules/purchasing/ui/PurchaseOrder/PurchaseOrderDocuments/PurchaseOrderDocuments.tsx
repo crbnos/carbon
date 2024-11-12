@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Spinner,
   Table,
   Tbody,
   Td,
@@ -71,7 +72,13 @@ const PurchaseOrderDocuments = ({
               </Tr>
             </Thead>
             <Tbody>
-              <Suspense fallback={null}>
+              <Suspense
+                fallback={
+                  <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+                    <Spinner className="h-10 w-10" />
+                  </div>
+                }
+              >
                 <Await resolve={attachments}>
                   {(resolvedAttachments: PurchaseOrderAttachment[]) => {
                     if (!resolvedAttachments.length) {
