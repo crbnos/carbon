@@ -2,13 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Spinner,
-} from "@carbon/react";
+import { Spinner } from "@carbon/react";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
@@ -131,16 +125,9 @@ export default function SalesRFQLine() {
 
         <Suspense
           fallback={
-            <Card>
-              <CardHeader>
-                <CardTitle>Files</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="min-h-[100px] flex items-center justify-center">
-                  <Spinner />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+              <Spinner className="h-10 w-10" />
+            </div>
           }
         >
           <Await resolve={files}>

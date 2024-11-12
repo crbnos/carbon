@@ -3,14 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Spinner,
-  VStack,
-} from "@carbon/react";
+import { Spinner, VStack } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { Await, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
@@ -120,16 +113,9 @@ export default function SalesRFQDetailsRoute() {
       <Suspense
         key={`documents-${rfqId}`}
         fallback={
-          <Card>
-            <CardHeader>
-              <CardTitle>Files</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="min-h-[100px] flex items-center justify-center">
-                <Spinner />
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex w-full min-h-[480px] h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
         }
       >
         <Await resolve={rfqData.files}>
