@@ -154,17 +154,6 @@ export const notifyTask = task({
     }
 
     if (payload.recipient.type === "user") {
-      const user = await client
-        .from("user")
-        .select("*")
-        .eq("id", payload.recipient.userId)
-        .single();
-
-      if (user.error) {
-        console.error("Failed to get user", user.error);
-        throw user.error;
-      }
-
       try {
         await trigger(novu, {
           workflow,
@@ -177,12 +166,8 @@ export const notifyTask = task({
           user: {
             subscriberId: getSubscriberId({
               companyId: payload.companyId,
-              userId: user.data.id,
+              userId: payload.recipient.userId,
             }),
-            email: user.data.email,
-            fullName: user.data.fullName ?? "",
-            avatarUrl: user.data.avatarUrl ?? undefined,
-            companyId: payload.companyId,
           },
         });
       } catch (error) {
@@ -213,30 +198,20 @@ export const notifyTask = task({
         return;
       }
 
-      const users = await client
-        .from("user")
-        .select("*")
-        .in("id", [...new Set(userIds.data as string[])]);
-
       const notificationPayloads: TriggerPayload[] =
-        users.data?.map((user) => ({
+        [...new Set(userIds.data as string[])].map((userId) => ({
           workflow,
           payload: {
             recordId: payload.documentId,
             description,
             event: payload.event,
-            link: "#",
             from: payload.from,
           },
           user: {
             subscriberId: getSubscriberId({
               companyId: payload.companyId,
-              userId: user.id,
+              userId: userId,
             }),
-            email: user.email,
-            fullName: user.fullName ?? "",
-            avatarUrl: user.avatarUrl ?? undefined,
-            companyId: payload.companyId,
           },
         })) ?? [];
 

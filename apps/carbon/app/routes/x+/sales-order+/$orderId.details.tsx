@@ -166,6 +166,7 @@ export default function SalesOrderRoute() {
     exchangeRate: orderData?.salesOrder?.exchangeRate ?? undefined,
     exchangeRateUpdatedAt: orderData?.salesOrder?.exchangeRateUpdatedAt ?? "",
     originatedFromQuote: originatedFromQuote,
+    salesPersonId: orderData?.salesOrder?.salesPersonId ?? "",
     ...getCustomFields(orderData?.salesOrder?.customFields),
   };
 

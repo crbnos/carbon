@@ -124,6 +124,7 @@ serve(async (req: Request) => {
                 customerLocationId: quote.data.customerLocationId,
                 customerReference: quote.data.customerReference,
                 locationId: quote.data.locationId,
+                salesPersonId: quote.data.salesPersonId ?? userId,
                 status: "Confirmed",
                 createdBy: userId,
                 companyId: companyId,
@@ -479,7 +480,7 @@ serve(async (req: Request) => {
                 expirationDate: toCalendarDate(
                   now(getLocalTimeZone()).add({ days: 30 })
                 ).toString(),
-                salesPersonId: salesRfq.data?.createdBy,
+                salesPersonId: salesRfq.data?.salesPersonId ?? userId,
                 status: "Draft",
                 externalNotes: salesRfq.data?.externalNotes,
                 internalNotes: salesRfq.data?.internalNotes,

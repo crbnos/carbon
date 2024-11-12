@@ -27,6 +27,7 @@ export default function ModelRoute() {
     <div className="w-screen h-screen bg-white p-0 m-0">
       <ModelViewer
         mode="light"
+        key={model.modelPath}
         file={null}
         url={getPublicModelUrl(model.modelPath)}
       />

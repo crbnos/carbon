@@ -550,6 +550,7 @@ export const JobOperation = ({
           <div className="h-[calc(100vh-156px)] md:h-[calc(100vh-104px)] p-4">
             <ModelViewer
               file={null}
+              key={operation.itemModelPath ?? job.modelPath}
               url={`/file/preview/private/${
                 operation.itemModelPath ?? job.modelPath
               }`}

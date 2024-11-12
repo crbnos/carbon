@@ -17,6 +17,7 @@ import {
   CustomerContact,
   CustomerLocation,
   DatePicker,
+  Employee,
   Hidden,
   Input,
   Location,
@@ -100,6 +101,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 isDisabled={isCustomer}
               />
               <Location name="locationId" label="RFQ Location" />
+              <Employee name="salesPersonId" label="Sales Person" isOptional />
               <CustomFormFields table="salesRfq" />
             </div>
           </VStack>

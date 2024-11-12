@@ -5,6 +5,7 @@ const API_ENDPOINT = "https://api.novu.co/v1";
 export enum NotificationWorkflow {
   Assignment = "assignment",
   DigitalQuoteResponse = "digital-quote-response",
+  Expiration = "expiration",
 }
 
 export enum NotificationEvent {
@@ -13,19 +14,17 @@ export enum NotificationEvent {
   SalesOrderAssignment = "sales-order-assignment",
   JobAssignment = "job-assignment",
   DigitalQuoteResponse = "digital-quote-response",
+  QuoteExpired = "quote-expired",
 }
 
 export enum NotificationType {
   AssignmentInApp = "assignment-in-app",
   DigitalQuoteResponseInApp = "digital-quote-response-in-app",
+  ExpirationInApp = "expiration-in-app",
 }
 
 export type TriggerUser = {
   subscriberId: string;
-  email: string;
-  fullName: string;
-  avatarUrl?: string;
-  companyId: string;
 };
 
 export type NotificationPayload = {

@@ -5,6 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Label,
   ScrollArea,
   toast,
   VStack,
@@ -95,9 +96,7 @@ export default function SalesSettingsRoute() {
           >
             <input type="hidden" name="intent" value="digitalQuote" />
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Digital Quote
-              </CardTitle>
+              <CardTitle className="flex items-center gap-2">Quotes</CardTitle>
               <CardDescription>
                 Enable digital quotes for your company. This will allow you to
                 send digital quotes to your customers, and allow them to accept
@@ -105,12 +104,21 @@ export default function SalesSettingsRoute() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col gap-4 max-w-[400px]">
-                <Boolean name="digitalQuoteEnabled" description="Enabled" />
-                <Users
-                  name="digitalQuoteNotificationGroup"
-                  label="Who should receive notifications when a digital quote is accepted?"
-                />
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Label>Digital Quotes</Label>
+                  <Boolean
+                    name="digitalQuoteEnabled"
+                    description="Digital Quotes Enabled"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>Notifications</Label>
+                  <Users
+                    name="digitalQuoteNotificationGroup"
+                    label="Who should receive notifications when a digital quote is accepted or expired?"
+                  />
+                </div>
               </div>
             </CardContent>
             <CardFooter>

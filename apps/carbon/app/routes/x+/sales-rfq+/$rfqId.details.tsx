@@ -94,6 +94,8 @@ export default function SalesRFQDetailsRoute() {
       : "",
     rfqId: rfqData?.rfqSummary?.rfqId ?? "",
     status: rfqData?.rfqSummary?.status ?? ("Draft" as SalesRFQStatusType),
+    salesPersonId: rfqData?.rfqSummary?.salesPersonId ?? "",
+
     ...getCustomFields(rfqData.rfqSummary?.customFields ?? {}),
   };
 

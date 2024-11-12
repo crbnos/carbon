@@ -16475,6 +16475,7 @@ export type Database = {
           orderDate: string
           revisionId: number
           salesOrderId: string
+          salesPersonId: string | null
           status: Database["public"]["Enums"]["salesOrderStatus"]
           updatedAt: string | null
           updatedBy: string | null
@@ -16501,6 +16502,7 @@ export type Database = {
           orderDate?: string
           revisionId?: number
           salesOrderId: string
+          salesPersonId?: string | null
           status?: Database["public"]["Enums"]["salesOrderStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -16527,6 +16529,7 @@ export type Database = {
           orderDate?: string
           revisionId?: number
           salesOrderId?: string
+          salesPersonId?: string | null
           status?: Database["public"]["Enums"]["salesOrderStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -17635,6 +17638,7 @@ export type Database = {
           revisionId: number
           rfqDate: string
           rfqId: string
+          salesPersonId: string | null
           status: Database["public"]["Enums"]["salesRfqStatus"]
           updatedAt: string | null
           updatedBy: string | null
@@ -17658,6 +17662,7 @@ export type Database = {
           revisionId?: number
           rfqDate: string
           rfqId: string
+          salesPersonId?: string | null
           status?: Database["public"]["Enums"]["salesRfqStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -17681,6 +17686,7 @@ export type Database = {
           revisionId?: number
           rfqDate?: string
           rfqId?: string
+          salesPersonId?: string | null
           status?: Database["public"]["Enums"]["salesRfqStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -25049,14 +25055,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -27749,6 +27755,7 @@ export type Database = {
           receiptRequestedDate: string | null
           revisionId: number | null
           salesOrderId: string | null
+          salesPersonId: string | null
           shippingMethodName: string | null
           shippingTermName: string | null
           status: Database["public"]["Enums"]["salesOrderStatus"] | null
@@ -28168,6 +28175,7 @@ export type Database = {
           rfqDate: string | null
           rfqId: string | null
           salesOrderId: string | null
+          salesPersonId: string | null
           status: Database["public"]["Enums"]["salesRfqStatus"] | null
           updatedAt: string | null
           updatedBy: string | null

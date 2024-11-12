@@ -521,6 +521,7 @@ export const salesOrderValidator = z.object({
   currencyCode: zfd.text(z.string()),
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional()),
+  salesPersonId: zfd.text(z.string().optional()),
 });
 
 export const salesOrderShipmentValidator = z
@@ -660,6 +661,7 @@ export const salesRfqValidator = z.object({
   locationId: zfd.text(z.string().optional()),
   rfqDate: z.string().min(1, { message: "Order Date is required" }),
   status: z.enum(salesRFQStatusType).optional(),
+  salesPersonId: zfd.text(z.string().optional()),
 });
 
 export const salesRfqDragValidator = z.object({

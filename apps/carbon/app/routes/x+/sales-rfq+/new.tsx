@@ -69,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function SalesRFQNewRoute() {
-  const { defaults } = useUser();
+  const { id: userId, defaults } = useUser();
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
   const initialValues = {
@@ -82,6 +82,7 @@ export default function SalesRFQNewRoute() {
     rfqDate: today(getLocalTimeZone()).toString(),
     rfqId: undefined,
     status: "Draft" as SalesRFQStatusType,
+    salesPersonId: userId,
   };
 
   return (

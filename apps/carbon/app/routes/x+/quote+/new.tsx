@@ -66,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function QuoteNewRoute() {
-  const { defaults } = useUser();
+  const { id: userId, defaults } = useUser();
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
   const initialValues = {
@@ -80,6 +80,7 @@ export default function QuoteNewRoute() {
     locationId: defaults?.locationId ?? "",
     quoteId: undefined,
     status: "Draft" as QuotationStatusType,
+    salesPersonId: userId,
     currencyCode: undefined,
     exchangeRate: undefined,
     exchangeRateUpdatedAt: "",

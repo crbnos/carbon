@@ -186,6 +186,7 @@ const CadModel = ({
       {() => {
         return file || modelPath ? (
           <ModelViewer
+            key={modelPath}
             file={file}
             url={modelPath ? getPrivateUrl(modelPath) : null}
             mode={mode}

@@ -95,13 +95,9 @@ const OpportunityState = ({ opportunity }: { opportunity: Opportunity }) => {
                 {getStateIcon(isCompleted)({
                   className: cn(
                     "w-8 h-8 muted-foreground",
-                    isStarted &&
-                      isCurrent &&
-                      "text-emerald-100  dark:text-emerald-400",
-                    isStarted &&
-                      !isCurrent &&
-                      "text-emerald-600  dark:text-emerald-400",
-                    !isStarted && "text-muted-foreground"
+                    isStarted && isCurrent
+                      ? "text-emerald-100  dark:text-emerald-400"
+                      : "text-muted-foreground"
                   ),
                 })}
               </div>

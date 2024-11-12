@@ -44,3 +44,14 @@ export const digitalQuoteResponseWorkflow = workflow(
     payloadSchema,
   }
 );
+
+export const expirationWorkflow = workflow(
+  NotificationWorkflow.Expiration,
+  async ({ payload, step }) => {
+    await step.inApp(NotificationType.ExpirationInApp, () => ({
+      body: "Expired",
+      payload,
+    }));
+  },
+  { payloadSchema }
+);

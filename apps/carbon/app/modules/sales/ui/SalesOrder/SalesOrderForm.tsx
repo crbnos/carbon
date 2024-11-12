@@ -22,6 +22,7 @@ import {
   CustomerContact,
   CustomerLocation,
   DatePicker,
+  Employee,
   Hidden,
   Input,
   Location,
@@ -149,6 +150,8 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
               />
 
               <Location name="locationId" label="Sales Location" />
+
+              <Employee name="salesPersonId" label="Sales Person" />
 
               <Currency
                 name="currencyCode"

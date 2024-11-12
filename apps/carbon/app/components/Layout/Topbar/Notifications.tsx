@@ -18,6 +18,7 @@ import { Link } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import {
   LuBell,
+  LuCalendarX,
   LuDollarSign,
   LuHammer,
   LuInbox,
@@ -156,6 +157,14 @@ function GenericNotification({
       return (
         <Notification
           icon={<LuDollarSign />}
+          to={path.to.quoteDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.QuoteExpired:
+      return (
+        <Notification
+          icon={<LuCalendarX />}
           to={path.to.quoteDetails(id)}
           {...props}
         />

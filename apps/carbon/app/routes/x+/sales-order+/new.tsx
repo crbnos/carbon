@@ -76,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function SalesOrderNewRoute() {
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
-  const { company } = useUser();
+  const { id: userId, company } = useUser();
   const initialValues = {
     id: undefined,
     salesOrderId: undefined,
@@ -84,6 +84,7 @@ export default function SalesOrderNewRoute() {
     orderDate: today(getLocalTimeZone()).toString(),
     status: "Draft" as SalesOrderStatus,
     currencyCode: company?.baseCurrencyCode ?? "USD",
+    salesPersonId: userId,
     exchangeRate: undefined,
     exchangeRateUpdatedAt: "",
     originatedFromQuote: false,
