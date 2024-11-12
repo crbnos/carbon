@@ -17,10 +17,7 @@ import Tailwind from "~/styles/tailwind.css?url";
 export const config = { runtime: "edge" };
 
 export function links() {
-  return [
-    { rel: "stylesheet", href: Tailwind },
-    { rel: "stylesheet", href: "/assets/theme.css" },
-  ];
+  return [{ rel: "stylesheet", href: Tailwind }];
 }
 
 export const meta: MetaFunction = () => {

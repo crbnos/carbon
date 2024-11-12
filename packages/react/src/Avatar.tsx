@@ -85,7 +85,7 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
         <>
           {avatarInitials ? (
             <span
-              className="text-foreground"
+              className="text-foreground no-underline"
               style={name ? { color } : undefined}
             >
               {avatarInitials}

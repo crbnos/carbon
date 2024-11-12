@@ -15,6 +15,7 @@ const payloadSchema = z.object({
     NotificationEvent.SalesOrderAssignment,
     NotificationEvent.JobAssignment,
     NotificationEvent.DigitalQuoteResponse,
+    NotificationEvent.QuoteExpired,
   ]),
   from: z.string().optional(),
 });
