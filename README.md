@@ -1,4 +1,3 @@
-
 ![CarbonOS](https://github.com/user-attachments/assets/664eb49a-f873-49f8-bb6f-95a94ba89f97)
 
 Carbon is the operating system for manufacturing. It allows customers, suppliers, and employees to share a common platform that's easy to integrate with.
@@ -83,7 +82,9 @@ After installation you should be able to access the following apps/containers lo
 | Application     | URL                                                                                                                |
 | --------------- | ------------------------------------------------------------------------------------------------------------------ |
 | ERP             | [http://localhost:3000](http://localhost:3000)                                                                     |
-| MES             | [http://localhost:4000](http://localhost:4000)                                                                     |
+| Developers      | [http://localhost:3001](http://localhost:3001)                                                                     |
+| MES             | [http://localhost:3002](http://localhost:3002)                                                                     |
+| Website         | [http://localhost:4002](http://localhost:4002)                                                                     |
 | Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
 | Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |
 | Inbucket        | [http://localhost:54324/monitor](http://localhost:54324/monitor)                                                   |
@@ -175,11 +176,4 @@ For example, to run test command in the `@carbon/react` package you can run:
 
 ```
 $ npm run test -w @carbon/react
-```
-
-### Or run with the `launcher.sh` script
-
-```
-chmod +x launcher.sh # make the file executable
-./launcher.sh
 ```
