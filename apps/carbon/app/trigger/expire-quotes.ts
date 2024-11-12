@@ -14,8 +14,8 @@ const novu = new Novu(NOVU_SECRET_KEY!);
 
 export const expireQuotes = schedules.task({
   id: "expire-quotes",
-  // Run at 9am, 2pm, and 7pm every day
-  cron: "0 9,14,19 * * *",
+  // Run at 7am, 12pm, and 5pm every day
+  cron: "0 7,12,17 * * *",
   run: async () => {
     console.log(
       `🕒 Quote Expiration Check Started: ${new Date().toISOString()}`
