@@ -303,7 +303,10 @@ export async function getItemFiles(
   itemId: string,
   companyId: string
 ) {
-  return client.storage.from("private").list(`${companyId}/parts/${itemId}`);
+  const result = await client.storage
+    .from("private")
+    .list(`${companyId}/parts/${itemId}`);
+  return result.data || [];
 }
 
 export async function getItemPostingGroup(

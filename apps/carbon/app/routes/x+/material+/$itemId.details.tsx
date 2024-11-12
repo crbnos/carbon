@@ -2,10 +2,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { Card, CardHeader, CardTitle, VStack } from "@carbon/react";
+import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, Material } from "~/modules/items";
 import {
@@ -64,7 +65,7 @@ export default function MaterialDetailsRoute() {
 
   const materialData = useRouteData<{
     materialSummary: Material;
-    files: ItemFile[];
+    files: Promise<ItemFile[]>;
     forms: ListItem[];
     substances: ListItem[];
   }>(path.to.material(itemId));
@@ -99,11 +100,25 @@ export default function MaterialDetailsRoute() {
         initialValues={materialInitialValues}
       />
       {permissions.is("employee") && (
-        <ItemDocuments
-          files={materialData?.files ?? []}
-          itemId={itemId}
-          type="Material"
-        />
+        <Suspense
+          fallback={
+            <Card className="flex-grow">
+              <CardHeader>
+                <CardTitle>Files</CardTitle>
+              </CardHeader>
+            </Card>
+          }
+        >
+          <Await resolve={materialData?.files}>
+            {(files) => (
+              <ItemDocuments
+                files={files ?? []}
+                itemId={itemId}
+                type="Material"
+              />
+            )}
+          </Await>
+        </Suspense>
       )}
     </VStack>
   );

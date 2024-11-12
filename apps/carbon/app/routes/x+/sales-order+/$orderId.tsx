@@ -11,7 +11,7 @@ import {
 } from "@carbon/react";
 import { Outlet, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
 import {
   getCustomer,
   getOpportunityBySalesOrder,
@@ -46,11 +46,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
-  const files = await getOpportunityDocuments(
-    client,
-    companyId,
-    opportunity.data.id
-  );
 
   if (salesOrder.error) {
     throw redirect(
@@ -63,10 +58,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? await getCustomer(client, salesOrder.data.customerId)
     : null;
 
-  return json({
+  return defer({
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
-    files: files.data ?? [],
+    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
   });

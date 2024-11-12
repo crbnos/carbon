@@ -2,10 +2,17 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+} from "@carbon/react";
+import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
-import { Fragment } from "react";
+import { defer, redirect } from "@vercel/remix";
+import { Fragment, Suspense } from "react";
 import { CadModel } from "~/components";
 import { usePermissions } from "~/hooks";
 import {
@@ -29,10 +36,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const [line, files] = await Promise.all([
-    getSalesRFQLine(client, lineId),
-    getOpportunityLineDocuments(client, companyId, lineId),
-  ]);
+  const [line] = await Promise.all([getSalesRFQLine(client, lineId)]);
 
   if (line.error) {
     throw redirect(
@@ -41,9 +45,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     );
   }
 
-  return json({
+  return defer({
     line: line.data,
-    files: files?.data ?? [],
+    files: getOpportunityLineDocuments(client, companyId, lineId),
   });
 };
 
@@ -124,13 +128,33 @@ export default function SalesRFQLine() {
           uploadClassName="min-h-[420px]"
           viewerClassName="min-h-[420px]"
         />
-        <OpportunityLineDocuments
-          files={files ?? []}
-          id={rfqId}
-          lineId={lineId}
-          modelUpload={line ?? undefined}
-          type="Request for Quote"
-        />
+
+        <Suspense
+          fallback={
+            <Card>
+              <CardHeader>
+                <CardTitle>Files</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="min-h-[100px] flex items-center justify-center">
+                  <Spinner />
+                </div>
+              </CardContent>
+            </Card>
+          }
+        >
+          <Await resolve={files}>
+            {(resolvedFiles) => (
+              <OpportunityLineDocuments
+                files={resolvedFiles ?? []}
+                id={rfqId}
+                lineId={lineId}
+                modelUpload={line ?? undefined}
+                type="Request for Quote"
+              />
+            )}
+          </Await>
+        </Suspense>
       </div>
       <SalesRFQLineNotes line={line} />
 

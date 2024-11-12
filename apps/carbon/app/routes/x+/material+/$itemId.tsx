@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
 import {
   MaterialHeader,
   MaterialProperties,
@@ -30,9 +30,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [materialSummary, files, buyMethods, pickMethods] = await Promise.all([
+  const [materialSummary, buyMethods, pickMethods] = await Promise.all([
     getMaterial(client, itemId, companyId),
-    getItemFiles(client, itemId, companyId),
     getBuyMethods(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
   ]);
@@ -47,9 +46,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     materialSummary: materialSummary.data,
-    files: files.data ?? [],
+    files: getItemFiles(client, itemId, companyId),
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
   });

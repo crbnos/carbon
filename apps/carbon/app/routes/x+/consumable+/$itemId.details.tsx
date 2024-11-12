@@ -2,10 +2,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { Card, CardHeader, CardTitle, VStack } from "@carbon/react";
+import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Consumable, ItemFile } from "~/modules/items";
 import {
@@ -63,7 +64,7 @@ export default function ConsumableDetailsRoute() {
 
   const consumableData = useRouteData<{
     consumableSummary: Consumable;
-    files: ItemFile[];
+    files: Promise<ItemFile[]>;
   }>(path.to.consumable(itemId));
   if (!consumableData) throw new Error("Could not find consumable data");
 
@@ -91,11 +92,25 @@ export default function ConsumableDetailsRoute() {
         initialValues={consumableInitialValues}
       />
       {permissions.is("employee") && (
-        <ItemDocuments
-          files={consumableData?.files ?? []}
-          itemId={itemId}
-          type="Consumable"
-        />
+        <Suspense
+          fallback={
+            <Card className="flex-grow">
+              <CardHeader>
+                <CardTitle>Files</CardTitle>
+              </CardHeader>
+            </Card>
+          }
+        >
+          <Await resolve={consumableData?.files}>
+            {(files) => (
+              <ItemDocuments
+                files={files ?? []}
+                itemId={itemId}
+                type="Consumable"
+              />
+            )}
+          </Await>
+        </Suspense>
       )}
     </VStack>
   );

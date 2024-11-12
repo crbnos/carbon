@@ -15,11 +15,7 @@ type Props = {
   internalDocuments?: number;
 };
 
-export function usePurchaseOrderSidebar({
-  lines = 0,
-  internalDocuments = 0,
-  externalDocuments = 0,
-}: Props) {
+export function usePurchaseOrderSidebar({ lines = 0 }: Props) {
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
 
@@ -56,7 +52,6 @@ export function usePurchaseOrderSidebar({
       name: "Internal Documents",
       to: path.to.purchaseOrderInternalDocuments(orderId),
       role: ["employee"],
-      count: internalDocuments,
       icon: <HiOutlineDocumentArrowDown />,
       shortcut: "Command+Shift+i",
     },
@@ -64,7 +59,6 @@ export function usePurchaseOrderSidebar({
       name: "External Documents",
       to: path.to.purchaseOrderExternalDocuments(orderId),
       role: ["employee", "supplier"],
-      count: externalDocuments,
       icon: <HiOutlineDocumentArrowUp />,
       shortcut: "Command+Shift+e",
     },

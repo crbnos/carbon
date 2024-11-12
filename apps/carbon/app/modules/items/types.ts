@@ -57,7 +57,7 @@ export type ItemCostingMethod =
   Database["public"]["Enums"]["itemCostingMethod"];
 
 export type ItemFile = NonNullable<
-  Awaited<ReturnType<typeof getItemFiles>>["data"]
+  Awaited<ReturnType<typeof getItemFiles>>
 >[number];
 
 export type ItemPostingGroup = NonNullable<

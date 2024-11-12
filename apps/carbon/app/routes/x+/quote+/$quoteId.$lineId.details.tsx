@@ -2,10 +2,17 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+} from "@carbon/react";
+import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
-import { Fragment, useMemo } from "react";
+import { defer, redirect } from "@vercel/remix";
+import { Fragment, Suspense, useMemo } from "react";
 import { CadModel } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
@@ -40,10 +47,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const [line, operations, files, prices] = await Promise.all([
+  const [line, operations, prices] = await Promise.all([
     getQuoteLine(client, lineId),
     getQuoteOperationsByLine(client, lineId),
-    getOpportunityLineDocuments(client, companyId, lineId),
     getQuoteLinePrices(client, lineId),
   ]);
 
@@ -54,10 +60,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     );
   }
 
-  return json({
+  return defer({
     line: line.data,
     operations: operations?.data ?? [],
-    files: files?.data ?? [],
+    files: getOpportunityLineDocuments(client, companyId, lineId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, QuotationPrice>
     >((acc, price) => {
@@ -169,13 +175,32 @@ export default function QuoteLine() {
           uploadClassName="min-h-[420px]"
           viewerClassName="min-h-[420px]"
         />
-        <OpportunityLineDocuments
-          files={files ?? []}
-          id={quoteId}
-          lineId={lineId}
-          modelUpload={line ?? undefined}
-          type="Quote"
-        />
+        <Suspense
+          fallback={
+            <Card>
+              <CardHeader>
+                <CardTitle>Files</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="min-h-[100px] flex items-center justify-center">
+                  <Spinner />
+                </div>
+              </CardContent>
+            </Card>
+          }
+        >
+          <Await resolve={files}>
+            {(resolvedFiles) => (
+              <OpportunityLineDocuments
+                files={resolvedFiles ?? []}
+                id={quoteId}
+                lineId={lineId}
+                modelUpload={line ?? undefined}
+                type="Quote"
+              />
+            )}
+          </Await>
+        </Suspense>
       </div>
       <QuoteLineNotes line={line} />
       {line.methodType === "Make" && line.status !== "No Quote" && (

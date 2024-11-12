@@ -14,8 +14,8 @@ import {
   cn,
   toast,
 } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
-import { useCallback, useEffect } from "react";
+import { Await, useFetcher, useParams } from "@remix-run/react";
+import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -39,7 +39,7 @@ const MaterialProperties = () => {
   );
   const routeData = useRouteData<{
     materialSummary: Material;
-    files: ItemFile[];
+    files: Promise<ItemFile[]>;
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
   }>(path.to.material(itemId));
@@ -252,16 +252,20 @@ const MaterialProperties = () => {
           <h3 className="text-xs text-muted-foreground">Files</h3>
         </HStack>
 
-        {routeData?.files.map((file) => {
-          return (
-            <FileBadge
-              key={file.id}
-              file={file}
-              itemId={itemId}
-              itemType="Material"
-            />
-          );
-        })}
+        <Suspense fallback={null}>
+          <Await resolve={routeData?.files}>
+            {(files) =>
+              files?.map((file) => (
+                <FileBadge
+                  key={file.id}
+                  file={file}
+                  itemId={itemId}
+                  itemType="Material"
+                />
+              ))
+            }
+          </Await>
+        </Suspense>
       </VStack>
     </VStack>
   );

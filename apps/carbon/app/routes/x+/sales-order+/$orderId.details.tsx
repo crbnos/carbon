@@ -1,5 +1,5 @@
 import { validationError, validator } from "@carbon/form";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -24,7 +24,15 @@ import {
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type { JSONContent } from "@carbon/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+  type JSONContent,
+} from "@carbon/react";
+import { Suspense } from "react";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -71,15 +79,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // if (shippingTerms.error) {
-  //   throw redirect(
-  //     path.to.salesOrders,
-  //     await flash(
-  //       request,
-  //       error(shippingTerms.error, "Failed to load shipping terms")
-  //     )
-  //   );
-  // }
   const opportunity = await getOpportunityBySalesOrder(client, orderId);
   const originatedFromQuote = opportunity.data?.quoteId !== null;
 
@@ -145,7 +144,7 @@ export default function SalesOrderRoute() {
   const orderData = useRouteData<{
     salesOrder: SalesOrder;
     opportunity: Opportunity;
-    files: FileObject[];
+    files: Promise<FileObject[]>;
   }>(path.to.salesOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
 
@@ -203,13 +202,32 @@ export default function SalesOrderRoute() {
         opportunity={orderData?.opportunity!}
       />
       <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
-      <OpportunityDocuments
-        key={`documents-${initialValues.id}`}
-        opportunity={orderData?.opportunity!}
-        attachments={orderData?.files ?? []}
-        id={orderId}
-        type="Sales Order"
-      />
+      <Suspense
+        key={`documents-${orderId}`}
+        fallback={
+          <Card>
+            <CardHeader>
+              <CardTitle>Files</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="min-h-[100px] flex items-center justify-center">
+                <Spinner />
+              </div>
+            </CardContent>
+          </Card>
+        }
+      >
+        <Await resolve={orderData.files}>
+          {(resolvedFiles) => (
+            <OpportunityDocuments
+              opportunity={orderData.opportunity}
+              attachments={resolvedFiles}
+              id={orderId}
+              type="Sales Order"
+            />
+          )}
+        </Await>
+      </Suspense>
       <OpportunityNotes
         key={`notes-${orderId}`}
         id={orderData.salesOrder.id}

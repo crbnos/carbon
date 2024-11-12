@@ -3,12 +3,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+  VStack,
+} from "@carbon/react";
 import { parseDate } from "@internationalized/date";
-import { useParams } from "@remix-run/react";
+import { Await, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import type {
   Opportunity,
@@ -73,7 +81,7 @@ export default function SalesRFQDetailsRoute() {
   const rfqData = useRouteData<{
     rfqSummary: SalesRFQ;
     lines: SalesRFQLine[];
-    files: FileObject[];
+    files: Promise<FileObject[]>;
     opportunity: Opportunity;
   }>(path.to.salesRfq(rfqId));
 
@@ -109,13 +117,32 @@ export default function SalesRFQDetailsRoute() {
         key={`${initialValues.id}:${initialValues.status}`}
         initialValues={initialValues}
       />
-      <OpportunityDocuments
+      <Suspense
         key={`documents-${rfqId}`}
-        opportunity={rfqData?.opportunity!}
-        attachments={rfqData?.files ?? []}
-        id={rfqId}
-        type="Request for Quote"
-      />
+        fallback={
+          <Card>
+            <CardHeader>
+              <CardTitle>Files</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="min-h-[100px] flex items-center justify-center">
+                <Spinner />
+              </div>
+            </CardContent>
+          </Card>
+        }
+      >
+        <Await resolve={rfqData.files}>
+          {(resolvedFiles) => (
+            <OpportunityDocuments
+              opportunity={rfqData.opportunity}
+              attachments={resolvedFiles}
+              id={rfqId}
+              type="Request for Quote"
+            />
+          )}
+        </Await>
+      </Suspense>
       <OpportunityNotes
         key={`notes-${rfqId}`}
         id={rfqData.rfqSummary.id}

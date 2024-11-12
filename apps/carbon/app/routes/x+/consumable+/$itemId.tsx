@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
 import {
   ConsumableHeader,
   ConsumableProperties,
@@ -30,14 +30,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [consumableSummary, files, buyMethods, pickMethods] = await Promise.all(
-    [
-      getConsumable(client, itemId, companyId),
-      getItemFiles(client, itemId, companyId),
-      getBuyMethods(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-    ]
-  );
+  const [consumableSummary, buyMethods, pickMethods] = await Promise.all([
+    getConsumable(client, itemId, companyId),
+
+    getBuyMethods(client, itemId, companyId),
+    getPickMethods(client, itemId, companyId),
+  ]);
 
   if (consumableSummary.error) {
     throw redirect(
@@ -49,9 +47,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     consumableSummary: consumableSummary.data,
-    files: files.data ?? [],
+    files: getItemFiles(client, itemId, companyId),
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
   });

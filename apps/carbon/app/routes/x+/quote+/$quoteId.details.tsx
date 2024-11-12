@@ -2,11 +2,19 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { type JSONContent } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+  type JSONContent,
+} from "@carbon/react";
+import { Await, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import type {
   Opportunity,
@@ -72,7 +80,7 @@ export default function QuoteDetailsRoute() {
 
   const quoteData = useRouteData<{
     quote: Quotation;
-    files: (FileObject & { quoteLineId: string | null })[];
+    files: Promise<(FileObject & { quoteLineId: string | null })[]>;
     shipment: QuotationShipment;
     payment: QuotationPayment;
     opportunity: Opportunity;
@@ -121,12 +129,32 @@ export default function QuoteDetailsRoute() {
         opportunity={quoteData?.opportunity!}
       />
       <QuoteForm key={initialValues.id} initialValues={initialValues} />
-      <OpportunityDocuments
-        opportunity={quoteData?.opportunity!}
-        attachments={quoteData?.files ?? []}
-        id={quoteId}
-        type="Quote"
-      />
+      <Suspense
+        key={`documents-${quoteId}`}
+        fallback={
+          <Card>
+            <CardHeader>
+              <CardTitle>Files</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="min-h-[100px] flex items-center justify-center">
+                <Spinner />
+              </div>
+            </CardContent>
+          </Card>
+        }
+      >
+        <Await resolve={quoteData.files}>
+          {(resolvedFiles) => (
+            <OpportunityDocuments
+              opportunity={quoteData.opportunity}
+              attachments={resolvedFiles}
+              id={quoteId}
+              type="Quote"
+            />
+          )}
+        </Await>
+      </Suspense>
       <QuotePaymentForm
         key={`payment-${initialValues.id}`}
         initialValues={paymentInitialValues}

@@ -121,9 +121,10 @@ export async function getPurchaseOrderExternalDocuments(
   companyId: string,
   purchaseOrderId: string
 ) {
-  return client.storage
+  const result = await client.storage
     .from("private")
     .list(`${companyId}/purchasing/external/${purchaseOrderId}`);
+  return result.data ?? [];
 }
 
 export async function getPurchaseOrderInternalDocuments(
@@ -131,9 +132,10 @@ export async function getPurchaseOrderInternalDocuments(
   companyId: string,
   purchaseOrderId: string
 ) {
-  return client.storage
+  const result = await client.storage
     .from("private")
     .list(`${companyId}/purchasing/internal/${purchaseOrderId}`);
+  return result.data ?? [];
 }
 
 export async function getPurchaseOrder(

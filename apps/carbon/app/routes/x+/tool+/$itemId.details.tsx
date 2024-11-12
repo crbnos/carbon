@@ -2,10 +2,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { Card, CardHeader, CardTitle, VStack } from "@carbon/react";
+import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, ToolSummary } from "~/modules/items";
 import {
@@ -60,7 +61,7 @@ export default function ToolDetailsRoute() {
 
   const toolData = useRouteData<{
     toolSummary: ToolSummary;
-    files: ItemFile[];
+    files: Promise<ItemFile[]>;
   }>(path.to.tool(itemId));
   if (!toolData) throw new Error("Could not find tool data");
 
@@ -84,11 +85,21 @@ export default function ToolDetailsRoute() {
         initialValues={toolInitialValues}
       />
       {permissions.is("employee") && (
-        <ItemDocuments
-          files={toolData?.files ?? []}
-          itemId={itemId}
-          type="Tool"
-        />
+        <Suspense
+          fallback={
+            <Card className="flex-grow">
+              <CardHeader>
+                <CardTitle>Files</CardTitle>
+              </CardHeader>
+            </Card>
+          }
+        >
+          <Await resolve={toolData?.files}>
+            {(files) => (
+              <ItemDocuments files={files ?? []} itemId={itemId} type="Tool" />
+            )}
+          </Await>
+        </Suspense>
       )}
     </VStack>
   );

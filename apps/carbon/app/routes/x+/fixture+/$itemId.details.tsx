@@ -2,10 +2,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { Card, CardHeader, CardTitle, VStack } from "@carbon/react";
+import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { CadModel } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Fixture, ItemFile } from "~/modules/items";
@@ -64,7 +65,7 @@ export default function FixtureDetailsRoute() {
 
   const fixtureData = useRouteData<{
     fixtureSummary: Fixture;
-    files: ItemFile[];
+    files: Promise<ItemFile[]>;
   }>(path.to.fixture(itemId));
   if (!fixtureData) throw new Error("Could not find fixture data");
 
@@ -100,12 +101,26 @@ export default function FixtureDetailsRoute() {
             modelPath={fixtureData?.fixtureSummary?.modelPath ?? null}
             title="CAD Model"
           />
-          <ItemDocuments
-            files={fixtureData?.files ?? []}
-            itemId={itemId}
-            modelUpload={fixtureData.fixtureSummary}
-            type="Fixture"
-          />
+          <Suspense
+            fallback={
+              <Card className="flex-grow">
+                <CardHeader>
+                  <CardTitle>Files</CardTitle>
+                </CardHeader>
+              </Card>
+            }
+          >
+            <Await resolve={fixtureData?.files ?? []}>
+              {(resolvedFiles) => (
+                <ItemDocuments
+                  files={resolvedFiles}
+                  itemId={itemId}
+                  modelUpload={fixtureData.fixtureSummary}
+                  type="Fixture"
+                />
+              )}
+            </Await>
+          </Suspense>
         </div>
       )}
     </VStack>

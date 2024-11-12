@@ -18,7 +18,8 @@ import {
   Tr,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
-import { Outlet } from "@remix-run/react";
+import { Await, Outlet } from "@remix-run/react";
+import { Suspense } from "react";
 import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
@@ -27,7 +28,7 @@ import PurchaseOrderDocumentForm from "./PurchaseOrderDocumentForm";
 import { usePurchaseOrderDocuments } from "./usePurchaseOrderDocuments";
 
 type PurchaseOrderDocumentsProps = {
-  attachments: PurchaseOrderAttachment[];
+  attachments: Promise<PurchaseOrderAttachment[]>;
   isExternal: boolean;
   orderId: string;
 };
@@ -70,77 +71,88 @@ const PurchaseOrderDocuments = ({
               </Tr>
             </Thead>
             <Tbody>
-              {attachments.length ? (
-                attachments.map((attachment) => {
-                  const type = getDocumentType(attachment.name);
-                  return (
-                    <Tr key={attachment.id}>
-                      <Td>
-                        <HStack>
-                          <DocumentIcon type={type} />
-                          <span
-                            className="font-medium"
-                            onClick={() => download(attachment)}
+              <Suspense fallback={null}>
+                <Await resolve={attachments}>
+                  {(resolvedAttachments: PurchaseOrderAttachment[]) => {
+                    if (!resolvedAttachments.length) {
+                      return (
+                        <Tr>
+                          <Td
+                            colSpan={24}
+                            className="py-8 text-muted-foreground text-center"
                           >
-                            {["PDF", "Image"].includes(type) ? (
-                              <DocumentPreview
-                                bucket="private"
-                                pathToFile={getPath(attachment)}
-                                // @ts-ignore
-                                type={type}
-                              >
-                                {attachment.name}
-                              </DocumentPreview>
-                            ) : (
-                              attachment.name
-                            )}
-                          </span>
-                        </HStack>
-                      </Td>
-                      <Td>
-                        {convertKbToString(
-                          Math.floor((attachment.metadata?.size ?? 0) / 1024)
-                        )}
-                      </Td>
-                      <Td>
-                        <div className="flex justify-end w-full">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <IconButton
-                                aria-label="More"
-                                icon={<MdMoreVert />}
-                                variant="secondary"
-                              />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
+                            No {isExternal ? "external" : "internal"}{" "}
+                            attachments
+                          </Td>
+                        </Tr>
+                      );
+                    }
+
+                    return resolvedAttachments.map((attachment) => {
+                      const type = getDocumentType(attachment.name);
+                      return (
+                        <Tr key={attachment.id}>
+                          <Td>
+                            <HStack>
+                              <DocumentIcon type={type} />
+                              <span
+                                className="font-medium"
                                 onClick={() => download(attachment)}
                               >
-                                Download
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={!canDelete}
-                                onClick={() => deleteAttachment(attachment)}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </Td>
-                    </Tr>
-                  );
-                })
-              ) : (
-                <Tr>
-                  <Td
-                    colSpan={24}
-                    className="py-8 text-muted-foreground text-center"
-                  >
-                    No {isExternal ? "external" : "internal"} attachments
-                  </Td>
-                </Tr>
-              )}
+                                {["PDF", "Image"].includes(type) ? (
+                                  <DocumentPreview
+                                    bucket="private"
+                                    pathToFile={getPath(attachment)}
+                                    // @ts-ignore
+                                    type={type}
+                                  >
+                                    {attachment.name}
+                                  </DocumentPreview>
+                                ) : (
+                                  attachment.name
+                                )}
+                              </span>
+                            </HStack>
+                          </Td>
+                          <Td>
+                            {convertKbToString(
+                              Math.floor(
+                                (attachment.metadata?.size ?? 0) / 1024
+                              )
+                            )}
+                          </Td>
+                          <Td>
+                            <div className="flex justify-end w-full">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <IconButton
+                                    aria-label="More"
+                                    icon={<MdMoreVert />}
+                                    variant="secondary"
+                                  />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem
+                                    onClick={() => download(attachment)}
+                                  >
+                                    Download
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    disabled={!canDelete}
+                                    onClick={() => deleteAttachment(attachment)}
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </Td>
+                        </Tr>
+                      );
+                    });
+                  }}
+                </Await>
+              </Suspense>
             </Tbody>
           </Table>
         </CardContent>

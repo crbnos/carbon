@@ -14,7 +14,7 @@ import type {
 
 // TODO: we should just use the FileObject type from supabase
 export type PurchaseOrderAttachment = NonNullable<
-  Awaited<ReturnType<typeof getPurchaseOrderExternalDocuments>>["data"]
+  Awaited<ReturnType<typeof getPurchaseOrderExternalDocuments>>
 >[number];
 
 export type PurchaseOrder = NonNullable<

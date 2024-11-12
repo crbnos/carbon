@@ -14,8 +14,8 @@ import {
   cn,
   toast,
 } from "@carbon/react";
-import { Link, useFetcher, useParams } from "@remix-run/react";
-import { useCallback, useEffect } from "react";
+import { Await, Link, useFetcher, useParams } from "@remix-run/react";
+import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import {
   CustomerAvatar,
@@ -47,7 +47,7 @@ const FixtureProperties = () => {
   );
   const routeData = useRouteData<{
     fixtureSummary: Fixture;
-    files: ItemFile[];
+    files: Promise<ItemFile[]>;
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
   }>(path.to.fixture(itemId));
@@ -292,16 +292,20 @@ const FixtureProperties = () => {
             </Link>
           </HStack>
         )}
-        {routeData?.files.map((file) => {
-          return (
-            <FileBadge
-              key={file.id}
-              file={file}
-              itemId={itemId}
-              itemType="Fixture"
-            />
-          );
-        })}
+        <Suspense fallback={null}>
+          <Await resolve={routeData?.files}>
+            {(files) =>
+              files?.map((file) => (
+                <FileBadge
+                  key={file.id}
+                  file={file}
+                  itemId={itemId}
+                  itemType="Fixture"
+                />
+              ))
+            }
+          </Await>
+        </Suspense>
       </VStack>
     </VStack>
   );

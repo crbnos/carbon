@@ -13,7 +13,7 @@ import { DndContext } from "@dnd-kit/core";
 import { Outlet, useParams, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
 
 import type { SalesRFQLine } from "~/modules/sales";
 import {
@@ -53,11 +53,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
-  const files = await getOpportunityDocuments(
-    client,
-    companyId,
-    opportunity.data.id
-  );
 
   if (rfqSummary.error) {
     throw redirect(
@@ -76,7 +71,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     rfqSummary: rfqSummary.data,
     lines:
       lines.data.map((line: SalesRFQLine) => ({
@@ -92,7 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         itemId: line.itemId ?? "",
         quantity: line.quantity ?? [1],
       })) ?? [],
-    files: files.data ?? [],
+    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
     opportunity: opportunity.data,
   });
 }

@@ -449,12 +449,7 @@ export async function getOpportunityDocuments(
     .from("private")
     .list(`${companyId}/opportunity/${opportunityId}`);
 
-  if (result.error) return result;
-
-  return {
-    data: result.data.map((f) => ({ ...f, bucket: "opportunity" })),
-    error: null,
-  };
+  return result.data?.map((f) => ({ ...f, bucket: "opportunity" })) ?? [];
 }
 
 export async function getOpportunityLineDocuments(
@@ -466,12 +461,7 @@ export async function getOpportunityLineDocuments(
     .from("private")
     .list(`${companyId}/opportunity-line/${lineId}`);
 
-  if (result.error) return result;
-
-  return {
-    data: result.data.map((f) => ({ ...f, bucket: "opportunity-line" })),
-    error: null,
-  };
+  return result.data?.map((f) => ({ ...f, bucket: "opportunity-line" })) ?? [];
 }
 
 export async function getQuote(

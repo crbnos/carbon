@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
 import { useEffect } from "react";
 import {
   PurchaseOrderHeader,
@@ -30,16 +30,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [
-    purchaseOrder,
-    purchaseOrderLines,
-    externalDocuments,
-    internalDocuments,
-  ] = await Promise.all([
+  const [purchaseOrder, purchaseOrderLines] = await Promise.all([
     getPurchaseOrder(client, orderId),
     getPurchaseOrderLines(client, orderId),
-    getPurchaseOrderExternalDocuments(client, companyId, orderId),
-    getPurchaseOrderInternalDocuments(client, companyId, orderId),
   ]);
 
   if (purchaseOrder.error) {
@@ -52,11 +45,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     purchaseOrder: purchaseOrder.data,
     purchaseOrderLines: purchaseOrderLines.data ?? [],
-    externalDocuments: externalDocuments.data ?? [],
-    internalDocuments: internalDocuments.data ?? [],
+    externalDocuments: getPurchaseOrderExternalDocuments(
+      client,
+      companyId,
+      orderId
+    ),
+    internalDocuments: getPurchaseOrderInternalDocuments(
+      client,
+      companyId,
+      orderId
+    ),
   });
 }
 

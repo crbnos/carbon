@@ -14,12 +14,12 @@ export default function PurchaseOrderExternalDocumentsRoute() {
   if (!orderId) throw new Error("orderId not found");
 
   const routeData = useRouteData<{
-    externalDocuments: PurchaseOrderAttachment[];
+    externalDocuments: Promise<PurchaseOrderAttachment[]>;
   }>(path.to.purchaseOrder(orderId));
 
   return (
     <PurchaseOrderDocuments
-      attachments={routeData?.externalDocuments ?? []}
+      attachments={routeData?.externalDocuments!}
       isExternal
       orderId={orderId}
     />

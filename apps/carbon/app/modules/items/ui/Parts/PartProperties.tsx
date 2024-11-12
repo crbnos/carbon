@@ -14,8 +14,8 @@ import {
   cn,
   toast,
 } from "@carbon/react";
-import { Link, useFetcher, useParams } from "@remix-run/react";
-import { useCallback, useEffect } from "react";
+import { Await, Link, useFetcher, useParams } from "@remix-run/react";
+import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -42,7 +42,7 @@ const PartProperties = () => {
   );
   const routeData = useRouteData<{
     partSummary: PartSummary;
-    files: ItemFile[];
+    files: Promise<ItemFile[]>;
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
   }>(path.to.part(itemId));
@@ -284,16 +284,20 @@ const PartProperties = () => {
             </Link>
           </HStack>
         )}
-        {routeData?.files.map((file) => {
-          return (
-            <FileBadge
-              key={file.id}
-              file={file}
-              itemId={itemId}
-              itemType="Part"
-            />
-          );
-        })}
+        <Suspense fallback={null}>
+          <Await resolve={routeData?.files}>
+            {(files) =>
+              files?.map((file) => (
+                <FileBadge
+                  key={file.id}
+                  file={file}
+                  itemId={itemId}
+                  itemType="Part"
+                />
+              ))
+            }
+          </Await>
+        </Suspense>
       </VStack>
     </VStack>
   );

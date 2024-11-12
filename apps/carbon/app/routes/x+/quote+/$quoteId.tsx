@@ -56,11 +56,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
-  const files = await getOpportunityDocuments(
-    client,
-    companyId,
-    opportunity.data.id
-  );
 
   if (quote.error) {
     throw redirect(
@@ -106,7 +101,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quote: quote.data,
     lines: lines.data ?? [],
     methods: methods.data ?? [],
-    files: files.data ?? [],
+    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,

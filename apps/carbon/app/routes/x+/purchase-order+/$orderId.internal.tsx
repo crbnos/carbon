@@ -14,12 +14,12 @@ export default function PurchaseOrderInternalDocumentsRoute() {
   if (!orderId) throw new Error("orderId not found");
 
   const routeData = useRouteData<{
-    internalDocuments: PurchaseOrderAttachment[];
+    internalDocuments: Promise<PurchaseOrderAttachment[]>;
   }>(path.to.purchaseOrder(orderId));
 
   return (
     <PurchaseOrderDocuments
-      attachments={routeData?.internalDocuments ?? []}
+      attachments={routeData?.internalDocuments!}
       isExternal={false}
       orderId={orderId}
     />

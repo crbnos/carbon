@@ -2,10 +2,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { Card, CardHeader, CardTitle, VStack } from "@carbon/react";
+import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { CadModel } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, PartSummary } from "~/modules/items";
@@ -59,7 +60,7 @@ export default function PartDetailsRoute() {
 
   const partData = useRouteData<{
     partSummary: PartSummary;
-    files: ItemFile[];
+    files: Promise<ItemFile[]>;
   }>(path.to.part(itemId));
 
   if (!partData) throw new Error("Could not find part data");
@@ -92,12 +93,26 @@ export default function PartDetailsRoute() {
             modelPath={partData?.partSummary?.modelPath ?? null}
             title="CAD Model"
           />
-          <ItemDocuments
-            files={partData?.files ?? []}
-            itemId={itemId}
-            modelUpload={partData.partSummary ?? undefined}
-            type="Part"
-          />
+          <Suspense
+            fallback={
+              <Card className="flex-grow">
+                <CardHeader>
+                  <CardTitle>Files</CardTitle>
+                </CardHeader>
+              </Card>
+            }
+          >
+            <Await resolve={partData?.files}>
+              {(resolvedFiles) => (
+                <ItemDocuments
+                  files={resolvedFiles}
+                  itemId={itemId}
+                  modelUpload={partData.partSummary ?? undefined}
+                  type="Part"
+                />
+              )}
+            </Await>
+          </Suspense>
         </div>
       )}
     </VStack>

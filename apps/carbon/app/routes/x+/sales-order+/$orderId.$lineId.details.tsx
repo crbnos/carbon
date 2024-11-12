@@ -2,7 +2,13 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { Card, CardHeader, CardTitle } from "@carbon/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+} from "@carbon/react";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
@@ -38,10 +44,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const [line, jobs, files] = await Promise.all([
+  const [line, jobs] = await Promise.all([
     getSalesOrderLine(client, lineId),
     getJobsBySalesOrderLine(client, lineId),
-    getOpportunityLineDocuments(client, companyId, lineId),
   ]);
 
   if (line.error) {
@@ -57,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       line.data.itemId && line.data.methodType === "Make"
         ? getItemReplenishment(client, line.data.itemId, companyId)
         : Promise.resolve({ data: null }),
-    files: files?.data ?? [],
+    files: getOpportunityLineDocuments(client, companyId, lineId),
     jobs: jobs?.data ?? [],
   });
 }
@@ -205,13 +210,32 @@ export default function EditSalesOrderLineRoute() {
           uploadClassName="min-h-[420px]"
           viewerClassName="min-h-[420px]"
         />
-        <OpportunityLineDocuments
-          files={files ?? []}
-          id={orderId}
-          lineId={lineId}
-          modelUpload={line ?? undefined}
-          type="Sales Order"
-        />
+        <Suspense
+          fallback={
+            <Card>
+              <CardHeader>
+                <CardTitle>Files</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="min-h-[100px] flex items-center justify-center">
+                  <Spinner />
+                </div>
+              </CardContent>
+            </Card>
+          }
+        >
+          <Await resolve={files}>
+            {(resolvedFiles) => (
+              <OpportunityLineDocuments
+                files={resolvedFiles ?? []}
+                id={orderId}
+                lineId={lineId}
+                modelUpload={line ?? undefined}
+                type="Sales Order"
+              />
+            )}
+          </Await>
+        </Suspense>
       </div>
       {/* <SalesOrderLineNotes line={line} /> */}
 
