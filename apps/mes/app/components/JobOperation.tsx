@@ -76,7 +76,6 @@ import {
   scrapQuantityValidator,
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
-import { capitalize } from "~/utils/string";
 
 import { useCarbon } from "@carbon/auth";
 import {
@@ -99,13 +98,7 @@ import {
 } from "@internationalized/date";
 import type { PostgrestResponse, RealtimeChannel } from "@supabase/supabase-js";
 import { FaRedoAlt, FaTasks } from "react-icons/fa";
-import {
-  FaCheck,
-  FaFlagCheckered,
-  FaPause,
-  FaPlay,
-  FaTrash,
-} from "react-icons/fa6";
+import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
   LuChevronLeft,
   LuClipboardCheck,
@@ -580,14 +573,14 @@ export const JobOperation = ({
                   icon={
                     <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
-                  tooltip="Rework"
+                  tooltip="Log Rework"
                   onClick={reworkModal.onOpen}
                 />
                 <IconButtonWithTooltip
                   icon={
                     <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
-                  tooltip="Scrap"
+                  tooltip="Log Scrap"
                   onClick={scrapModal.onOpen}
                 />
                 <StartStopButton
@@ -601,16 +594,16 @@ export const JobOperation = ({
 
                 <IconButtonWithTooltip
                   icon={
-                    <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
-                  tooltip="Complete"
+                  tooltip="Log Completed"
                   onClick={completeModal.onOpen}
                 />
                 <IconButtonWithTooltip
                   icon={
-                    <FaFlagCheckered className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
-                  tooltip="Finish"
+                  tooltip="Close Out"
                   onClick={finishModal.onOpen}
                 />
               </div>
@@ -1248,10 +1241,10 @@ function QuantityModal({
   const [quantity, setQuantity] = useState(type === "finish" ? 0 : 1);
 
   const titleMap = {
-    scrap: `Scrap ${operation.itemReadableId}`,
-    rework: `Rework ${operation.itemReadableId}`,
-    complete: `Complete ${operation.itemReadableId}`,
-    finish: `Finish ${operation.itemReadableId}`,
+    scrap: `Log Scrap for ${operation.itemReadableId}`,
+    rework: `Log Rework for ${operation.itemReadableId}`,
+    complete: `Log Completed for ${operation.itemReadableId}`,
+    finish: `Close Out ${operation.itemReadableId}`,
   };
 
   const descriptionMap = {
@@ -1259,7 +1252,7 @@ function QuantityModal({
     rework: "Select a rework quantity",
     complete: "Select a completion quantity",
     finish:
-      "Are you sure you want to complete this operation? This will end all active production events for this operation.",
+      "Are you sure you want to close out this operation? This will end all active production events for this operation.",
   };
 
   const actionMap = {
@@ -1361,7 +1354,7 @@ function QuantityModal({
               variant={type === "scrap" ? "destructive" : "primary"}
               type="submit"
             >
-              {capitalize(type)}
+              Submit
             </Button>
           </ModalFooter>
         </ValidatedForm>
