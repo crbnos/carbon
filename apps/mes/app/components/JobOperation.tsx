@@ -877,13 +877,13 @@ function useOperationState(operation: OperationWithDetails, job: Job) {
 
   const [activeTab, setActiveTab] = useState("details");
   const [eventType, setEventType] = useState(() => {
+    if (operation.setupDuration > 0) {
+      return "Setup";
+    }
     if (operation.laborDuration > 0) {
       return "Labor";
     }
-    if (operation.machineDuration > 0) {
-      return "Machine";
-    }
-    return "Setup";
+    return "Machine";
   });
 
   const { carbon, accessToken } = useCarbon();
