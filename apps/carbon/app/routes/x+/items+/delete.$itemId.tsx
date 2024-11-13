@@ -18,7 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (deletion.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.items,
-      await flash(request, error(deletion.error, "Failed to delete item"))
+      await flash(request, error(deletion.error, deletion.error.message))
     );
   }
 

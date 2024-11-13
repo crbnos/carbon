@@ -16,12 +16,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const quoteDelete = await deleteJob(client, jobId);
+  const jobDelete = await deleteJob(client, jobId);
 
-  if (quoteDelete.error) {
+  if (jobDelete.error) {
     return json(
       path.to.jobs,
-      await flash(request, error(quoteDelete.error, "Failed to delete job"))
+      await flash(request, error(jobDelete.error, jobDelete.error.message))
     );
   }
 

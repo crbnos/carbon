@@ -62,7 +62,16 @@ export async function deleteItemCustomerPart(
 }
 
 export async function deleteItem(client: SupabaseClient<Database>, id: string) {
-  return client.from("item").update({ active: false }).eq("id", id);
+  const [itemDelete, searchDelete] = await Promise.all([
+    client.from("item").delete().eq("id", id),
+    client.from("search").delete().eq("uuid", id),
+  ]);
+
+  if (searchDelete.error) {
+    return searchDelete;
+  }
+
+  return itemDelete;
 }
 
 export async function deleteItemPostingGroup(

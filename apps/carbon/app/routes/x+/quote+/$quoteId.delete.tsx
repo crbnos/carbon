@@ -21,7 +21,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (quoteDelete.error) {
     return json(
       path.to.quotes,
-      await flash(request, error(quoteDelete.error, "Failed to delete quote"))
+      await flash(request, error(quoteDelete.error, quoteDelete.error.message))
     );
   }
 
