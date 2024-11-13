@@ -21,7 +21,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (salesRfqDelete.error) {
     return json(
       path.to.salesRfqs,
-      await flash(request, error(salesRfqDelete.error, "Failed to delete RFQ"))
+      await flash(
+        request,
+        error(salesRfqDelete.error, salesRfqDelete.error.message)
+      )
     );
   }
 

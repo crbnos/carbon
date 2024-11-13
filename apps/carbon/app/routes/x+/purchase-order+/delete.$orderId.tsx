@@ -20,10 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (remove.error) {
     throw redirect(
       path.to.purchaseOrders,
-      await flash(
-        request,
-        error(remove.error, "Failed to delete purchase order")
-      )
+      await flash(request, error(remove.error, remove.error.message))
     );
   }
 

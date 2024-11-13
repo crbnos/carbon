@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.receipts,
       await flash(
         request,
-        error(deleteReceiptError, "Failed to delete receipt")
+        error(deleteReceiptError, deleteReceiptError.message)
       )
     );
   }

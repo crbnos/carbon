@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.salesOrders,
       await flash(
         request,
-        error(salesOrderDelete.error, "Failed to delete sales order")
+        error(salesOrderDelete.error, salesOrderDelete.error.message)
       )
     );
   }
