@@ -30,14 +30,14 @@ import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
 import { useMediaQuery } from "~/hooks";
 import {
-  getJobOperationsByWorkCenter,
-  getWorkCenter,
-  getWorkCentersByLocation,
-} from "~/services/jobs.service";
-import {
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
 } from "~/services/location.server";
+import {
+  getJobOperationsByWorkCenter,
+  getWorkCenter,
+  getWorkCentersByLocation,
+} from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
 
@@ -88,7 +88,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json(payload);
 }
 
-export default function JobsRoute() {
+export default function OperationsRoute() {
   const { operations, workCenters } = useLoaderData<typeof loader>();
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -131,7 +131,7 @@ export default function JobsRoute() {
       >
         <Tabs defaultValue="current">
           <div className="flex items-center px-4 py-2 h-[52px] bg-background">
-            <Heading size="h2">Jobs</Heading>
+            <Heading size="h2">Operations</Heading>
             <TabsList className="ml-auto">
               <TabsTrigger value="current">Current</TabsTrigger>
               <TabsTrigger value="all">All</TabsTrigger>

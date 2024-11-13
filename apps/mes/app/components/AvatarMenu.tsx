@@ -32,7 +32,7 @@ import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
 import type { action } from "~/routes/x+/location";
-import type { Location } from "~/services/jobs.service";
+import type { Location } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 const AvatarMenu = ({

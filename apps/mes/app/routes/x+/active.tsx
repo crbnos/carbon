@@ -8,7 +8,7 @@ import { LuSearch } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
 import { useMediaQuery } from "~/hooks";
-import { getActiveJobOperationsByEmployee } from "~/services/jobs.service";
+import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
 
 import { defaultLayout } from "~/utils/layout";
@@ -88,7 +88,7 @@ export default function ActiveRoute() {
           <div className="p-4 pt-0">
             <OperationsList
               key="active"
-              emptyMessage="No active jobs"
+              emptyMessage="No active operations"
               operations={filteredOperations}
             />
           </div>

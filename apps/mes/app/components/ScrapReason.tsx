@@ -3,7 +3,7 @@ import { Combobox } from "@carbon/form";
 import { useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
-import type { getScrapReasonsList } from "~/services/jobs.service";
+import type { getScrapReasonsList } from "~/services/operations.service";
 import { path } from "~/utils/path";
 type ScrapReasonSelectProps = Omit<ComboboxProps, "options">;
 

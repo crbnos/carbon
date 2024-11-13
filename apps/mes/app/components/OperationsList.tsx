@@ -16,7 +16,10 @@ import {
 } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import { LuAlertTriangle, LuClipboardCheck, LuTimer } from "react-icons/lu";
-import type { Operation, OperationSettings } from "~/services/jobs.service";
+import type {
+  Operation,
+  OperationSettings,
+} from "~/services/operations.service";
 import { DeadlineIcon, OperationStatusIcon } from "./Icons";
 
 type OperationsListProps = {
@@ -36,7 +39,7 @@ const settings = {
 
 export function OperationsList({
   operations,
-  emptyMessage = "No scheduled jobs",
+  emptyMessage = "No scheduled operations",
 }: OperationsListProps) {
   const { operationId } = useParams();
 

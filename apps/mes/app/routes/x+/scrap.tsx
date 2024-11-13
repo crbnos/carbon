@@ -7,7 +7,7 @@ import { json } from "@vercel/remix";
 import {
   insertScrapQuantity,
   scrapQuantityValidator,
-} from "~/services/jobs.service";
+} from "~/services/operations.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

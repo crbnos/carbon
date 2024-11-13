@@ -67,14 +67,14 @@ import type {
   productionEventType,
   ProductionQuantity,
   StorageItem,
-} from "~/services/jobs.service";
+} from "~/services/operations.service";
 import {
   finishValidator,
   getFileType,
   nonScrapQuantityValidator,
   productionEventValidator,
   scrapQuantityValidator,
-} from "~/services/jobs.service";
+} from "~/services/operations.service";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 
@@ -924,7 +924,7 @@ function useOperationState(operation: OperationWithDetails, job: Job) {
             } else if (payload.eventType === "DELETE") {
               if (payload.old.id === operation.id) {
                 alert("This operation has been deleted.");
-                window.location.href = path.to.jobs;
+                window.location.href = path.to.operations;
               }
             }
           }
