@@ -5,6 +5,7 @@ import { createContext, forwardRef, useContext, useMemo } from "react";
 import { LuPanelLeft } from "react-icons/lu";
 
 interface CollapsibleSidebarContextValue {
+  hasSidebar: boolean;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -13,12 +14,10 @@ const CollapsibleSidebarContext = createContext<
   CollapsibleSidebarContextValue | undefined
 >(undefined);
 
-function useCollapsibleSidebar() {
+export function useCollapsibleSidebar() {
   const context = useContext(CollapsibleSidebarContext);
   if (!context) {
-    throw new Error(
-      "useCollapsibleSidebar must be used within CollapsibleSidebarProvider"
-    );
+    return { hasSidebar: false, isOpen: false, onToggle: () => {} };
   }
   return context;
 }
@@ -28,7 +27,11 @@ export function CollapsibleSidebarProvider({ children }: PropsWithChildren) {
 
   return (
     <CollapsibleSidebarContext.Provider
-      value={{ isOpen: disclosure.isOpen, onToggle: disclosure.onToggle }}
+      value={{
+        hasSidebar: true,
+        isOpen: disclosure.isOpen,
+        onToggle: disclosure.onToggle,
+      }}
     >
       {children}
     </CollapsibleSidebarContext.Provider>
@@ -39,7 +42,9 @@ export const CollapsibleSidebarTrigger = forwardRef<
   HTMLButtonElement,
   Omit<ComponentProps<typeof IconButton>, "aria-label" | "icon">
 >(({ className, ...props }, ref) => {
-  const { isOpen, onToggle } = useCollapsibleSidebar();
+  const { isOpen, onToggle, hasSidebar } = useCollapsibleSidebar();
+
+  if (!hasSidebar) return null;
 
   return (
     <IconButton
