@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { useFetchers, useSubmit } from "@remix-run/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
@@ -30,15 +30,35 @@ type KanbanProps = {
   items: Item[];
 } & DisplaySettings;
 
+const COLUMN_ORDER_KEY = "kanban-column-order";
+
 const Kanban = ({
   columns,
   items: initialItems,
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
-  const [columnOrder, setColumnOrder] = useState<string[]>(
-    columns.map((col) => col.id)
-  );
+  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
+    // Get stored column order from localStorage
+    const storedOrder = localStorage.getItem(COLUMN_ORDER_KEY);
+    if (storedOrder) {
+      const parsedOrder = JSON.parse(storedOrder) as string[];
+      // Add any new columns that aren't in stored order
+      const newOrder = [...parsedOrder];
+      columns.forEach((col) => {
+        if (!newOrder.includes(col.id)) {
+          newOrder.push(col.id);
+        }
+      });
+      return newOrder;
+    }
+    return columns.map((col) => col.id);
+  });
+
+  // Update localStorage when column order changes
+  useEffect(() => {
+    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(columnOrder));
+  }, [columnOrder]);
 
   const itemsById = new Map<string, Item>(
     initialItems.map((item) => [item.id, item])

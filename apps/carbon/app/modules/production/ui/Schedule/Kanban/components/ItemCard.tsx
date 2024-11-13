@@ -150,9 +150,12 @@ export function ItemCard({
                 {item.subtitle}
               </span>
             )}
-            <span className="mr-auto font-semibold line-clamp-1">
+            <Link
+              to={`${item.link}?selectedOperation=${item.id}`}
+              className="mr-auto font-semibold line-clamp-1"
+            >
               {item.title}
-            </span>
+            </Link>
           </div>
           <HStack spacing={0} className="-mr-4">
             <IconButton

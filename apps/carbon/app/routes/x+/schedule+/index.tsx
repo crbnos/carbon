@@ -4,7 +4,7 @@ import { path } from "~/utils/path";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Button, HStack } from "@carbon/react";
+import { Button, ClientOnly, HStack, Spinner } from "@carbon/react";
 import { Link, useLoaderData } from "@remix-run/react";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { useMemo } from "react";
@@ -233,17 +233,27 @@ export default function ScheduleRoute() {
       <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
         <div className="flex flex-1 min-h-0 w-full relative">
           {columns.length > 0 ? (
-            <Kanban
-              columns={columns}
-              items={items}
-              showCustomer
-              showDescription
-              showDueDate
-              showDuration
-              showEmployee
-              showProgress={false}
-              showStatus
-            />
+            <ClientOnly
+              fallback={
+                <div className="flex h-full w-full items-center justify-center">
+                  <Spinner className="h-8 w-8" />
+                </div>
+              }
+            >
+              {() => (
+                <Kanban
+                  columns={columns}
+                  items={items}
+                  showCustomer
+                  showDescription
+                  showDueDate
+                  showDuration
+                  showEmployee
+                  showProgress={false}
+                  showStatus
+                />
+              )}
+            </ClientOnly>
           ) : hasFilters ? (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
               <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
