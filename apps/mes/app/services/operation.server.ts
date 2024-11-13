@@ -5,7 +5,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
-import type { OperationWithDetails } from "./jobs.service";
+import type { OperationWithDetails } from "./operations.service";
 import {
   getJobByOperationId,
   getJobFiles,
@@ -13,7 +13,7 @@ import {
   getJobOperationById,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
-} from "./jobs.service";
+} from "./operations.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {});
@@ -33,14 +33,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (job.error) {
     throw redirect(
-      path.to.jobs,
+      path.to.operations,
       await flash(request, error(job.error, "Failed to fetch job"))
     );
   }
 
   if (operation.error) {
     throw redirect(
-      path.to.jobs,
+      path.to.operations,
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
   }

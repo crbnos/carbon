@@ -26,13 +26,13 @@ import { EndShift } from "~/components/EndShift";
 import Feedback from "~/components/Feedback";
 import { useMediaQuery } from "~/hooks";
 import {
-  getActiveJobCount,
-  getLocationsByCompany,
-} from "~/services/jobs.service";
-import {
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
 } from "~/services/location.server";
+import {
+  getActiveJobCount,
+  getLocationsByCompany,
+} from "~/services/operations.service";
 import { defaultLayout } from "~/utils/layout";
 import { path } from "~/utils/path";
 
@@ -204,9 +204,9 @@ export default function AuthenticatedRoute() {
                         isCollapsed={isCollapsed}
                         links={[
                           {
-                            title: "Jobs",
+                            title: "Operations",
                             icon: LuInbox,
-                            to: path.to.jobs,
+                            to: path.to.operations,
                           },
                           {
                             title: "Active",

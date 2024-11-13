@@ -9,7 +9,10 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { finishJobOperation, finishValidator } from "~/services/jobs.service";
+import {
+  finishJobOperation,
+  finishValidator,
+} from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -40,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.jobs,
+    path.to.operations,
     await flash(request, success("Operation finished successfully"))
   );
 }
