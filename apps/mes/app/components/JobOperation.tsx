@@ -293,86 +293,6 @@ export const JobOperation = ({
               </div>
             </div>
             <Separator />
-            <div className="flex items-start p-4">
-              <div className="flex flex-col w-full gap-2">
-                {operation.setupDuration > 0 && (
-                  <HStack>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuTimer className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">Setup</TooltipContent>
-                    </Tooltip>
-                    <Progress
-                      numerator={formatDurationMilliseconds(progress.setup)}
-                      denominator={formatDurationMilliseconds(
-                        operation.setupDuration
-                      )}
-                      value={(progress.setup / operation.setupDuration) * 100}
-                    />
-                  </HStack>
-                )}
-                {operation.laborDuration > 0 && (
-                  <HStack>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuHardHat className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">Labor</TooltipContent>
-                    </Tooltip>
-                    <Progress
-                      numerator={formatDurationMilliseconds(progress.labor)}
-                      denominator={formatDurationMilliseconds(
-                        operation.laborDuration
-                      )}
-                      value={(progress.labor / operation.laborDuration) * 100}
-                    />
-                  </HStack>
-                )}
-                {operation.machineDuration > 0 && (
-                  <HStack>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuHammer className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">Machine</TooltipContent>
-                    </Tooltip>
-                    <Progress
-                      numerator={formatDurationMilliseconds(progress.machine)}
-                      denominator={formatDurationMilliseconds(
-                        operation.machineDuration
-                      )}
-                      value={
-                        (progress.machine / operation.machineDuration) * 100
-                      }
-                    />
-                  </HStack>
-                )}
-                <HStack>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <FaTasks className="h-4 w-4 mr-1" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Quantity</TooltipContent>
-                  </Tooltip>
-                  <Progress
-                    indicatorClassName={
-                      operation.operationStatus === "Paused"
-                        ? "bg-yellow-500"
-                        : ""
-                    }
-                    numerator={operation.quantityComplete.toString()}
-                    denominator={operation.operationQuantity.toString()}
-                    value={
-                      (operation.quantityComplete /
-                        operation.operationQuantity) *
-                      100
-                    }
-                  />
-                </HStack>
-              </div>
-            </div>
-            <Separator />
 
             <div className="flex items-start justify-between p-4">
               <div className="flex flex-col flex-shrink items-end">
@@ -569,57 +489,131 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
 
-        {activeTab !== "model" && (
-          <Controls>
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex items-center gap-4 justify-center">
-                {/* <IconButtonWithTooltip
+        <Controls className="z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg">
+          <div className="flex items-start p-4">
+            <div className="flex flex-col w-full gap-2">
+              {operation.setupDuration > 0 && (
+                <HStack>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuTimer className="h-4 w-4 mr-1" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Setup</TooltipContent>
+                  </Tooltip>
+                  <Progress
+                    numerator={formatDurationMilliseconds(progress.setup)}
+                    denominator={formatDurationMilliseconds(
+                      operation.setupDuration
+                    )}
+                    value={(progress.setup / operation.setupDuration) * 100}
+                  />
+                </HStack>
+              )}
+              {operation.laborDuration > 0 && (
+                <HStack>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuHardHat className="h-4 w-4 mr-1" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Labor</TooltipContent>
+                  </Tooltip>
+                  <Progress
+                    numerator={formatDurationMilliseconds(progress.labor)}
+                    denominator={formatDurationMilliseconds(
+                      operation.laborDuration
+                    )}
+                    value={(progress.labor / operation.laborDuration) * 100}
+                  />
+                </HStack>
+              )}
+              {operation.machineDuration > 0 && (
+                <HStack>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuHammer className="h-4 w-4 mr-1" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Machine</TooltipContent>
+                  </Tooltip>
+                  <Progress
+                    numerator={formatDurationMilliseconds(progress.machine)}
+                    denominator={formatDurationMilliseconds(
+                      operation.machineDuration
+                    )}
+                    value={(progress.machine / operation.machineDuration) * 100}
+                  />
+                </HStack>
+              )}
+              <HStack>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <FaTasks className="h-4 w-4 mr-1" />
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Quantity</TooltipContent>
+                </Tooltip>
+                <Progress
+                  indicatorClassName={
+                    operation.operationStatus === "Paused"
+                      ? "bg-yellow-500"
+                      : ""
+                  }
+                  numerator={operation.quantityComplete.toString()}
+                  denominator={operation.operationQuantity.toString()}
+                  value={
+                    (operation.quantityComplete / operation.operationQuantity) *
+                    100
+                  }
+                />
+              </HStack>
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-4 justify-center">
+              {/* <IconButtonWithTooltip
                   icon={
                     <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
                   tooltip="Log Rework"
                   onClick={reworkModal.onOpen}
                 /> */}
-                <IconButtonWithTooltip
-                  icon={
-                    <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip="Log Scrap"
-                  onClick={scrapModal.onOpen}
-                />
-                <StartStopButton
-                  eventType={eventType as (typeof productionEventType)[number]}
-                  job={job}
-                  operation={operation}
-                  setupProductionEvent={setupProductionEvent}
-                  laborProductionEvent={laborProductionEvent}
-                  machineProductionEvent={machineProductionEvent}
-                />
-
-                <IconButtonWithTooltip
-                  icon={
-                    <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip="Log Completed"
-                  onClick={completeModal.onOpen}
-                />
-                <IconButtonWithTooltip
-                  icon={
-                    <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip="Close Out"
-                  onClick={finishModal.onOpen}
-                />
-              </div>
-              <WorkTypeToggle
-                active={active}
+              <IconButtonWithTooltip
+                icon={
+                  <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                }
+                tooltip="Log Scrap"
+                onClick={scrapModal.onOpen}
+              />
+              <StartStopButton
+                eventType={eventType as (typeof productionEventType)[number]}
+                job={job}
                 operation={operation}
-                value={eventType}
-                onChange={setEventType}
+                setupProductionEvent={setupProductionEvent}
+                laborProductionEvent={laborProductionEvent}
+                machineProductionEvent={machineProductionEvent}
+              />
+
+              <IconButtonWithTooltip
+                icon={
+                  <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                }
+                tooltip="Log Completed"
+                onClick={completeModal.onOpen}
+              />
+              <IconButtonWithTooltip
+                icon={
+                  <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                }
+                tooltip="Close Out"
+                onClick={finishModal.onOpen}
               />
             </div>
-          </Controls>
-        )}
+            <WorkTypeToggle
+              active={active}
+              operation={operation}
+              value={eventType}
+              onChange={setEventType}
+            />
+          </div>
+        </Controls>
       </Tabs>
       {reworkModal.isOpen && (
         <QuantityModal
