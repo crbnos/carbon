@@ -241,7 +241,7 @@ export default function AuthenticatedRoute() {
             )}
           </ClientOnly>
         </TooltipProvider>
-        <Toaster position="top-right" />
+        <Toaster position="bottom-left" />
       </CarbonProvider>
     </div>
   );
