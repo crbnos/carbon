@@ -100,7 +100,7 @@ import {
   toZoned,
 } from "@internationalized/date";
 import type { PostgrestResponse, RealtimeChannel } from "@supabase/supabase-js";
-import { FaRedoAlt, FaTasks } from "react-icons/fa";
+import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
   LuAlertTriangle,
@@ -279,7 +279,7 @@ export const JobOperation = ({
                   </div>
                 </div>
 
-                <div className="rounded-xl border bg-card text-card-foreground shadow">
+                {/* <div className="rounded-xl border bg-card text-card-foreground shadow">
                   <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
                     <h3 className="tracking-tight text-sm font-medium">
                       Reworked
@@ -289,7 +289,7 @@ export const JobOperation = ({
                   <div className="p-6 pt-0">
                     <Heading size="h2">{operation.quantityReworked}</Heading>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
             <Separator />
@@ -573,13 +573,13 @@ export const JobOperation = ({
           <Controls>
             <div className="flex flex-col items-center gap-4">
               <div className="flex items-center gap-4 justify-center">
-                <IconButtonWithTooltip
+                {/* <IconButtonWithTooltip
                   icon={
                     <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
                   tooltip="Log Rework"
                   onClick={reworkModal.onOpen}
-                />
+                /> */}
                 <IconButtonWithTooltip
                   icon={
                     <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
