@@ -856,5 +856,5 @@ export const getPrivateUrl = (path: string) => {
 };
 
 export const getPublicModelUrl = (path: string) => {
-  return `/file/model/private/${path}`;
+  return `/file/model/public/${path}`;
 };

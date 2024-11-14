@@ -34,11 +34,9 @@ type CadModelProps = {
   title?: string;
   uploadClassName?: string;
   viewerClassName?: string;
-  isReadOnly?: boolean;
 };
 
 const CadModel = ({
-  isReadOnly,
   metadata,
   modelPath,
   title,
@@ -191,6 +189,7 @@ const CadModel = ({
             url={modelPath ? getPrivateUrl(modelPath) : null}
             mode={mode}
             onDataUrl={onDataUrl}
+            className={viewerClassName}
           />
         ) : (
           <CadModelUpload
