@@ -63,6 +63,7 @@ export default function ActiveRoute() {
         collapsedSize={0}
         defaultSize={defaultLayout[1]}
         minSize={isMobile ? 0 : 30}
+        className="flex flex-col flex-grow"
       >
         <Tabs defaultValue="current">
           <div className="flex items-center px-4 py-2 h-[52px] bg-background">

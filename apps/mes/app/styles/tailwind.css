@@ -34,6 +34,7 @@
       hsl(var(--primary)) 0%,
       hsl(var(--background)) 100%
     );
+    --header-height: 52px;
   }
 
   .dark {
