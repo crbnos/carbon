@@ -271,7 +271,7 @@ export const JobOperation = ({
         <Separator className="flex md:hidden" />
 
         <TabsContent value="details" className="flex flex-col">
-          <ScrollArea className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto p-4">
+          <ScrollArea className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto">
             <div className="flex items-start justify-between p-4">
               <div className="flex flex-col flex-grow">
                 <Heading size="h2">{operation.itemReadableId}</Heading>
