@@ -123,13 +123,6 @@ type JobOperationProps = {
   job: Job;
 };
 
-const operationsToControlsHeight = {
-  "3": 194,
-  "2": 170,
-  "1": 146,
-  "0": 122,
-};
-
 export const JobOperation = ({
   backPath,
   events,
@@ -154,13 +147,11 @@ export const JobOperation = ({
   } = useOperationState(originalOperation, job);
 
   const controlsHeight = useMemo(() => {
-    let operations = 0;
+    let operations = 1;
     if (operation.setupDuration > 0) operations++;
     if (operation.laborDuration > 0) operations++;
     if (operation.machineDuration > 0) operations++;
-    return operationsToControlsHeight[
-      operations.toString() as keyof typeof operationsToControlsHeight
-    ];
+    return 122 + operations * 24;
   }, [
     operation.laborDuration,
     operation.machineDuration,
