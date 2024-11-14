@@ -1,4 +1,7 @@
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   Button,
   cn,
@@ -100,6 +103,7 @@ import type { PostgrestResponse, RealtimeChannel } from "@supabase/supabase-js";
 import { FaRedoAlt, FaTasks } from "react-icons/fa";
 import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
+  LuAlertTriangle,
   LuChevronLeft,
   LuClipboardCheck,
   LuExpand,
@@ -1247,6 +1251,9 @@ function QuantityModal({
     finish: `Close Out ${operation.itemReadableId}`,
   };
 
+  const isOperationComplete =
+    operation.quantityComplete >= operation.operationQuantity;
+
   const descriptionMap = {
     scrap: "Select a scrap quantity and reason",
     rework: "Select a rework quantity",
@@ -1306,6 +1313,16 @@ function QuantityModal({
             <Hidden name="laborProductionEventId" />
             <Hidden name="machineProductionEventId" />
             <VStack spacing={2}>
+              {type === "finish" && !isOperationComplete && (
+                <Alert variant="warning">
+                  <LuAlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Insufficient quantity</AlertTitle>
+                  <AlertDescription>
+                    The completed quantity for this operation is less than the
+                    required quantity of {operation.operationQuantity}.
+                  </AlertDescription>
+                </Alert>
+              )}
               {type !== "finish" && (
                 <>
                   <NumberControlled
@@ -1351,7 +1368,11 @@ function QuantityModal({
             </Button>
 
             <Button
-              variant={type === "scrap" ? "destructive" : "primary"}
+              variant={
+                type === "scrap" || (!isOperationComplete && type === "finish")
+                  ? "destructive"
+                  : "primary"
+              }
               type="submit"
             >
               Submit
