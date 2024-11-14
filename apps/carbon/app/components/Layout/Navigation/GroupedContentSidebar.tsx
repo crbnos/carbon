@@ -1,4 +1,11 @@
-import { Button, cn, VStack } from "@carbon/react";
+import {
+  Button,
+  cn,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  VStack,
+} from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { useOptimisticLocation } from "~/hooks";
 import type { RouteGroup } from "~/types";
@@ -30,26 +37,48 @@ const GroupedContentSidebar = ({
               {group.routes.map((route) => {
                 const isActive = exactMatch
                   ? location.pathname === route.to
-                  : location.pathname.includes(route.to);
+                  : location.pathname.includes(route.to) &&
+                    !route.groups?.some((subRoute) =>
+                      `${location.pathname}${location.search}`.includes(
+                        subRoute.to
+                      )
+                    );
                 return (
-                  <Button
-                    key={route.name}
-                    asChild
-                    leftIcon={route.icon}
-                    variant={isActive ? "active" : "ghost"}
-                    className={cn(
-                      "w-full justify-start truncate",
-                      !isActive &&
-                        "hover:bg-active hover:text-active-foreground"
-                    )}
-                  >
-                    <Link
-                      to={route.to + (route.q ? `?q=${route.q}` : "")}
-                      prefetch="intent"
+                  <div className="w-full flex flex-col" key={route.name}>
+                    <Button
+                      asChild
+                      leftIcon={route.icon}
+                      variant={isActive ? "active" : "ghost"}
+                      className={cn(
+                        "w-full justify-start truncate",
+                        !isActive &&
+                          "hover:bg-active hover:text-active-foreground"
+                      )}
                     >
-                      {route.name}
-                    </Link>
-                  </Button>
+                      <Link
+                        to={route.to + (route.q ? `?q=${route.q}` : "")}
+                        prefetch="intent"
+                      >
+                        {route.name}
+                      </Link>
+                    </Button>
+                    {route.groups && (
+                      <SidebarMenuSub>
+                        {route.groups.map((subRoute) => (
+                          <SidebarMenuSubItem key={subRoute.name}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={`${location.pathname}${location.search}`.includes(
+                                subRoute.to
+                              )}
+                            >
+                              <Link to={subRoute.to}>{subRoute.name}</Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
+                  </div>
                 );
               })}
             </VStack>
