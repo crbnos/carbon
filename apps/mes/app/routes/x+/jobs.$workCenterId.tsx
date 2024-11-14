@@ -120,8 +120,6 @@ export default function JobsRoute() {
     );
   }, [operations, searchTerm]);
 
-  console.log({ operations, filteredOperations });
-
   return (
     <>
       <ResizablePanel

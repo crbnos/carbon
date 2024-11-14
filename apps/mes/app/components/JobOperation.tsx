@@ -1382,14 +1382,18 @@ function Navigation({
   return (
     <>
       <TabsList className="md:ml-auto">
-        <TabsTrigger value="details">Details</TabsTrigger>
+        <TabsTrigger variant="primary" value="details">
+          Details
+        </TabsTrigger>
         <TabsTrigger
+          variant="primary"
           disabled={!job.modelPath && !operation.itemModelPath}
           value="model"
         >
           Model
         </TabsTrigger>
         <TabsTrigger
+          variant="primary"
           disabled={
             !operation.workInstruction ||
             Object.keys(operation.workInstruction).length === 0
