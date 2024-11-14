@@ -175,6 +175,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
           Math.max(operation.laborDuration, operation.machineDuration),
         deadlineType: op.jobDeadlineType,
         customerId: op.jobCustomerId,
+        salesOrderReadableId: op.salesOrderReadableId,
+        salesOrderId: op.salesOrderId,
+        salesOrderLineId: op.salesOrderLineId,
         status: op.operationStatus,
       };
     }) ?? []) satisfies Item[],
@@ -251,6 +254,7 @@ export default function ScheduleRoute() {
                   showEmployee
                   showProgress={false}
                   showStatus
+                  showSalesOrder
                 />
               )}
             </ClientOnly>

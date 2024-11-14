@@ -23,6 +23,7 @@ export type DisplaySettings = {
   showEmployee: boolean;
   showProgress: boolean;
   showStatus: boolean;
+  showSalesOrder: boolean;
 };
 
 export type DraggableData = ColumnDragData | ItemDragData;
@@ -43,6 +44,9 @@ const itemValidator = z.object({
   deadlineType: z.enum(deadlineTypes).optional(),
   progress: z.number().optional(), // miliseconds
   status: z.enum(jobOperationStatus).optional(),
+  salesOrderReadableId: z.string().optional(),
+  salesOrderId: z.string().optional(),
+  salesOrderLineId: z.string().optional(),
 });
 
 export type Item = z.infer<typeof itemValidator>;

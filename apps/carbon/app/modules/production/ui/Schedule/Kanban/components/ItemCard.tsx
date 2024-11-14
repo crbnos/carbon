@@ -2,13 +2,13 @@ import {
   Card,
   CardContent,
   CardHeader,
+  cn,
   HStack,
   IconButton,
   Progress,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  cn,
 } from "@carbon/react";
 import {
   convertDateStringToIsoString,
@@ -22,19 +22,21 @@ import {
   LuCheckCircle,
   LuClipboardCheck,
   LuExternalLink,
-  LuFactory,
   LuGripVertical,
   LuTimer,
   LuUsers,
+  LuUserSquare,
   LuXCircle,
 } from "react-icons/lu";
 
 import { Link } from "@remix-run/react";
+import { RiProgress8Line } from "react-icons/ri";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 import { getDeadlineIcon, getDeadlineText } from "~/modules/production";
+import { path } from "~/utils/path";
 import type { DisplaySettings, Item, ItemDragData } from "../types";
 
 type ItemCardProps = {
@@ -94,6 +96,7 @@ export function ItemCard({
   showEmployee,
   showProgress,
   showStatus,
+  showSalesOrder,
 }: ItemCardProps) {
   const {
     setNodeRef,
@@ -244,9 +247,27 @@ export function ItemCard({
           </HStack>
         )}
 
+        {showSalesOrder &&
+          item.salesOrderReadableId &&
+          item.salesOrderId &&
+          item.salesOrderLineId && (
+            <HStack className="justify-start space-x-2">
+              <RiProgress8Line className="text-muted-foreground" />
+              <Link
+                to={path.to.salesOrderLine(
+                  item.salesOrderId,
+                  item.salesOrderLineId
+                )}
+                className="text-sm"
+              >
+                {item.salesOrderReadableId}
+              </Link>
+            </HStack>
+          )}
+
         {showCustomer && item.customerId && (
           <HStack className="justify-start space-x-2">
-            <LuFactory className="text-muted-foreground" />
+            <LuUserSquare className="text-muted-foreground" />
             <CustomerAvatar customerId={item.customerId} />
           </HStack>
         )}
