@@ -120,6 +120,8 @@ export default function JobsRoute() {
     );
   }, [operations, searchTerm]);
 
+  console.log({ operations, filteredOperations });
+
   return (
     <>
       <ResizablePanel
@@ -179,7 +181,7 @@ export default function JobsRoute() {
             <OperationsList
               key={`current:${workCenterId}`}
               operations={filteredOperations.filter((operation) =>
-                ["In Progress", "Ready", "Todo", "Waiting"].includes(
+                ["In Progress", "Ready", "Todo", "Waiting", "Paused"].includes(
                   operation.operationStatus
                 )
               )}
