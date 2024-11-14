@@ -42,7 +42,7 @@ export default function Route() {
                 <code>PUBLIC_KEY</code> (shown below) in addition to your{" "}
                 <code>carbon-key</code> API Key.
               </p>
-              <Alert variant="success">
+              <Alert variant="destructive">
                 <LuAlertTriangle className="h-4 w-4 my-1" />
                 <AlertTitle className="!my-0 font-bold text-base">
                   You should never expose the <code>carbon-key</code> in the
