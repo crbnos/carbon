@@ -13,6 +13,7 @@ import {
   getJobOperationById,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
+  getThumbnailPathByItemId,
 } from "./operations.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -45,6 +46,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (!job.data.itemId) {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error("Item ID is required", "Failed to fetch item"))
+    );
+  }
+
+  const thumbnailPath = await getThumbnailPathByItemId(client, job.data.itemId);
+
   return defer({
     events: events.data ?? [],
     quantities: (quantities.data ?? []).reduce(
@@ -64,5 +74,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getJobFiles(client, companyId, job.data),
     materials: getJobMaterialsByOperationId(client, operation.data?.[0]),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
+    thumbnailPath,
   });
 }
