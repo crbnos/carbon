@@ -58,6 +58,10 @@ export const removeSubdomain = (url?: string): string => {
   return domain;
 };
 
+export const getPrivateUrl = (path: string) => {
+  return `/file/preview/private/${path}`;
+};
+
 export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_API_URL}/storage/v1/object/public/${bucket}/${path}`;
 };

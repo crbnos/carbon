@@ -196,6 +196,36 @@ export function getFileType(fileName: string): (typeof documentTypes)[number] {
   return "Other";
 }
 
+export async function getThumbnailPathByItemId(
+  client: SupabaseClient<Database>,
+  itemId: string
+) {
+  const { data: item } = await client
+    .from("item")
+    .select("thumbnailPath, modelUploadId")
+    .eq("id", itemId)
+    .single();
+
+  if (!item) return null;
+
+  const { thumbnailPath, modelUploadId } = item;
+
+  if (!modelUploadId) return thumbnailPath;
+
+  const { data: modelUpload } = await client
+    .from("modelUpload")
+    .select("thumbnailPath")
+    .eq("id", modelUploadId)
+    .single();
+
+  const modelUploadThumbnailPath = modelUpload?.thumbnailPath;
+
+  if (!thumbnailPath && modelUploadThumbnailPath) {
+    return modelUploadThumbnailPath;
+  }
+  return thumbnailPath;
+}
+
 export async function getJobFiles(
   client: SupabaseClient<Database>,
   companyId: string,

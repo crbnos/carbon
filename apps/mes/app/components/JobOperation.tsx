@@ -112,6 +112,7 @@ import {
   LuTimer,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components/Icons";
+import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
 
 type JobOperationProps = {
@@ -121,6 +122,7 @@ type JobOperationProps = {
   materials: Promise<PostgrestResponse<JobMaterial>>;
   operation: OperationWithDetails;
   job: Job;
+  thumbnailPath: string | null;
 };
 
 export const JobOperation = ({
@@ -130,6 +132,7 @@ export const JobOperation = ({
   job,
   materials,
   operation: originalOperation,
+  thumbnailPath,
 }: JobOperationProps) => {
   useRealtime("job", `id=eq.${job.id}`);
   const {
@@ -273,12 +276,17 @@ export const JobOperation = ({
         <TabsContent value="details" className="flex flex-col">
           <ScrollArea className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto">
             <div className="flex items-start justify-between p-4">
-              <div className="flex flex-col flex-grow">
-                <Heading size="h2">{operation.itemReadableId}</Heading>
-                <p className="text-muted-foreground line-clamp-1">
-                  {operation.itemDescription}
-                </p>
-              </div>
+              <HStack>
+                <div className="flex flex-col flex-grow">
+                  <Heading size="h2">{operation.itemReadableId}</Heading>
+                  <p className="text-muted-foreground line-clamp-1">
+                    {operation.itemDescription}
+                  </p>
+                </div>
+                {thumbnailPath && (
+                  <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
+                )}
+              </HStack>
               <div className="flex flex-col flex-shrink items-end">
                 <Heading size="h2">{operation.operationQuantity}</Heading>
                 <p className="text-muted-foreground line-clamp-1">
@@ -288,7 +296,7 @@ export const JobOperation = ({
             </div>
             <Separator />
             <div className="flex items-start p-4">
-              <div className="grid gap-4 md:grid-cols-1 md:grid-cols-2 w-full">
+              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 w-full">
                 <div className="rounded-xl border bg-card text-card-foreground shadow">
                   <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
                     <h3 className="tracking-tight text-sm font-medium">

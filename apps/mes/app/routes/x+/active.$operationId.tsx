@@ -10,7 +10,7 @@ export default function OperationRoute() {
   const { operationId } = useParams();
   if (!operationId) throw new Error("Operation ID is required");
 
-  const { events, job, files, materials, operation } =
+  const { events, job, files, materials, operation, thumbnailPath } =
     useLoaderData<typeof loader>();
 
   return (
@@ -21,6 +21,7 @@ export default function OperationRoute() {
       materials={materials}
       operation={operation}
       job={job}
+      thumbnailPath={thumbnailPath}
     />
   );
 }
