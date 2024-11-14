@@ -277,15 +277,15 @@ export const JobOperation = ({
           <ScrollArea className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto">
             <div className="flex items-start justify-between p-4">
               <HStack>
+                {thumbnailPath && (
+                  <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
+                )}
                 <div className="flex flex-col flex-grow">
                   <Heading size="h2">{operation.itemReadableId}</Heading>
                   <p className="text-muted-foreground line-clamp-1">
                     {operation.itemDescription}
                   </p>
                 </div>
-                {thumbnailPath && (
-                  <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
-                )}
               </HStack>
               <div className="flex flex-col flex-shrink items-end">
                 <Heading size="h2">{operation.operationQuantity}</Heading>
@@ -509,6 +509,11 @@ export const JobOperation = ({
                       operation.setupDuration
                     )}
                     value={(progress.setup / operation.setupDuration) * 100}
+                    indicatorClassName={
+                      progress.setup > operation.setupDuration
+                        ? "bg-red-500"
+                        : ""
+                    }
                   />
                 </HStack>
               )}
@@ -526,6 +531,11 @@ export const JobOperation = ({
                       operation.laborDuration
                     )}
                     value={(progress.labor / operation.laborDuration) * 100}
+                    indicatorClassName={
+                      progress.labor > operation.laborDuration
+                        ? "bg-red-500"
+                        : ""
+                    }
                   />
                 </HStack>
               )}
@@ -543,6 +553,11 @@ export const JobOperation = ({
                       operation.machineDuration
                     )}
                     value={(progress.machine / operation.machineDuration) * 100}
+                    indicatorClassName={
+                      progress.machine > operation.machineDuration
+                        ? "bg-red-500"
+                        : ""
+                    }
                   />
                 </HStack>
               )}
@@ -555,7 +570,8 @@ export const JobOperation = ({
                 </Tooltip>
                 <Progress
                   indicatorClassName={
-                    operation.operationStatus === "Paused"
+                    operation.operationStatus === "Paused" &&
+                    operation.quantityComplete < operation.operationQuantity
                       ? "bg-yellow-500"
                       : ""
                   }
@@ -1267,6 +1283,13 @@ function QuantityModal({
     finish: path.to.finish,
   };
 
+  const actionButtonMap = {
+    scrap: "Log Scrap",
+    rework: "Log Rework",
+    complete: "Log Completed",
+    finish: isOperationComplete ? "Close" : "Close Anyways",
+  };
+
   const validatorMap = {
     scrap: scrapQuantityValidator,
     rework: nonScrapQuantityValidator,
@@ -1312,7 +1335,7 @@ function QuantityModal({
             <Hidden name="machineProductionEventId" />
             <VStack spacing={2}>
               {type === "finish" && !isOperationComplete && (
-                <Alert variant="warning">
+                <Alert variant="destructive">
                   <LuAlertTriangle className="h-4 w-4" />
                   <AlertTitle>Insufficient quantity</AlertTitle>
                   <AlertDescription>
@@ -1373,7 +1396,7 @@ function QuantityModal({
               }
               type="submit"
             >
-              Submit
+              {actionButtonMap[type]}
             </Button>
           </ModalFooter>
         </ValidatedForm>
