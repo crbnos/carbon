@@ -53,6 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
     const insertLine = await upsertSalesRFQLine(client, {
       ...data,
+      description: "",
       companyId,
       createdBy: userId,
       customFields: setCustomFields(formData),

@@ -35127,6 +35127,182 @@ export default {
         tags: ["salesRfqs"],
       },
     },
+    "/rpc/new_sales_rfq": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "rfq_date",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "customer_id",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "customer_location_id",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "customer_contact_id",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "customer_reference",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "expiration_date",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "json",
+            in: "query",
+            name: "external_notes",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "json",
+            in: "query",
+            name: "internal_notes",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "status",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "sales_person_id",
+            required: false,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) new_sales_rfq"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                customer_contact_id: {
+                  format: "text",
+                  type: "string",
+                },
+                customer_id: {
+                  format: "text",
+                  type: "string",
+                },
+                customer_location_id: {
+                  format: "text",
+                  type: "string",
+                },
+                customer_reference: {
+                  format: "text",
+                  type: "string",
+                },
+                expiration_date: {
+                  format: "text",
+                  type: "string",
+                },
+                external_notes: {
+                  format: "json",
+                },
+                internal_notes: {
+                  format: "json",
+                },
+                location_id: {
+                  format: "text",
+                  type: "string",
+                },
+                rfq_date: {
+                  format: "text",
+                  type: "string",
+                },
+                sales_person_id: {
+                  format: "text",
+                  type: "string",
+                },
+                status: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["company_id", "rfq_date"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) new_sales_rfq"],
+      },
+    },
     "/rpc/has_company_permission": {
       get: {
         parameters: [
@@ -35373,6 +35549,74 @@ export default {
           },
         },
         tags: ["(rpc) get_my_permission"],
+      },
+    },
+    "/rpc/get_next_sequence": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "sequence_name",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_next_sequence"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                sequence_name: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["sequence_name", "company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_next_sequence"],
       },
     },
     "/rpc/get_active_job_operations_by_location": {

@@ -25,7 +25,7 @@ export default function Route() {
             <CodeSnippet
               selectedLang={selectedLang}
               snippet={Snippets.env({
-                appUrl: SUPABASE_API_URL,
+                appUrl: window.location.origin,
                 apiKey: "<your-api-key>",
                 publicKey: SUPABASE_ANON_PUBLIC,
                 apiUrl: SUPABASE_API_URL,

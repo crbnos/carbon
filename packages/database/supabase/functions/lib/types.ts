@@ -29839,6 +29839,13 @@ export type Database = {
         }
         Returns: Json
       }
+      get_next_sequence: {
+        Args: {
+          sequence_name: string
+          company_id: string
+        }
+        Returns: string
+      }
       get_permission_companies: {
         Args: {
           claim: string
@@ -29992,6 +29999,26 @@ export type Database = {
           "": Json
         }
         Returns: string[]
+      }
+      new_sales_rfq: {
+        Args: {
+          company_id: string
+          rfq_date: string
+          customer_id?: string
+          customer_location_id?: string
+          customer_contact_id?: string
+          customer_reference?: string
+          expiration_date?: string
+          external_notes?: Json
+          internal_notes?: Json
+          location_id?: string
+          status?: string
+          sales_person_id?: string
+        }
+        Returns: {
+          id: string
+          rfq_id: string
+        }[]
       }
       users_for_groups: {
         Args: {
