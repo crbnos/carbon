@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -11,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  useMount,
   VStack,
 } from "@carbon/react";
 import type { FetcherWithComponents } from "@remix-run/react";
@@ -19,42 +21,61 @@ import { useState } from "react";
 import { LuAlertTriangle } from "react-icons/lu";
 import { CustomerContact, SelectControlled } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
+import {
+  getQuoteLinePricesByQuoteId,
+  getQuoteLines,
+  quoteFinalizeValidator,
+} from "~/modules/sales";
 import { path } from "~/utils/path";
-import { quoteFinalizeValidator } from "../../sales.models";
 import type { Quotation, QuotationLine, QuotationPrice } from "../../types";
 
 type QuotationFinalizeModalProps = {
   onClose: () => void;
   quote?: Quotation;
   fetcher: FetcherWithComponents<{}>;
-  lines: QuotationLine[];
-  prices: QuotationPrice[];
 };
 
 const QuotationFinalizeModal = ({
   quote,
   onClose,
   fetcher,
-  lines,
-  prices,
 }: QuotationFinalizeModalProps) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
   const integrations = useIntegrations();
   const canEmail = integrations.has("resend");
+  const { carbon } = useCarbon();
+
+  const [loading, setLoading] = useState(true);
+  const [lines, setLines] = useState<QuotationLine[]>([]);
+  const [prices, setPrices] = useState<QuotationPrice[]>([]);
+
+  const fetchQuoteData = async () => {
+    if (!carbon) return;
+
+    const [lines, prices] = await Promise.all([
+      getQuoteLines(carbon, quoteId),
+      getQuoteLinePricesByQuoteId(carbon, quoteId),
+    ]);
+    setLines(lines.data ?? []);
+    setPrices(prices.data ?? []);
+
+    setLoading(false);
+  };
+
+  useMount(() => {
+    fetchQuoteData();
+  });
 
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "Download"
   );
 
-  console.log({ lines, prices });
-
   const linesWithNoPrices = lines
     .filter((line) => !prices.some((price) => price.quoteLineId === line.id))
     .map((line) => line.itemReadableId)
     .filter((id): id is string => id !== undefined);
-  console.log({ linesWithNoPrices });
 
   const linesWithZeroPriceOrLeadTime = prices
     .filter((price) => price.unitPrice === 0 || price.leadTime === 0)
@@ -63,12 +84,10 @@ const QuotationFinalizeModal = ({
       return line?.itemReadableId;
     })
     .filter((id): id is string => id !== undefined);
-  console.log({ linesWithZeroPriceOrLeadTime });
 
   const warningLineReadableIds = [
     ...new Set([...linesWithNoPrices, ...linesWithZeroPriceOrLeadTime]),
   ];
-  console.log({ warningLineReadableIds });
 
   return (
     <Modal
@@ -145,7 +164,9 @@ const QuotationFinalizeModal = ({
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Finalize</Button>
+            <Button isDisabled={loading} type="submit">
+              Finalize
+            </Button>
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
