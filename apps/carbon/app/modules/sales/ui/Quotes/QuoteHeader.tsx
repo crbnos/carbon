@@ -294,6 +294,8 @@ const QuoteHeader = () => {
           quote={routeData?.quote}
           onClose={finalizeModal.onClose}
           fetcher={finalizeFetcher}
+          lines={routeData?.lines ?? []}
+          prices={routeData?.prices ?? []}
         />
       )}
       {shareModal.isOpen && (
