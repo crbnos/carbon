@@ -124,16 +124,10 @@ const SupplierProcessForm = ({
                   minValue={0}
                 />
                 <Number
-                  name="unitCost"
-                  label="Unit Cost"
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency,
-                    maximumFractionDigits: 4,
-                  }}
+                  name="leadTime"
+                  label="Standard Lead Time"
                   minValue={0}
                 />
-                <Number name="leadTime" label="Lead Time" minValue={0} />
 
                 <CustomFormFields table="supplierProcess" />
               </VStack>

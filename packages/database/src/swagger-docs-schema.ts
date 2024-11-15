@@ -11560,9 +11560,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierProcesses.minimumCost",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierProcesses.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierProcesses.leadTime",
           },
           {
@@ -33007,9 +33004,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierProcess.minimumCost",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierProcess.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierProcess.leadTime",
           },
           {
@@ -33102,9 +33096,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierProcess.minimumCost",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierProcess.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierProcess.leadTime",
           },
           {
@@ -33149,9 +33140,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierProcess.minimumCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierProcess.unitCost",
           },
           {
             $ref: "#/parameters/rowFilter.supplierProcess.leadTime",
@@ -42447,10 +42435,6 @@ export default {
           type: "string",
         },
         minimumCost: {
-          format: "numeric",
-          type: "number",
-        },
-        unitCost: {
           format: "numeric",
           type: "number",
         },
@@ -52529,7 +52513,6 @@ export default {
         "supplierId",
         "processId",
         "minimumCost",
-        "unitCost",
         "leadTime",
         "companyId",
         "createdBy",
@@ -52555,11 +52538,6 @@ export default {
           type: "string",
         },
         minimumCost: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        unitCost: {
           default: 0,
           format: "numeric",
           type: "number",
@@ -60312,13 +60290,6 @@ export default {
     },
     "rowFilter.supplierProcesses.minimumCost": {
       name: "minimumCost",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierProcesses.unitCost": {
-      name: "unitCost",
       required: false,
       format: "numeric",
       in: "query",
@@ -73564,13 +73535,6 @@ export default {
     },
     "rowFilter.supplierProcess.minimumCost": {
       name: "minimumCost",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierProcess.unitCost": {
-      name: "unitCost",
       required: false,
       format: "numeric",
       in: "query",

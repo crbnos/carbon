@@ -203,7 +203,6 @@ export const supplierProcessValidator = z.object({
   supplierId: z.string().min(36, { message: "Supplier is required" }),
   processId: z.string().min(1, { message: "Process is required" }),
   minimumCost: zfd.numeric(z.number().min(0)),
-  unitCost: zfd.numeric(z.number().min(0)),
   leadTime: zfd.numeric(z.number().min(0)),
 });
 
