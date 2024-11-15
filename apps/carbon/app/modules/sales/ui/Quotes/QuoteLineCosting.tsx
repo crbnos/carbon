@@ -268,7 +268,7 @@ const QuoteLineCosting = ({
                     );
                   })}
                 </Tr>
-                <Tr>
+                {/* <Tr>
                   <Td className="border-r border-border pl-10 ">
                     <HStack className="w-full justify-between ">
                       <span className="whitespace-nowrap">Service Cost</span>
@@ -295,7 +295,7 @@ const QuoteLineCosting = ({
                       </Td>
                     );
                   })}
-                </Tr>
+                </Tr> */}
               </>
             )}
             <Tr>
