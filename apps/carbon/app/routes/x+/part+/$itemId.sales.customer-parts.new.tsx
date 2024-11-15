@@ -2,12 +2,33 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useParams } from "@remix-run/react";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
-import { customerPartValidator, upsertItemCustomerPart } from "~/modules/items";
+import { useLoaderData, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
+import {
+  customerPartValidator,
+  getItem,
+  upsertItemCustomerPart,
+} from "~/modules/items";
 import CustomerPartForm from "~/modules/items/ui/Item/CustomerPartForm";
 import { path } from "~/utils/path";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "parts",
+    role: "employee",
+  });
+
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
+
+  const itemData = await getItem(client, itemId);
+  const readableId = itemData?.data?.readableId;
+
+  return json({
+    readableId,
+  });
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -50,6 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function NewCustomerPartRoute() {
   const { itemId } = useParams();
+  const { readableId } = useLoaderData<typeof loader>();
 
   if (!itemId) throw new Error("itemId not found");
 
@@ -58,6 +80,7 @@ export default function NewCustomerPartRoute() {
     customerId: "",
     customerPartId: "",
     customerPartRevision: "",
+    readableId: readableId ?? "",
   };
 
   return <CustomerPartForm initialValues={initialValues} />;
