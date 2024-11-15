@@ -84,7 +84,7 @@ After installation you should be able to access the following apps/containers lo
 | ERP             | [http://localhost:3000](http://localhost:3000)                                                                     |
 | Developers      | [http://localhost:3001](http://localhost:3001)                                                                     |
 | MES             | [http://localhost:3002](http://localhost:3002)                                                                     |
-| Website         | [http://localhost:4002](http://localhost:4002)                                                                     |
+| Website         | [http://localhost:3003](http://localhost:3003)                                                                     |
 | Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
 | Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |
 | Inbucket        | [http://localhost:54324/monitor](http://localhost:54324/monitor)                                                   |

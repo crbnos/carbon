@@ -31,7 +31,7 @@ export default defineConfig({
     ],
   },
   server: {
-    port: 4001,
+    port: 3003,
   },
   plugins: [
     remix({
