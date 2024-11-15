@@ -45,21 +45,22 @@ type ItemCardProps = {
 } & DisplaySettings;
 
 const cardVariants = cva(
-  "bg-gradient-to-bl via-card to-card hover:to-muted/30 hover:via-muted/30",
+  "dark:bg-gradient-to-bl dark:via-card dark:to-card dark:hover:to-muted/30 dark:hover:via-muted/30 bg-card hover:bg-muted/30",
   {
     variants: {
       dragging: {
         over: "ring-2 ring-primary opacity-30",
         overlay:
-          "ring-2 ring-primary hover:from-muted hover:via-muted hover:to-muted",
+          "ring-2 ring-primary dark:hover:from-muted dark:hover:via-muted dark:hover:to-muted hover:bg-muted",
       },
       status: {
-        "In Progress": "border-emerald-600/30 from-emerald-600/10",
+        "In Progress":
+          "border-emerald-600/30 dark:from-emerald-600/10 bg-emerald-600/5",
         Ready: "",
         Done: "",
-        Paused: "border-yellow-500/30 from-yellow-500/10",
-        Canceled: "border-red-500/30 from-red-500/10",
-        Waiting: "border-yellow-500/30 from-yellow-500/10",
+        Paused: "border-yellow-500/30 dark:from-yellow-500/10 bg-yellow-500/5",
+        Canceled: "border-red-500/30 dark:from-red-500/10 bg-red-500/5",
+        Waiting: "border-yellow-500/30 dark:from-yellow-500/10 bg-yellow-500/5",
         Todo: "border-border",
       },
     },

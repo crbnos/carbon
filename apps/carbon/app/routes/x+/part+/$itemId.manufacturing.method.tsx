@@ -11,7 +11,7 @@ import type { MakeMethod, Material, MethodOperation } from "~/modules/items";
 import {
   BillOfMaterial,
   BillOfProcess,
-  MakeMethodBreadcrumbs,
+  MakeMethodTools,
   PartManufacturingForm,
   getItemManufacturing,
   partManufacturingValidator,
@@ -112,7 +112,7 @@ export default function MakeMethodRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodBreadcrumbs itemId={itemId} type="Part" />
+      <MakeMethodTools itemId={itemId} type="Part" />
       <PartManufacturingForm
         key={itemId}
         initialValues={manufacturingInitialValues}

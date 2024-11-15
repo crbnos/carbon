@@ -18,7 +18,6 @@ import {
   getOpportunityDocuments,
   getSalesOrder,
   getSalesOrderLines,
-  SalesOrderBreadcrumbs,
   SalesOrderExplorer,
   SalesOrderHeader,
 } from "~/modules/sales";
@@ -97,7 +96,6 @@ export default function SalesOrderRoute() {
                   <ResizablePanel order={2}>
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <VStack spacing={2} className="p-2">
-                        <SalesOrderBreadcrumbs />
                         <Outlet />
                       </VStack>
                     </ScrollArea>

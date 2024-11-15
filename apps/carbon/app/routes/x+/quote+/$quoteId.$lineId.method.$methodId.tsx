@@ -7,6 +7,7 @@ import {
   getQuoteOperationsByMethodId,
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
+  QuoteMakeMethodTools,
 } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -83,6 +84,7 @@ export default function QuoteMakeMethodRoute() {
 
   return (
     <VStack spacing={2}>
+      <QuoteMakeMethodTools />
       <QuoteBillOfProcess
         key={`bop:${methodId}:${operations.length}`}
         quoteMakeMethodId={methodId}

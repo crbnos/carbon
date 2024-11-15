@@ -18,11 +18,9 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
-import { Link, useFetcher, useLocation, useParams } from "@remix-run/react";
+import { useFetcher, useLocation, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { LuAlertTriangle, LuDownload, LuUpload } from "react-icons/lu";
-import { RiProgress4Line } from "react-icons/ri";
-import { BreadcrumbItem, Breadcrumbs } from "~/components";
 import { Hidden, Item, Submit } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -30,7 +28,7 @@ import { path } from "~/utils/path";
 import { getLineMethodValidator, getMethodValidator } from "../../sales.models";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
 
-const QuoteBreadcrumbs = () => {
+const QuoteMakeMethodTools = () => {
   const permissions = usePermissions();
   const { quoteId, lineId, methodId, materialId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
@@ -77,30 +75,20 @@ const QuoteBreadcrumbs = () => {
 
   return (
     <>
-      <Menubar>
-        <HStack className="w-full justify-between">
-          <Breadcrumbs>
-            <BreadcrumbItem>
-              <Button leftIcon={<RiProgress4Line />} variant="ghost" asChild>
-                <Link to={path.to.quoteDetails(quoteId)}>
-                  {routeData?.quote?.quoteId}
-                </Link>
-              </Button>
-            </BreadcrumbItem>
-            {line && (
-              <BreadcrumbItem>
-                <Button variant="ghost" asChild>
-                  <Link to={path.to.quoteLine(quoteId, line.id!)}>
-                    {line.itemReadableId}
-                  </Link>
-                </Button>
-              </BreadcrumbItem>
-            )}
-          </Breadcrumbs>
-          {line &&
-            permissions.can("update", "sales") &&
-            (isQuoteLineMethod || isQuoteMakeMethod) && (
+      {line &&
+        permissions.can("update", "sales") &&
+        (isQuoteLineMethod || isQuoteMakeMethod) && (
+          <Menubar>
+            <HStack className="w-full justify-start">
               <HStack spacing={0}>
+                <MenubarItem
+                  isLoading={isGetMethodLoading}
+                  isDisabled={isGetMethodLoading}
+                  leftIcon={<LuDownload />}
+                  onClick={getMethodModal.onOpen}
+                >
+                  Get Method
+                </MenubarItem>
                 <MenubarItem
                   isDisabled={
                     !permissions.can("update", "parts") || isSaveMethodLoading
@@ -111,18 +99,10 @@ const QuoteBreadcrumbs = () => {
                 >
                   Save Method
                 </MenubarItem>
-                <MenubarItem
-                  isLoading={isGetMethodLoading}
-                  isDisabled={isGetMethodLoading}
-                  leftIcon={<LuDownload />}
-                  onClick={getMethodModal.onOpen}
-                >
-                  Get Method
-                </MenubarItem>
               </HStack>
-            )}
-        </HStack>
-      </Menubar>
+            </HStack>
+          </Menubar>
+        )}
       {getMethodModal.isOpen && (
         <Modal
           open
@@ -298,4 +278,4 @@ const QuoteBreadcrumbs = () => {
   );
 };
 
-export default QuoteBreadcrumbs;
+export default QuoteMakeMethodTools;

@@ -23,18 +23,16 @@ import {
   useMount,
   VStack,
 } from "@carbon/react";
-import { Link, useFetcher, useLocation, useParams } from "@remix-run/react";
+import { useFetcher, useLocation, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import {
   LuAlertTriangle,
   LuDownload,
-  LuHardHat,
   LuSquareStack,
   LuUpload,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { BreadcrumbItem, Breadcrumbs } from "~/components";
 import {
   Hidden,
   Item,
@@ -94,19 +92,10 @@ const JobBreadcrumbs = () => {
 
   return (
     <>
-      <Menubar>
-        <HStack className="w-full justify-between">
-          <Breadcrumbs>
-            <BreadcrumbItem>
-              <Button leftIcon={<LuHardHat />} variant="ghost" asChild>
-                <Link to={path.to.jobDetails(jobId)}>
-                  {routeData?.job?.jobId}
-                </Link>
-              </Button>
-            </BreadcrumbItem>
-          </Breadcrumbs>
-          {permissions.can("update", "production") &&
-            (isJobMethod || isJobMakeMethod) && (
+      {permissions.can("update", "production") &&
+        (isJobMethod || isJobMakeMethod) && (
+          <Menubar>
+            <HStack className="w-full justify-start">
               <HStack spacing={0}>
                 <MenubarItem
                   isDisabled={
@@ -127,9 +116,9 @@ const JobBreadcrumbs = () => {
                   Get Method
                 </MenubarItem>
               </HStack>
-            )}
-        </HStack>
-      </Menubar>
+            </HStack>
+          </Menubar>
+        )}
       {getMethodModal.isOpen && (
         <Modal
           open

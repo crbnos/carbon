@@ -1,6 +1,11 @@
-import { Card, cn } from "@carbon/react";
+import { Button, cn, Menubar } from "@carbon/react";
 import { Link } from "@remix-run/react";
-import { LuCheckCircle2, LuCircle } from "react-icons/lu";
+import { LuCircle, LuTruck } from "react-icons/lu";
+import {
+  RiProgress2Line,
+  RiProgress4Line,
+  RiProgress8Line,
+} from "react-icons/ri";
 import { useOptimisticLocation } from "~/hooks/useOptimisticLocation";
 import { path } from "~/utils/path";
 import type { Opportunity } from "../../types";
@@ -27,8 +32,19 @@ function getOpportunityCompleted(opportunity: Opportunity, state: string) {
   }
 }
 
-function getStateIcon(isCompleted?: boolean) {
-  return isCompleted ? LuCheckCircle2 : LuCircle;
+function getOpportunityIcon(state: string) {
+  switch (state) {
+    case "RFQ":
+      return RiProgress2Line;
+    case "Quote":
+      return RiProgress4Line;
+    case "Order":
+      return RiProgress8Line;
+    case "Shipment":
+      return LuTruck;
+    default:
+      return LuCircle;
+  }
 }
 
 function getPath(opportunity: Opportunity, state: string) {
@@ -58,65 +74,58 @@ function getIsCurrent(
       return pathname.includes(
         path.to.salesOrderDetails(opportunity.salesOrderId!)
       );
+
     default:
       return false;
   }
 }
 
-const states = ["RFQ", "Quote", "Order", "Shipped"];
+const states = ["RFQ", "Quote", "Order", "Shipment"];
 
 const OpportunityState = ({ opportunity }: { opportunity: Opportunity }) => {
   const { pathname } = useOptimisticLocation();
   return (
-    <Card>
-      <div className="relative flex items-center justify-between">
-        {states.map((state) => {
-          const isStarted = getOpportunityStarted(opportunity, state);
-          const isCompleted = getOpportunityCompleted(opportunity, state);
-          const isCurrent = getIsCurrent(opportunity, pathname, state);
+    <Menubar>
+      {states.map((state, index) => {
+        const isStarted = getOpportunityStarted(opportunity, state);
+        const isCompleted = getOpportunityCompleted(opportunity, state);
+        const isCurrent = getIsCurrent(opportunity, pathname, state);
+        const Icon = getOpportunityIcon(state);
+        const to = getPath(opportunity, state);
 
-          const Component = isStarted ? Link : "div";
-
-          return (
-            <Component
-              key={state}
-              // @ts-expect-error
-              to={isStarted ? getPath(opportunity, state) : undefined}
-              className="group flex flex-col items-center z-10"
-            >
-              <div
+        return isStarted && to ? (
+          <Button
+            leftIcon={
+              <Icon
                 className={cn(
-                  "w-12 h-12 rounded-full border-2 flex items-center justify-center mb-2 bg-muted border-border",
-                  !isStarted && "cursor-not-allowed",
-                  isCurrent &&
-                    "bg-emerald-600 dark:bg-emerald-900 border-transparent"
+                  isCurrent && "text-emerald-500",
+                  !isCurrent && "opacity-80 hover:opacity-100"
                 )}
-              >
-                {getStateIcon(isCompleted)({
-                  className: cn(
-                    "w-8 h-8 muted-foreground",
-                    isStarted && isCurrent
-                      ? "text-emerald-100  dark:text-emerald-400"
-                      : "text-muted-foreground"
-                  ),
-                })}
-              </div>
-              <span
+              />
+            }
+            variant="ghost"
+            asChild
+          >
+            <Link to={to}>{state}</Link>
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            isDisabled
+            leftIcon={
+              <Icon
                 className={cn(
-                  "text-sm text-center",
-                  isCurrent
-                    ? "text-foreground"
-                    : "text-muted-foreground group-hover:text-foreground transition-colors"
+                  isCompleted && "text-emerald-500",
+                  !isCurrent && "opacity-80 hover:opacity-100"
                 )}
-              >
-                {state}
-              </span>
-            </Component>
-          );
-        })}
-        <div className="absolute top-6 left-4 right-4 h-0.5 bg-border" />
-      </div>
-    </Card>
+              />
+            }
+          >
+            {state}
+          </Button>
+        );
+      })}
+    </Menubar>
   );
 };
 

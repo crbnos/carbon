@@ -199,10 +199,7 @@ export default function SalesOrderRoute() {
 
   return (
     <>
-      <OpportunityState
-        key={`state-${initialValues.id}`}
-        opportunity={orderData?.opportunity!}
-      />
+      <OpportunityState opportunity={orderData.opportunity} />
       <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
       <Suspense
         key={`documents-${orderId}`}

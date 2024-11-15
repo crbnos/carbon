@@ -10,7 +10,7 @@ import {
   BillOfMaterial,
   BillOfProcess,
   ItemForm,
-  MakeMethodBreadcrumbs,
+  MakeMethodTools,
   getItem,
   getMethodMaterial,
   getMethodMaterialsByMakeMethod,
@@ -106,7 +106,7 @@ export default function MethodMaterialMakePage() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodBreadcrumbs itemId={item.id} type="Part" />
+      <MakeMethodTools itemId={item.id} type="Part" />
       <ItemForm
         key={`item:${itemId}:${makeMethodId}:${materialId}`}
         type={item.type}

@@ -1,11 +1,8 @@
-import SalesOrderBreadcrumbs from "./SalesOrderBreadcrumbs";
-import SalesOrderShipmentForm from "./SalesOrderShipmentForm";
-//import SalesOrderDocuments from "./SalesOrderDocuments";
-//import SalesOrderDocumentForm from "./SalesOrderDocuments/SalesOrderDocumentForm";
 import SalesOrderExplorer from "./SalesOrderExplorer";
 import SalesOrderForm from "./SalesOrderForm";
 import SalesOrderHeader from "./SalesOrderHeader";
 import SalesOrderLineForm from "./SalesOrderLineForm";
+import SalesOrderShipmentForm from "./SalesOrderShipmentForm";
 
 import SalesOrderPaymentForm from "./SalesOrderPaymentForm";
 
@@ -14,10 +11,7 @@ import SalesStatus from "./SalesStatus";
 import { useSalesOrderTotals } from "./useSalesOrderTotals";
 
 export {
-  SalesOrderBreadcrumbs,
   SalesOrderExplorer,
-  //SalesOrderDocumentForm,
-  //SalesOrderDocuments,
   SalesOrderForm,
   SalesOrderHeader,
   SalesOrderLineForm,
