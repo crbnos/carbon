@@ -7,14 +7,13 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  ItemSalePriceForm,
   getItemCustomerParts,
   getItemUnitSalePrice,
   itemUnitSalePriceValidator,
   upsertItemUnitSalePrice,
 } from "~/modules/items";
 import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
-import { getCustomFields, setCustomFields } from "~/utils/form";
+import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -89,22 +88,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartSalesRoute() {
-  const { partUnitSalePrice, customerParts, itemId } =
-    useLoaderData<typeof loader>();
+  const { customerParts, itemId } = useLoaderData<typeof loader>();
 
-  const initialValues = {
-    ...partUnitSalePrice,
-    salesUnitOfMeasureCode: partUnitSalePrice?.salesUnitOfMeasureCode ?? "",
-    ...getCustomFields(partUnitSalePrice.customFields),
-    itemId: itemId,
-  };
+  // const initialValues = {
+  //   ...partUnitSalePrice,
+  //   salesUnitOfMeasureCode: partUnitSalePrice?.salesUnitOfMeasureCode ?? "",
+  //   ...getCustomFields(partUnitSalePrice.customFields),
+  //   itemId: itemId,
+  // };
 
   return (
     <VStack spacing={2} className="p-2">
-      <ItemSalePriceForm
+      {/* <ItemSalePriceForm
         key={initialValues.itemId}
         initialValues={initialValues}
-      />
+      /> */}
       {customerParts ? (
         <CustomerParts customerParts={customerParts} itemId={itemId} />
       ) : null}
