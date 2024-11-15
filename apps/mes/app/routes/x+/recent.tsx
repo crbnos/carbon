@@ -66,7 +66,7 @@ export default function ActiveRoute() {
       >
         <Tabs defaultValue="current">
           <div className="flex items-center px-4 py-2 h-[52px] bg-background">
-            <Heading size="h2">Active</Heading>
+            <Heading size="h4">Recent</Heading>
           </div>
           <Separator />
           <div className="p-4">

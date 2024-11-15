@@ -199,7 +199,7 @@ export const JobOperation = ({
                 />
               </Link>
             )}
-            <Heading size="h2">{operation.jobReadableId}</Heading>
+            <Heading size="h4">{operation.jobReadableId}</Heading>
           </div>
           <div className="hidden md:flex flex-shrink-0 items-center justify-end gap-2">
             <Navigation
@@ -281,7 +281,7 @@ export const JobOperation = ({
                   <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
                 )}
                 <div className="flex flex-col flex-grow">
-                  <Heading size="h2">{operation.itemReadableId}</Heading>
+                  <Heading size="h3">{operation.itemReadableId}</Heading>
                   <p className="text-muted-foreground line-clamp-1">
                     {operation.itemDescription}
                   </p>
