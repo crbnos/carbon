@@ -245,13 +245,11 @@ export const getRatesFromSupplierProcesses =
     supplierProcessId: string | null
   ): {
     operationMinimumCost: number;
-    operationUnitCost: number;
     operationLeadTime: number;
   } => {
     if (!processes) {
       return {
         operationMinimumCost: 0,
-        operationUnitCost: 0,
         operationLeadTime: 0,
       };
     }
@@ -264,7 +262,6 @@ export const getRatesFromSupplierProcesses =
       if (supplierProcess) {
         return {
           operationMinimumCost: supplierProcess.minimumCost,
-          operationUnitCost: supplierProcess.unitCost,
           operationLeadTime: supplierProcess.leadTime,
         };
       }
@@ -277,10 +274,6 @@ export const getRatesFromSupplierProcesses =
         relatedProcesses.reduce((acc, process) => {
           return (acc += process.minimumCost ?? 0);
         }, 0) / relatedProcesses.length;
-      const operationUnitCost =
-        relatedProcesses.reduce((acc, process) => {
-          return (acc += process.unitCost ?? 0);
-        }, 0) / relatedProcesses.length;
       const operationLeadTime =
         relatedProcesses.reduce((acc, process) => {
           return (acc += process.leadTime ?? 0);
@@ -288,14 +281,12 @@ export const getRatesFromSupplierProcesses =
 
       return {
         operationMinimumCost,
-        operationUnitCost,
         operationLeadTime,
       };
     }
 
     return {
       operationMinimumCost: 0,
-      operationUnitCost: 0,
       operationLeadTime: 0,
     };
   };

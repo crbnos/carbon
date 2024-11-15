@@ -67,7 +67,6 @@ export default function NewSupplierProcessRoute() {
     supplierId: supplierId,
     processId: "",
     minimumCost: 0,
-    unitCost: 0,
     leadTime: 0,
   };
 

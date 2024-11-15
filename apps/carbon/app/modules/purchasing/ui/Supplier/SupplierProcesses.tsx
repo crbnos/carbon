@@ -121,11 +121,6 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
         cell: ({ row }) => formatter.format(row.original.minimumCost ?? 0),
       },
       {
-        accessorKey: "unitCost",
-        header: "Unit Cost",
-        cell: ({ row }) => formatter.format(row.original.unitCost ?? 0),
-      },
-      {
         accessorKey: "leadTime",
         header: "Lead Time",
         cell: (item) => item.getValue(),
@@ -137,13 +132,6 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
   const editableComponents = useMemo(
     () => ({
       minimumCost: EditableNumber(onCellEdit, {
-        formatOptions: {
-          style: "currency",
-          currency: baseCurrency,
-          maximumFractionDigits: 4,
-        },
-      }),
-      unitCost: EditableNumber(onCellEdit, {
         formatOptions: {
           style: "currency",
           currency: baseCurrency,

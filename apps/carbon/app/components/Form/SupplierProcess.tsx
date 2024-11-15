@@ -54,7 +54,6 @@ const SupplierProcess = ({
             processId,
             supplierId: "",
             minimumCost: 0,
-            unitCost: 0,
             leadTime: 0,
           }}
         />
