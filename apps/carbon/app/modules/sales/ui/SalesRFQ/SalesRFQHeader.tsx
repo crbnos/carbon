@@ -118,7 +118,6 @@ const SalesRFQHeader = () => {
               </Button>
             </statusFetcher.Form>
           )}
-
           {status === "Ready for Quote" && (
             <>
               <statusFetcher.Form
