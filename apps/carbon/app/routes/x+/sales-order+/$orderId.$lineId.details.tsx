@@ -224,8 +224,6 @@ export default function EditSalesOrderLineRoute() {
           </Await>
         </Suspense>
       </div>
-      {/* <SalesOrderLineNotes line={line} /> */}
-
       <Outlet />
     </>
   );
