@@ -30,7 +30,7 @@ export const path = {
     finish: `${x}/finish`,
     forgotPassword: "/forgot-password",
     healthcheck: "/healthcheck",
-    jobs: `${x}/jobs`,
+    operations: `${x}/operations`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",
@@ -44,7 +44,8 @@ export const path = {
     scrapReasons: `${api}/scrap-reasons`,
     switchCompany: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
-    workCenter: (workCenter: string) => generatePath(`${x}/jobs/${workCenter}`),
+    workCenter: (workCenter: string) =>
+      generatePath(`${x}/operations/${workCenter}`),
   },
 } as const;
 
@@ -55,6 +56,10 @@ export const removeSubdomain = (url?: string): string => {
   const domain = parts.slice(-2).join(".");
 
   return domain;
+};
+
+export const getPrivateUrl = (path: string) => {
+  return `/file/preview/private/${path}`;
 };
 
 export const getStoragePath = (bucket: string, path: string) => {

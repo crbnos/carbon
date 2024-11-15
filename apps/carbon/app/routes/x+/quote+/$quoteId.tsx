@@ -23,7 +23,6 @@ import {
   getQuoteMethodTrees,
   getQuotePayment,
   getQuoteShipment,
-  QuoteBreadcrumbs,
   QuoteExplorer,
   QuoteHeader,
 } from "~/modules/sales";
@@ -142,7 +141,6 @@ export default function QuoteRoute() {
                   <ResizablePanel order={2}>
                     <ScrollArea className="h-[calc(100vh-99px)]">
                       <VStack spacing={2} className="p-2">
-                        <QuoteBreadcrumbs />
                         <Outlet />
                       </VStack>
                     </ScrollArea>

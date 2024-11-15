@@ -43,6 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   let selectedWorkCenterIds: string[] = [];
   let selectedProcessIds: string[] = [];
+  let selectedSalesOrderIds: string[] = [];
   if (filterParam) {
     for (const filter of filterParam) {
       const [key, operator, value] = filter.split(":");
@@ -57,6 +58,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
           selectedProcessIds = value.split(",");
         } else if (operator === "eq") {
           selectedProcessIds = [value];
+        }
+      } else if (key === "salesOrderId") {
+        if (operator === "in") {
+          selectedSalesOrderIds = value.split(",");
+        } else if (operator === "eq") {
+          selectedSalesOrderIds = [value];
         }
       }
     }
@@ -111,6 +118,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
         selectedWorkCenterIds.includes(op.workCenterId)
       ) ?? []
     : operations.data ?? [];
+
+  if (selectedSalesOrderIds.length) {
+    filteredOperations = filteredOperations.filter((op) =>
+      selectedSalesOrderIds.includes(op.salesOrderId)
+    );
+  }
 
   if (search) {
     filteredOperations = filteredOperations.filter(
@@ -175,15 +188,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
           Math.max(operation.laborDuration, operation.machineDuration),
         deadlineType: op.jobDeadlineType,
         customerId: op.jobCustomerId,
+        salesOrderReadableId: op.salesOrderReadableId,
+        salesOrderId: op.salesOrderId,
+        salesOrderLineId: op.salesOrderLineId,
         status: op.operationStatus,
       };
     }) ?? []) satisfies Item[],
     processes: processes.data ?? [],
+    salesOrders: Object.entries(
+      filteredOperations?.reduce((acc, op) => {
+        if (op.salesOrderId) {
+          acc[op.salesOrderId] = op.salesOrderReadableId;
+        }
+        return acc;
+      }, {} as Record<string, string>) ?? {}
+    ).map(([id, readableId]) => ({ id, readableId })),
   });
 }
 
 export default function ScheduleRoute() {
-  const { columns, items, processes } = useLoaderData<typeof loader>();
+  const { columns, items, processes, salesOrders } =
+    useLoaderData<typeof loader>();
   const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
   const currentFilters = params.getAll("filter");
@@ -203,6 +228,7 @@ export default function ScheduleRoute() {
       {
         accessorKey: "processId",
         header: "Process",
+        pluralHeader: "Processes",
         filter: {
           type: "static",
           options: processes.map((p) => ({
@@ -211,8 +237,19 @@ export default function ScheduleRoute() {
           })),
         },
       },
+      {
+        accessorKey: "salesOrderId",
+        header: "Sales Order",
+        filter: {
+          type: "static",
+          options: salesOrders.map((so) => ({
+            label: so.readableId,
+            value: so.id,
+          })),
+        },
+      },
     ];
-  }, [columns, processes]);
+  }, [columns, processes, salesOrders]);
 
   return (
     <div className="flex flex-col h-full max-h-full  overflow-auto relative">
@@ -251,6 +288,7 @@ export default function ScheduleRoute() {
                   showEmployee
                   showProgress={false}
                   showStatus
+                  showSalesOrder
                 />
               )}
             </ClientOnly>

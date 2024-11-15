@@ -12,6 +12,7 @@ import {
   getQuoteOperationsByMethodId,
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
+  QuoteMakeMethodTools,
   QuoteMaterialForm,
 } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -110,6 +111,7 @@ export default function QuoteMakeMethodRoute() {
 
   return (
     <VStack spacing={2}>
+      <QuoteMakeMethodTools />
       <QuoteMaterialForm
         key={material.id}
         initialValues={material}

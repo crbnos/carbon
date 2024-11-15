@@ -33142,9 +33142,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierProcesses.minimumCost",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierProcesses.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierProcesses.leadTime",
           },
           {
@@ -33799,9 +33796,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierProcess.minimumCost",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierProcess.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierProcess.leadTime",
           },
           {
@@ -33894,9 +33888,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierProcess.minimumCost",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierProcess.unitCost",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierProcess.leadTime",
           },
           {
@@ -33941,9 +33932,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierProcess.minimumCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierProcess.unitCost",
           },
           {
             $ref: "#/parameters/rowFilter.supplierProcess.leadTime",
@@ -35127,182 +35115,6 @@ export default {
         tags: ["salesRfqs"],
       },
     },
-    "/rpc/new_sales_rfq": {
-      get: {
-        parameters: [
-          {
-            format: "text",
-            in: "query",
-            name: "company_id",
-            required: true,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "rfq_date",
-            required: true,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "customer_id",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "customer_location_id",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "customer_contact_id",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "customer_reference",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "expiration_date",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "json",
-            in: "query",
-            name: "external_notes",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "json",
-            in: "query",
-            name: "internal_notes",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "location_id",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "status",
-            required: false,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "sales_person_id",
-            required: false,
-            type: "string",
-          },
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json",
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-          },
-        },
-        tags: ["(rpc) new_sales_rfq"],
-      },
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                company_id: {
-                  format: "text",
-                  type: "string",
-                },
-                customer_contact_id: {
-                  format: "text",
-                  type: "string",
-                },
-                customer_id: {
-                  format: "text",
-                  type: "string",
-                },
-                customer_location_id: {
-                  format: "text",
-                  type: "string",
-                },
-                customer_reference: {
-                  format: "text",
-                  type: "string",
-                },
-                expiration_date: {
-                  format: "text",
-                  type: "string",
-                },
-                external_notes: {
-                  format: "json",
-                },
-                internal_notes: {
-                  format: "json",
-                },
-                location_id: {
-                  format: "text",
-                  type: "string",
-                },
-                rfq_date: {
-                  format: "text",
-                  type: "string",
-                },
-                sales_person_id: {
-                  format: "text",
-                  type: "string",
-                },
-                status: {
-                  format: "text",
-                  type: "string",
-                },
-              },
-              required: ["company_id", "rfq_date"],
-              type: "object",
-            },
-          },
-          {
-            $ref: "#/parameters/preferParams",
-          },
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json",
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-          },
-        },
-        tags: ["(rpc) new_sales_rfq"],
-      },
-    },
     "/rpc/has_company_permission": {
       get: {
         parameters: [
@@ -35688,6 +35500,125 @@ export default {
           },
         },
         tags: ["(rpc) get_active_job_operations_by_location"],
+      },
+    },
+    "/rpc/create_rfq_from_model": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "customer_part_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "email",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "model_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "sequence_number",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "unit_of_measure",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_rfq_from_model"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                customer_part_id: {
+                  format: "text",
+                  type: "string",
+                },
+                email: {
+                  format: "text",
+                  type: "string",
+                },
+                model_id: {
+                  format: "text",
+                  type: "string",
+                },
+                sequence_number: {
+                  format: "text",
+                  type: "string",
+                },
+                unit_of_measure: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [
+                "company_id",
+                "customer_part_id",
+                "email",
+                "model_id",
+                "sequence_number",
+                "unit_of_measure",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_rfq_from_model"],
       },
     },
     "/rpc/jsonb_to_text_array": {
@@ -49476,6 +49407,7 @@ export default {
           type: "string",
         },
         rfqDate: {
+          default: "CURRENT_DATE",
           format: "date",
           type: "string",
         },
@@ -52717,10 +52649,6 @@ export default {
           format: "numeric",
           type: "number",
         },
-        unitCost: {
-          format: "numeric",
-          type: "number",
-        },
         leadTime: {
           format: "numeric",
           type: "number",
@@ -52976,7 +52904,6 @@ export default {
         "supplierId",
         "processId",
         "minimumCost",
-        "unitCost",
         "leadTime",
         "companyId",
         "createdBy",
@@ -53002,11 +52929,6 @@ export default {
           type: "string",
         },
         minimumCost: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        unitCost: {
           default: 0,
           format: "numeric",
           type: "number",
@@ -73636,13 +73558,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierProcesses.unitCost": {
-      name: "unitCost",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierProcesses.leadTime": {
       name: "leadTime",
       required: false,
@@ -73996,13 +73911,6 @@ export default {
     },
     "rowFilter.supplierProcess.minimumCost": {
       name: "minimumCost",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierProcess.unitCost": {
-      name: "unitCost",
       required: false,
       format: "numeric",
       in: "query",

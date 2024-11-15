@@ -23,7 +23,7 @@ import {
   JobBillOfProcess,
   JobEstimatesVsActuals,
 } from "~/modules/production";
-import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
+import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -98,7 +98,7 @@ export default function JobMakeMethodRoute() {
   return (
     <div className="h-[calc(100vh-49px)] w-full items-start overflow-y-auto">
       <VStack spacing={2} className="p-2">
-        <JobBreadcrumbs />
+        <JobMakeMethodTools />
         <JobBillOfProcess
           key={`bop:${methodId}:${operations.length}:${operations[0]?.workCenterId}`}
           jobMakeMethodId={methodId}

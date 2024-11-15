@@ -5,7 +5,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
-import type { OperationWithDetails } from "./jobs.service";
+import type { OperationWithDetails } from "./operations.service";
 import {
   getJobByOperationId,
   getJobFiles,
@@ -13,7 +13,8 @@ import {
   getJobOperationById,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
-} from "./jobs.service";
+  getThumbnailPathByItemId,
+} from "./operations.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {});
@@ -33,17 +34,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (job.error) {
     throw redirect(
-      path.to.jobs,
+      path.to.operations,
       await flash(request, error(job.error, "Failed to fetch job"))
     );
   }
 
   if (operation.error) {
     throw redirect(
-      path.to.jobs,
+      path.to.operations,
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
   }
+
+  if (!job.data.itemId) {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error("Item ID is required", "Failed to fetch item"))
+    );
+  }
+
+  const thumbnailPath = await getThumbnailPathByItemId(client, job.data.itemId);
 
   return defer({
     events: events.data ?? [],
@@ -64,5 +74,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getJobFiles(client, companyId, job.data),
     materials: getJobMaterialsByOperationId(client, operation.data?.[0]),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
+    thumbnailPath,
   });
 }

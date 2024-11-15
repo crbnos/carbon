@@ -27,15 +27,12 @@ import { getMethodValidator } from "~/modules/items";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
-type MakeMethodBreadcrumbsProps = {
+type MakeMethodToolsProps = {
   itemId: string;
   type: MethodItemType;
 };
 
-const MakeMethodBreadcrumbs = ({
-  itemId,
-  type,
-}: MakeMethodBreadcrumbsProps) => {
+const MakeMethodTools = ({ itemId, type }: MakeMethodToolsProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<{ error: string | null }>();
 
@@ -58,18 +55,8 @@ const MakeMethodBreadcrumbs = ({
   return (
     <>
       <Menubar>
-        <HStack className="w-full justify-end">
+        <HStack className="w-full justify-start">
           <HStack spacing={0}>
-            <MenubarItem
-              isDisabled={
-                !permissions.can("update", "parts") || isSaveMethodLoading
-              }
-              isLoading={isSaveMethodLoading}
-              leftIcon={<LuUpload />}
-              onClick={saveMethodModal.onOpen}
-            >
-              Save Method
-            </MenubarItem>
             <MenubarItem
               isLoading={isGetMethodLoading}
               isDisabled={
@@ -79,6 +66,16 @@ const MakeMethodBreadcrumbs = ({
               onClick={getMethodModal.onOpen}
             >
               Get Method
+            </MenubarItem>
+            <MenubarItem
+              isDisabled={
+                !permissions.can("update", "parts") || isSaveMethodLoading
+              }
+              isLoading={isSaveMethodLoading}
+              leftIcon={<LuUpload />}
+              onClick={saveMethodModal.onOpen}
+            >
+              Save Method
             </MenubarItem>
           </HStack>
         </HStack>
@@ -218,4 +215,4 @@ const MakeMethodBreadcrumbs = ({
   );
 };
 
-export default MakeMethodBreadcrumbs;
+export default MakeMethodTools;

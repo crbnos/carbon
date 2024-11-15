@@ -68,7 +68,10 @@ export async function getLocationAndWorkCenter(
     }
   }
 
-  if (!location) throw notFound("Failed to get a valid location");
+  if (!location)
+    throw notFound(
+      "Failed to get a valid location. Please add one in the resources module."
+    );
 
   if (!workCenter) {
     const workCenters = await client
@@ -82,7 +85,10 @@ export async function getLocationAndWorkCenter(
     }
   }
 
-  if (!workCenter) throw notFound("Failed to get a valid work center");
+  if (!workCenter)
+    throw notFound(
+      "Failed to get a valid work center. Please add one in the resources module."
+    );
   if (updated) {
     setLocationAndWorkCenter(companyId, location, workCenter);
   }

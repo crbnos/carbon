@@ -2,7 +2,6 @@ import DeleteQuoteLine from "./DeleteQuoteLine";
 import QuoteBillOfMaterial from "./QuoteBillOfMaterial";
 import QuoteBillOfProcess from "./QuoteBillOfProcess";
 import QuoteBoMExplorer from "./QuoteBoMExplorer";
-import QuoteBreadcrumbs from "./QuoteBreadcrumbs";
 import QuoteExplorer from "./QuoteExplorer";
 import QuoteForm from "./QuoteForm";
 import QuoteHeader from "./QuoteHeader";
@@ -10,6 +9,7 @@ import QuoteLineCosting from "./QuoteLineCosting";
 import QuoteLineForm from "./QuoteLineForm";
 import QuoteLineNotes from "./QuoteLineNotes";
 import QuoteLinePricing from "./QuoteLinePricing";
+import QuoteMakeMethodTools from "./QuoteMakeMethodTools";
 import QuoteMaterialForm from "./QuoteMaterialForm";
 import QuotePaymentForm from "./QuotePaymentForm";
 import QuoteShipmentForm from "./QuoteShipmentForm";
@@ -21,7 +21,6 @@ export {
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
   QuoteBoMExplorer,
-  QuoteBreadcrumbs,
   QuoteExplorer,
   QuoteForm,
   QuoteHeader,
@@ -29,6 +28,7 @@ export {
   QuoteLineForm,
   QuoteLineNotes,
   QuoteLinePricing,
+  QuoteMakeMethodTools,
   QuoteMaterialForm,
   QuotePaymentForm,
   QuoteShipmentForm,

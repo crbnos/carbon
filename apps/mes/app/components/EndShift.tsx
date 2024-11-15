@@ -23,7 +23,7 @@ import type { action } from "~/routes/x+/end-shift.tsx";
 import {
   getActiveJobOperationsByEmployee,
   type Operation,
-} from "~/services/jobs.service";
+} from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 export const EndShift = ({ isCollapsed }: { isCollapsed: boolean }) => {

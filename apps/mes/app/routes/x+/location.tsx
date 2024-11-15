@@ -2,8 +2,8 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { getWorkCentersByLocation } from "~/services/jobs.service";
 import { setLocationAndWorkCenter } from "~/services/location.server";
+import { getWorkCentersByLocation } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

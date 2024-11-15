@@ -18,7 +18,9 @@ import { customerPartValidator } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type CustomerPartFormProps = {
-  initialValues: z.infer<typeof customerPartValidator>;
+  initialValues: z.infer<typeof customerPartValidator> & {
+    readableId: string;
+  };
 };
 
 const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
@@ -59,6 +61,7 @@ const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
             <Hidden name="itemId" />
 
             <VStack spacing={4}>
+              <Input name="readableId" label="Part ID" isDisabled />
               <Customer name="customerId" label="Customer" />
               <Input name="customerPartId" label="Customer Part ID" />
               <Input

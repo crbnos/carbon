@@ -56,6 +56,7 @@ export type Route = {
   to: string;
   icon?: any;
   q?: string; // TODO: this is dumb
+  groups?: Omit<Route, "groups">[];
 };
 
 export type RouteGroup = {

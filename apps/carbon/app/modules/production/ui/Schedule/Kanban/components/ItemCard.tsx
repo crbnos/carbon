@@ -2,13 +2,13 @@ import {
   Card,
   CardContent,
   CardHeader,
+  cn,
   HStack,
   IconButton,
   Progress,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  cn,
 } from "@carbon/react";
 import {
   convertDateStringToIsoString,
@@ -22,19 +22,21 @@ import {
   LuCheckCircle,
   LuClipboardCheck,
   LuExternalLink,
-  LuFactory,
   LuGripVertical,
   LuTimer,
   LuUsers,
+  LuUserSquare,
   LuXCircle,
 } from "react-icons/lu";
 
 import { Link } from "@remix-run/react";
+import { RiProgress8Line } from "react-icons/ri";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 import { getDeadlineIcon, getDeadlineText } from "~/modules/production";
+import { path } from "~/utils/path";
 import type { DisplaySettings, Item, ItemDragData } from "../types";
 
 type ItemCardProps = {
@@ -43,21 +45,22 @@ type ItemCardProps = {
 } & DisplaySettings;
 
 const cardVariants = cva(
-  "bg-gradient-to-bl via-card to-card hover:to-muted/30 hover:via-muted/30",
+  "dark:bg-gradient-to-bl dark:via-card dark:to-card dark:hover:to-muted/30 dark:hover:via-muted/30 bg-card hover:bg-muted/30",
   {
     variants: {
       dragging: {
         over: "ring-2 ring-primary opacity-30",
         overlay:
-          "ring-2 ring-primary hover:from-muted hover:via-muted hover:to-muted",
+          "ring-2 ring-primary dark:hover:from-muted dark:hover:via-muted dark:hover:to-muted hover:bg-muted",
       },
       status: {
-        "In Progress": "border-emerald-600/30 from-emerald-600/10",
+        "In Progress":
+          "border-emerald-600/30 dark:from-emerald-600/10 bg-emerald-600/5",
         Ready: "",
         Done: "",
-        Paused: "border-yellow-500/30 from-yellow-500/10",
-        Canceled: "border-red-500/30 from-red-500/10",
-        Waiting: "border-yellow-500/30 from-yellow-500/10",
+        Paused: "border-yellow-500/30 dark:from-yellow-500/10 bg-yellow-500/5",
+        Canceled: "border-red-500/30 dark:from-red-500/10 bg-red-500/5",
+        Waiting: "border-yellow-500/30 dark:from-yellow-500/10 bg-yellow-500/5",
         Todo: "border-border",
       },
     },
@@ -94,6 +97,7 @@ export function ItemCard({
   showEmployee,
   showProgress,
   showStatus,
+  showSalesOrder,
 }: ItemCardProps) {
   const {
     setNodeRef,
@@ -244,9 +248,27 @@ export function ItemCard({
           </HStack>
         )}
 
+        {showSalesOrder &&
+          item.salesOrderReadableId &&
+          item.salesOrderId &&
+          item.salesOrderLineId && (
+            <HStack className="justify-start space-x-2">
+              <RiProgress8Line className="text-muted-foreground" />
+              <Link
+                to={path.to.salesOrderLine(
+                  item.salesOrderId,
+                  item.salesOrderLineId
+                )}
+                className="text-sm"
+              >
+                {item.salesOrderReadableId}
+              </Link>
+            </HStack>
+          )}
+
         {showCustomer && item.customerId && (
           <HStack className="justify-start space-x-2">
-            <LuFactory className="text-muted-foreground" />
+            <LuUserSquare className="text-muted-foreground" />
             <CustomerAvatar customerId={item.customerId} />
           </HStack>
         )}

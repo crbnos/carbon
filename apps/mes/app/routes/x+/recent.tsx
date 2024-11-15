@@ -7,7 +7,7 @@ import { LuSearch } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
 import { useMediaQuery } from "~/hooks";
-import { getRecentJobOperationsByEmployee } from "~/services/jobs.service";
+import { getRecentJobOperationsByEmployee } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
 
 import { defaultLayout } from "~/utils/layout";
@@ -62,10 +62,11 @@ export default function ActiveRoute() {
         collapsedSize={0}
         defaultSize={defaultLayout[1]}
         minSize={isMobile ? 0 : 30}
+        className="flex flex-col flex-grow"
       >
         <Tabs defaultValue="current">
           <div className="flex items-center px-4 py-2 h-[52px] bg-background">
-            <Heading size="h2">Active</Heading>
+            <Heading size="h4">Recent</Heading>
           </div>
           <Separator />
           <div className="p-4">
@@ -87,7 +88,7 @@ export default function ActiveRoute() {
           <div className="p-4 pt-0">
             <OperationsList
               key="active"
-              emptyMessage="No active jobs"
+              emptyMessage="No active operations"
               operations={filteredOperations}
             />
           </div>

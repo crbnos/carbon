@@ -7,6 +7,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
   customerPartValidator,
+  getItem,
   getItemCustomerPart,
   upsertItemCustomerPart,
 } from "~/modules/items";
@@ -29,8 +30,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId
   );
 
+  if (!customerPart?.data) throw new Error("Could not find customer part");
+
+  const itemData = await getItem(client, customerPart.data.itemId);
+  const readableId = itemData?.data?.readableId;
+
   return json({
     customerPart: customerPart?.data ?? null,
+    readableId,
   });
 }
 
@@ -74,11 +81,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditCustomerPartRoute() {
-  const { customerPart } = useLoaderData<typeof loader>();
+  const { customerPart, readableId } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: customerPart?.id ?? "",
     itemId: customerPart?.itemId ?? "",
+    readableId: readableId ?? "",
     customerId: customerPart?.customerId ?? "",
     customerPartId: customerPart?.customerPartId ?? "",
     customerPartRevision: customerPart?.customerPartRevision ?? "",

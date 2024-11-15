@@ -21,7 +21,6 @@ import {
   getOpportunityDocuments,
   getSalesRFQ,
   getSalesRFQLines,
-  SalesRFQBreadcrumbs,
   SalesRFQExplorer,
   SalesRFQHeader,
 } from "~/modules/sales";
@@ -171,7 +170,6 @@ export default function SalesRFQRoute() {
                     <ResizablePanel order={2} className="z-1">
                       <ScrollArea className="h-[calc(100vh-99px)]">
                         <VStack spacing={2} className="p-2">
-                          <SalesRFQBreadcrumbs />
                           <Outlet />
                         </VStack>
                       </ScrollArea>

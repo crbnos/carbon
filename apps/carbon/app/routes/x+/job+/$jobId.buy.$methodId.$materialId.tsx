@@ -10,7 +10,7 @@ import {
   getJobOperationsByMethodId,
   JobMaterialForm,
 } from "~/modules/production";
-import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
+import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -73,7 +73,7 @@ export default function JobMaterialBuyPage() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <JobBreadcrumbs />
+      <JobMakeMethodTools />
       <JobMaterialForm
         key={materialId}
         initialValues={material}

@@ -1,4 +1,7 @@
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   Button,
   cn,
@@ -67,16 +70,15 @@ import type {
   productionEventType,
   ProductionQuantity,
   StorageItem,
-} from "~/services/jobs.service";
+} from "~/services/operations.service";
 import {
   finishValidator,
   getFileType,
   nonScrapQuantityValidator,
   productionEventValidator,
   scrapQuantityValidator,
-} from "~/services/jobs.service";
+} from "~/services/operations.service";
 import { path } from "~/utils/path";
-import { capitalize } from "~/utils/string";
 
 import { useCarbon } from "@carbon/auth";
 import {
@@ -98,15 +100,10 @@ import {
   toZoned,
 } from "@internationalized/date";
 import type { PostgrestResponse, RealtimeChannel } from "@supabase/supabase-js";
-import { FaRedoAlt, FaTasks } from "react-icons/fa";
+import { FaTasks } from "react-icons/fa";
+import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
-  FaCheck,
-  FaFlagCheckered,
-  FaPause,
-  FaPlay,
-  FaTrash,
-} from "react-icons/fa6";
-import {
+  LuAlertTriangle,
   LuChevronLeft,
   LuClipboardCheck,
   LuExpand,
@@ -115,6 +112,7 @@ import {
   LuTimer,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components/Icons";
+import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
 
 type JobOperationProps = {
@@ -124,6 +122,7 @@ type JobOperationProps = {
   materials: Promise<PostgrestResponse<JobMaterial>>;
   operation: OperationWithDetails;
   job: Job;
+  thumbnailPath: string | null;
 };
 
 export const JobOperation = ({
@@ -133,6 +132,7 @@ export const JobOperation = ({
   job,
   materials,
   operation: originalOperation,
+  thumbnailPath,
 }: JobOperationProps) => {
   useRealtime("job", `id=eq.${job.id}`);
   const {
@@ -148,6 +148,18 @@ export const JobOperation = ({
     setActiveTab,
     setEventType,
   } = useOperationState(originalOperation, job);
+
+  const controlsHeight = useMemo(() => {
+    let operations = 1;
+    if (operation.setupDuration > 0) operations++;
+    if (operation.laborDuration > 0) operations++;
+    if (operation.machineDuration > 0) operations++;
+    return 122 + operations * 24;
+  }, [
+    operation.laborDuration,
+    operation.machineDuration,
+    operation.setupDuration,
+  ]);
 
   const { downloadFile, getFilePath } = useFiles(job);
 
@@ -172,8 +184,11 @@ export const JobOperation = ({
         value={activeTab}
         onValueChange={setActiveTab}
         className="w-full h-full bg-card"
+        style={
+          { "--controls-height": `${controlsHeight}px` } as React.CSSProperties
+        }
       >
-        <div className="flex items-center justify-between px-4 py-2 h-[52px] bg-background">
+        <div className="flex items-center justify-between px-4 py-2 h-[var(--header-height)] bg-background">
           <div className="flex items-center flex-grow gap-2">
             {!fullscreen.isOpen && (
               <Link to={backPath}>
@@ -184,7 +199,7 @@ export const JobOperation = ({
                 />
               </Link>
             )}
-            <Heading size="h2">{operation.jobReadableId}</Heading>
+            <Heading size="h4">{operation.jobReadableId}</Heading>
           </div>
           <div className="hidden md:flex flex-shrink-0 items-center justify-end gap-2">
             <Navigation
@@ -195,60 +210,83 @@ export const JobOperation = ({
           </div>
         </div>
 
-        {!fullscreen.isOpen && (
-          <>
-            <Separator />
-            <div className="flex items-center justify-start px-4 py-2 h-[52px] bg-background gap-4 w-full overflow-y-auto">
-              {operation.description && (
-                <HStack className="justify-start space-x-2">
-                  <LuClipboardCheck className="text-muted-foreground" />
-                  <span className="text-sm truncate">
-                    {operation.description}
-                  </span>
-                </HStack>
-              )}
-              {operation.operationStatus && (
-                <HStack className="justify-start space-x-2">
-                  <OperationStatusIcon
-                    status={
-                      operation.jobStatus === "Paused"
-                        ? "Paused"
-                        : operation.operationStatus
-                    }
-                  />
-                  <span className="text-sm truncate">
-                    {operation.jobStatus === "Paused"
-                      ? "Paused"
-                      : operation.operationStatus}
-                  </span>
-                </HStack>
-              )}
-              {typeof operation.duration === "number" && (
-                <HStack className="justify-start space-x-2">
-                  <LuTimer className="text-muted-foreground" />
-                  <span className="text-sm truncate">
-                    {formatDurationMilliseconds(operation.duration)}
-                  </span>
-                </HStack>
-              )}
-            </div>
-            <Separator />
-          </>
-        )}
-        <div className="flex md:hidden items-center justify-start px-4 py-2 h-[52px] bg-background gap-4">
+        <Separator />
+        <div className="flex items-center justify-start px-4 py-2 h-[var(--header-height)] bg-background gap-4 w-full overflow-y-auto">
+          {operation.description && (
+            <HStack className="justify-start space-x-2">
+              <LuClipboardCheck className="text-muted-foreground" />
+              <span className="text-sm truncate">{operation.description}</span>
+            </HStack>
+          )}
+          {operation.operationStatus && (
+            <HStack className="justify-start space-x-2">
+              <OperationStatusIcon
+                status={
+                  operation.jobStatus === "Paused"
+                    ? "Paused"
+                    : operation.operationStatus
+                }
+              />
+              <span className="text-sm truncate">
+                {operation.jobStatus === "Paused"
+                  ? "Paused"
+                  : operation.operationStatus}
+              </span>
+            </HStack>
+          )}
+          {typeof operation.duration === "number" && (
+            <HStack className="justify-start space-x-2">
+              <LuTimer className="text-muted-foreground" />
+              <span className="text-sm truncate">
+                {formatDurationMilliseconds(operation.duration)}
+              </span>
+            </HStack>
+          )}
+          {operation.jobDeadlineType && (
+            <HStack className="justify-start space-x-2">
+              <DeadlineIcon
+                deadlineType={operation.jobDeadlineType}
+                overdue={isOverdue}
+              />
+
+              <span
+                className={cn(
+                  "text-sm truncate",
+                  isOverdue ? "text-red-500" : ""
+                )}
+              >
+                {["ASAP", "No Deadline"].includes(operation.jobDeadlineType)
+                  ? operation.jobDeadlineType
+                  : operation.jobDueDate
+                  ? `Due ${formatRelativeTime(
+                      convertDateStringToIsoString(operation.jobDueDate)
+                    )}`
+                  : "–"}
+              </span>
+            </HStack>
+          )}
+        </div>
+        <Separator />
+
+        <div className="flex md:hidden items-center justify-start px-4 py-2 h-[var(--header-height)] bg-background gap-4">
           <Navigation job={job} operation={operation} fullscreen={fullscreen} />
         </div>
         <Separator className="flex md:hidden" />
 
-        <TabsContent value="details">
-          <ScrollArea className="h-[calc(100vh-156px)] md:h-[calc(100vh-104px)] pb-36">
+        <TabsContent value="details" className="flex flex-col">
+          <ScrollArea className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto">
             <div className="flex items-start justify-between p-4">
-              <div className="flex flex-col flex-grow">
-                <Heading size="h2">{operation.itemReadableId}</Heading>
-                <p className="text-muted-foreground line-clamp-1">
-                  {operation.itemDescription}
-                </p>
-              </div>
+              <HStack>
+                {thumbnailPath && (
+                  <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
+                )}
+                <div className="flex flex-col flex-grow">
+                  <Heading size="h3">{operation.itemReadableId}</Heading>
+                  <p className="text-muted-foreground line-clamp-1">
+                    {operation.itemDescription}
+                  </p>
+                </div>
+              </HStack>
               <div className="flex flex-col flex-shrink items-end">
                 <Heading size="h2">{operation.operationQuantity}</Heading>
                 <p className="text-muted-foreground line-clamp-1">
@@ -258,7 +296,7 @@ export const JobOperation = ({
             </div>
             <Separator />
             <div className="flex items-start p-4">
-              <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3 w-full">
+              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 w-full">
                 <div className="rounded-xl border bg-card text-card-foreground shadow">
                   <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
                     <h3 className="tracking-tight text-sm font-medium">
@@ -282,7 +320,7 @@ export const JobOperation = ({
                   </div>
                 </div>
 
-                <div className="rounded-xl border bg-card text-card-foreground shadow">
+                {/* <div className="rounded-xl border bg-card text-card-foreground shadow">
                   <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
                     <h3 className="tracking-tight text-sm font-medium">
                       Reworked
@@ -292,126 +330,7 @@ export const JobOperation = ({
                   <div className="p-6 pt-0">
                     <Heading size="h2">{operation.quantityReworked}</Heading>
                   </div>
-                </div>
-              </div>
-            </div>
-            <Separator />
-            <div className="flex items-start p-4">
-              <div className="flex flex-col w-full gap-2">
-                {operation.setupDuration > 0 && (
-                  <HStack>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuTimer className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">Setup</TooltipContent>
-                    </Tooltip>
-                    <Progress
-                      numerator={formatDurationMilliseconds(progress.setup)}
-                      denominator={formatDurationMilliseconds(
-                        operation.setupDuration
-                      )}
-                      value={(progress.setup / operation.setupDuration) * 100}
-                    />
-                  </HStack>
-                )}
-                {operation.laborDuration > 0 && (
-                  <HStack>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuHardHat className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">Labor</TooltipContent>
-                    </Tooltip>
-                    <Progress
-                      numerator={formatDurationMilliseconds(progress.labor)}
-                      denominator={formatDurationMilliseconds(
-                        operation.laborDuration
-                      )}
-                      value={(progress.labor / operation.laborDuration) * 100}
-                    />
-                  </HStack>
-                )}
-                {operation.machineDuration > 0 && (
-                  <HStack>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuHammer className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">Machine</TooltipContent>
-                    </Tooltip>
-                    <Progress
-                      numerator={formatDurationMilliseconds(progress.machine)}
-                      denominator={formatDurationMilliseconds(
-                        operation.machineDuration
-                      )}
-                      value={
-                        (progress.machine / operation.machineDuration) * 100
-                      }
-                    />
-                  </HStack>
-                )}
-                <HStack>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <FaTasks className="h-4 w-4 mr-1" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Quantity</TooltipContent>
-                  </Tooltip>
-                  <Progress
-                    indicatorClassName={
-                      operation.operationStatus === "Paused"
-                        ? "bg-yellow-500"
-                        : ""
-                    }
-                    numerator={operation.quantityComplete.toString()}
-                    denominator={operation.operationQuantity.toString()}
-                    value={
-                      (operation.quantityComplete /
-                        operation.operationQuantity) *
-                      100
-                    }
-                  />
-                </HStack>
-              </div>
-            </div>
-            <Separator />
-
-            <div className="flex items-start justify-between p-4">
-              <div className="flex flex-col flex-shrink items-end">
-                {operation.jobDeadlineType && (
-                  <HStack className="justify-start space-x-2">
-                    <DeadlineIcon
-                      deadlineType={operation.jobDeadlineType}
-                      overdue={isOverdue}
-                    />
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <span
-                          className={cn(
-                            "text-sm truncate",
-                            isOverdue ? "text-red-500" : ""
-                          )}
-                        >
-                          {["ASAP", "No Deadline"].includes(
-                            operation.jobDeadlineType
-                          )
-                            ? operation.jobDeadlineType
-                            : operation.jobDueDate
-                            ? `Due ${formatRelativeTime(
-                                convertDateStringToIsoString(
-                                  operation.jobDueDate
-                                )
-                              )}`
-                            : "–"}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        {operation.jobDeadlineType}
-                      </TooltipContent>
-                    </Tooltip>
-                  </HStack>
-                )}
+                </div> */}
               </div>
             </div>
             <Separator />
@@ -548,7 +467,7 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
         <TabsContent value="model">
-          <div className="h-[calc(100vh-156px)] md:h-[calc(100vh-104px)] p-4">
+          <div className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height))] p-0">
             <ModelViewer
               file={null}
               key={operation.itemModelPath ?? job.modelPath}
@@ -556,11 +475,12 @@ export const JobOperation = ({
                 operation.itemModelPath ?? job.modelPath
               }`}
               mode={mode}
+              className="rounded-none"
             />
           </div>
         </TabsContent>
-        <TabsContent value="instructions" className="flex flex-grow bg-card">
-          <ScrollArea className="h-[calc(100vh-156px)] md:h-[calc(100vh-104px)] w-full p-4 pb-36">
+        <TabsContent value="instructions" className="flex flex-grow">
+          <ScrollArea className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto p-4">
             <div
               className="prose dark:prose-invert"
               dangerouslySetInnerHTML={{
@@ -572,48 +492,139 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
 
-        {activeTab !== "model" && (
-          <Controls>
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex items-center gap-4 justify-center">
-                <IconButtonWithTooltip
+        <Controls>
+          <div className="flex items-start p-4">
+            <div className="flex flex-col w-full gap-2">
+              {operation.setupDuration > 0 && (
+                <HStack>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuTimer className="h-4 w-4 mr-1" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Setup</TooltipContent>
+                  </Tooltip>
+                  <Progress
+                    numerator={formatDurationMilliseconds(progress.setup)}
+                    denominator={formatDurationMilliseconds(
+                      operation.setupDuration
+                    )}
+                    value={(progress.setup / operation.setupDuration) * 100}
+                    indicatorClassName={
+                      progress.setup > operation.setupDuration
+                        ? "bg-red-500"
+                        : ""
+                    }
+                  />
+                </HStack>
+              )}
+              {operation.laborDuration > 0 && (
+                <HStack>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuHardHat className="h-4 w-4 mr-1" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Labor</TooltipContent>
+                  </Tooltip>
+                  <Progress
+                    numerator={formatDurationMilliseconds(progress.labor)}
+                    denominator={formatDurationMilliseconds(
+                      operation.laborDuration
+                    )}
+                    value={(progress.labor / operation.laborDuration) * 100}
+                    indicatorClassName={
+                      progress.labor > operation.laborDuration
+                        ? "bg-red-500"
+                        : ""
+                    }
+                  />
+                </HStack>
+              )}
+              {operation.machineDuration > 0 && (
+                <HStack>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuHammer className="h-4 w-4 mr-1" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Machine</TooltipContent>
+                  </Tooltip>
+                  <Progress
+                    numerator={formatDurationMilliseconds(progress.machine)}
+                    denominator={formatDurationMilliseconds(
+                      operation.machineDuration
+                    )}
+                    value={(progress.machine / operation.machineDuration) * 100}
+                    indicatorClassName={
+                      progress.machine > operation.machineDuration
+                        ? "bg-red-500"
+                        : ""
+                    }
+                  />
+                </HStack>
+              )}
+              <HStack>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <FaTasks className="h-4 w-4 mr-1" />
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Quantity</TooltipContent>
+                </Tooltip>
+                <Progress
+                  indicatorClassName={
+                    operation.operationStatus === "Paused" &&
+                    operation.quantityComplete < operation.operationQuantity
+                      ? "bg-yellow-500"
+                      : ""
+                  }
+                  numerator={operation.quantityComplete.toString()}
+                  denominator={operation.operationQuantity.toString()}
+                  value={
+                    (operation.quantityComplete / operation.operationQuantity) *
+                    100
+                  }
+                />
+              </HStack>
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-4 justify-center">
+              {/* <IconButtonWithTooltip
                   icon={
                     <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
-                  tooltip="Rework"
+                  tooltip="Log Rework"
                   onClick={reworkModal.onOpen}
-                />
-                <IconButtonWithTooltip
-                  icon={
-                    <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip="Scrap"
-                  onClick={scrapModal.onOpen}
-                />
-                <StartStopButton
-                  eventType={eventType as (typeof productionEventType)[number]}
-                  job={job}
-                  operation={operation}
-                  setupProductionEvent={setupProductionEvent}
-                  laborProductionEvent={laborProductionEvent}
-                  machineProductionEvent={machineProductionEvent}
-                />
+                /> 
+                */}
+              <IconButtonWithTooltip
+                icon={
+                  <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                }
+                tooltip="Log Scrap"
+                onClick={scrapModal.onOpen}
+              />
+              <StartStopButton
+                eventType={eventType as (typeof productionEventType)[number]}
+                job={job}
+                operation={operation}
+                setupProductionEvent={setupProductionEvent}
+                laborProductionEvent={laborProductionEvent}
+                machineProductionEvent={machineProductionEvent}
+              />
 
-                <IconButtonWithTooltip
-                  icon={
-                    <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip="Complete"
-                  onClick={completeModal.onOpen}
-                />
-                <IconButtonWithTooltip
-                  icon={
-                    <FaFlagCheckered className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip="Finish"
-                  onClick={finishModal.onOpen}
-                />
-              </div>
+              <IconButtonWithTooltip
+                icon={
+                  <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                }
+                tooltip="Log Completed"
+                onClick={completeModal.onOpen}
+              />
+              <IconButtonWithTooltip
+                icon={
+                  <FaCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                }
+                tooltip="Close Out"
+                onClick={finishModal.onOpen}
+              />
               <WorkTypeToggle
                 active={active}
                 operation={operation}
@@ -621,8 +632,8 @@ export const JobOperation = ({
                 onChange={setEventType}
               />
             </div>
-          </Controls>
-        )}
+          </div>
+        </Controls>
       </Tabs>
       {reworkModal.isOpen && (
         <QuantityModal
@@ -877,13 +888,13 @@ function useOperationState(operation: OperationWithDetails, job: Job) {
 
   const [activeTab, setActiveTab] = useState("details");
   const [eventType, setEventType] = useState(() => {
+    if (operation.setupDuration > 0) {
+      return "Setup";
+    }
     if (operation.laborDuration > 0) {
       return "Labor";
     }
-    if (operation.machineDuration > 0) {
-      return "Machine";
-    }
-    return "Setup";
+    return "Machine";
   });
 
   const { carbon, accessToken } = useCarbon();
@@ -924,7 +935,7 @@ function useOperationState(operation: OperationWithDetails, job: Job) {
             } else if (payload.eventType === "DELETE") {
               if (payload.old.id === operation.id) {
                 alert("This operation has been deleted.");
-                window.location.href = path.to.jobs;
+                window.location.href = path.to.operations;
               }
             }
           }
@@ -999,7 +1010,7 @@ function Controls({
     <TooltipProvider>
       <div
         className={cn(
-          "absolute p-4 bottom-0 left-1/2 transform -translate-x-1/2 w-full",
+          "absolute p-2 bottom-2 left-1/2 transform -translate-x-1/2 w-[calc(100%-1rem)] z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg",
           className
         )}
       >
@@ -1248,18 +1259,21 @@ function QuantityModal({
   const [quantity, setQuantity] = useState(type === "finish" ? 0 : 1);
 
   const titleMap = {
-    scrap: `Scrap ${operation.itemReadableId}`,
-    rework: `Rework ${operation.itemReadableId}`,
-    complete: `Complete ${operation.itemReadableId}`,
-    finish: `Finish ${operation.itemReadableId}`,
+    scrap: `Log Scrap for ${operation.itemReadableId}`,
+    rework: `Log Rework for ${operation.itemReadableId}`,
+    complete: `Log Completed for ${operation.itemReadableId}`,
+    finish: `Close Out ${operation.itemReadableId}`,
   };
+
+  const isOperationComplete =
+    operation.quantityComplete >= operation.operationQuantity;
 
   const descriptionMap = {
     scrap: "Select a scrap quantity and reason",
     rework: "Select a rework quantity",
     complete: "Select a completion quantity",
     finish:
-      "Are you sure you want to complete this operation? This will end all active production events for this operation.",
+      "Are you sure you want to close out this operation? This will end all active production events for this operation.",
   };
 
   const actionMap = {
@@ -1267,6 +1281,13 @@ function QuantityModal({
     rework: path.to.rework,
     complete: path.to.complete,
     finish: path.to.finish,
+  };
+
+  const actionButtonMap = {
+    scrap: "Log Scrap",
+    rework: "Log Rework",
+    complete: "Log Completed",
+    finish: isOperationComplete ? "Close" : "Close Anyways",
   };
 
   const validatorMap = {
@@ -1313,6 +1334,16 @@ function QuantityModal({
             <Hidden name="laborProductionEventId" />
             <Hidden name="machineProductionEventId" />
             <VStack spacing={2}>
+              {type === "finish" && !isOperationComplete && (
+                <Alert variant="destructive">
+                  <LuAlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Insufficient quantity</AlertTitle>
+                  <AlertDescription>
+                    The completed quantity for this operation is less than the
+                    required quantity of {operation.operationQuantity}.
+                  </AlertDescription>
+                </Alert>
+              )}
               {type !== "finish" && (
                 <>
                   <NumberControlled
@@ -1358,10 +1389,14 @@ function QuantityModal({
             </Button>
 
             <Button
-              variant={type === "scrap" ? "destructive" : "primary"}
+              variant={
+                type === "scrap" || (!isOperationComplete && type === "finish")
+                  ? "destructive"
+                  : "primary"
+              }
               type="submit"
             >
-              {capitalize(type)}
+              {actionButtonMap[type]}
             </Button>
           </ModalFooter>
         </ValidatedForm>
@@ -1382,14 +1417,18 @@ function Navigation({
   return (
     <>
       <TabsList className="md:ml-auto">
-        <TabsTrigger value="details">Details</TabsTrigger>
+        <TabsTrigger variant="primary" value="details">
+          Details
+        </TabsTrigger>
         <TabsTrigger
+          variant="primary"
           disabled={!job.modelPath && !operation.itemModelPath}
           value="model"
         >
           Model
         </TabsTrigger>
         <TabsTrigger
+          variant="primary"
           disabled={
             !operation.workInstruction ||
             Object.keys(operation.workInstruction).length === 0

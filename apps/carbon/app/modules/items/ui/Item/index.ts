@@ -11,7 +11,7 @@ import ItemForm from "./ItemForm";
 import ItemPlanningForm from "./ItemPlanningForm";
 import ItemPurchasingForm from "./ItemPurchasingForm";
 import ItemSalePriceForm from "./ItemSalePriceForm";
-import MakeMethodBreadcrumbs from "./MakeMethodBreacrumbs";
+import MakeMethodTools from "./MakeMethodTools";
 import PickMethodForm from "./PickMethodForm";
 
 export {
@@ -27,6 +27,6 @@ export {
   ItemPlanningForm,
   ItemPurchasingForm,
   ItemSalePriceForm,
-  MakeMethodBreadcrumbs,
+  MakeMethodTools,
   PickMethodForm,
 };

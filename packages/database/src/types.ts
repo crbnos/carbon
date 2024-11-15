@@ -17663,7 +17663,7 @@ export type Database = {
           internalNotes?: Json | null
           locationId?: string | null
           revisionId?: number
-          rfqDate: string
+          rfqDate?: string
           rfqId: string
           salesPersonId?: string | null
           status?: Database["public"]["Enums"]["salesRfqStatus"]
@@ -20152,7 +20152,6 @@ export type Database = {
           minimumCost: number
           processId: string
           supplierId: string
-          unitCost: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -20166,7 +20165,6 @@ export type Database = {
           minimumCost?: number
           processId: string
           supplierId: string
-          unitCost?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20180,7 +20178,6 @@ export type Database = {
           minimumCost?: number
           processId?: string
           supplierId?: string
-          unitCost?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -28800,7 +28797,6 @@ export type Database = {
           processId: string | null
           processName: string | null
           supplierId: string | null
-          unitCost: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -29578,6 +29574,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      create_rfq_from_model: {
+        Args: {
+          company_id: string
+          customer_part_id: string
+          email: string
+          model_id: string
+          sequence_number: string
+          unit_of_measure: string
+        }
+        Returns: {
+          rfq_id: string
+          rfq_readable_id: string
+          rfq_line_id: string
+        }[]
+      }
       get_active_job_count: {
         Args: {
           employee_id: string
@@ -29642,6 +29653,9 @@ export type Database = {
           jobDueDate: string
           jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
           jobCustomerId: string
+          salesOrderReadableId: string
+          salesOrderId: string
+          salesOrderLineId: string
           parentMaterialId: string
           itemReadableId: string
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
@@ -29999,26 +30013,6 @@ export type Database = {
           "": Json
         }
         Returns: string[]
-      }
-      new_sales_rfq: {
-        Args: {
-          company_id: string
-          rfq_date: string
-          customer_id?: string
-          customer_location_id?: string
-          customer_contact_id?: string
-          customer_reference?: string
-          expiration_date?: string
-          external_notes?: Json
-          internal_notes?: Json
-          location_id?: string
-          status?: string
-          sales_person_id?: string
-        }
-        Returns: {
-          id: string
-          rfq_id: string
-        }[]
       }
       users_for_groups: {
         Args: {

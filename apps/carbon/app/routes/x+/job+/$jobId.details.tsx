@@ -21,7 +21,7 @@ import {
   recalculateJobRequirements,
   upsertJob,
 } from "~/modules/production";
-import JobBreadcrumbs from "~/modules/production/ui/Jobs/JobBreadcrumbs";
+import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import type { StorageItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -110,7 +110,7 @@ export default function JobDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2 h-full">
-      <JobBreadcrumbs />
+      <JobMakeMethodTools />
       {/* @ts-ignore */}
       <JobForm key={jobInitialValues.id} initialValues={jobInitialValues} />
       {permissions.is("employee") && (

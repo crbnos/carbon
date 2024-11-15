@@ -52,7 +52,7 @@ export default function Route() {
                 To initialize the Client Library SDK, you will need the
                 environment variables you set up earlier.
               </p>
-              <Alert variant="success">
+              <Alert variant="destructive">
                 <LuAlertTriangle className="h-4 w-4 my-1" />
                 <AlertTitle className="!my-0 font-bold text-base">
                   You should never expose the <code>carbon-key</code> in the
