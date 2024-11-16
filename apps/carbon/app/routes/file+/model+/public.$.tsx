@@ -24,10 +24,9 @@ const supportedFileTypes: Record<string, string> = {
 
 export let loader = async ({ params }: LoaderFunctionArgs) => {
   const client = getCarbonServiceRole();
-  const { bucket } = params;
+
   const path = params["*"];
 
-  if (!bucket) throw new Error("Bucket not found");
   if (!path) throw new Error("Path not found");
 
   if (!path.includes("models")) {
@@ -45,7 +44,7 @@ export let loader = async ({ params }: LoaderFunctionArgs) => {
   const contentType = supportedFileTypes[fileType];
 
   async function downloadFile() {
-    const result = await client.storage.from(bucket!).download(`${path}`);
+    const result = await client.storage.from("private").download(`${path}`);
     if (result.error) {
       console.error(result.error);
       return null;

@@ -234,31 +234,10 @@ export async function getNextSequence(
   table: string,
   companyId: string
 ) {
-  const sequence = await getSequence(client, table, companyId);
-  if (sequence.error) {
-    return sequence;
-  }
-
-  const { prefix, suffix, next, size, step } = sequence.data;
-
-  const nextValue = next + step;
-  const nextSequence = nextValue.toString().padStart(size, "0");
-  const derivedPrefix = interpolateSequenceDate(prefix);
-  const derivedSuffix = interpolateSequenceDate(suffix);
-
-  const update = await updateSequence(client, table, companyId, {
-    next: nextValue,
-    updatedBy: "system",
+  return client.rpc("get_next_sequence", {
+    sequence_name: table,
+    company_id: companyId,
   });
-
-  if (update.error) {
-    return update;
-  }
-
-  return {
-    data: `${derivedPrefix}${nextSequence}${derivedSuffix}`,
-    error: null,
-  };
 }
 
 export async function getSequence(
@@ -316,26 +295,6 @@ export async function insertCompany(
   company: z.infer<typeof companyValidator>
 ) {
   return client.from("company").insert(company).select("id").single();
-}
-
-export async function rollbackNextSequence(
-  client: SupabaseClient<Database>,
-  table: string,
-  companyId: string
-) {
-  const sequence = await getSequence(client, table, companyId);
-  if (sequence.error) {
-    return sequence;
-  }
-
-  const { next } = sequence.data;
-
-  const nextValue = next - 1;
-
-  return await updateSequence(client, table, companyId, {
-    next: nextValue,
-    updatedBy: "system",
-  });
 }
 
 export async function seedCompany(

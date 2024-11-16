@@ -23,7 +23,9 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   label?: string;
   helperText?: string;
   isOptional?: boolean;
-  onChange?: (newValue: { value: string; label: string } | null) => void;
+  onChange?: (
+    newValue: { value: string; label: string | JSX.Element } | null
+  ) => void;
 };
 
 const Select = ({
@@ -93,7 +95,7 @@ export type SelectBaseProps = Omit<
   size?: "sm" | "md" | "lg";
   value?: string;
   options: {
-    label: string;
+    label: string | JSX.Element;
     value: string;
   }[];
   isClearable?: boolean;

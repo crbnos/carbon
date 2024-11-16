@@ -30,6 +30,8 @@ const SalesRFQHeader = () => {
   if (!rfqId) throw new Error("rfqId not found");
 
   const convertToQuoteModal = useDisclosure();
+  const requiresCustomerAlert = useDisclosure();
+
   const permissions = usePermissions();
 
   const routeData = useRouteData<{
@@ -72,28 +74,36 @@ const SalesRFQHeader = () => {
             isReadOnly={!permissions.can("update", "sales")}
           />
 
-          {status === "Draft" && (
-            <statusFetcher.Form
-              method="post"
-              action={path.to.salesRfqStatus(rfqId)}
-            >
-              <input type="hidden" name="status" value="Ready for Quote" />
+          {status === "Draft" &&
+            (routeData?.rfqSummary?.customerId ? (
+              <statusFetcher.Form
+                method="post"
+                action={path.to.salesRfqStatus(rfqId)}
+              >
+                <input type="hidden" name="status" value="Ready for Quote" />
+                <Button
+                  isDisabled={
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "sales")
+                  }
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") === "Ready for Quote"
+                  }
+                  leftIcon={<LuRefreshCw />}
+                  type="submit"
+                >
+                  Ready for Quote
+                </Button>
+              </statusFetcher.Form>
+            ) : (
               <Button
-                isDisabled={
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Ready for Quote"
-                }
+                onClick={requiresCustomerAlert.onOpen}
                 leftIcon={<LuRefreshCw />}
-                type="submit"
               >
                 Ready for Quote
               </Button>
-            </statusFetcher.Form>
-          )}
+            ))}
 
           {["Ready for Quote", "Closed"].includes(status) && (
             <statusFetcher.Form
@@ -164,11 +174,39 @@ const SalesRFQHeader = () => {
           onClose={convertToQuoteModal.onClose}
         />
       )}
+      {requiresCustomerAlert.isOpen && (
+        <RequiresCustomerAlert onClose={requiresCustomerAlert.onClose} />
+      )}
     </div>
   );
 };
 
 export default SalesRFQHeader;
+
+function RequiresCustomerAlert({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal open onOpenChange={(open) => !open && onClose()}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Cannot convert RFQ to quote</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <Alert variant="destructive">
+            <LuAlertTriangle className="h-4 w-4" />
+            <AlertTitle>RFQ has no customer</AlertTitle>
+            <AlertDescription>
+              In order to convert this RFQ to a quote, it must be associated
+              with a customer.
+            </AlertDescription>
+          </Alert>
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={onClose}>OK</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
 
 function ConvertToQuoteModal({
   lines,
@@ -179,10 +217,15 @@ function ConvertToQuoteModal({
   rfqId: string;
   onClose: () => void;
 }) {
+  const routeData = useRouteData<{ rfqSummary: SalesRFQ }>(
+    path.to.salesRfq(rfqId)
+  );
+
   const fetcher = useFetcher<{ error: string | null }>();
   const isLoading = fetcher.state !== "idle";
   const linesWithoutItems = lines.filter((line) => !line.itemId);
   const requiresPartNumbers = linesWithoutItems.length > 0;
+  const requiresCustomer = !routeData?.rfqSummary?.customerId;
 
   useEffect(() => {
     if (fetcher.state === "loading") {
@@ -207,8 +250,18 @@ function ConvertToQuoteModal({
           </ModalDescription>
         </ModalHeader>
 
-        {requiresPartNumbers && (
-          <ModalBody>
+        <ModalBody>
+          {requiresCustomer && (
+            <Alert variant="destructive">
+              <LuAlertTriangle className="h-4 w-4" />
+              <AlertTitle>RFQ has no customer</AlertTitle>
+              <AlertDescription>
+                In order to convert this RFQ to a quote, it must have a
+                customer.
+              </AlertDescription>
+            </Alert>
+          )}
+          {requiresPartNumbers && (
             <Alert variant="warning">
               <LuAlertTriangle className="h-4 w-4" />
               <AlertTitle>Lines need internal part numbers</AlertTitle>
@@ -232,8 +285,8 @@ function ConvertToQuoteModal({
                 manually assign the parts for each line item before converting.
               </AlertDescription>
             </Alert>
-          </ModalBody>
-        )}
+          )}
+        </ModalBody>
 
         <ModalFooter>
           <Button variant="secondary" onClick={onClose}>

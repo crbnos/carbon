@@ -69,7 +69,7 @@ export function ModelViewer({
           onModelLoaded: (model) => {
             if (viewerRef.current) {
               const viewer3D = viewerRef.current.GetViewer();
-              updateColor(isDarkMode ? darkColor : lightColor);
+              updateColor(color ?? (isDarkMode ? darkColor : lightColor));
 
               viewer3D.Resize(
                 parentDiv.current?.clientWidth,

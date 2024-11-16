@@ -13,7 +13,7 @@ import {
   upsertPurchaseInvoice,
 } from "~/modules/invoicing";
 import { createPurchaseInvoiceFromPurchaseOrder } from "~/modules/invoicing/invoicing.server";
-import { getNextSequence, rollbackNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -102,7 +102,6 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (createPurchaseInvoice.error || !createPurchaseInvoice.data?.[0]) {
-    await rollbackNextSequence(client, "purchaseInvoice", companyId);
     throw redirect(
       path.to.purchaseInvoices,
       await flash(

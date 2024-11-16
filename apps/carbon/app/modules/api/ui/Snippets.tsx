@@ -18,6 +18,43 @@ const snippets = {
       code: `npm install --save @supabase/supabase-js`,
     },
   }),
+  env: ({
+    appUrl,
+    apiKey,
+    publicKey,
+    apiUrl,
+    companyId,
+  }: {
+    appUrl: string;
+    apiKey: string;
+    publicKey: string;
+    apiUrl: string;
+    companyId: string;
+  }) => ({
+    bash: {
+      language: "bash",
+      code: `
+export CARBON_API_KEY="${apiKey}"
+
+export CARBON_APP_URL="${appUrl}"
+export CARBON_PUBLIC_KEY="${publicKey}"
+export CARBON_API_URL="${apiUrl}"
+export CARBON_COMPANY_ID="${companyId}"      
+      `,
+    },
+    js: {
+      language: "js",
+      code: `
+// .env
+CARBON_API_KEY = "${apiKey}"
+
+CARBON_APP_URL = "${appUrl}"
+CARBON_PUBLIC_KEY = "${publicKey}"
+CARBON_API_URL = "${apiUrl}"
+CARBON_COMPANY_ID = "${companyId}"
+      `,
+    },
+  }),
   init: (endpoint: string) => ({
     bash: {
       language: "bash",
@@ -27,12 +64,15 @@ const snippets = {
       language: "js",
       code: `
 import { createClient } from '@supabase/supabase-js'
-const apiUrl = '${endpoint}'
-const publicKey = process.env.PUBLIC_KEY
+
+const apiKey = process.env.CARBON_API_KEY
+const apiUrl = process.env.CARBON_API_URL
+const publicKey = process.env.CARBON_PUBLIC_KEY
+
 const carbon = createClient(apiUrl, publicKey, {
   global: {
     headers: {
-      "carbon-key": "<your_api_key_here>",
+      "carbon-key": apiKey,
     },
   },
 });`,
@@ -42,8 +82,8 @@ const carbon = createClient(apiUrl, publicKey, {
       code: `
 import os
 from supabase import create_client, Client
-url: str = '${endpoint}'
-key: str = os.environ.get("SUPABASE_KEY")
+url: str = os.environ.get("CARBON_API_URL")
+key: str = os.environ.get("CARBON_API_KEY")
 supabase: Client = create_client(url, key)
 `,
     },

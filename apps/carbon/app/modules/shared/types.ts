@@ -1,5 +1,9 @@
 import type { StorageItem } from "~/types";
-import type { methodItemType, methodType } from "./shared.models";
+import type {
+  methodItemType,
+  methodType,
+  standardFactorType,
+} from "./shared.models";
 import type { getNotes } from "./shared.service";
 
 export type BillOfMaterialNodeType =
@@ -41,20 +45,6 @@ export type OptimisticFileObject = Omit<
   StorageItem,
   "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
 >;
-
-export const standardFactorType = [
-  "Hours/Piece",
-  "Hours/100 Pieces",
-  "Hours/1000 Pieces",
-  "Minutes/Piece",
-  "Minutes/100 Pieces",
-  "Minutes/1000 Pieces",
-  "Pieces/Hour",
-  "Pieces/Minute",
-  "Seconds/Piece",
-  "Total Hours",
-  "Total Minutes",
-] as const;
 
 export type StandardFactor = (typeof standardFactorType)[number];
 

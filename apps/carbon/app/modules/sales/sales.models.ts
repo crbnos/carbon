@@ -7,8 +7,8 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  standardFactorType,
 } from "../shared";
-import { standardFactorType } from "../shared/types";
 
 export const salesRFQStatusType = [
   "Draft",

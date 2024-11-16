@@ -191,6 +191,7 @@ const CadModel = ({
             url={modelPath ? getPrivateUrl(modelPath) : null}
             mode={mode}
             onDataUrl={onDataUrl}
+            className={viewerClassName}
           />
         ) : (
           <CadModelUpload
@@ -211,14 +212,16 @@ type CadModelUploadProps = {
   title?: string;
   file: File | null;
   className?: string;
+  isReadOnly?: boolean;
   onFileChange: (file: File | null) => void;
 };
 
 const CadModelUpload = ({
   title,
   file,
-  onFileChange,
+  isReadOnly,
   className,
+  onFileChange,
 }: CadModelUploadProps) => {
   const hasFile = !!file;
 
@@ -257,6 +260,10 @@ const CadModelUpload = ({
       toast.error(message);
     },
   });
+
+  if (isReadOnly) {
+    return null;
+  }
 
   return (
     <div

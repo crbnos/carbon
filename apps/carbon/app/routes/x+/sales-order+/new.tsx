@@ -12,7 +12,7 @@ import {
   salesOrderValidator,
   upsertSalesOrder,
 } from "~/modules/sales";
-import { getNextSequence, rollbackNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -57,8 +57,6 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (createSalesOrder.error || !createSalesOrder.data?.[0]) {
-    // TODO: this should be done as a transaction
-    await rollbackNextSequence(client, "salesOrder", companyId);
     throw redirect(
       path.to.salesOrders,
       await flash(

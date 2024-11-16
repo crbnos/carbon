@@ -8,7 +8,7 @@ import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
 import type { QuotationStatusType } from "~/modules/sales";
 import { QuoteForm, quoteValidator, upsertQuote } from "~/modules/sales";
-import { getNextSequence, rollbackNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -52,8 +52,6 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (createQuote.error || !createQuote.data?.[0]) {
-    // TODO: this should be done as a transaction
-    await rollbackNextSequence(client, "quote", companyId);
     throw redirect(
       path.to.quotes,
       await flash(request, error(createQuote.error, "Failed to insert quote"))

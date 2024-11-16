@@ -10,7 +10,7 @@ import {
   upsertJob,
   upsertJobMethod,
 } from "~/modules/production";
-import { getNextSequence, rollbackNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings";
 import type { recalculateTask } from "~/trigger/recalculate";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -68,8 +68,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const id = createJob.data?.id!;
   if (createJob.error || !jobId) {
-    // TODO: this should be done as a transaction
-    await rollbackNextSequence(serviceRole, "job", companyId);
     throw redirect(
       path.to.salesOrderLine(orderId, lineId),
       await flash(request, error(createJob.error, "Failed to insert job"))

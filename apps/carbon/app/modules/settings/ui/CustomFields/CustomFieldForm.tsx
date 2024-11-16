@@ -54,7 +54,7 @@ const CustomFieldForm = ({
   const onChangeCheckForListType = (
     selected: {
       value: string;
-      label: string;
+      label: string | JSX.Element;
     } | null
   ) => {
     setIsList(

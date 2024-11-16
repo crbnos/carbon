@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import { getCurrentSequence, rollbackNextSequence } from "~/modules/settings";
+import { getCurrentSequence } from "~/modules/settings";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsDelete(request);
@@ -47,17 +47,6 @@ export async function action({ request }: ActionFunctionArgs) {
       data: null,
       error: "Sequence has changed since last request",
     });
-  }
-
-  const rollback = await rollbackNextSequence(client, table, companyId);
-  if (rollback.error) {
-    return json(
-      rollback,
-      await flash(
-        request,
-        error(rollback.error, `Failed to rollback sequence for ${table}`)
-      )
-    );
   }
 
   return json({

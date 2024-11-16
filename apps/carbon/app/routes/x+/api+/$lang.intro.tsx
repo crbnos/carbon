@@ -2,12 +2,14 @@ import { getBrowserEnv, SUPABASE_ANON_PUBLIC } from "@carbon/auth";
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { LuAlertTriangle } from "react-icons/lu";
+import { useUser } from "~/hooks";
 import { CodeSnippet, Snippets, useSelectedLang } from "~/modules/api";
 import { path } from "~/utils/path";
 
 const { SUPABASE_API_URL } = getBrowserEnv();
 
 export default function Route() {
+  const { company } = useUser();
   const selectedLang = useSelectedLang();
   return (
     <>
@@ -16,14 +18,23 @@ export default function Route() {
         <article className="code-column text-foreground">
           <p>CarbonOS uses API token authentication for the public API.</p>
           <p>
-            To begin, go to the Settings page and click on{" "}
-            <Link to={path.to.apiKeys}>API Keys</Link>, and create a new API
-            Key. Be sure to save this API Key in a secure location, as you will
-            only be able to view it once upon creation.
+            First you'll need an <Link to={path.to.apiKeys}>API Key</Link>.
           </p>
-          <p>We recommend setting your API Key as an Environment Variable. </p>
+          <p>Next save the API Key as an Environment Variable.</p>
+          <article>
+            <CodeSnippet
+              selectedLang={selectedLang}
+              snippet={Snippets.env({
+                appUrl: window.location.origin,
+                apiKey: "<your-api-key>",
+                publicKey: SUPABASE_ANON_PUBLIC,
+                apiUrl: SUPABASE_API_URL,
+                companyId: company?.id,
+              })}
+            />
+          </article>
           <p>
-            The API Key is provided via the header <code>carbon-key</code> when
+            The API Key is provided via the <code>carbon-key</code> header when
             making requests to the API.
           </p>
         </article>
@@ -38,9 +49,8 @@ export default function Route() {
                 JavaScript Client Library SDK.
               </p>
               <p>
-                To initialize the Client Library SDK, you will need the{" "}
-                <code>PUBLIC_KEY</code> (shown below) in addition to your{" "}
-                <code>carbon-key</code> API Key.
+                To initialize the Client Library SDK, you will need the
+                environment variables you set up earlier.
               </p>
               <Alert variant="destructive">
                 <LuAlertTriangle className="h-4 w-4 my-1" />
@@ -53,16 +63,7 @@ export default function Route() {
                   it in a public-facing client.
                 </AlertDescription>
               </Alert>
-              <article>
-                <CodeSnippet
-                  selectedLang={selectedLang}
-                  snippet={Snippets.authKey(
-                    "CLIENT KEY",
-                    "PUBLIC_KEY",
-                    SUPABASE_ANON_PUBLIC
-                  )}
-                />
-              </article>
+
               <p>
                 As with your API Key, we recommend setting your Client Key as an
                 Environment Variable.
@@ -76,6 +77,10 @@ export default function Route() {
                   />
                 </article>
               </div>
+              <p>
+                You can now make requests to the API using the client. See the
+                specific tables and views for more details.
+              </p>
             </article>
           </div>
         </>

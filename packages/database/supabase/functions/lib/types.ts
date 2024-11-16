@@ -17628,7 +17628,7 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customerContactId: string | null
-          customerId: string
+          customerId: string | null
           customerLocationId: string | null
           customerReference: string | null
           customFields: Json | null
@@ -17652,7 +17652,7 @@ export type Database = {
           createdAt?: string | null
           createdBy?: string | null
           customerContactId?: string | null
-          customerId: string
+          customerId?: string | null
           customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
@@ -17663,7 +17663,7 @@ export type Database = {
           internalNotes?: Json | null
           locationId?: string | null
           revisionId?: number
-          rfqDate: string
+          rfqDate?: string
           rfqId: string
           salesPersonId?: string | null
           status?: Database["public"]["Enums"]["salesRfqStatus"]
@@ -17676,7 +17676,7 @@ export type Database = {
           createdAt?: string | null
           createdBy?: string | null
           customerContactId?: string | null
-          customerId?: string
+          customerId?: string | null
           customerLocationId?: string | null
           customerReference?: string | null
           customFields?: Json | null
@@ -25931,14 +25931,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -29574,6 +29574,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      create_rfq_from_model: {
+        Args: {
+          company_id: string
+          customer_part_id: string
+          email: string
+          model_id: string
+          sequence_number: string
+          unit_of_measure: string
+        }
+        Returns: {
+          rfq_id: string
+          rfq_readable_id: string
+          rfq_line_id: string
+        }[]
+      }
       get_active_job_count: {
         Args: {
           employee_id: string
@@ -29837,6 +29852,13 @@ export type Database = {
           claim: string
         }
         Returns: Json
+      }
+      get_next_sequence: {
+        Args: {
+          sequence_name: string
+          company_id: string
+        }
+        Returns: string
       }
       get_permission_companies: {
         Args: {
@@ -30429,7 +30451,6 @@ export type Database = {
           owner_id: string | null
           path_tokens: string[] | null
           updated_at: string | null
-          user_metadata: Json | null
           version: string | null
         }
         Insert: {
@@ -30443,7 +30464,6 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
-          user_metadata?: Json | null
           version?: string | null
         }
         Update: {
@@ -30457,7 +30477,6 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
-          user_metadata?: Json | null
           version?: string | null
         }
         Relationships: [
@@ -30479,7 +30498,6 @@ export type Database = {
           key: string
           owner_id: string | null
           upload_signature: string
-          user_metadata: Json | null
           version: string
         }
         Insert: {
@@ -30490,7 +30508,6 @@ export type Database = {
           key: string
           owner_id?: string | null
           upload_signature: string
-          user_metadata?: Json | null
           version: string
         }
         Update: {
@@ -30501,7 +30518,6 @@ export type Database = {
           key?: string
           owner_id?: string | null
           upload_signature?: string
-          user_metadata?: Json | null
           version?: string
         }
         Relationships: [
@@ -30637,10 +30653,6 @@ export type Database = {
           metadata: Json
           updated_at: string
         }[]
-      }
-      operation: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       search: {
         Args: {

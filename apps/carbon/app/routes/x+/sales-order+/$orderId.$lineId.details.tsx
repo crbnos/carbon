@@ -192,7 +192,7 @@ export default function EditSalesOrderLineRoute() {
           </Await>
         </Suspense>
       )}
-      <div className="grid grid-cols-1 xl:grid-cols-2 w-full flex-grow gap-2 ">
+      <div className="grid grid-cols-1 lg:grid-cols-2 w-full flex-grow gap-2 ">
         <CadModel
           isReadOnly={!permissions.can("update", "sales")}
           metadata={{
