@@ -65,6 +65,9 @@ export let loader = async ({ params }: LoaderFunctionArgs) => {
   const headers = new Headers({
     "Content-Type": contentType,
     "Cache-Control": "private, max-age=31536000, immutable", // Cache for a year
+    "Access-Control-Allow-Origin": "*", // Allow cross-origin requests
+    "Access-Control-Allow-Methods": "GET", // Only allow GET requests
+    "Access-Control-Allow-Headers": "Content-Type", // Allow Content-Type header
   });
   return new Response(fileData, { status: 200, headers });
 };
