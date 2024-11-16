@@ -41,7 +41,7 @@ export let loader = async ({ params }: LoaderFunctionArgs) => {
     (!(fileType in supportedFileTypes) &&
       !supportedModelTypes.includes(fileType))
   )
-    throw new Error("File type not supported");
+    throw new Error(`File type ${fileType} not supported`);
   const contentType = supportedFileTypes[fileType];
 
   async function downloadFile() {

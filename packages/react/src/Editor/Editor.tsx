@@ -62,7 +62,7 @@ const Editor = ({
       onUpload: uploadHandler,
       validateFn: (file) => {
         if (!file.type.includes("image/")) {
-          toast.error("File type not supported.");
+          toast.error(`File type ${file.type} not supported.`);
           return false;
         } else if (file.size / 1024 / 1024 > 20) {
           toast.error("File size too big (max 20MB).");
