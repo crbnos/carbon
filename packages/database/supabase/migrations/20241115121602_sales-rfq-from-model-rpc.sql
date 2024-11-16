@@ -1,9 +1,6 @@
 ALTER TABLE "salesRfq" 
 ALTER COLUMN "rfqDate" SET DEFAULT CURRENT_DATE;
 
-ALTER TABLE "salesRfq" 
-ALTER COLUMN "rfqDate" SET DEFAULT CURRENT_DATE;
-
 CREATE OR REPLACE FUNCTION create_rfq_from_model_v1(
   company_id text,
   customer_part_id text,
@@ -25,21 +22,32 @@ AS $$
 DECLARE
   v_rfq_id text;
   v_line_id text;
+  v_customer_id text;
 BEGIN
   IF session_user = 'authenticator' THEN
     IF NOT (has_role('employee', company_id) OR has_valid_api_key_for_company(company_id)) THEN
       RAISE EXCEPTION 'Insufficient permissions';
     END IF;
   END IF;
+
+  -- Find customer ID from email
+  SELECT cc."customerId" INTO v_customer_id
+  FROM "contact" c
+  JOIN "customerContact" cc ON cc."contactId" = c.id 
+  WHERE c."email" = create_rfq_from_model_v1.email
+  AND c."companyId" = company_id
+  LIMIT 1;
   
   -- Create RFQ
   INSERT INTO "salesRfq" (
     "rfqId",
+    "customerId",
     "companyId",
     "createdBy"
   )
   VALUES ( 
     sequence_number,
+    v_customer_id,
     company_id,
     'system'
   )
