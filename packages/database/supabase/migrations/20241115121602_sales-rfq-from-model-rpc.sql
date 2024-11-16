@@ -1,13 +1,17 @@
 ALTER TABLE "salesRfq" 
 ALTER COLUMN "rfqDate" SET DEFAULT CURRENT_DATE;
 
-CREATE OR REPLACE FUNCTION create_rfq_from_model(
+ALTER TABLE "salesRfq" 
+ALTER COLUMN "rfqDate" SET DEFAULT CURRENT_DATE;
+
+CREATE OR REPLACE FUNCTION create_rfq_from_model_v1(
   company_id text,
   customer_part_id text,
   email text,
   model_id text,
   sequence_number text,
-  unit_of_measure text
+  unit_of_measure text,
+  notes json DEFAULT '{}'::json
 )
 RETURNS TABLE (
   rfq_id text,
@@ -47,6 +51,7 @@ BEGIN
     "customerPartId",
     "modelUploadId",
     "unitOfMeasureCode",
+    "internalNotes",
     quantity,
     "companyId",
     "createdBy"
@@ -56,6 +61,7 @@ BEGIN
     customer_part_id,
     model_id,
     unit_of_measure,
+    notes,
     ARRAY[1],
     company_id,
     'system'

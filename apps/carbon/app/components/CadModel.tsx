@@ -34,9 +34,11 @@ type CadModelProps = {
   title?: string;
   uploadClassName?: string;
   viewerClassName?: string;
+  isReadOnly?: boolean;
 };
 
 const CadModel = ({
+  isReadOnly,
   metadata,
   modelPath,
   title,
@@ -210,14 +212,16 @@ type CadModelUploadProps = {
   title?: string;
   file: File | null;
   className?: string;
+  isReadOnly?: boolean;
   onFileChange: (file: File | null) => void;
 };
 
 const CadModelUpload = ({
   title,
   file,
-  onFileChange,
+  isReadOnly,
   className,
+  onFileChange,
 }: CadModelUploadProps) => {
   const hasFile = !!file;
 
@@ -256,6 +260,10 @@ const CadModelUpload = ({
       toast.error(message);
     },
   });
+
+  if (isReadOnly) {
+    return null;
+  }
 
   return (
     <div

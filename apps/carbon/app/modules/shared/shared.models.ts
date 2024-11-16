@@ -51,3 +51,17 @@ export const feedbackValidator = z.object({
   attachmentPath: z.string().optional(),
   location: z.string(),
 });
+
+export const standardFactorType = [
+  "Hours/Piece",
+  "Hours/100 Pieces",
+  "Hours/1000 Pieces",
+  "Minutes/Piece",
+  "Minutes/100 Pieces",
+  "Minutes/1000 Pieces",
+  "Pieces/Hour",
+  "Pieces/Minute",
+  "Seconds/Piece",
+  "Total Hours",
+  "Total Minutes",
+] as const;
