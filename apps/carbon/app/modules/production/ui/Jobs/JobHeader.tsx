@@ -36,7 +36,6 @@ import {
   LuTable,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Assignee, useOptimisticAssignment } from "~/components";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Job } from "../../types";
@@ -54,14 +53,6 @@ const JobHeader = () => {
   const cancelModal = useDisclosure();
 
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
-  const optimisticAssignment = useOptimisticAssignment({
-    id: jobId,
-    table: "job",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.job?.assignee;
 
   const statusFetcher = useFetcher<{}>();
   const status = routeData?.job?.status;
@@ -92,14 +83,6 @@ const JobHeader = () => {
           <JobStatus status={routeData?.job?.status} />
         </HStack>
         <HStack>
-          <Assignee
-            id={jobId}
-            table="job"
-            value={assignee ?? ""}
-            className="h-8"
-            isReadOnly={!permissions.can("update", "production")}
-          />
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

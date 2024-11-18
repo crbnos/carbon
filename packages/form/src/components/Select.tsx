@@ -1,5 +1,6 @@
 import {
   Select as CarbonSelect,
+  cn,
   FormControl,
   FormErrorMessage,
   FormHelperText,
@@ -15,7 +16,7 @@ import {
 
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef } from "react";
-import { LuX } from "react-icons/lu";
+import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 
 export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
@@ -38,7 +39,6 @@ const Select = ({
   helperText,
   isOptional = false,
   isLoading,
-  inline,
   options,
   ...props
 }: SelectProps) => {
@@ -52,8 +52,6 @@ const Select = ({
       props?.onChange?.(null);
     }
   };
-
-  const inlinePreview = !!inline;
 
   return (
     <FormControl isInvalid={!!error} className={props.className}>
@@ -112,6 +110,10 @@ export type SelectBaseProps = Omit<
   isLoading?: boolean;
   isReadOnly?: boolean;
   placeholder?: string;
+  inline?: (
+    value: string,
+    options: { value: string; label: string | JSX.Element }[]
+  ) => JSX.Element;
   onChange: (selected: string) => void;
 };
 
@@ -125,13 +127,22 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
       isLoading,
       isReadOnly,
       placeholder,
+      inline,
       onChange,
       ...props
     },
     ref
   ) => {
+    const isInlinePreview = !!inline;
+
     return (
       <HStack spacing={1}>
+        {isInlinePreview && value && (
+          <span className="flex-grow line-clamp-1">
+            {inline(value, options)}
+          </span>
+        )}
+
         <CarbonSelect
           value={value}
           onValueChange={(value) => onChange(value)}
@@ -140,15 +151,26 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
           <SelectTrigger
             ref={ref}
             size={size}
-            // isReadOnly={isReadOnly}
             {...props}
-            className="min-w-[160px] relative"
+            className={cn(!isInlinePreview && "min-w-[160px] relative")}
+            inline={isInlinePreview}
             hideIcon={isLoading}
           >
-            <SelectValue placeholder={placeholder} />
-            {isLoading && (
-              <div className="absolute top-3 right-2">
-                <Spinner />
+            {isInlinePreview ? (
+              <IconButton
+                size={size ?? "sm"}
+                variant="secondary"
+                aria-label={value ? "Edit" : "Add"}
+                icon={value ? <LuSettings2 /> : <LuPlus />}
+              />
+            ) : (
+              <div>
+                <SelectValue placeholder={placeholder} />
+                {isLoading && (
+                  <div className="absolute top-3 right-2">
+                    <Spinner />
+                  </div>
+                )}
               </div>
             )}
           </SelectTrigger>

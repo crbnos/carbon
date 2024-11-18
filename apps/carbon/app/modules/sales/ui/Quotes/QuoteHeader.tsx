@@ -33,7 +33,7 @@ import {
   LuTrophy,
   LuXCircle,
 } from "react-icons/lu";
-import { Assignee, Copy, useOptimisticAssignment } from "~/components";
+import { Copy } from "~/components";
 
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Quotation, QuotationLine, QuotationPrice } from "~/modules/sales";
@@ -61,15 +61,6 @@ const QuoteHeader = () => {
   const convertToOrderModal = useDisclosure();
   const shareModal = useDisclosure();
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: quoteId,
-    table: "quote",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.quote?.assignee;
-
   const finalizeFetcher = useFetcher<{}>();
   const statusFetcher = useFetcher<{}>();
 
@@ -86,13 +77,6 @@ const QuoteHeader = () => {
             <QuoteStatus status={routeData?.quote?.status} />
           </HStack>
           <HStack>
-            <Assignee
-              id={quoteId}
-              table="quote"
-              value={assignee ?? ""}
-              className="h-8"
-              isReadOnly={!permissions.can("update", "sales")}
-            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
