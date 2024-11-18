@@ -2,19 +2,21 @@ import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import { Spinner } from "@carbon/react";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { Fragment, Suspense } from "react";
 import { CadModel } from "~/components";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { SalesRFQ } from "~/modules/sales";
 import {
   getOpportunityLineDocuments,
   getSalesRFQLine,
   OpportunityLineDocuments,
+  OpportunityLineNotes,
   SalesRFQLineForm,
-  SalesRFQLineNotes,
   salesRfqLineValidator,
   upsertSalesRFQLine,
 } from "~/modules/sales";
@@ -89,10 +91,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function SalesRFQLine() {
   const { line, files } = useLoaderData<typeof loader>();
+
   const permissions = usePermissions();
+
   const { rfqId, lineId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
+
+  const rfqData = useRouteData<{
+    rfqSummary: SalesRFQ;
+  }>(path.to.salesRfq(rfqId));
 
   const initialValues = {
     ...line,
@@ -111,7 +119,13 @@ export default function SalesRFQLine() {
   return (
     <Fragment key={lineId}>
       <SalesRFQLineForm key={lineId} initialValues={initialValues} />
-
+      <OpportunityLineNotes
+        id={line.id}
+        table="salesRfqLine"
+        title={rfqData?.rfqSummary.rfqId ?? ""}
+        subTitle={line.customerPartId ?? ""}
+        notes={line.internalNotes as JSONContent}
+      />
       <div className="grid grid-cols-1 lg:grid-cols-2 w-full flex-grow gap-2 ">
         <CadModel
           isReadOnly={!permissions.can("update", "sales")}
@@ -145,7 +159,6 @@ export default function SalesRFQLine() {
           </Await>
         </Suspense>
       </div>
-      <SalesRFQLineNotes line={line} />
 
       <Outlet />
     </Fragment>

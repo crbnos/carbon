@@ -193,6 +193,7 @@ serve(async (req: Request) => {
                   itemReadableId: line.itemReadableId,
                   locationId: line.locationId ?? quote.data.locationId,
                   methodType: line.methodType,
+                  notes: line.notes,
                   saleQuantity: selectedLines![line.id!].quantity,
                   status: "Ordered",
                   unitOfMeasureCode: line.unitOfMeasureCode,
@@ -373,6 +374,10 @@ serve(async (req: Request) => {
           );
         }
 
+        if (!salesRfq.data.customerId) {
+          throw new Error(`Sales RFQ with id ${id} has no customerId`);
+        }
+
         // Handle customer payment terms, shipping, currency codes, etc.
         const [customerPayment, customerShipping, customer, company] =
           await Promise.all([
@@ -475,6 +480,10 @@ serve(async (req: Request) => {
             })
             .returning(["id"])
             .executeTakeFirstOrThrow();
+
+          if (!salesRfq.data.customerId) {
+            throw new Error(`Sales RFQ with id ${id} has no customerId`);
+          }
 
           const quote = await trx
             .insertInto("quote")

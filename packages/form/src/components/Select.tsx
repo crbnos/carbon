@@ -154,6 +154,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
             {...props}
             className={cn(!isInlinePreview && "min-w-[160px] relative")}
             inline={isInlinePreview}
+            disabled={isReadOnly}
             hideIcon={isLoading}
           >
             {isInlinePreview ? (
@@ -162,6 +163,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
                 variant="secondary"
                 aria-label={value ? "Edit" : "Add"}
                 icon={value ? <LuSettings2 /> : <LuPlus />}
+                isDisabled={isReadOnly}
               />
             ) : (
               <div>

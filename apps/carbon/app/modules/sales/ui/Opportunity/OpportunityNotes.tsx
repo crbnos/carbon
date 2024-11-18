@@ -2,27 +2,36 @@ import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
   Editor,
   generateHTML,
+  HStack,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   toast,
-  useThrottle,
+  useDebounce,
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { nanoid } from "nanoid";
+import { useState } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { getPrivateUrl } from "~/utils/path";
 
 const OpportunityNotes = ({
   id,
   table,
-  internalNotes,
-  externalNotes,
+  title,
+  internalNotes: initialInternalNotes,
+  externalNotes: initialExternalNotes,
 }: {
   id: string | null;
   table: "salesRfq" | "quote" | "salesOrder";
+  title: string;
   internalNotes?: JSONContent;
   externalNotes?: JSONContent;
 }) => {
@@ -32,6 +41,13 @@ const OpportunityNotes = ({
   } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
+  const [tab, setTab] = useState("internal");
+  const [internalNotes, setInternalNotes] = useState(
+    initialInternalNotes ?? {}
+  );
+  const [externalNotes, setExternalNotes] = useState(
+    initialExternalNotes ?? {}
+  );
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
@@ -51,7 +67,7 @@ const OpportunityNotes = ({
     return getPrivateUrl(result.data.path);
   };
 
-  const onUpdateExternalNotes = useThrottle(async (content: JSONContent) => {
+  const onUpdateExternalNotes = useDebounce(async (content: JSONContent) => {
     await carbon
       ?.from(table)
       .update({
@@ -62,7 +78,7 @@ const OpportunityNotes = ({
       .eq("id", id!);
   }, 2500);
 
-  const onUpdateInternalNotes = useThrottle(async (content: JSONContent) => {
+  const onUpdateInternalNotes = useDebounce(async (content: JSONContent) => {
     await carbon
       ?.from(table)
       .update({
@@ -78,46 +94,59 @@ const OpportunityNotes = ({
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Internal Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {permissions.can("update", "sales") ? (
-            <Editor
-              initialValue={(internalNotes ?? {}) as JSONContent}
-              onUpload={onUploadImage}
-              onChange={onUpdateInternalNotes}
-            />
-          ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(internalNotes as JSONContent),
-              }}
-            />
-          )}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>External Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {permissions.can("update", "sales") ? (
-            <Editor
-              initialValue={(externalNotes ?? {}) as JSONContent}
-              onUpload={onUploadImage}
-              onChange={onUpdateExternalNotes}
-            />
-          ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(externalNotes as JSONContent),
-              }}
-            />
-          )}
-        </CardContent>
+        <Tabs value={tab} onValueChange={setTab}>
+          <HStack className="w-full justify-between">
+            <CardHeader>
+              <CardTitle>{title}</CardTitle>
+            </CardHeader>
+            <CardAction>
+              <TabsList>
+                <TabsTrigger value="internal">Internal</TabsTrigger>
+                <TabsTrigger value="external">External</TabsTrigger>
+              </TabsList>
+            </CardAction>
+          </HStack>
+          <CardContent>
+            <TabsContent value="internal">
+              {permissions.can("update", "sales") ? (
+                <Editor
+                  initialValue={(internalNotes ?? {}) as JSONContent}
+                  onUpload={onUploadImage}
+                  onChange={(value) => {
+                    setInternalNotes(value);
+                    onUpdateInternalNotes(value);
+                  }}
+                />
+              ) : (
+                <div
+                  className="prose dark:prose-invert"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(internalNotes as JSONContent),
+                  }}
+                />
+              )}
+            </TabsContent>
+            <TabsContent value="external">
+              {permissions.can("update", "sales") ? (
+                <Editor
+                  initialValue={(externalNotes ?? {}) as JSONContent}
+                  onUpload={onUploadImage}
+                  onChange={(value) => {
+                    setExternalNotes(value);
+                    onUpdateExternalNotes(value);
+                  }}
+                />
+              ) : (
+                <div
+                  className="prose dark:prose-invert"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(externalNotes as JSONContent),
+                  }}
+                />
+              )}
+            </TabsContent>
+          </CardContent>
+        </Tabs>
       </Card>
     </>
   );

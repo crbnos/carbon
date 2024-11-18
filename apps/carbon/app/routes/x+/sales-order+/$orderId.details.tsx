@@ -176,6 +176,7 @@ export default function SalesOrderRoute() {
         key={`notes-${orderId}`}
         id={orderData.salesOrder.id}
         table="salesOrder"
+        title={orderData.salesOrder.salesOrderId ?? ""}
         internalNotes={orderData.salesOrder.internalNotes as JSONContent}
         externalNotes={orderData.salesOrder.externalNotes as JSONContent}
       />

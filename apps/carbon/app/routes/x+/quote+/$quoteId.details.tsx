@@ -123,6 +123,7 @@ export default function QuoteDetailsRoute() {
       <OpportunityNotes
         key={`notes-${initialValues.id}`}
         id={quoteData.quote.id}
+        title={quoteData.quote.quoteId ?? ""}
         table="quote"
         internalNotes={quoteData.quote.internalNotes as JSONContent}
         externalNotes={quoteData.quote.externalNotes as JSONContent}

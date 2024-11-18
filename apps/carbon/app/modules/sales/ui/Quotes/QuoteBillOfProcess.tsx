@@ -17,7 +17,6 @@ import {
   cn,
   generateHTML,
   useDebounce,
-  useThrottle,
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useParams } from "@remix-run/react";
@@ -251,7 +250,7 @@ const QuoteBillOfProcess = ({
     });
   }, []);
 
-  const onUpdateWorkInstruction = useThrottle(async (content: JSONContent) => {
+  const onUpdateWorkInstruction = useDebounce(async (content: JSONContent) => {
     if (!permissions.can("update", "parts")) return;
     setItems((prevItems) =>
       prevItems.map((item) =>

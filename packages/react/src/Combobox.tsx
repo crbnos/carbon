@@ -77,6 +77,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
                 variant="secondary"
                 aria-label={value ? "Edit" : "Add"}
                 icon={value ? <LuSettings2 /> : <LuPlus />}
+                isDisabled={isReadOnly}
                 ref={ref}
                 onClick={() => setOpen(true)}
               />

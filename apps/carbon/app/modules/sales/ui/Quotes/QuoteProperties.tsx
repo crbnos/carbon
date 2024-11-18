@@ -86,6 +86,10 @@ const QuoteProperties = () => {
       : routeData?.quote?.assignee;
   const permissions = usePermissions();
 
+  const isDisabled =
+    !permissions.can("update", "sales") ||
+    !["Draft"].includes(routeData?.quote?.status ?? "");
+
   return (
     <VStack
       spacing={4}
@@ -152,6 +156,7 @@ const QuoteProperties = () => {
         <Customer
           name="customerId"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("customerId", value.value);
@@ -175,6 +180,7 @@ const QuoteProperties = () => {
           value={routeData?.quote?.customerReference ?? ""}
           size="sm"
           inline
+          isReadOnly={isDisabled}
           onBlur={(e) => {
             onUpdate("customerReference", e.target.value);
           }}
@@ -194,6 +200,7 @@ const QuoteProperties = () => {
           name="customerLocationId"
           customer={routeData?.quote?.customerId ?? ""}
           inline
+          isReadOnly={isDisabled}
           onChange={(customerLocation) => {
             if (customerLocation?.id) {
               onUpdate("customerLocationId", customerLocation.id);
@@ -215,6 +222,7 @@ const QuoteProperties = () => {
           name="customerContactId"
           customer={routeData?.quote?.customerId ?? ""}
           inline
+          isReadOnly={isDisabled}
           onChange={(customerContact) => {
             if (customerContact?.id) {
               onUpdate("customerContactId", customerContact.id);
@@ -238,6 +246,7 @@ const QuoteProperties = () => {
           name="expirationDate"
           label="Expiration Date"
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("expirationDate", date);
           }}
@@ -257,6 +266,7 @@ const QuoteProperties = () => {
           name="dueDate"
           label="Due Date"
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("dueDate", date);
           }}
@@ -274,6 +284,7 @@ const QuoteProperties = () => {
           label="Quote Location"
           name="locationId"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("locationId", value.value);
@@ -293,6 +304,7 @@ const QuoteProperties = () => {
           name="salesPersonId"
           label="Sales Person"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("salesPersonId", value.value);
@@ -314,6 +326,7 @@ const QuoteProperties = () => {
           name="estimatorId"
           label="Estimator"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("estimatorId", value.value);
@@ -336,6 +349,7 @@ const QuoteProperties = () => {
           label="Currency"
           inline
           value={routeData?.quote?.currencyCode ?? ""}
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("currencyCode", value.value);
@@ -372,6 +386,7 @@ const QuoteProperties = () => {
                 variant="secondary"
                 aria-label="Refresh"
                 icon={<LuRefreshCcw />}
+                isDisabled={isDisabled}
                 onClick={() => {
                   const formData = new FormData();
                   formData.append(

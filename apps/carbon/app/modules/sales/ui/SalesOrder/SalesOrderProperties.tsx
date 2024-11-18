@@ -88,6 +88,12 @@ const SalesOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.salesOrder?.assignee;
 
+  const isDisabled =
+    !permissions.can("update", "sales") ||
+    !["Draft", "In Progress", "Needs Approval"].includes(
+      routeData?.salesOrder?.status ?? ""
+    );
+
   return (
     <VStack
       spacing={4}
@@ -159,6 +165,7 @@ const SalesOrderProperties = () => {
         <Customer
           name="customerId"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("customerId", value.value);
@@ -183,6 +190,7 @@ const SalesOrderProperties = () => {
           value={routeData?.salesOrder?.customerReference ?? ""}
           size="sm"
           inline
+          isReadOnly={isDisabled}
           onBlur={(e) => {
             onUpdate("customerReference", e.target.value);
           }}
@@ -202,6 +210,7 @@ const SalesOrderProperties = () => {
           name="customerLocationId"
           customer={routeData?.salesOrder?.customerId ?? ""}
           inline
+          isReadOnly={isDisabled}
           onChange={(customerLocation) => {
             if (customerLocation?.id) {
               onUpdate("customerLocationId", customerLocation.id);
@@ -223,6 +232,7 @@ const SalesOrderProperties = () => {
           name="customerContactId"
           customer={routeData?.salesOrder?.customerId ?? ""}
           inline
+          isReadOnly={isDisabled}
           onChange={(customerContact) => {
             if (customerContact?.id) {
               onUpdate("customerContactId", customerContact.id);
@@ -266,6 +276,7 @@ const SalesOrderProperties = () => {
           name="orderDate"
           label="Order Date"
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("orderDate", date);
           }}
@@ -283,6 +294,7 @@ const SalesOrderProperties = () => {
           label="Sales Order Location"
           name="locationId"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("locationId", value.value);
@@ -302,6 +314,7 @@ const SalesOrderProperties = () => {
           name="salesPersonId"
           label="Sales Person"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("salesPersonId", value.value);
@@ -324,6 +337,7 @@ const SalesOrderProperties = () => {
           label="Currency"
           inline
           value={routeData?.salesOrder?.currencyCode ?? ""}
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("currencyCode", value.value);
@@ -362,6 +376,7 @@ const SalesOrderProperties = () => {
                 variant="secondary"
                 aria-label="Refresh"
                 icon={<LuRefreshCcw />}
+                isDisabled={isDisabled}
                 onClick={() => {
                   const formData = new FormData();
                   formData.append(
