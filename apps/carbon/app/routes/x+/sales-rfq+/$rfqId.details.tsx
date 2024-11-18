@@ -4,28 +4,21 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Spinner, VStack } from "@carbon/react";
-import { parseDate } from "@internationalized/date";
 import { Await, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import type {
-  Opportunity,
-  SalesRFQ,
-  SalesRFQLine,
-  SalesRFQStatusType,
-} from "~/modules/sales";
+import type { Opportunity, SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import {
   OpportunityDocuments,
   OpportunityNotes,
   OpportunityState,
-  SalesRFQForm,
   salesRfqValidator,
   upsertSalesRFQ,
 } from "~/modules/sales";
-import { getCustomFields, setCustomFields } from "~/utils/form";
+import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -80,35 +73,18 @@ export default function SalesRFQDetailsRoute() {
 
   if (!rfqData) throw new Error("Could not find rfq data");
 
-  const initialValues = {
-    customerContactId: rfqData?.rfqSummary?.customerContactId ?? "",
-    customerLocationId: rfqData?.rfqSummary?.customerLocationId ?? "",
-    customerId: rfqData?.rfqSummary?.customerId ?? "",
-    customerReference: rfqData?.rfqSummary?.customerReference ?? "",
-    expirationDate: rfqData?.rfqSummary?.expirationDate
-      ? parseDate(rfqData?.rfqSummary?.expirationDate).toString()
-      : "",
-    id: rfqData?.rfqSummary?.id ?? "",
-    locationId: rfqData?.rfqSummary?.locationId ?? "",
-    rfqDate: rfqData?.rfqSummary?.rfqDate
-      ? parseDate(rfqData?.rfqSummary?.rfqDate).toString()
-      : "",
-    rfqId: rfqData?.rfqSummary?.rfqId ?? "",
-    status: rfqData?.rfqSummary?.status ?? ("Draft" as SalesRFQStatusType),
-    salesPersonId: rfqData?.rfqSummary?.salesPersonId ?? "",
-
-    ...getCustomFields(rfqData.rfqSummary?.customFields ?? {}),
-  };
-
   return (
     <VStack spacing={2}>
       <OpportunityState
-        key={`state-${initialValues.id}`}
+        key={`state-${rfqId}`}
         opportunity={rfqData?.opportunity!}
       />
-      <SalesRFQForm
-        key={`${initialValues.id}:${initialValues.status}`}
-        initialValues={initialValues}
+      <OpportunityNotes
+        key={`notes-${rfqId}`}
+        id={rfqData.rfqSummary.id}
+        table="salesRfq"
+        internalNotes={rfqData.rfqSummary.internalNotes as JSONContent}
+        externalNotes={rfqData.rfqSummary.externalNotes as JSONContent}
       />
       <Suspense
         key={`documents-${rfqId}`}
@@ -129,13 +105,6 @@ export default function SalesRFQDetailsRoute() {
           )}
         </Await>
       </Suspense>
-      <OpportunityNotes
-        key={`notes-${rfqId}`}
-        id={rfqData.rfqSummary.id}
-        table="salesRfq"
-        internalNotes={rfqData.rfqSummary.internalNotes as JSONContent}
-        externalNotes={rfqData.rfqSummary.externalNotes as JSONContent}
-      />
     </VStack>
   );
 }

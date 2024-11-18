@@ -79,7 +79,7 @@ const CreateCustomerModal = () => {
               <CustomerContact
                 name="id"
                 customer={customer}
-                onChange={setContact}
+                onChange={(contact) => setContact(contact?.contact ?? null)}
               />
               {contact && (
                 <>
@@ -119,7 +119,12 @@ const CustomerContact = ({
 }: {
   name: string;
   customer?: string;
-  onChange?: (newValue: CustomerContactType["contact"] | null) => void;
+  onChange?: (
+    newValue: {
+      id: string;
+      contact: CustomerContactType["contact"];
+    } | null
+  ) => void;
 }) => {
   const initialLoad = useRef(true);
   const { error, defaultValue } = useField(name);
@@ -164,7 +169,7 @@ const CustomerContact = ({
         (c) => c.id === newValue
       );
 
-      onChange(contact?.contact ?? null);
+      onChange({ id: newValue, contact: contact?.contact ?? null });
     }
   };
 

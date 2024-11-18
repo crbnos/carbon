@@ -25,6 +25,7 @@ import {
   getQuoteShipment,
   QuoteExplorer,
   QuoteHeader,
+  QuoteProperties,
 } from "~/modules/sales";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -139,12 +140,17 @@ export default function QuoteRoute() {
                     </ScrollArea>
                   </ResizablePanel>
                   <ResizableHandle withHandle />
-                  <ResizablePanel order={2}>
-                    <ScrollArea className="h-[calc(100vh-99px)]">
-                      <VStack spacing={2} className="p-2">
-                        <Outlet />
-                      </VStack>
-                    </ScrollArea>
+                  <ResizablePanel order={2} className="z-1">
+                    <div className="flex h-[calc(100vh-99px)] w-full">
+                      <div className="flex h-full w-full overflow-y-auto">
+                        <ScrollArea className="h-[calc(100vh-99px)] w-full">
+                          <VStack spacing={2} className="p-2">
+                            <Outlet />
+                          </VStack>
+                        </ScrollArea>
+                      </div>
+                      <QuoteProperties />
+                    </div>
                   </ResizablePanel>
                 </ResizablePanelGroup>
               )}

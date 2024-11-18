@@ -1,13 +1,25 @@
-import type { ComboboxProps } from "@carbon/form";
-import { Combobox, CreatableCombobox } from "@carbon/form";
+import type { CreatableComboboxProps } from "@carbon/form";
+import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
 import { SupplierForm } from "~/modules/purchasing";
 import { useSuppliers } from "~/stores";
+import SupplierAvatar from "../SupplierAvatar";
 
-type SupplierSelectProps = Omit<ComboboxProps, "options"> & {
+type SupplierSelectProps = Omit<
+  CreatableComboboxProps,
+  "options" | "inline"
+> & {
+  inline?: boolean;
   allowedSuppliers?: string[];
+};
+
+const SupplierPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  return <SupplierAvatar supplierId={value} />;
 };
 
 const Supplier = ({ allowedSuppliers, ...props }: SupplierSelectProps) => {
@@ -16,29 +28,27 @@ const Supplier = ({ allowedSuppliers, ...props }: SupplierSelectProps) => {
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useMemo(() => {
-    const result =
-      suppliers.map((c) => ({
-        value: c.id,
-        label: c.name,
-      })) ?? [];
-    if (allowedSuppliers) {
-      return result.filter((c) => allowedSuppliers.includes(c.value));
-    }
-    return result;
-  }, [suppliers, allowedSuppliers]);
+  const options = useMemo(
+    () =>
+      suppliers
+        .filter((s) => !allowedSuppliers || allowedSuppliers.includes(s.id))
+        .map((c) => ({
+          value: c.id,
+          label: c.name,
+        })) ?? [],
+    [suppliers, allowedSuppliers]
+  );
 
   const { company } = useUser();
 
-  return allowedSuppliers ? (
-    <Combobox options={options} {...props} label={props?.label ?? "Supplier"} />
-  ) : (
+  return (
     <>
       <CreatableCombobox
         ref={triggerRef}
         options={options}
         {...props}
         label={props?.label ?? "Supplier"}
+        inline={props?.inline ? SupplierPreview : undefined}
         onCreateOption={(option) => {
           newSuppliersModal.onOpen();
           setCreated(option);

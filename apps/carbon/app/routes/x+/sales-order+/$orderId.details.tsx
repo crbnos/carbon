@@ -15,7 +15,6 @@ import {
   OpportunityDocuments,
   OpportunityNotes,
   OpportunityState,
-  SalesOrderForm,
   SalesOrderPaymentForm,
   SalesOrderShipmentForm,
   salesOrderValidator,
@@ -131,45 +130,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function SalesOrderRoute() {
-  const {
-    salesOrderShipment,
-    salesOrderPayment,
-    originatedFromQuote,
-    quote,
-    // shippingTerms,
-  } = useLoaderData<typeof loader>();
+  const { salesOrderShipment, salesOrderPayment } =
+    useLoaderData<typeof loader>();
+
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
+
   const orderData = useRouteData<{
     salesOrder: SalesOrder;
     opportunity: Opportunity;
     files: Promise<FileObject[]>;
   }>(path.to.salesOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
-
-  const initialValues = {
-    id: orderData?.salesOrder?.id ?? "",
-    salesOrderId: orderData?.salesOrder?.salesOrderId ?? "",
-    customerId: orderData?.salesOrder?.customerId ?? "",
-    customerContactId: orderData?.salesOrder?.customerContactId ?? "",
-    customerLocationId: orderData?.salesOrder?.customerLocationId ?? "",
-    customerReference: orderData?.salesOrder?.customerReference ?? "",
-    orderDate: orderData?.salesOrder?.orderDate ?? "",
-    status: orderData?.salesOrder?.status ?? ("Draft" as "Draft"),
-    receiptRequestedDate: orderData?.salesOrder?.receiptRequestedDate ?? "",
-    receiptPromisedDate: orderData?.salesOrder?.receiptPromisedDate ?? "",
-    externalNotes: orderData?.salesOrder?.externalNotes ?? {},
-    internalNotes: orderData?.salesOrder?.internalNotes ?? {},
-    currencyCode: orderData?.salesOrder?.currencyCode ?? "",
-    exchangeRate: orderData?.salesOrder?.exchangeRate ?? undefined,
-    exchangeRateUpdatedAt: orderData?.salesOrder?.exchangeRateUpdatedAt ?? "",
-    originatedFromQuote: originatedFromQuote,
-    salesPersonId: orderData?.salesOrder?.salesPersonId ?? "",
-    digitalQuoteAcceptedBy: quote?.data?.digitalQuoteAcceptedBy ?? undefined,
-    digitalQuoteAcceptedByEmail:
-      quote?.data?.digitalQuoteAcceptedByEmail ?? undefined,
-    ...getCustomFields(orderData?.salesOrder?.customFields),
-  };
 
   const shipmentInitialValues = {
     id: salesOrderShipment.id,
@@ -200,7 +172,13 @@ export default function SalesOrderRoute() {
   return (
     <>
       <OpportunityState opportunity={orderData.opportunity} />
-      <SalesOrderForm key={initialValues.id} initialValues={initialValues} />
+      <OpportunityNotes
+        key={`notes-${orderId}`}
+        id={orderData.salesOrder.id}
+        table="salesOrder"
+        internalNotes={orderData.salesOrder.internalNotes as JSONContent}
+        externalNotes={orderData.salesOrder.externalNotes as JSONContent}
+      />
       <Suspense
         key={`documents-${orderId}`}
         fallback={
@@ -220,22 +198,14 @@ export default function SalesOrderRoute() {
           )}
         </Await>
       </Suspense>
-      <OpportunityNotes
-        key={`notes-${orderId}`}
-        id={orderData.salesOrder.id}
-        table="salesOrder"
-        internalNotes={orderData.salesOrder.internalNotes as JSONContent}
-        externalNotes={orderData.salesOrder.externalNotes as JSONContent}
-      />
-      <SalesOrderShipmentForm
-        key={`shipment-${initialValues.id}`}
-        initialValues={shipmentInitialValues}
 
-        // shippingTerms={shippingTerms as ListItem[]}
+      <SalesOrderShipmentForm
+        key={`shipment-${orderId}`}
+        initialValues={shipmentInitialValues}
       />
 
       <SalesOrderPaymentForm
-        key={`payment-${initialValues.id}`}
+        key={`payment-${orderId}`}
         initialValues={paymentInitialValues}
       />
     </>

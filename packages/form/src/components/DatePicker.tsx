@@ -1,21 +1,25 @@
+import { useFormContext } from "@carbon/form";
 import {
   DatePicker as DatePickerBase,
   FormControl,
   FormErrorMessage,
   FormLabel,
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { getLocalTimeZone, parseDate, toZoned } from "@internationalized/date";
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import { useField } from "../hooks";
 
 type DatePickerProps = {
   name: string;
   label?: string;
-  onChange?: (date: CalendarDate) => void;
   isDisabled?: boolean;
   minValue?: CalendarDate;
   maxValue?: CalendarDate;
+  inline?: boolean;
+  onChange?: (date: string | null) => void;
 };
 
 const DatePicker = ({
@@ -24,23 +28,42 @@ const DatePicker = ({
   isDisabled = false,
   minValue,
   maxValue,
+  inline = false,
   onChange,
 }: DatePickerProps) => {
-  const { error, defaultValue, validate } = useField(name);
+  const { validate } = useFormContext();
+  const { error, defaultValue, validate: validateField } = useField(name);
   const [date, setDate] = useState<CalendarDate | undefined>(
     defaultValue ? parseDate(defaultValue) : undefined
   );
 
-  const handleChange = (date: CalendarDate) => {
-    setDate(date);
-    onChange?.(date);
-    validate();
+  const handleChange = async (newDate: CalendarDate) => {
+    const formattedDate = newDate
+      ? toZoned(newDate, getLocalTimeZone()).toAbsoluteString()
+      : null;
+    flushSync(() => {
+      setDate(newDate);
+    });
+    if (inline) {
+      const result = await validate();
+      if (result.error) {
+        setDate(date);
+      } else {
+        onChange?.(formattedDate);
+      }
+    } else {
+      validateField();
+      onChange?.(formattedDate);
+    }
   };
 
-  // Convert local time to UTC for storage
   const utcValue = date
     ? toZoned(date, getLocalTimeZone()).toAbsoluteString()
     : "";
+
+  const DatePickerPreview = (
+    <span className="flex-grow line-clamp-1">{formatDate(utcValue)}</span>
+  );
 
   return (
     <FormControl isInvalid={!!error}>
@@ -52,6 +75,7 @@ const DatePicker = ({
         minValue={minValue}
         maxValue={maxValue}
         onChange={handleChange}
+        inline={inline ? DatePickerPreview : undefined}
       />
       {error && <FormErrorMessage>{error}</FormErrorMessage>}
     </FormControl>

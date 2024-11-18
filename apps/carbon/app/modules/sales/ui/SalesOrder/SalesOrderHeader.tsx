@@ -9,7 +9,7 @@ import {
   LuStopCircle,
   LuTruck,
 } from "react-icons/lu";
-import { Assignee, Copy, useOptimisticAssignment } from "~/components";
+import { Assignee, useOptimisticAssignment } from "~/components";
 
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesOrder, SalesOrderLine } from "~/modules/sales";
@@ -45,11 +45,9 @@ const SalesOrderHeader = () => {
           <HStack>
             <Link to={path.to.salesOrderDetails(orderId)}>
               <Heading size="h3" className="flex items-center gap-2">
-                {/* <ModuleIcon icon={<RiProgress8Line />} /> */}
                 <span>{routeData?.salesOrder?.salesOrderId}</span>
               </Heading>
             </Link>
-            <Copy text={routeData?.salesOrder?.salesOrderId ?? ""} />
             <SalesStatus status={routeData?.salesOrder?.status} />
           </HStack>
           <HStack>

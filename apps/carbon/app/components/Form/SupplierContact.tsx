@@ -1,6 +1,3 @@
-import type { ComboboxProps } from "@carbon/form";
-import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
@@ -9,14 +6,34 @@ import type {
 } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
+import type { ComboboxProps } from "@carbon/form";
+import { CreatableCombobox } from "@carbon/form";
+import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { SupplierContactForm } from "~/modules/purchasing";
 
 type SupplierContactSelectProps = Omit<
   ComboboxProps,
-  "options" | "onChange"
+  "options" | "onChange" | "inline"
 > & {
   supplier?: string;
-  onChange?: (supplier: SupplierContactType["contact"] | null) => void;
+  onChange?: (
+    supplier: { id: string; contact: SupplierContactType["contact"] } | null
+  ) => void;
+  inline?: boolean;
+};
+
+const SupplierContactPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const contact = options.find((o) => o.value === value);
+  if (!contact) return null;
+  return (
+    <HStack>
+      <Avatar size="xs" name={contact.label} />
+      <span>{contact.label}</span>
+    </HStack>
+  );
 };
 
 const SupplierContact = (props: SupplierContactSelectProps) => {
@@ -54,7 +71,7 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
         (contact) => contact.id === newValue?.value
       ) ?? null;
 
-    props.onChange?.(contact?.contact ?? null);
+    props.onChange?.(contact ?? null);
   };
 
   return (
@@ -63,6 +80,7 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props.inline ? SupplierContactPreview : undefined}
         label={props?.label ?? "Supplier Contact"}
         onChange={onChange}
         onCreateOption={(option) => {

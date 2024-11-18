@@ -80,11 +80,9 @@ const QuoteHeader = () => {
           <HStack>
             <Link to={path.to.quoteDetails(quoteId)}>
               <Heading size="h3" className="flex items-center gap-2">
-                {/* <ModuleIcon icon={<RiProgress4Line />} /> */}
                 <span>{routeData?.quote?.quoteId}</span>
               </Heading>
             </Link>
-            <Copy text={routeData?.quote?.quoteId ?? ""} />
             <QuoteStatus status={routeData?.quote?.status} />
           </HStack>
           <HStack>
