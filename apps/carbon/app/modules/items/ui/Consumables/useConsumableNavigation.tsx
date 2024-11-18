@@ -1,14 +1,23 @@
 import { useParams } from "@remix-run/react";
 
 import { LuBox, LuFileText, LuShoppingCart, LuTags } from "react-icons/lu";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
+import type { ConsumableSummary } from "../../types";
 
 export function useConsumableNavigation() {
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
+
+  const routeData = useRouteData<{ consumableSummary: ConsumableSummary }>(
+    path.to.consumable(itemId)
+  );
+  if (!routeData?.consumableSummary?.itemTrackingType)
+    throw new Error("Could not find itemTrackingType in routeData");
+
+  const itemTrackingType = routeData.consumableSummary.itemTrackingType;
 
   return [
     {
@@ -41,13 +50,15 @@ export function useConsumableNavigation() {
     {
       name: "Inventory",
       to: path.to.consumableInventory(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee", "supplier"],
       icon: LuBox,
       shortcut: "Command+Shift+i",
     },
   ].filter(
     (item) =>
-      item.role === undefined ||
-      item.role.some((role) => permissions.is(role as Role))
+      !item.isDisabled &&
+      (item.role === undefined ||
+        item.role.some((role) => permissions.is(role as Role)))
   );
 }

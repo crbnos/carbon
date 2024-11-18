@@ -17,8 +17,11 @@ export function useFixtureNavigation() {
   }>(path.to.fixture(itemId));
   if (!routeData?.fixtureSummary?.replenishmentSystem)
     throw new Error("Could not find replenishmentSystem in routeData");
+  if (!routeData?.fixtureSummary?.itemTrackingType)
+    throw new Error("Could not find itemTrackingType in routeData");
 
   const replenishment = routeData.fixtureSummary.replenishmentSystem;
+  const itemTrackingType = routeData.fixtureSummary.itemTrackingType;
 
   return [
     {
@@ -53,6 +56,7 @@ export function useFixtureNavigation() {
     {
       name: "Inventory",
       to: path.to.fixtureInventory(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee", "supplier"],
       icon: LuBox,
       shortcut: "Command+Shift+i",

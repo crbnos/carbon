@@ -1,14 +1,24 @@
 import { useParams } from "@remix-run/react";
 
 import { LuBox, LuFileText, LuShoppingCart, LuTags } from "react-icons/lu";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
+import type { MaterialSummary } from "../../types";
 
 export function useMaterialNavigation() {
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
+
+  const routeData = useRouteData<{ materialSummary: MaterialSummary }>(
+    path.to.material(itemId)
+  );
+  if (!routeData?.materialSummary?.itemTrackingType)
+    throw new Error("Could not find itemTrackingType in routeData");
+
+  const itemTrackingType = routeData.materialSummary.itemTrackingType;
+  console.log({ itemTrackingType });
 
   return [
     {
@@ -41,13 +51,15 @@ export function useMaterialNavigation() {
     {
       name: "Inventory",
       to: path.to.materialInventory(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee", "supplier"],
       icon: LuBox,
       shortcut: "Command+Shift+i",
     },
   ].filter(
     (item) =>
-      item.role === undefined ||
-      item.role.some((role) => permissions.is(role as Role))
+      !item.isDisabled &&
+      (item.role === undefined ||
+        item.role.some((role) => permissions.is(role as Role)))
   );
 }

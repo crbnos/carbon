@@ -23,8 +23,11 @@ export function usePartNavigation() {
   );
   if (!routeData?.partSummary?.replenishmentSystem)
     throw new Error("Could not find replenishmentSystem in routeData");
+  if (!routeData?.partSummary?.itemTrackingType)
+    throw new Error("Could not find itemTrackingType in routeData");
 
   const replenishment = routeData.partSummary.replenishmentSystem;
+  const itemTrackingType = routeData.partSummary.itemTrackingType;
 
   return [
     {
@@ -52,6 +55,7 @@ export function usePartNavigation() {
     {
       name: "Inventory",
       to: path.to.partInventory(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee", "supplier"],
       icon: LuBox,
       shortcut: "Command+Shift+i",
