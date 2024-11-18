@@ -70,6 +70,10 @@ const SalesRFQProperties = () => {
       : routeData?.rfqSummary?.assignee;
   const permissions = usePermissions();
 
+  const isDisabled =
+    !permissions.can("update", "sales") ||
+    !["Draft", "Ready to Quote"].includes(routeData?.rfqSummary?.status ?? "");
+
   return (
     <VStack
       spacing={4}
@@ -140,6 +144,7 @@ const SalesRFQProperties = () => {
         <Customer
           name="customerId"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("customerId", value.value);
@@ -164,6 +169,7 @@ const SalesRFQProperties = () => {
           value={routeData?.rfqSummary?.customerReference ?? ""}
           size="sm"
           inline
+          isReadOnly={isDisabled}
           onBlur={(e) => {
             onUpdate("customerReference", e.target.value);
           }}
@@ -183,6 +189,7 @@ const SalesRFQProperties = () => {
           name="customerLocationId"
           customer={routeData?.rfqSummary?.customerId ?? ""}
           inline
+          isReadOnly={isDisabled}
           onChange={(customerLocation) => {
             if (customerLocation?.id) {
               onUpdate("customerLocationId", customerLocation.id);
@@ -204,6 +211,7 @@ const SalesRFQProperties = () => {
           name="customerContactId"
           customer={routeData?.rfqSummary?.customerId ?? ""}
           inline
+          isReadOnly={isDisabled}
           onChange={(customerContact) => {
             if (customerContact?.id) {
               onUpdate("customerContactId", customerContact.id);
@@ -225,6 +233,7 @@ const SalesRFQProperties = () => {
           name="rfqDate"
           label="RFQ Date"
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("rfqDate", date);
           }}
@@ -244,6 +253,7 @@ const SalesRFQProperties = () => {
           name="expirationDate"
           label="Expiration Date"
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("expirationDate", date);
           }}
@@ -261,6 +271,7 @@ const SalesRFQProperties = () => {
           label="RFQ Location"
           name="locationId"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("locationId", value.value);
@@ -282,6 +293,7 @@ const SalesRFQProperties = () => {
           name="salesPersonId"
           label="Sales Person"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("salesPersonId", value.value);

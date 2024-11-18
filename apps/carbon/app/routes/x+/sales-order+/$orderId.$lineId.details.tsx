@@ -7,6 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import { Card, CardHeader, CardTitle, Spinner } from "@carbon/react";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
@@ -23,6 +24,7 @@ import type {
 } from "~/modules/sales";
 import {
   OpportunityLineDocuments,
+  OpportunityLineNotes,
   SalesOrderLineForm,
   SalesOrderLineJobs,
   getOpportunityLineDocuments,
@@ -167,6 +169,13 @@ export default function EditSalesOrderLineRoute() {
         key={initialValues.id}
         // @ts-ignore
         initialValues={initialValues}
+      />
+      <OpportunityLineNotes
+        id={line.id}
+        table="salesOrderLine"
+        title={orderData.salesOrder.salesOrderId ?? ""}
+        subTitle={line.customerPartId ?? ""}
+        notes={line.notes as JSONContent}
       />
       {line.methodType === "Make" && (
         <Suspense

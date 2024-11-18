@@ -2,6 +2,7 @@ import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import { Spinner } from "@carbon/react";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
@@ -11,6 +12,7 @@ import { CadModel } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type {
+  Quotation,
   QuotationOperation,
   QuotationPrice,
   QuoteMethod,
@@ -21,9 +23,9 @@ import {
   getQuoteLinePrices,
   getQuoteOperationsByLine,
   OpportunityLineDocuments,
+  OpportunityLineNotes,
   QuoteLineCosting,
   QuoteLineForm,
-  QuoteLineNotes,
   QuoteLinePricing,
   quoteLineValidator,
   upsertQuoteLine,
@@ -121,9 +123,10 @@ export default function QuoteLine() {
   useRealtime("quoteMaterial", `quoteLineId=eq.${lineId}`);
   useRealtime("quoteOperation", `quoteLineId=eq.${lineId}`);
 
-  const quoteData = useRouteData<{ methods: Tree<QuoteMethod>[] }>(
-    path.to.quote(quoteId)
-  );
+  const quoteData = useRouteData<{
+    methods: Tree<QuoteMethod>[];
+    quote: Quotation;
+  }>(path.to.quote(quoteId));
 
   const methodTree = useMemo(
     () => quoteData?.methods?.find((m) => m.data.quoteLineId === line.id),
@@ -158,7 +161,13 @@ export default function QuoteLine() {
   return (
     <Fragment key={lineId}>
       <QuoteLineForm key={lineId} initialValues={initialValues} />
-
+      <OpportunityLineNotes
+        id={line.id}
+        table="quoteLine"
+        title={quoteData?.quote.quoteId ?? ""}
+        subTitle={line.itemReadableId ?? ""}
+        notes={line.notes as JSONContent}
+      />
       <div className="grid grid-cols-1 lg:grid-cols-2 w-full flex-grow gap-2 ">
         <CadModel
           isReadOnly={!permissions.can("update", "sales")}
@@ -191,7 +200,7 @@ export default function QuoteLine() {
           </Await>
         </Suspense>
       </div>
-      <QuoteLineNotes line={line} />
+
       {line.methodType === "Make" && line.status !== "No Quote" && (
         <QuoteLineCosting
           quantities={line.quantity ?? [1]}

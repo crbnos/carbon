@@ -1,5 +1,12 @@
 import type { ComponentPropsWithoutRef, RefCallback, RefObject } from "react";
-import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { Button, type ButtonProps } from "./Button";
 import { cn } from "./utils/cn";
@@ -374,7 +381,10 @@ export default function useActionBar({
     []
   );
 
-  const boundingRect = containerRef?.current?.getBoundingClientRect();
+  const boundingRect = useMemo(
+    () => containerRef?.current?.getBoundingClientRect(),
+    [containerRef]
+  );
 
   const [ref, isDragging, position] = useDraggable({
     boundingRect,

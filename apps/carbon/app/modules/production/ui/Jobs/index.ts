@@ -7,9 +7,9 @@ import JobForm from "./JobForm";
 import JobHeader from "./JobHeader";
 import JobMaterialForm from "./JobMaterialForm";
 import JobMaterialsTable from "./JobMaterialsTable";
+import JobNotes from "./JobNotes";
 import JobOperationsTable from "./JobOperationsTable";
 import JobProperties from "./JobProperties";
-
 import JobsTable from "./JobsTable";
 import JobStatus from "./JobStatus";
 import ProductionEventForm from "./ProductionEventForm";
@@ -28,6 +28,7 @@ export {
   JobHeader,
   JobMaterialForm,
   JobMaterialsTable,
+  JobNotes,
   JobOperationsTable,
   JobProperties,
   JobsTable,

@@ -16857,6 +16857,7 @@ export type Database = {
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
+          notes: Json | null
           promisedDate: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
@@ -16897,6 +16898,7 @@ export type Database = {
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          notes?: Json | null
           promisedDate?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
@@ -16937,6 +16939,7 @@ export type Database = {
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          notes?: Json | null
           promisedDate?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
@@ -25931,14 +25934,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27533,6 +27536,7 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           modelUploadId: string | null
+          notes: Json | null
           promisedDate: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
@@ -29574,7 +29578,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      create_rfq_from_model: {
+      create_rfq_from_model_v1: {
         Args: {
           company_id: string
           customer_part_id: string
@@ -29582,6 +29586,7 @@ export type Database = {
           model_id: string
           sequence_number: string
           unit_of_measure: string
+          notes?: Json
         }
         Returns: {
           rfq_id: string

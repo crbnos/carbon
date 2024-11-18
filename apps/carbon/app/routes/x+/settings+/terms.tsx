@@ -11,7 +11,7 @@ import {
   Editor,
   generateHTML,
   HStack,
-  useThrottle,
+  useDebounce,
   VStack,
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -70,7 +70,7 @@ export default function Terms() {
     setPurchasingTermsStatus("draft");
     onUpdatePurchasingTerms(content);
   };
-  const onUpdatePurchasingTerms = useThrottle(async (content: JSONContent) => {
+  const onUpdatePurchasingTerms = useDebounce(async (content: JSONContent) => {
     if (!carbon) return;
     const { error } = await carbon
       .from("terms")
@@ -87,7 +87,7 @@ export default function Terms() {
     setSalesTermsStatus("draft");
     onUpdateSalesTerms(content);
   };
-  const onUpdateSalesTerms = useThrottle(async (content: JSONContent) => {
+  const onUpdateSalesTerms = useDebounce(async (content: JSONContent) => {
     setSalesTermsStatus("draft");
     await carbon
       ?.from("terms")

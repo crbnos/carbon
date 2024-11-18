@@ -27,6 +27,7 @@ const DatePicker = (
     ...props,
     shouldCloseOnSelect: false,
   });
+
   const ref = useRef<HTMLDivElement>(null);
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
     useDatePicker(props, state, ref);
@@ -49,6 +50,7 @@ const DatePicker = (
                   variant="secondary"
                   size="sm"
                   aria-label="Open date picker"
+                  isDisabled={props.isDisabled}
                   {...buttonProps}
                 />
               </PopoverTrigger>
