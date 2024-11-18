@@ -9,7 +9,6 @@ import {
   LuStopCircle,
   LuTruck,
 } from "react-icons/lu";
-import { Assignee, useOptimisticAssignment } from "~/components";
 
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesOrder, SalesOrderLine } from "~/modules/sales";
@@ -18,7 +17,6 @@ import { path } from "~/utils/path";
 import SalesStatus from "./SalesStatus";
 
 const SalesOrderHeader = () => {
-  const permissions = usePermissions();
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
 
@@ -27,14 +25,7 @@ const SalesOrderHeader = () => {
     lines: SalesOrderLine[];
   }>(path.to.salesOrder(orderId));
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: orderId,
-    table: "salesOrder",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.salesOrder?.assignee;
+  const permissions = usePermissions();
 
   const statusFetcher = useFetcher<{}>();
 
@@ -51,13 +42,6 @@ const SalesOrderHeader = () => {
             <SalesStatus status={routeData?.salesOrder?.status} />
           </HStack>
           <HStack>
-            <Assignee
-              id={orderId}
-              table="salesOrder"
-              value={assignee ?? ""}
-              className="h-8"
-              isReadOnly={!permissions.can("update", "sales")}
-            />
             <Button leftIcon={<LuEye />} variant="secondary" asChild>
               <a
                 target="_blank"

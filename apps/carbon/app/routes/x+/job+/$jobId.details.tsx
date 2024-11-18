@@ -16,14 +16,12 @@ import { CadModel, Documents } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
-  JobForm,
   jobValidator,
   recalculateJobRequirements,
   upsertJob,
 } from "~/modules/production";
-import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import type { StorageItem } from "~/types";
-import { getCustomFields, setCustomFields } from "~/utils/form";
+import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -91,28 +89,8 @@ export default function JobDetailsRoute() {
 
   useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
-  const jobInitialValues = {
-    id: jobData.job?.id ?? "",
-    jobId: jobData.job?.jobId ?? "",
-    customerId: jobData.job?.customerId ?? "",
-    deadlineType: jobData.job?.deadlineType ?? ("No Deadline" as "No Deadline"),
-    description: jobData.job?.description ?? "",
-    dueDate: jobData.job?.dueDate ?? "",
-    itemId: jobData.job?.itemId ?? "",
-    itemType: jobData.job?.itemType ?? ("Part" as const),
-    locationId: jobData.job?.locationId ?? "",
-    quantity: jobData.job?.quantity ?? 0,
-    scrapQuantity: jobData.job?.scrapQuantity ?? 0,
-    status: jobData.job?.status ?? ("Draft" as const),
-    unitOfMeasureCode: jobData.job?.unitOfMeasureCode ?? "EA",
-    ...getCustomFields(jobData.job?.customFields ?? {}),
-  };
-
   return (
     <VStack spacing={2} className="p-2 h-full">
-      <JobMakeMethodTools />
-      {/* @ts-ignore */}
-      <JobForm key={jobInitialValues.id} initialValues={jobInitialValues} />
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
           <CadModel

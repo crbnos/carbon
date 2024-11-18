@@ -19,7 +19,6 @@ import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
 import { LuAlertTriangle, LuRefreshCw, LuXCircle } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { Assignee, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -39,15 +38,6 @@ const SalesRFQHeader = () => {
     lines: SalesRFQLine[];
   }>(path.to.salesRfq(rfqId));
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: rfqId,
-    table: "salesRfq",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.rfqSummary?.assignee;
-
   const status = routeData?.rfqSummary?.status ?? "Draft";
 
   const statusFetcher = useFetcher<{}>();
@@ -65,14 +55,6 @@ const SalesRFQHeader = () => {
           <SalesRFQStatus status={routeData?.rfqSummary?.status} />
         </HStack>
         <HStack>
-          <Assignee
-            id={rfqId}
-            table="salesRfq"
-            value={assignee ?? ""}
-            className="h-8"
-            isReadOnly={!permissions.can("update", "sales")}
-          />
-
           {status === "Draft" &&
             (routeData?.rfqSummary?.customerId ? (
               <statusFetcher.Form

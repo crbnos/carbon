@@ -10,17 +10,25 @@ import {
 import { useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 
-import { DatePicker, NumberControlled, ValidatedForm } from "@carbon/form";
+import {
+  DatePicker,
+  NumberControlled,
+  Select,
+  ValidatedForm,
+} from "@carbon/form";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import { Customer, Item, Location, UnitOfMeasure } from "~/components/Form";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
+import { deadlineTypes } from "../../production.models";
 import type { Job } from "../../types";
+import { getDeadlineIcon, getDeadlineText } from "./Deadline";
 
 const JobProperties = () => {
   const { jobId } = useParams();
@@ -58,6 +66,16 @@ const JobProperties = () => {
     },
     [fetcher, jobId, routeData?.job]
   );
+
+  const permissions = usePermissions();
+  const optimisticAssignment = useOptimisticAssignment({
+    id: jobId,
+    table: "job",
+  });
+  const assignee =
+    optimisticAssignment !== undefined
+      ? optimisticAssignment
+      : routeData?.job?.assignee;
 
   return (
     <VStack
@@ -108,6 +126,14 @@ const JobProperties = () => {
         </HStack>
         <span className="text-sm">{routeData?.job?.jobId}</span>
       </VStack>
+
+      <Assignee
+        id={jobId}
+        table="job"
+        value={assignee ?? ""}
+        variant="inline"
+        isReadOnly={!permissions.can("update", "production")}
+      />
 
       <ValidatedForm
         defaultValues={{ itemId: routeData?.job?.itemId ?? undefined }}
@@ -167,6 +193,76 @@ const JobProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          dueDate: routeData?.job?.dueDate ?? "",
+        }}
+        validator={z.object({
+          dueDate: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <DatePicker
+          name="dueDate"
+          label="Due Date"
+          inline
+          onChange={(date) => {
+            onUpdate("dueDate", date);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          deadlineType: routeData?.job?.deadlineType ?? "",
+        }}
+        validator={z.object({
+          deadlineType: z
+            .string()
+            .min(1, { message: "Deadline Type is required" }),
+        })}
+        className="w-full"
+      >
+        <Select
+          name="deadlineType"
+          label="Deadline Type"
+          inline={(value, options) => {
+            const deadlineType = value as (typeof deadlineTypes)[number];
+            return (
+              <div className="flex gap-1 items-center">
+                {getDeadlineIcon(deadlineType, false)}
+                <span>{getDeadlineText(deadlineType)}</span>
+              </div>
+            );
+          }}
+          options={deadlineTypes.map((d) => ({
+            value: d,
+            label: d,
+          }))}
+          onChange={(value) => {
+            onUpdate("deadlineType", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{ customerId: routeData?.job?.customerId ?? undefined }}
+        validator={z.object({
+          customerId: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <Customer
+          name="customerId"
+          inline
+          isOptional
+          onChange={(value) => {
+            onUpdate("customerId", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
+
       <ValidatedForm
         defaultValues={{
           unitOfMeasureCode: routeData?.job?.unitOfMeasureCode ?? undefined,
@@ -203,42 +299,6 @@ const JobProperties = () => {
             if (value?.value) {
               onUpdate("locationId", value.value);
             }
-          }}
-        />
-      </ValidatedForm>
-
-      <ValidatedForm
-        defaultValues={{
-          dueDate: routeData?.job?.dueDate ?? "",
-        }}
-        validator={z.object({
-          dueDate: zfd.text(z.string().optional()),
-        })}
-        className="w-full"
-      >
-        <DatePicker
-          name="dueDate"
-          label="Due Date"
-          inline
-          onChange={(date) => {
-            onUpdate("dueDate", date);
-          }}
-        />
-      </ValidatedForm>
-
-      <ValidatedForm
-        defaultValues={{ customerId: routeData?.job?.customerId ?? undefined }}
-        validator={z.object({
-          customerId: zfd.text(z.string().optional()),
-        })}
-        className="w-full"
-      >
-        <Customer
-          name="customerId"
-          inline
-          isOptional
-          onChange={(value) => {
-            onUpdate("customerId", value?.value ?? null);
           }}
         />
       </ValidatedForm>

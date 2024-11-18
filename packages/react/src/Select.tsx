@@ -40,24 +40,26 @@ interface SelectTriggerProps
   extends ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>,
     VariantProps<typeof selectTriggerVariants> {
   hideIcon?: boolean;
+  inline?: boolean;
 }
 
 const SelectTrigger = forwardRef<
   ElementRef<typeof SelectPrimitive.Trigger>,
   SelectTriggerProps
->(({ size, className, children, hideIcon, ...props }, ref) => (
+>(({ size, className, children, hideIcon, inline, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      selectTriggerVariants({
-        size,
-      }),
+      !inline &&
+        selectTriggerVariants({
+          size,
+        }),
       className
     )}
     {...props}
   >
     {children}
-    {!hideIcon && (
+    {!hideIcon && !inline && (
       <SelectPrimitive.Icon asChild>
         <LuChevronsUpDown className="h-4 w-4 opacity-50" />
       </SelectPrimitive.Icon>
