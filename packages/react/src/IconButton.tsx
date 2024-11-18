@@ -11,8 +11,17 @@ export interface IconButtonProps
   isRound?: boolean;
 }
 
+const iconSizes = {
+  sm: "w-4 h-4",
+  md: "w-5 h-5",
+  lg: "w-6 h-6",
+} as const;
+
 const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ icon, "aria-label": ariaLabel, isRound, children, ...props }, ref) => {
+  (
+    { icon, "aria-label": ariaLabel, isRound, children, size = "md", ...props },
+    ref
+  ) => {
     /**
      * Passing the icon as prop or children should work
      */
@@ -21,7 +30,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       ? cloneElement(element as any, {
           "aria-hidden": true,
           focusable: false,
-          className: "w-5 h-5",
+          className: iconSizes[size],
         })
       : null;
 
@@ -31,6 +40,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         ref={ref}
         isIcon
         isRound={isRound}
+        size={size}
         {...props}
       >
         {_children}

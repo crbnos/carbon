@@ -1,5 +1,4 @@
 import {
-  Badge,
   Card,
   CardAction,
   CardContent,
@@ -18,6 +17,7 @@ import {
   Th,
   Thead,
   Tr,
+  VStack,
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
@@ -303,10 +303,14 @@ const OpportunityLineDocuments = ({
                   <Td>
                     <HStack>
                       <DocumentIcon type="Model" />
-                      <Hyperlink target="_blank" to={getModelPath(modelUpload)}>
-                        {modelUpload.modelName}
-                      </Hyperlink>
-                      <Badge variant="secondary">Model</Badge>
+                      <VStack>
+                        <Hyperlink
+                          target="_blank"
+                          to={getModelPath(modelUpload)}
+                        >
+                          {modelUpload.modelName}
+                        </Hyperlink>
+                      </VStack>
                     </HStack>
                   </Td>
                   <Td>

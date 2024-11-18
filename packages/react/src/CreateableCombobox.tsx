@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
-import { LuCheck, LuX } from "react-icons/lu";
+import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import {
   Command,
   CommandGroup,
@@ -30,6 +30,10 @@ export type CreatableComboboxProps = Omit<
   isReadOnly?: boolean;
   label?: string;
   placeholder?: string;
+  inline?: (
+    value: string,
+    options: { value: string; label: string; helper?: string }[]
+  ) => React.ReactNode;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
   itemHeight?: number;
@@ -47,38 +51,60 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       placeholder,
       onChange,
       label,
-      onCreateOption,
       itemHeight = 40,
+      inline,
+      onCreateOption,
       ...props
     },
     ref
   ) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const isInlinePreview = !!inline;
 
     return (
-      <HStack className="min-w-0 flex-grow" spacing={1}>
+      <HStack
+        className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
+        spacing={1}
+      >
+        {isInlinePreview && value && (
+          <span className="flex-grow line-clamp-1">
+            {inline(value, options)}
+          </span>
+        )}
+
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <CommandTrigger
-              size={size}
-              role="combobox"
-              className={cn(
-                "min-w-[160px]",
-                !value && "text-muted-foreground truncate"
-              )}
-              ref={ref}
-              {...props}
-              onClick={() => setOpen(true)}
-            >
-              {value ? (
-                options.find((option) => option.value === value)?.label
-              ) : (
-                <span className="!text-muted-foreground">
-                  {placeholder ?? "Select"}
-                </span>
-              )}
-            </CommandTrigger>
+            {inline ? (
+              <IconButton
+                size={size ?? "sm"}
+                variant="secondary"
+                aria-label={value ? "Edit" : "Add"}
+                icon={value ? <LuSettings2 /> : <LuPlus />}
+                ref={ref}
+                onClick={() => setOpen(true)}
+              />
+            ) : (
+              <CommandTrigger
+                size={size}
+                role="combobox"
+                className={cn(
+                  "min-w-[160px]",
+                  !value && "text-muted-foreground truncate"
+                )}
+                ref={ref}
+                {...props}
+                onClick={() => setOpen(true)}
+              >
+                {value ? (
+                  options.find((option) => option.value === value)?.label
+                ) : (
+                  <span className="!text-muted-foreground">
+                    {placeholder ?? "Select"}
+                  </span>
+                )}
+              </CommandTrigger>
+            )}
           </PopoverTrigger>
           <PopoverContent
             align="start"
@@ -100,11 +126,11 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         </Popover>
         {isClearable && !isReadOnly && value && (
           <IconButton
-            variant="ghost"
+            variant={isInlinePreview ? "secondary" : "ghost"}
             aria-label="Clear"
             icon={<LuX />}
             onClick={() => onChange?.("")}
-            size={size === "sm" ? "md" : size}
+            size={isInlinePreview ? "sm" : size}
           />
         )}
       </HStack>

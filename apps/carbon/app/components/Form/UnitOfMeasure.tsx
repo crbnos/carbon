@@ -10,8 +10,19 @@ import type {
 } from "~/modules/items";
 import { UnitOfMeasureForm } from "~/modules/items";
 import { path } from "~/utils/path";
+import { Enumerable } from "../Enumerable";
 
-type UnitOfMeasureSelectProps = Omit<ComboboxProps, "options">;
+type UnitOfMeasureSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
+  inline?: boolean;
+};
+
+const UnitOfMeasurePreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const uom = options.find((o) => o.value === value);
+  return <Enumerable value={uom?.label ?? null} />;
+};
 
 const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
   const options = useUnitOfMeasure();
@@ -26,6 +37,7 @@ const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props.inline ? UnitOfMeasurePreview : undefined}
         label={props?.label ?? "Unit of Measure"}
         onCreateOption={(option) => {
           newUnitOfMeasureModal.onOpen();

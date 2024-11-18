@@ -7,7 +7,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   ScrollArea,
-  VStack,
 } from "@carbon/react";
 import {
   Await,
@@ -27,6 +26,7 @@ import {
   getJobMethodTree,
   JobBoMExplorer,
   JobHeader,
+  JobProperties,
 } from "~/modules/production";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -113,11 +113,12 @@ export default function JobRoute() {
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                   <ResizablePanel order={2}>
-                    <ScrollArea className="h-[calc(100vh-99px)]">
-                      <VStack spacing={2} className="h-[calc(100vh-99px)]">
+                    <div className="flex h-[calc(100vh-99px)] w-full">
+                      <ScrollArea className="h-[calc(100vh-99px)] w-full">
                         <Outlet />
-                      </VStack>
-                    </ScrollArea>
+                      </ScrollArea>
+                      <JobProperties />
+                    </div>
                   </ResizablePanel>
                 </ResizablePanelGroup>
               )}

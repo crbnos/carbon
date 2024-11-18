@@ -13,7 +13,7 @@ import { path } from "~/utils/path";
 
 type SupplierLocationSelectProps = Omit<
   ComboboxProps,
-  "options" | "onChange"
+  "options" | "onChange" | "inline"
 > & {
   supplier?: string;
   onChange?: (supplier: SupplierLocationType | null) => void;

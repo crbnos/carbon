@@ -15,8 +15,10 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   label?: string;
   helperText?: string;
   isOptional?: boolean;
-  options: { value: string | number; label: string }[];
-  onChange?: (newValue: { value: string; label: string } | null) => void;
+  options: { value: string | number; label: string | JSX.Element }[];
+  onChange?: (
+    newValue: { value: string; label: string | JSX.Element } | null
+  ) => void;
 };
 
 const SelectControlled = ({

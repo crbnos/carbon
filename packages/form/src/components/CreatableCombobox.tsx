@@ -8,6 +8,7 @@ import {
 } from "@carbon/react";
 import { forwardRef, useEffect } from "react";
 
+import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
 
 export type CreatableComboboxProps = Omit<
@@ -18,6 +19,10 @@ export type CreatableComboboxProps = Omit<
   label?: string;
   helperText?: string;
   isOptional?: boolean;
+  inline?: (
+    value: string,
+    options: { value: string; label: string; helper?: string }[]
+  ) => React.ReactNode;
   onChange?: (newValue: { value: string; label: string } | null) => void;
 };
 
@@ -59,13 +64,15 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           ref={ref}
           {...props}
           value={value?.replace(/"/g, '\\"')}
-          onChange={(newValue) => {
-            setValue(newValue?.replace(/"/g, '\\"') ?? "");
-            onChange(newValue?.replace(/"/g, '\\"') ?? "");
-          }}
           isClearable={isOptional && !props.isReadOnly}
           label={label}
           className="w-full"
+          onChange={(newValue) => {
+            flushSync(() => {
+              setValue(newValue?.replace(/"/g, '\\"') ?? "");
+            });
+            onChange(newValue?.replace(/"/g, '\\"') ?? "");
+          }}
         />
 
         {error ? (

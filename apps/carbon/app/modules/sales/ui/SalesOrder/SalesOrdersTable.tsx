@@ -6,9 +6,9 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useFetcher, useFetchers } from "@remix-run/react";
+import { useFetcher, useFetchers, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -38,7 +38,6 @@ import { SalesStatus, salesOrderStatusType } from "~/modules/sales";
 import { useCustomers, usePeople } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
-import { useSalesOrder } from "./useSalesOrder";
 
 type SalesOrdersTableProps = {
   data: SalesOrder[];
@@ -401,3 +400,34 @@ function useOptimisticFavorite() {
     }
   }
 }
+
+export const useSalesOrder = () => {
+  const navigate = useNavigate();
+
+  const edit = useCallback(
+    (salesOrder: SalesOrder) => navigate(path.to.salesOrder(salesOrder.id!)),
+    [navigate]
+  );
+
+  /*const invoice = useCallback(
+    (salesOrder: SalesOrder) =>
+      navigate(
+        `${path.to.newPurchaseInvoice}?sourceDocument=Purchase Order&sourceDocumentId=${purchaseOrder.id}`
+      ),
+    [navigate]
+  );
+
+  const receive = useCallback(
+    (salesOrder: SalesOrder) =>
+      navigate(
+        `${path.to.newReceipt}?sourceDocument=Purchase Order&sourceDocumentId=${salesOrder.id}`
+      ),
+    [navigate]
+  );*/
+
+  return {
+    edit,
+    //invoice,
+    //receive,
+  };
+};

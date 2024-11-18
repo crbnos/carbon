@@ -1,4 +1,4 @@
-import type { ComboboxProps } from "@carbon/form";
+import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
@@ -9,9 +9,22 @@ import type { getLocationsList } from "~/modules/resources";
 import { LocationForm } from "~/modules/resources";
 import { path } from "~/utils/path";
 
-type LocationSelectProps = Omit<ComboboxProps, "options">;
+type LocationSelectProps = Omit<
+  CreatableComboboxProps,
+  "options" | "inline"
+> & {
+  inline?: boolean;
+};
 
-const Location = (props: LocationSelectProps) => {
+const LocationPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const location = options.find((o) => o.value === value);
+  return <span>{location?.label}</span>;
+};
+
+const Location = ({ inline = false, ...props }: LocationSelectProps) => {
   const newLocationModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -27,6 +40,7 @@ const Location = (props: LocationSelectProps) => {
         options={options}
         {...props}
         label={props?.label ?? "Location"}
+        inline={inline ? LocationPreview : undefined}
         onCreateOption={(option) => {
           newLocationModal.onOpen();
           setCreated(option);

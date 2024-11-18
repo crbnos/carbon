@@ -13,6 +13,9 @@ import {
   FormHelperText,
   FormLabel,
   IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
 } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -27,14 +30,24 @@ import { methodItemType, type MethodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { MethodItemTypeIcon } from "../Icons";
 
-type ItemSelectProps = Omit<ComboboxProps, "options" | "type"> & {
+type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   disabledItems?: string[];
   includeInactive?: boolean;
+  inline?: boolean;
   replenishmentSystem?: "Buy" | "Make";
   type: MethodItemType;
   typeFieldName?: string;
   validItemTypes?: MethodItemType[];
   onTypeChange?: (type: MethodItemType) => void;
+};
+
+const ItemPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const item = options.find((o) => o.value === value);
+  if (!item) return null;
+  return <span>{item.label}</span>;
 };
 
 const Item = ({
@@ -140,6 +153,7 @@ const Item = ({
             ref={triggerRef}
             options={options}
             {...props}
+            inline={props.inline ? ItemPreview : undefined}
             value={value?.replace(/"/g, '\\"')}
             onChange={(newValue) => {
               setValue(newValue?.replace(/"/g, '\\"') ?? "");
@@ -155,17 +169,28 @@ const Item = ({
           />
           {canSwitchItemType && (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  type="button"
-                  aria-label="Change Type"
-                  className="bg-transparent flex-shrink-0 h-10 w-10 px-3 rounded-l-none border-l-0 shadow-sm"
-                  disabled={props.isReadOnly}
-                  variant="secondary"
-                  size="lg"
-                  icon={<MethodItemTypeIcon type={type} />}
-                />
-              </DropdownMenuTrigger>
+              <Tooltip>
+                <TooltipTrigger>
+                  <DropdownMenuTrigger asChild>
+                    <IconButton
+                      type="button"
+                      aria-label="Change Type"
+                      className={cn(
+                        props.inline === true
+                          ? "ml-1"
+                          : "bg-transparent flex-shrink-0 h-10 w-10 px-3 rounded-l-none border-l-0 shadow-sm"
+                      )}
+                      disabled={props.isReadOnly}
+                      variant="secondary"
+                      size={props.inline ? "sm" : "lg"}
+                      icon={<MethodItemTypeIcon type={type} />}
+                    />
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Change the item type (e.g. Part, Material, Tool, etc.)
+                </TooltipContent>
+              </Tooltip>
               <DropdownMenuContent>
                 {Object.values(methodItemType)
                   .filter(

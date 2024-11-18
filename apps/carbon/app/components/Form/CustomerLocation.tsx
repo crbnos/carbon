@@ -14,10 +14,20 @@ import { formatAddress } from "@carbon/utils";
 
 type CustomerLocationSelectProps = Omit<
   ComboboxProps,
-  "options" | "onChange"
+  "options" | "onChange" | "inline"
 > & {
   customer?: string;
+  inline?: boolean;
   onChange?: (customer: CustomerLocationType | null) => void;
+};
+
+const CustomerLocationPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const location = options.find((o) => o.value === value);
+  if (!location) return null;
+  return <span>{location.label}</span>;
 };
 
 const CustomerLocation = (props: CustomerLocationSelectProps) => {
@@ -67,6 +77,7 @@ const CustomerLocation = (props: CustomerLocationSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props?.inline ? CustomerLocationPreview : undefined}
         label={props?.label ?? "Customer Location"}
         onChange={onChange}
         onCreateOption={(option) => {

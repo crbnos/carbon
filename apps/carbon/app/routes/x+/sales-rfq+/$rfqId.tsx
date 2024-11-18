@@ -23,6 +23,7 @@ import {
   getSalesRFQLines,
   SalesRFQExplorer,
   SalesRFQHeader,
+  SalesRFQProperties,
 } from "~/modules/sales";
 
 import { error, getCarbonServiceRole } from "@carbon/auth";
@@ -170,11 +171,16 @@ export default function SalesRFQRoute() {
                     </ResizablePanel>
                     <ResizableHandle withHandle />
                     <ResizablePanel order={2} className="z-1">
-                      <ScrollArea className="h-[calc(100vh-99px)]">
-                        <VStack spacing={2} className="p-2">
-                          <Outlet />
-                        </VStack>
-                      </ScrollArea>
+                      <div className="flex h-[calc(100vh-99px)] w-full">
+                        <div className="flex h-full w-full overflow-y-auto">
+                          <ScrollArea className="h-[calc(100vh-99px)] w-full">
+                            <VStack spacing={2} className="p-2">
+                              <Outlet />
+                            </VStack>
+                          </ScrollArea>
+                        </div>
+                        <SalesRFQProperties />
+                      </div>
                     </ResizablePanel>
                   </ResizablePanelGroup>
                 )}

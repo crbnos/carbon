@@ -26,6 +26,10 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   onChange?: (
     newValue: { value: string; label: string | JSX.Element } | null
   ) => void;
+  inline?: (
+    value: string,
+    options: { value: string; label: string | JSX.Element }[]
+  ) => JSX.Element;
 };
 
 const Select = ({
@@ -34,6 +38,8 @@ const Select = ({
   helperText,
   isOptional = false,
   isLoading,
+  inline,
+  options,
   ...props
 }: SelectProps) => {
   const { getInputProps, error } = useField(name);
@@ -41,11 +47,13 @@ const Select = ({
 
   const onChange = (value: string) => {
     if (value) {
-      props?.onChange?.(props.options.find((o) => o.value === value) ?? null);
+      props?.onChange?.(options.find((o) => o.value === value) ?? null);
     } else {
       props?.onChange?.(null);
     }
   };
+
+  const inlinePreview = !!inline;
 
   return (
     <FormControl isInvalid={!!error} className={props.className}>
@@ -54,6 +62,7 @@ const Select = ({
           {label}
         </FormLabel>
       )}
+
       <input
         {...getInputProps({
           id: name,
@@ -65,6 +74,7 @@ const Select = ({
       />
       <SelectBase
         {...props}
+        options={options}
         value={value}
         onChange={(newValue) => {
           setValue(newValue ?? "");

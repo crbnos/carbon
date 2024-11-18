@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
@@ -17,8 +18,10 @@ import {
 import { Await, useFetcher, useParams } from "@remix-run/react";
 import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
+import { z } from "zod";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { UnitOfMeasure } from "~/components/Form";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
@@ -65,14 +68,18 @@ const MaterialProperties = () => {
   }, [fetcher.data]);
   const onUpdate = useCallback(
     (
-      field: "replenishmentSystem" | "defaultMethodType" | "itemTrackingType",
-      value: string
+      field:
+        | "replenishmentSystem"
+        | "defaultMethodType"
+        | "itemTrackingType"
+        | "unitOfMeasureCode",
+      value: string | null
     ) => {
       const formData = new FormData();
 
       formData.append("items", itemId);
       formData.append("field", field);
-      formData.append("value", value);
+      formData.append("value", value?.toString() ?? "");
       fetcher.submit(formData, {
         method: "post",
         action: path.to.bulkUpdateItems,
@@ -84,7 +91,7 @@ const MaterialProperties = () => {
   return (
     <VStack
       spacing={4}
-      className="w-96 bg-card h-full overflow-y-auto border-l border-border px-4 py-2"
+      className="w-96 bg-background h-full overflow-y-auto border-l border-border px-4 py-2"
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
@@ -218,10 +225,27 @@ const MaterialProperties = () => {
         />
       </VStack>
 
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Unit of Measure</h3>
-        <Enumerable value={routeData?.materialSummary?.unitOfMeasure ?? null} />
-      </VStack>
+      <ValidatedForm
+        defaultValues={{
+          unitOfMeasureCode:
+            routeData?.materialSummary?.unitOfMeasureCode ?? undefined,
+        }}
+        validator={z.object({
+          unitOfMeasureCode: z
+            .string()
+            .min(1, { message: "Unit of Measure is required" }),
+        })}
+        className="w-full"
+      >
+        <UnitOfMeasure
+          label="Unit of Measure"
+          name="unitOfMeasureCode"
+          inline
+          onChange={(value) => {
+            onUpdate("unitOfMeasureCode", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">

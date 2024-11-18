@@ -6,13 +6,29 @@ import { useMemo } from "react";
 import type { getCurrenciesList } from "~/modules/accounting";
 import { path } from "~/utils/path";
 
-type CurrencySelectProps = Omit<ComboboxProps, "options">;
+type CurrencySelectProps = Omit<ComboboxProps, "options" | "inline"> & {
+  inline?: boolean;
+};
 
-const Currency = ({ ...props }: CurrencySelectProps) => {
+const CurrencyPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const currency = options.find((o) => o.value === value);
+  if (!currency) return null;
+  return <span>{currency.label}</span>;
+};
+
+const Currency = ({ inline, ...props }: CurrencySelectProps) => {
   const options = useCurrencyCodes();
 
   return (
-    <Combobox {...props} options={options} label={props?.label ?? "Currency"} />
+    <Combobox
+      {...props}
+      inline={inline ? CurrencyPreview : undefined}
+      options={options}
+      label={props?.label ?? "Currency"}
+    />
   );
 };
 
