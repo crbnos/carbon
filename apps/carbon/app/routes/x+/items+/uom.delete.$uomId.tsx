@@ -12,6 +12,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
   });
+
   const { uomId } = params;
   if (!uomId) throw notFound("uomId not found");
 
