@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import {
   Currency,
   Customer,
@@ -23,7 +24,7 @@ import {
   Employee,
   Location,
 } from "~/components/Form";
-import { useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/quote+/$quoteId.exchange-rate";
 import { path } from "~/utils/path";
@@ -75,6 +76,16 @@ const QuoteProperties = () => {
     [fetcher, quoteId, routeData?.quote]
   );
 
+  const optimisticAssignment = useOptimisticAssignment({
+    id: quoteId,
+    table: "quote",
+  });
+  const assignee =
+    optimisticAssignment !== undefined
+      ? optimisticAssignment
+      : routeData?.quote?.assignee;
+  const permissions = usePermissions();
+
   return (
     <VStack
       spacing={4}
@@ -124,7 +135,13 @@ const QuoteProperties = () => {
         </HStack>
         <span className="text-sm">{routeData?.quote?.quoteId}</span>
       </VStack>
-
+      <Assignee
+        id={quoteId}
+        table="quote"
+        value={assignee ?? ""}
+        variant="inline"
+        isReadOnly={!permissions.can("update", "sales")}
+      />
       <ValidatedForm
         defaultValues={{ customerId: routeData?.quote?.customerId }}
         validator={z.object({

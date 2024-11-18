@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import {
   Currency,
   Customer,
@@ -23,7 +24,7 @@ import {
   Employee,
   Location,
 } from "~/components/Form";
-import { useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/sales-order+/$orderId.exchange-rate";
 import { path } from "~/utils/path";
@@ -77,6 +78,16 @@ const SalesOrderProperties = () => {
     [fetcher, orderId, routeData?.salesOrder]
   );
 
+  const permissions = usePermissions();
+  const optimisticAssignment = useOptimisticAssignment({
+    id: orderId,
+    table: "salesOrder",
+  });
+  const assignee =
+    optimisticAssignment !== undefined
+      ? optimisticAssignment
+      : routeData?.salesOrder?.assignee;
+
   return (
     <VStack
       spacing={4}
@@ -129,6 +140,14 @@ const SalesOrderProperties = () => {
         </HStack>
         <span className="text-sm">{routeData?.salesOrder?.salesOrderId}</span>
       </VStack>
+
+      <Assignee
+        id={orderId}
+        table="salesOrder"
+        value={assignee ?? ""}
+        variant="inline"
+        isReadOnly={!permissions.can("update", "sales")}
+      />
 
       <ValidatedForm
         defaultValues={{ customerId: routeData?.salesOrder?.customerId }}

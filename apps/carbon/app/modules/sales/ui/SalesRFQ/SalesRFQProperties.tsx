@@ -13,6 +13,7 @@ import { useCallback, useEffect } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import {
   Customer,
   CustomerContact,
@@ -20,7 +21,7 @@ import {
   Employee,
   Location,
 } from "~/components/Form";
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -58,6 +59,16 @@ const SalesRFQProperties = () => {
     },
     [fetcher, rfqId, routeData?.rfqSummary]
   );
+
+  const optimisticAssignment = useOptimisticAssignment({
+    id: rfqId,
+    table: "salesRfq",
+  });
+  const assignee =
+    optimisticAssignment !== undefined
+      ? optimisticAssignment
+      : routeData?.rfqSummary?.assignee;
+  const permissions = usePermissions();
 
   return (
     <VStack
@@ -110,6 +121,14 @@ const SalesRFQProperties = () => {
         </HStack>
         <span className="text-sm">{routeData?.rfqSummary?.rfqId}</span>
       </VStack>
+
+      <Assignee
+        id={rfqId}
+        table="salesRfq"
+        value={assignee ?? ""}
+        variant="inline"
+        isReadOnly={!permissions.can("update", "sales")}
+      />
 
       <ValidatedForm
         defaultValues={{ customerId: routeData?.rfqSummary?.customerId }}
