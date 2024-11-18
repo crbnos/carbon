@@ -124,6 +124,10 @@ export const path = {
       generatePath(`${x}/people/attributes/list/${id}`),
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
+    bulkUpdateJob: `${x}/job/update`,
+    bulkUpdateQuote: `${x}/quote/update`,
+    bulkUpdateSalesOrder: `${x}/sales-order/update`,
+    bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,

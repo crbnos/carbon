@@ -89,7 +89,6 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 label="Customer Contact"
                 customer={customer}
               />
-
               <DatePicker
                 name="rfqDate"
                 label="RFQ Date"

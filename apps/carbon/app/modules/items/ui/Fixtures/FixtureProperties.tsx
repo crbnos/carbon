@@ -92,7 +92,7 @@ const FixtureProperties = () => {
   return (
     <VStack
       spacing={4}
-      className="w-96 bg-card h-full overflow-y-auto border-l border-border px-4 py-2"
+      className="w-96 bg-background h-full overflow-y-auto border-l border-border px-4 py-2"
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">

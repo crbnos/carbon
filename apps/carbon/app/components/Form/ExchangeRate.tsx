@@ -5,20 +5,25 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  VStack,
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
 import React, { useMemo } from "react";
 import { LuInfo, LuRefreshCw } from "react-icons/lu";
-import { Input } from "~/components/Form";
+import { NumberControlled } from "~/components/Form";
 
-interface ExchangeRateProps extends React.ComponentProps<typeof Input> {
+interface ExchangeRateProps
+  extends React.ComponentProps<typeof NumberControlled> {
+  inline?: boolean;
   onRefresh?: () => void;
   exchangeRateUpdatedAt: string | undefined;
 }
 
 const ExchangeRate: React.FC<ExchangeRateProps> = ({
   onRefresh,
+  inline = false,
   exchangeRateUpdatedAt,
+  value,
   ...props
 }) => {
   const { locale } = useLocale();
@@ -39,10 +44,12 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
   return (
     <div className="relative">
       <HStack spacing={0} className="items-end">
-        <Input
-          label={
-            <HStack spacing={1}>
-              <span>Exchange Rate</span>
+        {inline ? (
+          <VStack spacing={2}>
+            <HStack className="w-full justify-between">
+              <span className="text-xs text-muted-foreground">
+                Exchange Rate
+              </span>
               {exchangeRateUpdatedAt && (
                 <Tooltip>
                   <TooltipTrigger tabIndex={-1}>
@@ -52,11 +59,34 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
                 </Tooltip>
               )}
             </HStack>
-          }
-          {...props}
-          isReadOnly
-          className={cn("z-10", onRefresh ? "rounded-r-none" : "")}
-        />
+            <HStack className="w-full justify-between">
+              <span>{value}</span>
+            </HStack>
+          </VStack>
+        ) : (
+          <NumberControlled
+            label={
+              <HStack spacing={1}>
+                <span>Exchange Rate</span>
+                {exchangeRateUpdatedAt && (
+                  <Tooltip>
+                    <TooltipTrigger tabIndex={-1}>
+                      <LuInfo className="w-4 h-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Last updated: {formattedDate}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </HStack>
+            }
+            {...props}
+            value={value}
+            isReadOnly
+            className={cn("z-10", onRefresh ? "rounded-r-none" : "")}
+          />
+        )}
+
         {onRefresh && (
           <IconButton
             aria-label="Refresh exchange rate"

@@ -6,6 +6,5 @@ export * from "./CustomerTypes";
 export * from "./Opportunity";
 export * from "./Quotes";
 export * from "./SalesOrder";
-export * from "./SalesOrders";
 export * from "./SalesRFQ";
 export { useSalesSubmodules };

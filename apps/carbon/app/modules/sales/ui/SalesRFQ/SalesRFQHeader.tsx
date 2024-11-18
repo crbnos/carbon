@@ -19,7 +19,7 @@ import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
 import { LuAlertTriangle, LuRefreshCw, LuXCircle } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { Assignee, Copy, useOptimisticAssignment } from "~/components";
+import { Assignee, useOptimisticAssignment } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -62,7 +62,6 @@ const SalesRFQHeader = () => {
               <span>{routeData?.rfqSummary?.rfqId}</span>
             </Heading>
           </Link>
-          <Copy text={routeData?.rfqSummary?.rfqId ?? ""} />
           <SalesRFQStatus status={routeData?.rfqSummary?.status} />
         </HStack>
         <HStack>

@@ -8,15 +8,32 @@ import { path } from "~/utils/path";
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
+import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { CustomerContactForm } from "~/modules/sales";
 
 type CustomerContactSelectProps = Omit<
   ComboboxProps,
-  "options" | "onChange"
+  "options" | "onChange" | "inline"
 > & {
   customer?: string;
-  onChange?: (customer: CustomerContactType["contact"] | null) => void;
+  onChange?: (
+    customer: { id: string; contact: CustomerContactType["contact"] } | null
+  ) => void;
+  inline?: boolean;
+};
+
+const CustomerContactPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const contact = options.find((o) => o.value === value);
+  if (!contact) return null;
+  return (
+    <HStack>
+      <Avatar size="xs" name={contact.label} />
+      <span>{contact.label}</span>
+    </HStack>
+  );
 };
 
 const CustomerContact = (props: CustomerContactSelectProps) => {
@@ -54,7 +71,7 @@ const CustomerContact = (props: CustomerContactSelectProps) => {
         (contact) => contact.id === newValue?.value
       ) ?? null;
 
-    props.onChange?.(contact?.contact ?? null);
+    props.onChange?.(contact ?? null);
   };
 
   return (
@@ -63,6 +80,7 @@ const CustomerContact = (props: CustomerContactSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props.inline ? CustomerContactPreview : undefined}
         label={props?.label ?? "Customer Contact"}
         onChange={onChange}
         onCreateOption={(option) => {

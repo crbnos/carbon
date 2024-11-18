@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
-import { LuCheck, LuX } from "react-icons/lu";
+import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import {
   Command,
   CommandGroup,
@@ -31,6 +31,10 @@ export type ComboboxProps = Omit<
   isReadOnly?: boolean;
   placeholder?: string;
   onChange?: (selected: string) => void;
+  inline?: (
+    value: string,
+    options: { value: string; label: string; helper?: string }[]
+  ) => React.ReactNode;
   itemHeight?: number;
 };
 
@@ -45,34 +49,59 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       isReadOnly,
       placeholder,
       onChange,
+      inline,
       itemHeight = 40,
       ...props
     },
     ref
   ) => {
     const [open, setOpen] = useState(false);
+    const isInlinePreview = !!inline;
 
     return (
-      <HStack spacing={1}>
+      <HStack
+        className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
+        spacing={isInlinePreview ? 2 : 1}
+      >
+        {isInlinePreview && value && (
+          <span className="flex-grow line-clamp-1">
+            {inline(value, options)}
+          </span>
+        )}
+
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <CommandTrigger
-              size={size}
-              role="combobox"
-              className={cn("min-w-[160px]", !value && "text-muted-foreground")}
-              icon={isLoading ? <Spinner /> : undefined}
-              ref={ref}
-              {...props}
-              onClick={() => setOpen(true)}
-            >
-              {value ? (
-                options.find((option) => option.value === value)?.label
-              ) : (
-                <span className="!text-muted-foreground">
-                  {placeholder ?? "Select"}
-                </span>
-              )}
-            </CommandTrigger>
+            {inline ? (
+              <IconButton
+                size={size ?? "sm"}
+                variant="secondary"
+                aria-label={value ? "Edit" : "Add"}
+                icon={value ? <LuSettings2 /> : <LuPlus />}
+                ref={ref}
+                onClick={() => setOpen(true)}
+              />
+            ) : (
+              <CommandTrigger
+                size={size}
+                role="combobox"
+                className={cn(
+                  "min-w-[160px]",
+                  !value && "text-muted-foreground"
+                )}
+                icon={isLoading ? <Spinner /> : undefined}
+                ref={ref}
+                {...props}
+                onClick={() => setOpen(true)}
+              >
+                {value ? (
+                  options.find((option) => option.value === value)?.label
+                ) : (
+                  <span className="!text-muted-foreground">
+                    {placeholder ?? "Select"}
+                  </span>
+                )}
+              </CommandTrigger>
+            )}
           </PopoverTrigger>
           <PopoverContent
             align="start"

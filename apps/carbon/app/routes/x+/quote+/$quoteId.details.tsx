@@ -19,7 +19,6 @@ import {
   OpportunityDocuments,
   OpportunityNotes,
   OpportunityState,
-  QuoteForm,
   QuotePaymentForm,
   QuoteShipmentForm,
   quoteValidator,
@@ -121,7 +120,13 @@ export default function QuoteDetailsRoute() {
         key={`state-${initialValues.id}`}
         opportunity={quoteData?.opportunity!}
       />
-      <QuoteForm key={initialValues.id} initialValues={initialValues} />
+      <OpportunityNotes
+        key={`notes-${initialValues.id}`}
+        id={quoteData.quote.id}
+        table="quote"
+        internalNotes={quoteData.quote.internalNotes as JSONContent}
+        externalNotes={quoteData.quote.externalNotes as JSONContent}
+      />
       <Suspense
         key={`documents-${quoteId}`}
         fallback={
@@ -148,13 +153,6 @@ export default function QuoteDetailsRoute() {
       <QuoteShipmentForm
         key={`shipment-${initialValues.id}`}
         initialValues={shipmentInitialValues}
-      />
-      <OpportunityNotes
-        key={`notes-${initialValues.id}`}
-        id={quoteData.quote.id}
-        table="quote"
-        internalNotes={quoteData.quote.internalNotes as JSONContent}
-        externalNotes={quoteData.quote.externalNotes as JSONContent}
       />
     </>
   );

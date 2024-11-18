@@ -11,6 +11,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  ModalOverlay,
   ModalTitle,
   VStack,
 } from "@carbon/react";
@@ -45,6 +46,7 @@ const CreateSupplierModal = () => {
         if (!open) navigate(path.to.supplierAccounts);
       }}
     >
+      <ModalOverlay />
       <ModalContent>
         <ValidatedForm
           method="post"
@@ -63,6 +65,7 @@ const CreateSupplierModal = () => {
           <ModalHeader>
             <ModalTitle>Create an account</ModalTitle>
           </ModalHeader>
+
           <ModalBody>
             <VStack spacing={4}>
               <Supplier
@@ -75,7 +78,7 @@ const CreateSupplierModal = () => {
               <SupplierContact
                 name="id"
                 supplier={supplier}
-                onChange={setContact}
+                onChange={(contact) => setContact(contact?.contact ?? null)}
               />
               {contact && (
                 <>
@@ -96,12 +99,12 @@ const CreateSupplierModal = () => {
                 </>
               )}
             </VStack>
+            <ModalFooter>
+              <HStack>
+                <Submit>Create User</Submit>
+              </HStack>
+            </ModalFooter>
           </ModalBody>
-          <ModalFooter>
-            <HStack spacing={4}>
-              <Submit>Create User</Submit>
-            </HStack>
-          </ModalFooter>
         </ValidatedForm>
       </ModalContent>
     </Modal>
@@ -115,7 +118,12 @@ const SupplierContact = ({
 }: {
   name: string;
   supplier?: string;
-  onChange?: (newValue: SupplierContactType["contact"] | null) => void;
+  onChange?: (
+    newValue: {
+      id: string;
+      contact: SupplierContactType["contact"];
+    } | null
+  ) => void;
 }) => {
   const initialLoad = useRef(true);
   const { error, defaultValue } = useField(name);
@@ -159,7 +167,7 @@ const SupplierContact = ({
         (c) => c.id === newValue
       );
 
-      onChange(contact?.contact ?? null);
+      onChange({ id: newValue, contact: contact?.contact ?? null });
     }
   };
 
