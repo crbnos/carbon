@@ -18,7 +18,6 @@ import {
   cn,
   generateHTML,
   useDebounce,
-  useThrottle,
 } from "@carbon/react";
 import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -271,7 +270,7 @@ const JobBillOfProcess = ({
     });
   }, []);
 
-  const onUpdateWorkInstruction = useThrottle(async (content: JSONContent) => {
+  const onUpdateWorkInstruction = useDebounce(async (content: JSONContent) => {
     if (!permissions.can("update", "parts")) return;
     setItems((prevItems) =>
       prevItems.map((item) =>

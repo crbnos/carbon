@@ -87,6 +87,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
             aria-label={value !== undefined ? "Edit" : "Add"}
             size="sm"
             variant="secondary"
+            isDisabled={isReadOnly}
             onClick={() => setInlineMode(false)}
           />
         </HStack>

@@ -7,6 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import { Spinner, VStack } from "@carbon/react";
 import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -16,6 +17,7 @@ import { CadModel, Documents } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
+  JobNotes,
   jobValidator,
   recalculateJobRequirements,
   upsertJob,
@@ -91,8 +93,14 @@ export default function JobDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2 h-full">
+      <JobNotes
+        id={jobId}
+        title={jobData?.job.jobId ?? ""}
+        subTitle={jobData?.job.itemReadableId ?? ""}
+        notes={jobData?.job.notes as JSONContent}
+      />
       {permissions.is("employee") && (
-        <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 w-full gap-2">
           <CadModel
             isReadOnly={!permissions.can("update", "production")}
             metadata={{

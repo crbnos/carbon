@@ -45,6 +45,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
       onChange,
       isUppercase,
       inline = false,
+      isReadOnly,
       onBlur,
       ...rest
     },
@@ -85,6 +86,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
             aria-label={value ? "Edit" : "Add"}
             size="sm"
             variant="secondary"
+            isDisabled={isReadOnly}
             onClick={() => setInlineMode(false)}
           />
         </HStack>
@@ -116,6 +118,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
               })}
               onChange={handleChange}
               value={controlValue}
+              isReadOnly={isReadOnly}
               onBlur={async (e) => {
                 if (inline) {
                   const result = await validate();

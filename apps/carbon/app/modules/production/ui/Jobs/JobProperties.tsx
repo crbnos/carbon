@@ -77,6 +77,10 @@ const JobProperties = () => {
       ? optimisticAssignment
       : routeData?.job?.assignee;
 
+  const isDisabled =
+    !permissions.can("update", "production") ||
+    ["Completed", "Cancelled"].includes(routeData?.job?.status ?? "");
+
   return (
     <VStack
       spacing={4}
@@ -145,6 +149,7 @@ const JobProperties = () => {
         <Item
           name="itemId"
           inline
+          isReadOnly={isDisabled}
           type={type}
           validItemTypes={["Part", "Fixture"]}
           onChange={(value) => {
@@ -166,6 +171,7 @@ const JobProperties = () => {
           label="Quantity"
           name="quantity"
           inline
+          isReadOnly={isDisabled}
           value={routeData?.job?.quantity ?? 0}
           onChange={(value) => {
             onUpdate("quantity", value);
@@ -187,6 +193,7 @@ const JobProperties = () => {
           label="Estimated Scrap Quantity"
           name="scrapQuantity"
           inline
+          isReadOnly={isDisabled}
           value={routeData?.job?.scrapQuantity ?? 0}
           onChange={(value) => {
             onUpdate("scrapQuantity", value);
@@ -207,6 +214,7 @@ const JobProperties = () => {
           name="dueDate"
           label="Due Date"
           inline
+          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("dueDate", date);
           }}
@@ -236,6 +244,7 @@ const JobProperties = () => {
               </div>
             );
           }}
+          isReadOnly={isDisabled}
           options={deadlineTypes.map((d) => ({
             value: d,
             label: d,
@@ -257,6 +266,7 @@ const JobProperties = () => {
           name="customerId"
           inline
           isOptional
+          isReadOnly={isDisabled}
           onChange={(value) => {
             onUpdate("customerId", value?.value ?? null);
           }}
@@ -278,6 +288,7 @@ const JobProperties = () => {
           label="Unit of Measure"
           name="unitOfMeasureCode"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             onUpdate("unitOfMeasureCode", value?.value ?? null);
           }}
@@ -295,6 +306,7 @@ const JobProperties = () => {
           label="Job Location"
           name="locationId"
           inline
+          isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
               onUpdate("locationId", value.value);

@@ -82,6 +82,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                 aria-label={value ? "Edit" : "Add"}
                 icon={value ? <LuSettings2 /> : <LuPlus />}
                 ref={ref}
+                isDisabled={isReadOnly}
                 onClick={() => setOpen(true)}
               />
             ) : (
@@ -94,6 +95,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                 )}
                 ref={ref}
                 {...props}
+                disabled={isReadOnly}
                 onClick={() => setOpen(true)}
               >
                 {value ? (

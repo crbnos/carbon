@@ -3,7 +3,6 @@ import SalesRFQExplorer from "./SalesRFQExplorer";
 import SalesRFQForm from "./SalesRFQForm";
 import SalesRFQHeader from "./SalesRFQHeader";
 import SalesRFQLineForm from "./SalesRFQLineForm";
-import SalesRFQLineNotes from "./SalesRFQLineNotes";
 import SalesRFQProperties from "./SalesRFQProperties";
 import SalesRFQStatus from "./SalesRFQStatus";
 import SalesRFQsTable from "./SalesRFQsTable";
@@ -14,7 +13,6 @@ export {
   SalesRFQForm,
   SalesRFQHeader,
   SalesRFQLineForm,
-  SalesRFQLineNotes,
   SalesRFQProperties,
   SalesRFQStatus,
   SalesRFQsTable,

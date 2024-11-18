@@ -7,7 +7,6 @@ import QuoteForm from "./QuoteForm";
 import QuoteHeader from "./QuoteHeader";
 import QuoteLineCosting from "./QuoteLineCosting";
 import QuoteLineForm from "./QuoteLineForm";
-import QuoteLineNotes from "./QuoteLineNotes";
 import QuoteLinePricing from "./QuoteLinePricing";
 import QuoteMakeMethodTools from "./QuoteMakeMethodTools";
 import QuoteMaterialForm from "./QuoteMaterialForm";
@@ -27,7 +26,6 @@ export {
   QuoteHeader,
   QuoteLineCosting,
   QuoteLineForm,
-  QuoteLineNotes,
   QuoteLinePricing,
   QuoteMakeMethodTools,
   QuoteMaterialForm,
