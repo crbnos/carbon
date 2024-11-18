@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type {
   getBuyMethods,
+  getConsumable,
   getConsumables,
   getFixtures,
   getItemCost,
@@ -11,6 +12,7 @@ import type {
   getItemQuantities,
   getItemShelfQuantities,
   getMakeMethod,
+  getMaterial,
   getMaterialForms,
   getMaterialSubstances,
   getMaterials,
@@ -34,6 +36,10 @@ export type BuyMethod = NonNullable<
 export type Consumable = NonNullable<
   Awaited<ReturnType<typeof getConsumables>>["data"]
 >[number];
+
+export type ConsumableSummary = NonNullable<
+  Awaited<ReturnType<typeof getConsumable>>
+>["data"];
 
 export type CustomerPart = NonNullable<
   Awaited<ReturnType<typeof getItemCustomerParts>>["data"]
@@ -89,6 +95,10 @@ export type MakeMethod = NonNullable<
 export type Material = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
 >[number];
+
+export type MaterialSummary = NonNullable<
+  Awaited<ReturnType<typeof getMaterial>>
+>["data"];
 
 export type Method = NonNullable<
   Awaited<ReturnType<typeof getMethodTreeArray>>["data"]

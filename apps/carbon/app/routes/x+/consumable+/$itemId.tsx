@@ -32,7 +32,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [consumableSummary, buyMethods, pickMethods] = await Promise.all([
     getConsumable(client, itemId, companyId),
-
     getBuyMethods(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
   ]);

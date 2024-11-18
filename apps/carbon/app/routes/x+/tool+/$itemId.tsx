@@ -32,7 +32,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [toolSummary, buyMethods, pickMethods] = await Promise.all([
     getTool(client, itemId, companyId),
-
     getBuyMethods(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
   ]);
