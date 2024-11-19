@@ -72,8 +72,16 @@ const QuotationFinalizeModal = ({
     canEmail ? "Email" : "Download"
   );
 
-  const linesWithNoPrices = lines
-    .filter((line) => !prices.some((price) => price.quoteLineId === line.id))
+  const linesMissingQuoteLinePrices = lines
+    .filter((line) => {
+      if (!line.quantity || !Array.isArray(line.quantity)) return false;
+      return line.quantity.some(
+        (qty) =>
+          !prices.some(
+            (price) => price.quoteLineId === line.id && price.quantity === qty
+          )
+      );
+    })
     .map((line) => line.itemReadableId)
     .filter((id): id is string => id !== undefined);
 
@@ -86,7 +94,10 @@ const QuotationFinalizeModal = ({
     .filter((id): id is string => id !== undefined);
 
   const warningLineReadableIds = [
-    ...new Set([...linesWithNoPrices, ...linesWithZeroPriceOrLeadTime]),
+    ...new Set([
+      ...linesMissingQuoteLinePrices,
+      ...linesWithZeroPriceOrLeadTime,
+    ]),
   ];
 
   return (
