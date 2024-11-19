@@ -101,6 +101,7 @@ export default function UpdateCustomFieldRoute() {
         dataTypeId: (customField.dataTypeId || DataType.Text).toString(),
         table: table,
         listOptions: customField.listOptions ?? [],
+        tags: customField.tags ?? [],
       }}
       dataTypes={routeData?.dataTypes ?? []}
       onClose={onClose}

@@ -43,6 +43,20 @@ export async function getNotes(
     .order("createdAt");
 }
 
+export async function getTagsList(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  table?: string | null
+) {
+  let query = client.from("tag").select("id, name").eq("companyId", companyId);
+
+  if (table) {
+    query = query.eq("table", table);
+  }
+
+  return query;
+}
+
 export async function importCsv(
   client: SupabaseClient<Database>,
   args: {
@@ -69,6 +83,13 @@ export async function insertNote(
   }
 ) {
   return client.from("note").insert([note]).select("*").single();
+}
+
+export async function insertTag(
+  client: SupabaseClient<Database>,
+  tag: Database["public"]["Tables"]["tag"]["Insert"]
+) {
+  return client.from("tag").insert(tag).select("*").single();
 }
 
 export async function upsertExternalLink(

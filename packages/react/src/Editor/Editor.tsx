@@ -24,7 +24,6 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Separator } from "../Separator";
-import { cn } from "../utils/cn";
 import { ColorSelector } from "./components/ColorSelector";
 import { LinkSelector } from "./components/LinkSelector";
 import { NodeSelector } from "./components/NodeSelector";
@@ -94,7 +93,7 @@ const Editor = ({
   return (
     <EditorRoot>
       <EditorContent
-        className={cn("p-4", className)}
+        className={className}
         {...(initialValue && { initialContent: initialValue })}
         extensions={extensions}
         editorProps={{

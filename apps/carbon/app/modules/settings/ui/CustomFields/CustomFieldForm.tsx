@@ -14,11 +14,11 @@ import { ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
-import { Array, Hidden, Input, Select, Submit } from "~/components/Form";
+import { Array, Hidden, Input, Select, Submit, Tags } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { customFieldValidator } from "~/modules/settings";
-import { DataType } from "~/modules/shared";
+import { customFieldTablesWithTags, DataType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type CustomFieldFormProps = {
@@ -101,11 +101,17 @@ const CustomFieldForm = ({
                 onChange={onChangeCheckForListType}
               />
               {isList && <Array name="listOptions" label="List Options" />}
+
+              {customFieldTablesWithTags.includes(table) && (
+                <Tags table={table} name="tags" />
+              )}
             </VStack>
           </DrawerBody>
           <DrawerFooter>
             <HStack>
-              <Submit isDisabled={isDisabled}>Save</Submit>
+              <Submit withBlocker={false} isDisabled={isDisabled}>
+                Save
+              </Submit>
               <Button size="md" variant="solid" onClick={onClose}>
                 Cancel
               </Button>

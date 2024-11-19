@@ -51,7 +51,6 @@ export const path = {
       scrapReasons: `${api}/production/scrap-reasons`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
       services: `${api}/items/services`,
-
       shifts: (id: string) =>
         generatePath(`${api}/people/shifts?location=${id}`),
       shelves: (id: string) =>
@@ -64,6 +63,8 @@ export const path = {
         generatePath(`${api}/purchasing/supplier-processes?processId=${id}`),
       supplierStatuses: `${api}/purchasing/supplier-statuses`,
       supplierTypes: `${api}/purchasing/supplier-types`,
+      tags: (table?: string) =>
+        generatePath(`${api}/shared/tags?table=${table}`),
       unitOfMeasures: `${api}/items/uoms`,
       workCentersByLocation: (id: string) =>
         generatePath(`${api}/resources/work-centers?location=${id}`),
@@ -562,6 +563,7 @@ export const path = {
       generatePath(`${x}/supplier/${id}/processes/new`),
     newSupplierStatus: `${x}/purchasing/supplier-statuses/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
+    newTag: `${x}/settings/tags/new`,
     newTool: `${x}/tool/new`,
     newToolSupplier: (id: string) =>
       generatePath(`${x}/tool/${id}/purchasing/new`),

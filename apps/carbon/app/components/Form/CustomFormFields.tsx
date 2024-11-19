@@ -5,9 +5,10 @@ import Employee from "./Employee";
 
 type CustomFormFieldsProps = {
   table: string;
+  tags?: string[];
 };
 
-const CustomFormFields = ({ table }: CustomFormFieldsProps) => {
+const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
   const customFormSchema = useCustomFieldsSchema();
   const tableFields = customFormSchema?.[table];
 
@@ -17,6 +18,10 @@ const CustomFormFields = ({ table }: CustomFormFieldsProps) => {
     <>
       {tableFields
         .sort((a, b) => a.sortOrder - b.sortOrder)
+        .filter((field) => {
+          if (!field.tags || !Array.isArray(field.tags)) return true;
+          return field.tags.some((tag) => tags.includes(tag));
+        })
         .map((field) => {
           switch (field.dataTypeId) {
             case DataType.Boolean:
