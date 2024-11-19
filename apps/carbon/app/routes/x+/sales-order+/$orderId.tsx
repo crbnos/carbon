@@ -1,4 +1,4 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -31,17 +31,19 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
+  const serviceRole = await getCarbonServiceRole();
+
   const [salesOrder, lines, opportunity] = await Promise.all([
-    getSalesOrder(client, orderId),
-    getSalesOrderLines(client, orderId),
-    getOpportunityBySalesOrder(client, orderId),
+    getSalesOrder(serviceRole, orderId),
+    getSalesOrderLines(serviceRole, orderId),
+    getOpportunityBySalesOrder(serviceRole, orderId),
   ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
@@ -54,13 +56,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const customer = salesOrder.data?.customerId
-    ? await getCustomer(client, salesOrder.data.customerId)
+    ? await getCustomer(serviceRole, salesOrder.data.customerId)
     : null;
 
   return defer({
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
-    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
+    files: getOpportunityDocuments(serviceRole, companyId, opportunity.data.id),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
   });

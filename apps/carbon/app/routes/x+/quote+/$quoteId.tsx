@@ -1,4 +1,4 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -36,22 +36,23 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
+  const serviceRole = await getCarbonServiceRole();
 
   const [quote, shipment, payment, lines, prices, opportunity, methods] =
     await Promise.all([
-      getQuote(client, quoteId),
-      getQuoteShipment(client, quoteId),
-      getQuotePayment(client, quoteId),
-      getQuoteLines(client, quoteId),
-      getQuoteLinePricesByQuoteId(client, quoteId),
-      getOpportunityByQuote(client, quoteId),
-      getQuoteMethodTrees(client, quoteId),
+      getQuote(serviceRole, quoteId),
+      getQuoteShipment(serviceRole, quoteId),
+      getQuotePayment(serviceRole, quoteId),
+      getQuoteLines(serviceRole, quoteId),
+      getQuoteLinePricesByQuoteId(serviceRole, quoteId),
+      getOpportunityByQuote(serviceRole, quoteId),
+      getQuoteMethodTrees(serviceRole, quoteId),
     ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
@@ -83,7 +84,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
     const presentationCurrency = await getCurrencyByCode(
-      client,
+      serviceRole,
       companyId,
       quote.data.currencyCode
     );
@@ -93,14 +94,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const customer = quote.data?.customerId
-    ? await getCustomer(client, quote.data.customerId)
+    ? await getCustomer(serviceRole, quote.data.customerId)
     : null;
 
   return defer({
     quote: quote.data,
     lines: lines.data ?? [],
     methods: methods.data ?? [],
-    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
+    files: getOpportunityDocuments(serviceRole, companyId, opportunity.data.id),
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,

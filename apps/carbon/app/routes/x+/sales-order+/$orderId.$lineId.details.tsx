@@ -1,4 +1,9 @@
-import { assertIsPost, error, notFound } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  notFound,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -29,7 +34,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "sales",
     role: "employee",
   });
@@ -38,9 +43,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
+  const serviceRole = await getCarbonServiceRole();
+
   const [line, jobs] = await Promise.all([
-    getSalesOrderLine(client, lineId),
-    getJobsBySalesOrderLine(client, lineId),
+    getSalesOrderLine(serviceRole, lineId),
+    getJobsBySalesOrderLine(serviceRole, lineId),
   ]);
 
   if (line.error) {
@@ -54,9 +61,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     line: line?.data ?? null,
     itemReplenishment:
       line.data.itemId && line.data.methodType === "Make"
-        ? getItemReplenishment(client, line.data.itemId, companyId)
+        ? getItemReplenishment(serviceRole, line.data.itemId, companyId)
         : Promise.resolve({ data: null }),
-    files: getOpportunityLineDocuments(client, companyId, lineId),
+    files: getOpportunityLineDocuments(serviceRole, companyId, lineId),
     jobs: jobs?.data ?? [],
   });
 }

@@ -1,4 +1,4 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -33,7 +33,7 @@ import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
@@ -41,10 +41,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
+  const serviceRole = await getCarbonServiceRole();
+
   const [line, operations, prices] = await Promise.all([
-    getQuoteLine(client, lineId),
-    getQuoteOperationsByLine(client, lineId),
-    getQuoteLinePrices(client, lineId),
+    getQuoteLine(serviceRole, lineId),
+    getQuoteOperationsByLine(serviceRole, lineId),
+    getQuoteLinePrices(serviceRole, lineId),
   ]);
 
   if (line.error) {
@@ -57,7 +59,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return defer({
     line: line.data,
     operations: operations?.data ?? [],
-    files: getOpportunityLineDocuments(client, companyId, lineId),
+    files: getOpportunityLineDocuments(serviceRole, companyId, lineId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, QuotationPrice>
     >((acc, price) => {
