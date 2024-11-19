@@ -413,12 +413,6 @@ const LineItems = ({
                   <span className="text-muted-foreground text-base truncate">
                     {line.description}
                   </span>
-                  <div
-                    className="prose dark:prose-invert text-muted-foreground"
-                    dangerouslySetInnerHTML={{
-                      __html: generateHTML(line.notes as JSONContent),
-                    }}
-                  />
                 </div>
               </VStack>
             </HStack>
