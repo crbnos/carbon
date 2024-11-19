@@ -789,9 +789,9 @@ const QuoteLinePricing = ({
               </Td>
               {quantities.map((quantity, index) => {
                 const price =
-                  netPricesByQuantity[index] * quantity +
-                  prices[quantity]?.shippingCost +
-                  additionalChargesByQuantity[index];
+                  (netPricesByQuantity[index] ?? 0) * quantity +
+                  (prices[quantity]?.shippingCost ?? 0) +
+                  (additionalChargesByQuantity[index] ?? 0);
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
@@ -834,9 +834,9 @@ const QuoteLinePricing = ({
               </Td>
               {quantities.map((quantity, index) => {
                 const subtotal =
-                  netPricesByQuantity[index] * quantity +
-                  prices[quantity]?.shippingCost +
-                  additionalChargesByQuantity[index];
+                  (netPricesByQuantity[index] ?? 0) * quantity +
+                  (prices[quantity]?.shippingCost ?? 0) +
+                  (additionalChargesByQuantity[index] ?? 0);
                 const tax = subtotal * (line.taxPercent ?? 0);
                 const price = subtotal + tax;
                 return (
@@ -875,9 +875,9 @@ const QuoteLinePricing = ({
                   </Td>
                   {quantities.map((quantity, index) => {
                     const subtotal =
-                      netPricesByQuantity[index] * quantity +
-                      prices[quantity]?.shippingCost +
-                      additionalChargesByQuantity[index];
+                      (netPricesByQuantity[index] ?? 0) * quantity +
+                      (prices[quantity]?.shippingCost ?? 0) +
+                      (additionalChargesByQuantity[index] ?? 0);
                     const tax = subtotal * (line.taxPercent ?? 0);
                     const price = subtotal + tax;
                     const exchangeRate = prices[quantity]?.exchangeRate;
