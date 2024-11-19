@@ -4,11 +4,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BiAddToQueue } from "react-icons/bi";
 import { BsListUl } from "react-icons/bs";
-import { LuDatabase, LuLayoutGrid, LuList } from "react-icons/lu";
+import { LuDatabase, LuLayoutGrid, LuList, LuTags } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { modulesType, type CustomFieldsTableType } from "~/modules/settings";
+import { customFieldTablesWithTags } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type CustomFieldsTableProps = {
@@ -27,7 +28,12 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         accessorKey: "name",
         header: "Table",
         cell: ({ row }) => (
-          <Hyperlink to={row.original.table!}>{row.original.name}</Hyperlink>
+          <div className="flex items-center gap-2">
+            <Hyperlink to={row.original.table!}>{row.original.name}</Hyperlink>
+            {customFieldTablesWithTags.includes(row.original.table!) && (
+              <LuTags className="text-red-500" />
+            )}
+          </div>
         ),
         meta: {
           icon: <LuDatabase />,

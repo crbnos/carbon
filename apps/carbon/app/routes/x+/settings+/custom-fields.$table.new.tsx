@@ -63,6 +63,7 @@ export default function NewCustomFieldRoute() {
         // @ts-ignore
         dataTypeId: DataType.Text.toString(),
         table: table,
+        tags: [],
       }}
       dataTypes={routeData?.dataTypes ?? []}
       onClose={onClose}

@@ -327,7 +327,7 @@ function SelectedOption({
     <Badge
       key={item}
       variant="secondary"
-      className="border border-border shadow-sm"
+      className="border border-card shadow-sm"
     >
       {options.find((option) => option.value === item)?.label}
       <BadgeCloseButton

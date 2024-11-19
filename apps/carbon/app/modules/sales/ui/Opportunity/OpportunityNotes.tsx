@@ -4,6 +4,7 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   Editor,
@@ -98,6 +99,9 @@ const OpportunityNotes = ({
           <HStack className="w-full justify-between">
             <CardHeader>
               <CardTitle>{title}</CardTitle>
+              <CardDescription>
+                {tab === "internal" ? "Internal Notes" : "External Notes"}
+              </CardDescription>
             </CardHeader>
             <CardAction>
               <TabsList>

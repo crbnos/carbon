@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { FaFlagCheckered } from "react-icons/fa6";
 import { useUser } from "~/hooks";
-import type { action } from "~/routes/x+/end-shift.tsx";
+import type { action } from "~/routes/x+/end-shift";
 import {
   getActiveJobOperationsByEmployee,
   type Operation,
@@ -45,8 +45,6 @@ export const EndShift = ({ isCollapsed }: { isCollapsed: boolean }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.data?.success]);
-
-  console.log({ fetcher });
 
   const openModal = async () => {
     flushSync(() => {

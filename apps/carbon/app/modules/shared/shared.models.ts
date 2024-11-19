@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+export const customFieldTablesWithTags = [
+  "consumable",
+  "fixture",
+  "job",
+  "material",
+  "part",
+  "tool",
+];
+
 export const methodItemType = [
   "Part",
   "Material",
