@@ -1,4 +1,4 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Outlet, useLoaderData } from "@remix-run/react";
@@ -22,17 +22,19 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "parts",
   });
+
+  const serviceRole = await getCarbonServiceRole();
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
   const [fixtureSummary, buyMethods, pickMethods] = await Promise.all([
-    getFixture(client, itemId, companyId),
-    getBuyMethods(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
+    getFixture(serviceRole, itemId, companyId),
+    getBuyMethods(serviceRole, itemId, companyId),
+    getPickMethods(serviceRole, itemId, companyId),
   ]);
 
   if (fixtureSummary.error) {
@@ -47,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     fixtureSummary: fixtureSummary.data,
-    files: getItemFiles(client, itemId, companyId),
+    files: getItemFiles(serviceRole, itemId, companyId),
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
   });

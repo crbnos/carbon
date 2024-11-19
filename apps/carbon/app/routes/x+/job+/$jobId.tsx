@@ -1,4 +1,4 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -38,14 +38,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "production",
   });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const job = await getJob(client, jobId);
+  const serviceRole = await getCarbonServiceRole();
+
+  const job = await getJob(serviceRole, jobId);
 
   if (job.error) {
     throw redirect(
@@ -56,8 +58,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     job: job.data,
-    files: getJobDocuments(client, companyId, job.data),
-    method: getJobMethodTree(client, jobId), // returns a promise
+    files: getJobDocuments(serviceRole, companyId, job.data),
+    method: getJobMethodTree(serviceRole, jobId), // returns a promise
   });
 }
 

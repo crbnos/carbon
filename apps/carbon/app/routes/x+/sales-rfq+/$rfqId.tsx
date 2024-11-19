@@ -25,7 +25,7 @@ import {
   SalesRFQHeader,
 } from "~/modules/sales";
 
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/SalesRFQ/useOptimiticDocumentDrag";
@@ -38,17 +38,19 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
+  const serviceRole = await getCarbonServiceRole();
+
   const [rfqSummary, lines, opportunity] = await Promise.all([
-    getSalesRFQ(client, rfqId),
-    getSalesRFQLines(client, rfqId),
-    getOpportunityBySalesRFQ(client, rfqId),
+    getSalesRFQ(serviceRole, rfqId),
+    getSalesRFQLines(serviceRole, rfqId),
+    getOpportunityBySalesRFQ(serviceRole, rfqId),
   ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
@@ -86,7 +88,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         itemId: line.itemId ?? "",
         quantity: line.quantity ?? [1],
       })) ?? [],
-    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
+    files: getOpportunityDocuments(serviceRole, companyId, opportunity.data.id),
     opportunity: opportunity.data,
   });
 }

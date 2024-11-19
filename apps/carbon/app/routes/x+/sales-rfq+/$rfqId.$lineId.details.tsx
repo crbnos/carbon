@@ -1,4 +1,4 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -22,7 +22,7 @@ import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
@@ -30,7 +30,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const [line] = await Promise.all([getSalesRFQLine(client, lineId)]);
+  const serviceRole = await getCarbonServiceRole();
+
+  const [line] = await Promise.all([getSalesRFQLine(serviceRole, lineId)]);
 
   if (line.error) {
     throw redirect(
@@ -41,7 +43,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return defer({
     line: line.data,
-    files: getOpportunityLineDocuments(client, companyId, lineId),
+    files: getOpportunityLineDocuments(serviceRole, companyId, lineId),
   });
 };
 
