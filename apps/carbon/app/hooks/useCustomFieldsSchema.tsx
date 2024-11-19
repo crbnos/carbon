@@ -34,6 +34,7 @@ const fieldValidator = z
       listOptions: z.array(z.string()).nullable(),
       name: z.string(),
       sortOrder: z.number(),
+      tags: z.array(z.string()).nullable(),
     })
   )
   .nullable();

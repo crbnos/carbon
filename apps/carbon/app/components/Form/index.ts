@@ -64,6 +64,7 @@ import SupplierProcess from "./SupplierProcess";
 import SupplierStatus from "./SupplierStatus";
 import SupplierType from "./SupplierType";
 import Suppliers from "./Suppliers";
+import Tags from "./Tags";
 import UnitHint, { getUnitHint } from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";
 import User from "./User";
@@ -133,6 +134,7 @@ export {
   Suppliers,
   SupplierStatus,
   SupplierType,
+  Tags,
   TextArea,
   TimePicker,
   Timezone,
