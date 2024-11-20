@@ -265,7 +265,7 @@ const JobHeader = () => {
                 }
                 leftIcon={<LuPlayCircle />}
               >
-                Start
+                Release
               </Button>
             </>
           )}
