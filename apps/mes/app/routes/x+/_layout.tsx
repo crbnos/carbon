@@ -4,27 +4,19 @@ import {
   requireAuthSession,
 } from "@carbon/auth/session.server";
 import {
-  ClientOnly,
-  cn,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  Separator,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
   Toaster,
   TooltipProvider,
 } from "@carbon/react";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
-import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
+import { useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
-import { useEffect, useRef, useState } from "react";
-import { LuActivity, LuClock, LuInbox } from "react-icons/lu";
-import type { ImperativePanelHandle } from "react-resizable-panels";
-import { AvatarMenu, Nav } from "~/components";
-import { EndShift } from "~/components/EndShift";
-import Feedback from "~/components/Feedback";
-import { useMediaQuery } from "~/hooks";
+import { useEffect } from "react";
+import { AppSidebar } from "~/components";
 import {
   getLocationAndWorkCenter,
   setLocationAndWorkCenter,
@@ -33,7 +25,6 @@ import {
   getActiveJobCount,
   getLocationsByCompany,
 } from "~/services/operations.service";
-import { defaultLayout } from "~/utils/layout";
 import { path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
@@ -119,17 +110,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AuthenticatedRoute() {
   const { session, activeEvents, company, companies, location, locations } =
     useLoaderData<typeof loader>();
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const transition = useNavigation();
-  const panelRef = useRef<ImperativePanelHandle>(null);
-  const { isMobile } = useMediaQuery();
-
-  useEffect(() => {
-    if (isMobile) {
-      panelRef.current?.collapse();
-    }
-  }, [isMobile]);
 
   /* NProgress */
   useEffect(() => {
@@ -144,104 +126,27 @@ export default function AuthenticatedRoute() {
   }, [transition.state]);
 
   return (
-    <div className="h-full w-full">
-      <div className="ray" data-theme="dark" data-chat-started="true">
-        <div className="light-ray ray-one"></div>
-        <div className="light-ray ray-two"></div>
-        <div className="light-ray ray-three"></div>
-        <div className="light-ray ray-four"></div>
-        <div className="light-ray ray-five"></div>
-      </div>
-
+    <div className="h-screen w-screen overflow-hidden">
       <CarbonProvider session={session}>
-        <TooltipProvider delayDuration={0}>
-          <ClientOnly fallback={null}>
-            {() => (
-              <ResizablePanelGroup
-                direction="horizontal"
-                className="h-full items-stretch"
-              >
-                <ResizablePanel
-                  ref={panelRef}
-                  defaultSize={isMobile ? 4 : defaultLayout[0]}
-                  collapsedSize={4}
-                  collapsible={true}
-                  minSize={15}
-                  maxSize={25}
-                  onCollapse={() => {
-                    setIsCollapsed(true);
-                  }}
-                  onExpand={() => {
-                    setIsCollapsed(false);
-                  }}
-                  className={cn(
-                    isCollapsed &&
-                      "min-w-[50px] transition-all duration-300 ease-in-out"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex h-[52px] items-center justify-start bg-background",
-                      isCollapsed ? "h-[52px]" : "px-2"
-                    )}
-                  >
-                    <div
-                      className={cn("flex w-full items-center justify-center")}
-                    >
-                      <AvatarMenu
-                        company={company}
-                        companies={companies}
-                        isCollapsed={isCollapsed}
-                        location={location}
-                        locations={locations}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent bg-background">
-                    <div className="flex flex-col">
-                      <Separator />
-                      <Nav
-                        isCollapsed={isCollapsed}
-                        links={[
-                          {
-                            title: "Operations",
-                            icon: LuInbox,
-                            to: path.to.operations,
-                          },
-                          {
-                            title: "Active",
-                            icon: LuActivity,
-                            label: (activeEvents ?? 0).toString(),
-                            to: path.to.active,
-                          },
-                          {
-                            title: "Recent",
-                            icon: LuClock,
-                            to: path.to.recent,
-                          },
-                        ]}
-                      />
-                    </div>
-                    <div
-                      className={cn(
-                        "flex flex-col gap-2",
-                        isCollapsed ? "p-1" : "p-2"
-                      )}
-                    >
-                      {activeEvents > 0 && (
-                        <EndShift isCollapsed={isCollapsed} />
-                      )}
-                      <Feedback isCollapsed={isCollapsed} />
-                    </div>
-                  </div>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <Outlet />
-              </ResizablePanelGroup>
-            )}
-          </ClientOnly>
-        </TooltipProvider>
-        <Toaster position="bottom-left" />
+        <SidebarProvider>
+          <TooltipProvider delayDuration={0}>
+            <AppSidebar
+              activeEvents={activeEvents}
+              company={company}
+              companies={companies}
+              location={location}
+              locations={locations}
+            />
+            <SidebarInset>
+              <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+                <div className="flex items-center gap-2 px-4">
+                  <SidebarTrigger className="-ml-1" />
+                </div>
+              </header>
+            </SidebarInset>
+          </TooltipProvider>
+          <Toaster position="bottom-left" />
+        </SidebarProvider>
       </CarbonProvider>
     </div>
   );

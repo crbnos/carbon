@@ -11,10 +11,10 @@ import {
   Button,
   File,
   HStack,
-  IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger,
+  SidebarMenuButton,
   VStack,
   toast,
 } from "@carbon/react";
@@ -30,7 +30,7 @@ import { path } from "~/utils/path";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
-const Feedback = ({ isCollapsed }: { isCollapsed: boolean }) => {
+const Feedback = () => {
   const fetcher = useFetcher<typeof action>();
   const location = useLocation();
   const popoverTriggerRef = useRef<HTMLButtonElement>(null);
@@ -84,18 +84,10 @@ const Feedback = ({ isCollapsed }: { isCollapsed: boolean }) => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        {isCollapsed ? (
-          <IconButton
-            variant="secondary"
-            icon={<LuMessageCircle className="h-4 w-4" />}
-            size="lg"
-            aria-label="Feedback"
-          />
-        ) : (
-          <Button variant="secondary" size="lg">
-            Feedback
-          </Button>
-        )}
+        <SidebarMenuButton className="text-sidebar-foreground/70">
+          <LuMessageCircle className="text-sidebar-foreground/70" />
+          <span>Feedback</span>
+        </SidebarMenuButton>
       </PopoverTrigger>
       <PopoverContent className="w-[380px] ">
         <ValidatedForm
