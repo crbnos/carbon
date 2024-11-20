@@ -129,8 +129,8 @@ export default function JobDetailsRoute() {
             }}
             modelPath={jobData?.job?.modelPath ?? null}
             title="CAD Model"
-            uploadClassName="min-h-[420px]"
-            viewerClassName="min-h-[420px]"
+            uploadClassName="aspect-square min-h-[420px]"
+            viewerClassName="aspect-square min-h-[420px]"
           />
         </div>
       )}

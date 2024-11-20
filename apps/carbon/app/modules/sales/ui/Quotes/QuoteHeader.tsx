@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   Heading,
+  IconButton,
   Input,
   InputGroup,
   InputRightElement,
@@ -27,6 +28,8 @@ import {
   LuExternalLink,
   LuEye,
   LuFile,
+  LuPanelLeft,
+  LuPanelRight,
   LuRefreshCw,
   LuShare,
   LuStopCircle,
@@ -34,6 +37,7 @@ import {
   LuXCircle,
 } from "react-icons/lu";
 import { Copy } from "~/components";
+import { usePanels } from "~/components/Layout";
 
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Quotation, QuotationLine, QuotationPrice } from "~/modules/sales";
@@ -46,6 +50,8 @@ const QuoteHeader = () => {
   const permissions = usePermissions();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
+
+  const { toggleExplorer, toggleProperties } = usePanels();
 
   const routeData = useRouteData<{
     quote: Quotation;
@@ -66,9 +72,15 @@ const QuoteHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px]">
+      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px]">
         <HStack className="w-full justify-between">
           <HStack>
+            <IconButton
+              aria-label="Toggle Explorer"
+              icon={<LuPanelLeft />}
+              onClick={toggleExplorer}
+              variant="ghost"
+            />
             <Link to={path.to.quoteDetails(quoteId)}>
               <Heading size="h3" className="flex items-center gap-2">
                 <span>{routeData?.quote?.quoteId}</span>
@@ -268,6 +280,12 @@ const QuoteHeader = () => {
                 </Button>
               </statusFetcher.Form>
             )}
+            <IconButton
+              aria-label="Toggle Properties"
+              icon={<LuPanelRight />}
+              onClick={toggleProperties}
+              variant="ghost"
+            />
           </HStack>
         </HStack>
       </div>

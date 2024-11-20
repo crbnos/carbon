@@ -1,4 +1,5 @@
 import Background from "./Background";
+
 import {
   CollapsibleSidebar,
   ContentSidebar,
@@ -7,6 +8,7 @@ import {
   GroupedContentSidebar,
   PrimaryNavigation,
 } from "./Navigation";
+import { PanelProvider, ResizablePanels, usePanels } from "./Panels";
 
 import Topbar from "./Topbar";
 
@@ -17,6 +19,9 @@ export {
   DetailSidebar,
   DetailsTopbar,
   GroupedContentSidebar,
+  PanelProvider,
   PrimaryNavigation,
+  ResizablePanels,
   Topbar,
+  usePanels,
 };

@@ -1,17 +1,11 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  ClientOnly,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  ScrollArea,
-  VStack,
-} from "@carbon/react";
+import { ClientOnly, VStack } from "@carbon/react";
 import { Outlet, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getCustomer,
   getOpportunityBySalesOrder,
@@ -75,43 +69,29 @@ export default function SalesOrderRoute() {
   if (!orderId) throw new Error("Could not find orderId");
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] w-full">
-      <SalesOrderHeader />
-      <div className="flex h-[calc(100dvh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <SalesOrderHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ClientOnly fallback={null}>
               {() => (
-                <ResizablePanelGroup direction="horizontal">
-                  <ResizablePanel
-                    order={1}
-                    minSize={10}
-                    defaultSize={20}
-                    className="bg-card h-full shadow-lg"
-                  >
-                    <ScrollArea className="h-[calc(100dvh-99px)]">
-                      <div className="grid w-full h-full overflow-hidden">
-                        <SalesOrderExplorer />
-                      </div>
-                    </ScrollArea>
-                  </ResizablePanel>
-                  <ResizableHandle withHandle />
-                  <ResizablePanel order={2}>
-                    <div className="flex h-[calc(100dvh-99px)] w-full">
-                      <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-                        <VStack spacing={2} className="p-2">
-                          <Outlet />
-                        </VStack>
-                      </div>
-                      <SalesOrderProperties />
+                <ResizablePanels
+                  explorer={<SalesOrderExplorer />}
+                  content={
+                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                      <VStack spacing={2} className="p-2">
+                        <Outlet />
+                      </VStack>
                     </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
+                  }
+                  properties={<SalesOrderProperties />}
+                />
               )}
             </ClientOnly>
           </div>
         </div>
       </div>
-    </div>
+    </PanelProvider>
   );
 }
