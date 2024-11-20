@@ -116,8 +116,11 @@ export default function SalesRFQExplorer() {
         isOverExplorer && "bg-primary/10 border-2 border-dashed border-primary"
       )}
     >
-      <VStack className="w-full h-[calc(100vh-99px)] justify-between">
-        <VStack className="flex-1 overflow-y-auto" spacing={0}>
+      <VStack className="w-full h-[calc(100dvh-99px)] justify-between">
+        <VStack
+          className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+          spacing={0}
+        >
           {(salesRfqData?.lines && salesRfqData?.lines?.length > 0) ||
           lines.length > 0 ? (
             lines.map((line) =>

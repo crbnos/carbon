@@ -323,7 +323,7 @@ const Grid = <T extends object>({
   return (
     <VStack spacing={0} className="h-full">
       <div
-        className="w-full h-full bg-card overflow-x-auto"
+        className="w-full h-full bg-card overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         style={{
           contain: contained ? "strict" : undefined,
         }}

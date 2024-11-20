@@ -44,7 +44,7 @@ export function OperationsList({
   const { operationId } = useParams();
 
   return operations.length > 0 ? (
-    <ScrollArea className="h-[calc(100vh-120px)]">
+    <ScrollArea className="h-[calc(100dvh-120px)]">
       <div className="flex flex-col gap-2">
         {operations.map((operation) => (
           <OperationCard
@@ -57,7 +57,7 @@ export function OperationsList({
       </div>
     </ScrollArea>
   ) : (
-    <div className="flex flex-col w-full h-[calc(100vh-120px)] items-center justify-center gap-4">
+    <div className="flex flex-col w-full h-[calc(100dvh-120px)] items-center justify-center gap-4">
       <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
         <LuAlertTriangle className="h-6 w-6" />
       </div>

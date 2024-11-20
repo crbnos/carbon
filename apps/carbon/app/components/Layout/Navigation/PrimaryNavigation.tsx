@@ -39,7 +39,7 @@ const PrimaryNavigation = () => {
           "bg-background py-[3px] group z-10 h-full w-14 data-[state=expanded]:w-[13rem]",
           "border-r border-border data-[state=expanded]:shadow-xl",
           "transition-width duration-200",
-          "hide-scrollbar flex flex-col justify-between overflow-y-auto"
+          "hide-scrollbar flex flex-col justify-between overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onMouseEnter={navigationPanel.onOpen}
         onMouseLeave={navigationPanel.onClose}

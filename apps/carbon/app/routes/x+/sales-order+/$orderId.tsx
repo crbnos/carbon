@@ -75,10 +75,10 @@ export default function SalesOrderRoute() {
   if (!orderId) throw new Error("Could not find orderId");
 
   return (
-    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
+    <div className="flex flex-col h-[calc(100dvh-49px)] w-full">
       <SalesOrderHeader />
-      <div className="flex h-[calc(100vh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto">
+      <div className="flex h-[calc(100dvh-99px)] w-full">
+        <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
           <div className="flex flex-grow overflow-hidden">
             <ClientOnly fallback={null}>
               {() => (
@@ -89,7 +89,7 @@ export default function SalesOrderRoute() {
                     defaultSize={20}
                     className="bg-card h-full shadow-lg"
                   >
-                    <ScrollArea className="h-[calc(100vh-99px)]">
+                    <ScrollArea className="h-[calc(100dvh-99px)]">
                       <div className="grid w-full h-full overflow-hidden">
                         <SalesOrderExplorer />
                       </div>
@@ -97,13 +97,11 @@ export default function SalesOrderRoute() {
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                   <ResizablePanel order={2}>
-                    <div className="flex h-[calc(100vh-99px)] w-full">
-                      <div className="flex h-full w-full overflow-y-auto">
-                        <ScrollArea className="h-[calc(100vh-99px)] w-full">
-                          <VStack spacing={2} className="p-2">
-                            <Outlet />
-                          </VStack>
-                        </ScrollArea>
+                    <div className="flex h-[calc(100dvh-99px)] w-full">
+                      <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+                        <VStack spacing={2} className="p-2">
+                          <Outlet />
+                        </VStack>
                       </div>
                       <SalesOrderProperties />
                     </div>

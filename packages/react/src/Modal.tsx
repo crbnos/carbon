@@ -32,7 +32,7 @@ const ModalOverlay = forwardRef<
       // 'z-50 fixed h-full w-full left-0 top-0',
       // 'bg-alternative/90 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       "bg-alternative/90 backdrop-blur-sm",
-      "z-50 fixed inset-0 grid place-items-center overflow-y-auto data-open:animate-overlay-show data-closed:animate-overlay-hide",
+      "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-open:animate-overlay-show data-closed:animate-overlay-hide",
       className
     )}
     {...props}

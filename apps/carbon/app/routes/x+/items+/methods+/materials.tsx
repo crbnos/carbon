@@ -55,7 +55,7 @@ export default function MethodMaterialsRoute() {
   const { count, materials } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={0} className="h-[calc(100vh-49px)]">
+    <VStack spacing={0} className="h-[calc(100dvh-49px)]">
       <MethodMaterialsTable data={materials} count={count} />
     </VStack>
   );

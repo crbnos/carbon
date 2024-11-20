@@ -24,7 +24,7 @@ const GroupedContentSidebar = ({
 
   return (
     <CollapsibleSidebar width={width}>
-      <div className="overflow-y-auto h-full w-full pb-8">
+      <div className="overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8">
         <VStack>
           {groups.map((group) => (
             <VStack

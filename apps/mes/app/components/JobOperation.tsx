@@ -211,7 +211,7 @@ export const JobOperation = ({
         </div>
 
         <Separator />
-        <div className="flex items-center justify-start px-4 py-2 h-[var(--header-height)] bg-background gap-4 w-full overflow-y-auto">
+        <div className="flex items-center justify-start px-4 py-2 h-[var(--header-height)] bg-background gap-4 w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
           {operation.description && (
             <HStack className="justify-start space-x-2">
               <LuClipboardCheck className="text-muted-foreground" />
@@ -274,7 +274,7 @@ export const JobOperation = ({
         <Separator className="flex md:hidden" />
 
         <TabsContent value="details" className="flex flex-col">
-          <ScrollArea className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto">
+          <ScrollArea className="w-full h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             <div className="flex items-start justify-between p-4">
               <HStack>
                 {thumbnailPath && (
@@ -467,7 +467,7 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
         <TabsContent value="model">
-          <div className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height))] p-0">
+          <div className="w-full h-[calc(100dvh-var(--header-height)*2-var(--controls-height))] p-0">
             <ModelViewer
               file={null}
               key={operation.itemModelPath ?? job.modelPath}
@@ -480,7 +480,7 @@ export const JobOperation = ({
           </div>
         </TabsContent>
         <TabsContent value="instructions" className="flex flex-grow">
-          <ScrollArea className="w-full h-[calc(100vh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto p-4">
+          <ScrollArea className="w-full h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent p-4">
             <div
               className="prose dark:prose-invert"
               dangerouslySetInnerHTML={{

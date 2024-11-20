@@ -64,10 +64,10 @@ export default function PartRoute() {
   useRealtime("modelUpload", `modelPath=eq.${partSummary.modelPath}`);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
+    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <PartHeader />
-      <div className="flex h-[calc(100vh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto">
+      <div className="flex h-[calc(100dvh-99px)] w-full">
+        <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
           <Outlet />
         </div>
         <PartProperties />

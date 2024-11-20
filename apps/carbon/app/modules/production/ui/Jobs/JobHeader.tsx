@@ -73,7 +73,7 @@ const JobHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border shadow-md">
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px]">
         <HStack>
           <Link to={path.to.jobDetails(jobId)}>
             <Heading size="h3" className="flex items-center gap-2">
