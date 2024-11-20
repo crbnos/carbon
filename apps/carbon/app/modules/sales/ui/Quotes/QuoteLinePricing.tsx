@@ -441,6 +441,7 @@ const QuoteLinePricing = ({
                       value={markup}
                       formatOptions={{
                         style: "percent",
+                        maximumFractionDigits: 2,
                       }}
                       onChange={(value) => {
                         if (Number.isFinite(value) && value !== price) {
