@@ -512,7 +512,14 @@ const Table = <T extends object>({
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [getTableWrapperEl, table, visibleColumns, pinnedColumnsKey, columnOrder]);
+  }, [
+    getTableWrapperEl,
+    table,
+    visibleColumns,
+    pinnedColumnsKey,
+    columnOrder,
+    withSelectableRows,
+  ]);
 
   // const lastLeftPinnedColumn = table
   //   .getLeftVisibleLeafColumns()
@@ -804,6 +811,7 @@ function getRowSelectionColumn<T>(): ColumnDef<T>[] {
     {
       id: "Select",
       size: 50,
+      enablePinning: true,
       header: ({ table }) => (
         <IndeterminateCheckbox
           {...{

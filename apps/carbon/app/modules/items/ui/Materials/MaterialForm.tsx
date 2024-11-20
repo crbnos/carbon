@@ -40,7 +40,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type MaterialFormProps = {
-  initialValues: z.infer<typeof materialValidator>;
+  initialValues: z.infer<typeof materialValidator> & { tags?: string[] };
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -185,7 +185,7 @@ const MaterialForm = ({
                   />
                 )}
                 <Boolean name="active" label="Active" />
-                <CustomFormFields table="material" />
+                <CustomFormFields table="material" tags={initialValues.tags} />
               </div>
             </ModalCardBody>
             <ModalCardFooter>

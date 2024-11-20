@@ -13,6 +13,7 @@ import {
   getItemFiles,
   getPickMethods,
 } from "~/modules/items";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -31,10 +32,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [fixtureSummary, buyMethods, pickMethods] = await Promise.all([
+  const [fixtureSummary, buyMethods, pickMethods, tags] = await Promise.all([
     getFixture(serviceRole, itemId, companyId),
     getBuyMethods(serviceRole, itemId, companyId),
     getPickMethods(serviceRole, itemId, companyId),
+    getTagsList(serviceRole, companyId, "fixture"),
   ]);
 
   if (fixtureSummary.error) {
@@ -52,6 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getItemFiles(serviceRole, itemId, companyId),
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 

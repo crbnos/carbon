@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
-import type { LoaderFunctionArgs } from "@vercel/remix";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getAttributeDataTypes } from "~/modules/people";
 import { CustomFieldsTable, getCustomFieldsTables } from "~/modules/settings";
@@ -53,7 +53,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-export default function UserAttributesRoute() {
+export async function action({ request }: ActionFunctionArgs) {
+  const { client, userId } = await requirePermissions(request, {});
+
+  const formData = await request.formData();
+  const ids = formData.getAll("ids");
+  const table = formData.get("table");
+  const value = formData.get("value");
+
+  if (typeof value !== "string" || typeof table !== "string") {
+    return json({ error: { message: "Invalid table" }, data: null });
+  }
+
+  const result = await client
+    // @ts-ignore
+    .from(table)
+    .update({
+      customFields: JSON.parse(value),
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    .in(getIdField(table), ids as string[]);
+
+  return json(result);
+}
+
+function getIdField(table: string) {
+  switch (table) {
+    case "part":
+    case "material":
+    case "consumable":
+    case "tool":
+    case "fixture":
+      return "itemId";
+    default:
+      return "id";
+  }
+}
+
+export default function CustomFieldsRoute() {
   const { count, tables } = useLoaderData<typeof loader>();
 
   return (

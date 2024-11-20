@@ -82,6 +82,7 @@ export default function FixtureDetailsRoute() {
     active: fixtureData.fixtureSummary?.active ?? true,
     customerId: fixtureData.fixtureSummary?.customerId ?? "",
     unitOfMeasureCode: "EA",
+    tags: fixtureData.fixtureSummary?.tags ?? [],
     ...getCustomFields(fixtureData.fixtureSummary?.customFields ?? {}),
   };
 
@@ -92,15 +93,7 @@ export default function FixtureDetailsRoute() {
         initialValues={fixtureInitialValues}
       />
       {permissions.is("employee") && (
-        <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
-          <CadModel
-            isReadOnly={!permissions.can("update", "parts")}
-            metadata={{
-              itemId,
-            }}
-            modelPath={fixtureData?.fixtureSummary?.modelPath ?? null}
-            title="CAD Model"
-          />
+        <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2">
           <Suspense
             fallback={
               <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
@@ -119,6 +112,14 @@ export default function FixtureDetailsRoute() {
               )}
             </Await>
           </Suspense>
+          <CadModel
+            isReadOnly={!permissions.can("update", "parts")}
+            metadata={{
+              itemId,
+            }}
+            modelPath={fixtureData?.fixtureSummary?.modelPath ?? null}
+            title="CAD Model"
+          />
         </div>
       )}
     </VStack>

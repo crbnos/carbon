@@ -76,6 +76,7 @@ export default function PartDetailsRoute() {
     itemTrackingType: partData.partSummary?.itemTrackingType ?? "Inventory",
     active: partData.partSummary?.active ?? true,
     unitOfMeasureCode: partData.partSummary?.unitOfMeasureCode ?? "EA",
+    tags: partData.partSummary?.tags ?? [],
     ...getCustomFields(partData.partSummary?.customFields ?? {}),
   };
 
@@ -86,13 +87,7 @@ export default function PartDetailsRoute() {
         initialValues={partInitialValues}
       />
       {permissions.is("employee") && (
-        <div className="grid grid-cols-1 md:grid-cols-2 w-full flex-grow gap-2">
-          <CadModel
-            isReadOnly={!permissions.can("update", "parts")}
-            metadata={{ itemId }}
-            modelPath={partData?.partSummary?.modelPath ?? null}
-            title="CAD Model"
-          />
+        <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2">
           <Suspense
             fallback={
               <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
@@ -111,6 +106,13 @@ export default function PartDetailsRoute() {
               )}
             </Await>
           </Suspense>
+
+          <CadModel
+            isReadOnly={!permissions.can("update", "parts")}
+            metadata={{ itemId }}
+            modelPath={partData?.partSummary?.modelPath ?? null}
+            title="CAD Model"
+          />
         </div>
       )}
     </VStack>

@@ -1,3 +1,4 @@
+import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -24,6 +25,7 @@ import {
   Employee,
   Location,
 } from "~/components/Form";
+import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/quote+/$quoteId.exchange-rate";
@@ -74,6 +76,22 @@ const QuoteProperties = () => {
       });
     },
     [fetcher, quoteId, routeData?.quote]
+  );
+
+  const onUpdateCustomFields = useCallback(
+    (value: string) => {
+      const formData = new FormData();
+
+      formData.append("ids", quoteId);
+      formData.append("table", "quote");
+      formData.append("value", value);
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.customFields,
+      });
+    },
+    [fetcher, quoteId]
   );
 
   const optimisticAssignment = useOptimisticAssignment({
@@ -402,6 +420,15 @@ const QuoteProperties = () => {
             </HStack>
           </VStack>
         )}
+      <CustomFormInlineFields
+        customFields={
+          (routeData?.quote?.customFields ?? {}) as Record<string, Json>
+        }
+        table="quote"
+        tags={[]}
+        onUpdate={onUpdateCustomFields}
+        isDisabled={isDisabled}
+      />
     </VStack>
   );
 };

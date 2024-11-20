@@ -7,6 +7,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { JobsTable, getJobs } from "~/modules/production";
 import { getLocationsList } from "~/modules/resources";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -28,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [jobs, locations] = await Promise.all([
+  const [jobs, locations, tags] = await Promise.all([
     getJobs(client, companyId, {
       search,
       limit,
@@ -37,6 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       filters,
     }),
     getLocationsList(client, companyId),
+    getTagsList(client, companyId, "job"),
   ]);
 
   if (jobs.error) {
@@ -50,15 +52,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: jobs.count ?? 0,
     jobs: jobs.data ?? [],
     locations: locations.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 
 export default function JobsRoute() {
-  const { count, locations, jobs } = useLoaderData<typeof loader>();
+  const { count, tags, jobs } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <JobsTable data={jobs} count={count} locations={locations} />
+      <JobsTable data={jobs} count={count} tags={tags} />
       <Outlet />
     </VStack>
   );

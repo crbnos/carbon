@@ -28,6 +28,7 @@ import {
   JobHeader,
   JobProperties,
 } from "~/modules/production";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -46,8 +47,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!jobId) throw new Error("Could not find jobId");
 
   const serviceRole = await getCarbonServiceRole();
-
-  const job = await getJob(serviceRole, jobId);
+  const [job, tags] = await Promise.all([
+    getJob(serviceRole, jobId),
+    getTagsList(serviceRole, companyId, "job"),
+  ]);
 
   if (job.error) {
     throw redirect(
@@ -58,6 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     job: job.data,
+    tags: tags.data ?? [],
     files: getJobDocuments(serviceRole, companyId, job.data),
     method: getJobMethodTree(serviceRole, jobId), // returns a promise
   });

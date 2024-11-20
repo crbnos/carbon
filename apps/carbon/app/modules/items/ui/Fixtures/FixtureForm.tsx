@@ -37,7 +37,7 @@ import {
 import { path } from "~/utils/path";
 
 type FixtureFormProps = {
-  initialValues: z.infer<typeof fixtureValidator>;
+  initialValues: z.infer<typeof fixtureValidator> & { tags: string[] };
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -189,7 +189,7 @@ const FixtureForm = ({
                 )}
                 <Boolean name="active" label="Active" />
 
-                <CustomFormFields table="fixture" />
+                <CustomFormFields table="fixture" tags={initialValues.tags} />
               </div>
             </ModalCardBody>
             <ModalCardFooter>

@@ -1,3 +1,5 @@
+import type { Json } from "@carbon/database";
+import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
@@ -17,8 +19,12 @@ import {
 import { Await, useFetcher, useParams } from "@remix-run/react";
 import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { Boolean, Tags } from "~/components/Form";
+import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
@@ -42,6 +48,7 @@ const ConsumableProperties = () => {
     files: Promise<ItemFile[]>;
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
+    tags: { name: string }[];
   }>(path.to.consumable(itemId));
 
   const locations = sharedConsumablesData?.locations ?? [];
@@ -65,14 +72,18 @@ const ConsumableProperties = () => {
   }, [fetcher.data]);
   const onUpdate = useCallback(
     (
-      field: "replenishmentSystem" | "defaultMethodType" | "itemTrackingType",
+      field:
+        | "replenishmentSystem"
+        | "defaultMethodType"
+        | "itemTrackingType"
+        | "active",
       value: string
     ) => {
       const formData = new FormData();
 
       formData.append("items", itemId);
       formData.append("field", field);
-      formData.append("value", value);
+      formData.append("value", value?.toString() ?? "");
       fetcher.submit(formData, {
         method: "post",
         action: path.to.bulkUpdateItems,
@@ -81,10 +92,45 @@ const ConsumableProperties = () => {
     [fetcher, itemId]
   );
 
+  const onUpdateTags = useCallback(
+    (value: string[]) => {
+      const formData = new FormData();
+
+      formData.append("ids", itemId);
+      formData.append("table", "consumable");
+
+      value.forEach((v) => {
+        formData.append("value", v);
+      });
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.tags,
+      });
+    },
+    [fetcher, itemId]
+  );
+
+  const onUpdateCustomFields = useCallback(
+    (value: string) => {
+      const formData = new FormData();
+
+      formData.append("ids", itemId);
+      formData.append("table", "consumable");
+      formData.append("value", value);
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.customFields,
+      });
+    },
+    [fetcher, itemId]
+  );
+
   return (
     <VStack
       spacing={4}
-      className="w-96 bg-background h-full overflow-y-auto border-l border-border px-4 py-2"
+      className="w-96 bg-background h-full overflow-y-auto border-l border-border px-4 py-2 text-sm"
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
@@ -236,6 +282,54 @@ const ConsumableProperties = () => {
           />
         ))}
       </VStack>
+      <ValidatedForm
+        defaultValues={{
+          active: routeData?.consumableSummary?.active ?? undefined,
+        }}
+        validator={z.object({
+          active: zfd.checkbox(),
+        })}
+        className="w-full"
+      >
+        <Boolean
+          label="Active"
+          name="active"
+          variant="small"
+          onChange={(value) => {
+            onUpdate("active", value ? "on" : "off");
+          }}
+        />
+      </ValidatedForm>
+      <ValidatedForm
+        defaultValues={{
+          tags: routeData?.consumableSummary?.tags ?? [],
+        }}
+        validator={z.object({
+          tags: z.array(z.string()).optional(),
+        })}
+        className="w-full"
+      >
+        <Tags
+          label="Tags"
+          name="tags"
+          availableTags={routeData?.tags ?? []}
+          table="consumable"
+          inline
+          onChange={onUpdateTags}
+        />
+      </ValidatedForm>
+
+      <CustomFormInlineFields
+        customFields={
+          (routeData?.consumableSummary?.customFields ?? {}) as Record<
+            string,
+            Json
+          >
+        }
+        table="consumable"
+        tags={routeData?.consumableSummary?.tags ?? []}
+        onUpdate={onUpdateCustomFields}
+      />
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">

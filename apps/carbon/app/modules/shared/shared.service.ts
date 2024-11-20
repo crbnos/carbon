@@ -48,13 +48,13 @@ export async function getTagsList(
   companyId: string,
   table?: string | null
 ) {
-  let query = client.from("tag").select("id, name").eq("companyId", companyId);
+  let query = client.from("tag").select("name").eq("companyId", companyId);
 
   if (table) {
     query = query.eq("table", table);
   }
 
-  return query;
+  return query.order("name");
 }
 
 export async function importCsv(

@@ -1,3 +1,4 @@
+import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -24,6 +25,7 @@ import {
   Employee,
   Location,
 } from "~/components/Form";
+import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/sales-order+/$orderId.exchange-rate";
@@ -76,6 +78,22 @@ const SalesOrderProperties = () => {
       });
     },
     [fetcher, orderId, routeData?.salesOrder]
+  );
+
+  const onUpdateCustomFields = useCallback(
+    (value: string) => {
+      const formData = new FormData();
+
+      formData.append("ids", orderId);
+      formData.append("table", "salesOrder");
+      formData.append("value", value);
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.customFields,
+      });
+    },
+    [fetcher, orderId]
   );
 
   const permissions = usePermissions();
@@ -392,6 +410,15 @@ const SalesOrderProperties = () => {
             </HStack>
           </VStack>
         )}
+      <CustomFormInlineFields
+        customFields={
+          (routeData?.salesOrder?.customFields ?? {}) as Record<string, Json>
+        }
+        table="salesOrder"
+        tags={[]}
+        onUpdate={onUpdateCustomFields}
+        isDisabled={isDisabled}
+      />
     </VStack>
   );
 };

@@ -126,19 +126,7 @@ export default function SalesRFQLine() {
         subTitle={line.customerPartId ?? ""}
         notes={line.internalNotes as JSONContent}
       />
-      <div className="grid grid-cols-1 lg:grid-cols-2 w-full flex-grow gap-2 ">
-        <CadModel
-          isReadOnly={!permissions.can("update", "sales")}
-          metadata={{
-            salesRfqLineId: line.id ?? undefined,
-            itemId: line.itemId ?? undefined,
-          }}
-          modelPath={line?.modelPath ?? null}
-          title="CAD Model"
-          uploadClassName="min-h-[420px]"
-          viewerClassName="min-h-[420px]"
-        />
-
+      <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
         <Suspense
           fallback={
             <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
@@ -158,6 +146,17 @@ export default function SalesRFQLine() {
             )}
           </Await>
         </Suspense>
+        <CadModel
+          isReadOnly={!permissions.can("update", "sales")}
+          metadata={{
+            salesRfqLineId: line.id ?? undefined,
+            itemId: line.itemId ?? undefined,
+          }}
+          modelPath={line?.modelPath ?? null}
+          title="CAD Model"
+          uploadClassName="min-h-[420px]"
+          viewerClassName="min-h-[420px]"
+        />
       </div>
 
       <Outlet />
