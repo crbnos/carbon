@@ -11,7 +11,6 @@ import {
   PopoverContent,
   PopoverTrigger,
   reactNodeToString,
-  ScrollArea,
   VStack,
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
@@ -181,7 +180,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                   ))}
               </CommandGroup>
             ) : (
-              <ScrollArea className="max-h-[300px]">
+              <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
                 <CommandGroup>
                   {activeOptions.map((option) => {
                     const isChecked = hasFilter(
@@ -222,7 +221,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                     );
                   })}
                 </CommandGroup>
-              </ScrollArea>
+              </div>
             )}
           </Command>
         </PopoverContent>

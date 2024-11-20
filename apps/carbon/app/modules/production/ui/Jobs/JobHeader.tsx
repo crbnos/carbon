@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   Heading,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -27,6 +28,8 @@ import {
   LuHardHat,
   LuList,
   LuPackage,
+  LuPanelLeft,
+  LuPanelRight,
   LuPauseCircle,
   LuPlayCircle,
   LuRefreshCw,
@@ -36,6 +39,7 @@ import {
   LuTable,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
+import { usePanels } from "~/components/Layout";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Job } from "../../types";
@@ -48,6 +52,7 @@ const JobHeader = () => {
   if (!jobId) throw new Error("jobId not found");
 
   const location = useOptimisticLocation();
+  const { toggleExplorer, toggleProperties } = usePanels();
 
   const releaseModal = useDisclosure();
   const cancelModal = useDisclosure();
@@ -73,8 +78,14 @@ const JobHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px]">
+      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px]">
         <HStack>
+          <IconButton
+            aria-label="Toggle Explorer"
+            icon={<LuPanelLeft />}
+            onClick={toggleExplorer}
+            variant="ghost"
+          />
           <Link to={path.to.jobDetails(jobId)}>
             <Heading size="h3" className="flex items-center gap-2">
               <span>{routeData?.job?.jobId}</span>
@@ -250,6 +261,12 @@ const JobHeader = () => {
               </Button>
             </>
           )}
+          <IconButton
+            aria-label="Toggle Properties"
+            icon={<LuPanelRight />}
+            onClick={toggleProperties}
+            variant="ghost"
+          />
         </HStack>
       </div>
       {releaseModal.isOpen && (

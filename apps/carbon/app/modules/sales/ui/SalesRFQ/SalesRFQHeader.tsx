@@ -5,6 +5,7 @@ import {
   Button,
   HStack,
   Heading,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -17,8 +18,15 @@ import {
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
-import { LuAlertTriangle, LuRefreshCw, LuXCircle } from "react-icons/lu";
+import {
+  LuAlertTriangle,
+  LuPanelLeft,
+  LuPanelRight,
+  LuRefreshCw,
+  LuXCircle,
+} from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
+import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -30,6 +38,7 @@ const SalesRFQHeader = () => {
 
   const convertToQuoteModal = useDisclosure();
   const requiresCustomerAlert = useDisclosure();
+  const { toggleExplorer, toggleProperties } = usePanels();
 
   const permissions = usePermissions();
 
@@ -43,12 +52,17 @@ const SalesRFQHeader = () => {
   const statusFetcher = useFetcher<{}>();
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px]">
+    <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px]">
       <HStack className="w-full justify-between">
         <HStack>
+          <IconButton
+            aria-label="Toggle Explorer"
+            icon={<LuPanelLeft />}
+            onClick={toggleExplorer}
+            variant="ghost"
+          />
           <Link to={path.to.salesRfqDetails(rfqId)}>
             <Heading size="h3" className="flex items-center gap-2">
-              {/* <ModuleIcon icon={<RiProgress2Line />} /> */}
               <span>{routeData?.rfqSummary?.rfqId}</span>
             </Heading>
           </Link>
@@ -146,6 +160,12 @@ const SalesRFQHeader = () => {
               </Button>
             </>
           )}
+          <IconButton
+            aria-label="Toggle Properties"
+            icon={<LuPanelRight />}
+            onClick={toggleProperties}
+            variant="ghost"
+          />
         </HStack>
       </HStack>
       {convertToQuoteModal.isOpen && (
