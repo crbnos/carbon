@@ -26,10 +26,29 @@ export function useCustomColumns<T extends { customFields: Json }>(
 
   schema?.forEach((field) => {
     customColumns.push({
-      accessorKey: `customFields.${field.id}`,
+      accessorKey: `customFields->>${field.id}`,
       header: field.name,
       meta: {
         icon: <ColumnIcon dataTypeId={field.dataTypeId} />,
+        filter:
+          field.dataTypeId === DataType.Boolean
+            ? {
+                type: "static",
+                options: [
+                  { value: "on", label: "Yes" },
+                  { value: "", label: "No" },
+                ],
+              }
+            : field.dataTypeId === DataType.List
+            ? {
+                type: "static",
+                options:
+                  field.listOptions?.map((option) => ({
+                    value: option,
+                    label: <Enumerable value={option} />,
+                  })) || [],
+              }
+            : undefined,
       },
       cell: (item) => {
         switch (field.dataTypeId) {

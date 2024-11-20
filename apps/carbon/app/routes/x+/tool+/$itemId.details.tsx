@@ -75,6 +75,7 @@ export default function ToolDetailsRoute() {
     itemTrackingType: toolData.toolSummary?.itemTrackingType ?? "Inventory",
     active: toolData.toolSummary?.active ?? true,
     unitOfMeasureCode: toolData.toolSummary?.unitOfMeasureCode ?? "EA",
+    tags: toolData.toolSummary?.tags ?? [],
     ...getCustomFields(toolData.toolSummary?.customFields ?? {}),
   };
 

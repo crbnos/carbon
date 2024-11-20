@@ -196,6 +196,8 @@ export const path = {
     customField: (tableId: string, id: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/${id}`),
     customFields: `${x}/settings/custom-fields`,
+    customFieldsTable: (table: string) =>
+      generatePath(`${x}/settings/custom-fields/${table}`),
     customFieldList: (id: string) =>
       generatePath(`${x}/settings/custom-fields/${id}`),
     deactivateUsers: `${x}/users/deactivate`,
@@ -808,6 +810,7 @@ export const path = {
     supplierTypes: `${x}/purchasing/supplier-types`,
     tableSequence: (id: string) =>
       generatePath(`${x}/settings/sequences/${id}`),
+    tags: `${x}/settings/tags`,
     terms: `${x}/settings/terms`,
     theme: `${x}/account/theme`,
     timecards: `${x}/timecards`,

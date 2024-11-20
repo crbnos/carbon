@@ -33,7 +33,7 @@ import { itemTrackingTypes, toolValidator } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type ToolFormProps = {
-  initialValues: z.infer<typeof toolValidator>;
+  initialValues: z.infer<typeof toolValidator> & { tags: string[] };
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -163,7 +163,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                 )}
                 <Boolean name="active" label="Active" />
 
-                <CustomFormFields table="tool" />
+                <CustomFormFields table="tool" tags={initialValues.tags} />
               </div>
             </ModalCardBody>
             <ModalCardFooter>

@@ -3,7 +3,7 @@ import { CommandEmpty } from "cmdk";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useId, useMemo, useRef, useState } from "react";
 import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
-import { LuPlus, LuX } from "react-icons/lu";
+import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { Button } from "./Button";
@@ -35,9 +35,14 @@ export type CreatableMultiSelectProps = Omit<
   isReadOnly?: boolean;
   label?: string;
   placeholder?: string;
+  itemHeight?: number;
+  showCreateOptionOnEmpty?: boolean;
+  inline?: (
+    value: string[],
+    options: { value: string; label: string; helper?: string }[]
+  ) => React.ReactNode;
   onChange: (selected: string[]) => void;
   onCreateOption?: (inputValue: string) => void;
-  itemHeight?: number;
 };
 
 const CreatableMultiSelect = forwardRef<
@@ -53,11 +58,13 @@ const CreatableMultiSelect = forwardRef<
       isClearable,
       isReadOnly,
       placeholder,
-      onChange,
       label,
       className,
-      onCreateOption,
       itemHeight = 40,
+      showCreateOptionOnEmpty = true,
+      inline,
+      onChange,
+      onCreateOption,
       ...props
     },
     ref
@@ -72,54 +79,76 @@ const CreatableMultiSelect = forwardRef<
     };
 
     const hasSelections = value.length > 0;
+    const isInlinePreview = !!inline;
 
     return (
-      <HStack spacing={1}>
+      <HStack
+        className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
+        spacing={1}
+      >
+        {isInlinePreview && Array.isArray(value) && value.length > 0 && (
+          <span className="flex-grow line-clamp-1">
+            {inline(value, options)}
+          </span>
+        )}
+
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <Button
-              aria-controls={id}
-              aria-expanded={open}
-              role="combobox"
-              tabIndex={0}
-              variant="secondary"
-              className={cn(
-                multiSelectTriggerVariants({ size, hasSelections }),
-                "bg-transparent px-2",
-                className
-              )}
-              isDisabled={isReadOnly}
-              onClick={() => {
-                if (!isReadOnly) setOpen(!open);
-              }}
-              onKeyDown={(e) => {
-                if ((e.key === "Enter" || e.key === " ") && !isReadOnly) {
-                  setOpen(!open);
-                }
-              }}
-              asChild
-            >
-              <div>
-                {hasSelections ? (
-                  <div className="flex gap-1 flex-wrap">
-                    {value.map((item) => (
-                      <SelectedOption
-                        key={item.toString()}
-                        item={item}
-                        options={options}
-                        onUnselect={handleUnselect}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">
-                    {placeholder ?? "Search..."}
-                  </span>
+            {inline ? (
+              <IconButton
+                size={size ?? "sm"}
+                variant="secondary"
+                aria-label={hasSelections ? "Edit" : "Add"}
+                icon={hasSelections ? <LuSettings2 /> : <LuPlus />}
+                ref={ref}
+                isDisabled={isReadOnly}
+                onClick={() => setOpen(true)}
+              />
+            ) : (
+              <Button
+                aria-controls={id}
+                aria-expanded={open}
+                role="combobox"
+                tabIndex={0}
+                variant="secondary"
+                className={cn(
+                  multiSelectTriggerVariants({ size, hasSelections }),
+                  "bg-transparent px-2",
+                  className
                 )}
+                isDisabled={isReadOnly}
+                onClick={() => {
+                  if (!isReadOnly) setOpen(!open);
+                }}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && !isReadOnly) {
+                    setOpen(!open);
+                  }
+                }}
+                asChild
+              >
+                <div>
+                  {hasSelections ? (
+                    <div className="flex gap-1 flex-wrap">
+                      {value.map((item) => (
+                        <SelectedOption
+                          key={item.toString()}
+                          item={item}
+                          options={options}
+                          onUnselect={handleUnselect}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {placeholder ?? "Search..."}
+                    </span>
+                  )}
 
-                <RxMagnifyingGlass className="h-4 w-4 shrink-0 opacity-50" />
-              </div>
-            </Button>
+                  <RxMagnifyingGlass className="h-4 w-4 shrink-0 opacity-50" />
+                </div>
+              </Button>
+            )}
           </PopoverTrigger>
           <PopoverContent
             align="start"
@@ -135,16 +164,17 @@ const CreatableMultiSelect = forwardRef<
               label={label}
               search={search}
               setSearch={setSearch}
+              showCreateOptionOnEmpty={showCreateOptionOnEmpty}
             />
           </PopoverContent>
         </Popover>
         {isClearable && !isReadOnly && value && (
           <IconButton
-            variant="ghost"
+            variant={isInlinePreview ? "secondary" : "ghost"}
             aria-label="Clear"
             icon={<LuX />}
             onClick={() => onChange?.([])}
-            size={size === "sm" ? "md" : size}
+            size={isInlinePreview ? "sm" : size}
           />
         )}
       </HStack>
@@ -165,6 +195,7 @@ type VirtualizedCommandProps = {
   label?: string;
   search: string;
   setSearch: (search: string) => void;
+  showCreateOptionOnEmpty?: boolean;
 };
 
 function VirtualizedCommand({
@@ -177,6 +208,7 @@ function VirtualizedCommand({
   label,
   search,
   setSearch,
+  showCreateOptionOnEmpty = false,
 }: VirtualizedCommandProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -195,16 +227,19 @@ function VirtualizedCommand({
       )
     );
 
-    return isExactMatch
-      ? filtered
-      : [
-          ...filtered,
-          {
-            label: `Create`,
-            value: "create",
-          },
-        ];
-  }, [options, search]);
+    const trimmedSearch = search.trim();
+    if (isExactMatch || (trimmedSearch === "" && !showCreateOptionOnEmpty)) {
+      return filtered;
+    }
+
+    return [
+      ...filtered,
+      {
+        label: `Create`,
+        value: "create",
+      },
+    ];
+  }, [options, search, showCreateOptionOnEmpty]);
 
   const virtualizer = useVirtualizer({
     count: filteredOptions.length,

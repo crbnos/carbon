@@ -1,3 +1,4 @@
+import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -21,6 +22,7 @@ import {
   Employee,
   Location,
 } from "~/components/Form";
+import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import { path } from "~/utils/path";
@@ -58,6 +60,22 @@ const SalesRFQProperties = () => {
       });
     },
     [fetcher, rfqId, routeData?.rfqSummary]
+  );
+
+  const onUpdateCustomFields = useCallback(
+    (value: string) => {
+      const formData = new FormData();
+
+      formData.append("ids", rfqId);
+      formData.append("table", "salesRfq");
+      formData.append("value", value);
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.customFields,
+      });
+    },
+    [fetcher, rfqId]
   );
 
   const optimisticAssignment = useOptimisticAssignment({
@@ -301,6 +319,16 @@ const SalesRFQProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      <CustomFormInlineFields
+        customFields={
+          (routeData?.rfqSummary?.customFields ?? {}) as Record<string, Json>
+        }
+        table="salesRfq"
+        tags={[]}
+        onUpdate={onUpdateCustomFields}
+        isDisabled={isDisabled}
+      />
     </VStack>
   );
 };

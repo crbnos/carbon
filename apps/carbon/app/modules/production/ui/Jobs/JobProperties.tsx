@@ -13,6 +13,7 @@ import { LuCopy, LuLink } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 
+import type { Json } from "@carbon/database";
 import {
   DatePicker,
   NumberControlled,
@@ -22,7 +23,14 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { Assignee, useOptimisticAssignment } from "~/components";
-import { Customer, Item, Location, UnitOfMeasure } from "~/components/Form";
+import {
+  Customer,
+  Item,
+  Location,
+  Tags,
+  UnitOfMeasure,
+} from "~/components/Form";
+import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -36,6 +44,7 @@ const JobProperties = () => {
 
   const routeData = useRouteData<{
     job: Job;
+    tags: { name: string }[];
   }>(path.to.job(jobId));
 
   const fetcher = useFetcher<typeof action>();
@@ -65,6 +74,40 @@ const JobProperties = () => {
       });
     },
     [fetcher, jobId, routeData?.job]
+  );
+
+  const onUpdateCustomFields = useCallback(
+    (value: string) => {
+      const formData = new FormData();
+
+      formData.append("ids", jobId);
+      formData.append("table", "job");
+      formData.append("value", value);
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.customFields,
+      });
+    },
+    [fetcher, jobId]
+  );
+
+  const onUpdateTags = useCallback(
+    (value: string[]) => {
+      const formData = new FormData();
+
+      formData.append("ids", jobId);
+      formData.append("table", "job");
+      value.forEach((v) => {
+        formData.append("value", v);
+      });
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.tags,
+      });
+    },
+    [fetcher, jobId]
   );
 
   const permissions = usePermissions();
@@ -314,6 +357,35 @@ const JobProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          tags: routeData?.job.tags ?? [],
+        }}
+        validator={z.object({
+          tags: z.array(z.string()).optional(),
+        })}
+        className="w-full"
+      >
+        <Tags
+          availableTags={routeData?.tags ?? []}
+          label="Tags"
+          name="tags"
+          table="job"
+          inline
+          onChange={onUpdateTags}
+        />
+      </ValidatedForm>
+
+      <CustomFormInlineFields
+        customFields={
+          (routeData?.job?.customFields ?? {}) as Record<string, Json>
+        }
+        table="job"
+        tags={routeData?.job.tags ?? []}
+        onUpdate={onUpdateCustomFields}
+        isDisabled={isDisabled}
+      />
     </VStack>
   );
 };

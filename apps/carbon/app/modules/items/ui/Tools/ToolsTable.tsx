@@ -16,6 +16,7 @@ import {
   MenuItem,
   toast,
   useDisclosure,
+  VStack,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useFetcher, useNavigate } from "@remix-run/react";
@@ -23,11 +24,11 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuAlignJustify,
-  LuAlignLeft,
   LuBookMarked,
   LuCalendar,
   LuCheck,
   LuPencil,
+  LuTag,
   LuTrash,
   LuUser,
 } from "react-icons/lu";
@@ -50,16 +51,15 @@ import { itemTrackingTypes } from "~/modules/items";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type ToolsTableProps = {
   data: Tool[];
-  itemPostingGroups: ListItem[];
+  tags: { name: string }[];
   count: number;
 };
 
-const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
+const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
 
@@ -81,25 +81,18 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
               thumbnailPath={row.original.thumbnailPath}
               type="Tool"
             />
-            <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
-              {row.original.id}
-            </Hyperlink>
+            <VStack spacing={0}>
+              <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
+                {row.original.id}
+              </Hyperlink>
+              <div className="w-full truncate text-muted-foreground text-xs">
+                {row.original.name}
+              </div>
+            </VStack>
           </HStack>
         ),
         meta: {
           icon: <LuBookMarked />,
-        },
-      },
-      {
-        accessorKey: "name",
-        header: "Short Description",
-        cell: (item) => (
-          <div className="max-w-[320px] truncate">
-            {item.getValue<string>()}
-          </div>
-        ),
-        meta: {
-          icon: <LuAlignLeft />,
         },
       },
       {
@@ -162,6 +155,30 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
             })),
           },
           icon: <RxCodesandboxLogo />,
+        },
+      },
+      {
+        accessorKey: "tags",
+        header: "Tags",
+        cell: ({ row }) => (
+          <HStack spacing={0} className="gap-1">
+            {row.original.tags?.map((tag) => (
+              <Badge key={tag} variant="secondary">
+                {tag}
+              </Badge>
+            ))}
+          </HStack>
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: tags?.map((tag) => ({
+              value: tag.name,
+              label: <Badge variant="secondary">{tag.name}</Badge>,
+            })),
+            isArray: true,
+          },
+          icon: <LuTag />,
         },
       },
       {
@@ -248,7 +265,7 @@ const ToolsTable = memo(({ data, count }: ToolsTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, people]);
+  }, [customColumns, people, tags]);
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {

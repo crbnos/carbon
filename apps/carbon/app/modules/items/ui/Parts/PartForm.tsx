@@ -37,7 +37,7 @@ import {
 import { path } from "~/utils/path";
 
 type PartFormProps = {
-  initialValues: z.infer<typeof partValidator>;
+  initialValues: z.infer<typeof partValidator> & { tags?: string[] };
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -185,7 +185,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   />
                 )}
                 <Boolean name="active" label="Active" />
-                <CustomFormFields table="part" />
+                <CustomFormFields table="part" tags={initialValues.tags} />
               </div>
             </ModalCardBody>
             <ModalCardFooter>

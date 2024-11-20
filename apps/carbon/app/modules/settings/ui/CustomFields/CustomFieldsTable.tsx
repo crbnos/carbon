@@ -9,7 +9,7 @@ import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { modulesType, type CustomFieldsTableType } from "~/modules/settings";
-import { customFieldTablesWithTags } from "~/modules/shared";
+import { tablesWithTags } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type CustomFieldsTableProps = {
@@ -30,8 +30,8 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <Hyperlink to={row.original.table!}>{row.original.name}</Hyperlink>
-            {customFieldTablesWithTags.includes(row.original.table!) && (
-              <LuTags className="text-red-500" />
+            {tablesWithTags.includes(row.original.table!) && (
+              <LuTags className="text-emerald-500" />
             )}
           </div>
         ),

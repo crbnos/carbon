@@ -39,6 +39,17 @@ export async function action({ request }: ActionFunctionArgs) {
           updatedAt: new Date().toISOString(),
         })
       );
+    case "active":
+      return json(
+        await client
+          .from("item")
+          .update({
+            active: value === "on",
+            updatedBy: userId,
+            updatedAt: new Date().toISOString(),
+          })
+          .in("id", items as string[])
+      );
     default:
       return json({ error: { message: "Invalid field" }, data: null });
   }

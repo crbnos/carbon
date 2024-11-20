@@ -5,11 +5,8 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  ConsumablesTable,
-  getConsumables,
-  getItemPostingGroupsList,
-} from "~/modules/items";
+import { ConsumablesTable, getConsumables } from "~/modules/items";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -32,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [consumables, itemPostingGroups] = await Promise.all([
+  const [consumables, tags] = await Promise.all([
     getConsumables(client, companyId, {
       search,
       supplierId,
@@ -41,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getItemPostingGroupsList(client, companyId),
+    getTagsList(client, companyId, "consumable"),
   ]);
 
   if (consumables.error) {
@@ -57,21 +54,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: consumables.count ?? 0,
     consumables: consumables.data ?? [],
-    itemPostingGroups: itemPostingGroups.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 
 export default function ConsumablesSearchRoute() {
-  const { count, consumables, itemPostingGroups } =
-    useLoaderData<typeof loader>();
+  const { count, consumables, tags } = useLoaderData<typeof loader>();
+  useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ConsumablesTable
-        data={consumables}
-        count={count}
-        itemPostingGroups={itemPostingGroups}
-      />
+      <ConsumablesTable data={consumables} count={count} tags={tags} />
       <Outlet />
     </VStack>
   );

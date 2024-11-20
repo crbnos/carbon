@@ -80,7 +80,9 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
           <span className="text-xs text-muted-foreground">{label}</span>
         )}
         <HStack spacing={0} className="w-full justify-between">
-          {value && <span className="flex-grow line-clamp-1">{value}</span>}
+          {value && (
+            <span className="flex-grow text-sm line-clamp-1">{value}</span>
+          )}
           <IconButton
             icon={value ? <LuSettings2 /> : <LuPlus />}
             aria-label={value ? "Edit" : "Add"}
