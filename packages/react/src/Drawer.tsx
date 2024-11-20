@@ -63,7 +63,7 @@ const DrawerBody = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col flex-1 items-start justify-start overflow-y-auto w-full px-6 py-4",
+      "flex flex-col flex-1 items-start justify-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full px-6 py-4",
       className
     )}
     {...props}

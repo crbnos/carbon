@@ -96,7 +96,7 @@ export default function JobMakeMethodRoute() {
   const { materials, operations, productionData } = loaderData;
 
   return (
-    <div className="h-[calc(100vh-49px)] w-full items-start overflow-y-auto">
+    <div className="h-[calc(100dvh-49px)] w-full items-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
       <VStack spacing={2} className="p-2">
         <JobMakeMethodTools />
         <JobBillOfProcess

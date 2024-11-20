@@ -11,7 +11,7 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
 
   return (
     <CollapsibleSidebar>
-      <div className="overflow-y-auto h-full w-full pb-8">
+      <div className="overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8">
         <VStack>
           <VStack spacing={1} className="p-2">
             {links.map((route) => {

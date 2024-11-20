@@ -61,7 +61,7 @@ export default function InfiniteScroll<T extends { id: string }>({
 
   return (
     <div className="w-full">
-      <ul className="relative h-full overflow-y-auto ">
+      <ul className="relative h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
         {items.map((item) => (
           <Component key={item.id} item={item} />
         ))}

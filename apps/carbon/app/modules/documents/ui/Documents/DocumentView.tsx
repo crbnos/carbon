@@ -61,7 +61,7 @@ const DocumentPreview = ({ bucket, document }: DocumentPreviewProps) => {
           onLoadSuccess={onDocumentLoadSuccess}
           loading={<SkeletonDocument />}
         >
-          <div className="overflow-auto max-h-[calc(100vh-91px)]">
+          <div className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[calc(100dvh-91px)]">
             {Array.from(new Array(numPages), (_, index) => (
               <Page
                 key={`page_${index + 1}`}

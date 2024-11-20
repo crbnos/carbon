@@ -85,7 +85,7 @@ export function IntegrationForm({
             </VStack>
           </DrawerHeader>
           <DrawerBody>
-            <ScrollArea className="h-[calc(100vh-240px)]">
+            <ScrollArea className="h-[calc(100dvh-240px)]">
               <VStack spacing={2}>
                 <Heading size="h3">How it works</Heading>
                 <p className="text-sm text-muted-foreground">

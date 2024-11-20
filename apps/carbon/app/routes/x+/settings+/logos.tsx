@@ -70,7 +70,7 @@ export default function LogosRoute() {
   if (!company) throw new Error("Company not found");
 
   return (
-    <ScrollArea className="w-full h-[calc(100vh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
       <VStack spacing={2} className="p-2 h-full">
         <Card>
           <CardHeader>

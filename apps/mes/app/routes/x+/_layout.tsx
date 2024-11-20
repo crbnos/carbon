@@ -197,7 +197,7 @@ export default function AuthenticatedRoute() {
                       />
                     </div>
                   </div>
-                  <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto bg-background">
+                  <div className="flex flex-col h-[calc(100%-52px)] justify-between overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent bg-background">
                     <div className="flex flex-col">
                       <Separator />
                       <Nav

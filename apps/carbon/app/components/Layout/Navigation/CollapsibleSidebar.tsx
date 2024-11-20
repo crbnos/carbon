@@ -84,7 +84,7 @@ export const CollapsibleSidebar = ({
       initial={variants.visible}
       transition={{ duration: 0.2, ease: "easeInOut" }}
       variants={variants}
-      className="relative flex h-[calc(100vh-49px)]"
+      className="relative flex h-[calc(100dvh-49px)]"
     >
       <div className="h-full w-full overflow-y-scroll bg-card border-r border-border">
         {isOpen ? children : null}
