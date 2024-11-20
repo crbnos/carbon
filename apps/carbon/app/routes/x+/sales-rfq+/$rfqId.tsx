@@ -1,8 +1,5 @@
 import {
   ClientOnly,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
   supportedModelTypes,
   VStack,
   type JSONContent,
@@ -28,6 +25,7 @@ import {
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/SalesRFQ/useOptimiticDocumentDrag";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -148,42 +146,30 @@ export default function SalesRFQRoute() {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <div className="flex flex-col h-[calc(100dvh-49px)] w-full">
-        <SalesRFQHeader />
-        <div className="flex h-[calc(100dvh-99px)] w-full">
-          <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+      <PanelProvider>
+        <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+          <SalesRFQHeader />
+          <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
             <div className="flex flex-grow overflow-hidden">
               <ClientOnly fallback={null}>
                 {() => (
-                  <ResizablePanelGroup direction="horizontal">
-                    <ResizablePanel
-                      order={1}
-                      minSize={10}
-                      defaultSize={20}
-                      className="bg-card h-full z-0 shadow-lg"
-                    >
-                      <div className="grid w-full h-full overflow-hidden">
-                        <SalesRFQExplorer />
+                  <ResizablePanels
+                    explorer={<SalesRFQExplorer />}
+                    content={
+                      <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                        <VStack spacing={2} className="p-2">
+                          <Outlet />
+                        </VStack>
                       </div>
-                    </ResizablePanel>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel order={2} className="z-1">
-                      <div className="flex h-[calc(100dvh-99px)] w-full">
-                        <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-                          <VStack spacing={2} className="p-2">
-                            <Outlet />
-                          </VStack>
-                        </div>
-                        <SalesRFQProperties />
-                      </div>
-                    </ResizablePanel>
-                  </ResizablePanelGroup>
+                    }
+                    properties={<SalesRFQProperties />}
+                  />
                 )}
               </ClientOnly>
             </div>
           </div>
         </div>
-      </div>
+      </PanelProvider>
     </DndContext>
   );
 }

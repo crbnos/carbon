@@ -117,5 +117,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
     userId,
   });
 
-  throw redirect(path.to.salesOrderLine(orderId, lineId));
+  throw redirect(path.to.jobDetails(id));
 }

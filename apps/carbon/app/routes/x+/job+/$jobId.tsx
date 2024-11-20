@@ -1,12 +1,7 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  ClientOnly,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@carbon/react";
+import { ClientOnly } from "@carbon/react";
 import {
   Await,
   defer,
@@ -17,6 +12,7 @@ import {
 } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { Suspense } from "react";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
 import {
@@ -74,57 +70,51 @@ export default function JobRoute() {
   const { method } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-      <JobHeader />
-      <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
-        <div className="flex flex-grow overflow-hidden">
-          <ClientOnly fallback={null}>
-            {() => (
-              <ResizablePanelGroup direction="horizontal">
-                <ResizablePanel
-                  order={1}
-                  minSize={10}
-                  defaultSize={20}
-                  className="bg-card shadow-lg"
-                >
-                  <div className="grid w-full h-[calc(100dvh-99px)] overflow-hidden p-2">
-                    <Suspense fallback={<ExplorerSkeleton />}>
-                      <Await
-                        resolve={method}
-                        errorElement={
-                          <div className="p-2 text-red-500">
-                            Error loading job tree.
-                          </div>
-                        }
-                      >
-                        {(resolvedMethod) => (
-                          <JobBoMExplorer
-                            method={
-                              resolvedMethod.data &&
-                              resolvedMethod.data.length > 0
-                                ? flattenTree(resolvedMethod.data[0])
-                                : []
-                            }
-                          />
-                        )}
-                      </Await>
-                    </Suspense>
-                  </div>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel order={2} className="z-1">
-                  <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <JobHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ClientOnly fallback={null}>
+              {() => (
+                <ResizablePanels
+                  explorer={
+                    <div className="grid w-full h-[calc(100dvh-99px)] overflow-hidden p-2">
+                      <Suspense fallback={<ExplorerSkeleton />}>
+                        <Await
+                          resolve={method}
+                          errorElement={
+                            <div className="p-2 text-red-500">
+                              Error loading job tree.
+                            </div>
+                          }
+                        >
+                          {(resolvedMethod) => (
+                            <JobBoMExplorer
+                              method={
+                                resolvedMethod.data &&
+                                resolvedMethod.data.length > 0
+                                  ? flattenTree(resolvedMethod.data[0])
+                                  : []
+                              }
+                            />
+                          )}
+                        </Await>
+                      </Suspense>
+                    </div>
+                  }
+                  content={
                     <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                       <Outlet />
                     </div>
-                    <JobProperties />
-                  </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            )}
-          </ClientOnly>
+                  }
+                  properties={<JobProperties />}
+                />
+              )}
+            </ClientOnly>
+          </div>
         </div>
       </div>
-    </div>
+    </PanelProvider>
   );
 }

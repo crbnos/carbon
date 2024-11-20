@@ -1,16 +1,11 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  ClientOnly,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  VStack,
-} from "@carbon/react";
+import { ClientOnly, VStack } from "@carbon/react";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
 import {
   getCustomer,
@@ -118,40 +113,29 @@ export default function QuoteRoute() {
   const { methods } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-      <QuoteHeader />
-      <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
-        <div className="flex flex-grow overflow-hidden">
-          <ClientOnly fallback={null}>
-            {() => (
-              <ResizablePanelGroup direction="horizontal">
-                <ResizablePanel
-                  order={1}
-                  minSize={10}
-                  defaultSize={20}
-                  className="bg-card shadow-lg"
-                >
-                  <div className="grid w-full h-[calc(100dvh-99px)] overflow-hidden">
-                    <QuoteExplorer methods={methods} />
-                  </div>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel order={2} className="z-1">
-                  <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <QuoteHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ClientOnly fallback={null}>
+              {() => (
+                <ResizablePanels
+                  explorer={<QuoteExplorer methods={methods} />}
+                  content={
                     <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                       <VStack spacing={2} className="p-2">
                         <Outlet />
                       </VStack>
                     </div>
-
-                    <QuoteProperties />
-                  </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            )}
-          </ClientOnly>
+                  }
+                  properties={<QuoteProperties />}
+                />
+              )}
+            </ClientOnly>
+          </div>
         </div>
       </div>
-    </div>
+    </PanelProvider>
   );
 }
