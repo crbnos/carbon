@@ -1,7 +1,10 @@
+"use client";
+
+import { LuStopCircle } from "react-icons/lu";
+
 import { useCarbon } from "@carbon/auth";
 import {
   Button,
-  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -9,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  SidebarMenuButton,
   Spinner,
   toast,
   useDisclosure,
@@ -17,18 +21,15 @@ import { getLocalTimeZone } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
-import { FaFlagCheckered } from "react-icons/fa6";
 import { useUser } from "~/hooks";
-import type { action } from "~/routes/x+/end-shift";
-import {
-  getActiveJobOperationsByEmployee,
-  type Operation,
-} from "~/services/operations.service";
+import type { action as endShiftAction } from "~/routes/x+/end-shift";
+import type { Operation } from "~/services/operations.service";
+import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
-export const EndShift = ({ isCollapsed }: { isCollapsed: boolean }) => {
+export function EndShift() {
   const confirmModal = useDisclosure();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useFetcher<typeof endShiftAction>();
   const user = useUser();
   const { carbon } = useCarbon();
   const [operations, setOperations] = useState<Operation[]>([]);
@@ -66,19 +67,13 @@ export const EndShift = ({ isCollapsed }: { isCollapsed: boolean }) => {
 
   return (
     <>
-      {isCollapsed ? (
-        <IconButton
-          variant="destructive"
-          size="lg"
-          icon={<FaFlagCheckered className="h-4 w-4" />}
-          aria-label="End Shift"
-          onClick={openModal}
-        />
-      ) : (
-        <Button size="lg" variant="destructive" onClick={openModal}>
-          End Shift
-        </Button>
-      )}
+      <SidebarMenuButton
+        className="text-sidebar-foreground/70"
+        onClick={openModal}
+      >
+        <LuStopCircle className="text-sidebar-foreground/70" />
+        <span>End Shift</span>
+      </SidebarMenuButton>
       {confirmModal.isOpen && (
         <Modal
           open={confirmModal.isOpen}
@@ -159,4 +154,4 @@ export const EndShift = ({ isCollapsed }: { isCollapsed: boolean }) => {
       )}
     </>
   );
-};
+}
