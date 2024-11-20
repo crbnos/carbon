@@ -154,8 +154,8 @@ export default function SalesRFQLine() {
           }}
           modelPath={line?.modelPath ?? null}
           title="CAD Model"
-          uploadClassName="aspect-square min-h-[420px]"
-          viewerClassName="aspect-square min-h-[420px]"
+          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
         />
       </div>
 
