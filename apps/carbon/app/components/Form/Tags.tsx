@@ -1,39 +1,54 @@
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
-import { useMount } from "@carbon/react";
+import { Badge, HStack } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
-import type { getTagsList } from "~/modules/shared";
 import type { action } from "~/routes/x+/settings+/tags.new";
 import { path } from "~/utils/path";
 
-type TagsSelectProps = Omit<CreatableMultiSelectProps, "options" | "value"> & {
+type TagsSelectProps = Omit<
+  CreatableMultiSelectProps,
+  "options" | "value" | "inline"
+> & {
+  availableTags: { name: string }[];
   table?: string;
+  inline?: boolean;
 };
 
-const Tags = ({ table, ...props }: TagsSelectProps) => {
-  const tagsFetcher = useFetcher<Awaited<ReturnType<typeof getTagsList>>>();
-  const newTagFetcher = useFetcher<typeof action>();
+const TagsPreview = (
+  value: string[],
+  options: { value: string; label: string; helper?: string }[]
+) => {
+  return (
+    <HStack className="space-x-0 flex-wrap gap-1 items-start">
+      {value.map((label: string) => (
+        <Badge key={label} variant="secondary">
+          {label}
+        </Badge>
+      ))}
+    </HStack>
+  );
+};
 
-  useMount(() => {
-    tagsFetcher.load(path.to.api.tags(table));
-  });
+const Tags = ({ table, availableTags, ...props }: TagsSelectProps) => {
+  const newTagFetcher = useFetcher<typeof action>();
 
   const options = useMemo(
     () =>
-      tagsFetcher.data?.data
-        ? tagsFetcher.data?.data.map((c) => ({
-            value: c.id,
-            label: c.name,
-          }))
-        : [],
-    [tagsFetcher.data]
+      availableTags.map((c) => ({
+        value: c.name,
+        label: c.name,
+      })),
+    [availableTags]
   );
+
   return (
     <CreatableMultiSelect
       label={props?.label ?? "Tag"}
       options={options}
       {...props}
+      showCreateOptionOnEmpty={false}
+      inline={props.inline ? TagsPreview : undefined}
       onCreateOption={(option) => {
         if (!option) return;
 

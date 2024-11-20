@@ -11,14 +11,28 @@ import { useControlField, useField } from "../hooks";
 
 type FormBooleanProps = {
   name: string;
+  variant?: "large" | "small";
   label?: string;
   helperText?: string;
+  isDisabled?: boolean;
   description?: string;
   onChange?: (value: boolean) => void;
 };
 
 const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
-  ({ name, label, description, helperText, onChange, ...props }, ref) => {
+  (
+    {
+      name,
+      label,
+      description,
+      helperText,
+      onChange,
+      variant,
+      isDisabled,
+      ...props
+    },
+    ref
+  ) => {
     const { getInputProps, error } = useField(name);
     const [value, setValue] = useControlField<boolean>(name);
 
@@ -27,8 +41,10 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
         {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
         <HStack>
           <Switch
+            variant={variant}
             {...getInputProps()}
             checked={value}
+            disabled={isDisabled}
             onCheckedChange={(checked) => {
               setValue(checked);
               onChange?.(checked);

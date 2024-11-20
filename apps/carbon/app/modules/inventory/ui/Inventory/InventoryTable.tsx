@@ -1,10 +1,9 @@
-import { Button, Checkbox, Combobox, HStack } from "@carbon/react";
+import { Button, Checkbox, Combobox, HStack, VStack } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
   LuAlertTriangle,
-  LuAlignLeft,
   LuBookMarked,
   LuBox,
   LuCheck,
@@ -74,25 +73,23 @@ const InventoryTable = memo(
                 // @ts-ignore
                 type={row.original.type}
               />
-              <Hyperlink
-                to={`${path.to.inventoryItem(row.original.itemId!)}/?${params}`}
-                className="min-w-[200px] max-w-[260px] truncate"
-              >
-                <>{row.original.readableId}</>
-              </Hyperlink>
+
+              <VStack spacing={0}>
+                <Hyperlink
+                  to={`${path.to.inventoryItem(
+                    row.original.itemId!
+                  )}/?${params}`}
+                >
+                  {row.original.readableId}
+                </Hyperlink>
+                <div className="w-full truncate text-muted-foreground text-xs">
+                  {row.original.name}
+                </div>
+              </VStack>
             </HStack>
           ),
           meta: {
             icon: <LuBookMarked />,
-          },
-        },
-
-        {
-          accessorKey: "name",
-          header: "Short Description",
-          cell: ({ row }) => row.original.name,
-          meta: {
-            icon: <LuAlignLeft />,
           },
         },
         {

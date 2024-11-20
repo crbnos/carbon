@@ -190,6 +190,7 @@ export type Database = {
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"]
           name: string
           number: string
+          tags: string[] | null
           type: Database["public"]["Enums"]["glAccountType"]
           updatedAt: string | null
           updatedBy: string | null
@@ -211,6 +212,7 @@ export type Database = {
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"]
           name: string
           number: string
+          tags?: string[] | null
           type: Database["public"]["Enums"]["glAccountType"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -232,6 +234,7 @@ export type Database = {
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"]
           name?: string
           number?: string
+          tags?: string[] | null
           type?: Database["public"]["Enums"]["glAccountType"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -361,6 +364,7 @@ export type Database = {
           customFields: Json | null
           id: string
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -373,6 +377,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -385,6 +390,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -1402,6 +1408,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -1413,6 +1420,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -1424,6 +1432,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -1727,6 +1736,7 @@ export type Database = {
           supplierId: string
           supplierPartId: string | null
           supplierUnitOfMeasureCode: string | null
+          tags: string[] | null
           unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
@@ -1744,6 +1754,7 @@ export type Database = {
           supplierId: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
+          tags?: string[] | null
           unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -1761,6 +1772,7 @@ export type Database = {
           supplierId?: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
+          tags?: string[] | null
           unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -2104,6 +2116,7 @@ export type Database = {
           externalId: Json | null
           id: string
           itemId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -2117,6 +2130,7 @@ export type Database = {
           externalId?: Json | null
           id: string
           itemId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2130,6 +2144,7 @@ export type Database = {
           externalId?: Json | null
           id?: string
           itemId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2362,6 +2377,7 @@ export type Database = {
           customFields: Json | null
           hoursPerWeek: number
           id: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -2373,6 +2389,7 @@ export type Database = {
           customFields?: Json | null
           hoursPerWeek?: number
           id: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2384,6 +2401,7 @@ export type Database = {
           customFields?: Json | null
           hoursPerWeek?: number
           id?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2694,6 +2712,7 @@ export type Database = {
           decimalPlaces: number
           exchangeRate: number
           id: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -2707,6 +2726,7 @@ export type Database = {
           decimalPlaces?: number
           exchangeRate?: number
           id?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2720,6 +2740,7 @@ export type Database = {
           decimalPlaces?: number
           exchangeRate?: number
           id?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -2828,6 +2849,7 @@ export type Database = {
           logo: string | null
           name: string
           phone: string | null
+          tags: string[] | null
           taxId: string | null
           taxPercent: number
           updatedAt: string | null
@@ -2850,6 +2872,7 @@ export type Database = {
           logo?: string | null
           name: string
           phone?: string | null
+          tags?: string[] | null
           taxId?: string | null
           taxPercent?: number
           updatedAt?: string | null
@@ -2872,6 +2895,7 @@ export type Database = {
           logo?: string | null
           name?: string
           phone?: string | null
+          tags?: string[] | null
           taxId?: string | null
           taxPercent?: number
           updatedAt?: string | null
@@ -3180,6 +3204,7 @@ export type Database = {
           customerLocationId: string | null
           customFields: Json | null
           id: string
+          tags: string[] | null
           userId: string | null
         }
         Insert: {
@@ -3188,6 +3213,7 @@ export type Database = {
           customerLocationId?: string | null
           customFields?: Json | null
           id?: string
+          tags?: string[] | null
           userId?: string | null
         }
         Update: {
@@ -3196,6 +3222,7 @@ export type Database = {
           customerLocationId?: string | null
           customFields?: Json | null
           id?: string
+          tags?: string[] | null
           userId?: string | null
         }
         Relationships: [
@@ -3278,6 +3305,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          tags: string[] | null
         }
         Insert: {
           addressId: string
@@ -3285,6 +3313,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          tags?: string[] | null
         }
         Update: {
           addressId?: string
@@ -3292,6 +3321,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          tags?: string[] | null
         }
         Relationships: [
           {
@@ -3746,6 +3776,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -3756,6 +3787,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -3766,6 +3798,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -3879,6 +3912,7 @@ export type Database = {
           id: string
           name: string
           protected: boolean
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -3890,6 +3924,7 @@ export type Database = {
           id?: string
           name: string
           protected?: boolean
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -3901,6 +3936,7 @@ export type Database = {
           id?: string
           name?: string
           protected?: boolean
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -4200,6 +4236,7 @@ export type Database = {
           id: string
           name: string
           parentDepartmentId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -4211,6 +4248,7 @@ export type Database = {
           id?: string
           name: string
           parentDepartmentId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -4222,6 +4260,7 @@ export type Database = {
           id?: string
           name?: string
           parentDepartmentId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -4744,6 +4783,7 @@ export type Database = {
           managerId: string | null
           shiftId: string | null
           startDate: string | null
+          tags: string[] | null
           title: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -4757,6 +4797,7 @@ export type Database = {
           managerId?: string | null
           shiftId?: string | null
           startDate?: string | null
+          tags?: string[] | null
           title?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -4770,6 +4811,7 @@ export type Database = {
           managerId?: string | null
           shiftId?: string | null
           startDate?: string | null
+          tags?: string[] | null
           title?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -5445,6 +5487,7 @@ export type Database = {
           externalId: Json | null
           id: string
           itemId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -5459,6 +5502,7 @@ export type Database = {
           externalId?: Json | null
           id: string
           itemId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -5473,6 +5517,7 @@ export type Database = {
           externalId?: Json | null
           id?: string
           itemId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -5720,6 +5765,7 @@ export type Database = {
           date: string
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
           year: number | null
@@ -5732,6 +5778,7 @@ export type Database = {
           date: string
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           year?: number | null
@@ -5744,6 +5791,7 @@ export type Database = {
           date?: string
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           year?: number | null
@@ -6082,6 +6130,7 @@ export type Database = {
           itemId: string
           itemPostingGroupId: string | null
           standardCost: number
+          tags: string[] | null
           unitCost: number
           updatedAt: string | null
           updatedBy: string | null
@@ -6096,6 +6145,7 @@ export type Database = {
           itemId: string
           itemPostingGroupId?: string | null
           standardCost?: number
+          tags?: string[] | null
           unitCost?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -6110,6 +6160,7 @@ export type Database = {
           itemId?: string
           itemPostingGroupId?: string | null
           standardCost?: number
+          tags?: string[] | null
           unitCost?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -6240,6 +6291,7 @@ export type Database = {
           quantityOnPurchase: number
           quantityOnSalesOrder: number
           shelfId: string | null
+          tags: string[] | null
         }
         Insert: {
           companyId: string
@@ -6251,6 +6303,7 @@ export type Database = {
           quantityOnPurchase?: number
           quantityOnSalesOrder?: number
           shelfId?: string | null
+          tags?: string[] | null
         }
         Update: {
           companyId?: string
@@ -6262,6 +6315,7 @@ export type Database = {
           quantityOnPurchase?: number
           quantityOnSalesOrder?: number
           shelfId?: string | null
+          tags?: string[] | null
         }
         Relationships: [
           {
@@ -6495,6 +6549,7 @@ export type Database = {
           reorderQuantity: number
           safetyStockLeadTime: number
           safetyStockQuantity: number
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -6518,6 +6573,7 @@ export type Database = {
           reorderQuantity?: number
           safetyStockLeadTime?: number
           safetyStockQuantity?: number
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6541,6 +6597,7 @@ export type Database = {
           reorderQuantity?: number
           safetyStockLeadTime?: number
           safetyStockQuantity?: number
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6676,6 +6733,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -6688,6 +6746,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6700,6 +6759,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6820,6 +6880,7 @@ export type Database = {
           purchasingUnitOfMeasureCode: string | null
           requiresConfiguration: boolean
           scrapPercentage: number
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -6838,6 +6899,7 @@ export type Database = {
           purchasingUnitOfMeasureCode?: string | null
           requiresConfiguration?: boolean
           scrapPercentage?: number
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -6856,6 +6918,7 @@ export type Database = {
           purchasingUnitOfMeasureCode?: string | null
           requiresConfiguration?: boolean
           scrapPercentage?: number
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -7021,6 +7084,7 @@ export type Database = {
           priceIncludesTax: boolean
           salesBlocked: boolean
           salesUnitOfMeasureCode: string | null
+          tags: string[] | null
           unitSalePrice: number
           updatedAt: string | null
           updatedBy: string | null
@@ -7036,6 +7100,7 @@ export type Database = {
           priceIncludesTax?: boolean
           salesBlocked?: boolean
           salesUnitOfMeasureCode?: string | null
+          tags?: string[] | null
           unitSalePrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -7051,6 +7116,7 @@ export type Database = {
           priceIncludesTax?: boolean
           salesBlocked?: boolean
           salesUnitOfMeasureCode?: string | null
+          tags?: string[] | null
           unitSalePrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -7211,6 +7277,7 @@ export type Database = {
           salesOrderLineId: string | null
           scrapQuantity: number
           status: Database["public"]["Enums"]["jobStatus"]
+          tags: string[] | null
           unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
@@ -7241,6 +7308,7 @@ export type Database = {
           salesOrderLineId?: string | null
           scrapQuantity?: number
           status?: Database["public"]["Enums"]["jobStatus"]
+          tags?: string[] | null
           unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -7271,6 +7339,7 @@ export type Database = {
           salesOrderLineId?: string | null
           scrapQuantity?: number
           status?: Database["public"]["Enums"]["jobStatus"]
+          tags?: string[] | null
           unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8276,6 +8345,7 @@ export type Database = {
           description: string | null
           id: number
           postingDate: string
+          tags: string[] | null
         }
         Insert: {
           accountingPeriodId?: string | null
@@ -8285,6 +8355,7 @@ export type Database = {
           description?: string | null
           id?: number
           postingDate?: string
+          tags?: string[] | null
         }
         Update: {
           accountingPeriodId?: string | null
@@ -8294,6 +8365,7 @@ export type Database = {
           description?: string | null
           id?: number
           postingDate?: string
+          tags?: string[] | null
         }
         Relationships: [
           {
@@ -8352,6 +8424,7 @@ export type Database = {
           journalId: number
           journalLineReference: string
           quantity: number
+          tags: string[] | null
         }
         Insert: {
           accountNumber: string
@@ -8371,6 +8444,7 @@ export type Database = {
           journalId: number
           journalLineReference: string
           quantity?: number
+          tags?: string[] | null
         }
         Update: {
           accountNumber?: string
@@ -8390,6 +8464,7 @@ export type Database = {
           journalId?: number
           journalLineReference?: string
           quantity?: number
+          tags?: string[] | null
         }
         Relationships: [
           {
@@ -8452,6 +8527,7 @@ export type Database = {
           name: string
           postalCode: string
           stateProvince: string
+          tags: string[] | null
           timezone: string
           updatedAt: string | null
           updatedBy: string | null
@@ -8471,6 +8547,7 @@ export type Database = {
           name: string
           postalCode: string
           stateProvince: string
+          tags?: string[] | null
           timezone: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8490,6 +8567,7 @@ export type Database = {
           name?: string
           postalCode?: string
           stateProvince?: string
+          tags?: string[] | null
           timezone?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8533,6 +8611,7 @@ export type Database = {
           customFields: Json | null
           id: string
           itemId: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8543,6 +8622,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8553,6 +8633,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8645,6 +8726,7 @@ export type Database = {
           itemId: string | null
           materialFormId: string | null
           materialSubstanceId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8663,6 +8745,7 @@ export type Database = {
           itemId?: string | null
           materialFormId?: string | null
           materialSubstanceId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8681,6 +8764,7 @@ export type Database = {
           itemId?: string | null
           materialFormId?: string | null
           materialSubstanceId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8849,6 +8933,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8859,6 +8944,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8869,6 +8955,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8981,6 +9068,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8991,6 +9079,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -9001,6 +9090,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -9194,6 +9284,7 @@ export type Database = {
           productionQuantity: number | null
           quantity: number
           scrapQuantity: number
+          tags: string[] | null
           unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
@@ -9215,6 +9306,7 @@ export type Database = {
           productionQuantity?: number | null
           quantity: number
           scrapQuantity?: number
+          tags?: string[] | null
           unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -9236,6 +9328,7 @@ export type Database = {
           productionQuantity?: number | null
           quantity?: number
           scrapQuantity?: number
+          tags?: string[] | null
           unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -9424,6 +9517,7 @@ export type Database = {
           processId: string
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
@@ -9448,6 +9542,7 @@ export type Database = {
           processId: string
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
@@ -9472,6 +9567,7 @@ export type Database = {
           processId?: string
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
@@ -10259,6 +10355,7 @@ export type Database = {
           fromDate: string | null
           id: string
           itemId: string
+          tags: string[] | null
           toDate: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -10274,6 +10371,7 @@ export type Database = {
           fromDate?: string | null
           id: string
           itemId: string
+          tags?: string[] | null
           toDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -10289,6 +10387,7 @@ export type Database = {
           fromDate?: string | null
           id?: string
           itemId?: string
+          tags?: string[] | null
           toDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -10446,6 +10545,7 @@ export type Database = {
           customFields: Json | null
           hoursPerWeek: number
           id: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -10458,6 +10558,7 @@ export type Database = {
           customFields?: Json | null
           hoursPerWeek?: number
           id: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -10470,6 +10571,7 @@ export type Database = {
           customFields?: Json | null
           hoursPerWeek?: number
           id?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -10601,6 +10703,7 @@ export type Database = {
           discountPercentage: number
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -10616,6 +10719,7 @@ export type Database = {
           discountPercentage?: number
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -10631,6 +10735,7 @@ export type Database = {
           discountPercentage?: number
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -11635,6 +11740,7 @@ export type Database = {
           id: string
           name: string
           processType: Database["public"]["Enums"]["processType"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -11647,6 +11753,7 @@ export type Database = {
           id?: string
           name: string
           processType?: Database["public"]["Enums"]["processType"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -11659,6 +11766,7 @@ export type Database = {
           id?: string
           name?: string
           processType?: Database["public"]["Enums"]["processType"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12119,6 +12227,7 @@ export type Database = {
           subtotal: number
           supplierId: string | null
           supplierReference: string | null
+          tags: string[] | null
           totalAmount: number
           totalDiscount: number
           totalTax: number
@@ -12148,6 +12257,7 @@ export type Database = {
           subtotal?: number
           supplierId?: string | null
           supplierReference?: string | null
+          tags?: string[] | null
           totalAmount?: number
           totalDiscount?: number
           totalTax?: number
@@ -12177,6 +12287,7 @@ export type Database = {
           subtotal?: number
           supplierId?: string | null
           supplierReference?: string | null
+          tags?: string[] | null
           totalAmount?: number
           totalDiscount?: number
           totalTax?: number
@@ -12449,6 +12560,7 @@ export type Database = {
           quantity: number
           serviceId: string | null
           shelfId: string | null
+          tags: string[] | null
           totalAmount: number | null
           unitPrice: number
           updatedAt: string | null
@@ -12478,6 +12590,7 @@ export type Database = {
           quantity?: number
           serviceId?: string | null
           shelfId?: string | null
+          tags?: string[] | null
           totalAmount?: number | null
           unitPrice?: number
           updatedAt?: string | null
@@ -12507,6 +12620,7 @@ export type Database = {
           quantity?: number
           serviceId?: string | null
           shelfId?: string | null
+          tags?: string[] | null
           totalAmount?: number | null
           unitPrice?: number
           updatedAt?: string | null
@@ -12920,6 +13034,7 @@ export type Database = {
           supplierId: string
           supplierLocationId: string | null
           supplierReference: string | null
+          tags: string[] | null
           type: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt: string | null
           updatedBy: string | null
@@ -12945,6 +13060,7 @@ export type Database = {
           supplierId: string
           supplierLocationId?: string | null
           supplierReference?: string | null
+          tags?: string[] | null
           type: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -12970,6 +13086,7 @@ export type Database = {
           supplierId?: string
           supplierLocationId?: string | null
           supplierReference?: string | null
+          tags?: string[] | null
           type?: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -13216,6 +13333,7 @@ export type Database = {
           receiptRequestedDate: string | null
           shippingMethodId: string | null
           shippingTermId: string | null
+          tags: string[] | null
           trackingNumber: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -13234,6 +13352,7 @@ export type Database = {
           receiptRequestedDate?: string | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
+          tags?: string[] | null
           trackingNumber?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -13252,6 +13371,7 @@ export type Database = {
           receiptRequestedDate?: string | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
+          tags?: string[] | null
           trackingNumber?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -13471,6 +13591,7 @@ export type Database = {
           requiresInspection: boolean
           setupPrice: number | null
           shelfId: string | null
+          tags: string[] | null
           unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
@@ -13502,6 +13623,7 @@ export type Database = {
           requiresInspection?: boolean
           setupPrice?: number | null
           shelfId?: string | null
+          tags?: string[] | null
           unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -13533,6 +13655,7 @@ export type Database = {
           requiresInspection?: boolean
           setupPrice?: number | null
           shelfId?: string | null
+          tags?: string[] | null
           unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -13683,6 +13806,7 @@ export type Database = {
           invoiceSupplierLocationId: string | null
           paymentComplete: boolean
           paymentTermId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -13695,6 +13819,7 @@ export type Database = {
           invoiceSupplierLocationId?: string | null
           paymentComplete?: boolean
           paymentTermId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13707,6 +13832,7 @@ export type Database = {
           invoiceSupplierLocationId?: string | null
           paymentComplete?: boolean
           paymentTermId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -14176,6 +14302,7 @@ export type Database = {
           revisionId: number
           salesPersonId: string | null
           status: Database["public"]["Enums"]["quoteStatus"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -14206,6 +14333,7 @@ export type Database = {
           revisionId?: number
           salesPersonId?: string | null
           status?: Database["public"]["Enums"]["quoteStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -14236,6 +14364,7 @@ export type Database = {
           revisionId?: number
           salesPersonId?: string | null
           status?: Database["public"]["Enums"]["quoteStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -14603,6 +14732,7 @@ export type Database = {
           quoteId: string
           quoteRevisionId: number
           status: Database["public"]["Enums"]["quoteLineStatus"]
+          tags: string[] | null
           taxPercent: number
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -14630,6 +14760,7 @@ export type Database = {
           quoteId: string
           quoteRevisionId?: number
           status?: Database["public"]["Enums"]["quoteLineStatus"]
+          tags?: string[] | null
           taxPercent?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -14657,6 +14788,7 @@ export type Database = {
           quoteId?: string
           quoteRevisionId?: number
           status?: Database["public"]["Enums"]["quoteLineStatus"]
+          tags?: string[] | null
           taxPercent?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -15028,6 +15160,7 @@ export type Database = {
           quantityPerParent: number
           quoteId: string
           quoteLineId: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -15042,6 +15175,7 @@ export type Database = {
           quantityPerParent?: number
           quoteId: string
           quoteLineId: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -15056,6 +15190,7 @@ export type Database = {
           quantityPerParent?: number
           quoteId?: string
           quoteLineId?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -15236,6 +15371,7 @@ export type Database = {
           quoteMakeMethodId: string
           quoteOperationId: string | null
           scrapQuantity: number
+          tags: string[] | null
           unitCost: number
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -15260,6 +15396,7 @@ export type Database = {
           quoteMakeMethodId: string
           quoteOperationId?: string | null
           scrapQuantity?: number
+          tags?: string[] | null
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -15284,6 +15421,7 @@ export type Database = {
           quoteMakeMethodId?: string
           quoteOperationId?: string | null
           scrapQuantity?: number
+          tags?: string[] | null
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -15495,6 +15633,7 @@ export type Database = {
           quoteMakeMethodId: string | null
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
@@ -15527,6 +15666,7 @@ export type Database = {
           quoteMakeMethodId?: string | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
@@ -15559,6 +15699,7 @@ export type Database = {
           quoteMakeMethodId?: string | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
@@ -16050,6 +16191,7 @@ export type Database = {
           sourceDocumentReadableId: string | null
           status: Database["public"]["Enums"]["receiptStatus"]
           supplierId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -16072,6 +16214,7 @@ export type Database = {
           sourceDocumentReadableId?: string | null
           status?: Database["public"]["Enums"]["receiptStatus"]
           supplierId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -16094,6 +16237,7 @@ export type Database = {
           sourceDocumentReadableId?: string | null
           status?: Database["public"]["Enums"]["receiptStatus"]
           supplierId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -17649,6 +17793,7 @@ export type Database = {
           rfqId: string
           salesPersonId: string | null
           status: Database["public"]["Enums"]["salesRfqStatus"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -17673,6 +17818,7 @@ export type Database = {
           rfqId: string
           salesPersonId?: string | null
           status?: Database["public"]["Enums"]["salesRfqStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -17697,6 +17843,7 @@ export type Database = {
           rfqId?: string
           salesPersonId?: string | null
           status?: Database["public"]["Enums"]["salesRfqStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -18002,6 +18149,7 @@ export type Database = {
           order: number
           quantity: number[] | null
           salesRfqId: string
+          tags: string[] | null
           unitOfMeasureCode: string
           updatedAt: string | null
           updatedBy: string | null
@@ -18022,6 +18170,7 @@ export type Database = {
           order?: number
           quantity?: number[] | null
           salesRfqId: string
+          tags?: string[] | null
           unitOfMeasureCode: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -18042,6 +18191,7 @@ export type Database = {
           order?: number
           quantity?: number[] | null
           salesRfqId?: string
+          tags?: string[] | null
           unitOfMeasureCode?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -18487,6 +18637,7 @@ export type Database = {
           id: string
           itemId: string | null
           serviceType: Database["public"]["Enums"]["serviceType"]
+          tags: string[] | null
           toDate: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -18502,6 +18653,7 @@ export type Database = {
           id: string
           itemId?: string | null
           serviceType: Database["public"]["Enums"]["serviceType"]
+          tags?: string[] | null
           toDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -18517,6 +18669,7 @@ export type Database = {
           id?: string
           itemId?: string | null
           serviceType?: Database["public"]["Enums"]["serviceType"]
+          tags?: string[] | null
           toDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -18674,6 +18827,7 @@ export type Database = {
           id: string
           locationId: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
           warehouseId: string | null
@@ -18687,6 +18841,7 @@ export type Database = {
           id: string
           locationId: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           warehouseId?: string | null
@@ -18700,6 +18855,7 @@ export type Database = {
           id?: string
           locationId?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           warehouseId?: string | null
@@ -18842,6 +18998,7 @@ export type Database = {
           saturday: boolean
           startTime: string
           sunday: boolean
+          tags: string[] | null
           thursday: boolean
           tuesday: boolean
           updatedAt: string | null
@@ -18863,6 +19020,7 @@ export type Database = {
           saturday?: boolean
           startTime: string
           sunday?: boolean
+          tags?: string[] | null
           thursday?: boolean
           tuesday?: boolean
           updatedAt?: string | null
@@ -18884,6 +19042,7 @@ export type Database = {
           saturday?: boolean
           startTime?: string
           sunday?: boolean
+          tags?: string[] | null
           thursday?: boolean
           tuesday?: boolean
           updatedAt?: string | null
@@ -19016,6 +19175,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          tags: string[] | null
           trackingUrl: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -19030,6 +19190,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          tags?: string[] | null
           trackingUrl?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -19044,6 +19205,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          tags?: string[] | null
           trackingUrl?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -19171,6 +19333,7 @@ export type Database = {
           createdBy: string
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -19181,6 +19344,7 @@ export type Database = {
           createdBy: string
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -19191,6 +19355,7 @@ export type Database = {
           createdBy?: string
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -19312,6 +19477,7 @@ export type Database = {
           phone: string | null
           supplierStatusId: string | null
           supplierTypeId: string | null
+          tags: string[] | null
           taxId: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -19333,6 +19499,7 @@ export type Database = {
           phone?: string | null
           supplierStatusId?: string | null
           supplierTypeId?: string | null
+          tags?: string[] | null
           taxId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -19354,6 +19521,7 @@ export type Database = {
           phone?: string | null
           supplierStatusId?: string | null
           supplierTypeId?: string | null
+          tags?: string[] | null
           taxId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -19675,6 +19843,7 @@ export type Database = {
           id: string
           supplierId: string
           supplierLocationId: string | null
+          tags: string[] | null
           userId: string | null
         }
         Insert: {
@@ -19683,6 +19852,7 @@ export type Database = {
           id?: string
           supplierId: string
           supplierLocationId?: string | null
+          tags?: string[] | null
           userId?: string | null
         }
         Update: {
@@ -19691,6 +19861,7 @@ export type Database = {
           id?: string
           supplierId?: string
           supplierLocationId?: string | null
+          tags?: string[] | null
           userId?: string | null
         }
         Relationships: [
@@ -19896,6 +20067,7 @@ export type Database = {
           id: string
           name: string
           supplierId: string
+          tags: string[] | null
         }
         Insert: {
           addressId: string
@@ -19903,6 +20075,7 @@ export type Database = {
           id?: string
           name: string
           supplierId: string
+          tags?: string[] | null
         }
         Update: {
           addressId?: string
@@ -19910,6 +20083,7 @@ export type Database = {
           id?: string
           name?: string
           supplierId?: string
+          tags?: string[] | null
         }
         Relationships: [
           {
@@ -19965,6 +20139,7 @@ export type Database = {
           invoiceSupplierLocationId: string | null
           paymentTermId: string | null
           supplierId: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -19976,6 +20151,7 @@ export type Database = {
           invoiceSupplierLocationId?: string | null
           paymentTermId?: string | null
           supplierId: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -19987,6 +20163,7 @@ export type Database = {
           invoiceSupplierLocationId?: string | null
           paymentTermId?: string | null
           supplierId?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20158,6 +20335,7 @@ export type Database = {
           minimumCost: number
           processId: string
           supplierId: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -20171,6 +20349,7 @@ export type Database = {
           minimumCost?: number
           processId: string
           supplierId: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20184,6 +20363,7 @@ export type Database = {
           minimumCost?: number
           processId?: string
           supplierId?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20347,6 +20527,7 @@ export type Database = {
           shippingSupplierLocationId: string | null
           shippingTermId: string | null
           supplierId: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -20359,6 +20540,7 @@ export type Database = {
           shippingSupplierLocationId?: string | null
           shippingTermId?: string | null
           supplierId: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20371,6 +20553,7 @@ export type Database = {
           shippingSupplierLocationId?: string | null
           shippingTermId?: string | null
           supplierId?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20546,6 +20729,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -20556,6 +20740,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20566,6 +20751,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20679,6 +20865,7 @@ export type Database = {
           id: string
           name: string
           protected: boolean
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -20690,6 +20877,7 @@ export type Database = {
           id?: string
           name: string
           protected?: boolean
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20701,6 +20889,7 @@ export type Database = {
           id?: string
           name?: string
           protected?: boolean
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -20810,25 +20999,22 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          id: string
           name: string
-          table: string | null
+          table: string
         }
         Insert: {
           companyId: string
           createdAt?: string
           createdBy: string
-          id?: string
           name: string
-          table?: string | null
+          table: string
         }
         Update: {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          id?: string
           name?: string
-          table?: string | null
+          table?: string
         }
         Relationships: [
           {
@@ -20995,6 +21181,7 @@ export type Database = {
           externalId: Json | null
           id: string
           itemId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -21008,6 +21195,7 @@ export type Database = {
           externalId?: Json | null
           id: string
           itemId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -21021,6 +21209,7 @@ export type Database = {
           externalId?: Json | null
           id?: string
           itemId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -21177,6 +21366,7 @@ export type Database = {
           customFields: Json | null
           id: string
           name: string
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -21189,6 +21379,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -21201,6 +21392,7 @@ export type Database = {
           customFields?: Json | null
           id?: string
           name?: string
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -22124,6 +22316,7 @@ export type Database = {
           name: string
           overheadRate: number
           requiredAbilityId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -22142,6 +22335,7 @@ export type Database = {
           name: string
           overheadRate?: number
           requiredAbilityId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -22160,6 +22354,7 @@ export type Database = {
           name?: string
           overheadRate?: number
           requiredAbilityId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -22929,6 +23124,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string | null
+          tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -23765,6 +23961,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string | null
+          tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -24566,6 +24763,7 @@ export type Database = {
           salesOrderReadableId: string | null
           scrapQuantity: number | null
           status: Database["public"]["Enums"]["jobStatus"] | null
+          tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -24856,6 +25054,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string | null
+          tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
@@ -25230,6 +25429,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string | null
+          tags: string[] | null
           thumbnailPath: string | null
           toDate: string | null
           unitOfMeasure: string | null
@@ -29288,6 +29488,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           supplierIds: string | null
+          tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null

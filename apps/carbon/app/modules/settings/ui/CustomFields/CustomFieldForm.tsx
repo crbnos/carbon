@@ -15,10 +15,10 @@ import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import { Array, Hidden, Input, Select, Submit, Tags } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { customFieldValidator } from "~/modules/settings";
-import { customFieldTablesWithTags, DataType } from "~/modules/shared";
+import { DataType, tablesWithTags } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type CustomFieldFormProps = {
@@ -35,6 +35,10 @@ const CustomFieldForm = ({
   const permissions = usePermissions();
   const { table } = useParams();
   if (!table) throw new Error("table is not found");
+
+  const routeData = useRouteData<{
+    tags: { name: string }[];
+  }>(path.to.customFieldsTable(table));
 
   const options =
     dataTypes?.map((dt) => ({
@@ -102,8 +106,13 @@ const CustomFieldForm = ({
               />
               {isList && <Array name="listOptions" label="List Options" />}
 
-              {customFieldTablesWithTags.includes(table) && (
-                <Tags table={table} name="tags" />
+              {tablesWithTags.includes(table) && (
+                <Tags
+                  table={table}
+                  name="tags"
+                  availableTags={routeData?.tags ?? []}
+                  helperText="These custom fields will only be available for entities with the same tags"
+                />
               )}
             </VStack>
           </DrawerBody>

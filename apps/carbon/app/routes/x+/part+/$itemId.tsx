@@ -13,6 +13,7 @@ import {
   getPart,
   getPickMethods,
 } from "~/modules/items";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -30,11 +31,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partSummary, buyMethods, pickMethods] = await Promise.all([
+  const [partSummary, buyMethods, pickMethods, tags] = await Promise.all([
     getPart(client, itemId, companyId),
-
     getBuyMethods(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
+    getTagsList(client, companyId, "part"),
   ]);
 
   if (partSummary.error) {
@@ -52,6 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getItemFiles(client, itemId, companyId),
     buyMethods: buyMethods.data ?? [],
     pickMethods: pickMethods.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 

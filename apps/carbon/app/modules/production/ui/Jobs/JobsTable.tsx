@@ -1,4 +1,10 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  Badge,
+  HStack,
+  MenuIcon,
+  MenuItem,
+  useDisclosure,
+} from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -10,6 +16,7 @@ import {
   LuClock,
   LuHash,
   LuPencil,
+  LuTag,
   LuTrash,
   LuUser,
   LuUsers,
@@ -34,13 +41,12 @@ import {
   JobStatus,
 } from "~/modules/production";
 import { useCustomers, useFixtures, useParts, usePeople } from "~/stores";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type JobsTableProps = {
   data: Job[];
   count: number;
-  locations: ListItem[];
+  tags: { name: string }[];
 };
 
 const defaultColumnVisibility = {
@@ -58,7 +64,7 @@ const defaultColumnVisibility = {
   quantityReceivedToInventory: false,
 };
 
-const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
+const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const parts = useParts();
@@ -240,6 +246,30 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
         },
       },
       {
+        accessorKey: "tags",
+        header: "Tags",
+        cell: ({ row }) => (
+          <HStack spacing={0} className="gap-1">
+            {row.original.tags?.map((tag) => (
+              <Badge key={tag} variant="secondary">
+                {tag}
+              </Badge>
+            ))}
+          </HStack>
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: tags?.map((tag) => ({
+              value: tag.name,
+              label: <Badge variant="secondary">{tag.name}</Badge>,
+            })),
+            isArray: true,
+          },
+          icon: <LuTag />,
+        },
+      },
+      {
         accessorKey: "orderQuantity",
         header: "Order Qty",
         cell: (item) => item.getValue<number>(),
@@ -379,6 +409,9 @@ const JobsTable = memo(({ data, count, locations }: JobsTableProps) => {
       <Table<Job>
         data={data}
         defaultColumnVisibility={defaultColumnVisibility}
+        defaultColumnPinning={{
+          left: ["jobId"],
+        }}
         columns={columns}
         count={count ?? 0}
         primaryAction={

@@ -85,11 +85,11 @@ export default function MaterialDetailsRoute() {
     replenishmentSystem:
       materialData.materialSummary?.replenishmentSystem ?? "Buy",
     defaultMethodType: materialData.materialSummary?.defaultMethodType ?? "Buy",
-
     itemTrackingType:
       materialData.materialSummary?.itemTrackingType ?? "Inventory",
     active: materialData.materialSummary?.active ?? true,
     unitOfMeasureCode: materialData.materialSummary?.unitOfMeasureCode ?? "EA",
+    tags: materialData.materialSummary?.tags ?? [],
     ...getCustomFields(materialData.materialSummary?.customFields ?? {}),
   };
 

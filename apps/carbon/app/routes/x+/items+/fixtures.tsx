@@ -5,15 +5,12 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  FixturesTable,
-  getFixtures,
-  getItemPostingGroupsList,
-} from "~/modules/items";
+import { FixturesTable, getFixtures } from "~/modules/items";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
+import { getTagsList } from "~/modules/shared";
 export const handle: Handle = {
   breadcrumb: "Fixtures",
   to: path.to.fixtures,
@@ -32,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [fixtures, itemPostingGroups] = await Promise.all([
+  const [fixtures, tags] = await Promise.all([
     getFixtures(client, companyId, {
       search,
       supplierId,
@@ -41,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getItemPostingGroupsList(client, companyId),
+    getTagsList(client, companyId, "fixture"),
   ]);
 
   if (fixtures.error) {
@@ -54,20 +51,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: fixtures.count ?? 0,
     fixtures: fixtures.data ?? [],
-    itemPostingGroups: itemPostingGroups.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 
 export default function FixturesSearchRoute() {
-  const { count, fixtures, itemPostingGroups } = useLoaderData<typeof loader>();
+  const { count, fixtures, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <FixturesTable
-        data={fixtures}
-        count={count}
-        itemPostingGroups={itemPostingGroups}
-      />
+      <FixturesTable data={fixtures} count={count} tags={tags} />
       <Outlet />
     </VStack>
   );

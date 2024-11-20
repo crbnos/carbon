@@ -33,7 +33,7 @@ import { consumableValidator, itemTrackingTypes } from "~/modules/items";
 import { path } from "~/utils/path";
 
 type ConsumableFormProps = {
-  initialValues: z.infer<typeof consumableValidator>;
+  initialValues: z.infer<typeof consumableValidator> & { tags: string[] };
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -165,7 +165,10 @@ const ConsumableForm = ({
                 )}
                 <Boolean name="active" label="Active" />
 
-                <CustomFormFields table="consumable" />
+                <CustomFormFields
+                  table="consumable"
+                  tags={initialValues.tags}
+                />
               </div>
             </ModalCardBody>
             <ModalCardFooter>

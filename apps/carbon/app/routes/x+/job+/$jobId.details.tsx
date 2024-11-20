@@ -100,19 +100,7 @@ export default function JobDetailsRoute() {
         notes={jobData?.job.notes as JSONContent}
       />
       {permissions.is("employee") && (
-        <div className="grid grid-cols-1 md:grid-cols-2 w-full gap-2">
-          <CadModel
-            isReadOnly={!permissions.can("update", "production")}
-            metadata={{
-              jobId: jobData?.job?.id ?? undefined,
-              itemId: jobData?.job?.itemId ?? undefined,
-            }}
-            modelPath={jobData?.job?.modelPath ?? null}
-            title="CAD Model"
-            uploadClassName="min-h-[420px]"
-            viewerClassName="min-h-[420px]"
-          />
-
+        <div className="grid grid-cols-1 2xl:grid-cols-2 w-full gap-2">
           <Suspense
             fallback={
               <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
@@ -133,6 +121,17 @@ export default function JobDetailsRoute() {
               )}
             </Await>
           </Suspense>
+          <CadModel
+            isReadOnly={!permissions.can("update", "production")}
+            metadata={{
+              jobId: jobData?.job?.id ?? undefined,
+              itemId: jobData?.job?.itemId ?? undefined,
+            }}
+            modelPath={jobData?.job?.modelPath ?? null}
+            title="CAD Model"
+            uploadClassName="min-h-[420px]"
+            viewerClassName="min-h-[420px]"
+          />
         </div>
       )}
     </VStack>

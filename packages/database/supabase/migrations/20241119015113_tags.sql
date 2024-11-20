@@ -1,12 +1,14 @@
 CREATE TABLE IF NOT EXISTS "tag" (
-  "id" TEXT NOT NULL DEFAULT xid() PRIMARY KEY,
   "name" TEXT NOT NULL,
   "table" TEXT NOT NULL,
   "companyId" TEXT NOT NULL REFERENCES "company"("id") ON DELETE CASCADE,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL REFERENCES "user"("id") ON DELETE RESTRICT,
-  UNIQUE("companyId", "name", "table")
+  PRIMARY KEY ("name", "table", "companyId")
 );
+
+CREATE INDEX "tag_table_companyId_idx" ON "tag" ("table", "companyId");
+
 
 ALTER TABLE "tag" ENABLE ROW LEVEL SECURITY;
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
-export const customFieldTablesWithTags = [
+export const tablesWithTags = [
   "consumable",
   "fixture",
   "job",

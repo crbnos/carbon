@@ -82,6 +82,7 @@ export default function ConsumableDetailsRoute() {
     active: consumableData.consumableSummary?.active ?? true,
     unitOfMeasureCode:
       consumableData.consumableSummary?.unitOfMeasureCode ?? "EA",
+    tags: consumableData.consumableSummary?.tags ?? [],
     ...getCustomFields(consumableData.consumableSummary?.customFields ?? {}),
   };
 

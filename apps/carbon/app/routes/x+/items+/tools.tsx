@@ -5,11 +5,8 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  ToolsTable,
-  getItemPostingGroupsList,
-  getTools,
-} from "~/modules/items";
+import { ToolsTable, getTools } from "~/modules/items";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -32,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [tools, itemPostingGroups] = await Promise.all([
+  const [tools, tags] = await Promise.all([
     getTools(client, companyId, {
       search,
       supplierId,
@@ -41,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getItemPostingGroupsList(client, companyId),
+    getTagsList(client, companyId, "tool"),
   ]);
 
   if (tools.error) {
@@ -54,20 +51,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: tools.count ?? 0,
     tools: tools.data ?? [],
-    itemPostingGroups: itemPostingGroups.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 
 export default function ToolsSearchRoute() {
-  const { count, tools, itemPostingGroups } = useLoaderData<typeof loader>();
+  const { count, tools, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ToolsTable
-        data={tools}
-        count={count}
-        itemPostingGroups={itemPostingGroups}
-      />
+      <ToolsTable data={tools} count={count} tags={tags} />
       <Outlet />
     </VStack>
   );

@@ -1,3 +1,4 @@
+import type { Json } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -19,9 +20,11 @@ import { Await, Link, useFetcher, useParams } from "@remix-run/react";
 import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { UnitOfMeasure } from "~/components/Form";
+import { Boolean, Tags, UnitOfMeasure } from "~/components/Form";
+import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
@@ -48,6 +51,7 @@ const PartProperties = () => {
     files: Promise<ItemFile[]>;
     buyMethods: BuyMethod[];
     pickMethods: PickMethod[];
+    tags: { name: string }[];
   }>(path.to.part(itemId));
 
   const locations = sharedPartsData?.locations ?? [];
@@ -69,12 +73,14 @@ const PartProperties = () => {
       toast.error(fetcher.data.error.message);
     }
   }, [fetcher.data]);
+
   const onUpdate = useCallback(
     (
       field:
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
+        | "active"
         | "unitOfMeasureCode",
       value: string | null
     ) => {
@@ -82,10 +88,45 @@ const PartProperties = () => {
 
       formData.append("items", itemId);
       formData.append("field", field);
+
       formData.append("value", value?.toString() ?? "");
       fetcher.submit(formData, {
         method: "post",
         action: path.to.bulkUpdateItems,
+      });
+    },
+    [fetcher, itemId]
+  );
+
+  const onUpdateTags = useCallback(
+    (value: string[]) => {
+      const formData = new FormData();
+
+      formData.append("ids", itemId);
+      formData.append("table", "part");
+      value.forEach((v) => {
+        formData.append("value", v);
+      });
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.tags,
+      });
+    },
+    [fetcher, itemId]
+  );
+
+  const onUpdateCustomFields = useCallback(
+    (value: string) => {
+      const formData = new FormData();
+
+      formData.append("ids", itemId);
+      formData.append("table", "part");
+      formData.append("value", value);
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.customFields,
       });
     },
     [fetcher, itemId]
@@ -288,6 +329,51 @@ const PartProperties = () => {
           />
         ))}
       </VStack>
+      <ValidatedForm
+        defaultValues={{
+          active: routeData?.partSummary?.active ?? undefined,
+        }}
+        validator={z.object({
+          active: zfd.checkbox(),
+        })}
+        className="w-full"
+      >
+        <Boolean
+          label="Active"
+          name="active"
+          variant="small"
+          onChange={(value) => {
+            onUpdate("active", value ? "on" : "off");
+          }}
+        />
+      </ValidatedForm>
+      <ValidatedForm
+        defaultValues={{
+          tags: routeData?.partSummary?.tags ?? [],
+        }}
+        validator={z.object({
+          tags: z.array(z.string()).optional(),
+        })}
+        className="w-full"
+      >
+        <Tags
+          availableTags={routeData?.tags ?? []}
+          label="Tags"
+          name="tags"
+          table="part"
+          inline
+          onChange={onUpdateTags}
+        />
+      </ValidatedForm>
+
+      <CustomFormInlineFields
+        customFields={
+          (routeData?.partSummary?.customFields ?? {}) as Record<string, Json>
+        }
+        table="part"
+        tags={routeData?.partSummary?.tags ?? []}
+        onUpdate={onUpdateCustomFields}
+      />
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
@@ -308,6 +394,7 @@ const PartProperties = () => {
             </Link>
           </HStack>
         )}
+
         <Suspense fallback={null}>
           <Await resolve={routeData?.files}>
             {(files) =>

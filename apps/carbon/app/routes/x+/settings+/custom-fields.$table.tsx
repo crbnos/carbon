@@ -8,6 +8,7 @@ import { useRouteData, useUrlParams } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { CustomFieldsTableDetail, getCustomFields } from "~/modules/settings";
 import { updateCustomFieldsSortOrder } from "~/modules/settings/settings.server";
+import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -19,7 +20,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { table } = params;
   if (!table) throw notFound("Invalid table");
 
-  const customFields = await getCustomFields(client, table, companyId);
+  const [customFields, tags] = await Promise.all([
+    getCustomFields(client, table, companyId),
+    getTagsList(client, companyId, table),
+  ]);
 
   if (customFields.error) {
     throw redirect(
@@ -31,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({ customFields: customFields.data });
+  return json({ customFields: customFields.data, tags: tags.data });
 }
 
 export async function action({ request }: ActionFunctionArgs) {

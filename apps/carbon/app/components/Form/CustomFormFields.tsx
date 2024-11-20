@@ -19,7 +19,12 @@ const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
       {tableFields
         .sort((a, b) => a.sortOrder - b.sortOrder)
         .filter((field) => {
-          if (!field.tags || !Array.isArray(field.tags)) return true;
+          if (
+            !field.tags ||
+            !Array.isArray(field.tags) ||
+            field.tags.length === 0
+          )
+            return true;
           return field.tags.some((tag) => tags.includes(tag));
         })
         .map((field) => {
