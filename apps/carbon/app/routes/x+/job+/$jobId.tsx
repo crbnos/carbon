@@ -6,7 +6,6 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  ScrollArea,
 } from "@carbon/react";
 import {
   Await,
@@ -75,59 +74,55 @@ export default function JobRoute() {
   const { method } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
+    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <JobHeader />
-      <div className="flex h-[calc(100vh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto">
-          <div className="flex flex-grow overflow-hidden">
-            <ClientOnly fallback={null}>
-              {() => (
-                <ResizablePanelGroup direction="horizontal">
-                  <ResizablePanel
-                    order={1}
-                    minSize={10}
-                    defaultSize={20}
-                    className="bg-card h-full shadow-lg"
-                  >
-                    <ScrollArea className="h-[calc(100vh-99px)]">
-                      <div className="grid w-full h-full overflow-hidden p-2">
-                        <Suspense fallback={<ExplorerSkeleton />}>
-                          <Await
-                            resolve={method}
-                            errorElement={
-                              <div className="p-2 text-red-500">
-                                Error loading job tree.
-                              </div>
+      <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex flex-grow overflow-hidden">
+          <ClientOnly fallback={null}>
+            {() => (
+              <ResizablePanelGroup direction="horizontal">
+                <ResizablePanel
+                  order={1}
+                  minSize={10}
+                  defaultSize={20}
+                  className="bg-card shadow-lg"
+                >
+                  <div className="grid w-full h-[calc(100dvh-99px)] overflow-hidden p-2">
+                    <Suspense fallback={<ExplorerSkeleton />}>
+                      <Await
+                        resolve={method}
+                        errorElement={
+                          <div className="p-2 text-red-500">
+                            Error loading job tree.
+                          </div>
+                        }
+                      >
+                        {(resolvedMethod) => (
+                          <JobBoMExplorer
+                            method={
+                              resolvedMethod.data &&
+                              resolvedMethod.data.length > 0
+                                ? flattenTree(resolvedMethod.data[0])
+                                : []
                             }
-                          >
-                            {(resolvedMethod) => (
-                              <JobBoMExplorer
-                                method={
-                                  resolvedMethod.data &&
-                                  resolvedMethod.data.length > 0
-                                    ? flattenTree(resolvedMethod.data[0])
-                                    : []
-                                }
-                              />
-                            )}
-                          </Await>
-                        </Suspense>
-                      </div>
-                    </ScrollArea>
-                  </ResizablePanel>
-                  <ResizableHandle withHandle />
-                  <ResizablePanel order={2}>
-                    <div className="flex h-[calc(100vh-99px)] w-full">
-                      <ScrollArea className="h-[calc(100vh-99px)] w-full">
-                        <Outlet />
-                      </ScrollArea>
-                      <JobProperties />
+                          />
+                        )}
+                      </Await>
+                    </Suspense>
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel order={2} className="z-1">
+                  <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                      <Outlet />
                     </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
-              )}
-            </ClientOnly>
-          </div>
+                    <JobProperties />
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            )}
+          </ClientOnly>
         </div>
       </div>
     </div>

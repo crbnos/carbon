@@ -124,7 +124,7 @@ export default function FixtureManufacturing() {
               defaultSize={20}
               className="bg-card"
             >
-              <ScrollArea className="h-[calc(100vh-99px)]">
+              <ScrollArea className="h-[calc(100dvh-99px)]">
                 <div className="grid h-full overflow-hidden p-2">
                   <BoMExplorer
                     itemType="Fixture"
@@ -141,7 +141,7 @@ export default function FixtureManufacturing() {
               defaultSize={60}
               className="border-t border-border"
             >
-              <ScrollArea className="h-[calc(100vh-99px)]">
+              <ScrollArea className="h-[calc(100dvh-99px)]">
                 <Outlet key={JSON.stringify(params)} />
               </ScrollArea>
             </ResizablePanel>

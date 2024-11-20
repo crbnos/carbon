@@ -6,7 +6,6 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  ScrollArea,
   VStack,
 } from "@carbon/react";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
@@ -119,43 +118,38 @@ export default function QuoteRoute() {
   const { methods } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
+    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <QuoteHeader />
-      <div className="flex h-[calc(100vh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto">
-          <div className="flex flex-grow overflow-hidden">
-            <ClientOnly fallback={null}>
-              {() => (
-                <ResizablePanelGroup direction="horizontal">
-                  <ResizablePanel
-                    order={1}
-                    minSize={10}
-                    defaultSize={20}
-                    className="bg-card h-full shadow-lg"
-                  >
-                    <ScrollArea className="h-[calc(100vh-99px)]">
-                      <div className="grid w-full h-full overflow-hidden">
-                        <QuoteExplorer methods={methods} />
-                      </div>
-                    </ScrollArea>
-                  </ResizablePanel>
-                  <ResizableHandle withHandle />
-                  <ResizablePanel order={2} className="z-1">
-                    <div className="flex h-[calc(100vh-99px)] w-full">
-                      <div className="flex h-full w-full overflow-y-auto">
-                        <ScrollArea className="h-[calc(100vh-99px)] w-full">
-                          <VStack spacing={2} className="p-2">
-                            <Outlet />
-                          </VStack>
-                        </ScrollArea>
-                      </div>
-                      <QuoteProperties />
+      <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex flex-grow overflow-hidden">
+          <ClientOnly fallback={null}>
+            {() => (
+              <ResizablePanelGroup direction="horizontal">
+                <ResizablePanel
+                  order={1}
+                  minSize={10}
+                  defaultSize={20}
+                  className="bg-card shadow-lg"
+                >
+                  <div className="grid w-full h-[calc(100dvh-99px)] overflow-hidden">
+                    <QuoteExplorer methods={methods} />
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel order={2} className="z-1">
+                  <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                      <VStack spacing={2} className="p-2">
+                        <Outlet />
+                      </VStack>
                     </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
-              )}
-            </ClientOnly>
-          </div>
+
+                    <QuoteProperties />
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            )}
+          </ClientOnly>
         </div>
       </div>
     </div>

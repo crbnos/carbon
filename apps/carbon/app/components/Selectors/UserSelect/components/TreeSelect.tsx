@@ -20,7 +20,7 @@ const UserTreeSelect = () => {
       aria-multiselectable={isMulti}
       ref={listBoxRef}
       onMouseOver={onMouseOver}
-      className="overflow-auto max-h-[300px] my-1 flex flex-col"
+      className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[300px] my-1 flex flex-col"
     >
       {loading ? (
         <Spinner />

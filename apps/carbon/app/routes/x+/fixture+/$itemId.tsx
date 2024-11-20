@@ -64,12 +64,10 @@ export default function FixtureRoute() {
   useRealtime("modelUpload", `modelPath=eq.${fixtureSummary.modelPath}`);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-49px)] w-full">
+    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <FixtureHeader />
-      <div className="flex h-[calc(100vh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto">
-          <Outlet />
-        </div>
+      <div className="flex h-[calc(100dvh-99px)] w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+        <Outlet />
         <FixtureProperties />
       </div>
     </div>

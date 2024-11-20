@@ -263,7 +263,7 @@ const QuoteToOrderDrawer = ({
                 )}
               />
             ) : null}
-            <ScrollArea className="h-[calc(100vh-145px)] flex-grow w-full">
+            <ScrollArea className="h-[calc(100dvh-145px)] flex-grow w-full">
               <LinePricingForm
                 quote={quote}
                 lines={lines}

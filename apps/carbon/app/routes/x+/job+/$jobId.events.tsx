@@ -80,7 +80,7 @@ export default function ProductionEventsRoute() {
 
   return (
     <>
-      <VStack spacing={0} className="h-[calc(100vh-99px)]">
+      <VStack spacing={0} className="h-[calc(100dvh-99px)]">
         <ProductionEventsTable
           data={events}
           count={count}

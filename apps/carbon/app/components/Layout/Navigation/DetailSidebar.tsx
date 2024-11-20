@@ -37,7 +37,10 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
   );
 
   return (
-    <VStack className="overflow-y-auto h-full" spacing={1}>
+    <VStack
+      className="overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full"
+      spacing={1}
+    >
       {links.map((route) => {
         const isActive = location.pathname.includes(route.to);
 

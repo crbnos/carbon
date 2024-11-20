@@ -181,7 +181,7 @@ function VirtualizedCommand({
       />
       <div
         ref={parentRef}
-        className="overflow-auto pt-1"
+        className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1"
         style={{
           height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`,
         }}

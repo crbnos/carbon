@@ -64,7 +64,7 @@ export default function JobMaterialsRoute() {
   const { count, materials } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={0} className="h-[calc(100vh-99px)]">
+    <VStack spacing={0} className="h-[calc(100dvh-99px)]">
       <JobMaterialsTable data={materials} count={count} />
     </VStack>
   );

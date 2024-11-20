@@ -5,6 +5,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
