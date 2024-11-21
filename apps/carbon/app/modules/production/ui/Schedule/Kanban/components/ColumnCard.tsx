@@ -85,8 +85,8 @@ export function ColumnCard({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
         })} flex flex-col p-[1px] pt-0`,
         currentFilters.length > 0
-          ? "h-[calc(100ddvh-135px)]"
-          : "h-[calc(100ddvh-98px)]"
+          ? "h-[calc(100dvh-135px)]"
+          : "h-[calc(100dvh-98px)]"
       )}
     >
       <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-10 border-b">
