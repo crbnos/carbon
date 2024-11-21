@@ -4,7 +4,6 @@ import {
   CardHeader,
   cn,
   HStack,
-  IconButton,
   Progress,
 } from "@carbon/react";
 import {
@@ -16,7 +15,6 @@ import { cva } from "class-variance-authority";
 import {
   LuCheckCircle,
   LuClipboardCheck,
-  LuExternalLink,
   LuTimer,
   LuXCircle,
 } from "react-icons/lu";
@@ -28,6 +26,7 @@ import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 
 import { DeadlineIcon } from "~/components/Icons";
+import { path } from "~/utils/path";
 import type { DisplaySettings, Item } from "../types";
 
 type ItemCardProps = {
@@ -35,7 +34,7 @@ type ItemCardProps = {
 } & DisplaySettings;
 
 const cardVariants = cva(
-  "dark:bg-gradient-to-bl dark:via-card dark:to-card dark:hover:to-muted/30 dark:hover:via-muted/30 bg-card hover:bg-muted/30",
+  "dark:bg-gradient-to-tr dark:via-card dark:to-card dark:hover:to-muted/30 dark:hover:via-muted/30 bg-card hover:bg-muted/30",
   {
     variants: {
       status: {
@@ -89,118 +88,106 @@ export function ItemCard({
       : false;
 
   return (
-    <Card
-      className={cn(
-        "max-w-[330px]",
-        cardVariants({
-          status: item.status,
-        })
-      )}
-    >
-      <CardHeader
+    <Link to={path.to.operation(item.id)}>
+      <Card
         className={cn(
-          "max-w-full p-3 border-b relative",
-          cardHeaderVariants({
+          "max-w-[330px]",
+          cardVariants({
             status: item.status,
           })
         )}
       >
-        <div className="flex w-full max-w-full justify-between">
-          <div className="flex flex-col space-y-0">
-            {item.subtitle && (
-              <span className="text-xs text-muted-foreground line-clamp-1">
-                {item.subtitle}
-              </span>
-            )}
-            <Link
-              to={`${item.link}?selectedOperation=${item.id}`}
-              className="mr-auto font-semibold line-clamp-1"
-            >
-              {item.title}
-            </Link>
+        <CardHeader
+          className={cn(
+            "max-w-full p-3 border-b relative",
+            cardHeaderVariants({
+              status: item.status,
+            })
+          )}
+        >
+          <div className="flex w-full max-w-full justify-between">
+            <div className="flex flex-col space-y-0">
+              {item.subtitle && (
+                <span className="text-xs text-muted-foreground line-clamp-1">
+                  {item.subtitle}
+                </span>
+              )}
+              <span>{item.title}</span>
+            </div>
           </div>
-          {item.link && (
-            <Link to={`${item.link}?selectedOperation=${item.id}`}>
-              <IconButton
-                aria-label="Link to job operation"
-                icon={<LuExternalLink />}
-                variant={"ghost"}
+
+          {showProgress &&
+            ["Paused", "Done", "In Progress"].includes(item.status!) && (
+              <Progress
+                indicatorClassName={
+                  item.status === "Paused" ? "bg-yellow-500" : ""
+                }
+                numerator={
+                  item.progress ? formatDurationMilliseconds(item.progress) : ""
+                }
+                denominator={
+                  item.duration ? formatDurationMilliseconds(item.duration) : ""
+                }
+                value={
+                  item.progress && item.duration
+                    ? (item.progress / item.duration) * 100
+                    : 0
+                }
               />
-            </Link>
-          )}
-        </div>
-
-        {showProgress &&
-          ["Paused", "Done", "In Progress"].includes(item.status!) && (
-            <Progress
-              indicatorClassName={
-                item.status === "Paused" ? "bg-yellow-500" : ""
-              }
-              numerator={
-                item.progress ? formatDurationMilliseconds(item.progress) : ""
-              }
-              denominator={
-                item.duration ? formatDurationMilliseconds(item.duration) : ""
-              }
-              value={
-                item.progress && item.duration
-                  ? (item.progress / item.duration) * 100
-                  : 0
-              }
-            />
-          )}
-      </CardHeader>
-      <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap text-sm">
-        {showDescription && item.description && (
-          <HStack className="justify-start space-x-2">
-            <LuClipboardCheck className="text-muted-foreground" />
-            <span className="text-sm line-clamp-1">{item.description}</span>
-          </HStack>
-        )}
-        {showStatus && item.status && (
-          <HStack className="justify-start space-x-2">
-            {getStatusIcon(item.status)}
-            <span className="text-sm">{item.status}</span>
-          </HStack>
-        )}
-        {showDuration && typeof item.duration === "number" && (
-          <HStack className="justify-start space-x-2">
-            <LuTimer className="text-muted-foreground" />
-            <span className="text-sm">
-              {formatDurationMilliseconds(item.duration)}
-            </span>
-          </HStack>
-        )}
-        {showDueDate && item.deadlineType && (
-          <HStack className="justify-start space-x-2">
-            <DeadlineIcon
-              deadlineType={item.deadlineType}
-              overdue={isOverdue}
-            />
-
-            <span className={cn("text-sm", isOverdue ? "text-red-500" : "")}>
-              {["ASAP", "No Deadline"].includes(item.deadlineType)
-                ? item.deadlineType
-                : item.dueDate
-                ? `Due ${formatRelativeTime(
-                    convertDateStringToIsoString(item.dueDate)
-                  )}`
-                : "–"}
-            </span>
-          </HStack>
-        )}
-
-        {showSalesOrder &&
-          item.salesOrderReadableId &&
-          item.salesOrderId &&
-          item.salesOrderLineId && (
+            )}
+        </CardHeader>
+        <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap text-sm">
+          {showDescription && item.description && (
             <HStack className="justify-start space-x-2">
-              <RiProgress8Line className="text-muted-foreground" />
-              <span className="text-sm">{item.salesOrderReadableId}</span>
+              <LuClipboardCheck className="text-muted-foreground" />
+              <span className="text-sm line-clamp-1">{item.description}</span>
             </HStack>
           )}
-      </CardContent>
-    </Card>
+          {showStatus && item.status && (
+            <HStack className="justify-start space-x-2">
+              {getStatusIcon(item.status)}
+              <span className="text-sm">{item.status}</span>
+            </HStack>
+          )}
+          {showDuration && typeof item.duration === "number" && (
+            <HStack className="justify-start space-x-2">
+              <LuTimer className="text-muted-foreground" />
+              <span className="text-sm">
+                {formatDurationMilliseconds(item.duration)}
+              </span>
+            </HStack>
+          )}
+          {showDueDate && item.deadlineType && (
+            <HStack className="justify-start space-x-2">
+              <DeadlineIcon
+                deadlineType={item.deadlineType}
+                overdue={isOverdue}
+              />
+
+              <span className={cn("text-sm", isOverdue ? "text-red-500" : "")}>
+                {["ASAP", "No Deadline"].includes(item.deadlineType)
+                  ? item.deadlineType
+                  : item.dueDate
+                  ? `Due ${formatRelativeTime(
+                      convertDateStringToIsoString(item.dueDate)
+                    )}`
+                  : "–"}
+              </span>
+            </HStack>
+          )}
+
+          {showSalesOrder &&
+            item.salesOrderReadableId &&
+            item.salesOrderId &&
+            item.salesOrderLineId && (
+              <HStack className="justify-start space-x-2">
+                <RiProgress8Line className="text-muted-foreground" />
+                <span className="text-sm">{item.salesOrderReadableId}</span>
+              </HStack>
+            )}
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 

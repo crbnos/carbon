@@ -176,9 +176,7 @@ const JobBillOfProcess = ({
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "sales") || isDisabled) return;
     setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
+      prevItems.map((i) => (i.id === id ? { ...i, checked: !i.checked } : i))
     );
   };
 
@@ -276,20 +274,6 @@ const JobBillOfProcess = ({
 
   const onUpdateWorkInstruction = useDebounce(
     async (content: JSONContent) => {
-      if (!permissions.can("update", "parts")) return;
-      setItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === selectedItemId
-            ? {
-                ...item,
-                data: {
-                  ...item.data,
-                  workInstruction: content,
-                },
-              }
-            : item
-        )
-      );
       if (selectedItemId !== null && !isTemporaryId(selectedItemId))
         await carbon
           ?.from("jobOperation")
@@ -407,6 +391,7 @@ const JobBillOfProcess = ({
   }, [isLoading, hasMore, carbon, selectedItemId, companyId, page]);
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
+
   const renderListItem = ({
     item,
     items,
@@ -414,6 +399,7 @@ const JobBillOfProcess = ({
     onToggleItem,
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
+    console.log({ item, items, selectedItemId });
     const isOpen = item.id === selectedItemId;
     const tabs = [
       {
@@ -454,7 +440,24 @@ const JobBillOfProcess = ({
                     item.data.workInstruction ?? ({} as JSONContent)
                   }
                   onUpload={onUploadImage}
-                  onChange={onUpdateWorkInstruction}
+                  onChange={(content) => {
+                    if (!permissions.can("update", "parts")) return;
+                    setItems((prevItems) =>
+                      prevItems.map((i) =>
+                        i.id === selectedItemId
+                          ? {
+                              ...i,
+                              data: {
+                                ...i.data,
+                                workInstruction: content,
+                              },
+                            }
+                          : i
+                      )
+                    );
+                    onUpdateWorkInstruction(content);
+                  }}
+                  className="py-8"
                 />
               ) : (
                 <div
