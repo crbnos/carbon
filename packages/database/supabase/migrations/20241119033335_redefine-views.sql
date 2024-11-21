@@ -1,3 +1,5 @@
+ALTER TABLE "customField" ADD COLUMN "tags" TEXT[] DEFAULT ARRAY[]::TEXT[];
+
 CREATE OR REPLACE VIEW "customFieldTables" WITH(SECURITY_INVOKER=true) AS
 SELECT 
   cft.*, 
