@@ -11,7 +11,7 @@ import {
   TooltipProvider,
 } from "@carbon/react";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
-import { useLoaderData, useNavigation } from "@remix-run/react";
+import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
@@ -138,11 +138,14 @@ export default function AuthenticatedRoute() {
               locations={locations}
             />
             <SidebarInset>
-              <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+              <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b">
                 <div className="flex items-center gap-2 px-4">
                   <SidebarTrigger className="-ml-1" />
                 </div>
               </header>
+              <main className="flex flex-1 w-full h-[calc(100vh-var(--header-height))] overflow-hidden">
+                <Outlet />
+              </main>
             </SidebarInset>
           </TooltipProvider>
           <Toaster position="bottom-left" />
