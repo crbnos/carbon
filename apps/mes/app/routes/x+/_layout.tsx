@@ -3,13 +3,7 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  Toaster,
-  TooltipProvider,
-} from "@carbon/react";
+import { SidebarInset, SidebarProvider, TooltipProvider } from "@carbon/react";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
@@ -126,9 +120,9 @@ export default function AuthenticatedRoute() {
   }, [transition.state]);
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <div className="h-screen w-screen overflow-y-auto md:overflow-hidden">
       <CarbonProvider session={session}>
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={false}>
           <TooltipProvider delayDuration={0}>
             <AppSidebar
               activeEvents={activeEvents}
@@ -137,18 +131,10 @@ export default function AuthenticatedRoute() {
               location={location}
               locations={locations}
             />
-            <SidebarInset>
-              <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b">
-                <div className="flex items-center gap-2 px-4">
-                  <SidebarTrigger className="-ml-1" />
-                </div>
-              </header>
-              <main className="flex flex-1 w-full h-[calc(100vh-var(--header-height))] overflow-hidden">
-                <Outlet />
-              </main>
+            <SidebarInset className="bg-card">
+              <Outlet />
             </SidebarInset>
           </TooltipProvider>
-          <Toaster position="bottom-left" />
         </SidebarProvider>
       </CarbonProvider>
     </div>

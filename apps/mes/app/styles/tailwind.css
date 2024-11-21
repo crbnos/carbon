@@ -19,7 +19,8 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     --header-height: 50px;
-    --filters-height: 50px;
+    --filters-height: 38px;
+    --controls-width: 240px;
   }
 
   .dark {

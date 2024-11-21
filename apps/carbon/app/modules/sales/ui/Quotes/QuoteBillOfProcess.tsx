@@ -156,9 +156,7 @@ const QuoteBillOfProcess = ({
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "sales") || isDisabled) return;
     setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
+      prevItems.map((i) => (i.id === id ? { ...i, checked: !i.checked } : i))
     );
   };
 
@@ -243,11 +241,11 @@ const QuoteBillOfProcess = ({
 
   const onCloseOnDrag = useCallback(() => {
     setItems((prevItems) => {
-      const updatedItems = prevItems.map((item) =>
-        item.checked ? { ...item, checked: false } : item
+      const updatedItems = prevItems.map((i) =>
+        i.checked ? { ...i, checked: false } : i
       );
       return updatedItems.some(
-        (item, index) => item.checked !== prevItems[index].checked
+        (i, index) => i.checked !== prevItems[index].checked
       )
         ? updatedItems
         : prevItems;
@@ -256,20 +254,6 @@ const QuoteBillOfProcess = ({
 
   const onUpdateWorkInstruction = useDebounce(
     async (content: JSONContent) => {
-      if (!permissions.can("update", "parts")) return;
-      setItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === selectedItemId
-            ? {
-                ...item,
-                data: {
-                  ...item.data,
-                  workInstruction: content,
-                },
-              }
-            : item
-        )
-      );
       if (selectedItemId !== null && !isTemporaryId(selectedItemId))
         await carbon
           ?.from("quoteOperation")
@@ -349,7 +333,24 @@ const QuoteBillOfProcess = ({
                     item.data.workInstruction ?? ({} as JSONContent)
                   }
                   onUpload={onUploadImage}
-                  onChange={onUpdateWorkInstruction}
+                  onChange={(content) => {
+                    if (!permissions.can("update", "parts")) return;
+                    setItems((prevItems) =>
+                      prevItems.map((i) =>
+                        i.id === selectedItemId
+                          ? {
+                              ...i,
+                              data: {
+                                ...i.data,
+                                workInstruction: content,
+                              },
+                            }
+                          : i
+                      )
+                    );
+                    onUpdateWorkInstruction(content);
+                  }}
+                  className="py-8"
                 />
               ) : (
                 <div

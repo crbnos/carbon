@@ -1,11 +1,24 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { ClientOnly, Spinner } from "@carbon/react";
+import {
+  Button,
+  ClientOnly,
+  Heading,
+  HStack,
+  SidebarTrigger,
+  Spinner,
+} from "@carbon/react";
 import { json, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
+import { useMemo } from "react";
 import { LuAlertTriangle } from "react-icons/lu";
+
+import type { ColumnFilter } from "~/components/Filter";
+import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
 import type { Column, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
+import SearchFilter from "~/components/SearchFilter";
+import { useUrlParams } from "~/hooks/useUrlParams";
 import { getLocationAndWorkCenter } from "~/services/location.server";
 import {
   getActiveJobOperationsByLocation,
@@ -162,12 +175,61 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function Operations() {
   const { columns, items, processes } = useLoaderData<typeof loader>();
-  const hasFilters = false; // TODO: implement filters
+
+  const [params] = useUrlParams();
+  const { hasFilters, clearFilters } = useFilters();
+  const currentFilters = params.getAll("filter");
+  const filters = useMemo<ColumnFilter[]>(() => {
+    return [
+      {
+        accessorKey: "workCenterId",
+        header: "Work Center",
+        filter: {
+          type: "static",
+          options: columns.map((col) => ({
+            label: col.title,
+            value: col.id,
+          })),
+        },
+      },
+      {
+        accessorKey: "processId",
+        header: "Process",
+        pluralHeader: "Processes",
+        filter: {
+          type: "static",
+          options: processes.map((p) => ({
+            label: p.name,
+            value: p.id,
+          })),
+        },
+      },
+    ];
+  }, [columns, processes]);
 
   return (
-    <div className="flex flex-col h-full max-h-full  overflow-auto relative">
-      <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
-        <div className="flex flex-1 min-h-0 w-full relative">
+    <>
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
+        <div className="flex items-center gap-2 px-2">
+          <SidebarTrigger />
+          <Heading size="h4">Schedule</Heading>
+        </div>
+      </header>
+      <main className="flex flex-1 w-full h-[calc(100vh-var(--header-height))] overflow-hidden">
+        <div className="flex flex-col h-full max-h-full w-full overflow-x-auto relative">
+          <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
+            <HStack>
+              <SearchFilter param="search" size="sm" placeholder="Search" />
+              <Filter filters={filters} />
+            </HStack>
+          </HStack>
+          {currentFilters.length > 0 && (
+            <HStack className="h-[var(--filters-height)] px-4 py-1.5 justify-between bg-card border-b border-border w-full">
+              <HStack>
+                <ActiveFilters filters={filters} />
+              </HStack>
+            </HStack>
+          )}
           {columns.length > 0 ? (
             <ClientOnly
               fallback={
@@ -199,7 +261,7 @@ export default function Operations() {
               <span className="text-xs font-mono font-light text-foreground uppercase">
                 No results
               </span>
-              {/* <Button onClick={clearFilters}>Clear Filters</Button> */}
+              <Button onClick={clearFilters}>Clear Filters</Button>
             </div>
           ) : (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
@@ -212,7 +274,7 @@ export default function Operations() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }
