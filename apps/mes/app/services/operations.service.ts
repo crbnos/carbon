@@ -74,6 +74,32 @@ export const documentTypes = [
   "Other",
 ] as const;
 
+export const deadlineTypes = [
+  "ASAP",
+  "Hard Deadline",
+  "Soft Deadline",
+  "No Deadline",
+] as const;
+
+export const jobStatus = [
+  "Draft",
+  "Ready",
+  "In Progress",
+  "Paused",
+  "Completed",
+  "Cancelled",
+] as const;
+
+export const jobOperationStatus = [
+  "Todo",
+  "Ready",
+  "Waiting",
+  "In Progress",
+  "Paused",
+  "Done",
+  "Canceled",
+] as const;
+
 export const productionEventType = ["Setup", "Labor", "Machine"] as const;
 
 export const productionEventAction = ["Start", "End"] as const;
@@ -142,6 +168,17 @@ export async function getActiveJobOperationsByEmployee(
   });
 }
 
+export async function getActiveJobOperationsByLocation(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  workCenterIds: string[] = []
+) {
+  return client.rpc("get_active_job_operations_by_location", {
+    location_id: locationId,
+    work_center_ids: workCenterIds,
+  });
+}
+
 export async function getActiveJobCount(
   client: SupabaseClient<Database>,
   args: {
@@ -194,36 +231,6 @@ export function getFileType(fileName: string): (typeof documentTypes)[number] {
   }
 
   return "Other";
-}
-
-export async function getThumbnailPathByItemId(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  const { data: item } = await client
-    .from("item")
-    .select("thumbnailPath, modelUploadId")
-    .eq("id", itemId)
-    .single();
-
-  if (!item) return null;
-
-  const { thumbnailPath, modelUploadId } = item;
-
-  if (!modelUploadId) return thumbnailPath;
-
-  const { data: modelUpload } = await client
-    .from("modelUpload")
-    .select("thumbnailPath")
-    .eq("id", modelUploadId)
-    .single();
-
-  const modelUploadThumbnailPath = modelUpload?.thumbnailPath;
-
-  if (!thumbnailPath && modelUploadThumbnailPath) {
-    return modelUploadThumbnailPath;
-  }
-  return thumbnailPath;
 }
 
 export async function getJobFiles(
@@ -316,6 +323,17 @@ export async function getLocationsByCompany(
     .order("name", { ascending: true });
 }
 
+export async function getProcessesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("process")
+    .select(`id, name`)
+    .eq("companyId", companyId)
+    .order("name");
+}
+
 export async function getProductionEventsForJobOperation(
   client: SupabaseClient<Database>,
   args: {
@@ -363,6 +381,36 @@ export async function getScrapReasonsList(
     .order("name");
 }
 
+export async function getThumbnailPathByItemId(
+  client: SupabaseClient<Database>,
+  itemId: string
+) {
+  const { data: item } = await client
+    .from("item")
+    .select("thumbnailPath, modelUploadId")
+    .eq("id", itemId)
+    .single();
+
+  if (!item) return null;
+
+  const { thumbnailPath, modelUploadId } = item;
+
+  if (!modelUploadId) return thumbnailPath;
+
+  const { data: modelUpload } = await client
+    .from("modelUpload")
+    .select("thumbnailPath")
+    .eq("id", modelUploadId)
+    .single();
+
+  const modelUploadThumbnailPath = modelUpload?.thumbnailPath;
+
+  if (!thumbnailPath && modelUploadThumbnailPath) {
+    return modelUploadThumbnailPath;
+  }
+  return thumbnailPath;
+}
+
 export async function getWorkCenter(
   client: SupabaseClient<Database>,
   workCenterId: string
@@ -375,7 +423,7 @@ export async function getWorkCentersByLocation(
   locationId: string
 ) {
   return client
-    .from("workCenter")
+    .from("workCenters")
     .select("*")
     .eq("locationId", locationId)
     .eq("active", true)
