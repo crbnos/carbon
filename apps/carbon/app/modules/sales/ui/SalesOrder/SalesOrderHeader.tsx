@@ -12,14 +12,13 @@ import {
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
+  LuCheckCircle,
   LuChevronDown,
   LuEye,
-  LuFile,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
   LuStopCircle,
-  LuTruck,
 } from "react-icons/lu";
 
 import { usePanels } from "~/components/Layout";
@@ -112,15 +111,38 @@ const SalesOrderHeader = () => {
                 </statusFetcher.Form>
               </>
             )}
-            {routeData?.salesOrder?.status !== "Draft" && (
+            {!["Draft", "Completed"].includes(
+              routeData?.salesOrder?.status ?? ""
+            ) && (
               <>
-                <Button variant="secondary" isDisabled leftIcon={<LuTruck />}>
+                {/* <Button variant="secondary" isDisabled leftIcon={<LuTruck />}>
                   Ship
                 </Button>
 
                 <Button variant="secondary" isDisabled leftIcon={<LuFile />}>
                   Invoice
-                </Button>
+                </Button> */}
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.salesOrderStatus(orderId)}
+                >
+                  <input type="hidden" name="status" value="Completed" />
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    leftIcon={<LuCheckCircle />}
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "sales")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Completed"
+                    }
+                  >
+                    Complete
+                  </Button>
+                </statusFetcher.Form>
               </>
             )}
             {!["Cancelled", "Closed", "Completed", "Invoiced"].includes(
@@ -149,7 +171,7 @@ const SalesOrderHeader = () => {
               </statusFetcher.Form>
             )}
 
-            {["Cancelled", "Closed"].includes(
+            {["Cancelled", "Closed", "Completed"].includes(
               routeData?.salesOrder?.status ?? ""
             ) && (
               <statusFetcher.Form
