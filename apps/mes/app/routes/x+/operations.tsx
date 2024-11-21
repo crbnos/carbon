@@ -162,19 +162,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       };
     }) ?? []) satisfies Item[],
     processes: processes.data ?? [],
-    salesOrders: Object.entries(
-      filteredOperations?.reduce((acc, op) => {
-        if (op.salesOrderId) {
-          acc[op.salesOrderId] = op.salesOrderReadableId;
-        }
-        return acc;
-      }, {} as Record<string, string>) ?? {}
-    ).map(([id, readableId]) => ({ id, readableId })),
+    workCenters: workCenters.data ?? [],
   });
 }
 
 export default function Operations() {
-  const { columns, items, processes } = useLoaderData<typeof loader>();
+  const { columns, items, processes, workCenters } =
+    useLoaderData<typeof loader>();
 
   const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
@@ -186,9 +180,9 @@ export default function Operations() {
         header: "Work Center",
         filter: {
           type: "static",
-          options: columns.map((col) => ({
-            label: col.title,
-            value: col.id,
+          options: workCenters.map((col) => ({
+            label: col.name!,
+            value: col.id!,
           })),
         },
       },
@@ -198,14 +192,19 @@ export default function Operations() {
         pluralHeader: "Processes",
         filter: {
           type: "static",
-          options: processes.map((p) => ({
-            label: p.name,
-            value: p.id,
-          })),
+          options: processes
+            .filter(
+              (p): p is { id: string; name: string } =>
+                p.id != null && p.name != null
+            )
+            .map((p) => ({
+              label: p.name,
+              value: p.id,
+            })),
         },
       },
     ];
-  }, [columns, processes]);
+  }, [processes, workCenters]);
 
   return (
     <>
