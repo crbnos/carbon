@@ -85,11 +85,11 @@ export function ColumnCard({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
         })} flex flex-col p-[1px] pt-0`,
         currentFilters.length > 0
-          ? `h-[calc(100dvh-var(--header-height)-var(--filters-height))]`
-          : `h-[calc(100dvh-var(--header-height))]`
+          ? `h-[calc(100dvh-var(--header-height)*2-var(--filters-height))]`
+          : `h-[calc(100dvh-var(--header-height)*2)]`
       )}
     >
-      <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-10 border-b">
+      <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
         <div className="flex flex-grow items-start space-x-2">
           {column.active && <PulsingDot />}
           <div className="flex flex-col flex-grow">

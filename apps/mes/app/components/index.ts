@@ -6,7 +6,6 @@ import Hyperlink from "./Hyperlink";
 import { DeadlineIcon, FileIcon, OperationStatusIcon } from "./Icons";
 import { JobOperation } from "./JobOperation";
 import { OperationsList } from "./OperationsList";
-import { OptionallyFullscreen } from "./OptionallyFullscreen";
 
 export {
   AppSidebar,
@@ -18,5 +17,4 @@ export {
   JobOperation,
   OperationsList,
   OperationStatusIcon,
-  OptionallyFullscreen,
 };
