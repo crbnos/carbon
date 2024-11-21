@@ -37,8 +37,14 @@ interface PanelProviderProps {
 }
 
 export function PanelProvider({ children }: PanelProviderProps) {
-  const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
-  const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(false);
+  const isBrowser = typeof window !== "undefined";
+
+  const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(
+    isBrowser ? window.innerWidth < 768 : false
+  );
+  const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(
+    isBrowser ? window.innerWidth < 1024 : false
+  );
 
   const value = {
     isExplorerCollapsed,
