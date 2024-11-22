@@ -31,7 +31,7 @@ export const path = {
     forgotPassword: "/forgot-password",
     healthcheck: "/healthcheck",
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
-    operations: `${x}/operations`,
+    operations: `${x}/operations?saved=1`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",
