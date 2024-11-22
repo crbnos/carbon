@@ -77,7 +77,8 @@ const SalesOrderProperties = () => {
         action: path.to.bulkUpdateSalesOrder,
       });
     },
-    [fetcher, orderId, routeData?.salesOrder]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orderId, routeData?.salesOrder]
   );
 
   const onUpdateCustomFields = useCallback(
@@ -93,7 +94,8 @@ const SalesOrderProperties = () => {
         action: path.to.customFields,
       });
     },
-    [fetcher, orderId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orderId]
   );
 
   const permissions = usePermissions();

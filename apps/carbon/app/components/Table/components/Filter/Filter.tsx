@@ -102,7 +102,8 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
           fetcher.load(filter.filter.endpoint);
         }
       },
-      [fetcher, filters]
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [filters]
     );
 
     return hasFilters && !open && trigger !== "icon" ? (

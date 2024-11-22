@@ -91,7 +91,8 @@ const MaterialProperties = () => {
         action: path.to.bulkUpdateItems,
       });
     },
-    [fetcher, itemId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [itemId]
   );
 
   const onUpdateTags = useCallback(
@@ -109,7 +110,8 @@ const MaterialProperties = () => {
         action: path.to.tags,
       });
     },
-    [fetcher, itemId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [itemId]
   );
 
   const onUpdateCustomFields = useCallback(
@@ -125,7 +127,8 @@ const MaterialProperties = () => {
         action: path.to.customFields,
       });
     },
-    [fetcher, itemId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [itemId]
   );
 
   return (
