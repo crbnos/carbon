@@ -152,7 +152,7 @@ const SalesOrderProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.salesOrder?.id ?? "")
+                    copyToClipboard(routeData?.salesOrder?.salesPersonId ?? "")
                   }
                 >
                   <LuCopy className="w-3 h-3" />

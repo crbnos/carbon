@@ -146,7 +146,9 @@ const QuoteProperties = () => {
                   aria-label="Copy"
                   size="sm"
                   className="p-1"
-                  onClick={() => copyToClipboard(routeData?.quote?.id ?? "")}
+                  onClick={() =>
+                    copyToClipboard(routeData?.quote?.quoteId ?? "")
+                  }
                 >
                   <LuCopy className="w-3 h-3" />
                 </Button>

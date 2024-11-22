@@ -131,7 +131,7 @@ const SalesRFQProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.rfqSummary?.id ?? "")
+                    copyToClipboard(routeData?.rfqSummary?.rfqId ?? "")
                   }
                 >
                   <LuCopy className="w-3 h-3" />
