@@ -2,6 +2,8 @@ import { error, getBrowserEnv } from "@carbon/auth";
 import { getSessionFlash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { Button, Heading, toast } from "@carbon/react";
+import type { Theme } from "@carbon/utils";
+import { themes } from "@carbon/utils";
 import {
   Links,
   Meta,
@@ -26,6 +28,7 @@ import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 
 import { useMode } from "./hooks/useMode";
+import { getTheme } from "./services/theme.server";
 import { modeValidator } from "./types/validators";
 
 export const config = { runtime: "edge", regions: ["iad1"] };
@@ -35,7 +38,6 @@ export function links() {
     { rel: "stylesheet", href: Tailwind },
     { rel: "stylesheet", href: Background },
     { rel: "stylesheet", href: NProgress },
-    { rel: "stylesheet", href: "/assets/theme.css" },
   ];
 }
 
@@ -66,6 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         SUPABASE_ANON_PUBLIC,
       },
       mode: getMode(request),
+      theme: getTheme(request),
       result: sessionFlash?.result,
     },
     {
@@ -97,13 +100,47 @@ function Document({
   children,
   title = "CarbonOS",
   mode = "dark",
+  theme = "zinc",
 }: {
   children: React.ReactNode;
   title?: string;
   mode?: "light" | "dark";
+  theme?: string;
 }) {
+  const selectedTheme = themes.find((t) => t.name === theme) as
+    | Theme
+    | undefined;
+
+  // Create style objects for both light and dark modes
+  const lightVars: Record<string, string> = {};
+  const darkVars: Record<string, string> = {};
+
+  if (selectedTheme) {
+    // Set light mode variables
+    Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
+      const cssKey = `--${key}`;
+      lightVars[cssKey] = `${value}`;
+    });
+
+    // Set dark mode variables
+    Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
+      const cssKey = `--${key}`;
+      darkVars[cssKey] = `${value}`;
+    });
+  }
+
+  // Combine the styles with proper selectors
+  const themeStyle = {
+    ...(mode === "dark" ? darkVars : lightVars),
+    "--radius": "0.5rem",
+  } as React.CSSProperties;
+
   return (
-    <html lang="en" className={`${mode} h-full overflow-x-hidden`}>
+    <html
+      lang="en"
+      className={`${mode} h-full overflow-x-hidden`}
+      style={themeStyle}
+    >
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -130,6 +167,7 @@ export default function App() {
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
   const result = loaderData?.result;
+  const theme = loaderData?.theme ?? "zinc";
 
   /* Toast Messages */
   useEffect(() => {
@@ -144,7 +182,7 @@ export default function App() {
   const mode = useMode();
 
   return (
-    <Document mode={mode}>
+    <Document mode={mode} theme={theme}>
       <Outlet />
       <script
         dangerouslySetInnerHTML={{
