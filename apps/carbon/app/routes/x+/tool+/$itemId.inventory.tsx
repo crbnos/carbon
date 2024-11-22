@@ -199,7 +199,7 @@ export default function ToolInventoryRoute() {
     ...getCustomFields(toolInventory.customFields ?? {}),
   };
   return (
-    <VStack spacing={2}>
+    <VStack spacing={2} className="p-2">
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}

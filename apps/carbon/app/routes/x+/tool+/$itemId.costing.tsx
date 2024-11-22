@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -88,13 +89,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ToolCostingRoute() {
   const { itemCost } = useLoaderData<typeof loader>();
   return (
-    <ItemCostingForm
-      key={itemCost.itemId}
-      initialValues={{
-        ...itemCost,
-        // itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
-        ...getCustomFields(itemCost.customFields),
-      }}
-    />
+    <VStack spacing={2} className="p-2">
+      <ItemCostingForm
+        key={itemCost.itemId}
+        initialValues={{
+          ...itemCost,
+          // itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
+          ...getCustomFields(itemCost.customFields),
+        }}
+      />
+    </VStack>
   );
 }

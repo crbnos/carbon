@@ -29,7 +29,11 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
-import { itemTrackingTypes, toolValidator } from "~/modules/items";
+import {
+  itemReplenishmentSystems,
+  itemTrackingTypes,
+  toolValidator,
+} from "~/modules/items";
 import { path } from "~/utils/path";
 
 type ToolFormProps = {
@@ -69,9 +73,17 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
       value: itemTrackingType,
     })) ?? [];
 
+  const [replenishmentSystem, setReplenishmentSystem] = useState<string>(
+    initialValues.replenishmentSystem ?? "Buy"
+  );
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
     initialValues.defaultMethodType ?? "Buy"
   );
+  const itemReplenishmentSystemOptions =
+    itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
+      label: itemReplenishmentSystem,
+      value: itemReplenishmentSystem,
+    })) ?? [];
 
   return (
     <ModalCardProvider type={type}>
@@ -97,7 +109,6 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
-              <Hidden name="replenishmentSystem" value="Buy" />
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -134,11 +145,23 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                 {isEditing && (
                   <TextArea name="description" label="Long Description" />
                 )}
-
+                <Select
+                  name="replenishmentSystem"
+                  label="Replenishment System"
+                  options={itemReplenishmentSystemOptions}
+                  onChange={(newValue) => {
+                    setReplenishmentSystem(newValue?.value ?? "Buy");
+                    if (newValue?.value === "Buy") {
+                      setDefaultMethodType("Buy");
+                    } else {
+                      setDefaultMethodType("Make");
+                    }
+                  }}
+                />
                 <DefaultMethodType
                   name="defaultMethodType"
                   label="Default Method Type"
-                  replenishmentSystem="Buy"
+                  replenishmentSystem={replenishmentSystem}
                   value={defaultMethodType}
                   onChange={(newValue) =>
                     setDefaultMethodType(newValue?.value ?? "Buy")

@@ -1,5 +1,6 @@
 import { useParams } from "@remix-run/react";
 
+import { BiListCheck } from "react-icons/bi";
 import { LuBox, LuFileText, LuShoppingCart, LuTags } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Role } from "~/types";
@@ -11,12 +12,15 @@ export function useToolNavigation() {
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
-  const routeData = useRouteData<{ toolSummary: ToolSummary }>(
-    path.to.tool(itemId)
-  );
+  const routeData = useRouteData<{
+    toolSummary: ToolSummary;
+  }>(path.to.tool(itemId));
+  if (!routeData?.toolSummary?.replenishmentSystem)
+    throw new Error("Could not find replenishmentSystem in routeData");
   if (!routeData?.toolSummary?.itemTrackingType)
     throw new Error("Could not find itemTrackingType in routeData");
 
+  const replenishment = routeData.toolSummary.replenishmentSystem;
   const itemTrackingType = routeData.toolSummary.itemTrackingType;
 
   return [
@@ -29,9 +33,18 @@ export function useToolNavigation() {
     {
       name: "Purchasing",
       to: path.to.toolPurchasing(itemId),
+      isDisabled: replenishment === "Make",
       role: ["employee", "supplier"],
       icon: LuShoppingCart,
       shortcut: "Command+Shift+p",
+    },
+    {
+      name: "Manufacturing",
+      to: path.to.toolManufacturing(itemId),
+      isDisabled: replenishment === "Buy",
+      role: ["employee"],
+      icon: BiListCheck,
+      shortcut: "Command+Shift+m",
     },
     {
       name: "Costing",
