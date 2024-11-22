@@ -268,7 +268,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, people, data]);
+  }, [tags, people, customColumns]);
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
@@ -276,6 +276,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
       toast.error(fetcher.data.error.message);
     }
   }, [fetcher.data]);
+
   const onBulkUpdate = useCallback(
     (
       selectedRows: typeof data,
@@ -293,7 +294,8 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         action: path.to.bulkUpdateItems,
       });
     },
-    [fetcher]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const renderActions = useCallback(

@@ -273,6 +273,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
       toast.error(fetcher.data.error.message);
     }
   }, [fetcher.data]);
+
   const onBulkUpdate = useCallback(
     (
       selectedRows: typeof data,
@@ -290,7 +291,8 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
         action: path.to.bulkUpdateItems,
       });
     },
-    [fetcher]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const renderActions = useCallback(

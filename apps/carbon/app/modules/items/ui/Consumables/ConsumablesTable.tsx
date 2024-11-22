@@ -269,7 +269,7 @@ const ConsumablesTable = memo(
         },
       ];
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, people, tags]);
+    }, [tags, people, customColumns]);
 
     const fetcher = useFetcher<typeof action>();
     useEffect(() => {
@@ -294,7 +294,8 @@ const ConsumablesTable = memo(
           action: path.to.bulkUpdateItems,
         });
       },
-      [fetcher]
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      []
     );
 
     const renderActions = useCallback(
