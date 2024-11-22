@@ -3,8 +3,9 @@ import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dis
 import { DB } from "../database.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../methods.ts";
 import { Database } from "../types.ts";
+import { MaterialManager } from "./material-manager.ts";
 import { ResourceManager } from "./resource-manager.ts";
-import { BaseOperation, Operation, SchedulingStrategy } from "./types.ts";
+import { BaseOperation, SchedulingStrategy } from "./types.ts";
 
 class SchedulingEngine {
   private client: SupabaseClient<Database>;
@@ -12,6 +13,7 @@ class SchedulingEngine {
   private jobId: string;
   private operationsToSchedule: BaseOperation[];
   private resourceManager: ResourceManager;
+  private materialManager: MaterialManager;
 
   constructor({
     client,
@@ -29,6 +31,7 @@ class SchedulingEngine {
     this.jobId = jobId;
     this.operationsToSchedule = [];
     this.resourceManager = new ResourceManager(db, companyId);
+    this.materialManager = new MaterialManager(db, companyId);
   }
 
   async initialize(): Promise<void> {
@@ -37,6 +40,7 @@ class SchedulingEngine {
     }
     await Promise.all([
       this.resourceManager.initialize(this.jobId),
+      this.materialManager.initialize(this.jobId),
       this.getOperationsToSchedule(),
     ]);
   }
@@ -182,54 +186,3 @@ class SchedulingEngine {
 }
 
 export { SchedulingEngine };
-
-function sortOperations(operations: Operation[]) {
-  return operations.sort((a, b) => {
-    // First should come anything that's in progress
-    if (a.status === "In Progress" && b.status !== "In Progress") {
-      return -1;
-    } else if (a.status !== "In Progress" && b.status === "In Progress") {
-      return 1;
-    }
-    // Then anything that's paused
-    else if (a.status === "Paused" && b.status !== "Paused") {
-      return -1;
-    } else if (a.status !== "Paused" && b.status === "Paused") {
-      return 1;
-    }
-    // Then anything that's ASAP
-    else if (a.deadlineType === "ASAP" && b.deadlineType !== "ASAP") {
-      return -1;
-    } else if (a.deadlineType !== "ASAP" && b.deadlineType === "ASAP") {
-      return 1;
-    }
-    // Then we sort deadlines
-    else if (
-      a.deadlineType === "Hard Deadline" ||
-      a.deadlineType === "Soft Deadline"
-    ) {
-      if (
-        b.deadlineType === "Hard Deadline" ||
-        b.deadlineType === "Soft Deadline"
-      ) {
-        return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
-      } else {
-        return -1;
-      }
-    }
-    // Finally we add anything that has no deadline
-    else if (
-      a.deadlineType === "No Deadline" &&
-      b.deadlineType !== "No Deadline"
-    ) {
-      return 1;
-    } else if (
-      a.deadlineType === "No Deadline" &&
-      b.deadlineType === "No Deadline"
-    ) {
-      return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
-    } else {
-      return 0;
-    }
-  });
-}
