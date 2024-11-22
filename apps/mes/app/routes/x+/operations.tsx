@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
   Spinner,
 } from "@carbon/react";
-import { json, useLoaderData } from "@remix-run/react";
+import { json, redirect, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { useMemo } from "react";
 import { LuAlertTriangle } from "react-icons/lu";
@@ -20,6 +20,7 @@ import { Kanban } from "~/components/Kanban";
 import SearchFilter from "~/components/SearchFilter";
 import { useUrlParams } from "~/hooks/useUrlParams";
 import { getLocationAndWorkCenter } from "~/services/location.server";
+import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
   getProcessesList,
@@ -35,6 +36,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
   const filterParam = searchParams.getAll("filter");
+  const saved = searchParams.get("saved") === "1";
+
+  console.log("ok");
+
+  // Handle saved filters
+  const headers = new Headers();
+  const savedFilters = await getFilters(request);
+
+  if (saved) {
+    if (savedFilters || filterParam.length === 0) {
+      const savedFiltersArray = savedFilters?.split(",") ?? [];
+      const newUrl = new URL(request.url);
+      newUrl.searchParams.delete("saved");
+      savedFiltersArray.forEach((filter) => {
+        newUrl.searchParams.append("filter", filter);
+      });
+      return redirect(newUrl.toString());
+    }
+  } else {
+    // Save current filters if they differ from saved ones
+    const savedFilters = await getFilters(request);
+    const currentFiltersString = filterParam?.filter(Boolean).join(",");
+    if (savedFilters !== currentFiltersString) {
+      headers.append(
+        "Set-Cookie",
+        await setFilters(request, currentFiltersString)
+      );
+      // Continue with the rest of the loader but include the cookie header
+      // in the final response
+    }
+  }
 
   let selectedWorkCenterIds: string[] = [];
   let selectedProcessIds: string[] = [];
@@ -126,44 +158,47 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return true;
     }) ?? [];
 
-  return json({
-    columns: filteredWorkCenters
-      .map((wc) => ({
-        id: wc.id!,
-        title: wc.name!,
-        type:
-          (wc.processes as { id: string; name: string }[] | undefined)?.map(
-            (p) => p.id
-          ) ?? [],
-        active: activeWorkCenters.has(wc.id),
-      }))
-      .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
-    items: (filteredOperations.map((op) => {
-      const operation = makeDurations(op);
-      return {
-        id: op.id,
-        columnId: op.workCenterId,
-        columnType: op.processId,
-        priority: op.priority,
-        title: op.jobReadableId,
+  return json(
+    {
+      columns: filteredWorkCenters
+        .map((wc) => ({
+          id: wc.id!,
+          title: wc.name!,
+          type:
+            (wc.processes as { id: string; name: string }[] | undefined)?.map(
+              (p) => p.id
+            ) ?? [],
+          active: activeWorkCenters.has(wc.id),
+        }))
+        .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
+      items: (filteredOperations.map((op) => {
+        const operation = makeDurations(op);
+        return {
+          id: op.id,
+          columnId: op.workCenterId,
+          columnType: op.processId,
+          priority: op.priority,
+          title: op.jobReadableId,
 
-        subtitle: op.itemReadableId,
-        description: op.description,
-        dueDate: op.jobDueDate,
-        duration:
-          operation.setupDuration +
-          Math.max(operation.laborDuration, operation.machineDuration),
-        deadlineType: op.jobDeadlineType,
-        customerId: op.jobCustomerId,
-        salesOrderReadableId: op.salesOrderReadableId,
-        salesOrderId: op.salesOrderId,
-        salesOrderLineId: op.salesOrderLineId,
-        status: op.operationStatus,
-      };
-    }) ?? []) satisfies Item[],
-    processes: processes.data ?? [],
-    workCenters: workCenters.data ?? [],
-  });
+          subtitle: op.itemReadableId,
+          description: op.description,
+          dueDate: op.jobDueDate,
+          duration:
+            operation.setupDuration +
+            Math.max(operation.laborDuration, operation.machineDuration),
+          deadlineType: op.jobDeadlineType,
+          customerId: op.jobCustomerId,
+          salesOrderReadableId: op.salesOrderReadableId,
+          salesOrderId: op.salesOrderId,
+          salesOrderLineId: op.salesOrderLineId,
+          status: op.operationStatus,
+        };
+      }) ?? []) satisfies Item[],
+      processes: processes.data ?? [],
+      workCenters: workCenters.data ?? [],
+    },
+    { headers }
+  );
 }
 
 export default function Operations() {
