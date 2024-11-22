@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   generateHTML,
   Heading,
   HStack,
@@ -41,11 +42,13 @@ import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import {
   LuChevronDown,
   LuCreditCard,
   LuImage,
   LuTruck,
+  LuUpload,
   LuXCircle,
 } from "react-icons/lu";
 import { useMode } from "~/hooks/useMode";
@@ -885,6 +888,17 @@ const Quote = ({ data }: { data: QuoteData }) => {
 
   const termsHTML = generateHTML(terms as JSONContent);
 
+  const [file, setFile] = useState<File | null>(null);
+  const onDrop = (acceptedFiles: File[]) => {
+    setFile(acceptedFiles[0]);
+  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { "application/pdf": [".pdf"] },
+    maxFiles: 1,
+    maxSize: 25 * 1024 * 1024, // 25MB limit
+  });
+
   return (
     <VStack spacing={8} className="w-full items-center p-2 md:p-8">
       {logo && (
@@ -980,6 +994,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               onSubmit={() => {
                 submitted.current = true;
               }}
+              encType="multipart/form-data"
             >
               <ModalHeader>
                 <ModalTitle>Accept Quote</ModalTitle>
@@ -997,6 +1012,35 @@ const Quote = ({ data }: { data: QuoteData }) => {
                     name="digitalQuoteAcceptedByEmail"
                     label="Please enter your email address"
                   />
+                  <div
+                    {...getRootProps()}
+                    className={cn(
+                      "w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer",
+                      isDragActive ? "border-primary" : "border-muted"
+                    )}
+                  >
+                    <input name="file" {...getInputProps()} />
+                    {file ? (
+                      <>
+                        <p>{file.name}</p>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setFile(null)}
+                        >
+                          Change
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          Drag and drop a Purchase Order PDF here, or click to
+                          select a file
+                        </p>
+                        <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
+                      </>
+                    )}
+                  </div>
                 </div>
               </ModalBody>
               <ModalFooter>
@@ -1008,6 +1052,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
                   name="selectedLines"
                   value={JSON.stringify(selectedLines)}
                 />
+
                 <Button
                   isLoading={fetcher.state !== "idle"}
                   isDisabled={fetcher.state !== "idle"}

@@ -5,6 +5,7 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import {
   convertQuoteToOrder,
+  getOpportunityByQuote,
   getQuoteByExternalId,
   selectedLinesValidator,
 } from "~/modules/sales";
@@ -27,6 +28,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const digitalQuoteAcceptedByEmail = String(
     formData.get("digitalQuoteAcceptedByEmail")
   );
+  const file = formData.get("file");
+
   if (typeof selectedLinesRaw !== "string") {
     return json({ success: false, message: "Invalid selected lines data" });
   }
@@ -52,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       message: "Quote not found",
     });
   }
-  const [convert, company] = await Promise.all([
+  const [convert, company, opportunity] = await Promise.all([
     convertQuoteToOrder(serviceRole, {
       id: quote.data.id,
       companyId: quote.data.companyId,
@@ -62,6 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       digitalQuoteAcceptedByEmail,
     }),
     getCompany(serviceRole, quote.data.companyId),
+    getOpportunityByQuote(serviceRole, quote.data.id),
   ]);
 
   if (convert.error) {
@@ -74,6 +78,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (company.error) {
     console.error("Failed to get company", company.error);
+    return json({
+      success: false,
+      message: "Failed to send notification",
+    });
+  }
+
+  if (opportunity.error) {
+    console.error("Failed to get opportunity", opportunity.error);
     return json({
       success: false,
       message: "Failed to send notification",
@@ -97,6 +109,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
         success: false,
         message: "Failed to send notification",
       });
+    }
+  }
+
+  if (file && file instanceof File) {
+    const purchaseOrderDocumentPath = `${company.data.id}/opportunity/${opportunity.data.id}/${file.name}`;
+
+    const fileUpload = await serviceRole.storage
+      .from("private")
+      .upload(purchaseOrderDocumentPath, file);
+
+    if (fileUpload.error) {
+      console.error("Failed to upload file", fileUpload.error);
+      return json({
+        success: false,
+        message: "Failed to upload file",
+      });
+    }
+
+    const updateOpportunity = await serviceRole
+      .from("opportunity")
+      .update({
+        purchaseOrderDocumentPath,
+      })
+      .eq("id", opportunity.data?.id!);
+
+    if (updateOpportunity.error) {
+      console.error("Failed to update opportunity", updateOpportunity.error);
     }
   }
 
