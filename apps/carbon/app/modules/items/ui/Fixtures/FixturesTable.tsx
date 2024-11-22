@@ -297,7 +297,7 @@ const FixturesTable = memo(({ data, count, tags }: FixturesTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, customers, people, tags]);
+  }, [customers, tags, people, customColumns]);
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
@@ -322,7 +322,8 @@ const FixturesTable = memo(({ data, count, tags }: FixturesTableProps) => {
         action: path.to.bulkUpdateItems,
       });
     },
-    [fetcher]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const renderActions = useCallback(

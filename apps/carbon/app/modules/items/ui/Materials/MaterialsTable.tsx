@@ -313,7 +313,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, people, tags]);
+  }, [tags, people, customColumns]);
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
@@ -321,6 +321,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       toast.error(fetcher.data.error.message);
     }
   }, [fetcher.data]);
+
   const onBulkUpdate = useCallback(
     (
       selectedRows: typeof data,
@@ -342,7 +343,8 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         action: path.to.bulkUpdateItems,
       });
     },
-    [fetcher]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const renderActions = useCallback(
