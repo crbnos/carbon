@@ -80,7 +80,7 @@ export default function ToolDetailsRoute() {
   };
 
   return (
-    <VStack spacing={2} className="w-full h-full">
+    <VStack spacing={2} className="w-full h-full p-2">
       <ToolForm
         key={JSON.stringify(toolInitialValues)}
         initialValues={toolInitialValues}

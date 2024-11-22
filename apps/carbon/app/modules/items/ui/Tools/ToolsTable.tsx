@@ -28,6 +28,7 @@ import {
   LuCalendar,
   LuCheck,
   LuPencil,
+  LuRefreshCw,
   LuTag,
   LuTrash,
   LuUser,
@@ -43,11 +44,12 @@ import {
   Table,
   TrackingTypeIcon,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Tool } from "~/modules/items";
-import { itemTrackingTypes } from "~/modules/items";
+import { itemReplenishmentSystems, itemTrackingTypes } from "~/modules/items";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
@@ -132,6 +134,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           icon: <TbTargetArrow />,
         },
       },
+
       {
         accessorKey: "defaultMethodType",
         header: "Default Method",
@@ -155,6 +158,21 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
             })),
           },
           icon: <RxCodesandboxLogo />,
+        },
+      },
+      {
+        accessorKey: "replenishmentSystem",
+        header: "Replenishment",
+        cell: (item) => <Enumerable value={item.getValue<string>()} />,
+        meta: {
+          filter: {
+            type: "static",
+            options: itemReplenishmentSystems.map((type) => ({
+              value: type,
+              label: <Enumerable value={type} />,
+            })),
+          },
+          icon: <LuRefreshCw />,
         },
       },
       {

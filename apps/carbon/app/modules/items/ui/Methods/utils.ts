@@ -6,6 +6,8 @@ export function getPathToMakeMethod(type: string, id: string) {
       return path.to.partMakeMethod(id);
     case "Fixture":
       return path.to.fixtureMakeMethod(id);
+    case "Tool":
+      return path.to.toolMakeMethod(id);
     default:
       return "#";
   }
