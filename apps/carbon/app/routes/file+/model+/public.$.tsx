@@ -65,8 +65,6 @@ export let loader = async ({ params }: LoaderFunctionArgs) => {
   const headers = new Headers({
     "Content-Type": contentType,
     "Cache-Control": "public, max-age=31536000, immutable",
-    "CDN-Cache-Control": "public, max-age=31536000, immutable",
-    "Vercel-CDN-Cache-Control": "public, max-age=31536000, immutable",
     "Access-Control-Allow-Origin": "*", // Allow cross-origin requests
     "Access-Control-Allow-Methods": "GET", // Only allow GET requests
     "Access-Control-Allow-Headers": "Content-Type", // Allow Content-Type header

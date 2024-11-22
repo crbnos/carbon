@@ -61,9 +61,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const headers = new Headers({
     "Content-Type": contentType,
-    "Cache-Control": "public, max-age=31536000, immutable",
-    "CDN-Cache-Control": "public, max-age=31536000, immutable",
-    "Vercel-CDN-Cache-Control": "public, max-age=31536000, immutable",
+    "Cache-Control": "private, max-age=31536000, immutable",
   });
   return new Response(fileData, { status: 200, headers });
 };
