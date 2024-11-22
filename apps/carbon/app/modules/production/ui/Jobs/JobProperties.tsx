@@ -73,7 +73,8 @@ const JobProperties = () => {
         action: path.to.bulkUpdateJob,
       });
     },
-    [fetcher, jobId, routeData?.job]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [jobId, routeData?.job]
   );
 
   const onUpdateCustomFields = useCallback(
@@ -89,7 +90,8 @@ const JobProperties = () => {
         action: path.to.customFields,
       });
     },
-    [fetcher, jobId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [jobId]
   );
 
   const onUpdateTags = useCallback(
@@ -107,7 +109,8 @@ const JobProperties = () => {
         action: path.to.tags,
       });
     },
-    [fetcher, jobId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [jobId]
   );
 
   const permissions = usePermissions();

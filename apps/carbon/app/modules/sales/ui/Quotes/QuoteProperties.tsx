@@ -75,7 +75,8 @@ const QuoteProperties = () => {
         action: path.to.bulkUpdateQuote,
       });
     },
-    [fetcher, quoteId, routeData?.quote]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [quoteId, routeData?.quote]
   );
 
   const onUpdateCustomFields = useCallback(
@@ -91,7 +92,8 @@ const QuoteProperties = () => {
         action: path.to.customFields,
       });
     },
-    [fetcher, quoteId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [quoteId]
   );
 
   const optimisticAssignment = useOptimisticAssignment({

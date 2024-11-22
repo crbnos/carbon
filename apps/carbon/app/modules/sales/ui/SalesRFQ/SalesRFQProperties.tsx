@@ -59,7 +59,8 @@ const SalesRFQProperties = () => {
         action: path.to.bulkUpdateSalesRfq,
       });
     },
-    [fetcher, rfqId, routeData?.rfqSummary]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rfqId, routeData?.rfqSummary]
   );
 
   const onUpdateCustomFields = useCallback(
@@ -75,7 +76,8 @@ const SalesRFQProperties = () => {
         action: path.to.customFields,
       });
     },
-    [fetcher, rfqId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rfqId]
   );
 
   const optimisticAssignment = useOptimisticAssignment({
