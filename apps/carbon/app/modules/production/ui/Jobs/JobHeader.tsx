@@ -1,4 +1,7 @@
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -17,12 +20,18 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Spinner,
   useDisclosure,
+  useMount,
 } from "@carbon/react";
 
+import { useCarbon } from "@carbon/auth";
 import type { FetcherWithComponents } from "@remix-run/react";
 import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
+import { useState } from "react";
+import { flushSync } from "react-dom";
 import {
+  LuAlertTriangle,
   LuChevronDown,
   LuClock,
   LuHardHat,
@@ -343,6 +352,55 @@ function JobStartModal({
   fetcher: FetcherWithComponents<{}>;
   onClose: () => void;
 }) {
+  const { carbon } = useCarbon();
+  const [loading, setLoading] = useState(true);
+  const [eachAssemblyHasAnOperation, setEachAssemblyHasAnOperation] =
+    useState(false);
+
+  const validate = async () => {
+    if (!carbon || !job) return;
+    const [makeMethod, materials, operations] = await Promise.all([
+      carbon
+        .from("jobMakeMethod")
+        .select("*")
+        .eq("jobId", job.id!)
+        .is("parentMaterialId", null)
+        .single(),
+      carbon
+        .from("jobMaterialWithMakeMethodId")
+        .select("*")
+        .eq("jobId", job.id!),
+      carbon.from("jobOperation").select("*").eq("jobId", job.id!),
+    ]);
+
+    // make methods for materials
+    const uniqueMakeMethodIds = new Set(
+      materials.data
+        ?.filter((m) => m.jobMaterialMakeMethodId && m.methodType === "Make")
+        .map((m) => m.jobMaterialMakeMethodId) ?? []
+    );
+
+    // top-level make method
+    uniqueMakeMethodIds.add(makeMethod.data?.id!);
+
+    flushSync(() => {
+      setEachAssemblyHasAnOperation(
+        Array.from(uniqueMakeMethodIds).every(
+          (makeMethodId) =>
+            operations.data?.some(
+              (op) => op.jobMakeMethodId === makeMethodId
+            ) ?? false
+        )
+      );
+    });
+
+    setLoading(false);
+  };
+
+  useMount(() => {
+    validate();
+  });
+
   if (!job) return null;
 
   return (
@@ -358,29 +416,56 @@ function JobStartModal({
         <ModalHeader>
           <ModalTitle>Start {job?.jobId}</ModalTitle>
         </ModalHeader>
-        <ModalBody>
-          Are you sure you want to start this job? It will become available to
-          the shop floor.
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <fetcher.Form
-            onSubmit={onClose}
-            method="post"
-            action={`${path.to.jobStatus(job.id!)}?schedule=1`}
-          >
-            <input type="hidden" name="status" value="Ready" />
-            <Button
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-            >
-              Release Job
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
+        {loading ? (
+          <ModalBody>
+            <div className="flex flex-col h-[118px] w-full items-center justify-center gap-2">
+              <Spinner className="size-8" />
+              <p className="text-sm">Validating job...</p>
+            </div>
+          </ModalBody>
+        ) : (
+          <>
+            <ModalBody>
+              {eachAssemblyHasAnOperation ? (
+                <p>
+                  Are you sure you want to start this job? It will become
+                  available to the shop floor.
+                </p>
+              ) : (
+                <Alert variant="warning">
+                  <LuAlertTriangle />
+                  <AlertTitle>Missing Operations</AlertTitle>
+                  <AlertDescription>
+                    There are Bills of Processes associated with this job that
+                    have no operations. Please assign an operation to each make
+                    method before releasing it.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
+              <fetcher.Form
+                onSubmit={onClose}
+                method="post"
+                action={`${path.to.jobStatus(job.id!)}?schedule=1`}
+              >
+                <input type="hidden" name="status" value="Ready" />
+                <Button
+                  isLoading={fetcher.state !== "idle"}
+                  isDisabled={
+                    fetcher.state !== "idle" || !eachAssemblyHasAnOperation
+                  }
+                  type="submit"
+                >
+                  Release Job
+                </Button>
+              </fetcher.Form>
+            </ModalFooter>
+          </>
+        )}
       </ModalContent>
     </Modal>
   );

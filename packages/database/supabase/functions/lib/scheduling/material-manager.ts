@@ -16,15 +16,22 @@ class MaterialManager {
       throw new Error("Database connection is not initialized");
     }
 
-    const materialToAssign = await this.db
-      .selectFrom("jobMaterial")
-      .selectAll()
-      .where("jobId", "=", jobId)
-      .where("jobOperationId", "is", null)
-      .where("companyId", "=", this.companyId)
-      .execute();
+    const [materialToAssign, jobOperations] = await Promise.all([
+      this.db
+        .selectFrom("jobMaterial")
+        .selectAll()
+        .where("jobId", "=", jobId)
+        .where("jobOperationId", "is", null)
+        .where("companyId", "=", this.companyId)
+        .execute(),
+      this.db
+        .selectFrom("jobOperation")
+        .selectAll()
+        .where("jobId", "=", jobId)
+        .execute(),
+    ]);
 
-    console.log({ materialToAssign });
+    console.log({ materialToAssign, jobOperations });
   }
 }
 
