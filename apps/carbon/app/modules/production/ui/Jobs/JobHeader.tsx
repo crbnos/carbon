@@ -377,7 +377,7 @@ function JobStartModal({
               isDisabled={fetcher.state !== "idle"}
               type="submit"
             >
-              Start
+              Release Job
             </Button>
           </fetcher.Form>
         </ModalFooter>
