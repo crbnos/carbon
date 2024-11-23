@@ -3,7 +3,8 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { SchedulingEngine } from "../lib/scheduling/engine.ts";
+import { SchedulingEngine } from "../lib/scheduling/scheduling-engine.ts";
+import { SchedulingStrategy } from "../lib/scheduling/types.ts";
 import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
@@ -39,7 +40,10 @@ serve(async (req: Request) => {
     const engine = new SchedulingEngine({ client, db, jobId, companyId });
 
     await engine.initialize();
-    // await engine.prioritize(SchedulingStrategy.LeastTime);
+    await Promise.all([
+      engine.prioritize(SchedulingStrategy.LeastTime),
+      engine.assign(),
+    ]);
 
     return new Response(
       JSON.stringify({
