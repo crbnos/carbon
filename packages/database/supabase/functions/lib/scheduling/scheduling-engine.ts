@@ -12,6 +12,9 @@ class SchedulingEngine {
   private db: Kysely<DB>;
   private jobId: string;
   private operationsToSchedule: BaseOperation[];
+  private operationsByJobMakeMethodId: Record<string, BaseOperation[]>;
+  private validMaterialIds: string[];
+
   private resourceManager: ResourceManager;
   private materialManager: MaterialManager;
 
@@ -28,10 +31,14 @@ class SchedulingEngine {
   }) {
     this.db = db;
     this.client = client;
+
     this.jobId = jobId;
     this.operationsToSchedule = [];
-    this.resourceManager = new ResourceManager(db, companyId);
+    this.operationsByJobMakeMethodId = {};
+    this.validMaterialIds = [];
+
     this.materialManager = new MaterialManager(db, companyId);
+    this.resourceManager = new ResourceManager(db, companyId);
   }
 
   async initialize(): Promise<void> {
@@ -41,8 +48,15 @@ class SchedulingEngine {
     await Promise.all([
       this.resourceManager.initialize(this.jobId),
       this.materialManager.initialize(this.jobId),
-      this.getOperationsToSchedule(),
+      this.getOperationsAndMaterialsToSchedule(),
     ]);
+  }
+
+  async assign() {
+    await this.materialManager.assignOperationsToMaterials(
+      this.validMaterialIds,
+      this.operationsByJobMakeMethodId
+    );
   }
 
   async prioritize(
@@ -121,7 +135,7 @@ class SchedulingEngine {
     }
   }
 
-  async getOperationsToSchedule() {
+  async getOperationsAndMaterialsToSchedule() {
     if (!this.db) {
       throw new Error("Database connection is not initialized");
     }
@@ -138,6 +152,7 @@ class SchedulingEngine {
         .where("jobId", "=", this.jobId)
         .where("status", "not in", ["Done", "Canceled"])
         .where("operationType", "not in", ["Outside"])
+        .orderBy("order")
         .execute(),
     ]);
 
@@ -151,6 +166,8 @@ class SchedulingEngine {
       acc[operation.jobMakeMethodId].push(operation);
       return acc;
     }, {});
+
+    this.operationsByJobMakeMethodId = operationsByJobMakeMethodId;
 
     if (!jobMakeMethod?.id) {
       throw new Error("Job make method not found");
@@ -168,6 +185,7 @@ class SchedulingEngine {
 
     const operationsToSchedule: BaseOperation[] = [];
     const queue: JobMethodTreeItem[] = [jobMethodTree];
+    const validMaterialIds: string[] = [];
 
     while (queue.length > 0) {
       const currentNode = queue.shift();
@@ -178,10 +196,15 @@ class SchedulingEngine {
         [];
       operationsToSchedule.unshift(...operations);
 
+      if (!currentNode.data.isRoot && currentNode.data.methodMaterialId) {
+        validMaterialIds.push(currentNode.data.methodMaterialId);
+      }
+
       queue.push(...currentNode.children);
     }
 
     this.operationsToSchedule = operationsToSchedule;
+    this.validMaterialIds = validMaterialIds;
   }
 }
 
