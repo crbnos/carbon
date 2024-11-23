@@ -271,7 +271,7 @@ export const JobOperation = ({
         <Separator />
 
         <TabsContent value="details" className="flex-col hidden md:flex">
-          <ScrollArea className="w-full pl-[calc(var(--controls-width))] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+          <ScrollArea className="w-full pr-[calc(var(--controls-width))] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             <div className="flex items-start justify-between p-4">
               <HStack>
                 {thumbnailPath && (
@@ -1089,7 +1089,7 @@ function Controls({
   return (
     <div
       className={cn(
-        "flex flex-col md:absolute p-2 top-[calc(var(--header-height)*2-2px)] left-0 w-full md:w-[var(--controls-width)] md:min-h-[200px] z-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:border-r border-y md:rounded-br-lg",
+        "flex flex-col md:absolute p-2 top-[calc(var(--header-height)*2-2px)] right-0 w-full md:w-[var(--controls-width)] md:min-h-[200px] z-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:border-l border-y md:rounded-bl-lg",
         className
       )}
     >
