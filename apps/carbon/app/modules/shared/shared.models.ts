@@ -14,7 +14,6 @@ export const methodItemType = [
   "Part",
   "Material",
   "Tool",
-  "Fixture",
   "Consumable",
   // "Service",
 ] as const;

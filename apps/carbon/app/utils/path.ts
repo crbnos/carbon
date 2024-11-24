@@ -337,37 +337,6 @@ export const path = {
     externalQuote: (id: string) => generatePath(`/share/quote/${id}`),
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
-    fixture: (id: string) => generatePath(`${x}/fixture/${id}`),
-    fixtures: `${x}/items/fixtures`,
-    fixtureCosting: (id: string) => generatePath(`${x}/fixture/${id}/costing`),
-    fixtureDetails: (id: string) => generatePath(`${x}/fixture/${id}/details`),
-    fixtureInventory: (id: string) =>
-      generatePath(`${x}/fixture/${id}/inventory`),
-    fixtureInventoryLocation: (id: string, locationId: string) =>
-      generatePath(`${x}/fixture/${id}/inventory?location=${locationId}`),
-    fixtureMakeMethod: (id: string) =>
-      generatePath(`${x}/fixture/${id}/manufacturing/method`),
-    fixtureManufacturing: (id: string) =>
-      generatePath(`${x}/fixture/${id}/manufacturing`),
-    fixtureManufacturingMaterial: (
-      itemId: string,
-      makeMethodId: string,
-      methodMaterialId: string
-    ) =>
-      generatePath(
-        `${x}/fixture/${itemId}/manufacturing/${makeMethodId}/${methodMaterialId}`
-      ),
-    fixturePlanning: (id: string) =>
-      generatePath(`${x}/fixture/${id}/planning`),
-    fixturePlanningLocation: (id: string, locationId: string) =>
-      generatePath(`${x}/fixture/${id}/planning?location=${locationId}`),
-    fixturePurchasing: (id: string) =>
-      generatePath(`${x}/fixture/${id}/purchasing`),
-    fixtureRoot: `${x}/fixture`,
-    fixtureSupplier: (itemId: string, id: string) =>
-      generatePath(`${x}/fixture/${itemId}/suppliers/${id}`),
-    fixtureSuppliers: (id: string) =>
-      generatePath(`${x}/fixture/${id}/suppliers`),
     forgotPassword: "/forgot-password",
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),
     groups: `${x}/users/groups`,

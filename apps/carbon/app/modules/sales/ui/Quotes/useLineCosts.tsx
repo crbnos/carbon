@@ -10,7 +10,6 @@ import type {
 
 const defaultEffects: CostEffects = {
   consumableCost: [],
-  fixtureCost: [],
   laborCost: [],
   laborHours: [],
   machineCost: [],
@@ -88,11 +87,6 @@ export function useLineCosts({
             break;
           case "Tool":
             effects.toolCost.push(
-              (quantity) => data.unitCost * data.quantity * quantity
-            );
-            break;
-          case "Fixture":
-            effects.fixtureCost.push(
               (quantity) => data.unitCost * data.quantity * quantity
             );
             break;
@@ -362,11 +356,6 @@ export function useLineCosts({
         0
       );
 
-      const fixtureCost = costEffects.fixtureCost.reduce(
-        (acc, effect) => acc + effect(quantity),
-        0
-      );
-
       const consumableCost = costEffects.consumableCost.reduce(
         (acc, effect) => acc + effect(quantity),
         0
@@ -414,7 +403,6 @@ export function useLineCosts({
 
       return {
         consumableCost,
-        fixtureCost,
         laborCost,
         laborHours,
         machineCost,

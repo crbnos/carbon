@@ -40,7 +40,7 @@ import {
   jobStatus,
   JobStatus,
 } from "~/modules/production";
-import { useCustomers, useFixtures, useParts, usePeople } from "~/stores";
+import { useCustomers, useParts, usePeople, useTools } from "~/stores";
 import { path } from "~/utils/path";
 
 type JobsTableProps = {
@@ -68,9 +68,9 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const parts = useParts();
-  const fixtures = useFixtures();
+  const tools = useTools();
 
-  const items = useMemo(() => [...parts, ...fixtures], [parts, fixtures]);
+  const items = useMemo(() => [...parts, ...tools], [parts, tools]);
 
   const [people] = usePeople();
   const [customers] = useCustomers();

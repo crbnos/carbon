@@ -30,7 +30,7 @@ import { path } from "~/utils/path";
 
 type BuyMethodFormProps = {
   initialValues: z.infer<typeof buyMethodValidator>;
-  type: "Part" | "Service" | "Tool" | "Consumable" | "Material" | "Fixture";
+  type: "Part" | "Service" | "Tool" | "Consumable" | "Material";
 };
 
 const BuyMethodForm = ({ initialValues, type }: BuyMethodFormProps) => {
@@ -135,7 +135,7 @@ export default BuyMethodForm;
 
 function getAction(
   isEditing: boolean,
-  type: "Part" | "Service" | "Tool" | "Consumable" | "Material" | "Fixture",
+  type: "Part" | "Service" | "Tool" | "Consumable" | "Material",
   itemId: string,
   id?: string
 ) {
@@ -175,14 +175,6 @@ function getAction(
       return path.to.materialSupplier(itemId, id!);
     } else {
       return path.to.newMaterialSupplier(itemId);
-    }
-  }
-
-  if (type === "Fixture") {
-    if (isEditing) {
-      return path.to.fixtureSupplier(itemId, id!);
-    } else {
-      return path.to.newFixtureSupplier(itemId);
     }
   }
 

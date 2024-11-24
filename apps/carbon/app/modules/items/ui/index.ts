@@ -1,7 +1,6 @@
 import useItemsSubmodules from "./useItemsSubmodules";
 
 export * from "./Consumables";
-export * from "./Fixtures";
 export * from "./Item";
 export * from "./ItemPostingGroups";
 export * from "./MaterialForms";

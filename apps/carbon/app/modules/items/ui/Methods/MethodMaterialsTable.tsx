@@ -3,7 +3,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { Hyperlink, MethodIcon, MethodItemTypeIcon, Table } from "~/components";
 import { methodItemType, methodType } from "~/modules/shared";
-import { useFixtures, useParts } from "~/stores";
+import { useParts, useTools } from "~/stores";
 import type { MethodMaterial } from "../../types";
 import { getPathToMakeMethod } from "./utils";
 
@@ -15,9 +15,9 @@ type MethodMaterialsTableProps = {
 const MethodMaterialsTable = memo(
   ({ data, count }: MethodMaterialsTableProps) => {
     const parts = useParts();
-    const fixtures = useFixtures();
+    const tools = useTools();
 
-    const items = useMemo(() => [...parts, ...fixtures], [parts, fixtures]);
+    const items = useMemo(() => [...parts, ...tools], [parts, tools]);
 
     const columns = useMemo<ColumnDef<MethodMaterial>[]>(() => {
       return [

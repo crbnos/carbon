@@ -21,7 +21,6 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ConsumableForm,
-  FixtureForm,
   MaterialForm,
   PartForm,
   ToolForm,
@@ -240,6 +239,7 @@ const Item = ({
             defaultMethodType: "Make",
             active: props?.includeInactive === undefined,
             unitCost: 0,
+            tags: [],
           }}
         />
       )}
@@ -261,30 +261,11 @@ const Item = ({
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
             unitCost: 0,
+            tags: [],
           }}
         />
       )}
-      {type === "Fixture" && newItemsModal.isOpen && (
-        <FixtureForm
-          type="modal"
-          onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
-          }}
-          initialValues={{
-            id: "",
-            name: created,
-            description: "",
-            itemTrackingType: "Inventory",
-            unitOfMeasureCode: "EA",
-            replenishmentSystem: "Make",
-            defaultMethodType: "Buy",
-            active: props?.includeInactive === undefined,
-            unitCost: 0,
-          }}
-        />
-      )}
+
       {type === "Material" && newItemsModal.isOpen && (
         <MaterialForm
           type="modal"
@@ -327,6 +308,7 @@ const Item = ({
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
             unitCost: 0,
+            tags: [],
           }}
         />
       )}

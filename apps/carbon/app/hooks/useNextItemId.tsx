@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useUser } from "./useUser";
 
 export function useNextItemId(
-  table: "Part" | "Service" | "Tool" | "Material" | "Consumable" | "Fixture"
+  table: "Part" | "Service" | "Tool" | "Material" | "Consumable"
 ) {
   const { company } = useUser();
   const { carbon } = useCarbon();
