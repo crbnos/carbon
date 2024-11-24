@@ -19,7 +19,7 @@ import type { Column, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
 import SearchFilter from "~/components/SearchFilter";
 import { useUrlParams } from "~/hooks/useUrlParams";
-import { getLocationAndWorkCenter } from "~/services/location.server";
+import { getLocation } from "~/services/location.server";
 import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
@@ -94,7 +94,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  const { location } = await getLocationAndWorkCenter(request, serviceRole, {
+  const { location } = await getLocation(request, serviceRole, {
     companyId,
     userId,
   });
