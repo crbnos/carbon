@@ -1,4 +1,9 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  success,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -24,7 +29,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id, action: productionAction, timezone, ...data } = validation.data;
+  const {
+    id,
+    action: productionAction,
+    timezone,
+    hasActiveEvents,
+    ...data
+  } = validation.data;
 
   if (productionAction === "Start") {
     const startEvent = await startProductionEvent(client, {
@@ -34,11 +45,31 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       createdBy: userId,
     });
+
     if (startEvent.error) {
       return json(
         {},
         await flash(request, error(startEvent.error, "Failed to start event"))
       );
+    }
+
+    if (hasActiveEvents === "false") {
+      const serviceRole = await getCarbonServiceRole();
+      const issue = await serviceRole.functions.invoke("issue", {
+        body: {
+          id: data.jobOperationId,
+          type: "jobOperation",
+          companyId,
+          userId,
+        },
+      });
+
+      if (issue.error) {
+        return json(
+          startEvent.data,
+          await flash(request, error(issue.error, "Failed to issue materials"))
+        );
+      }
     }
 
     return json(
