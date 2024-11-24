@@ -1,12 +1,13 @@
 import { formatTimeAgo } from "@carbon/utils";
+import type { ReactNode } from "react";
 import { usePeople } from "~/stores";
 import Avatar from "./Avatar";
 
 type ActivityProps = {
   employeeId: string;
-  activityMessage: string;
+  activityMessage: ReactNode;
   activityTime: string;
-  activityIcon?: React.ReactNode;
+  activityIcon?: ReactNode;
 };
 
 const Activity = ({

@@ -89,6 +89,7 @@ import {
 import {
   convertDateStringToIsoString,
   convertKbToString,
+  formatDate,
   formatDurationMilliseconds,
   formatRelativeTime,
 } from "@carbon/utils";
@@ -167,6 +168,7 @@ export const JobOperation = ({
 
   const {
     active,
+    hasActiveEvents,
     setupProductionEvent,
     laborProductionEvent,
     machineProductionEvent,
@@ -293,7 +295,7 @@ export const JobOperation = ({
             </div>
             <Separator />
             <div className="flex items-start p-4">
-              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 w-full">
+              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 w-full">
                 <div className="rounded-xl border bg-card text-card-foreground shadow">
                   <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
                     <h3 className="tracking-tight text-sm font-medium">
@@ -302,7 +304,7 @@ export const JobOperation = ({
                     <FaCheck className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="p-6 pt-0">
-                    <Heading size="h2">{operation.quantityComplete}</Heading>
+                    <Heading size="h1">{operation.quantityComplete}</Heading>
                   </div>
                 </div>
                 <div className="rounded-xl border bg-card text-card-foreground shadow">
@@ -313,7 +315,44 @@ export const JobOperation = ({
                     <FaTrash className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="p-6 pt-0">
-                    <Heading size="h2">{operation.quantityScrapped}</Heading>
+                    <Heading size="h1">{operation.quantityScrapped}</Heading>
+                  </div>
+                </div>
+                <div className="rounded-xl border bg-card text-card-foreground shadow">
+                  <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 className="tracking-tight text-sm font-medium">
+                      Due Date
+                    </h3>
+                    <DeadlineIcon
+                      deadlineType={operation.jobDeadlineType}
+                      overdue={isOverdue}
+                    />
+                  </div>
+                  <div className="p-6 pt-0">
+                    <VStack className="justify-start" spacing={0}>
+                      <Heading
+                        size="h3"
+                        className={cn(
+                          "truncate",
+                          isOverdue ? "text-red-500" : ""
+                        )}
+                      >
+                        {["ASAP", "No Deadline"].includes(
+                          operation.jobDeadlineType
+                        )
+                          ? operation.jobDeadlineType
+                          : operation.jobDueDate
+                          ? `Due ${formatRelativeTime(
+                              convertDateStringToIsoString(operation.jobDueDate)
+                            )}`
+                          : "–"}
+                      </Heading>
+                      <span className="text-muted-foreground text-sm">
+                        {operation.jobDueDate
+                          ? formatDate(operation.jobDueDate)
+                          : "–"}
+                      </span>
+                    </VStack>
                   </div>
                 </div>
 
@@ -587,6 +626,7 @@ export const JobOperation = ({
                 setupProductionEvent={setupProductionEvent}
                 laborProductionEvent={laborProductionEvent}
                 machineProductionEvent={machineProductionEvent}
+                hasActiveEvents={hasActiveEvents}
               />
               <div className="flex items-center gap-2 justify-center">
                 {/* <IconButtonWithTooltip
@@ -768,6 +808,7 @@ function useActiveEvents(
   events: ProductionEvent[]
 ): {
   active: { setup: boolean; labor: boolean; machine: boolean };
+  hasActiveEvents: boolean;
   setupProductionEvent: ProductionEvent | undefined;
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
@@ -902,6 +943,8 @@ function useActiveEvents(
 
   return {
     active,
+    hasActiveEvents:
+      progress.setup > 0 || progress.labor > 0 || progress.machine > 0,
     ...activeEvents,
     progress,
   };
@@ -1109,7 +1152,7 @@ function Times({
     <TooltipProvider>
       <div
         className={cn(
-          "flex flex-col md:absolute p-2 bottom-2 md:left-1/2 md:transform md:-translate-x-1/2 w-full md:w-[420px] z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b md:border md:rounded-lg",
+          "flex flex-col md:absolute p-2 bottom-2 md:left-1/2 md:transform md:-translate-x-1/2 w-full md:w-[calc(100%-2rem)] z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b md:border md:rounded-lg",
           className
         )}
       >
@@ -1249,6 +1292,7 @@ function StartStopButton({
   setupProductionEvent,
   laborProductionEvent,
   machineProductionEvent,
+  hasActiveEvents,
   ...props
 }: ComponentProps<"button"> & {
   eventType: (typeof productionEventType)[number];
@@ -1257,6 +1301,7 @@ function StartStopButton({
   setupProductionEvent: ProductionEvent | undefined;
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
+  hasActiveEvents: boolean;
 }) {
   const fetcher = useFetcher<ProductionEvent>();
   const isActive = useMemo(() => {
@@ -1324,6 +1369,10 @@ function StartStopButton({
       <Hidden name="id" value={id} />
       <Hidden name="jobOperationId" value={operation.id} />
       <Hidden name="timezone" />
+      <Hidden
+        name="hasActiveEvents"
+        value={hasActiveEvents ? "true" : "false"}
+      />
       <Hidden name="action" value={isActive ? "End" : "Start"} />
       <Hidden name="type" value={eventType} />
       <Hidden name="workCenterId" value={operation.workCenterId ?? undefined} />
