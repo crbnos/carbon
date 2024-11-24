@@ -1,6 +1,6 @@
 import { Button, cn, Menubar } from "@carbon/react";
 import { Link } from "@remix-run/react";
-import { LuCircle, LuTruck } from "react-icons/lu";
+import { LuCircle } from "react-icons/lu";
 import {
   RiProgress2Line,
   RiProgress4Line,
@@ -40,8 +40,6 @@ function getOpportunityIcon(state: string) {
       return RiProgress4Line;
     case "Order":
       return RiProgress8Line;
-    case "Shipment":
-      return LuTruck;
     default:
       return LuCircle;
   }
@@ -80,7 +78,7 @@ function getIsCurrent(
   }
 }
 
-const states = ["RFQ", "Quote", "Order", "Shipment"];
+const states = ["RFQ", "Quote", "Order"];
 
 const OpportunityState = ({ opportunity }: { opportunity: Opportunity }) => {
   const { pathname } = useOptimisticLocation();

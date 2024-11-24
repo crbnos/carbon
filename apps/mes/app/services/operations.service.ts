@@ -121,6 +121,7 @@ export const productionEventValidator = z.object({
     }),
   }),
   workCenterId: zfd.text(z.string().optional()),
+  hasActiveEvents: z.enum(["true", "false"]),
 });
 
 export const finishValidator = z.object({
@@ -527,7 +528,7 @@ export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
     z.infer<typeof productionEventValidator>,
-    "id" | "action" | "timezone"
+    "id" | "action" | "timezone" | "hasActiveEvents"
   > & {
     startTime: string;
     employeeId: string;
