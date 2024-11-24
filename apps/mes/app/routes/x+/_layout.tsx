@@ -11,10 +11,7 @@ import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
 import { useEffect } from "react";
 import { AppSidebar } from "~/components";
-import {
-  getLocationAndWorkCenter,
-  setLocationAndWorkCenter,
-} from "~/services/location.server";
+import { getLocation, setLocation } from "~/services/location.server";
 import {
   getActiveJobCount,
   getLocationsByCompany,
@@ -58,7 +55,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   let [storedLocations, locations, activeEvents] = await Promise.all([
-    getLocationAndWorkCenter(request, client, {
+    getLocation(request, client, {
       companyId,
       userId,
     }),
@@ -90,11 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     storedLocations.updated
       ? {
           headers: {
-            "Set-Cookie": setLocationAndWorkCenter(
-              companyId,
-              storedLocations.location,
-              storedLocations.workCenter
-            ),
+            "Set-Cookie": setLocation(companyId, storedLocations.location),
           },
         }
       : undefined
