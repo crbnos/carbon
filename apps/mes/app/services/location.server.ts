@@ -3,36 +3,25 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as cookie from "cookie";
 
-export function getCompanySettings(
-  request: Request,
-  companyId: string
-):
-  | { location: string; workCenter: string }
-  | { location: undefined; workCenter: undefined } {
+export function getCompanySettings(request: Request, companyId: string) {
   const cookieHeader = request.headers.get("cookie");
   const parsed = cookieHeader ? cookie.parse(cookieHeader)[companyId] : null;
   if (parsed) {
-    const [location, workCenter] = parsed.split(":");
-    return { location, workCenter };
+    return { location: parsed };
   }
   return {
     location: undefined,
-    workCenter: undefined,
   };
 }
 
-export function setLocationAndWorkCenter(
-  companyId: string,
-  currentLocation: string,
-  workCenter: string
-) {
-  return cookie.serialize(companyId, `${currentLocation}:${workCenter}`, {
+export function setLocation(companyId: string, locationId: string) {
+  return cookie.serialize(companyId, locationId, {
     path: "/",
     maxAge: 31536000,
   });
 }
 
-export async function getLocationAndWorkCenter(
+export async function getLocation(
   request: Request,
   client: SupabaseClient<Database>,
   args: {
@@ -41,7 +30,7 @@ export async function getLocationAndWorkCenter(
   }
 ) {
   const { userId, companyId } = args;
-  let { location, workCenter } = getCompanySettings(request, companyId);
+  let { location } = getCompanySettings(request, companyId);
 
   let updated = false;
 
@@ -73,25 +62,9 @@ export async function getLocationAndWorkCenter(
       "Failed to get a valid location. Please add one in the resources module."
     );
 
-  if (!workCenter) {
-    const workCenters = await client
-      .from("workCenter")
-      .select("id")
-      .eq("locationId", location);
-
-    if (workCenters.data && workCenters.data.length > 0) {
-      workCenter = workCenters.data[0].id;
-      updated = true;
-    }
-  }
-
-  if (!workCenter)
-    throw notFound(
-      "Failed to get a valid work center. Please add one in the resources module."
-    );
   if (updated) {
-    setLocationAndWorkCenter(companyId, location, workCenter);
+    setLocation(companyId, location);
   }
 
-  return { location, workCenter, updated };
+  return { location, updated };
 }

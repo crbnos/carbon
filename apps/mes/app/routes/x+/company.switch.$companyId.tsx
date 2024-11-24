@@ -6,10 +6,7 @@ import {
   updateCompanySession,
 } from "@carbon/auth/session.server";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
-import {
-  getLocationAndWorkCenter,
-  setLocationAndWorkCenter,
-} from "~/services/location.server";
+import { getLocation, setLocation } from "~/services/location.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -36,16 +33,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const sessionCookie = await updateCompanySession(request, companyId!);
-  const storedLocations = await getLocationAndWorkCenter(request, client, {
+  const storedLocations = await getLocation(request, client, {
     userId,
     companyId: companyId!,
   });
 
   if (storedLocations.updated) {
-    const workCenterLocationCookie = await setLocationAndWorkCenter(
+    const workCenterLocationCookie = await setLocation(
       companyId!,
-      storedLocations.location,
-      storedLocations.workCenter
+      storedLocations.location
     );
 
     throw redirect(path.to.authenticatedRoot, {
