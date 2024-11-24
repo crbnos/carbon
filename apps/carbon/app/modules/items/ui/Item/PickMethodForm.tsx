@@ -25,7 +25,7 @@ type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
   locations: ListItem[];
   shelves: ListItem[];
-  type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
+  type: "Part" | "Material" | "Tool" | "Consumable";
 };
 
 const PickMethodForm = ({
@@ -101,7 +101,7 @@ export default PickMethodForm;
 function getLocationPath(
   itemId: string,
   locationId: string,
-  type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable"
+  type: "Part" | "Material" | "Tool" | "Consumable"
 ) {
   switch (type) {
     case "Part":
@@ -111,8 +111,6 @@ function getLocationPath(
 
     case "Tool":
       return `${path.to.toolInventory(itemId)}?location=${locationId}`;
-    case "Fixture":
-      return `${path.to.fixtureInventory(itemId)}?location=${locationId}`;
     case "Consumable":
       return `${path.to.consumableInventory(itemId)}?location=${locationId}`;
     default:

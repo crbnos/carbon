@@ -5,7 +5,6 @@ import { HiSquares2X2 } from "react-icons/hi2";
 import {
   LuAtom,
   LuCheckCircle,
-  LuGrip,
   LuHammer,
   LuHeadphones,
   LuPizza,
@@ -138,8 +137,6 @@ export const MethodItemTypeIcon = ({
       return <LuAtom className={className} />;
     case "Tool":
       return <LuHammer className={className} />;
-    case "Fixture":
-      return <LuGrip className={className} />;
     case "Consumable":
       return <LuPizza className={className} />;
     case "Service":

@@ -610,8 +610,6 @@ function getDocumentLocation(
       return path.to.material(sourceDocumentId);
     case "Tool":
       return path.to.tool(sourceDocumentId);
-    case "Fixture":
-      return path.to.fixture(sourceDocumentId);
     case "Consumable":
       return path.to.consumable(sourceDocumentId);
     // case "Service":

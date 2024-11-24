@@ -100,13 +100,6 @@ export const customerPartValidator = z.object({
   customerPartRevision: zfd.text(z.string().optional()),
 });
 
-export const fixtureValidator = itemValidator.merge(
-  z.object({
-    id: z.string().min(1, { message: "Fixture ID is required" }).max(255),
-    customerId: z.string().optional(),
-  })
-);
-
 export const materialValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Material ID is required" }).max(255),
@@ -168,18 +161,18 @@ export const methodMaterialValidator = z
       path: ["itemId"],
     }
   )
-  .refine(
-    (data) => {
-      if (data.itemType === "Fixture") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Fixture ID is required",
-      path: ["itemId"],
-    }
-  )
+  // .refine(
+  //   (data) => {
+  //     if (data.itemType === "Fixture") {
+  //       return !!data.itemReadableId;
+  //     }
+  //     return true;
+  //   },
+  //   {
+  //     message: "Fixture ID is required",
+  //     path: ["itemId"],
+  //   }
+  // )
   .refine(
     (data) => {
       if (data.itemType === "Tool") {

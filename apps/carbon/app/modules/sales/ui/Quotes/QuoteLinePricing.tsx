@@ -179,7 +179,6 @@ const QuoteLinePricing = ({
     const costs = getLineCosts(quantity);
     const totalCost =
       (costs.consumableCost +
-        costs.fixtureCost +
         costs.laborCost +
         costs.machineCost +
         costs.materialCost +

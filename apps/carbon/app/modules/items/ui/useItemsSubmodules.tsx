@@ -2,7 +2,6 @@ import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuAtom,
   LuGlassWater,
-  LuGrip,
   LuHammer,
   LuPizza,
   LuRuler,
@@ -30,11 +29,6 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         name: "Tools",
         to: path.to.tools,
         icon: <LuHammer />,
-      },
-      {
-        name: "Fixtures",
-        to: path.to.fixtures,
-        icon: <LuGrip />,
       },
       {
         name: "Consumables",

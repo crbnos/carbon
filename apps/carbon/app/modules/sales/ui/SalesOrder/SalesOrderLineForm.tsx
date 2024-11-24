@@ -365,7 +365,6 @@ const SalesOrderLineForm = ({
                           "Material",
                           "Service",
                           "Tool",
-                          "Fixture",
                           "Consumable",
                         ].includes(lineType) && (
                           <Location

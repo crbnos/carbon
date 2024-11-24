@@ -221,18 +221,6 @@ export const quoteMaterialValidator = z
   )
   .refine(
     (data) => {
-      if (data.itemType === "Fixture") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Fixture ID is required",
-      path: ["itemId"],
-    }
-  )
-  .refine(
-    (data) => {
       if (data.itemType === "Tool") {
         return !!data.itemReadableId;
       }
@@ -494,7 +482,6 @@ export const salesOrderLineType = [
   // "Service",
   "Material",
   "Tool",
-  "Fixture",
   "Consumable",
   "Comment",
   "Fixed Asset",

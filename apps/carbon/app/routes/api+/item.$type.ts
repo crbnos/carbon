@@ -14,11 +14,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { type } = params;
   if (!type) throw new Error("Could not find type");
 
-  if (
-    !["Part", "Material", "Tool", "Service", "Consumable", "Fixture"].includes(
-      type
-    )
-  ) {
+  if (!["Part", "Material", "Tool", "Service", "Consumable"].includes(type)) {
     throw new Error("Invalid type");
   }
 

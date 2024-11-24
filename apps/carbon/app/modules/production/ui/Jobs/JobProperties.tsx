@@ -197,7 +197,7 @@ const JobProperties = () => {
           inline
           isReadOnly={isDisabled}
           type={type}
-          validItemTypes={["Part", "Fixture"]}
+          validItemTypes={["Part", "Tool"]}
           onChange={(value) => {
             onUpdate("itemId", value?.value ?? null);
           }}

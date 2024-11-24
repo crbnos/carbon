@@ -28,7 +28,7 @@ import { path } from "~/utils/path";
 type ItemPlanningFormProps = {
   initialValues: z.infer<typeof itemPlanningValidator>;
   locations: ListItem[];
-  type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable";
+  type: "Part" | "Material" | "Tool" | "Consumable";
 };
 
 const ItemPlanningForm = ({
@@ -163,7 +163,7 @@ export default ItemPlanningForm;
 function getLocationPath(
   itemId: string,
   locationId: string,
-  type: "Part" | "Material" | "Tool" | "Fixture" | "Consumable"
+  type: "Part" | "Material" | "Tool" | "Consumable"
 ) {
   switch (type) {
     case "Part":
@@ -173,8 +173,6 @@ function getLocationPath(
 
     case "Tool":
       return `${path.to.toolPlanning(itemId)}?location=${locationId}`;
-    case "Fixture":
-      return `${path.to.fixturePlanning(itemId)}?location=${locationId}`;
     case "Consumable":
       return `${path.to.consumablePlanning(itemId)}?location=${locationId}`;
     default:

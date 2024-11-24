@@ -220,8 +220,6 @@ function getRootLink(itemType: MethodItemType, itemId: string) {
   switch (itemType) {
     case "Part":
       return path.to.partMakeMethod(itemId);
-    case "Fixture":
-      return path.to.fixtureMakeMethod(itemId);
     case "Tool":
       return path.to.toolMakeMethod(itemId);
     default:
@@ -242,12 +240,12 @@ function getMaterialLink(
         makeMethodId,
         materialId
       );
-    case "Fixture":
-      return path.to.fixtureManufacturingMaterial(
-        itemId,
-        makeMethodId,
-        materialId
-      );
+    // case "Fixture":
+    //   return path.to.fixtureManufacturingMaterial(
+    //     itemId,
+    //     makeMethodId,
+    //     materialId
+    //   );
     case "Tool":
       return path.to.toolManufacturingMaterial(
         itemId,

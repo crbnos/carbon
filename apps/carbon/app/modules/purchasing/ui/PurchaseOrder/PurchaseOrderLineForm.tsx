@@ -138,7 +138,6 @@ const PurchaseOrderLineForm = ({
       case "Material":
       case "Part":
       case "Tool":
-      case "Fixture":
         const [item, buyMethod, inventory] = await Promise.all([
           carbon
             .from("item")
@@ -386,7 +385,6 @@ const PurchaseOrderLineForm = ({
                     "Service",
                     "Material",
                     "Tool",
-                    "Fixture",
                     "Consumable",
                     "Fixed Asset",
                   ].includes(type) && (
@@ -403,7 +401,6 @@ const PurchaseOrderLineForm = ({
                     "Service",
                     "Material",
                     "Tool",
-                    "Fixture",
                     "Consumable",
                     "Fixed Asset",
                   ].includes(type) && (

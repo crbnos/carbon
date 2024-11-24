@@ -25,7 +25,6 @@ import type {
 
 export type Costs = {
   consumableCost: number;
-  fixtureCost: number;
   laborCost: number;
   laborHours: number;
   machineHours: number;
@@ -41,7 +40,6 @@ export type Costs = {
 
 export type CostEffects = {
   consumableCost: QuantityEffect[];
-  fixtureCost: QuantityEffect[];
   laborCost: QuantityEffect[];
   laborHours: QuantityEffect[];
   machineHours: QuantityEffect[];

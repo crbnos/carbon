@@ -159,8 +159,6 @@ export function getLinkToItemDetails(type: MethodItemType, id: string) {
       return path.to.consumableDetails(id);
     // case "Service":
     //   return path.to.serviceDetails(id);
-    case "Fixture":
-      return path.to.fixtureDetails(id);
     default:
       throw new Error("Invalid type");
   }

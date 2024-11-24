@@ -3,7 +3,7 @@ import { memo, useMemo } from "react";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { operationTypes } from "~/modules/shared";
-import { useFixtures, useParts } from "~/stores";
+import { useParts, useTools } from "~/stores";
 import type { MethodOperation } from "../../types";
 import { getPathToMakeMethod } from "./utils";
 
@@ -15,9 +15,9 @@ type MethodOperationsTableProps = {
 const MethodOperationsTable = memo(
   ({ data, count }: MethodOperationsTableProps) => {
     const parts = useParts();
-    const fixtures = useFixtures();
+    const tools = useTools();
 
-    const items = useMemo(() => [...parts, ...fixtures], [parts, fixtures]);
+    const items = useMemo(() => [...parts, ...tools], [parts, tools]);
 
     const columns = useMemo<ColumnDef<MethodOperation>[]>(() => {
       return [

@@ -4,8 +4,6 @@ export function getPathToMakeMethod(type: string, id: string) {
   switch (type) {
     case "Part":
       return path.to.partMakeMethod(id);
-    case "Fixture":
-      return path.to.fixtureMakeMethod(id);
     case "Tool":
       return path.to.toolMakeMethod(id);
     default:

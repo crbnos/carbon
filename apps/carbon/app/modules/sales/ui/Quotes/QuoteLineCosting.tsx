@@ -92,7 +92,6 @@ const QuoteLineCosting = ({
                   costs.materialCost +
                   costs.partCost +
                   costs.toolCost +
-                  costs.fixtureCost +
                   costs.consumableCost +
                   costs.serviceCost;
 
@@ -203,34 +202,6 @@ const QuoteLineCosting = ({
                           <span className="text-muted-foreground text-xs">
                             {costs.toolCost && quantity > 0
                               ? formatter.format(costs.toolCost / quantity)
-                              : formatter.format(0)}
-                          </span>
-                        </VStack>
-                      </Td>
-                    );
-                  })}
-                </Tr>
-                <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap">Fixture Cost</span>
-                      <Badge variant="secondary">
-                        <MethodItemTypeIcon type="Fixture" />
-                      </Badge>
-                    </HStack>
-                  </Td>
-                  {quantityCosts.map(({ quantity, costs }) => {
-                    return (
-                      <Td key={quantity.toString()}>
-                        <VStack spacing={0}>
-                          <span>
-                            {costs.fixtureCost
-                              ? formatter.format(costs.fixtureCost)
-                              : formatter.format(0)}
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {costs.fixtureCost && quantity > 0
-                              ? formatter.format(costs.fixtureCost / quantity)
                               : formatter.format(0)}
                           </span>
                         </VStack>
@@ -500,7 +471,6 @@ const QuoteLineCosting = ({
               {quantityCosts.map(({ quantity, costs }) => {
                 const totalCost =
                   costs.consumableCost +
-                  costs.fixtureCost +
                   costs.laborCost +
                   costs.machineCost +
                   costs.materialCost +
