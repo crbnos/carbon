@@ -1,5 +1,7 @@
 import { LuMinusCircle, LuPlusCircle } from "react-icons/lu";
+import { Hyperlink } from "~/components";
 import Activity from "~/components/Activity";
+import { path } from "~/utils/path";
 import type { ItemLedger } from "../../types";
 
 const getActivityText = (ledgerRecord: ItemLedger) => {
@@ -38,6 +40,35 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
       return `invoiced ${ledgerRecord.quantity} units for service`;
     case "Service Shipment":
       return `shipped ${ledgerRecord.quantity} units for service`;
+    case "Job Consumption":
+      return (
+        <span>
+          issued {ledgerRecord.quantity * -1} units{" "}
+          {ledgerRecord.documentLineId && ledgerRecord.documentId ? (
+            <>
+              to a{" "}
+              <Hyperlink
+                className="text-base"
+                to={`${path.to.jobProductionEvents(
+                  ledgerRecord.documentId!
+                )}?filter=jobOperationId:eq:${ledgerRecord.documentLineId}`}
+              >
+                job operation
+              </Hyperlink>
+            </>
+          ) : ledgerRecord.documentId ? (
+            <>
+              to a{" "}
+              <Hyperlink
+                className="text-base"
+                to={path.to.jobDetails(ledgerRecord.documentId!)}
+              >
+                job
+              </Hyperlink>
+            </>
+          ) : null}
+        </span>
+      );
     default:
       break;
   }
@@ -61,6 +92,7 @@ const getActivityIcon = (ledgerRecord: ItemLedger) => {
     case "Positive Adjmt.":
       return <LuPlusCircle className="text-blue-500 w-5 h-5" />;
     case "Negative Adjmt.":
+    case "Consumption":
       return <LuMinusCircle className="text-red-500 w-5 h-5" />;
     default:
       return "";

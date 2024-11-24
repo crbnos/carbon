@@ -274,8 +274,6 @@ class ResourceManager {
       priorityByWorkCenter.set(workCenter, priority);
     });
 
-    console.log({ workCenters });
-
     // TODO: use cached durations if available
     workCenters.forEach((workCenter) => {
       const duration = this.getDurationByWorkCenterIdAndPriority(

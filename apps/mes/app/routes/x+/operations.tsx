@@ -38,8 +38,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const filterParam = searchParams.getAll("filter");
   const saved = searchParams.get("saved") === "1";
 
-  console.log("ok");
-
   // Handle saved filters
   const headers = new Headers();
   const savedFilters = await getFilters(request);

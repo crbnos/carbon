@@ -8,6 +8,7 @@ import { useUser } from "~/hooks";
 import type { getLocationsList } from "~/modules/resources";
 import { LocationForm } from "~/modules/resources";
 import { path } from "~/utils/path";
+import { Enumerable } from "../Enumerable";
 
 type LocationSelectProps = Omit<
   CreatableComboboxProps,
@@ -21,7 +22,7 @@ const LocationPreview = (
   options: { value: string; label: string }[]
 ) => {
   const location = options.find((o) => o.value === value);
-  return <span>{location?.label}</span>;
+  return <Enumerable value={location?.label ?? null} />;
 };
 
 const Location = ({ inline = false, ...props }: LocationSelectProps) => {
