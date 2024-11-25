@@ -402,6 +402,7 @@ export const productionEventValidator = z
     workCenterId: zfd.text(z.string().optional()),
     startTime: z.string().min(1, { message: "Start time is required" }),
     endTime: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional()),
   })
   .refine(
     (data) => {

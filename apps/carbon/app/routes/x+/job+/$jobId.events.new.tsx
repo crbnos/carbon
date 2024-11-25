@@ -93,6 +93,7 @@ export default function NewProductionEventRoute() {
     startTime: new Date(new Date().setHours(8, 0, 0, 0)).toISOString(),
     employeeId: "",
     workCenterId: "",
+    notes: "",
   };
 
   return (

@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { TextArea, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Drawer,
@@ -114,6 +114,7 @@ const ProductionEventForm = ({
                 minValue={startTime}
                 onChange={setEndTime}
               />
+              <TextArea name="notes" label="Notes" />
             </VStack>
           </DrawerBody>
           <DrawerFooter>
