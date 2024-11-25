@@ -86,6 +86,7 @@ import {
   Hidden,
   Number,
   NumberControlled,
+  Select,
   TextArea,
   ValidatedForm,
 } from "@carbon/form";
@@ -214,7 +215,28 @@ export const JobOperation = ({
               </Button>
             </div>
             <div className="hidden md:flex flex-shrink-0 items-center justify-end gap-2">
-              <Navigation job={job} operation={operation} />
+              <TabsList className="md:ml-auto">
+                <TabsTrigger variant="primary" value="details">
+                  Details
+                </TabsTrigger>
+                <TabsTrigger
+                  variant="primary"
+                  disabled={!job.modelPath && !operation.itemModelPath}
+                  value="model"
+                >
+                  Model
+                </TabsTrigger>
+                <TabsTrigger
+                  variant="primary"
+                  disabled={
+                    !operation.workInstruction ||
+                    Object.keys(operation.workInstruction).length === 0
+                  }
+                  value="instructions"
+                >
+                  Instructions
+                </TabsTrigger>
+              </TabsList>
             </div>
           </HStack>
         </header>
@@ -1678,13 +1700,34 @@ function IssueModal({
             jobOperationId: operationId,
             itemId: material?.itemId,
             quantity: 1,
+            adjustmentType: "Positive Adjmt.",
           }}
         >
           <ModalBody>
             <Hidden name="jobOperationId" />
             <Hidden name="materialId" />
+            {!material?.id && (
+              <Hidden name="adjustmentType" value="Set Quantity" />
+            )}
             <VStack spacing={4}>
               <Combobox name="itemId" label="Item" options={itemOptions} />
+              {material?.id && (
+                <Select
+                  name="adjustmentType"
+                  label="Adjustment Type"
+                  options={[
+                    { label: "Set Quantity", value: "Set Quantity" },
+                    {
+                      label: "Positive Adjustment",
+                      value: "Positive Adjmt.",
+                    },
+                    {
+                      label: "Negative Adjustment",
+                      value: "Negative Adjmt.",
+                    },
+                  ]}
+                />
+              )}
               <Number name="quantity" label="Quantity" />
             </VStack>
           </ModalBody>
@@ -1699,40 +1742,5 @@ function IssueModal({
         </ValidatedForm>
       </ModalContent>
     </Modal>
-  );
-}
-
-function Navigation({
-  job,
-  operation,
-}: {
-  job: Job;
-  operation: OperationWithDetails;
-}) {
-  return (
-    <>
-      <TabsList className="md:ml-auto">
-        <TabsTrigger variant="primary" value="details">
-          Details
-        </TabsTrigger>
-        <TabsTrigger
-          variant="primary"
-          disabled={!job.modelPath && !operation.itemModelPath}
-          value="model"
-        >
-          Model
-        </TabsTrigger>
-        <TabsTrigger
-          variant="primary"
-          disabled={
-            !operation.workInstruction ||
-            Object.keys(operation.workInstruction).length === 0
-          }
-          value="instructions"
-        >
-          Instructions
-        </TabsTrigger>
-      </TabsList>
-    </>
   );
 }

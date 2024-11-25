@@ -21,6 +21,11 @@ const payloadValidator = z.discriminatedUnion("type", [
     id: z.string(),
     itemId: z.string(),
     quantity: z.number(),
+    adjustmentType: z.enum([
+      "Set Quantity",
+      "Positive Adjmt.",
+      "Negative Adjmt.",
+    ]),
     materialId: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
@@ -149,18 +154,27 @@ serve(async (req: Request) => {
               }
             }
 
-            await trx
-              .insertInto("itemLedger")
-              .values(itemLedgerInserts)
-              .execute();
+            if (itemLedgerInserts.length > 0) {
+              await trx
+                .insertInto("itemLedger")
+                .values(itemLedgerInserts)
+                .execute();
+            }
           }
         });
 
         break;
       }
       case "partToOperation": {
-        const { id, companyId, userId, itemId, quantity, materialId } =
-          validatedPayload;
+        const {
+          id,
+          companyId,
+          userId,
+          itemId,
+          quantity,
+          materialId,
+          adjustmentType,
+        } = validatedPayload;
         await db.transaction().execute(async (trx) => {
           const jobOperation = await trx
             .selectFrom("jobOperation")
@@ -182,13 +196,33 @@ serve(async (req: Request) => {
           ]);
 
           if (materialId) {
-            const material = await trx
-              .selectFrom("jobMaterial")
-              .where("id", "=", materialId)
-              .selectAll()
-              .executeTakeFirst();
+            const [material, pickMethod] = await Promise.all([
+              trx
+                .selectFrom("jobMaterial")
+                .where("id", "=", materialId)
+                .selectAll()
+                .executeTakeFirst(),
+              trx
+                .selectFrom("pickMethod")
+                .where("itemId", "=", itemId)
+                .where("locationId", "=", job?.locationId!)
+                .select("defaultShelfId")
+                .executeTakeFirst(),
+            ]);
 
-            if (material?.methodType !== "Make") {
+            const quantityToIssue =
+              adjustmentType === "Positive Adjmt."
+                ? Number(quantity)
+                : adjustmentType === "Negative Adjmt."
+                ? -Number(quantity)
+                : Number(quantity) - Number(material?.quantityIssued); // set quantity
+
+            console.log({ quantityToIssue });
+
+            if (
+              material?.methodType !== "Make" &&
+              item?.itemTrackingType === "Inventory"
+            ) {
               itemLedgerInserts.push({
                 entryType: "Consumption",
                 documentType: "Job Consumption",
@@ -196,7 +230,12 @@ serve(async (req: Request) => {
                 documentLineId: id,
                 companyId,
                 itemId: material?.itemId!,
-                quantity: -Number(material?.quantityToIssue),
+                locationId: job?.locationId,
+                shelfId: material?.defaultShelf
+                  ? pickMethod?.defaultShelfId
+                  : material?.shelfId,
+                quantity: -Number(quantityToIssue),
+                createdBy: userId,
               });
             }
 
@@ -204,12 +243,27 @@ serve(async (req: Request) => {
               .updateTable("jobMaterial")
               .set({
                 quantityIssued:
-                  (Number(material?.quantityIssued) ?? 0) + Number(quantity),
+                  (Number(material?.quantityIssued) ?? 0) +
+                  Number(quantityToIssue),
               })
               .where("id", "=", materialId)
               .execute();
+
+            if (itemLedgerInserts.length > 0) {
+              await trx
+                .insertInto("itemLedger")
+                .values(itemLedgerInserts)
+                .execute();
+            }
           } else {
             if (item?.itemTrackingType === "Inventory") {
+              const pickMethod = await trx
+                .selectFrom("pickMethod")
+                .where("itemId", "=", itemId)
+                .where("locationId", "=", job?.locationId!)
+                .select("defaultShelfId")
+                .executeTakeFirst();
+
               itemLedgerInserts.push({
                 entryType: "Consumption",
                 documentType: "Job Consumption",
@@ -219,6 +273,7 @@ serve(async (req: Request) => {
                 itemId: itemId!,
                 quantity: -Number(quantity ?? 0),
                 locationId: job?.locationId,
+                shelfId: pickMethod?.defaultShelfId,
                 createdBy: userId,
               });
             }
@@ -259,10 +314,12 @@ serve(async (req: Request) => {
               })
               .executeTakeFirst();
 
-            await trx
-              .insertInto("itemLedger")
-              .values(itemLedgerInserts)
-              .execute();
+            if (itemLedgerInserts.length > 0) {
+              await trx
+                .insertInto("itemLedger")
+                .values(itemLedgerInserts)
+                .execute();
+            }
           }
         });
         break;
@@ -318,10 +375,12 @@ serve(async (req: Request) => {
             createdBy: userId,
           });
 
-          await trx
-            .insertInto("itemLedger")
-            .values(itemLedgerInserts)
-            .execute();
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+          }
         });
 
         break;

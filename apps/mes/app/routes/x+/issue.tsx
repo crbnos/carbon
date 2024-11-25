@@ -18,7 +18,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: validation.error }, { status: 400 });
   }
 
-  const { jobOperationId, materialId, itemId, quantity } = validation.data;
+  const { jobOperationId, materialId, itemId, quantity, adjustmentType } =
+    validation.data;
 
   const serviceRole = await getCarbonServiceRole();
   const issue = await serviceRole.functions.invoke("issue", {
@@ -28,6 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
       itemId,
       materialId,
       quantity,
+      adjustmentType,
       companyId,
       userId,
     },
