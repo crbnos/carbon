@@ -223,7 +223,7 @@ const WorkCentersTable = memo(
             Edit Work Center
           </MenuItem>
           <MenuItem
-            disabled={!permissions.can("delete", "users")}
+            disabled={!permissions.can("delete", "resources")}
             onClick={() => onDelete(row)}
           >
             <MenuIcon icon={<LuTrash />} />
