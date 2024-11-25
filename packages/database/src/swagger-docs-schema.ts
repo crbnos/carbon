@@ -190,6 +190,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemInventory.quantityOnProductionOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.itemInventory.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -276,6 +279,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemInventory.quantityOnProductionOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.itemInventory.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -314,6 +320,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemInventory.quantityOnProductionOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemInventory.tags",
           },
           {
             $ref: "#/parameters/body.itemInventory",
@@ -586,6 +595,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierType.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierType.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -672,6 +684,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierType.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierType.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -710,6 +725,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierType.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierType.tags",
           },
           {
             $ref: "#/parameters/body.supplierType",
@@ -755,6 +773,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerType.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerType.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -843,6 +864,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerType.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.customerType.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -881,6 +905,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerType.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerType.tags",
           },
           {
             $ref: "#/parameters/body.customerType",
@@ -923,6 +950,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shippingTerm.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shippingTerm.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -1008,6 +1038,9 @@ export default {
             $ref: "#/parameters/rowFilter.shippingTerm.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.shippingTerm.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -1043,6 +1076,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shippingTerm.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shippingTerm.tags",
           },
           {
             $ref: "#/parameters/body.shippingTerm",
@@ -1678,6 +1714,9 @@ export default {
             $ref: "#/parameters/rowFilter.service.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.service.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -1776,6 +1815,9 @@ export default {
             $ref: "#/parameters/rowFilter.service.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.service.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -1826,6 +1868,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.service.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.service.tags",
           },
           {
             $ref: "#/parameters/body.service",
@@ -2038,6 +2083,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderPayment.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -2127,6 +2175,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderPayment.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -2170,6 +2221,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderPayment.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderPayment.tags",
+          },
+          {
             $ref: "#/parameters/body.purchaseOrderPayment",
           },
           {
@@ -2182,6 +2236,141 @@ export default {
           },
         },
         tags: ["purchaseOrderPayment"],
+      },
+    },
+    "/tag": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tag.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.createdBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/tag",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["tag"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.tag",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["tag"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tag.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.createdBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["tag"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tag.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tag.createdBy",
+          },
+          {
+            $ref: "#/parameters/body.tag",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["tag"],
       },
     },
     "/holiday": {
@@ -2216,6 +2405,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.holiday.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.holiday.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -2307,6 +2499,9 @@ export default {
             $ref: "#/parameters/rowFilter.holiday.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.holiday.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -2348,6 +2543,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.holiday.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.holiday.tags",
           },
           {
             $ref: "#/parameters/body.holiday",
@@ -2935,6 +3133,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountSubcategory.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.accountSubcategory.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -3021,6 +3222,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountSubcategory.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.accountSubcategory.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -3059,6 +3263,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountSubcategory.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountSubcategory.tags",
           },
           {
             $ref: "#/parameters/body.accountSubcategory",
@@ -3125,6 +3332,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -3234,6 +3444,9 @@ export default {
             $ref: "#/parameters/rowFilter.material.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.material.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -3295,6 +3508,9 @@ export default {
             $ref: "#/parameters/rowFilter.material.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.material.tags",
+          },
+          {
             $ref: "#/parameters/body.material",
           },
           {
@@ -3338,6 +3554,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierPayment.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierPayment.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -3426,6 +3645,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierPayment.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierPayment.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -3464,6 +3686,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierPayment.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierPayment.tags",
           },
           {
             $ref: "#/parameters/body.supplierPayment",
@@ -3649,6 +3874,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -3765,6 +3993,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -3833,6 +4064,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.tags",
           },
           {
             $ref: "#/parameters/body.methodMaterial",
@@ -3961,6 +4195,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.processType",
           },
           {
+            $ref: "#/parameters/rowFilter.process.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -4050,6 +4287,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.processType",
           },
           {
+            $ref: "#/parameters/rowFilter.process.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -4091,6 +4331,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.processType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.tags",
           },
           {
             $ref: "#/parameters/body.process",
@@ -4175,6 +4418,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -4302,6 +4548,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -4379,6 +4628,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.tags",
           },
           {
             $ref: "#/parameters/body.quoteMaterial",
@@ -4637,6 +4889,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.notes",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.thumbnailPath",
@@ -5158,6 +5413,9 @@ export default {
             $ref: "#/parameters/rowFilter.journalLine.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.journalLine.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -5262,6 +5520,9 @@ export default {
             $ref: "#/parameters/rowFilter.journalLine.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.journalLine.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -5318,6 +5579,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.journalLine.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.journalLine.tags",
           },
           {
             $ref: "#/parameters/body.journalLine",
@@ -5503,6 +5767,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialForm.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.materialForm.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -5586,6 +5853,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialForm.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.materialForm.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -5621,6 +5891,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialForm.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialForm.tags",
           },
           {
             $ref: "#/parameters/body.materialForm",
@@ -5956,6 +6229,9 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.receipt.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -6069,6 +6345,9 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.receipt.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6134,6 +6413,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receipt.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receipt.tags",
           },
           {
             $ref: "#/parameters/body.receipt",
@@ -6304,6 +6586,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierLocation.name",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierLocation.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -6378,6 +6663,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierLocation.name",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierLocation.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6404,6 +6692,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierLocation.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierLocation.tags",
           },
           {
             $ref: "#/parameters/body.supplierLocation",
@@ -6449,6 +6740,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.contractor.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractor.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -6537,6 +6831,9 @@ export default {
             $ref: "#/parameters/rowFilter.contractor.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.contractor.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6575,6 +6872,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.contractor.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractor.tags",
           },
           {
             $ref: "#/parameters/body.contractor",
@@ -6757,6 +7057,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.name",
           },
           {
+            $ref: "#/parameters/rowFilter.customerLocation.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -6831,6 +7134,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.name",
           },
           {
+            $ref: "#/parameters/rowFilter.customerLocation.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6857,6 +7163,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerLocation.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerLocation.tags",
           },
           {
             $ref: "#/parameters/body.customerLocation",
@@ -7375,6 +7684,9 @@ export default {
             $ref: "#/parameters/rowFilter.journal.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.journal.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -7455,6 +7767,9 @@ export default {
             $ref: "#/parameters/rowFilter.journal.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.journal.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -7487,6 +7802,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.journal.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.journal.tags",
           },
           {
             $ref: "#/parameters/body.journal",
@@ -7915,6 +8233,9 @@ export default {
             $ref: "#/parameters/rowFilter.shift.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.shift.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8031,6 +8352,9 @@ export default {
             $ref: "#/parameters/rowFilter.shift.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.shift.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -8099,6 +8423,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shift.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shift.tags",
           },
           {
             $ref: "#/parameters/body.shift",
@@ -8572,6 +8899,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateUpdatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8700,6 +9030,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateUpdatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -8782,6 +9115,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.exchangeRateUpdatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.tags",
+          },
+          {
             $ref: "#/parameters/body.purchaseOrder",
           },
           {
@@ -8861,6 +9197,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.fixtures.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixtures.tags",
           },
           {
             $ref: "#/parameters/rowFilter.fixtures.modelId",
@@ -9499,6 +9838,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.notes",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -9672,6 +10014,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.notes",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -9797,6 +10142,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.notes",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -10579,6 +10927,18 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.estimatedQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterial.defaultShelf",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.quantityIssued",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.quantityToIssue",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -10701,6 +11061,18 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.estimatedQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterial.defaultShelf",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.quantityIssued",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.quantityToIssue",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -10775,6 +11147,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.estimatedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.defaultShelf",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.quantityIssued",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.quantityToIssue",
           },
           {
             $ref: "#/parameters/body.jobMaterial",
@@ -11263,6 +11647,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.conversionFactor",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -11409,6 +11796,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.conversionFactor",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -11507,6 +11897,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.conversionFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.tags",
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine",
@@ -11890,6 +12283,9 @@ export default {
             $ref: "#/parameters/rowFilter.shelf.name",
           },
           {
+            $ref: "#/parameters/rowFilter.shelf.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -11982,6 +12378,9 @@ export default {
             $ref: "#/parameters/rowFilter.shelf.name",
           },
           {
+            $ref: "#/parameters/rowFilter.shelf.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -12026,6 +12425,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shelf.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shelf.tags",
           },
           {
             $ref: "#/parameters/body.shelf",
@@ -12313,6 +12715,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemUnitSalePrice.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemUnitSalePrice.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -12411,6 +12816,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemUnitSalePrice.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemUnitSalePrice.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -12461,6 +12869,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemUnitSalePrice.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemUnitSalePrice.tags",
           },
           {
             $ref: "#/parameters/body.itemUnitSalePrice",
@@ -12563,6 +12974,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -12708,6 +13122,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.job.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -12803,6 +13220,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.tags",
           },
           {
             $ref: "#/parameters/body.job",
@@ -13151,6 +13571,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.consumables.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.tags",
           },
           {
             $ref: "#/parameters/rowFilter.consumables.supplierIds",
@@ -13729,6 +14152,9 @@ export default {
             $ref: "#/parameters/rowFilter.customer.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.customer.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -13848,6 +14274,9 @@ export default {
             $ref: "#/parameters/rowFilter.customer.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.customer.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -13919,6 +14348,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customer.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.tags",
           },
           {
             $ref: "#/parameters/body.customer",
@@ -14158,6 +14590,9 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.overheadRate",
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -14265,6 +14700,9 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.overheadRate",
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -14326,6 +14764,9 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.overheadRate",
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.tags",
+          },
+          {
             $ref: "#/parameters/body.workCenter",
           },
           {
@@ -14375,6 +14816,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tool.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tool.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -14469,6 +14913,9 @@ export default {
             $ref: "#/parameters/rowFilter.tool.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.tool.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -14513,6 +14960,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tool.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tool.tags",
           },
           {
             $ref: "#/parameters/body.tool",
@@ -14923,6 +15373,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountCategory.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.accountCategory.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -15012,6 +15465,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountCategory.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.accountCategory.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -15053,6 +15509,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountCategory.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountCategory.tags",
           },
           {
             $ref: "#/parameters/body.accountCategory",
@@ -15292,6 +15751,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -15408,6 +15870,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -15476,6 +15941,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.tags",
           },
           {
             $ref: "#/parameters/body.supplier",
@@ -15649,6 +16117,9 @@ export default {
             $ref: "#/parameters/rowFilter.shippingMethod.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.shippingMethod.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -15744,6 +16215,9 @@ export default {
             $ref: "#/parameters/rowFilter.shippingMethod.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.shippingMethod.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -15791,6 +16265,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shippingMethod.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shippingMethod.tags",
           },
           {
             $ref: "#/parameters/body.shippingMethod",
@@ -15875,6 +16352,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.workInstruction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -16002,6 +16482,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.workInstruction",
           },
           {
+            $ref: "#/parameters/rowFilter.methodOperation.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -16079,6 +16562,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.workInstruction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.tags",
           },
           {
             $ref: "#/parameters/body.methodOperation",
@@ -16864,6 +17350,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqLine.customerPartRevision",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfqLine.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -16977,6 +17466,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfqLine.customerPartRevision",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfqLine.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -17042,6 +17534,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqLine.customerPartRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLine.tags",
           },
           {
             $ref: "#/parameters/body.salesRfqLine",
@@ -17141,6 +17636,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoice.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -17283,6 +17781,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoice.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -17377,6 +17878,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoice.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.tags",
+          },
+          {
             $ref: "#/parameters/body.purchaseInvoice",
           },
           {
@@ -17417,6 +17921,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerStatus.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerStatus.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -17502,6 +18009,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerStatus.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.customerStatus.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -17537,6 +18047,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerStatus.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerStatus.tags",
           },
           {
             $ref: "#/parameters/body.customerStatus",
@@ -17591,6 +18104,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMakeMethod.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMakeMethod.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -17688,6 +18204,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMakeMethod.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMakeMethod.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -17735,6 +18254,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMakeMethod.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMakeMethod.tags",
           },
           {
             $ref: "#/parameters/body.quoteMakeMethod",
@@ -18145,6 +18667,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierStatus.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierStatus.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -18228,6 +18753,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierStatus.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierStatus.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -18263,6 +18791,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierStatus.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStatus.tags",
           },
           {
             $ref: "#/parameters/body.supplierStatus",
@@ -18619,6 +19150,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.digitalQuoteAcceptedByEmail",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -18762,6 +19296,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.digitalQuoteAcceptedByEmail",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -18857,6 +19394,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quote.digitalQuoteAcceptedByEmail",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.tags",
           },
           {
             $ref: "#/parameters/body.quote",
@@ -19858,6 +20398,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.jobs.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.jobs.name",
           },
           {
@@ -19981,6 +20524,9 @@ export default {
             $ref: "#/parameters/rowFilter.customField.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.customField.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -20076,6 +20622,9 @@ export default {
             $ref: "#/parameters/rowFilter.customField.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.customField.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -20123,6 +20672,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customField.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customField.tags",
           },
           {
             $ref: "#/parameters/body.customField",
@@ -20657,6 +21209,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.parts.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.parts.tags",
           },
           {
             $ref: "#/parameters/rowFilter.parts.supplierIds",
@@ -21235,6 +21790,9 @@ export default {
             $ref: "#/parameters/rowFilter.makeMethod.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.makeMethod.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -21318,6 +21876,9 @@ export default {
             $ref: "#/parameters/rowFilter.makeMethod.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.makeMethod.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -21353,6 +21914,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.makeMethod.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.makeMethod.tags",
           },
           {
             $ref: "#/parameters/body.makeMethod",
@@ -21493,6 +22057,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -21600,6 +22167,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -21659,6 +22229,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.tags",
           },
           {
             $ref: "#/parameters/body.purchaseOrderDelivery",
@@ -22042,6 +22615,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.createdBy",
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedger.documentLineId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -22146,6 +22722,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.createdBy",
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedger.documentLineId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -22202,6 +22781,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemLedger.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedger.documentLineId",
           },
           {
             $ref: "#/parameters/body.itemLedger",
@@ -22501,6 +23083,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierContact.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierContact.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -22578,6 +23163,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierContact.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierContact.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -22607,6 +23195,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierContact.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierContact.tags",
           },
           {
             $ref: "#/parameters/body.supplierContact",
@@ -22897,6 +23488,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerContact.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.customerContact.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -22974,6 +23568,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerContact.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.customerContact.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -23003,6 +23600,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerContact.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContact.tags",
           },
           {
             $ref: "#/parameters/body.customerContact",
@@ -23392,6 +23992,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -23514,6 +24117,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -23590,6 +24196,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.tags",
+          },
+          {
             $ref: "#/parameters/body.itemPlanning",
           },
           {
@@ -23639,6 +24248,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employeeJob.departmentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeJob.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -23733,6 +24345,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.departmentId",
           },
           {
+            $ref: "#/parameters/rowFilter.employeeJob.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -23777,6 +24392,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employeeJob.departmentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeJob.tags",
           },
           {
             $ref: "#/parameters/body.employeeJob",
@@ -23846,6 +24464,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.account.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.account.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -23958,6 +24579,9 @@ export default {
             $ref: "#/parameters/rowFilter.account.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.account.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -24020,6 +24644,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.account.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.account.tags",
           },
           {
             $ref: "#/parameters/body.account",
@@ -24721,6 +25348,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialSubstance.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.materialSubstance.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -24804,6 +25434,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialSubstance.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.materialSubstance.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -24839,6 +25472,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialSubstance.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialSubstance.tags",
           },
           {
             $ref: "#/parameters/body.materialSubstance",
@@ -25135,6 +25771,9 @@ export default {
             $ref: "#/parameters/rowFilter.consumable.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.consumable.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -25227,6 +25866,9 @@ export default {
             $ref: "#/parameters/rowFilter.consumable.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.consumable.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -25271,6 +25913,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.consumable.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumable.tags",
           },
           {
             $ref: "#/parameters/body.consumable",
@@ -25340,6 +25985,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.location.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -25452,6 +26100,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.location.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -25514,6 +26165,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.location.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.tags",
           },
           {
             $ref: "#/parameters/body.location",
@@ -25777,6 +26431,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.workInstruction",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteOperation.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -25926,6 +26583,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.workInstruction",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteOperation.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -26029,6 +26689,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.workInstruction",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteOperation.tags",
+          },
+          {
             $ref: "#/parameters/body.quoteOperation",
           },
           {
@@ -26111,6 +26774,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfq.salesPersonId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -26238,6 +26904,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.salesPersonId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfq.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -26317,6 +26986,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.salesPersonId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfq.tags",
+          },
+          {
             $ref: "#/parameters/body.salesRfq",
           },
           {
@@ -26372,6 +27044,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.paymentTerm.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentTerm.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -26472,6 +27147,9 @@ export default {
             $ref: "#/parameters/rowFilter.paymentTerm.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.paymentTerm.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -26522,6 +27200,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.paymentTerm.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentTerm.tags",
           },
           {
             $ref: "#/parameters/body.paymentTerm",
@@ -27589,6 +28270,9 @@ export default {
             $ref: "#/parameters/rowFilter.unitOfMeasure.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.unitOfMeasure.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27678,6 +28362,9 @@ export default {
             $ref: "#/parameters/rowFilter.unitOfMeasure.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.unitOfMeasure.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27719,6 +28406,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.unitOfMeasure.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitOfMeasure.tags",
           },
           {
             $ref: "#/parameters/body.unitOfMeasure",
@@ -27877,6 +28567,9 @@ export default {
             $ref: "#/parameters/rowFilter.partner.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.partner.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27966,6 +28659,9 @@ export default {
             $ref: "#/parameters/rowFilter.partner.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.partner.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -28007,6 +28703,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.partner.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.partner.tags",
           },
           {
             $ref: "#/parameters/body.partner",
@@ -28246,6 +28945,9 @@ export default {
             $ref: "#/parameters/rowFilter.part.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.part.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -28344,6 +29046,9 @@ export default {
             $ref: "#/parameters/rowFilter.part.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.part.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -28394,6 +29099,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.part.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.part.tags",
           },
           {
             $ref: "#/parameters/body.part",
@@ -28631,6 +29339,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materials.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.tags",
           },
           {
             $ref: "#/parameters/rowFilter.materials.materialForm",
@@ -28879,6 +29590,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemReplenishment.scrapPercentage",
           },
           {
+            $ref: "#/parameters/rowFilter.itemReplenishment.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -28986,6 +29700,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemReplenishment.scrapPercentage",
           },
           {
+            $ref: "#/parameters/rowFilter.itemReplenishment.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -29045,6 +29762,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemReplenishment.scrapPercentage",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemReplenishment.tags",
           },
           {
             $ref: "#/parameters/body.itemReplenishment",
@@ -29212,6 +29932,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierShipping.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierShipping.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -29301,6 +30024,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierShipping.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierShipping.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -29342,6 +30068,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierShipping.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierShipping.tags",
           },
           {
             $ref: "#/parameters/body.supplierShipping",
@@ -29911,6 +30640,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemCost.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemCost.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -30006,6 +30738,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemCost.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemCost.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -30053,6 +30788,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemCost.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemCost.tags",
           },
           {
             $ref: "#/parameters/body.itemCost",
@@ -30521,6 +31259,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tools.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.tags",
           },
           {
             $ref: "#/parameters/rowFilter.tools.supplierIds",
@@ -31384,6 +32125,9 @@ export default {
             $ref: "#/parameters/rowFilter.fixture.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.fixture.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -31479,6 +32223,9 @@ export default {
             $ref: "#/parameters/rowFilter.fixture.externalId",
           },
           {
+            $ref: "#/parameters/rowFilter.fixture.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -31526,6 +32273,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.fixture.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fixture.tags",
           },
           {
             $ref: "#/parameters/body.fixture",
@@ -32125,6 +32875,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -32259,6 +33012,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -32345,6 +33101,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.tags",
           },
           {
             $ref: "#/parameters/body.quoteLine",
@@ -32506,6 +33265,9 @@ export default {
             $ref: "#/parameters/rowFilter.currency.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.currency.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -32598,6 +33360,9 @@ export default {
             $ref: "#/parameters/rowFilter.currency.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.currency.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -32642,6 +33407,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.currency.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.currency.tags",
           },
           {
             $ref: "#/parameters/body.currency",
@@ -33817,6 +34585,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierProcess.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierProcess.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -33909,6 +34680,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierProcess.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierProcess.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -33953,6 +34727,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierProcess.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierProcess.tags",
           },
           {
             $ref: "#/parameters/body.supplierProcess",
@@ -34135,6 +34912,9 @@ export default {
             $ref: "#/parameters/rowFilter.buyMethod.unitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.buyMethod.tags",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -34239,6 +35019,9 @@ export default {
             $ref: "#/parameters/rowFilter.buyMethod.unitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.buyMethod.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -34297,6 +35080,9 @@ export default {
             $ref: "#/parameters/rowFilter.buyMethod.unitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.buyMethod.tags",
+          },
+          {
             $ref: "#/parameters/body.buyMethod",
           },
           {
@@ -34343,6 +35129,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPostingGroup.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroup.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -34434,6 +35223,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPostingGroup.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.itemPostingGroup.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -34475,6 +35267,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPostingGroup.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroup.tags",
           },
           {
             $ref: "#/parameters/body.itemPostingGroup",
@@ -34520,6 +35315,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.department.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.department.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -34608,6 +35406,9 @@ export default {
             $ref: "#/parameters/rowFilter.department.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.department.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -34646,6 +35447,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.department.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.department.tags",
           },
           {
             $ref: "#/parameters/body.department",
@@ -34745,6 +35549,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.conversionFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -34887,6 +35694,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.conversionFactor",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.tags",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -34979,6 +35789,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.conversionFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.tags",
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine",
@@ -35500,125 +36313,6 @@ export default {
           },
         },
         tags: ["(rpc) get_active_job_operations_by_location"],
-      },
-    },
-    "/rpc/create_rfq_from_model": {
-      get: {
-        parameters: [
-          {
-            format: "text",
-            in: "query",
-            name: "company_id",
-            required: true,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "customer_part_id",
-            required: true,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "email",
-            required: true,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "model_id",
-            required: true,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "sequence_number",
-            required: true,
-            type: "string",
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "unit_of_measure",
-            required: true,
-            type: "string",
-          },
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json",
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-          },
-        },
-        tags: ["(rpc) create_rfq_from_model"],
-      },
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                company_id: {
-                  format: "text",
-                  type: "string",
-                },
-                customer_part_id: {
-                  format: "text",
-                  type: "string",
-                },
-                email: {
-                  format: "text",
-                  type: "string",
-                },
-                model_id: {
-                  format: "text",
-                  type: "string",
-                },
-                sequence_number: {
-                  format: "text",
-                  type: "string",
-                },
-                unit_of_measure: {
-                  format: "text",
-                  type: "string",
-                },
-              },
-              required: [
-                "company_id",
-                "customer_part_id",
-                "email",
-                "model_id",
-                "sequence_number",
-                "unit_of_measure",
-              ],
-              type: "object",
-            },
-          },
-          {
-            $ref: "#/parameters/preferParams",
-          },
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json",
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-          },
-        },
-        tags: ["(rpc) create_rfq_from_model"],
       },
     },
     "/rpc/jsonb_to_text_array": {
@@ -37054,6 +37748,135 @@ export default {
         tags: ["(rpc) get_my_claim"],
       },
     },
+    "/rpc/create_rfq_from_model_v1": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "customer_part_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "email",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "model_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "sequence_number",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "unit_of_measure",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "json",
+            in: "query",
+            name: "notes",
+            required: false,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_rfq_from_model_v1"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                customer_part_id: {
+                  format: "text",
+                  type: "string",
+                },
+                email: {
+                  format: "text",
+                  type: "string",
+                },
+                model_id: {
+                  format: "text",
+                  type: "string",
+                },
+                notes: {
+                  format: "json",
+                },
+                sequence_number: {
+                  format: "text",
+                  type: "string",
+                },
+                unit_of_measure: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [
+                "company_id",
+                "customer_part_id",
+                "email",
+                "model_id",
+                "sequence_number",
+                "unit_of_measure",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_rfq_from_model_v1"],
+      },
+    },
     "/rpc/get_item_quantities": {
       get: {
         parameters: [
@@ -37533,6 +38356,13 @@ export default {
           format: "numeric",
           type: "number",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -37629,6 +38459,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -37687,6 +38524,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -37734,6 +38578,13 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -38051,6 +38902,13 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -38184,6 +39042,46 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+      },
+      type: "object",
+    },
+    tag: {
+      required: ["name", "table", "companyId", "createdAt", "createdBy"],
+      properties: {
+        name: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        table: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -38237,6 +39135,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -38601,6 +39506,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -38686,6 +39598,13 @@ export default {
         externalId: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -38739,6 +39658,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -38871,6 +39797,13 @@ export default {
         productionQuantity: {
           format: "numeric",
           type: "number",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -39020,6 +39953,13 @@ export default {
           format: 'public."processType"',
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -39155,6 +40095,13 @@ export default {
         productionQuantity: {
           format: "numeric",
           type: "number",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -39363,6 +40310,9 @@ export default {
         taxPercent: {
           format: "numeric",
           type: "number",
+        },
+        notes: {
+          format: "jsonb",
         },
         thumbnailPath: {
           format: "text",
@@ -39745,6 +40695,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -39950,6 +40907,13 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -40181,6 +41145,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -40253,6 +41224,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -40310,6 +41288,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -40551,6 +41536,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -40753,6 +41745,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -41054,6 +42053,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -41503,6 +42509,13 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -41607,6 +42620,13 @@ export default {
         },
         externalId: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         modelId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -42010,6 +43030,9 @@ export default {
           format: "numeric",
           type: "number",
         },
+        notes: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -42358,6 +43381,26 @@ export default {
           format: "numeric",
           type: "number",
         },
+        defaultShelf: {
+          default: true,
+          format: "boolean",
+          type: "boolean",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantityIssued: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        quantityToIssue: {
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -42561,6 +43604,8 @@ export default {
             "Inventory Receipt",
             "Inventory Shipment",
             "Direct Transfer",
+            "Job Consumption",
+            "Job Receipt",
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string",
@@ -42768,6 +43813,13 @@ export default {
           default: 1,
           format: "numeric",
           type: "number",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -42982,6 +44034,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -43146,6 +44205,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -43320,6 +44386,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -43482,6 +44555,13 @@ export default {
         },
         externalId: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         supplierIds: {
           format: "text",
@@ -43970,6 +45050,13 @@ export default {
           format: "numeric",
           type: "number",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -44139,6 +45226,13 @@ export default {
           format: "numeric",
           type: "number",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -44199,6 +45293,13 @@ export default {
         },
         externalId: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -44372,6 +45473,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -44665,6 +45773,13 @@ export default {
         externalId: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -44772,6 +45887,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -44949,6 +46071,13 @@ export default {
         },
         workInstruction: {
           format: "json",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -45282,6 +46411,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -45448,6 +46584,13 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -45493,6 +46636,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -45573,6 +46723,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -45909,6 +47066,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -46122,6 +47286,13 @@ export default {
         digitalQuoteAcceptedByEmail: {
           format: "text",
           type: "string",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -46584,6 +47755,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
         name: {
           format: "text",
           type: "string",
@@ -46735,6 +47913,13 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -47041,6 +48226,13 @@ export default {
         externalId: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
         supplierIds: {
           format: "text",
           type: "string",
@@ -47307,6 +48499,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -47433,6 +48632,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -47694,6 +48900,8 @@ export default {
             "Inventory Receipt",
             "Inventory Shipment",
             "Direct Transfer",
+            "Job Consumption",
+            "Job Receipt",
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string",
@@ -47747,6 +48955,10 @@ export default {
           default: "system",
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        documentLineId: {
           format: "text",
           type: "string",
         },
@@ -47848,6 +49060,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -48095,6 +49314,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -48328,6 +49554,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -48390,6 +49623,13 @@ export default {
             "Note:\nThis is a Foreign Key to `department.id`.<fk table='department' column='id'/>",
           format: "text",
           type: "string",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -48491,6 +49731,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -48809,6 +50056,13 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -49002,6 +50256,13 @@ export default {
         externalId: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -49090,6 +50351,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -49357,6 +50625,13 @@ export default {
         workInstruction: {
           format: "json",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -49474,6 +50749,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -49556,6 +50838,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -50029,6 +51318,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -50112,6 +51408,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -50240,6 +51543,13 @@ export default {
         },
         externalId: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -50403,6 +51713,13 @@ export default {
         externalId: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
         materialForm: {
           format: "text",
           type: "string",
@@ -50552,6 +51869,13 @@ export default {
           format: "numeric",
           type: "number",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -50634,6 +51958,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -50911,6 +52242,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -51172,6 +52510,13 @@ export default {
         },
         externalId: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         supplierIds: {
           format: "text",
@@ -51837,6 +53182,13 @@ export default {
         externalId: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -52269,6 +53621,13 @@ export default {
           format: "numeric",
           type: "number",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -52447,6 +53806,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -52968,6 +54334,13 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -53082,6 +54455,13 @@ export default {
           format: "numeric",
           type: "number",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -53137,6 +54517,13 @@ export default {
         customFields: {
           format: "jsonb",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
       },
       type: "object",
     },
@@ -53184,6 +54571,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -53344,6 +54738,13 @@ export default {
           default: 1,
           format: "numeric",
           type: "number",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -53677,6 +55078,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.itemInventory.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.userPermission": {
       name: "userPermission",
       description: "userPermission",
@@ -53802,6 +55210,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplierType.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.customerType": {
       name: "customerType",
       description: "customerType",
@@ -53874,6 +55289,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.customerType.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.shippingTerm": {
       name: "shippingTerm",
       description: "shippingTerm",
@@ -53936,6 +55358,13 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shippingTerm.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -54365,6 +55794,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.service.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.employeeTypePermission": {
       name: "employeeTypePermission",
       description: "employeeTypePermission",
@@ -54509,6 +55945,57 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrderPayment.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.tag": {
+      name: "tag",
+      description: "tag",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/tag",
+      },
+    },
+    "rowFilter.tag.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tag.table": {
+      name: "table",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tag.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tag.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tag.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.holiday": {
       name: "holiday",
       description: "holiday",
@@ -54585,6 +56072,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.holiday.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -55074,6 +56568,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.accountSubcategory.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.material": {
       name: "material",
       description: "material",
@@ -55195,6 +56696,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.material.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.supplierPayment": {
       name: "supplierPayment",
       description: "supplierPayment",
@@ -55264,6 +56772,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierPayment.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -55429,6 +56944,13 @@ export default {
       name: "productionQuantity",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodMaterial.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -55604,6 +57126,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.process.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.quoteMaterial": {
       name: "quoteMaterial",
       description: "quoteMaterial",
@@ -55764,6 +57293,13 @@ export default {
       name: "productionQuantity",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteMaterial.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -56076,6 +57612,13 @@ export default {
       name: "taxPercent",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.notes": {
+      name: "notes",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -56510,6 +58053,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.journalLine.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.purchaseOrderLines": {
       name: "purchaseOrderLines",
       description: "purchaseOrderLines",
@@ -56815,6 +58365,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materialForm.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.item": {
       name: "item",
       description: "item",
@@ -57092,6 +58649,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.receipt.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.purchaseOrderTransaction": {
       name: "purchaseOrderTransaction",
       description: "purchaseOrderTransaction",
@@ -57180,6 +58744,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplierLocation.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.contractor": {
       name: "contractor",
       description: "contractor",
@@ -57249,6 +58820,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.contractor.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -57550,6 +59128,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.customerLocation.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.membership": {
       name: "membership",
       description: "membership",
@@ -57793,6 +59378,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.journal.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -58174,6 +59766,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shift.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -58747,6 +60346,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrder.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.fixtures": {
       name: "fixtures",
       description: "fixtures",
@@ -58900,6 +60506,13 @@ export default {
       name: "externalId",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fixtures.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -59462,6 +61075,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderLine.notes": {
+      name: "notes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.salesOrderTransaction": {
       name: "salesOrderTransaction",
       description: "salesOrderTransaction",
@@ -59903,6 +61523,34 @@ export default {
     },
     "rowFilter.jobMaterial.estimatedQuantity": {
       name: "estimatedQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterial.defaultShelf": {
+      name: "defaultShelf",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterial.shelfId": {
+      name: "shelfId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterial.quantityIssued": {
+      name: "quantityIssued",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterial.quantityToIssue": {
+      name: "quantityToIssue",
       required: false,
       format: "numeric",
       in: "query",
@@ -60406,6 +62054,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrderLine.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.salesOrderShipment": {
       name: "salesOrderShipment",
       description: "salesOrderShipment",
@@ -60706,6 +62361,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.shelf.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.supplierLedger": {
       name: "supplierLedger",
       description: "supplierLedger",
@@ -60905,6 +62567,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemUnitSalePrice.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -61110,6 +62779,13 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -61347,6 +63023,13 @@ export default {
       name: "externalId",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -62109,6 +63792,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.customer.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.note": {
       name: "note",
       description: "note",
@@ -62302,6 +63992,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.workCenter.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.tool": {
       name: "tool",
       description: "tool",
@@ -62385,6 +64082,13 @@ export default {
       name: "externalId",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tool.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -62622,6 +64326,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.accountCategory.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -63056,6 +64767,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplier.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.customFieldTable": {
       name: "customFieldTable",
       description: "customFieldTable",
@@ -63176,6 +64894,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shippingMethod.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -63339,6 +65064,13 @@ export default {
       name: "workInstruction",
       required: false,
       format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -63786,6 +65518,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesRfqLine.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.purchaseInvoice": {
       name: "purchaseInvoice",
       description: "purchaseInvoice",
@@ -63984,6 +65723,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseInvoice.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.customerStatus": {
       name: "customerStatus",
       description: "customerStatus",
@@ -64046,6 +65792,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerStatus.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -64139,6 +65892,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteMakeMethod.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -64570,6 +66330,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplierStatus.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.terms": {
       name: "terms",
       description: "terms",
@@ -64846,6 +66613,13 @@ export default {
       name: "digitalQuoteAcceptedByEmail",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quote.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -65479,6 +67253,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.jobs.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.jobs.name": {
       name: "name",
       required: false,
@@ -65674,6 +67455,13 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customField.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -66119,6 +67907,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.parts.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.parts.supplierIds": {
       name: "supplierIds",
       required: false,
@@ -66468,6 +68263,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.makeMethod.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.groups": {
       name: "groups",
       description: "groups",
@@ -66665,6 +68467,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderDelivery.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -67038,6 +68847,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.itemLedger.documentLineId": {
+      name: "documentLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.salesRfqFavorite": {
       name: "salesRfqFavorite",
       description: "salesRfqFavorite",
@@ -67167,6 +68983,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierContact.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -67542,6 +69365,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.customerContact.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.accountingPeriod": {
       name: "accountingPeriod",
       description: "accountingPeriod",
@@ -67814,6 +69644,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.itemPlanning.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.employeeJob": {
       name: "employeeJob",
       description: "employeeJob",
@@ -67897,6 +69734,13 @@ export default {
       name: "departmentId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.employeeJob.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -68025,6 +69869,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.account.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -68467,6 +70318,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materialSubstance.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.workCenterProcess": {
       name: "workCenterProcess",
       description: "workCenterProcess",
@@ -68732,6 +70590,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.consumable.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.location": {
       name: "location",
       description: "location",
@@ -68857,6 +70722,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.location.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -69137,6 +71009,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.quoteOperation.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.salesRfq": {
       name: "salesRfq",
       description: "salesRfq",
@@ -69300,6 +71179,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesRfq.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.paymentTerm": {
       name: "paymentTerm",
       description: "paymentTerm",
@@ -69397,6 +71283,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.paymentTerm.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -70039,6 +71932,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.unitOfMeasure.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.documentFavorite": {
       name: "documentFavorite",
       description: "documentFavorite",
@@ -70138,6 +72038,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.partner.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -70317,6 +72224,13 @@ export default {
       name: "externalId",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.part.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -70555,6 +72469,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materials.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.materials.materialForm": {
       name: "materialForm",
       required: false,
@@ -70755,6 +72676,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.itemReplenishment.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.documentLabel": {
       name: "documentLabel",
       description: "documentLabel",
@@ -70861,6 +72789,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierShipping.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -71170,6 +73105,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemCost.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -71556,6 +73498,13 @@ export default {
       name: "externalId",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -72511,6 +74460,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.fixture.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.document": {
       name: "document",
       description: "document",
@@ -73030,6 +74986,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.quoteLine.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.jobMaterialWithMakeMethodId": {
       name: "jobMaterialWithMakeMethodId",
       description: "jobMaterialWithMakeMethodId",
@@ -73276,6 +75239,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.currency.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -73965,6 +75935,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplierProcess.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.employee": {
       name: "employee",
       description: "employee",
@@ -74109,6 +76086,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.buyMethod.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.itemPostingGroup": {
       name: "itemPostingGroup",
       description: "itemPostingGroup",
@@ -74188,6 +76172,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.itemPostingGroup.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "body.department": {
       name: "department",
       description: "department",
@@ -74257,6 +76248,13 @@ export default {
       name: "customFields",
       required: false,
       format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.department.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -74455,6 +76453,13 @@ export default {
       name: "conversionFactor",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },

@@ -43,7 +43,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
     case "Job Consumption":
       return (
         <span>
-          issued {ledgerRecord.quantity * -1} units{" "}
+          issued {-1 * ledgerRecord.quantity} units{" "}
           {ledgerRecord.documentLineId && ledgerRecord.documentId ? (
             <>
               to a{" "}
@@ -84,7 +84,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
         ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf?.name}` : ""
       }`;
     case "Negative Adjmt.":
-      return `made a negative adjustment of ${ledgerRecord.quantity}${
+      return `made a negative adjustment of ${-1 * ledgerRecord.quantity}${
         ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf.name}` : ""
       }`;
     default:
