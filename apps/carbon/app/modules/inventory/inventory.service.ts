@@ -55,7 +55,7 @@ export async function insertManualInventoryAdjustment(
       data.quantity = quantityDifference;
     } else if (quantityDifference < 0) {
       data.entryType = "Negative Adjmt.";
-      data.quantity = Math.abs(quantityDifference);
+      data.quantity = -Math.abs(quantityDifference);
     } else {
       // No change in quantity, we can return early
       return { data: null };
@@ -69,6 +69,7 @@ export async function insertManualInventoryAdjustment(
         error: "Insufficient quantity for negative adjustment",
       };
     }
+    data.quantity = -Math.abs(data.quantity);
   }
 
   return client.from("itemLedger").insert([data]).select("*").single();

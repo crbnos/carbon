@@ -45,6 +45,11 @@ export const issueValidator = z.object({
   jobOperationId: z.string().min(1, { message: "Job Operation is required" }),
   materialId: zfd.text(z.string().optional()),
   quantity: zfd.numeric(z.number()),
+  adjustmentType: z.enum([
+    "Set Quantity",
+    "Positive Adjmt.",
+    "Negative Adjmt.",
+  ]),
 });
 
 export const feedbackValidator = z.object({
