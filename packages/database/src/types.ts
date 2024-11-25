@@ -30488,6 +30488,7 @@ export type Database = {
         | "Inventory Shipment"
         | "Direct Transfer"
         | "Job Consumption"
+        | "Job Receipt"
       itemLedgerType:
         | "Purchase"
         | "Sale"

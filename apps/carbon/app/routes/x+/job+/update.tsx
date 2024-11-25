@@ -30,6 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
+
   switch (field) {
     case "itemId":
       if (!value) {
@@ -156,7 +157,25 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       return json(quantityUpdate);
+    case "salesOrderId":
+    case "salesOrderLineId":
+      if (!value) {
+        return json(
+          await client
+            .from("job")
+            .update({ salesOrderId: null, salesOrderLineId: null })
+            .in("id", ids as string[])
+        );
+      } else {
+        return json({
+          error: { message: `Invalid value: ${value} for field: ${field}` },
+          data: null,
+        });
+      }
     default:
-      return json({ error: { message: "Invalid field" }, data: null });
+      return json({
+        error: { message: `Invalid field: ${field}` },
+        data: null,
+      });
   }
 }
