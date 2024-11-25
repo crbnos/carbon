@@ -6382,6 +6382,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           documentId: string | null
+          documentLineId: string | null
           documentType:
             | Database["public"]["Enums"]["itemLedgerDocumentType"]
             | null
@@ -6401,6 +6402,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           documentId?: string | null
+          documentLineId?: string | null
           documentType?:
             | Database["public"]["Enums"]["itemLedgerDocumentType"]
             | null
@@ -6420,6 +6422,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           documentId?: string | null
+          documentLineId?: string | null
           documentType?:
             | Database["public"]["Enums"]["itemLedgerDocumentType"]
             | null
@@ -7846,6 +7849,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          defaultShelf: boolean | null
           description: string
           estimatedQuantity: number | null
           id: string
@@ -7858,7 +7862,10 @@ export type Database = {
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
           quantity: number
+          quantityIssued: number | null
+          quantityToIssue: number | null
           scrapQuantity: number
+          shelfId: string | null
           unitCost: number
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -7869,6 +7876,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          defaultShelf?: boolean | null
           description: string
           estimatedQuantity?: number | null
           id?: string
@@ -7881,7 +7889,10 @@ export type Database = {
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity?: number
+          quantityIssued?: number | null
+          quantityToIssue?: number | null
           scrapQuantity?: number
+          shelfId?: string | null
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -7892,6 +7903,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          defaultShelf?: boolean | null
           description?: string
           estimatedQuantity?: number | null
           id?: string
@@ -7904,7 +7916,10 @@ export type Database = {
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity?: number
+          quantityIssued?: number | null
+          quantityToIssue?: number | null
           scrapQuantity?: number
+          shelfId?: string | null
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -8021,6 +8036,13 @@ export type Database = {
             columns: ["jobOperationId"]
             isOneToOne: false
             referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
             referencedColumns: ["id"]
           },
           {
@@ -11881,6 +11903,7 @@ export type Database = {
           endTime: string | null
           id: string
           jobOperationId: string
+          notes: Json | null
           startTime: string
           type: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt: string | null
@@ -11896,6 +11919,7 @@ export type Database = {
           endTime?: string | null
           id?: string
           jobOperationId: string
+          notes?: Json | null
           startTime?: string
           type?: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt?: string | null
@@ -11911,6 +11935,7 @@ export type Database = {
           endTime?: string | null
           id?: string
           jobOperationId?: string
+          notes?: Json | null
           startTime?: string
           type?: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt?: string | null
@@ -30465,6 +30490,8 @@ export type Database = {
         | "Inventory Receipt"
         | "Inventory Shipment"
         | "Direct Transfer"
+        | "Job Consumption"
+        | "Job Receipt"
       itemLedgerType:
         | "Purchase"
         | "Sale"
