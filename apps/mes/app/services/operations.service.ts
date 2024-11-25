@@ -1,144 +1,14 @@
 import type { Database } from "@carbon/database";
-import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
-import { z } from "zod";
-import { zfd } from "zod-form-data";
+import type { z } from "zod";
 import { sanitize } from "~/utils/supabase";
-
-export type BaseOperation = NonNullable<
-  Awaited<ReturnType<typeof getJobOperationsByWorkCenter>>["data"]
->[number];
-
-export type BaseOperationWithDetails = NonNullable<
-  Awaited<ReturnType<typeof getJobOperationById>>["data"]
->[number];
-
-type Durations = {
-  duration: number;
-  setupDuration: number;
-  laborDuration: number;
-  machineDuration: number;
-};
-
-export type Location = NonNullable<
-  Awaited<ReturnType<typeof getLocationsByCompany>>["data"]
->[number];
-
-export type Job = NonNullable<
-  Awaited<ReturnType<typeof getJobByOperationId>>["data"]
->;
-
-export type JobMaterial = NonNullable<
-  Awaited<ReturnType<typeof getJobMaterialsByOperationId>>["data"]
->[number];
-
-export type Operation = BaseOperation & Durations;
-export type OperationWithDetails = BaseOperationWithDetails & Durations;
-
-export type OperationSettings = {
-  showCustomer: boolean;
-  showDescription: boolean;
-  showDueDate: boolean;
-  showDuration: boolean;
-  showEmployee: boolean;
-  showProgress: boolean;
-  showStatus: boolean;
-};
-
-export type ProductionEvent = NonNullable<
-  Awaited<ReturnType<typeof getProductionEventsForJobOperation>>["data"]
->[number];
-
-export type ProductionQuantity = NonNullable<
-  Awaited<ReturnType<typeof getProductionQuantitiesForJobOperation>>["data"]
->[number];
-
-export type StorageItem = FileObject & {
-  bucket: string;
-};
-
-export type WorkCenter = NonNullable<
-  Awaited<ReturnType<typeof getJobOperationsByWorkCenter>>["data"]
->[number];
-
-export const documentTypes = [
-  "Archive",
-  "Document",
-  "Presentation",
-  "PDF",
-  "Spreadsheet",
-  "Text",
-  "Image",
-  "Video",
-  "Audio",
-  "Other",
-] as const;
-
-export const deadlineTypes = [
-  "ASAP",
-  "Hard Deadline",
-  "Soft Deadline",
-  "No Deadline",
-] as const;
-
-export const jobStatus = [
-  "Draft",
-  "Ready",
-  "In Progress",
-  "Paused",
-  "Completed",
-  "Cancelled",
-] as const;
-
-export const jobOperationStatus = [
-  "Todo",
-  "Ready",
-  "Waiting",
-  "In Progress",
-  "Paused",
-  "Done",
-  "Canceled",
-] as const;
-
-export const productionEventType = ["Setup", "Labor", "Machine"] as const;
-
-export const productionEventAction = ["Start", "End"] as const;
-
-export const productionEventValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  jobOperationId: z
-    .string()
-    .min(1, { message: "Job Operation ID is required" }),
-  timezone: zfd.text(z.string()),
-  action: z.enum(productionEventAction, {
-    errorMap: (issue, ctx) => ({
-      message: "Action is required",
-    }),
-  }),
-  type: z.enum(productionEventType, {
-    errorMap: (issue, ctx) => ({
-      message: "Type is required",
-    }),
-  }),
-  workCenterId: zfd.text(z.string().optional()),
-  hasActiveEvents: z.enum(["true", "false"]),
-});
-
-export const finishValidator = z.object({
-  jobOperationId: z.string(),
-  setupProductionEventId: zfd.text(z.string().optional()),
-  laborProductionEventId: zfd.text(z.string().optional()),
-  machineProductionEventId: zfd.text(z.string().optional()),
-});
-
-export const nonScrapQuantityValidator = finishValidator.extend({
-  quantity: zfd.numeric(z.number().positive()),
-});
-
-export const scrapQuantityValidator = nonScrapQuantityValidator.extend({
-  scrapReasonId: zfd.text(z.string()),
-  notes: zfd.text(z.string().optional()),
-});
+import type {
+  documentTypes,
+  nonScrapQuantityValidator,
+  productionEventValidator,
+  scrapQuantityValidator,
+} from "./models";
+import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 export async function finishJobOperation(
   client: SupabaseClient<Database>,
@@ -274,7 +144,9 @@ export async function getJobMaterialsByOperationId(
   return client
     .from("jobMaterial")
     .select("*")
-    .eq("jobMakeMethodId", operation.jobMakeMethodId);
+    .eq("jobMakeMethodId", operation.jobMakeMethodId)
+    .order("itemReadableId", { ascending: true })
+    .order("id", { ascending: true });
 }
 
 export async function getJobOperationById(

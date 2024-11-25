@@ -15,10 +15,7 @@ import {
 } from "@carbon/utils";
 import { Link } from "@remix-run/react";
 import { LuClipboardCheck, LuTimer } from "react-icons/lu";
-import type {
-  Operation,
-  OperationSettings,
-} from "~/services/operations.service";
+import type { Operation, OperationSettings } from "~/services/types";
 import { path } from "~/utils/path";
 import { DeadlineIcon, OperationStatusIcon } from "./Icons";
 

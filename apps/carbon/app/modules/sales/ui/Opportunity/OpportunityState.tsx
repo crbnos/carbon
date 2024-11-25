@@ -1,4 +1,5 @@
 import { Button, cn, Menubar } from "@carbon/react";
+import { useOptimisticLocation } from "@carbon/remix";
 import { Link } from "@remix-run/react";
 import { LuCircle } from "react-icons/lu";
 import {
@@ -6,7 +7,6 @@ import {
   RiProgress4Line,
   RiProgress8Line,
 } from "react-icons/ri";
-import { useOptimisticLocation } from "~/hooks/useOptimisticLocation";
 import { path } from "~/utils/path";
 import type { Opportunity } from "../../types";
 

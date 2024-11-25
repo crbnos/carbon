@@ -7,7 +7,6 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import type { OperationWithDetails } from "~/services/operations.service";
 import {
   getJobByOperationId,
   getJobFiles,
@@ -18,6 +17,7 @@ import {
   getThumbnailPathByItemId,
   getWorkCenter,
 } from "~/services/operations.service";
+import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
 
