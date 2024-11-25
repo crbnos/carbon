@@ -11,7 +11,7 @@ import { Link } from "@remix-run/react";
 import {
   LuContainer,
   LuHardHat,
-  LuPlus,
+  LuPenSquare,
   LuShoppingCart,
   LuSquareStack,
   LuUserSquare,
@@ -113,7 +113,7 @@ const CreateMenu = () => {
       <DropdownMenuTrigger asChild>
         <IconButton
           aria-label="Create"
-          icon={<LuPlus />}
+          icon={<LuPenSquare />}
           variant="secondary"
           className={"!border-dashed border-border"}
         />

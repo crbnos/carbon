@@ -2,7 +2,7 @@ import { useFetchers } from "@remix-run/react";
 import type { Mode } from "~/types/validators";
 import { modeValidator } from "~/types/validators";
 import { path } from "~/utils/path";
-import { useRouteData } from "./useRouteData";
+import { useRouteData } from "../../../../packages/remix/src/hooks/useRouteData";
 
 export function useOptimisticMode() {
   const fetchers = useFetchers();

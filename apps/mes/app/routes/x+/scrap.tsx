@@ -4,10 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import {
-  insertScrapQuantity,
-  scrapQuantityValidator,
-} from "~/services/operations.service";
+import { scrapQuantityValidator } from "~/services/models";
+import { insertScrapQuantity } from "~/services/operations.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

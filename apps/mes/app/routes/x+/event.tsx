@@ -10,9 +10,9 @@ import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
+import { productionEventValidator } from "~/services/models";
 import {
   endProductionEvent,
-  productionEventValidator,
   startProductionEvent,
 } from "~/services/operations.service";
 

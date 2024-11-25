@@ -261,6 +261,7 @@ const Item = ({
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
             unitCost: 0,
+            tags: [],
           }}
         />
       )}
@@ -282,6 +283,7 @@ const Item = ({
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
             unitCost: 0,
+            tags: [],
           }}
         />
       )}
@@ -305,6 +307,7 @@ const Item = ({
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
             unitCost: 0,
+            tags: [],
           }}
         />
       )}
@@ -327,6 +330,7 @@ const Item = ({
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
             unitCost: 0,
+            tags: [],
           }}
         />
       )}

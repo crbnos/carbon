@@ -1,4 +1,4 @@
-import { useUrlParams } from "~/hooks/useUrlParams";
+import { useUrlParams } from "~/hooks";
 
 export function useFilters() {
   const [params, setParams] = useUrlParams();

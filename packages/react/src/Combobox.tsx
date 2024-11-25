@@ -219,14 +219,14 @@ function VirtualizedCommand({
                 }}
               >
                 {item.helper ? (
-                  <div className="flex flex-col">
-                    <p className="line-clamp-1">{item.label}</p>
+                  <div className="flex flex-col pr-2">
+                    <p className="line-clamp-1 w-full">{item.label}</p>
                     <p className="text-xs text-muted-foreground line-clamp-1">
                       {item.helper}
                     </p>
                   </div>
                 ) : (
-                  <span className="line-clamp-1">{item.label}</span>
+                  <span className="line-clamp-1 w-full pr-2">{item.label}</span>
                 )}
                 <LuCheck
                   className={cn(

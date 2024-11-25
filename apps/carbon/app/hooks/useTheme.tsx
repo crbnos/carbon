@@ -1,8 +1,8 @@
 import { useFetchers } from "@remix-run/react";
 
+import { useRouteData } from "@carbon/remix";
 import { themeValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
-import { useRouteData } from "./useRouteData";
 
 export function useOptimisticTheme() {
   const fetchers = useFetchers();
