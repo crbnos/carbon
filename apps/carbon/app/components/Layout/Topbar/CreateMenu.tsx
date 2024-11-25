@@ -115,7 +115,6 @@ const CreateMenu = () => {
           aria-label="Create"
           icon={<LuPenSquare />}
           variant="secondary"
-          className={"!border-dashed border-border"}
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="w-48">

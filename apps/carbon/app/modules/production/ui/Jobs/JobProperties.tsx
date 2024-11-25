@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   HStack,
   Tooltip,
@@ -7,9 +8,9 @@ import {
   VStack,
   toast,
 } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
-import { LuCopy, LuLink } from "react-icons/lu";
+import { LuBox, LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 
@@ -20,6 +21,7 @@ import {
   Select,
   ValidatedForm,
 } from "@carbon/form";
+import { RiProgress8Line } from "react-icons/ri";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { Assignee, useOptimisticAssignment } from "~/components";
@@ -177,6 +179,43 @@ const JobProperties = () => {
         <span className="text-sm">{routeData?.job?.jobId}</span>
       </VStack>
 
+      <VStack spacing={2}>
+        <span className="text-xs text-muted-foreground">Target</span>
+        {routeData?.job?.customerId &&
+        routeData?.job?.salesOrderId &&
+        routeData?.job?.salesOrderLineId ? (
+          <HStack className="group" spacing={1}>
+            <Link
+              to={path.to.salesOrderLine(
+                routeData.job.salesOrderId,
+                routeData?.job.salesOrderLineId
+              )}
+            >
+              <Badge variant="secondary">
+                <RiProgress8Line className="w-3 h-3 mr-1" />
+                {routeData?.job.salesOrderReadableId ?? "Make to Order"}
+              </Badge>
+            </Link>
+            <Button
+              className="group-hover:opacity-100 opacity-0 transition-opacity duration-200"
+              variant="ghost"
+              size="sm"
+              leftIcon={<LuUnlink2 className="w-3 h-3" />}
+              onClick={() => {
+                onUpdate("salesOrderLineId", null);
+              }}
+            >
+              Unlink
+            </Button>
+          </HStack>
+        ) : (
+          <Badge variant="secondary">
+            <LuBox className="w-3 h-3 mr-1" />
+            Inventory
+          </Badge>
+        )}
+      </VStack>
+
       <Assignee
         id={jobId}
         table="job"
@@ -312,7 +351,7 @@ const JobProperties = () => {
           name="customerId"
           inline
           isOptional
-          isReadOnly={isDisabled}
+          isReadOnly={isDisabled || !!routeData?.job?.salesOrderId}
           onChange={(value) => {
             onUpdate("customerId", value?.value ?? null);
           }}

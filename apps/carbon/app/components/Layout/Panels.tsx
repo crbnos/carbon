@@ -2,6 +2,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
+  useIsMobile,
 } from "@carbon/react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
@@ -38,9 +39,10 @@ interface PanelProviderProps {
 
 export function PanelProvider({ children }: PanelProviderProps) {
   const isBrowser = typeof window !== "undefined";
+  const isMobile = useIsMobile();
 
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(
-    isBrowser ? window.innerWidth < 768 : false
+    isBrowser ? isMobile : false
   );
   const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(
     isBrowser ? window.innerWidth < 1024 : false
@@ -54,6 +56,13 @@ export function PanelProvider({ children }: PanelProviderProps) {
     setIsExplorerCollapsed,
     setIsPropertiesCollapsed,
   };
+
+  useEffect(() => {
+    if (isMobile) {
+      setIsExplorerCollapsed(true);
+      setIsPropertiesCollapsed(true);
+    }
+  }, [isBrowser, isMobile]);
 
   return (
     <PanelContext.Provider value={value}>{children}</PanelContext.Provider>

@@ -12,11 +12,11 @@ function JobStatus({ status }: JobStatusProps) {
     case "Ready":
       return <Status color="yellow">{status}</Status>;
     case "In Progress":
-      return <Status color="green">{status}</Status>;
+      return <Status color="blue">{status}</Status>;
     case "Paused":
       return <Status color="orange">{status}</Status>;
     case "Completed":
-      return <Status color="blue">{status}</Status>;
+      return <Status color="green">{status}</Status>;
     case "Cancelled":
       return <Status color="red">{status}</Status>;
     default:

@@ -10,7 +10,7 @@ ALTER TABLE "jobMaterial"
   ) STORED;
 
 ALTER TYPE "itemLedgerDocumentType" ADD VALUE 'Job Consumption';
-
+ALTER TYPE "itemLedgerDocumentType" ADD VALUE 'Job Receipt';
 
 CREATE OR REPLACE FUNCTION update_item_inventory_from_item_ledger()
 RETURNS TRIGGER AS $$
