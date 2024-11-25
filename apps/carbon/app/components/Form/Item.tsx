@@ -265,7 +265,6 @@ const Item = ({
           }}
         />
       )}
-
       {type === "Material" && newItemsModal.isOpen && (
         <MaterialForm
           type="modal"
@@ -286,6 +285,7 @@ const Item = ({
             defaultMethodType: "Buy",
             active: props?.includeInactive === undefined,
             unitCost: 0,
+            tags: [],
           }}
         />
       )}

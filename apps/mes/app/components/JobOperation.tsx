@@ -8,6 +8,7 @@ import {
   generateHTML,
   Heading,
   HStack,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -61,27 +62,29 @@ import {
   OperationStatusIcon,
 } from "~/components";
 import { useMode, useRealtime, useUser } from "~/hooks";
+import type { productionEventType } from "~/services/models";
+import {
+  finishValidator,
+  issueValidator,
+  nonScrapQuantityValidator,
+  productionEventValidator,
+  scrapQuantityValidator,
+} from "~/services/models";
 import type {
   Job,
   JobMaterial,
   OperationWithDetails,
   ProductionEvent,
-  productionEventType,
   ProductionQuantity,
   StorageItem,
-} from "~/services/operations.service";
-import {
-  finishValidator,
-  getFileType,
-  nonScrapQuantityValidator,
-  productionEventValidator,
-  scrapQuantityValidator,
-} from "~/services/operations.service";
+} from "~/services/types";
 import { path } from "~/utils/path";
 
 import { useCarbon } from "@carbon/auth";
 import {
+  Combobox,
   Hidden,
+  Number,
   NumberControlled,
   TextArea,
   ValidatedForm,
@@ -104,17 +107,21 @@ import type {
   PostgrestSingleResponse,
   RealtimeChannel,
 } from "@supabase/supabase-js";
+import { flushSync } from "react-dom";
 import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
   LuAlertTriangle,
   LuChevronLeft,
   LuClipboardCheck,
+  LuGitBranchPlus,
   LuHammer,
   LuHardHat,
   LuTimer,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components/Icons";
+import { getFileType } from "~/services/operations.service";
+import { useItems } from "~/stores";
 import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
 
@@ -144,10 +151,13 @@ export const JobOperation = ({
     eventType,
     isOverdue,
     operation,
+    issueModal,
     finishModal,
     scrapModal,
     reworkModal,
     completeModal,
+    selectedMaterial,
+    setSelectedMaterial,
     setActiveTab,
     setEventType,
   } = useOperationState(originalOperation, job);
@@ -350,30 +360,33 @@ export const JobOperation = ({
                       <span className="text-muted-foreground text-sm">
                         {operation.jobDueDate
                           ? formatDate(operation.jobDueDate)
-                          : "–"}
+                          : null}
                       </span>
                     </VStack>
                   </div>
                 </div>
-
-                {/* <div className="rounded-xl border bg-card text-card-foreground shadow">
-                  <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-                    <h3 className="tracking-tight text-sm font-medium">
-                      Reworked
-                    </h3>
-                    <FaRedoAlt className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                  <div className="p-6 pt-0">
-                    <Heading size="h2">{operation.quantityReworked}</Heading>
-                  </div>
-                </div> */}
               </div>
             </div>
             <Separator />
 
             <div className="flex flex-col items-start justify-between w-full">
               <div className="flex flex-col gap-4 p-4 w-full">
-                <Heading size="h3">Materials</Heading>
+                <HStack className="justify-between w-full">
+                  <Heading size="h3">Materials</Heading>
+                  <Button
+                    aria-label="Issue Material"
+                    leftIcon={<LuGitBranchPlus />}
+                    variant="secondary"
+                    onClick={() => {
+                      flushSync(() => {
+                        setSelectedMaterial(null);
+                      });
+                      issueModal.onOpen();
+                    }}
+                  >
+                    Issue Material
+                  </Button>
+                </HStack>
                 <Suspense key={operationId} fallback={<TableSkeleton />}>
                   <Await resolve={materials}>
                     {(resolvedMaterials) => (
@@ -382,7 +395,9 @@ export const JobOperation = ({
                           <Tr>
                             <Th>Part</Th>
                             <Th className="lg:table-cell hidden">Method</Th>
-                            <Th>Quantity</Th>
+                            <Th>Issued</Th>
+                            <Th>Required</Th>
+                            <Th className="text-right" />
                           </Tr>
                         </Thead>
                         <Tbody>
@@ -397,17 +412,28 @@ export const JobOperation = ({
                             </Tr>
                           ) : (
                             resolvedMaterials?.data?.map((material) => (
-                              <Tr key={material.id}>
-                                <Td className="flex items-center gap-2">
-                                  <MethodItemTypeIcon
-                                    type={material.itemType}
-                                  />
-                                  <span className="font-semibold">
-                                    {material.itemReadableId}
-                                  </span>
-                                  <span className="md:flex hidden">
-                                    {material.description}
-                                  </span>
+                              <Tr
+                                key={material.id}
+                                className={cn(
+                                  material.jobOperationId !== operationId &&
+                                    "opacity-50 hover:opacity-100"
+                                )}
+                              >
+                                <Td>
+                                  <HStack spacing={2}>
+                                    <MethodItemTypeIcon
+                                      type={material.itemType}
+                                      className="size-4"
+                                    />
+                                    <VStack spacing={0}>
+                                      <span className="font-semibold">
+                                        {material.itemReadableId}
+                                      </span>
+                                      <span className="text-muted-foreground text-xs">
+                                        {material.description}
+                                      </span>
+                                    </VStack>
+                                  </HStack>
                                 </Td>
                                 <Td className="lg:table-cell hidden">
                                   <Badge variant="secondary">
@@ -418,7 +444,30 @@ export const JobOperation = ({
                                     {material.methodType}
                                   </Badge>
                                 </Td>
+                                <Td>
+                                  {material.methodType === "Make" ? (
+                                    <MethodIcon type="Make" />
+                                  ) : (
+                                    material.quantityIssued
+                                  )}
+                                </Td>
                                 <Td>{material.estimatedQuantity}</Td>
+                                <Td className="text-right">
+                                  {material.methodType !== "Make" && (
+                                    <IconButton
+                                      aria-label="Issue Material"
+                                      variant="ghost"
+                                      icon={<LuGitBranchPlus />}
+                                      className="h-8 w-8"
+                                      onClick={() => {
+                                        flushSync(() => {
+                                          setSelectedMaterial(material);
+                                        });
+                                        issueModal.onOpen();
+                                      }}
+                                    />
+                                  )}
+                                </Td>
                               </Tr>
                             ))
                           )}
@@ -799,6 +848,16 @@ export const JobOperation = ({
           onClose={finishModal.onClose}
         />
       )}
+      {issueModal.isOpen && (
+        <IssueModal
+          operationId={operation.id}
+          material={selectedMaterial ?? undefined}
+          onClose={() => {
+            setSelectedMaterial(null);
+            issueModal.onClose();
+          }}
+        />
+      )}
     </>
   );
 };
@@ -1009,6 +1068,11 @@ function useOperationState(operation: OperationWithDetails, job: Job) {
   const reworkModal = useDisclosure();
   const completeModal = useDisclosure();
   const finishModal = useDisclosure();
+  const issueModal = useDisclosure();
+
+  const [selectedMaterial, setSelectedMaterial] = useState<JobMaterial | null>(
+    null
+  );
 
   const [activeTab, setActiveTab] = useState("details");
   const [eventType, setEventType] = useState(() => {
@@ -1084,10 +1148,12 @@ function useOperationState(operation: OperationWithDetails, job: Job) {
     reworkModal,
     completeModal,
     finishModal,
+    issueModal,
     isOverdue: operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
       : false,
-
+    selectedMaterial,
+    setSelectedMaterial,
     setActiveTab,
     setEventType,
   };
@@ -1566,6 +1632,68 @@ function QuantityModal({
               type="submit"
             >
               {actionButtonMap[type]}
+            </Button>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function IssueModal({
+  operationId,
+  material,
+  onClose,
+}: {
+  operationId: string;
+  material?: JobMaterial;
+  onClose: () => void;
+}) {
+  const [items] = useItems();
+  const itemOptions = useMemo(() => {
+    return items.map((item) => ({
+      label: item.readableId,
+      helper: item.name,
+      value: item.id,
+    }));
+  }, [items]);
+
+  return (
+    <Modal open onOpenChange={onClose}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Issue Material</ModalTitle>
+          <ModalDescription>
+            Manually add or subtract material from the required quantities.
+          </ModalDescription>
+        </ModalHeader>
+
+        <ValidatedForm
+          method="post"
+          action={path.to.issue}
+          onSubmit={onClose}
+          validator={issueValidator}
+          defaultValues={{
+            materialId: material?.id,
+            jobOperationId: operationId,
+            itemId: material?.itemId,
+            quantity: 1,
+          }}
+        >
+          <ModalBody>
+            <Hidden name="jobOperationId" />
+            <Hidden name="materialId" />
+            <VStack spacing={4}>
+              <Combobox name="itemId" label="Item" options={itemOptions} />
+              <Number name="quantity" label="Quantity" />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary">
+              Issue
             </Button>
           </ModalFooter>
         </ValidatedForm>

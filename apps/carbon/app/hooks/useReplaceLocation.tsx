@@ -1,6 +1,6 @@
+import { useOptimisticLocation } from "@carbon/remix";
 import type { Location } from "@remix-run/react";
 import { useCallback, useState } from "react";
-import { useOptimisticLocation } from "./useOptimisticLocation";
 
 export function useReplaceLocation() {
   const optimisticLocation = useOptimisticLocation();

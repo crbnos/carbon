@@ -9,10 +9,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  finishJobOperation,
-  finishValidator,
-} from "~/services/operations.service";
+import { finishValidator } from "~/services/models";
+import { finishJobOperation } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

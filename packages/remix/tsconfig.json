@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "ES2015"]
+  },
+  "include": [
+    "src",
+    "../../apps/mes/app/hooks/useMode.tsx",
+    "../../apps/mes/app/hooks/useRealtime.tsx"
+  ],
+  "exclude": ["node_modules"],
+  "extends": "@carbon/tsconfig/react-library.json"
+}

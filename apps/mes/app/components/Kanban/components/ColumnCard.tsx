@@ -14,7 +14,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import { useMemo } from "react";
 import { LuGripVertical } from "react-icons/lu";
-import { useUrlParams } from "~/hooks/useUrlParams";
+import { useUrlParams } from "~/hooks";
 import type { Column, ColumnDragData, DisplaySettings, Item } from "../types";
 import { ItemCard } from "./ItemCard";
 
@@ -118,7 +118,7 @@ export function ColumnCard({
         <CardContent className="flex flex-col gap-2 p-2">
           <SortableContext items={itemsIds}>
             {items.map((item) => (
-              <ItemCard key={item.id} item={item} {...displaySettings} />
+              <ItemCard key={item.id!} item={item} {...displaySettings} />
             ))}
           </SortableContext>
         </CardContent>
