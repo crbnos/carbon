@@ -11903,6 +11903,7 @@ export type Database = {
           endTime: string | null
           id: string
           jobOperationId: string
+          notes: Json | null
           startTime: string
           type: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt: string | null
@@ -11918,6 +11919,7 @@ export type Database = {
           endTime?: string | null
           id?: string
           jobOperationId: string
+          notes?: Json | null
           startTime?: string
           type?: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt?: string | null
@@ -11933,6 +11935,7 @@ export type Database = {
           endTime?: string | null
           id?: string
           jobOperationId?: string
+          notes?: Json | null
           startTime?: string
           type?: Database["public"]["Enums"]["productionEventType"] | null
           updatedAt?: string | null
