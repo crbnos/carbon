@@ -1,8 +1,8 @@
 import type { Json } from "@carbon/database";
+import { useRouteData } from "@carbon/remix";
 import { useMemo } from "react";
 import { z } from "zod";
 import { path } from "~/utils/path";
-import { useRouteData } from "./useRouteData";
 
 export function useCustomFieldsSchema() {
   const data = useRouteData<{

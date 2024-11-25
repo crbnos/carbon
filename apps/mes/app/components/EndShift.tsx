@@ -23,8 +23,8 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useUser } from "~/hooks";
 import type { action as endShiftAction } from "~/routes/x+/end-shift";
-import type { Operation } from "~/services/operations.service";
 import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
+import type { Operation } from "~/services/types";
 import { path } from "~/utils/path";
 
 export function EndShift() {

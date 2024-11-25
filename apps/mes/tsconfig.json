@@ -1,11 +1,5 @@
 {
-  "include": [
-    "env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "app/modules/documents/documents.service.ts",
-    "../carbon/app/components/Breadcrumb.tsx"
-  ],
+  "include": ["env.d.ts", "**/*.ts", "**/*.tsx"],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "ESNext"],
     "esModuleInterop": true,

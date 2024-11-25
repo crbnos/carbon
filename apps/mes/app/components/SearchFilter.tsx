@@ -7,7 +7,7 @@ import {
 } from "@carbon/react";
 import { useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import { useUrlParams } from "~/hooks/useUrlParams";
+import { useUrlParams } from "~/hooks";
 
 type SearchFilterProps = InputProps & {
   param: string;

@@ -1,7 +1,7 @@
+import { useRouteData } from "@carbon/remix";
 import { useCallback } from "react";
 import type { Integration } from "~/modules/settings";
 import { path } from "~/utils/path";
-import { useRouteData } from "./useRouteData";
 
 export function useIntegrations(): {
   list: Integration[];

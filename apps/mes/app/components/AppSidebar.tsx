@@ -48,7 +48,7 @@ import { Form, Link, useFetcher, useLocation } from "@remix-run/react";
 import { useRef, type ComponentProps } from "react";
 import { useMode, useUser } from "~/hooks";
 import type { action } from "~/root";
-import type { Location } from "~/services/operations.service";
+import type { Location } from "~/services/types";
 import { path } from "~/utils/path";
 import { EndShift } from "./EndShift";
 import Feedback from "./Feedback";

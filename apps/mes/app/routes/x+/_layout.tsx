@@ -11,6 +11,7 @@ import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
 import { useEffect } from "react";
 import { AppSidebar } from "~/components";
+import RealtimeDataProvider from "~/components/RealtimeDataProvider";
 import { getLocation, setLocation } from "~/services/location.server";
 import {
   getActiveJobCount,
@@ -115,20 +116,22 @@ export default function AuthenticatedRoute() {
   return (
     <div className="h-screen w-screen overflow-y-auto md:overflow-hidden">
       <CarbonProvider session={session}>
-        <SidebarProvider defaultOpen={false}>
-          <TooltipProvider delayDuration={0}>
-            <AppSidebar
-              activeEvents={activeEvents}
-              company={company}
-              companies={companies}
-              location={location}
-              locations={locations}
-            />
-            <SidebarInset className="bg-card">
-              <Outlet />
-            </SidebarInset>
-          </TooltipProvider>
-        </SidebarProvider>
+        <RealtimeDataProvider>
+          <SidebarProvider defaultOpen={false}>
+            <TooltipProvider delayDuration={0}>
+              <AppSidebar
+                activeEvents={activeEvents}
+                company={company}
+                companies={companies}
+                location={location}
+                locations={locations}
+              />
+              <SidebarInset className="bg-card">
+                <Outlet />
+              </SidebarInset>
+            </TooltipProvider>
+          </SidebarProvider>
+        </RealtimeDataProvider>
       </CarbonProvider>
     </div>
   );

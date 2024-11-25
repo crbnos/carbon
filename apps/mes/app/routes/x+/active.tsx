@@ -1,5 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, Heading, Input, SidebarTrigger } from "@carbon/react";
+import {
+  Button,
+  Heading,
+  Input,
+  SidebarTrigger,
+  useIsMobile,
+} from "@carbon/react";
 import { json, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -7,7 +13,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LuAlertTriangle, LuSearch } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
-import { useMediaQuery } from "~/hooks";
 import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
 
@@ -31,7 +36,7 @@ export default function ActiveRoute() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const panelRef = useRef<ImperativePanelHandle>(null);
-  const { isMobile } = useMediaQuery();
+  const isMobile = useIsMobile();
   const { operationId } = useParams();
 
   useEffect(() => {

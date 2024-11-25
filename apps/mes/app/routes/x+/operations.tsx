@@ -18,7 +18,7 @@ import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
 import type { Column, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
 import SearchFilter from "~/components/SearchFilter";
-import { useUrlParams } from "~/hooks/useUrlParams";
+import { useUrlParams } from "~/hooks";
 import { getLocation } from "~/services/location.server";
 import { getFilters, setFilters } from "~/services/operation.server";
 import {

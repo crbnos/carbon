@@ -1,5 +1,5 @@
+import { useRouteData } from "@carbon/remix";
 import { path } from "~/utils/path";
-import { useRouteData } from "./useRouteData";
 
 export function useOnboarding() {
   const routeData = useRouteData<{
