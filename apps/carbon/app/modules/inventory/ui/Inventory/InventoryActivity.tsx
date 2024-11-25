@@ -48,7 +48,6 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
             <>
               to a{" "}
               <Hyperlink
-                className="text-base"
                 to={`${path.to.jobProductionEvents(
                   ledgerRecord.documentId!
                 )}?filter=jobOperationId:eq:${ledgerRecord.documentLineId}`}
@@ -59,15 +58,21 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ) : ledgerRecord.documentId ? (
             <>
               to a{" "}
-              <Hyperlink
-                className="text-base"
-                to={path.to.jobDetails(ledgerRecord.documentId!)}
-              >
+              <Hyperlink to={path.to.jobDetails(ledgerRecord.documentId!)}>
                 job
               </Hyperlink>
             </>
           ) : null}
         </span>
+      );
+    case "Job Receipt":
+      return (
+        <>
+          <span>received {ledgerRecord.quantity} units from a</span>{" "}
+          <Hyperlink to={path.to.jobDetails(ledgerRecord.documentId!)}>
+            job
+          </Hyperlink>
+        </>
       );
     default:
       break;

@@ -9,25 +9,32 @@ import { Database } from "../lib/types.ts";
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
-const payloadValidator = z
-  .object({
-    type: z.enum(["jobOperation", "partToOperation"]),
+const payloadValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("jobOperation"),
     id: z.string(),
-    itemId: z.string().optional(),
-    quantity: z.number().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("partToOperation"),
+    id: z.string(),
+    itemId: z.string(),
+    quantity: z.number(),
     materialId: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
-  })
-  .refine(
-    (data) => {
-      if (data.type === "partToOperation") {
-        return data.itemId && data.quantity;
-      }
-      return true;
-    },
-    { message: "Item and quantity are required for part to operation" }
-  );
+  }),
+  z.object({
+    type: z.literal("jobComplete"),
+    jobId: z.string(),
+    quantityComplete: z.number(),
+    shelfId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+]);
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -36,22 +43,19 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    const { type, id, companyId, itemId, materialId, quantity, userId } =
-      payloadValidator.parse(payload);
+    const validatedPayload = payloadValidator.parse(payload);
 
     console.log({
       function: "issue",
-      type,
-      id,
-      companyId,
-      userId,
+      ...validatedPayload,
     });
 
     const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
       [];
 
-    switch (type) {
+    switch (validatedPayload.type) {
       case "jobOperation": {
+        const { id, companyId, userId } = validatedPayload;
         await db.transaction().execute(async (trx) => {
           const materialsToIssue = await trx
             .selectFrom("jobMaterial")
@@ -155,6 +159,8 @@ serve(async (req: Request) => {
         break;
       }
       case "partToOperation": {
+        const { id, companyId, userId, itemId, quantity, materialId } =
+          validatedPayload;
         await db.transaction().execute(async (trx) => {
           const jobOperation = await trx
             .selectFrom("jobOperation")
@@ -238,7 +244,7 @@ serve(async (req: Request) => {
                 companyId,
                 createdBy: userId,
                 description: item?.name,
-                estimatedQuantity: Number(quantity ?? 0),
+                estimatedQuantity: 0,
                 itemId: itemId!,
                 itemReadableId: item?.readableId,
                 itemType: item?.type,
@@ -247,7 +253,7 @@ serve(async (req: Request) => {
                 jobOperationId: id,
                 shelfId: pickMethod?.defaultShelfId,
                 methodType: "Pick",
-                quantity: Number(quantity ?? 0),
+                quantity: 0,
                 quantityIssued: Number(quantity ?? 0),
                 unitCost: itemCost?.unitCost,
               })
@@ -261,8 +267,65 @@ serve(async (req: Request) => {
         });
         break;
       }
-      default:
-        throw new Error(`Invalid type  ${type}`);
+      case "jobComplete": {
+        const {
+          jobId,
+          quantityComplete,
+          shelfId,
+          locationId,
+          companyId,
+          userId,
+        } = validatedPayload;
+
+        await db.transaction().execute(async (trx) => {
+          const job = await trx
+            .selectFrom("job")
+            .where("id", "=", jobId)
+            .select(["itemId", "quantityReceivedToInventory"])
+            .executeTakeFirst();
+
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", job?.itemId!)
+            .select(["readableId"])
+            .executeTakeFirst();
+
+          const quantityReceivedToInventory =
+            quantityComplete - (job?.quantityReceivedToInventory ?? 0);
+
+          await trx
+            .updateTable("job")
+            .set({
+              status: "Completed" as const,
+              quantityComplete,
+              quantityReceivedToInventory,
+              updatedAt: new Date().toISOString(),
+              updatedBy: userId,
+            })
+            .where("id", "=", jobId)
+            .execute();
+
+          itemLedgerInserts.push({
+            entryType: "Assembly Output",
+            documentType: "Job Receipt",
+            documentId: jobId,
+            companyId,
+            itemId: job?.itemId!,
+            itemReadableId: item?.readableId,
+            quantity: quantityReceivedToInventory,
+            locationId,
+            shelfId,
+            createdBy: userId,
+          });
+
+          await trx
+            .insertInto("itemLedger")
+            .values(itemLedgerInserts)
+            .execute();
+        });
+
+        break;
+      }
     }
 
     return new Response(

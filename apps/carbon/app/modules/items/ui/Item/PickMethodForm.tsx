@@ -11,7 +11,7 @@ import {
 } from "@carbon/react";
 import type { z } from "zod";
 import {
-  CreatableCombobox,
+  Combobox as ComboboxFormField,
   CustomFormFields,
   Hidden,
   Submit,
@@ -78,7 +78,7 @@ const PickMethodForm = ({
           <Hidden name="itemId" />
           <Hidden name="locationId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <CreatableCombobox
+            <ComboboxFormField
               name="defaultShelfId"
               label="Default Shelf"
               options={shelfOptions}

@@ -362,6 +362,7 @@ export const path = {
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
     itemPostingGroups: `${x}/items/groups`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
+    jobComplete: (id: string) => generatePath(`${x}/job/${id}/complete`),
     jobDetails: (id: string) => generatePath(`${x}/job/${id}/details`),
     jobMaterial: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/${id}`),
