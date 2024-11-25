@@ -101,6 +101,7 @@ export default function EditProductionEventRoute() {
     employeeId: productionEvent?.employeeId ?? "",
     workCenterId: productionEvent?.workCenterId ?? "",
     endTime: productionEvent?.endTime ?? "",
+    notes: productionEvent?.notes ?? "",
   };
 
   return (
