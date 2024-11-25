@@ -68,6 +68,14 @@ export const jobValidator = baseJobValidator.refine(
   }
 );
 
+export const jobCompleteValidator = z.object({
+  quantityComplete: zfd.numeric(z.number().min(0)),
+  salesOrderId: zfd.text(z.string().optional()),
+  salesOrderLineId: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  shelfId: zfd.text(z.string().optional()),
+});
+
 export const salesOrderToJobValidator = baseJobValidator
   .extend({
     quoteId: zfd.text(z.string().optional()),

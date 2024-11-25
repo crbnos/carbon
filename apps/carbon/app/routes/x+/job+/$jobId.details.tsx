@@ -103,7 +103,7 @@ export default function JobDetailsRoute() {
         <div className="grid grid-cols-1 2xl:grid-cols-2 w-full gap-2">
           <Suspense
             fallback={
-              <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+              <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center min-h-[420px] max-h-[70vh]">
                 <Spinner className="h-10 w-10" />
               </div>
             }

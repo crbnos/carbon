@@ -17,21 +17,25 @@ import {
   Modal,
   ModalBody,
   ModalContent,
+  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
   Spinner,
+  VStack,
   useDisclosure,
   useMount,
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
+import { Hidden, Number, ValidatedForm } from "@carbon/form";
 import type { FetcherWithComponents } from "@remix-run/react";
 import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuAlertTriangle,
+  LuCheckCircle,
   LuChevronDown,
   LuClock,
   LuHardHat,
@@ -48,9 +52,11 @@ import {
   LuTable,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
+import { Location, Shelf } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import { jobCompleteValidator } from "../../production.models";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 
@@ -65,6 +71,7 @@ const JobHeader = () => {
 
   const releaseModal = useDisclosure();
   const cancelModal = useDisclosure();
+  const completeModal = useDisclosure();
 
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
@@ -270,6 +277,25 @@ const JobHeader = () => {
               </Button>
             </>
           )}
+
+          {!["Cancelled", "Draft"].includes(status ?? "") && (
+            <Button
+              onClick={completeModal.onOpen}
+              isLoading={
+                statusFetcher.state !== "idle" &&
+                statusFetcher.formAction === path.to.jobComplete(jobId)
+              }
+              isDisabled={
+                statusFetcher.state !== "idle" ||
+                !permissions.can("update", "production")
+              }
+              leftIcon={<LuCheckCircle />}
+              variant="secondary"
+            >
+              Complete
+            </Button>
+          )}
+
           <IconButton
             aria-label="Toggle Properties"
             icon={<LuPanelRight />}
@@ -289,6 +315,13 @@ const JobHeader = () => {
         <JobCancelModal
           job={routeData?.job}
           onClose={cancelModal.onClose}
+          fetcher={statusFetcher}
+        />
+      )}
+      {completeModal.isOpen && (
+        <JobCompleteModal
+          job={routeData?.job}
+          onClose={completeModal.onClose}
           fetcher={statusFetcher}
         />
       )}
@@ -514,6 +547,124 @@ function JobCancelModal({
             </Button>
           </fetcher.Form>
         </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function JobCompleteModal({
+  job,
+  onClose,
+  fetcher,
+}: {
+  job?: Job;
+  fetcher: FetcherWithComponents<{}>;
+  onClose: () => void;
+}) {
+  const { carbon } = useCarbon();
+  const [loading, setLoading] = useState(true);
+  const [defaultShelfId, setDefaultShelfId] = useState<string | undefined>(
+    undefined
+  );
+
+  const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
+
+  const getDefaultShelf = async () => {
+    if (!carbon) return;
+
+    const pickMethod = await carbon
+      .from("pickMethod")
+      .select("*")
+      .eq("locationId", job?.locationId!)
+      .eq("itemId", job?.itemId!)
+      .single();
+
+    flushSync(() => {
+      setDefaultShelfId(pickMethod.data?.defaultShelfId ?? undefined);
+    });
+
+    setLoading(false);
+  };
+
+  useMount(() => {
+    if (!job) return;
+    if (!makeToOrder) {
+      getDefaultShelf();
+    } else {
+      setLoading(false);
+    }
+  });
+
+  if (!job) return null;
+
+  return (
+    <Modal open onOpenChange={onClose}>
+      <ModalContent>
+        {loading ? (
+          <ModalBody>
+            <div className="flex flex-col h-[118px] w-full items-center justify-center gap-2">
+              <Spinner className="size-8" />
+            </div>
+          </ModalBody>
+        ) : (
+          <ValidatedForm
+            method="post"
+            action={path.to.jobComplete(job.id!)}
+            validator={jobCompleteValidator}
+            onSubmit={onClose}
+            defaultValues={{
+              quantityComplete: job.quantity ?? 0,
+              salesOrderId: job.salesOrderId ?? undefined,
+              salesOrderLineId: job.salesOrderLineId ?? undefined,
+              locationId: job.locationId ?? undefined,
+              shelfId: defaultShelfId ?? undefined,
+            }}
+            fetcher={fetcher}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                {makeToOrder
+                  ? `Complete Job`
+                  : `Receive ${job.jobId} to Inventory`}
+              </ModalTitle>
+              <ModalDescription>
+                {makeToOrder
+                  ? `This job will no longer be available on the shop floor.`
+                  : "This job will be received to inventory. It will no longer be available on the shop floor."}
+              </ModalDescription>
+            </ModalHeader>
+            <Hidden name="salesOrderId" />
+            <Hidden name="salesOrderLineId" />
+            {makeToOrder && (
+              <>
+                <Hidden name="locationId" />
+                <Hidden name="shelfId" />
+              </>
+            )}
+            <ModalBody>
+              <VStack spacing={4}>
+                {!makeToOrder && (
+                  <>
+                    <Location name="locationId" label="Location" isReadOnly />
+                    <Shelf
+                      name="shelfId"
+                      locationId={job.locationId ?? undefined}
+                      label="Shelf"
+                    />
+                  </>
+                )}
+                <Number name="quantityComplete" label="Quantity Completed" />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
+
+              <Button type="submit">Complete Job</Button>
+            </ModalFooter>
+          </ValidatedForm>
+        )}
       </ModalContent>
     </Modal>
   );
