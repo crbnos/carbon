@@ -177,7 +177,7 @@ const ProductionQuantitiesTable = memo(
             Edit Quantity
           </MenuItem>
           <MenuItem
-            disabled={!permissions.can("delete", "users")}
+            disabled={!permissions.can("delete", "production")}
             onClick={() => onDelete(row)}
           >
             <MenuIcon icon={<LuTrash />} />
