@@ -3,6 +3,7 @@ import { useUrlParams } from "~/hooks";
 export function useFilters() {
   const [params, setParams] = useUrlParams();
   const urlFiltersParams = params.getAll("filter");
+
   const hasFilter = (searchKey: string, searchValue: string) => {
     return urlFiltersParams.some((filter) => {
       const [key, operator, value] = filter.split(":");
@@ -118,7 +119,7 @@ export function useFilters() {
     setParams({ filter: undefined });
   };
 
-  const hasFilters = urlFiltersParams.length > 0;
+  const hasFilters = urlFiltersParams.filter(Boolean).length > 0;
 
   return {
     clearFilters,

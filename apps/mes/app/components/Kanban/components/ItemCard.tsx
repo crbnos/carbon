@@ -8,11 +8,13 @@ import {
 } from "@carbon/react";
 import {
   convertDateStringToIsoString,
+  formatDate,
   formatDurationMilliseconds,
   formatRelativeTime,
 } from "@carbon/utils";
 import { cva } from "class-variance-authority";
 import {
+  LuCalendarDays,
   LuCheckCircle,
   LuClipboardCheck,
   LuTimer,
@@ -173,6 +175,12 @@ export function ItemCard({
                     )}`
                   : "–"}
               </span>
+            </HStack>
+          )}
+          {showDueDate && item.dueDate && (
+            <HStack className="justify-start space-x-2">
+              <LuCalendarDays />
+              <span className="text-sm">{formatDate(item.dueDate)}</span>
             </HStack>
           )}
 
