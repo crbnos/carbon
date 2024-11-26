@@ -2,6 +2,7 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   cn,
@@ -9,21 +10,32 @@ import {
   IconButton,
   Switch,
   Table,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Tbody,
   Td,
   Tfoot,
   Th,
   Thead,
+  toast,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   Tr,
   useDisclosure,
+  VStack,
 } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
 import type { z } from "zod";
-import { OperationStatusIcon, TimeTypeIcon } from "~/components/Icons";
+import {
+  MethodIcon,
+  OperationStatusIcon,
+  TimeTypeIcon,
+} from "~/components/Icons";
 
+import { useCarbon } from "@carbon/auth";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import {
   getLocalTimeZone,
@@ -31,13 +43,15 @@ import {
   parseAbsolute,
   toZoned,
 } from "@internationalized/date";
+import { useEffect, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { EmployeeAvatarGroup } from "~/components";
-import { usePercentFormatter } from "~/hooks";
+import { useCurrencyFormatter, usePercentFormatter } from "~/hooks";
 import { makeDurations } from "~/utils/duration";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
 import type {
+  JobMaterial,
   JobOperation,
   ProductionEvent,
   ProductionQuantity,
@@ -48,22 +62,66 @@ type Operation = z.infer<typeof jobOperationValidator> & {
   operationQuantity: number | null;
 };
 
+type Material = Pick<
+  JobMaterial,
+  | "id"
+  | "itemId"
+  | "itemReadableId"
+  | "estimatedQuantity"
+  | "methodType"
+  | "quantityIssued"
+  | "quantityToIssue"
+  | "unitCost"
+>;
+
 const timeTypes = ["Setup", "Labor", "Machine"] as const;
 
 const JobEstimatesVsActuals = ({
   operations,
+  materials,
   productionEvents,
   productionQuantities,
 }: {
   operations: Operation[];
+  materials: Material[];
   productionEvents: ProductionEvent[];
   productionQuantities: ProductionQuantity[];
 }) => {
+  const { carbon } = useCarbon();
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
 
+  const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
   const detailsDisclosure = useDisclosure();
+
+  const [currentUnitCosts, setCurrentUnitCosts] = useState<
+    Record<string, number>
+  >({});
+  const getCurrentUnitCosts = async (itemIds: string[]) => {
+    if (!carbon) return;
+    const itemCosts = await carbon
+      ?.from("itemCost")
+      .select("itemId, unitCost")
+      .in("itemId", itemIds);
+
+    if (!itemCosts?.data) {
+      toast.error("Failed to fetch item costs");
+      return;
+    }
+
+    setCurrentUnitCosts(
+      itemCosts?.data?.reduce((acc, itemCost) => {
+        acc[itemCost.itemId] = itemCost.unitCost;
+        return acc;
+      }, {} as Record<string, number>)
+    );
+  };
+
+  useEffect(() => {
+    getCurrentUnitCosts(materials.map((m) => m.itemId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [materials]);
 
   const getEstimatedTime = (operation: Operation) => {
     const op = makeDurations(operation);
@@ -146,181 +204,193 @@ const JobEstimatesVsActuals = ({
   };
 
   return (
-    <Card>
-      <HStack className="justify-between items-start">
-        <CardHeader>
-          <CardTitle>Estimates vs Actual</CardTitle>
-        </CardHeader>
-        <CardAction>
-          <div className="flex items-center space-x-2 py-2">
-            <Switch
-              variant="small"
-              checked={detailsDisclosure.isOpen}
-              onCheckedChange={detailsDisclosure.onToggle}
-              id="cost-details"
-            />
-            <label className="text-sm" htmlFor="cost-details">
-              Show Details
-            </label>
-          </div>
-        </CardAction>
-      </HStack>
-      <CardContent>
-        <Table>
-          <Thead>
-            <Tr>
-              <Th />
-              <Th>Estimated</Th>
-              <Th>Actual</Th>
-              <Th>%</Th>
-              <Th>Complete</Th>
-              <Th>Scrap</Th>
-              <Th />
-            </Tr>
-          </Thead>
-          <Tbody>
-            {operations.map((operation) => {
-              const estimated = getEstimatedTime(operation);
-              const actual = getActualTime(operation);
-              return (
-                <>
-                  <Tr key={operation.id} className="border-b border-border">
-                    <Td className="border-r border-border min-w-[200px]">
-                      <HStack className="w-full justify-between ">
-                        <span>{operation.description}</span>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <OperationStatusIcon status={operation.status} />
-                          </TooltipTrigger>
-                          <TooltipContent>{operation.status}</TooltipContent>
-                        </Tooltip>
-                      </HStack>
-                    </Td>
-                    <Td>
-                      <span className="line-clamp-1">
-                        {formatDurationMilliseconds(estimated.total)}
-                      </span>
-                    </Td>
-                    <Td>
-                      <span
-                        className={cn(
-                          "line-clamp-1",
-                          actual.total > estimated.total && "text-red-500"
-                        )}
-                      >
-                        {formatDurationMilliseconds(actual.total)}
-                      </span>
-                    </Td>
-                    <Td>
-                      <span
-                        className={cn(
-                          "line-clamp-1",
-                          actual.total > estimated.total && "text-red-500"
-                        )}
-                      >
-                        {percentFormatter.format(
-                          actual.total / estimated.total
-                        )}
-                      </span>
-                    </Td>
-                    <Td>{`${getCompleteQuantity(operation)}/${
-                      operation.operationQuantity
-                    }`}</Td>
-                    <Td>{getScrapQuantity(operation)}</Td>
-                    <Td>
-                      <Link
-                        to={`${path.to.jobProductionEvents(
-                          jobId
-                        )}?filter=jobOperationId:eq:${operation.id}`}
-                      >
-                        <IconButton
-                          variant="ghost"
-                          icon={<LuExternalLink />}
-                          aria-label="View Production Events"
-                        />
-                      </Link>
-                    </Td>
-                  </Tr>
-                  {detailsDisclosure.isOpen && (
+    <Tabs defaultValue="processes" className="w-full">
+      <Card>
+        <HStack className="justify-between items-start">
+          <CardHeader>
+            <CardTitle>Estimates vs Actual</CardTitle>
+            <CardDescription>
+              <div className="flex items-center gap-2">
+                <Switch
+                  variant="small"
+                  checked={detailsDisclosure.isOpen}
+                  onCheckedChange={detailsDisclosure.onToggle}
+                  id="cost-details"
+                />
+                <label className="text-sm" htmlFor="cost-details">
+                  Show Details
+                </label>
+              </div>
+            </CardDescription>
+          </CardHeader>
+          <CardAction>
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="processes">Processes</TabsTrigger>
+              <TabsTrigger value="materials">Material</TabsTrigger>
+            </TabsList>
+          </CardAction>
+        </HStack>
+        <CardContent>
+          <TabsContent value="processes">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th />
+                  <Th>Estimated</Th>
+                  <Th>Actual</Th>
+                  <Th>%</Th>
+                  <Th>Complete</Th>
+                  <Th>Scrap</Th>
+                  <Th />
+                </Tr>
+              </Thead>
+              <Tbody>
+                {operations.map((operation) => {
+                  const estimated = getEstimatedTime(operation);
+                  const actual = getActualTime(operation);
+                  return (
                     <>
-                      {timeTypes.map((type) => {
-                        if (
-                          estimated[
-                            type.toLowerCase() as keyof typeof estimated
-                          ] === 0
-                        ) {
-                          return null;
-                        }
-                        const employeeIds = getEmployeeIds(operation, type);
-                        return (
-                          <Tr key={type} className="border-b border-border">
-                            <Td className="border-r border-border pl-10">
-                              <HStack className="justify-between w-full">
-                                <HStack>
-                                  <TimeTypeIcon type={type} />
-                                  <span>{type}</span>
-                                </HStack>
-                                {employeeIds.length > 0 && (
-                                  <EmployeeAvatarGroup
-                                    employeeIds={employeeIds}
-                                    size="xs"
-                                    limit={3}
-                                  />
-                                )}
-                              </HStack>
-                            </Td>
-                            <Td>
-                              {formatDurationMilliseconds(
-                                estimated[
-                                  type.toLowerCase() as keyof typeof estimated
-                                ]
-                              )}
-                            </Td>
-                            <Td>
-                              {formatDurationMilliseconds(
-                                actual[
-                                  type.toLowerCase() as keyof typeof actual
-                                ]
-                              )}
-                            </Td>
-                            <Td>
-                              {percentFormatter.format(
-                                actual[
-                                  type.toLowerCase() as keyof typeof actual
-                                ] /
-                                  estimated[
-                                    type.toLowerCase() as keyof typeof estimated
-                                  ]
-                              )}
-                            </Td>
-                            <Td />
-                            <Td />
-                            <Td>
-                              <Link
-                                to={`${path.to.jobProductionEvents(
-                                  jobId
-                                )}?filter=jobOperationId:eq:${
-                                  operation.id
-                                }&filter=type:eq:${type}`}
-                              >
-                                <IconButton
-                                  variant="ghost"
-                                  icon={<LuExternalLink />}
-                                  aria-label="View Production Events"
+                      <Tr key={operation.id} className="border-b border-border">
+                        <Td className="border-r border-border min-w-[200px]">
+                          <HStack className="w-full justify-between ">
+                            <span>{operation.description}</span>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <OperationStatusIcon
+                                  status={operation.status}
                                 />
-                              </Link>
-                            </Td>
-                          </Tr>
-                        );
-                      })}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {operation.status}
+                              </TooltipContent>
+                            </Tooltip>
+                          </HStack>
+                        </Td>
+                        <Td>
+                          <span className="line-clamp-1">
+                            {formatDurationMilliseconds(estimated.total)}
+                          </span>
+                        </Td>
+                        <Td>
+                          <span
+                            className={cn(
+                              "line-clamp-1",
+                              actual.total > estimated.total && "text-red-500"
+                            )}
+                          >
+                            {formatDurationMilliseconds(actual.total)}
+                          </span>
+                        </Td>
+                        <Td>
+                          <span
+                            className={cn(
+                              "line-clamp-1",
+                              actual.total > estimated.total && "text-red-500"
+                            )}
+                          >
+                            {percentFormatter.format(
+                              actual.total / estimated.total
+                            )}
+                          </span>
+                        </Td>
+                        <Td>{`${getCompleteQuantity(operation)}/${
+                          operation.operationQuantity
+                        }`}</Td>
+                        <Td>{getScrapQuantity(operation)}</Td>
+                        <Td>
+                          <Link
+                            to={`${path.to.jobProductionEvents(
+                              jobId
+                            )}?filter=jobOperationId:eq:${operation.id}`}
+                          >
+                            <IconButton
+                              variant="ghost"
+                              icon={<LuExternalLink />}
+                              aria-label="View Production Events"
+                            />
+                          </Link>
+                        </Td>
+                      </Tr>
+                      {detailsDisclosure.isOpen && (
+                        <>
+                          {timeTypes.map((type) => {
+                            if (
+                              estimated[
+                                type.toLowerCase() as keyof typeof estimated
+                              ] === 0
+                            ) {
+                              return null;
+                            }
+                            const employeeIds = getEmployeeIds(operation, type);
+                            return (
+                              <Tr key={type} className="border-b border-border">
+                                <Td className="border-r border-border pl-10">
+                                  <HStack className="justify-between w-full">
+                                    <HStack>
+                                      <TimeTypeIcon type={type} />
+                                      <span>{type}</span>
+                                    </HStack>
+                                    {employeeIds.length > 0 && (
+                                      <EmployeeAvatarGroup
+                                        employeeIds={employeeIds}
+                                        size="xs"
+                                        limit={3}
+                                      />
+                                    )}
+                                  </HStack>
+                                </Td>
+                                <Td>
+                                  {formatDurationMilliseconds(
+                                    estimated[
+                                      type.toLowerCase() as keyof typeof estimated
+                                    ]
+                                  )}
+                                </Td>
+                                <Td>
+                                  {formatDurationMilliseconds(
+                                    actual[
+                                      type.toLowerCase() as keyof typeof actual
+                                    ]
+                                  )}
+                                </Td>
+                                <Td>
+                                  {percentFormatter.format(
+                                    actual[
+                                      type.toLowerCase() as keyof typeof actual
+                                    ] /
+                                      estimated[
+                                        type.toLowerCase() as keyof typeof estimated
+                                      ]
+                                  )}
+                                </Td>
+                                <Td />
+                                <Td />
+                                <Td>
+                                  <Link
+                                    to={`${path.to.jobProductionEvents(
+                                      jobId
+                                    )}?filter=jobOperationId:eq:${
+                                      operation.id
+                                    }&filter=type:eq:${type}`}
+                                  >
+                                    <IconButton
+                                      variant="ghost"
+                                      icon={<LuExternalLink />}
+                                      aria-label="View Production Events"
+                                    />
+                                  </Link>
+                                </Td>
+                              </Tr>
+                            );
+                          })}
+                        </>
+                      )}
                     </>
-                  )}
-                </>
-              );
-            })}
-          </Tbody>
-          <Tfoot>
-            {/* <Tr className="font-bold">
+                  );
+                })}
+              </Tbody>
+              <Tfoot>
+                {/* <Tr className="font-bold">
               <Td className="border-r border-border" />
               {types.map((type) => (
                 <Td key={type}>
@@ -328,10 +398,138 @@ const JobEstimatesVsActuals = ({
                 </Td>
               ))}
             </Tr> */}
-          </Tfoot>
-        </Table>
-      </CardContent>
-    </Card>
+              </Tfoot>
+            </Table>
+          </TabsContent>
+          <TabsContent value="materials">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Material</Th>
+                  <Th>Estimated</Th>
+                  <Th>Actual</Th>
+                  <Th>%</Th>
+                  {detailsDisclosure.isOpen && (
+                    <>
+                      <Th>Estimated</Th>
+                      <Th>Actual</Th>
+                    </>
+                  )}
+                </Tr>
+              </Thead>
+              <Tbody>
+                {materials?.map((material) => {
+                  const exceedsEstimate =
+                    material.quantityIssued &&
+                    material.quantityIssued > (material.estimatedQuantity ?? 0);
+                  const currentUnitCost =
+                    currentUnitCosts[material.itemId] ?? 0;
+
+                  const estimatedTotalCost =
+                    (material.estimatedQuantity ?? 0) *
+                    (material.unitCost ?? 0);
+                  const actualTotalCost =
+                    (material.quantityIssued ?? 0) * currentUnitCost;
+
+                  return (
+                    <>
+                      <Tr key={material.id} className="border-b border-border">
+                        <Td className="border-r border-border min-w-[200px]">
+                          <HStack className="w-full justify-start">
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <MethodIcon type={material.methodType} />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {material.methodType}
+                              </TooltipContent>
+                            </Tooltip>
+                            <span>{material.itemReadableId}</span>
+                          </HStack>
+                        </Td>
+                        <Td>{material.estimatedQuantity}</Td>
+                        <Td className={cn(exceedsEstimate && "text-red-500")}>
+                          {material.methodType === "Make" ? (
+                            <MethodIcon type="Make" />
+                          ) : (
+                            material.quantityIssued
+                          )}
+                        </Td>
+
+                        <Td className={cn(exceedsEstimate && "text-red-500")}>
+                          {material.methodType !== "Make" &&
+                          material.estimatedQuantity &&
+                          material.quantityIssued
+                            ? percentFormatter.format(
+                                material.quantityIssued /
+                                  material.estimatedQuantity
+                              )
+                            : null}
+                        </Td>
+                        {detailsDisclosure.isOpen && (
+                          <>
+                            <Td>
+                              {material.methodType === "Make" ? null : (
+                                <VStack spacing={0} className="py-1">
+                                  <span className="text-sm">
+                                    {currencyFormatter.format(
+                                      estimatedTotalCost
+                                    )}
+                                  </span>
+                                  <span className="text-xxs">
+                                    {currencyFormatter.format(
+                                      material.unitCost ?? 0
+                                    )}
+                                  </span>
+                                </VStack>
+                              )}
+                            </Td>
+                            <Td>
+                              {material.methodType === "Make" ? null : (
+                                <VStack spacing={0} className="py-1">
+                                  <span
+                                    className={cn(
+                                      "text-sm",
+                                      actualTotalCost > estimatedTotalCost &&
+                                        "text-red-500"
+                                    )}
+                                  >
+                                    {currencyFormatter.format(actualTotalCost)}
+                                  </span>
+                                  <span
+                                    className={cn(
+                                      "text-xxs",
+                                      currentUnitCost > material.unitCost &&
+                                        "text-red-500"
+                                    )}
+                                  >
+                                    {currencyFormatter.format(currentUnitCost)}
+                                  </span>
+                                </VStack>
+                              )}
+                            </Td>
+                          </>
+                        )}
+                      </Tr>
+                    </>
+                  );
+                })}
+              </Tbody>
+              <Tfoot>
+                {/* <Tr className="font-bold">
+              <Td className="border-r border-border" />
+              {types.map((type) => (
+                <Td key={type}>
+                  <Button variant="secondary">Add</Button>
+                </Td>
+              ))}
+            </Tr> */}
+              </Tfoot>
+            </Table>
+          </TabsContent>
+        </CardContent>
+      </Card>
+    </Tabs>
   );
 };
 
