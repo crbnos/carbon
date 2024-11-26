@@ -162,7 +162,7 @@ const SalesOrderPDF = ({
         <View style={tw("mb-5 text-xs")}>
           <View
             style={tw(
-              "flex flex-row justify-between items-center mt-5 py-1.5 px-[6px] border-t border-b border-gray-300 font-bold text-gray-500 uppercase"
+              "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold text-gray-500 uppercase"
             )}
           >
             <Text style={tw("w-5/12 text-left")}>Description</Text>
@@ -175,7 +175,7 @@ const SalesOrderPDF = ({
             return (
               <View
                 style={tw(
-                  "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300"
+                  "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300"
                 )}
                 key={line.id}
               >
@@ -213,14 +213,29 @@ const SalesOrderPDF = ({
               </View>
             );
           })}
+          {salesOrder.shippingCost && (
+            <View
+              style={tw(
+                "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
+              )}
+            >
+              <Text>Shipping</Text>
+              <Text style={tw("text-black")}>
+                {formatter.format(
+                  (salesOrder.shippingCost ?? 0) *
+                    (salesOrder.exchangeRate ?? 1)
+                )}
+              </Text>
+            </View>
+          )}
           <View
             style={tw(
-              "flex flex-row justify-between items-center py-1.5 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
+              "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
             )}
           >
             <Text>Total</Text>
             <Text style={tw("font-bold text-black")}>
-              {formatter.format(getTotal(salesOrderLines))}
+              {formatter.format(getTotal(salesOrderLines, salesOrder))}
             </Text>
           </View>
         </View>

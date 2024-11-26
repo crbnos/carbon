@@ -41,6 +41,7 @@ Product highlights/roadmap are:
 - [Redis](https://redis.io) - cache
 - [Trigger](https://trigger.dev) - jobs
 - [Resend](https://resend.com) – email
+- [Novu](https://novu.co) – notifications
 - [Vercel](https://vercel.com) – hosting
 
 ## Codebase

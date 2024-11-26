@@ -103,6 +103,7 @@ export default function QuoteDetailsRoute() {
     shippingMethodId: quoteData?.shipment?.shippingMethodId ?? "",
     shippingTermId: quoteData?.shipment?.shippingTermId ?? "",
     receiptRequestedDate: quoteData?.shipment?.receiptRequestedDate ?? "",
+    shippingCost: quoteData?.shipment?.shippingCost ?? 0,
   };
 
   const paymentInitialValues = {
