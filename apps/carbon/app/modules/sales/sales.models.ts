@@ -475,6 +475,7 @@ export const quoteShipmentValidator = z.object({
   locationId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
   receiptRequestedDate: zfd.text(z.string().optional()),
+  shippingCost: zfd.numeric(z.number().optional()),
 });
 
 export const salesOrderLineType = [
@@ -531,6 +532,7 @@ export const salesOrderShipmentValidator = z
     customerLocationId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
     supplierLocationId: zfd.text(z.string().optional()),
+    shippingCost: zfd.numeric(z.number().optional()),
     notes: zfd.text(z.string().optional()),
   })
   .refine(

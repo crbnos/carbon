@@ -146,7 +146,7 @@ const CompanyLogoForm = ({
           <img
             alt={getLogoTitle()}
             src={currentLogoPath}
-            className="h-32 w-auto mx-auto rounded-lg"
+            className="w-auto mx-auto rounded-lg"
           />
         ) : (
           <Avatar name={company?.name ?? undefined} size="2xl" />
