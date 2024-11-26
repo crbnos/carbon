@@ -31,7 +31,7 @@ export let loader = async ({ request }: LoaderFunctionArgs) => {
         </style>
       </head>
       <body>
-        <img src=${path.to.file.previewFile(file)} />
+        <img src="${path.to.file.previewFile(file)}" />
       </body>
     </html>`;
   const headers = new Headers({ "Content-Type": "text/html" });

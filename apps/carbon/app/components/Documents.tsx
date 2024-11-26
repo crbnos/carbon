@@ -307,6 +307,7 @@ const Documents = ({
             )}
             {allFiles.map((file) => {
               const type = getDocumentType(file.name);
+              const isPreviewable = ["PDF", "Image"].includes(type);
               return (
                 <Tr key={file.id}>
                   <Td>
@@ -316,7 +317,7 @@ const Documents = ({
                         className="font-medium"
                         onClick={() => download(file)}
                       >
-                        {["PDF", "Image"].includes(type) ? (
+                        {isPreviewable ? (
                           <DocumentPreview
                             bucket="private"
                             pathToFile={getReadPath(file)}
