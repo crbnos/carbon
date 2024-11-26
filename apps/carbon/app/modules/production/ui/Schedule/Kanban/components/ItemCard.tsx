@@ -12,6 +12,7 @@ import {
 } from "@carbon/react";
 import {
   convertDateStringToIsoString,
+  formatDate,
   formatDurationMilliseconds,
   formatRelativeTime,
 } from "@carbon/utils";
@@ -19,6 +20,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import {
+  LuCalendarDays,
   LuCheckCircle,
   LuClipboardCheck,
   LuExternalLink,
@@ -245,6 +247,12 @@ export function ItemCard({
                 {getDeadlineText(item.deadlineType)}
               </TooltipContent>
             </Tooltip>
+          </HStack>
+        )}
+        {showDueDate && item.dueDate && (
+          <HStack className="justify-start space-x-2">
+            <LuCalendarDays />
+            <span className="text-sm">{formatDate(item.dueDate)}</span>
           </HStack>
         )}
 

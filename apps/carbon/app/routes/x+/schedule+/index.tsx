@@ -211,7 +211,7 @@ export default function ScheduleRoute() {
     useLoaderData<typeof loader>();
   const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
-  const currentFilters = params.getAll("filter");
+  const currentFilters = params.getAll("filter").filter(Boolean);
   const filters = useMemo<ColumnFilter[]>(() => {
     return [
       {

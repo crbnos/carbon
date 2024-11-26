@@ -118,7 +118,7 @@ export function useFilters() {
     setParams({ filter: undefined });
   };
 
-  const hasFilters = urlFiltersParams.length > 0;
+  const hasFilters = urlFiltersParams.filter(Boolean).length > 0;
 
   return {
     clearFilters,
