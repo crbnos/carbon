@@ -575,6 +575,12 @@ export const salesOrderLineValidator = z
     serviceId: zfd.text(z.string().optional()),
     setupPrice: zfd.numeric(z.number().optional()),
     shelfId: zfd.text(z.string().optional()),
+    taxPercent: zfd.numeric(
+      z
+        .number()
+        .min(0)
+        .max(1, { message: "Tax percent must be between 0 and 1" })
+    ),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     unitPrice: zfd.numeric(z.number().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),

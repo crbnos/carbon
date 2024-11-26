@@ -12,10 +12,11 @@ import {
   DatePicker,
   Hidden,
   Location,
+  Number,
   ShippingMethod,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { Quotation } from "~/modules/sales";
 import { quoteShipmentValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
@@ -49,6 +50,8 @@ QuoteShipmentFormProps) => {
     routeData?.quote?.status ?? ""
   );
 
+  const { company } = useUser();
+
   return (
     <Card isCollapsible defaultCollapsed>
       <ValidatedForm
@@ -64,6 +67,15 @@ QuoteShipmentFormProps) => {
         <CardContent>
           <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
+            <Number
+              name="shippingCost"
+              label="Shipping Cost"
+              formatOptions={{
+                style: "currency",
+                currency:
+                  routeData?.quote?.currencyCode ?? company?.baseCurrencyCode,
+              }}
+            />
             <Location
               name="locationId"
               label="Shipment Location"

@@ -58,7 +58,8 @@ export function getLineTotal(
 }
 
 export function getTotal(
-  lines: Database["public"]["Views"]["salesOrderLines"]["Row"][]
+  lines: Database["public"]["Views"]["salesOrderLines"]["Row"][],
+  salesOrder: Database["public"]["Views"]["salesOrders"]["Row"]
 ) {
   let total = 0;
 
@@ -66,5 +67,7 @@ export function getTotal(
     total += getLineTotal(line);
   });
 
-  return total;
+  return (
+    total + (salesOrder.shippingCost ?? 0) * (salesOrder.exchangeRate ?? 1)
+  );
 }

@@ -6,7 +6,7 @@ import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
-import type { Opportunity, SalesOrder } from "~/modules/sales";
+import type { Opportunity, SalesOrder, SalesOrderLine } from "~/modules/sales";
 import {
   getOpportunityBySalesOrder,
   getQuote,
@@ -138,6 +138,7 @@ export default function SalesOrderRoute() {
 
   const orderData = useRouteData<{
     salesOrder: SalesOrder;
+    lines: SalesOrderLine[];
     opportunity: Opportunity;
     files: Promise<FileObject[]>;
   }>(path.to.salesOrder(orderId));
@@ -156,6 +157,7 @@ export default function SalesOrderRoute() {
     dropShipment: salesOrderShipment.dropShipment ?? false,
     customerId: salesOrderShipment.customerId ?? "",
     customerLocationId: salesOrderShipment.customerLocationId ?? "",
+    shippingCost: salesOrderShipment.shippingCost ?? 0,
     ...getCustomFields(salesOrderShipment.customFields),
   };
 
@@ -172,6 +174,7 @@ export default function SalesOrderRoute() {
   return (
     <>
       <OpportunityState opportunity={orderData.opportunity} />
+
       <OpportunityNotes
         key={`notes-${orderId}`}
         id={orderData.salesOrder.id}
@@ -180,6 +183,7 @@ export default function SalesOrderRoute() {
         internalNotes={orderData.salesOrder.internalNotes as JSONContent}
         externalNotes={orderData.salesOrder.externalNotes as JSONContent}
       />
+
       <Suspense
         key={`documents-${orderId}`}
         fallback={

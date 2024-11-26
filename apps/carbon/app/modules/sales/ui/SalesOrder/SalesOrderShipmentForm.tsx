@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@carbon/react";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
@@ -18,10 +18,12 @@ import {
   Hidden,
   Input,
   Location,
+  Number,
   ShippingMethod,
   Submit,
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
+import type { SalesOrder } from "~/modules/sales";
 import { salesOrderShipmentValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -43,10 +45,13 @@ SalesOrderShipmentFormProps) => {
     initialValues.customerId
   );
 
-  // const shippingTermOptions = shippingTerms.map((term) => ({
-  //   label: term.name,
-  //   value: term.id,
-  // }));
+  const { orderId } = useParams();
+  if (!orderId) throw new Error("orderId not found");
+  const routeData = useRouteData<{
+    salesOrder: SalesOrder;
+  }>(path.to.salesOrder(orderId));
+
+  const { company } = useUser();
 
   const isCustomer = permissions.is("customer");
 
@@ -65,6 +70,16 @@ SalesOrderShipmentFormProps) => {
         <CardContent>
           <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
+            <Number
+              name="shippingCost"
+              label="Shipping Cost"
+              formatOptions={{
+                style: "currency",
+                currency:
+                  routeData?.salesOrder?.currencyCode ??
+                  company?.baseCurrencyCode,
+              }}
+            />
             <Location
               name="locationId"
               label="Shipment Location"

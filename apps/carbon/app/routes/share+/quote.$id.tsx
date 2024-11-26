@@ -755,6 +755,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
     quote,
     quoteLines,
     quoteLinePrices,
+    quoteShipment,
     salesOrderLines,
     shippingMethod,
     terms,
@@ -884,7 +885,9 @@ const Quote = ({ data }: { data: QuoteData }) => {
         (line.taxPercent ?? 0)
     );
   }, 0);
-  const total = subtotal + tax;
+  const convertedShippingCost =
+    (quote.exchangeRate ?? 1) * (quoteShipment?.shippingCost ?? 0);
+  const total = subtotal + tax + convertedShippingCost;
 
   const termsHTML = generateHTML(terms as JSONContent);
 
@@ -940,7 +943,19 @@ const Quote = ({ data }: { data: QuoteData }) => {
               </HStack>
             )}
             {(shippingMethod || paymentTerm) && <Separator />}
-
+            {convertedShippingCost > 0 && (
+              <HStack className="justify-between text-xl w-full">
+                <span>Shipping:</span>
+                <MotionNumber
+                  value={convertedShippingCost}
+                  format={{
+                    style: "currency",
+                    currency: quote.currencyCode ?? "USD",
+                  }}
+                  locales={locale}
+                />
+              </HStack>
+            )}
             <HStack className="justify-between text-xl font-bold w-full">
               <span>Total:</span>
               <MotionNumber
