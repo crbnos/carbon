@@ -209,7 +209,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function ScheduleRoute() {
   const { columns, items, processes, salesOrders } =
     useLoaderData<typeof loader>();
+
+  const progressByOperation = useProgressByOperation(items);
+
   const [params] = useUrlParams();
+
   const { hasFilters, clearFilters } = useFilters();
   const currentFilters = params.getAll("filter").filter(Boolean);
   const filters = useMemo<ColumnFilter[]>(() => {
@@ -319,4 +323,8 @@ export default function ScheduleRoute() {
       </div>
     </div>
   );
+}
+
+function useProgressByOperation(items: Item[]) {
+  const operationIds = useMemo(() => items.map((item) => item.id), [items]);
 }
