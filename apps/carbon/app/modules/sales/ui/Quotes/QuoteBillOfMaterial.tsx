@@ -199,14 +199,18 @@ const QuoteBillOfMaterial = ({
     updateSortOrder(updates);
   };
 
-  const updateSortOrder = useDebounce((updates: Record<string, number>) => {
-    let formData = new FormData();
-    formData.append("updates", JSON.stringify(updates));
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.quoteMaterialsOrder,
-    });
-  }, 1000);
+  const updateSortOrder = useDebounce(
+    (updates: Record<string, number>) => {
+      let formData = new FormData();
+      formData.append("updates", JSON.stringify(updates));
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteMaterialsOrder,
+      });
+    },
+    1000,
+    true
+  );
 
   const onCloseOnDrag = useCallback(() => {
     setItems((prevItems) => {

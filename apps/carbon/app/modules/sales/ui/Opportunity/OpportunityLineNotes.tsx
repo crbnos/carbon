@@ -57,16 +57,20 @@ const OpportunityLineNotes = ({
     return getPrivateUrl(result.data.path);
   };
 
-  const onUpdateInternalNotes = useDebounce(async (content: JSONContent) => {
-    await carbon
-      ?.from(table)
-      .update({
-        [table === "salesRfqLine" ? "internalNotes" : "notes"]: content,
-        updatedAt: today(getLocalTimeZone()).toString(),
-        updatedBy: userId,
-      })
-      .eq("id", id!);
-  }, 2500);
+  const onUpdateInternalNotes = useDebounce(
+    async (content: JSONContent) => {
+      await carbon
+        ?.from(table)
+        .update({
+          [table === "salesRfqLine" ? "internalNotes" : "notes"]: content,
+          updatedAt: today(getLocalTimeZone()).toString(),
+          updatedBy: userId,
+        })
+        .eq("id", id!);
+    },
+    2500,
+    true
+  );
 
   if (!id) return null;
 

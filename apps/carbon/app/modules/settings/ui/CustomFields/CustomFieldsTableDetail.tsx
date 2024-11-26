@@ -114,11 +114,15 @@ const CustomFieldCategoryDetail = ({
     updateSortOrder(updates);
   };
 
-  const updateSortOrder = useDebounce((updates: Record<string, number>) => {
-    let formData = new FormData();
-    formData.append("updates", JSON.stringify(updates));
-    sortOrderFetcher.submit(formData, { method: "post" });
-  }, 500);
+  const updateSortOrder = useDebounce(
+    (updates: Record<string, number>) => {
+      let formData = new FormData();
+      formData.append("updates", JSON.stringify(updates));
+      sortOrderFetcher.submit(formData, { method: "post" });
+    },
+    1000,
+    true
+  );
 
   const deleteModal = useDisclosure();
   const [selectedCustomField, setSelectedCustomField] = useState<
