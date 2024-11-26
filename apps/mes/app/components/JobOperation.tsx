@@ -699,7 +699,7 @@ export const JobOperation = ({
                 machineProductionEvent={machineProductionEvent}
                 hasActiveEvents={hasActiveEvents}
               />
-              <div className="flex items-center gap-2 justify-center">
+              <div className="flex flex-row md:flex-col items-center gap-2 justify-center">
                 {/* <IconButtonWithTooltip
                   icon={
                     <FaRedoAlt className="text-accent-foreground group-hover:text-accent-foreground/80" />
@@ -1220,7 +1220,7 @@ function Controls({
   return (
     <div
       className={cn(
-        "flex flex-col md:absolute p-2 top-[calc(var(--header-height)*2-2px)] right-0 w-full md:w-[var(--controls-width)] md:min-h-[200px] z-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:border-l border-y md:rounded-bl-lg",
+        "flex flex-col md:absolute p-2 top-[calc(var(--header-height)*2-2px)] right-0 w-full md:w-[var(--controls-width)] md:min-h-[180px] z-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:border-l border-y md:rounded-bl-lg",
         className
       )}
     >
@@ -1274,7 +1274,7 @@ function IconButtonWithTooltip({
     <ButtonWithTooltip
       {...props}
       tooltip={tooltip}
-      className="size-12 md:size-16 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted"
+      className="size-16 text-xl md:text-lg md:size-[8dvh]  flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted"
     >
       {icon}
     </ButtonWithTooltip>

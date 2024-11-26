@@ -92,6 +92,10 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      screens: {
+        short: { raw: "(max-height: 400px)" },
+        tall: { raw: "(min-height: 401px and max-height: 600px)" },
+      },
     },
   },
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
