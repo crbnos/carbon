@@ -902,11 +902,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
   return (
     <VStack spacing={8} className="w-full items-center p-2 md:p-8">
       {logo && (
-        <img
-          src={logo}
-          alt={company?.name ?? ""}
-          className="h-32 w-auto mx-auto"
-        />
+        <img src={logo} alt={company?.name ?? ""} className="w-auto mx-auto" />
       )}
       <Card className="w-full max-w-5xl mx-auto">
         <div className="w-full text-center">
