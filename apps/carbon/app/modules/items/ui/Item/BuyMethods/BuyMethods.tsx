@@ -15,11 +15,11 @@ import {
   EditableNumber,
   EditableText,
 } from "~/components/Editable";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import Grid from "~/components/Grid";
-import { useCurrencyFormatter, useRouteData } from "~/hooks";
+import { useCurrencyFormatter } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { BuyMethod, UnitOfMeasureListItem } from "~/modules/items";
-import { path } from "~/utils/path";
+import type { BuyMethod } from "~/modules/items";
 import useBuyMethods from "./useBuyMethods";
 
 type BuyMethodsProps = {
@@ -29,21 +29,9 @@ type BuyMethodsProps = {
 const BuyMethods = ({ buyMethods }: BuyMethodsProps) => {
   const navigate = useNavigate();
   const { canEdit, onCellEdit } = useBuyMethods();
-  const sharedPartData = useRouteData<{
-    unitOfMeasures: UnitOfMeasureListItem[];
-  }>(path.to.partRoot);
 
   const formatter = useCurrencyFormatter();
-
-  const unitOfMeasureOptions = useMemo(() => {
-    return (
-      sharedPartData?.unitOfMeasures.map((unitOfMeasure) => ({
-        label: unitOfMeasure.code,
-        value: unitOfMeasure.code,
-      })) ?? []
-    );
-  }, [sharedPartData?.unitOfMeasures]);
-
+  const unitOfMeasureOptions = useUnitOfMeasure();
   const customColumns = useCustomColumns<BuyMethod>("buyMethod");
 
   const columns = useMemo<ColumnDef<BuyMethod>[]>(() => {
