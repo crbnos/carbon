@@ -68,27 +68,35 @@ const OpportunityNotes = ({
     return getPrivateUrl(result.data.path);
   };
 
-  const onUpdateExternalNotes = useDebounce(async (content: JSONContent) => {
-    await carbon
-      ?.from(table)
-      .update({
-        externalNotes: content,
-        updatedAt: today(getLocalTimeZone()).toString(),
-        updatedBy: userId,
-      })
-      .eq("id", id!);
-  }, 2500);
+  const onUpdateExternalNotes = useDebounce(
+    async (content: JSONContent) => {
+      await carbon
+        ?.from(table)
+        .update({
+          externalNotes: content,
+          updatedAt: today(getLocalTimeZone()).toString(),
+          updatedBy: userId,
+        })
+        .eq("id", id!);
+    },
+    2500,
+    true
+  );
 
-  const onUpdateInternalNotes = useDebounce(async (content: JSONContent) => {
-    await carbon
-      ?.from(table)
-      .update({
-        internalNotes: content,
-        updatedAt: today(getLocalTimeZone()).toString(),
-        updatedBy: userId,
-      })
-      .eq("id", id!);
-  }, 2500);
+  const onUpdateInternalNotes = useDebounce(
+    async (content: JSONContent) => {
+      await carbon
+        ?.from(table)
+        .update({
+          internalNotes: content,
+          updatedAt: today(getLocalTimeZone()).toString(),
+          updatedBy: userId,
+        })
+        .eq("id", id!);
+    },
+    2500,
+    true
+  );
 
   if (!id) return null;
 

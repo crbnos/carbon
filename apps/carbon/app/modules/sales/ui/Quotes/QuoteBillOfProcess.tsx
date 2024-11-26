@@ -228,14 +228,18 @@ const QuoteBillOfProcess = ({
     updateSortOrder(updates);
   };
 
-  const updateSortOrder = useDebounce((updates: Record<string, number>) => {
-    let formData = new FormData();
-    formData.append("updates", JSON.stringify(updates));
-    sortOrderFetcher.submit(formData, {
-      method: "post",
-      action: path.to.quoteOperationsOrder,
-    });
-  }, 1000);
+  const updateSortOrder = useDebounce(
+    (updates: Record<string, number>) => {
+      let formData = new FormData();
+      formData.append("updates", JSON.stringify(updates));
+      sortOrderFetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteOperationsOrder,
+      });
+    },
+    1000,
+    true
+  );
 
   const onCloseOnDrag = useCallback(() => {
     setItems((prevItems) => {
@@ -250,31 +254,35 @@ const QuoteBillOfProcess = ({
     });
   }, []);
 
-  const onUpdateWorkInstruction = useDebounce(async (content: JSONContent) => {
-    if (!permissions.can("update", "parts")) return;
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === selectedItemId
-          ? {
-              ...item,
-              data: {
-                ...item.data,
-                workInstruction: content,
-              },
-            }
-          : item
-      )
-    );
-    if (selectedItemId !== null && !isTemporaryId(selectedItemId))
-      await carbon
-        ?.from("quoteOperation")
-        .update({
-          workInstruction: content,
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId,
-        })
-        .eq("id", selectedItemId!);
-  }, 2500);
+  const onUpdateWorkInstruction = useDebounce(
+    async (content: JSONContent) => {
+      if (!permissions.can("update", "parts")) return;
+      setItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === selectedItemId
+            ? {
+                ...item,
+                data: {
+                  ...item.data,
+                  workInstruction: content,
+                },
+              }
+            : item
+        )
+      );
+      if (selectedItemId !== null && !isTemporaryId(selectedItemId))
+        await carbon
+          ?.from("quoteOperation")
+          .update({
+            workInstruction: content,
+            updatedAt: today(getLocalTimeZone()).toString(),
+            updatedBy: userId,
+          })
+          .eq("id", selectedItemId!);
+    },
+    2500,
+    true
+  );
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();

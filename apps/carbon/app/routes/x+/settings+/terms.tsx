@@ -70,35 +70,44 @@ export default function Terms() {
     setPurchasingTermsStatus("draft");
     onUpdatePurchasingTerms(content);
   };
-  const onUpdatePurchasingTerms = useDebounce(async (content: JSONContent) => {
-    if (!carbon) return;
-    const { error } = await carbon
-      .from("terms")
-      .update({
-        purchasingTerms: content,
-        updatedAt: today(getLocalTimeZone()).toString(),
-        updatedBy: userId,
-      })
-      .eq("id", companyId);
-    if (!error) setPurchasingTermsStatus("saved");
-  }, 2500);
+  const onUpdatePurchasingTerms = useDebounce(
+    async (content: JSONContent) => {
+      if (!carbon) return;
+      const { error } = await carbon
+        .from("terms")
+        .update({
+          purchasingTerms: content,
+          updatedAt: today(getLocalTimeZone()).toString(),
+          updatedBy: userId,
+        })
+        .eq("id", companyId);
+      if (!error) setPurchasingTermsStatus("saved");
+    },
+    2500,
+    true
+  );
 
   const handleUpdateSalesTerms = (content: JSONContent) => {
     setSalesTermsStatus("draft");
     onUpdateSalesTerms(content);
   };
-  const onUpdateSalesTerms = useDebounce(async (content: JSONContent) => {
-    setSalesTermsStatus("draft");
-    await carbon
-      ?.from("terms")
-      .update({
-        salesTerms: content,
-        updatedAt: today(getLocalTimeZone()).toString(),
-        updatedBy: userId,
-      })
-      .eq("id", companyId);
-    setSalesTermsStatus("saved");
-  }, 2500);
+
+  const onUpdateSalesTerms = useDebounce(
+    async (content: JSONContent) => {
+      setSalesTermsStatus("draft");
+      await carbon
+        ?.from("terms")
+        .update({
+          salesTerms: content,
+          updatedAt: today(getLocalTimeZone()).toString(),
+          updatedBy: userId,
+        })
+        .eq("id", companyId);
+      setSalesTermsStatus("saved");
+    },
+    2500,
+    true
+  );
 
   const onUploadImage = async (file: File) => {
     // Implement image upload logic here
