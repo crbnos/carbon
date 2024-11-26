@@ -68,7 +68,7 @@ const TableHeader = <T extends object>({
   withSelectableRows,
 }: HeaderProps<T>) => {
   const [params] = useUrlParams();
-  const currentFilters = params.getAll("filter");
+  const currentFilters = params.getAll("filter").filter(Boolean);
   const [importCSVTable, setImportCSVTable] = useState<
     keyof typeof fieldMappings | null
   >(null);

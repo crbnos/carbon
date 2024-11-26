@@ -35,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const filterParam = searchParams.getAll("filter");
+  const filterParam = searchParams.getAll("filter").filter(Boolean);
   const saved = searchParams.get("saved") === "1";
 
   // Handle saved filters
@@ -205,7 +205,7 @@ export default function Operations() {
 
   const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
-  const currentFilters = params.getAll("filter");
+  const currentFilters = params.getAll("filter").filter(Boolean);
   const filters = useMemo<ColumnFilter[]>(() => {
     return [
       {
