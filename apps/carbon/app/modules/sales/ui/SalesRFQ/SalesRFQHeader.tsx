@@ -28,7 +28,7 @@ import {
 import { RiProgress4Line } from "react-icons/ri";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
+import type { Opportunity, SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
 import SalesRFQStatus from "./SalesRFQStatus";
 
@@ -45,7 +45,10 @@ const SalesRFQHeader = () => {
   const routeData = useRouteData<{
     rfqSummary: SalesRFQ;
     lines: SalesRFQLine[];
+    opportunity: Opportunity;
   }>(path.to.salesRfq(rfqId));
+
+  console.log(routeData?.opportunity);
 
   const status = routeData?.rfqSummary?.status ?? "Draft";
 
@@ -101,6 +104,29 @@ const SalesRFQHeader = () => {
             ))}
 
           {["Ready for Quote", "Closed"].includes(status) && (
+            <statusFetcher.Form
+              method="post"
+              action={path.to.salesRfqStatus(rfqId)}
+            >
+              <input type="hidden" name="status" value="Draft" />
+              <Button
+                isDisabled={
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "sales")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Draft"
+                }
+                leftIcon={<LuRefreshCw />}
+                type="submit"
+                variant="secondary"
+              >
+                Reopen
+              </Button>
+            </statusFetcher.Form>
+          )}
+          {status === "Quoted" && routeData?.opportunity?.quoteId === null && (
             <statusFetcher.Form
               method="post"
               action={path.to.salesRfqStatus(rfqId)}

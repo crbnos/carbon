@@ -149,7 +149,21 @@ export async function deleteQuote(
   client: SupabaseClient<Database>,
   quoteId: string
 ) {
-  return client.from("quote").delete().eq("id", quoteId);
+  const [quote, opportunity] = await Promise.all([
+    client.from("quote").delete().eq("id", quoteId),
+    client
+      .from("opportunity")
+      .update({
+        quoteId: null,
+      })
+      .eq("quoteId", quoteId),
+  ]);
+
+  if (opportunity.error) {
+    return opportunity;
+  }
+
+  return quote;
 }
 
 export async function deleteQuoteMakeMethod(
@@ -184,7 +198,21 @@ export async function deleteSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string
 ) {
-  return client.from("salesOrder").delete().eq("id", salesOrderId);
+  const [salesOrder, opportunity] = await Promise.all([
+    client.from("salesOrder").delete().eq("id", salesOrderId),
+    client
+      .from("opportunity")
+      .update({
+        salesOrderId: null,
+      })
+      .eq("salesOrderId", salesOrderId),
+  ]);
+
+  if (opportunity.error) {
+    return opportunity;
+  }
+
+  return salesOrder;
 }
 
 export async function deleteSalesOrderLine(
