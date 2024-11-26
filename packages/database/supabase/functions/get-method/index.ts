@@ -1263,7 +1263,7 @@ serve(async (req: Request) => {
             operationInserts.push({
               makeMethodId: op.makeMethodId!,
               processId: op.processId!,
-              workCenterId: op.workCenterId,
+              // workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
               setupUnit: op.setupUnit ?? "Total Minutes",

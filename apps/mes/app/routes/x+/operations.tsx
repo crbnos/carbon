@@ -301,7 +301,7 @@ export default function Operations() {
                 <LuAlertTriangle className="h-6 w-6" />
               </div>
               <span className="text-xs font-mono font-light text-foreground uppercase">
-                No work centers exist
+                No operations are scheduled
               </span>
             </div>
           )}

@@ -466,6 +466,8 @@ export const JobOperation = ({
                                     {material.methodType}
                                   </Badge>
                                 </Td>
+
+                                <Td>{material.estimatedQuantity}</Td>
                                 <Td>
                                   {material.methodType === "Make" ? (
                                     <MethodIcon type="Make" />
@@ -473,7 +475,6 @@ export const JobOperation = ({
                                     material.quantityIssued
                                   )}
                                 </Td>
-                                <Td>{material.estimatedQuantity}</Td>
                                 <Td className="text-right">
                                   {material.methodType !== "Make" && (
                                     <IconButton
