@@ -122,6 +122,7 @@ export default function JobMakeMethodRoute() {
           <Await resolve={productionData}>
             {(resolvedProductionData) => (
               <JobEstimatesVsActuals
+                materials={materials ?? []}
                 operations={operations}
                 productionEvents={resolvedProductionData.events}
                 productionQuantities={resolvedProductionData.quantities}
