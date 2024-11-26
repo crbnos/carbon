@@ -57,7 +57,7 @@ const JobBreadcrumbs = () => {
     method: Tree<JobMethod>;
   }>(path.to.job(jobId));
 
-  const isDisabled = ["Completed", "Cancelled"].includes(
+  const isDisabled = ["Completed", "Cancelled", "In Progress"].includes(
     routeData?.job?.status ?? ""
   );
 
