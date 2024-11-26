@@ -9,7 +9,7 @@ export let loader = async ({ request }: LoaderFunctionArgs) => {
   });
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
-  const file = searchParams.get("file");
+  const file = decodeURIComponent(searchParams.get("file") ?? "");
   if (!file) throw new Error("file not found");
 
   const body = `
@@ -31,7 +31,7 @@ export let loader = async ({ request }: LoaderFunctionArgs) => {
         </style>
       </head>
       <body>
-        <img src=${path.to.file.previewFile(file)} />
+        <img src="${path.to.file.previewFile(file)}" />
       </body>
     </html>`;
   const headers = new Headers({ "Content-Type": "text/html" });

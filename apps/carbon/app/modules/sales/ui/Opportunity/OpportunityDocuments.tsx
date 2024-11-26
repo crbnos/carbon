@@ -206,6 +206,10 @@ const DraggableCell = ({
       }
     : undefined;
 
+  const isPreviewable = ["PDF", "Image"].includes(
+    getDocumentType(attachment.name)
+  );
+
   return (
     <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <HStack>
@@ -214,7 +218,7 @@ const DraggableCell = ({
         )}
         <DocumentIcon type={getDocumentType(attachment.name)} />
         <span className="font-medium" onClick={() => download(attachment)}>
-          {["PDF", "Image"].includes(getDocumentType(attachment.name)) ? (
+          {isPreviewable ? (
             <DocumentPreview
               bucket="private"
               pathToFile={getPath(attachment)}
