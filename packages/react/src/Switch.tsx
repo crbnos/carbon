@@ -16,7 +16,7 @@ const variations = {
   },
   small: {
     container:
-      "flex items-center gap-x-1.5 rounded hover:bg-muted pr-1 py-[0.1rem] pl-1.5 transition",
+      "flex items-center gap-x-1.5 rounded hover:bg-muted py-[0.1rem] px-0 transition",
     root: "h-3 w-6",
     thumb:
       "h-2.5 w-2.5 data-[state=checked]:translate-x-2.5 data-[state=unchecked]:translate-x-0",

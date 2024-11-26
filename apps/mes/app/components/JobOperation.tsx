@@ -417,8 +417,8 @@ export const JobOperation = ({
                           <Tr>
                             <Th>Part</Th>
                             <Th className="lg:table-cell hidden">Method</Th>
-                            <Th>Issued</Th>
-                            <Th>Required</Th>
+                            <Th>Estimated</Th>
+                            <Th>Actual</Th>
                             <Th className="text-right" />
                           </Tr>
                         </Thead>
