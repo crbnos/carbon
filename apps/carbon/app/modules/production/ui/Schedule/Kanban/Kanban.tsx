@@ -22,12 +22,13 @@ import { createPortal } from "react-dom";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
-import type { Column, DisplaySettings, Item } from "./types";
+import type { Column, DisplaySettings, Item, Progress } from "./types";
 import { coordinateGetter, hasDraggableData } from "./utils";
 
 type KanbanProps = {
   columns: Column[];
   items: Item[];
+  progressByItemId: Record<string, Progress>;
 } & DisplaySettings;
 
 const COLUMN_ORDER_KEY = "kanban-column-order";
@@ -35,6 +36,7 @@ const COLUMN_ORDER_KEY = "kanban-column-order";
 const Kanban = ({
   columns,
   items: initialItems,
+  progressByItemId,
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
@@ -215,6 +217,7 @@ const Kanban = ({
                 key={col.id}
                 column={col}
                 items={items.filter((item) => item.columnId === col.id)}
+                progressByItemId={progressByItemId}
                 {...displaySettings}
               />
             );
@@ -233,11 +236,24 @@ const Kanban = ({
                   items={items.filter(
                     (item) => item.columnId === activeColumn.id
                   )}
+                  progressByItemId={progressByItemId}
                   {...displaySettings}
                 />
               )}
               {activeItem && (
-                <ItemCard item={activeItem} isOverlay {...displaySettings} />
+                <ItemCard
+                  item={{
+                    ...activeItem,
+                    status: progressByItemId[activeItem.id]?.active
+                      ? "In Progress"
+                      : activeItem.status,
+                    progress: progressByItemId[activeItem.id]?.progress ?? 0,
+                    duration:
+                      progressByItemId[activeItem.id]?.totalDuration ?? 0,
+                  }}
+                  isOverlay
+                  {...displaySettings}
+                />
               )}
             </DragOverlay>,
             document.body

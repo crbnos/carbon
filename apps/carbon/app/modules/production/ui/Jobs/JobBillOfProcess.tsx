@@ -315,10 +315,8 @@ const JobBillOfProcess = ({
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    if (!carbon || !accessToken || !selectedItemId) return;
-    carbon.realtime.setAuth(accessToken);
-
-    if (!channelRef.current) {
+    if (!channelRef.current && carbon && accessToken) {
+      carbon.realtime.setAuth(accessToken);
       channelRef.current = carbon
         .channel("realtime:core")
         .on(
@@ -363,9 +361,18 @@ const JobBillOfProcess = ({
     }
 
     return () => {
-      if (channelRef.current) carbon?.removeChannel(channelRef.current);
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
     };
-  }, [accessToken, carbon, selectedItemId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItemId]);
+
+  useEffect(() => {
+    if (carbon && accessToken) carbon.realtime.setAuth(accessToken);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
 
   const loadMoreProductionEvents = useCallback(async () => {
     if (isLoading || !hasMore || !selectedItemId) return;

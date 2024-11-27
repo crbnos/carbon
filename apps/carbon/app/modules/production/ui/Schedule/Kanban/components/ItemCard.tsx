@@ -189,7 +189,11 @@ export function ItemCard({
           ["Paused", "Done", "In Progress"].includes(item.status!) && (
             <Progress
               indicatorClassName={
-                item.status === "Paused" ? "bg-yellow-500" : ""
+                (item.progress ?? 0) > (item.duration ?? 0)
+                  ? "bg-red-500"
+                  : item.status === "Paused"
+                  ? "bg-yellow-500"
+                  : ""
               }
               numerator={
                 item.progress ? formatDurationMilliseconds(item.progress) : ""

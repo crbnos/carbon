@@ -1,22 +1,38 @@
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-import { error } from "@carbon/auth";
+import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Button, ClientOnly, HStack, Spinner } from "@carbon/react";
+import {
+  Button,
+  ClientOnly,
+  HStack,
+  Spinner,
+  toast,
+  useInterval,
+  useMount,
+} from "@carbon/react";
+import {
+  getLocalTimeZone,
+  now,
+  parseAbsolute,
+  toZoned,
+} from "@internationalized/date";
 import { Link, useLoaderData } from "@remix-run/react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuAlertTriangle, LuPlus } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
-import { useUrlParams } from "~/hooks";
+import { useUrlParams, useUser } from "~/hooks";
 import type { Column, Item } from "~/modules/production";
 import { getActiveJobOperationsByLocation, Kanban } from "~/modules/production";
+import type { Event, Progress } from "~/modules/production/ui/Schedule/Kanban";
 import {
   getLocationsList,
   getProcessesList,
@@ -183,15 +199,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
         subtitle: op.itemReadableId,
         description: op.description,
         dueDate: op.jobDueDate,
-        duration:
-          operation.setupDuration +
-          Math.max(operation.laborDuration, operation.machineDuration),
+        duration: 0, // set in the client
+        progress: 0, // set in the client
         deadlineType: op.jobDeadlineType,
         customerId: op.jobCustomerId,
         salesOrderReadableId: op.salesOrderReadableId,
         salesOrderId: op.salesOrderId,
         salesOrderLineId: op.salesOrderLineId,
         status: op.operationStatus,
+        setupDuration: operation.setupDuration,
+        laborDuration: operation.laborDuration,
+        machineDuration: operation.machineDuration,
       };
     }) ?? []) satisfies Item[],
     processes: processes.data ?? [],
@@ -285,12 +303,13 @@ export default function ScheduleRoute() {
                 <Kanban
                   columns={columns}
                   items={items}
+                  progressByItemId={progressByOperation}
                   showCustomer
                   showDescription
                   showDueDate
                   showDuration
                   showEmployee
-                  showProgress={false}
+                  showProgress
                   showStatus
                   showSalesOrder
                 />
@@ -326,5 +345,172 @@ export default function ScheduleRoute() {
 }
 
 function useProgressByOperation(items: Item[]) {
-  const operationIds = useMemo(() => items.map((item) => item.id), [items]);
+  const {
+    company: { id: companyId },
+  } = useUser();
+  const { carbon, accessToken } = useCarbon();
+
+  const [productionEventsByOperation, setProductionEventsByOperation] =
+    useState<Record<string, Event[]>>({});
+
+  const [progressByOperation, setProgressByOperation] = useState<
+    Record<string, Progress>
+  >({});
+
+  const getProductionEvents = useCallback(
+    async (operationIds: string[]) => {
+      if (!carbon) return;
+
+      const { data, error } = await carbon
+        .from("productionEvent")
+        .select("id, jobOperationId, duration, startTime, endTime, duration")
+        .eq("companyId", companyId)
+        .in("jobOperationId", operationIds);
+
+      if (error) {
+        toast.error(error.message);
+      }
+
+      if (data) {
+        setProductionEventsByOperation(
+          data.reduce<Record<string, Event[]>>((acc, event) => {
+            acc[event.jobOperationId] = [
+              ...(acc[event.jobOperationId] ?? []),
+              event,
+            ];
+            return acc;
+          }, {})
+        );
+      }
+    },
+    [carbon, companyId]
+  );
+
+  useMount(() => {
+    getProductionEvents(items.map((item) => item.id));
+  });
+
+  const getProgresss = useCallback(() => {
+    const timeNow = now(getLocalTimeZone());
+    const progresss: Record<string, Progress> = {};
+
+    Object.entries(productionEventsByOperation).forEach(
+      ([operationId, events]) => {
+        const operation = items.find((item) => item.id === operationId);
+        const totalDuration =
+          (operation?.setupDuration ?? 0) +
+          (operation?.laborDuration ?? 0) +
+          (operation?.machineDuration ?? 0);
+
+        let progress = 0;
+        let active = false;
+        events.forEach((event) => {
+          if (event.endTime && event.duration) {
+            progress += event.duration * 1000;
+          } else if (event.startTime) {
+            active = true;
+            const startTime = toZoned(
+              parseAbsolute(event.startTime, getLocalTimeZone()),
+              getLocalTimeZone()
+            );
+
+            const difference = timeNow.compare(startTime);
+            if (difference > 0) {
+              progress += difference;
+            }
+          }
+        });
+
+        progresss[operationId] = {
+          totalDuration,
+          progress,
+          active,
+        };
+      }
+    );
+
+    return progresss;
+  }, [productionEventsByOperation, items]);
+
+  useInterval(() => {
+    setProgressByOperation(getProgresss());
+  }, 1000);
+
+  useEffect(() => {
+    if (Object.keys(productionEventsByOperation).length > 0) {
+      setProgressByOperation(getProgresss());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productionEventsByOperation]);
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useMount(() => {
+    if (!channelRef.current && carbon && accessToken) {
+      carbon.realtime.setAuth(accessToken);
+
+      channelRef.current = carbon
+        .channel("realtime:core")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "productionEvent",
+            filter: `jobOperationId=in.${items
+              .map((item) => item.id)
+              .join(",")}`,
+          },
+          (payload) => {
+            if (payload.eventType === "INSERT") {
+              const { new: inserted } = payload;
+              if (inserted.jobOperationId) {
+                setProductionEventsByOperation((prevState) => ({
+                  ...prevState,
+                  [inserted.jobOperationId]: [
+                    ...(prevState[inserted.jobOperationId] ?? []),
+                    inserted,
+                  ],
+                }));
+              }
+            } else if (payload.eventType === "UPDATE") {
+              const { new: updated } = payload;
+              if (updated.jobOperationId) {
+                setProductionEventsByOperation((prevState) => ({
+                  ...prevState,
+                  [updated.jobOperationId]: (
+                    prevState[updated.jobOperationId] ?? []
+                  ).map((event) => (event.id === updated.id ? updated : event)),
+                }));
+              }
+            } else if (payload.eventType === "DELETE") {
+              const { old: deleted } = payload;
+              if (deleted.jobOperationId) {
+                setProductionEventsByOperation((prevState) => ({
+                  ...prevState,
+                  [deleted.jobOperationId]: (
+                    prevState[deleted.jobOperationId] ?? []
+                  ).filter((event) => event.id !== deleted.id),
+                }));
+              }
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
+    };
+  });
+
+  useEffect(() => {
+    if (carbon && accessToken) carbon.realtime.setAuth(accessToken);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
+
+  return progressByOperation;
 }
