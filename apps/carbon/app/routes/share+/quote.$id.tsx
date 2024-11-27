@@ -72,7 +72,7 @@ import {
   getSalesTerms,
 } from "~/modules/sales";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
-import { getCompany } from "~/modules/settings";
+import { getCompany, getCompanySettings } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 import type { action } from "~/routes/api+/sales.digital-quote.$id";
 import { path } from "~/utils/path";
@@ -119,6 +119,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   const [
     company,
+    companySettings,
     quoteLines,
     quoteLinePrices,
     customerDetails,
@@ -130,6 +131,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     opportunity,
   ] = await Promise.all([
     getCompany(serviceRole, quote.data.companyId),
+    getCompanySettings(serviceRole, quote.data.companyId),
     getQuoteLines(serviceRole, quote.data.id),
     getQuoteLinePricesByQuoteId(serviceRole, quote.data.id),
     getQuoteCustomerDetails(serviceRole, quote.data.id),
@@ -187,6 +189,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     data: {
       quote: quote.data,
       company: company.data,
+      companySettings: companySettings.data,
       quoteLines: quoteLines.data,
       thumbnails: thumbnails,
       quoteLinePrices: quoteLinePrices.data,
@@ -750,6 +753,7 @@ const LinePricingOptions = ({
 const Quote = ({ data }: { data: QuoteData }) => {
   const {
     company,
+    companySettings,
     customerDetails,
     paymentTerm,
     quote,
@@ -968,7 +972,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               />
             </HStack>
           </VStack>
-          {company?.digitalQuoteEnabled && quote?.status === "Sent" && (
+          {companySettings?.digitalQuoteEnabled && quote?.status === "Sent" && (
             <Button
               onClick={confirmQuoteModal.onOpen}
               size="lg"
@@ -1014,6 +1018,9 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 } for ${formatter.format(total)}?`}</ModalDescription>
               </ModalHeader>
               <ModalBody>
+                {!companySettings?.digitalQuoteIncludesPurchaseOrders && (
+                  <input type="hidden" name="file" />
+                )}
                 <div className="space-y-4 py-4">
                   <Input
                     name="digitalQuoteAcceptedBy"
@@ -1023,35 +1030,37 @@ const Quote = ({ data }: { data: QuoteData }) => {
                     name="digitalQuoteAcceptedByEmail"
                     label="Please enter your email address"
                   />
-                  <div
-                    {...getRootProps()}
-                    className={cn(
-                      "w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer",
-                      isDragActive ? "border-primary" : "border-muted"
-                    )}
-                  >
-                    <input name="file" {...getInputProps()} />
-                    {file ? (
-                      <>
-                        <p>{file.name}</p>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setFile(null)}
-                        >
-                          Change
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <p>
-                          Drag and drop a Purchase Order PDF here, or click to
-                          select a file
-                        </p>
-                        <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
-                      </>
-                    )}
-                  </div>
+                  {companySettings?.digitalQuoteIncludesPurchaseOrders && (
+                    <div
+                      {...getRootProps()}
+                      className={cn(
+                        "w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer",
+                        isDragActive ? "border-primary" : "border-muted"
+                      )}
+                    >
+                      <input name="file" {...getInputProps()} />
+                      {file ? (
+                        <>
+                          <p>{file.name}</p>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setFile(null)}
+                          >
+                            Change
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p>
+                            Drag and drop a Purchase Order PDF here, or click to
+                            select a file
+                          </p>
+                          <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </ModalBody>
               <ModalFooter>

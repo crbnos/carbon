@@ -133,6 +133,17 @@ export async function getCompany(
   };
 }
 
+export async function getCompanySettings(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("companySettings")
+    .select("*")
+    .eq("id", companyId)
+    .single();
+}
+
 export async function getCompanyIntegrations(
   client: SupabaseClient<Database>,
   companyId: string
@@ -359,11 +370,18 @@ export async function updateDigitalQuoteSetting(
   client: SupabaseClient<Database>,
   companyId: string,
   digitalQuoteEnabled: boolean,
-  digitalQuoteNotificationGroup: string[]
+  digitalQuoteNotificationGroup: string[],
+  digitalQuoteIncludesPurchaseOrders: boolean
 ) {
   return client
-    .from("company")
-    .update(sanitize({ digitalQuoteEnabled, digitalQuoteNotificationGroup }))
+    .from("companySettings")
+    .update(
+      sanitize({
+        digitalQuoteEnabled,
+        digitalQuoteNotificationGroup,
+        digitalQuoteIncludesPurchaseOrders,
+      })
+    )
     .eq("id", companyId);
 }
 

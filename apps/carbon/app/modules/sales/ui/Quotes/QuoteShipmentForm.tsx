@@ -72,8 +72,7 @@ QuoteShipmentFormProps) => {
               label="Shipping Cost"
               formatOptions={{
                 style: "currency",
-                currency:
-                  routeData?.quote?.currencyCode ?? company?.baseCurrencyCode,
+                currency: company?.baseCurrencyCode,
               }}
             />
             <Location

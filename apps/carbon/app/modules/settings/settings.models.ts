@@ -72,6 +72,7 @@ export const digitalQuoteValidator = z.object({
   digitalQuoteNotificationGroup: z
     .array(z.string().min(36, { message: "Invalid selection" }))
     .optional(),
+  digitalQuoteIncludesPurchaseOrders: zfd.checkbox(),
 });
 
 export const sequenceValidator = z.object({
