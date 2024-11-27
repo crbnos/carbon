@@ -87,14 +87,122 @@ enum QuoteState {
   NotFound,
 }
 
-export async function loader({ params }: LoaderFunctionArgs) {
+const translations = {
+  en: {
+    "Accept Quote": "Accept Quote",
+    "Add-Ons": "Add-Ons",
+    Cancel: "Cancel",
+    Change: "Change",
+    days: "days",
+    "Digital Quote": "Digital Quote",
+    "Don't Buy": "Don't Buy",
+    "Drag and drop a Purchase Order PDF here, or click to select a file":
+      "Drag and drop a Purchase Order PDF here, or click to select a file",
+    Expires: "Expires",
+    "Extended Price": "Extended Price",
+    "Lead Time": "Lead Time",
+    "No pricing options found": "No pricing options found",
+    "Oops! The link you're trying to access has expired or is no longer valid.":
+      "Oops! The link you're trying to access has expired or is no longer valid.",
+    "Oops! The link you're trying to access is not valid.":
+      "Oops! The link you're trying to access is not valid.",
+    "Payment Term": "Payment Term",
+    "Please enter your email address": "Please enter your email address",
+    "Please enter your name": "Please enter your name",
+    Quantity: "Quantity",
+    "Quote expired": "Quote expired",
+    "Quote not found": "Quote not found",
+    "Shipping Method": "Shipping Method",
+    Shipping: "Shipping",
+    Subtotal: "Subtotal",
+    Tax: "Tax",
+    Total: "Total",
+    "Unit Price": "Unit Price",
+    "Yes, Accept": "Yes, Accept",
+  },
+  es: {
+    "Accept Quote": "Aceptar Cotización",
+    "Add-Ons": "Complementos",
+    Cancel: "Cancelar",
+    Change: "Cambiar",
+    days: "días",
+    "Digital Quote": "Cotización Digital",
+    "Don't Buy": "No Comprar",
+    "Drag and drop a Purchase Order PDF here, or click to select a file":
+      "Arrastre y suelte un PDF de Orden de Compra aquí, o haga clic para seleccionar un archivo",
+    Expires: "Expira",
+    "Extended Price": "Precio Extendido",
+    "Lead Time": "Tiempo de Entrega",
+    "No pricing options found": "No se encontraron opciones de precio",
+    "Oops! The link you're trying to access has expired or is no longer valid.":
+      "¡Ups! El enlace al que intenta acceder ha expirado o ya no es válido.",
+    "Oops! The link you're trying to access is not valid.":
+      "¡Ups! El enlace al que intenta acceder no es válido.",
+    "Payment Term": "Plazo de Pago",
+    "Please enter your email address":
+      "Por favor ingrese su correo electrónico",
+    "Please enter your name": "Por favor ingrese su nombre",
+    Quantity: "Cantidad",
+    "Quote expired": "Cotización expirada",
+    "Quote not found": "Cotización no encontrada",
+    "Shipping Method": "Método de Envío",
+    Shipping: "Envío",
+    Subtotal: "Subtotal",
+    Tax: "Impuesto",
+    Total: "Total",
+    "Unit Price": "Precio Unitario",
+    "Yes, Accept": "Sí, Aceptar",
+  },
+  de: {
+    "Accept Quote": "Angebot Annehmen",
+    "Add-Ons": "Zusätze",
+    Cancel: "Abbrechen",
+    Change: "Ändern",
+    days: "Tage",
+    "Digital Quote": "Digitales Angebot",
+    "Don't Buy": "Nicht Kaufen",
+    "Drag and drop a Purchase Order PDF here, or click to select a file":
+      "Ziehen Sie eine Bestellung als PDF hierher oder klicken Sie zum Auswählen",
+    Expires: "Läuft ab",
+    "Extended Price": "Erweiterter Preis",
+    "Lead Time": "Lieferzeit",
+    "No pricing options found": "Keine Preisoptionen gefunden",
+    "Oops! The link you're trying to access has expired or is no longer valid.":
+      "Ups! Der Link, den Sie aufrufen möchten, ist abgelaufen oder nicht mehr gültig.",
+    "Oops! The link you're trying to access is not valid.":
+      "Ups! Der Link, den Sie aufrufen möchten, ist nicht gültig.",
+    "Payment Term": "Zahlungsbedingung",
+    "Please enter your email address":
+      "Bitte geben Sie Ihre E-Mail-Adresse ein",
+    "Please enter your name": "Bitte geben Sie Ihren Namen ein",
+    Quantity: "Menge",
+    "Quote expired": "Angebot abgelaufen",
+    "Quote not found": "Angebot nicht gefunden",
+    "Shipping Method": "Versandart",
+    Shipping: "Versand",
+    Subtotal: "Zwischensumme",
+    Tax: "Steuer",
+    Total: "Gesamt",
+    "Unit Price": "Stückpreis",
+    "Yes, Accept": "Ja, Annehmen",
+  },
+};
+
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) {
     return json({
       state: QuoteState.NotFound,
       data: null,
+      strings: translations.en,
     });
   }
+  const locale = (request.headers.get("Accept-Language") || "en-US").substring(
+    0,
+    2
+  );
+  const strings =
+    translations[locale as keyof typeof translations] || translations.en;
 
   const serviceRole = getCarbonServiceRole();
   const quote = await getQuoteByExternalId(serviceRole, id);
@@ -103,6 +211,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     return json({
       state: QuoteState.NotFound,
       data: null,
+      strings,
     });
   }
 
@@ -114,6 +223,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     return json({
       state: QuoteState.Expired,
       data: null,
+      strings,
     });
   }
 
@@ -205,6 +315,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
       )?.name,
       salesOrderLines: salesOrderLines?.data ?? null,
     },
+    strings,
   });
 }
 
@@ -212,10 +323,12 @@ const Header = ({
   company,
   quote,
   customer,
+  strings,
 }: {
   company: QuoteData["company"];
   quote: QuoteData["quote"];
   customer: QuoteData["customerDetails"];
+  strings: (typeof translations)["en"];
 }) => (
   <CardHeader className="flex flex-col sm:flex-row items-start sm:items-start justify-between space-y-4 sm:space-y-2 pb-7">
     <div className="flex items-center space-x-4">
@@ -226,7 +339,7 @@ const Header = ({
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
-            Expires {formatDate(quote.expirationDate)}
+            {strings["Expires"]} {formatDate(quote.expirationDate)}
           </p>
         )}
       </div>
@@ -295,12 +408,14 @@ const LineItems = ({
   locale,
   selectedLines,
   setSelectedLines,
+  strings,
 }: {
   currencyCode: string;
   formatter: Intl.NumberFormat;
   locale: string;
   selectedLines: Record<string, SelectedLine>;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
+  strings: (typeof translations)["en"];
 }) => {
   const { company, quote, quoteLines, quoteLinePrices, thumbnails } =
     useLoaderData<typeof loader>().data!;
@@ -443,6 +558,7 @@ const LineItems = ({
                 locale={locale}
                 selectedLine={selectedLines[line.id!]}
                 setSelectedLines={setSelectedLines}
+                strings={strings}
               />
             </motion.div>
           </motion.div>
@@ -462,6 +578,7 @@ type LinePricingOptionsProps = {
   formatter: Intl.NumberFormat;
   selectedLine: SelectedLine;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
+  strings: (typeof translations)["en"];
 };
 
 const LinePricingOptions = ({
@@ -474,6 +591,7 @@ const LinePricingOptions = ({
   formatter,
   selectedLine,
   setSelectedLines,
+  strings,
 }: LinePricingOptionsProps) => {
   const { quote, salesOrderLines } = useLoaderData<typeof loader>().data!;
 
@@ -565,19 +683,18 @@ const LinePricingOptions = ({
         <Table>
           <Thead>
             <Tr>
-              <Th></Th>
-              <Th>Quantity</Th>
-              <Th>Unit Price</Th>
-              <Th>Add-Ons</Th>
-              <Th>Lead Time</Th>
-              <Th>Subtotal</Th>
+              <Th>{strings.Quantity}</Th>
+              <Th>{strings["Unit Price"]}</Th>
+              <Th>{strings["Add-Ons"]}</Th>
+              <Th>{strings["Lead Time"]}</Th>
+              <Th>{strings.Subtotal}</Th>
             </Tr>
           </Thead>
           <Tbody>
             {!Array.isArray(options) || options.length === 0 ? (
               <Tr>
                 <Td colSpan={6} className="text-center py-8">
-                  No pricing options found
+                  {strings["No pricing options found"]}
                 </Td>
               </Tr>
             ) : (
@@ -609,7 +726,12 @@ const LinePricingOptions = ({
                           ] + (option.convertedShippingCost ?? 0)
                         )}
                       </Td>
-                      <Td>{option.leadTime} days</Td>
+                      <Td>
+                        {new Intl.NumberFormat(locale, {
+                          style: "unit",
+                          unit: "day",
+                        }).format(option.leadTime)}
+                      </Td>
                       <Td>
                         {formatter.format(
                           (option.convertedNetUnitPrice ?? 0) *
@@ -633,7 +755,7 @@ const LinePricingOptions = ({
           <Table>
             <Tbody>
               <Tr key="extended-price" className="border-b border-border">
-                <Td>Extended Price</Td>
+                <Td>{strings["Extended Price"]}</Td>
                 <Td className="text-right">
                   <MotionNumber
                     value={
@@ -668,7 +790,7 @@ const LinePricingOptions = ({
                 ))}
 
               <Tr key="subtotal">
-                <Td>Subtotal</Td>
+                <Td>{strings.Subtotal}</Td>
                 <Td className="text-right">
                   <MotionNumber
                     value={
@@ -687,7 +809,9 @@ const LinePricingOptions = ({
               </Tr>
 
               <Tr key="tax" className="border-b border-border">
-                <Td>Tax ({selectedLine.taxPercent * 100}%)</Td>
+                <Td>
+                  {strings.Tax} ({selectedLine.taxPercent * 100}%)
+                </Td>
                 <Td className="text-right">
                   <MotionNumber
                     value={
@@ -707,7 +831,7 @@ const LinePricingOptions = ({
               </Tr>
 
               <Tr key="total" className="font-bold">
-                <Td>Total</Td>
+                <Td>{strings.Total}</Td>
                 <Td className="text-right">
                   <MotionNumber
                     value={
@@ -742,7 +866,7 @@ const LinePricingOptions = ({
               }));
             }}
           >
-            Don't Buy
+            {strings["Don't Buy"]}
           </Button>
         </HStack>
       )}
@@ -750,7 +874,13 @@ const LinePricingOptions = ({
   );
 };
 
-const Quote = ({ data }: { data: QuoteData }) => {
+const Quote = ({
+  data,
+  strings,
+}: {
+  data: QuoteData;
+  strings: (typeof translations)["en"];
+}) => {
   const {
     company,
     companySettings,
@@ -915,7 +1045,12 @@ const Quote = ({ data }: { data: QuoteData }) => {
         <div className="w-full text-center">
           {quote?.status !== "Sent" && <QuoteStatus status={quote.status} />}
         </div>
-        <Header company={company} quote={quote} customer={customerDetails} />
+        <Header
+          company={company}
+          quote={quote}
+          customer={customerDetails}
+          strings={strings}
+        />
         <CardContent>
           <LineItems
             currencyCode={quote.currencyCode ?? "USD"}
@@ -923,6 +1058,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
             formatter={formatter}
             selectedLines={selectedLines}
             setSelectedLines={setSelectedLines}
+            strings={strings}
           />
 
           <VStack spacing={2} className="mt-8">
@@ -930,7 +1066,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               <HStack className="justify-between text-sm text-muted-foreground w-full">
                 <HStack spacing={2}>
                   <LuTruck className="w-5 h-5" />
-                  <span>Shipping Method:</span>
+                  <span>{strings["Shipping Method"]}:</span>
                 </HStack>
                 <span className="text-foreground font-bold">
                   {shippingMethod}
@@ -941,7 +1077,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               <HStack className="justify-between text-sm text-muted-foreground w-full">
                 <HStack spacing={2}>
                   <LuCreditCard className="w-5 h-5" />
-                  <span>Payment Term:</span>
+                  <span>{strings["Payment Term"]}:</span>
                 </HStack>
                 <span className="text-foreground font-bold">{paymentTerm}</span>
               </HStack>
@@ -949,7 +1085,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
             {(shippingMethod || paymentTerm) && <Separator />}
             {convertedShippingCost > 0 && (
               <HStack className="justify-between text-xl w-full">
-                <span>Shipping:</span>
+                <span>{strings.Shipping}:</span>
                 <MotionNumber
                   value={convertedShippingCost}
                   format={{
@@ -961,7 +1097,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               </HStack>
             )}
             <HStack className="justify-between text-xl font-bold w-full">
-              <span>Total:</span>
+              <span>{strings.Total}:</span>
               <MotionNumber
                 value={total}
                 format={{
@@ -979,7 +1115,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               isDisabled={total === 0}
               className="w-full mt-8 text-lg"
             >
-              Accept Quote
+              {strings["Accept Quote"]}
             </Button>
           )}
         </CardContent>
@@ -1012,7 +1148,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               encType="multipart/form-data"
             >
               <ModalHeader>
-                <ModalTitle>Accept Quote</ModalTitle>
+                <ModalTitle>{strings["Accept Quote"]}</ModalTitle>
                 <ModalDescription>{`Are you sure you want to accept quote ${
                   quote.quoteId
                 } for ${formatter.format(total)}?`}</ModalDescription>
@@ -1047,14 +1183,17 @@ const Quote = ({ data }: { data: QuoteData }) => {
                             size="sm"
                             onClick={() => setFile(null)}
                           >
-                            Change
+                            {strings.Change}
                           </Button>
                         </>
                       ) : (
                         <>
                           <p>
-                            Drag and drop a Purchase Order PDF here, or click to
-                            select a file
+                            {
+                              strings[
+                                "Drag and drop a Purchase Order PDF here, or click to select a file"
+                              ]
+                            }
                           </p>
                           <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
                         </>
@@ -1065,7 +1204,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               </ModalBody>
               <ModalFooter>
                 <Button variant="secondary" onClick={confirmQuoteModal.onClose}>
-                  Cancel
+                  {strings.Cancel}
                 </Button>
                 <input
                   type="hidden"
@@ -1078,7 +1217,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
                   isDisabled={fetcher.state !== "idle"}
                   type="submit"
                 >
-                  Yes, Accept
+                  {strings["Yes, Accept"]}
                 </Button>
               </ModalFooter>
             </ValidatedForm>
@@ -1196,31 +1335,39 @@ type QuoteData = NonNullable<
 >;
 
 export default function ExternalQuote() {
-  const { state, data } = useLoaderData<typeof loader>();
+  const { state, data, strings } = useLoaderData<typeof loader>();
 
   switch (state) {
     case QuoteState.Valid:
       if (data) {
-        return <Quote data={data as QuoteData} />;
+        return <Quote data={data as QuoteData} strings={strings} />;
       }
       return (
         <ErrorMessage
-          title="Quote not found"
-          message="Oops! The link you're trying to access is not valid."
+          title={strings["Quote not found"]}
+          message={
+            strings["Oops! The link you're trying to access is not valid."]
+          }
         />
       );
     case QuoteState.Expired:
       return (
         <ErrorMessage
-          title="Quote expired"
-          message="Oops! The link you're trying to access has expired or is no longer valid."
+          title={strings["Quote expired"]}
+          message={
+            strings[
+              "Oops! The link you're trying to access has expired or is no longer valid."
+            ]
+          }
         />
       );
     case QuoteState.NotFound:
       return (
         <ErrorMessage
-          title="Quote not found"
-          message="Oops! The link you're trying to access is not valid."
+          title={strings["Quote not found"]}
+          message={
+            strings["Oops! The link you're trying to access is not valid."]
+          }
         />
       );
   }
