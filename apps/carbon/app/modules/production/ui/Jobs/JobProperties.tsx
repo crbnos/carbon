@@ -165,7 +165,7 @@ const JobProperties = () => {
                   aria-label="Copy"
                   size="sm"
                   className="p-1"
-                  onClick={() => copyToClipboard(routeData?.job?.id ?? "")}
+                  onClick={() => copyToClipboard(routeData?.job?.jobId ?? "")}
                 >
                   <LuCopy className="w-3 h-3" />
                 </Button>
