@@ -2294,7 +2294,7 @@ export type Database = {
           {
             foreignKeyName: "consumable_itemId_fkey"
             columns: ["itemId"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "item"
             referencedColumns: ["id"]
           },
@@ -8405,6 +8405,169 @@ export type Database = {
           },
         ]
       }
+      jobOperationTool: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          operationId: string
+          quantity: number
+          toolId: string
+          updatedAt: string
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          operationId: string
+          quantity?: number
+          toolId: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          operationId?: string
+          quantity?: number
+          toolId?: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_operationId_fkey"
+            columns: ["operationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_operationId_fkey"
+            columns: ["operationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "tool"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       journal: {
         Row: {
           accountingPeriodId: string | null
@@ -8939,7 +9102,7 @@ export type Database = {
           {
             foreignKeyName: "material_itemId_fkey"
             columns: ["itemId"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "item"
             referencedColumns: ["id"]
           },
@@ -9806,6 +9969,162 @@ export type Database = {
           },
         ]
       }
+      methodOperationTool: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          operationId: string
+          quantity: number
+          toolId: string
+          updatedAt: string
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          operationId: string
+          quantity?: number
+          toolId: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          operationId?: string
+          quantity?: number
+          toolId?: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "methodOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_operationId_fkey"
+            columns: ["operationId"]
+            isOneToOne: false
+            referencedRelation: "methodOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "tool"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       modelUpload: {
         Row: {
           autodeskUrn: string | null
@@ -10563,7 +10882,7 @@ export type Database = {
           {
             foreignKeyName: "part_id_fkey"
             columns: ["itemId"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "item"
             referencedColumns: ["id"]
           },
@@ -15966,6 +16285,169 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCenters"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      quoteOperationTool: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          operationId: string
+          quantity: number
+          toolId: string
+          updatedAt: string
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          operationId: string
+          quantity?: number
+          toolId: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          operationId?: string
+          quantity?: number
+          toolId?: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quoteOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_operationId_fkey"
+            columns: ["operationId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_operationId_fkey"
+            columns: ["operationId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "tool"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["itemId"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
@@ -21393,7 +21875,7 @@ export type Database = {
           {
             foreignKeyName: "tool_itemId_fkey"
             columns: ["itemId"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "item"
             referencedColumns: ["id"]
           },
@@ -23310,7 +23792,7 @@ export type Database = {
           {
             foreignKeyName: "consumable_itemId_fkey"
             columns: ["itemId"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "item"
             referencedColumns: ["id"]
           },
@@ -25276,7 +25758,7 @@ export type Database = {
           {
             foreignKeyName: "material_itemId_fkey"
             columns: ["itemId"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "item"
             referencedColumns: ["id"]
           },
@@ -25653,7 +26135,7 @@ export type Database = {
           {
             foreignKeyName: "part_id_fkey"
             columns: ["itemId"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "item"
             referencedColumns: ["id"]
           },
@@ -29715,7 +30197,7 @@ export type Database = {
           {
             foreignKeyName: "tool_itemId_fkey"
             columns: ["itemId"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "item"
             referencedColumns: ["id"]
           },

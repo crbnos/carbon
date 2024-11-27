@@ -6,6 +6,7 @@ import { type z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import type { operationToolValidator } from "../shared";
 import type {
   buyMethodValidator,
   consumableValidator,
@@ -616,9 +617,25 @@ export async function getMethodOperationsByMakeMethodId(
 ) {
   return client
     .from("methodOperation")
-    .select("*")
+    .select("*, methodOperationTool(id, operationId, toolId, quantity)")
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
+}
+
+export async function getMethodOperationToolsByOperationIds(
+  client: SupabaseClient<Database>,
+  operationIds: string[]
+) {
+  if (operationIds.length === 0) {
+    return {
+      data: [],
+      error: null,
+    };
+  }
+  return client
+    .from("methodOperationTool")
+    .select("*")
+    .in("operationId", operationIds);
 }
 
 type Method = NonNullable<
@@ -1484,6 +1501,34 @@ export async function upsertMethodOperation(
     .from("methodOperation")
     .update(sanitize(methodOperation))
     .eq("id", methodOperation.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertMethodOperationTool(
+  client: SupabaseClient<Database>,
+  methodOperationTool:
+    | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in methodOperationTool) {
+    return client
+      .from("methodOperationTool")
+      .insert(methodOperationTool)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("methodOperationTool")
+    .update(sanitize(methodOperationTool))
+    .eq("id", methodOperationTool.id)
     .select("id")
     .single();
 }
