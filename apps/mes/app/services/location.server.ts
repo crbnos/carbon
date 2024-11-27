@@ -6,7 +6,8 @@ import * as cookie from "cookie";
 export function getCompanySettings(request: Request, companyId: string) {
   const cookieHeader = request.headers.get("cookie");
   const parsed = cookieHeader ? cookie.parse(cookieHeader)[companyId] : null;
-  if (parsed) {
+  if (parsed && !parsed.includes(":")) {
+    // temporary check for backwards compatibility
     return { location: parsed };
   }
   return {
