@@ -12,7 +12,7 @@ import { Card, CardHeader, CardTitle, Spinner } from "@carbon/react";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import { CadModel } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import { getItemReplenishment } from "~/modules/items";
@@ -164,7 +164,7 @@ export default function EditSalesOrderLineRoute() {
   };
 
   return (
-    <>
+    <Fragment key={lineId}>
       <SalesOrderLineForm
         key={initialValues.id}
         // @ts-ignore
@@ -174,7 +174,7 @@ export default function EditSalesOrderLineRoute() {
         id={line.id}
         table="salesOrderLine"
         title={orderData.salesOrder.salesOrderId ?? ""}
-        subTitle={line.customerPartId ?? ""}
+        subTitle={line.itemReadableId ?? ""}
         notes={line.notes as JSONContent}
       />
       {line.methodType === "Make" && (
@@ -241,6 +241,6 @@ export default function EditSalesOrderLineRoute() {
         />
       </div>
       <Outlet />
-    </>
+    </Fragment>
   );
 }
