@@ -450,7 +450,7 @@ function useProgressByOperation(items: Item[]) {
       carbon.realtime.setAuth(accessToken);
 
       channelRef.current = carbon
-        .channel("realtime:core")
+        .channel(`kanban-schedule:${companyId}`)
         .on(
           "postgres_changes",
           {

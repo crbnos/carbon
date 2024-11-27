@@ -318,7 +318,7 @@ const JobBillOfProcess = ({
     if (!channelRef.current && carbon && accessToken) {
       carbon.realtime.setAuth(accessToken);
       channelRef.current = carbon
-        .channel("realtime:core")
+        .channel(`production-events:${selectedItemId}`)
         .on(
           "postgres_changes",
           {
