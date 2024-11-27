@@ -42,10 +42,17 @@ import {
   Tr,
   useDisclosure,
   useInterval,
+  useMount,
   VStack,
   type JSONContent,
 } from "@carbon/react";
-import { Await, useFetcher, useNavigate, useParams } from "@remix-run/react";
+import {
+  Await,
+  useFetcher,
+  useNavigate,
+  useParams,
+  useRevalidator,
+} from "@remix-run/react";
 import type { ComponentProps, ReactNode } from "react";
 import {
   Suspense,
@@ -61,7 +68,7 @@ import {
   FilePreview,
   OperationStatusIcon,
 } from "~/components";
-import { useMode, useRealtime, useUser } from "~/hooks";
+import { useMode, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import {
   finishValidator,
@@ -146,22 +153,30 @@ export const JobOperation = ({
   workCenter,
 }: JobOperationProps) => {
   const navigate = useNavigate();
-  useRealtime("job", `id=eq.${job.id}`);
+
+  const { downloadFile, getFilePath } = useFiles(job);
+
   const {
+    active,
     activeTab,
-    eventType,
-    isOverdue,
-    operation,
-    issueModal,
-    finishModal,
-    scrapModal,
-    reworkModal,
     completeModal,
+    eventType,
+    finishModal,
+    hasActiveEvents,
+    isOverdue,
+    issueModal,
+    laborProductionEvent,
+    machineProductionEvent,
+    operation,
+    progress,
+    reworkModal,
+    scrapModal,
     selectedMaterial,
-    setSelectedMaterial,
     setActiveTab,
     setEventType,
-  } = useOperationState(originalOperation, job);
+    setSelectedMaterial,
+    setupProductionEvent,
+  } = useOperation(originalOperation, events);
 
   const controlsHeight = useMemo(() => {
     let operations = 1;
@@ -174,17 +189,6 @@ export const JobOperation = ({
     operation.machineDuration,
     operation.setupDuration,
   ]);
-
-  const { downloadFile, getFilePath } = useFiles(job);
-
-  const {
-    active,
-    hasActiveEvents,
-    setupProductionEvent,
-    laborProductionEvent,
-    machineProductionEvent,
-    progress,
-  } = useActiveEvents(originalOperation, events);
 
   const mode = useMode();
   const { operationId } = useParams();
@@ -885,20 +889,37 @@ export const JobOperation = ({
   );
 };
 
-function useActiveEvents(
+function useOperation(
   operation: OperationWithDetails,
   events: ProductionEvent[]
-): {
-  active: { setup: boolean; labor: boolean; machine: boolean };
-  hasActiveEvents: boolean;
-  setupProductionEvent: ProductionEvent | undefined;
-  laborProductionEvent: ProductionEvent | undefined;
-  machineProductionEvent: ProductionEvent | undefined;
-  progress: { setup: number; labor: number; machine: number };
-} {
+) {
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
+  const revalidator = useRevalidator();
   const channelRef = useRef<RealtimeChannel | null>(null);
+
+  const scrapModal = useDisclosure();
+  const reworkModal = useDisclosure();
+  const completeModal = useDisclosure();
+  const finishModal = useDisclosure();
+  const issueModal = useDisclosure();
+
+  const [selectedMaterial, setSelectedMaterial] = useState<JobMaterial | null>(
+    null
+  );
+
+  const [activeTab, setActiveTab] = useState("details");
+  const [eventType, setEventType] = useState(() => {
+    if (operation.setupDuration > 0) {
+      return "Setup";
+    }
+    if (operation.laborDuration > 0) {
+      return "Labor";
+    }
+    return "Machine";
+  });
+
+  const [operationState, setOperationState] = useState(operation);
 
   const [eventState, setEventState] = useState<ProductionEvent[]>(events);
 
@@ -907,12 +928,28 @@ function useActiveEvents(
   }, [events]);
 
   useEffect(() => {
-    if (!carbon || !accessToken) return;
-    carbon.realtime.setAuth(accessToken);
+    setOperationState(operation);
+  }, [operation]);
 
-    if (!channelRef.current) {
+  useMount(() => {
+    if (!channelRef.current && carbon && accessToken) {
+      carbon.realtime.setAuth(accessToken);
       channelRef.current = carbon
-        .channel("realtime:core")
+        .channel(`job-operations:${operation.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "job",
+            filter: `id=eq.${operation.jobId}`,
+          },
+          (payload) => {
+            if (payload.eventType === "UPDATE") {
+              revalidator.revalidate();
+            }
+          }
+        )
         .on(
           "postgres_changes",
           {
@@ -932,10 +969,14 @@ function useActiveEvents(
                 break;
               case "UPDATE":
                 const { new: updated } = payload;
+
                 setEventState((prevEvents) =>
                   prevEvents.map((event) =>
                     event.id === updated.id
-                      ? (updated as ProductionEvent)
+                      ? ({
+                          ...event,
+                          ...updated,
+                        } as ProductionEvent)
                       : event
                   )
                 );
@@ -951,15 +992,45 @@ function useActiveEvents(
             }
           }
         )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "jobOperation",
+            filter: `id=eq.${operation.id}`,
+          },
+          (payload) => {
+            if (payload.eventType === "UPDATE") {
+              const updated = payload.new;
+              setOperationState((prev) => ({
+                ...prev,
+                ...updated,
+                operationStatus: updated.status ?? prev.operationStatus,
+              }));
+            } else if (payload.eventType === "DELETE") {
+              toast.error("This operation has been deleted");
+              window.location.href = path.to.operations;
+            }
+          }
+        )
         .subscribe();
     }
 
     return () => {
-      if (channelRef.current) carbon?.removeChannel(channelRef.current);
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        carbon?.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
+  });
 
+  useEffect(() => {
+    if (carbon && accessToken && channelRef.current)
+      carbon.realtime.setAuth(accessToken);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, operation.id]);
+  }, [accessToken]);
 
   const getProgress = useCallback(() => {
     const timeNow = now(getLocalTimeZone());
@@ -1029,6 +1100,21 @@ function useActiveEvents(
       progress.setup > 0 || progress.labor > 0 || progress.machine > 0,
     ...activeEvents,
     progress,
+    operation: operationState,
+    activeTab,
+    eventType,
+    scrapModal,
+    reworkModal,
+    completeModal,
+    finishModal,
+    issueModal,
+    isOverdue: operation.jobDueDate
+      ? new Date(operation.jobDueDate) < new Date()
+      : false,
+    selectedMaterial,
+    setSelectedMaterial,
+    setActiveTab,
+    setEventType,
   };
 }
 
@@ -1083,102 +1169,6 @@ function useFiles(job: Job) {
   return {
     downloadFile,
     getFilePath,
-  };
-}
-
-function useOperationState(operation: OperationWithDetails, job: Job) {
-  const scrapModal = useDisclosure();
-  const reworkModal = useDisclosure();
-  const completeModal = useDisclosure();
-  const finishModal = useDisclosure();
-  const issueModal = useDisclosure();
-
-  const [selectedMaterial, setSelectedMaterial] = useState<JobMaterial | null>(
-    null
-  );
-
-  const [activeTab, setActiveTab] = useState("details");
-  const [eventType, setEventType] = useState(() => {
-    if (operation.setupDuration > 0) {
-      return "Setup";
-    }
-    if (operation.laborDuration > 0) {
-      return "Labor";
-    }
-    return "Machine";
-  });
-
-  const { carbon, accessToken } = useCarbon();
-  const [operationState, setOperationState] = useState(operation);
-  const channelRef = useRef<RealtimeChannel | null>(null);
-
-  useEffect(() => {
-    setOperationState(operation);
-  }, [operation]);
-
-  useEffect(() => {
-    if (!carbon || !accessToken) return;
-
-    carbon.realtime.setAuth(accessToken);
-
-    if (!channelRef.current) {
-      channelRef.current = carbon
-        .channel("realtime:core")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=eq.${operation.id}`,
-          },
-          (payload) => {
-            if (payload.eventType === "UPDATE") {
-              const { new: updated } = payload;
-              if (updated.id === operation.id) {
-                setOperationState((prevState) => ({
-                  ...prevState,
-                  quantityComplete: updated.quantityComplete,
-                  quantityScrapped: updated.quantityScrapped,
-                  quantityReworked: updated.quantityReworked,
-                }));
-              }
-            } else if (payload.eventType === "DELETE") {
-              if (payload.old.id === operation.id) {
-                alert("This operation has been deleted.");
-                window.location.href = path.to.operations;
-              }
-            }
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        carbon?.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, operation.id]);
-
-  return {
-    operation: operationState,
-    activeTab,
-    eventType,
-    scrapModal,
-    reworkModal,
-    completeModal,
-    finishModal,
-    issueModal,
-    isOverdue: operation.jobDueDate
-      ? new Date(operation.jobDueDate) < new Date()
-      : false,
-    selectedMaterial,
-    setSelectedMaterial,
-    setActiveTab,
-    setEventType,
   };
 }
 
