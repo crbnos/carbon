@@ -9,7 +9,7 @@ import {
   getQuoteByExternalId,
   selectedLinesValidator,
 } from "~/modules/sales";
-import { getCompany } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings";
 import type { notifyTask } from "~/trigger/notify";
 
 export const config = {
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       message: "Quote not found",
     });
   }
-  const [convert, company, opportunity] = await Promise.all([
+  const [convert, companySettings, opportunity] = await Promise.all([
     convertQuoteToOrder(serviceRole, {
       id: quote.data.id,
       companyId: quote.data.companyId,
@@ -64,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       digitalQuoteAcceptedBy,
       digitalQuoteAcceptedByEmail,
     }),
-    getCompany(serviceRole, quote.data.companyId),
+    getCompanySettings(serviceRole, quote.data.companyId),
     getOpportunityByQuote(serviceRole, quote.data.id),
   ]);
 
@@ -76,8 +76,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  if (company.error) {
-    console.error("Failed to get company", company.error);
+  if (companySettings.error) {
+    console.error("Failed to get company settings", companySettings.error);
     return json({
       success: false,
       message: "Failed to send notification",
@@ -92,15 +92,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  if (company.data?.digitalQuoteNotificationGroup?.length) {
+  if (companySettings.data?.digitalQuoteNotificationGroup?.length) {
     try {
       await tasks.trigger<typeof notifyTask>("notify", {
-        companyId: company.data.id,
+        companyId: companySettings.data.id,
         documentId: quote.data.id,
         event: NotificationEvent.DigitalQuoteResponse,
         recipient: {
           type: "group",
-          groupIds: company.data?.digitalQuoteNotificationGroup ?? [],
+          groupIds: companySettings.data?.digitalQuoteNotificationGroup ?? [],
         },
       });
     } catch (err) {
@@ -113,7 +113,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (file && file instanceof File) {
-    const purchaseOrderDocumentPath = `${company.data.id}/opportunity/${opportunity.data.id}/${file.name}`;
+    const purchaseOrderDocumentPath = `${companySettings.data.id}/opportunity/${opportunity.data.id}/${file.name}`;
 
     const fileUpload = await serviceRole.storage
       .from("private")

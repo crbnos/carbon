@@ -1927,8 +1927,6 @@ export type Database = {
           baseCurrencyCode: string
           city: string | null
           countryCode: string | null
-          digitalQuoteEnabled: boolean
-          digitalQuoteNotificationGroup: string[]
           email: string | null
           fax: string | null
           id: string
@@ -1950,8 +1948,6 @@ export type Database = {
           baseCurrencyCode: string
           city?: string | null
           countryCode?: string | null
-          digitalQuoteEnabled?: boolean
-          digitalQuoteNotificationGroup?: string[]
           email?: string | null
           fax?: string | null
           id?: string
@@ -1973,8 +1969,6 @@ export type Database = {
           baseCurrencyCode?: string
           city?: string | null
           countryCode?: string | null
-          digitalQuoteEnabled?: boolean
-          digitalQuoteNotificationGroup?: string[]
           email?: string | null
           fax?: string | null
           id?: string
@@ -2102,6 +2096,56 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      companySettings: {
+        Row: {
+          digitalQuoteEnabled: boolean
+          digitalQuoteIncludesPurchaseOrders: boolean
+          digitalQuoteNotificationGroup: string[]
+          id: string
+        }
+        Insert: {
+          digitalQuoteEnabled?: boolean
+          digitalQuoteIncludesPurchaseOrders?: boolean
+          digitalQuoteNotificationGroup?: string[]
+          id: string
+        }
+        Update: {
+          digitalQuoteEnabled?: boolean
+          digitalQuoteIncludesPurchaseOrders?: boolean
+          digitalQuoteNotificationGroup?: string[]
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companySettings_companyId_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_companyId_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_companyId_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "companySettings_companyId_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
           },
         ]
       }
@@ -5926,6 +5970,7 @@ export type Database = {
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId: string | null
           name: string
+          notes: Json | null
           readableId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath: string | null
@@ -5947,6 +5992,7 @@ export type Database = {
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId?: string | null
           name: string
+          notes?: Json | null
           readableId: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath?: string | null
@@ -5968,6 +6014,7 @@ export type Database = {
           itemTrackingType?: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId?: string | null
           name?: string
+          notes?: Json | null
           readableId?: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath?: string | null
@@ -23004,8 +23051,6 @@ export type Database = {
           city: string | null
           companyId: string | null
           countryCode: string | null
-          digitalQuoteEnabled: boolean | null
-          digitalQuoteNotificationGroup: string[] | null
           email: string | null
           employeeType: string | null
           fax: string | null
@@ -23151,6 +23196,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
           name: string | null
+          notes: Json | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -25081,6 +25127,7 @@ export type Database = {
           materialSubstance: string | null
           materialSubstanceId: string | null
           name: string | null
+          notes: Json | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -25456,6 +25503,7 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           name: string | null
+          notes: Json | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -29518,6 +29566,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
           name: string | null
+          notes: Json | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -29921,6 +29970,19 @@ export type Database = {
           rfq_id: string
           rfq_readable_id: string
           rfq_line_id: string
+        }[]
+      }
+      create_rfq_from_models_v1: {
+        Args: {
+          company_id: string
+          email: string
+          sequence_number: string
+          model_data: Json[]
+        }
+        Returns: {
+          rfq_id: string
+          rfq_readable_id: string
+          rfq_line_ids: string[]
         }[]
       }
       get_active_job_count: {

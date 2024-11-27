@@ -14,16 +14,23 @@ import {
   Tailwind,
   Text,
 } from "@react-email/components";
-import type { Email } from "../types";
+import type { CompanySettings, Email } from "../types";
 
 interface QuoteEmailProps extends Email {
   quote: Database["public"]["Tables"]["quote"]["Row"];
+  companySettings: CompanySettings;
 }
 
-const QuoteEmail = ({ company, quote, recipient, sender }: QuoteEmailProps) => {
+const QuoteEmail = ({
+  company,
+  companySettings,
+  quote,
+  recipient,
+  sender,
+}: QuoteEmailProps) => {
   const reSubject = `Re: ${quote.quoteId} from ${company.name}`;
   const digitalQuoteUrl =
-    company.digitalQuoteEnabled && !!quote.externalLinkId && VERCEL_URL
+    companySettings.digitalQuoteEnabled && !!quote.externalLinkId && VERCEL_URL
       ? `${VERCEL_URL}/share/quote/${quote.externalLinkId}`
       : undefined;
 
