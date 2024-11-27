@@ -306,6 +306,8 @@ export async function getJobOperations(
   if (args) {
     query = setGenericQueryFilters(query, args, [
       { column: "description", ascending: true },
+      { column: "order", ascending: true },
+      { column: "createdAt", ascending: false },
     ]);
   }
 
