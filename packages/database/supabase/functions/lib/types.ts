@@ -5926,6 +5926,7 @@ export type Database = {
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId: string | null
           name: string
+          notes: Json | null
           readableId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath: string | null
@@ -5947,6 +5948,7 @@ export type Database = {
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId?: string | null
           name: string
+          notes?: Json | null
           readableId: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath?: string | null
@@ -5968,6 +5970,7 @@ export type Database = {
           itemTrackingType?: Database["public"]["Enums"]["itemTrackingType"]
           modelUploadId?: string | null
           name?: string
+          notes?: Json | null
           readableId?: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath?: string | null
@@ -16056,6 +16059,7 @@ export type Database = {
           id: string
           locationId: string | null
           receiptRequestedDate: string | null
+          shippingCost: number | null
           shippingMethodId: string | null
           shippingTermId: string | null
           updatedAt: string | null
@@ -16066,6 +16070,7 @@ export type Database = {
           id: string
           locationId?: string | null
           receiptRequestedDate?: string | null
+          shippingCost?: number | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
           updatedAt?: string | null
@@ -16076,6 +16081,7 @@ export type Database = {
           id?: string
           locationId?: string | null
           receiptRequestedDate?: string | null
+          shippingCost?: number | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
           updatedAt?: string | null
@@ -17406,6 +17412,7 @@ export type Database = {
           notes: string | null
           receiptPromisedDate: string | null
           receiptRequestedDate: string | null
+          shippingCost: number | null
           shippingMethodId: string | null
           shippingTermId: string | null
           supplierId: string | null
@@ -17427,6 +17434,7 @@ export type Database = {
           notes?: string | null
           receiptPromisedDate?: string | null
           receiptRequestedDate?: string | null
+          shippingCost?: number | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
           supplierId?: string | null
@@ -17448,6 +17456,7 @@ export type Database = {
           notes?: string | null
           receiptPromisedDate?: string | null
           receiptRequestedDate?: string | null
+          shippingCost?: number | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
           supplierId?: string | null
@@ -23145,6 +23154,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
           name: string | null
+          notes: Json | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -25075,6 +25085,7 @@ export type Database = {
           materialSubstance: string | null
           materialSubstanceId: string | null
           name: string | null
+          notes: Json | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -25450,6 +25461,7 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           name: string | null
+          notes: Json | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -27273,7 +27285,9 @@ export type Database = {
           salesOrderId: string | null
           salesPersonId: string | null
           salesRfqId: string | null
+          shippingCost: number | null
           status: Database["public"]["Enums"]["quoteStatus"] | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -28081,6 +28095,7 @@ export type Database = {
           revisionId: number | null
           salesOrderId: string | null
           salesPersonId: string | null
+          shippingCost: number | null
           shippingMethodName: string | null
           shippingTermName: string | null
           status: Database["public"]["Enums"]["salesOrderStatus"] | null
@@ -29509,6 +29524,7 @@ export type Database = {
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
           name: string | null
+          notes: Json | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
@@ -29912,6 +29928,19 @@ export type Database = {
           rfq_id: string
           rfq_readable_id: string
           rfq_line_id: string
+        }[]
+      }
+      create_rfq_from_models_v1: {
+        Args: {
+          company_id: string
+          email: string
+          sequence_number: string
+          model_data: Json[]
+        }
+        Returns: {
+          rfq_id: string
+          rfq_readable_id: string
+          rfq_line_ids: string[]
         }[]
       }
       get_active_job_count: {
