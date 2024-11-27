@@ -486,6 +486,7 @@ export const path = {
     newMaterial: `${x}/material/new`,
     newMethodMaterial: `${x}/items/methods/material/new`,
     newMethodOperation: `${x}/items/methods/operation/new`,
+    newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newItemPostingGroup: `${x}/items/groups/new`,

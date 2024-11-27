@@ -3,6 +3,9 @@ import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   Button,
   Card,
@@ -14,9 +17,23 @@ import {
   HStack,
   IconButton,
   Label,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  VStack,
   cn,
   generateHTML,
   useDebounce,
+  useDisclosure,
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
@@ -25,12 +42,21 @@ import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuChevronDown, LuSettings2, LuX } from "react-icons/lu";
+import {
+  LuAlertTriangle,
+  LuChevronDown,
+  LuHammer,
+  LuPenSquare,
+  LuSettings2,
+  LuTrash2,
+  LuX,
+} from "react-icons/lu";
 import type { z } from "zod";
 import { DirectionAwareTabs, TimeTypeIcon } from "~/components";
 import {
   Hidden,
   InputControlled,
+  Number,
   NumberControlled,
   Process,
   Select,
@@ -38,6 +64,7 @@ import {
   StandardFactor,
   Submit,
   SupplierProcess,
+  Tool,
   UnitHint,
   WorkCenter,
   getUnitHint,
@@ -45,7 +72,14 @@ import {
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
-import { methodOperationOrders, operationTypes } from "~/modules/shared";
+import type { OperationTool } from "~/modules/shared";
+import {
+  methodOperationOrders,
+  operationToolValidator,
+  operationTypes,
+} from "~/modules/shared";
+import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.new";
+import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
 
@@ -59,7 +93,7 @@ type ItemWithData = Item & {
 
 type BillOfProcessProps = {
   makeMethodId: string;
-  operations: Operation[];
+  operations: (Operation & { methodOperationTool: OperationTool[] })[];
 };
 
 function makeItems(operations: Operation[]): ItemWithData[] {
@@ -109,7 +143,7 @@ function makeItem(operation: Operation): ItemWithData {
   };
 }
 
-const initialOperation: Omit<Operation, "makeMethodId" | "order"> = {
+const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
   description: "",
   laborTime: 0,
   laborUnit: "Minutes/Piece",
@@ -349,6 +383,24 @@ const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
                 />
               )}
             </div>
+          </div>
+        ),
+      },
+      {
+        id: 2,
+        label: "Tools",
+        content: (
+          <div className="flex w-full flex-col py-4">
+            <ToolsForm
+              tools={
+                operations.find((o) => o.id === item.id)?.methodOperationTool ??
+                []
+              }
+              operationId={item.id!}
+              isDisabled={
+                selectedItemId === null || isTemporaryId(selectedItemId!)
+              }
+            />
           </div>
         ),
       },
@@ -975,4 +1027,182 @@ function OperationForm({
       </motion.div>
     </ValidatedForm>
   );
+}
+
+function ToolPreview({ toolId }: { toolId: string }) {
+  const tools = useTools();
+  const tool = tools.find((t) => t.id === toolId);
+  if (!tool) return null;
+  return (
+    <VStack spacing={0}>
+      <span className="text-sm font-medium">{tool.readableId}</span>
+      <span className="text-xs text-muted-foreground">{tool.name}</span>
+    </VStack>
+  );
+}
+function ToolsForm({
+  operationId,
+  isDisabled,
+  tools,
+}: {
+  operationId: string;
+  isDisabled: boolean;
+  tools: OperationTool[];
+}) {
+  const fetcher = useFetcher<typeof newMethodOperationToolAction>();
+
+  const [selectedTool, setSelectedTool] = useState<OperationTool | null>(null);
+  const addEditDisclosure = useDisclosure();
+  const deleteDisclosure = useDisclosure();
+
+  if (isDisabled && isTemporaryId(operationId)) {
+    return (
+      <Alert className="max-w-[420px] mx-auto my-8">
+        <LuAlertTriangle />
+        <AlertTitle>Cannot add tools to unsaved operation</AlertTitle>
+        <AlertDescription>
+          Please save the operation before adding tools.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {tools.length > 0 && (
+        <Table>
+          <Thead>
+            <Tr>
+              <Th>Tool</Th>
+              <Th>Quantity</Th>
+              <Th />
+            </Tr>
+          </Thead>
+          <Tbody>
+            {tools.map((t) => (
+              <Tr key={t.id}>
+                <Td>
+                  <ToolPreview toolId={t.toolId} />
+                </Td>
+                <Td>{t.quantity}</Td>
+                <Td className="flex justify-end gap-2 items-center">
+                  <IconButton
+                    aria-label="Edit Tool"
+                    icon={<LuPenSquare />}
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      flushSync(() => {
+                        setSelectedTool(t);
+                      });
+                      addEditDisclosure.onOpen();
+                    }}
+                  />
+                  <IconButton
+                    aria-label="Remove Tool"
+                    icon={<LuTrash2 />}
+                    size="sm"
+                    variant="secondary"
+                  />
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      )}
+
+      <div className="flex items-center justify-center border border-dashed text-center px-6 py-8 rounded-lg">
+        <Button
+          variant="secondary"
+          leftIcon={<LuHammer />}
+          onClick={() => {
+            flushSync(() => {
+              setSelectedTool(null);
+            });
+            addEditDisclosure.onOpen();
+          }}
+        >
+          New Tool
+        </Button>
+      </div>
+      {addEditDisclosure.isOpen && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              addEditDisclosure.onClose();
+            }
+          }}
+        >
+          <ModalContent>
+            <ValidatedForm
+              action={path.to.newMethodOperationTool}
+              method="post"
+              validator={operationToolValidator}
+              fetcher={fetcher}
+              resetAfterSubmit
+              onSubmit={() => {
+                flushSync(() => {
+                  setSelectedTool(null);
+                });
+                addEditDisclosure.onClose();
+              }}
+              defaultValues={{
+                id: selectedTool?.id,
+                toolId: selectedTool?.toolId ?? "",
+                quantity: selectedTool?.quantity ?? 1,
+                operationId,
+              }}
+              className="w-full"
+            >
+              <ModalHeader>
+                <ModalTitle>
+                  {selectedTool ? "Edit Tool" : "Add Tool"}
+                </ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <Hidden name="operationId" />
+                <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+                  <Tool name="toolId" label="Tool" autoFocus />
+                  <Number name="quantity" label="Quantity" />
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="secondary" onClick={addEditDisclosure.onClose}>
+                  Cancel
+                </Button>
+                <Submit
+                  isDisabled={isDisabled || fetcher.state !== "idle"}
+                  isLoading={fetcher.state !== "idle"}
+                >
+                  Save
+                </Submit>
+              </ModalFooter>
+            </ValidatedForm>
+          </ModalContent>
+        </Modal>
+      )}
+    </div>
+  );
+
+  // return (
+  //   <ValidatedForm
+  //     defaultValues={{ itemId: undefined }}
+  //     validator={z.object({
+  //       itemId: z.string().min(1, { message: "Item is required" }),
+  //     })}
+  //     className="w-full"
+  //   >
+  //     <Tool
+  //       name="toolId"
+  //       inline
+  //       isReadOnly={isDisabled}
+  //       onChange={(value) => {
+  //         if (value) {
+  //           onAddTool(value.value);
+  //         }
+  //       }}
+  //     />
+  //   </ValidatedForm>
+  // );
 }

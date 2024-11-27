@@ -60,6 +60,15 @@ export const feedbackValidator = z.object({
   location: z.string(),
 });
 
+export const operationToolValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  operationId: z.string().min(1, { message: "Operation is required" }),
+  toolId: z.string().min(1, { message: "Tool is required" }),
+  quantity: zfd.numeric(
+    z.number().min(0.000001, { message: "Quantity is required" })
+  ),
+});
+
 export const standardFactorType = [
   "Hours/Piece",
   "Hours/100 Pieces",

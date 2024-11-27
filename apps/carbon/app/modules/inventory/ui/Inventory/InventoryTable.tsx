@@ -181,9 +181,11 @@ const InventoryTable = memo(
             const unitOfMeasure = unitOfMeasures.find(
               (uom) => uom.code === row.original.unitOfMeasureCode
             );
-            return unitOfMeasure
-              ? unitOfMeasure.name
-              : row.original.unitOfMeasureCode;
+            return (
+              <Enumerable
+                value={unitOfMeasure?.name ?? row.original.unitOfMeasureCode}
+              />
+            );
           },
           meta: {
             icon: <LuRuler />,

@@ -1,7 +1,9 @@
+import type { z } from "zod";
 import type { StorageItem } from "~/types";
 import type {
   methodItemType,
   methodType,
+  operationToolValidator,
   standardFactorType,
 } from "./shared.models";
 import type { getNotes } from "./shared.service";
@@ -40,6 +42,8 @@ export type MethodType = (typeof methodType)[number];
 export type Note = NonNullable<
   Awaited<ReturnType<typeof getNotes>>["data"]
 >[number];
+
+export type OperationTool = z.infer<typeof operationToolValidator>;
 
 export type OptimisticFileObject = Omit<
   StorageItem,

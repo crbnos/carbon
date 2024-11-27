@@ -65,6 +65,7 @@ import SupplierStatus from "./SupplierStatus";
 import SupplierType from "./SupplierType";
 import Suppliers from "./Suppliers";
 import Tags from "./Tags";
+import Tool from "./Tool";
 import UnitHint, { getUnitHint } from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";
 import User from "./User";
@@ -138,6 +139,7 @@ export {
   TextArea,
   TimePicker,
   Timezone,
+  Tool,
   UnitHint,
   UnitOfMeasure,
   User,
