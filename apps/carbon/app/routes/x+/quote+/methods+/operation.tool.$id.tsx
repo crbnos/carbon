@@ -3,13 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { upsertMethodOperationTool } from "~/modules/items";
+import { upsertQuoteOperationTool } from "~/modules/sales";
 import { operationToolValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts",
+    update: "sales",
   });
 
   const { id } = params;
@@ -26,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...data } = validation.data;
 
-  const update = await upsertMethodOperationTool(client, {
+  const update = await upsertQuoteOperationTool(client, {
     id,
     ...data,
     companyId,
@@ -40,26 +40,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(update.error, "Failed to update method operation tool")
+        error(update.error, "Failed to update  operation tool")
       )
     );
   }
 
-  const methodOperationToolId = update.data?.id;
-  if (!methodOperationToolId) {
+  const operationToolId = update.data?.id;
+  if (!operationToolId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(update.error, "Failed to update method operation tool")
+        error(update.error, "Failed to update  operation tool")
       )
     );
   }
 
   return json(
-    { id: methodOperationToolId },
-    await flash(request, success("Method operation tool updated"))
+    { id: operationToolId },
+    await flash(request, success("Quote operation tool updated"))
   );
 }

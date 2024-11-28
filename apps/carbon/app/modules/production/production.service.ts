@@ -5,6 +5,7 @@ import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import type { operationToolValidator } from "../shared";
 import type {
   jobMaterialValidator,
   jobOperationStatus,
@@ -40,6 +41,13 @@ export async function deleteJobOperation(
   jobOperationId: string
 ) {
   return client.from("jobOperation").delete().eq("id", jobOperationId);
+}
+
+export async function deleteJobOperationTool(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("jobOperationTool").delete().eq("id", id);
 }
 
 export async function deleteProductionEvent(
@@ -331,7 +339,9 @@ export async function getJobOperationsByMethodId(
 ) {
   return client
     .from("jobOperation")
-    .select("*")
+    .select(
+      "*, jobOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
+    )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
 }
@@ -778,6 +788,35 @@ export async function upsertJobOperation(
   return client
     .from("jobOperation")
     .insert([jobOperation])
+    .select("id")
+    .single();
+}
+
+export async function upsertJobOperationTool(
+  client: SupabaseClient<Database>,
+  jobOperationTool:
+    | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in jobOperationTool) {
+    return client
+      .from("jobOperationTool")
+      .insert(jobOperationTool)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("jobOperationTool")
+    .update(sanitize(jobOperationTool))
+    .eq("id", jobOperationTool.id)
     .select("id")
     .single();
 }

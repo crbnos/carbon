@@ -631,22 +631,6 @@ export async function getMethodOperationsByMakeMethodId(
     .order("order", { ascending: true });
 }
 
-export async function getMethodOperationToolsByOperationIds(
-  client: SupabaseClient<Database>,
-  operationIds: string[]
-) {
-  if (operationIds.length === 0) {
-    return {
-      data: [],
-      error: null,
-    };
-  }
-  return client
-    .from("methodOperationTool")
-    .select("*")
-    .in("operationId", operationIds);
-}
-
 type Method = NonNullable<
   Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
 >[number];

@@ -3,6 +3,9 @@ import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   Button,
   Card,
@@ -10,27 +13,44 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Editor,
   HStack,
   IconButton,
   Label,
+  VStack,
   cn,
   generateHTML,
   useDebounce,
+  useDisclosure,
 } from "@carbon/react";
+import { formatRelativeTime } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuChevronDown, LuDollarSign, LuSettings2, LuX } from "react-icons/lu";
+import {
+  LuAlertTriangle,
+  LuChevronDown,
+  LuDollarSign,
+  LuHammer,
+  LuMoreVertical,
+  LuPlusCircle,
+  LuSettings2,
+  LuX,
+} from "react-icons/lu";
 import type { z } from "zod";
-import { DirectionAwareTabs, TimeTypeIcon } from "~/components";
+import { DirectionAwareTabs, EmployeeAvatar, TimeTypeIcon } from "~/components";
 import {
   Hidden,
   InputControlled,
+  Number,
   NumberControlled,
   Process,
   Select,
@@ -38,14 +58,24 @@ import {
   StandardFactor,
   Submit,
   SupplierProcess,
+  Tool,
   UnitHint,
   WorkCenter,
   getUnitHint,
 } from "~/components/Form";
+import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { methodOperationOrders, operationTypes } from "~/modules/shared";
+import type { OperationTool } from "~/modules/shared";
+import {
+  methodOperationOrders,
+  operationToolValidator,
+  operationTypes,
+} from "~/modules/shared";
+import type { action as editQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.$id";
+import type { action as newQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.new";
+import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { quoteOperationValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
@@ -60,7 +90,9 @@ type ItemWithData = Item & {
 
 type QuoteBillOfProcessProps = {
   quoteMakeMethodId: string;
-  operations: Operation[];
+  operations: (Operation & {
+    quoteOperationTool: OperationTool[];
+  })[];
 };
 
 function makeItems(operations: Operation[]): ItemWithData[] {
@@ -110,7 +142,10 @@ function makeItem(operation: Operation): ItemWithData {
   };
 }
 
-const initialOperation: Omit<Operation, "quoteMakeMethodId" | "order"> = {
+const initialOperation: Omit<
+  Operation,
+  "quoteMakeMethodId" | "order" | "quoteOperationTool"
+> = {
   description: "",
   laborRate: 0,
   laborTime: 0,
@@ -363,6 +398,24 @@ const QuoteBillOfProcess = ({
                 />
               )}
             </div>
+          </div>
+        ),
+      },
+      {
+        id: 2,
+        label: "Tools",
+        content: (
+          <div className="flex w-full flex-col py-4">
+            <ToolsForm
+              tools={
+                operations.find((o) => o.id === item.id)?.quoteOperationTool ??
+                []
+              }
+              operationId={item.id!}
+              isDisabled={
+                selectedItemId === null || isTemporaryId(selectedItemId!)
+              }
+            />
           </div>
         ),
       },
@@ -1204,5 +1257,214 @@ function OperationForm({
         </motion.div>
       </motion.div>
     </ValidatedForm>
+  );
+}
+
+function ToolsListItem({
+  tool: { toolId, quantity, id, updatedBy, updatedAt, createdBy, createdAt },
+  operationId,
+  className,
+}: {
+  tool: OperationTool;
+  operationId: string;
+  className?: string;
+}) {
+  const disclosure = useDisclosure();
+  const deleteModalDisclosure = useDisclosure();
+  const submitted = useRef(false);
+  const fetcher = useFetcher<typeof editQuoteOperationToolAction>();
+
+  useEffect(() => {
+    if (submitted.current && fetcher.state === "idle") {
+      disclosure.onClose();
+      submitted.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state]);
+
+  const tools = useTools();
+  const tool = tools.find((t) => t.id === toolId);
+  if (!tool || !id) return null;
+
+  const isUpdated = updatedBy !== null;
+  const person = isUpdated ? updatedBy : createdBy;
+  const date = updatedAt ?? createdAt;
+
+  return (
+    <div className={cn("border-b p-6", className)}>
+      {disclosure.isOpen ? (
+        <ValidatedForm
+          action={path.to.quoteOperationTool(id)}
+          method="post"
+          validator={operationToolValidator}
+          fetcher={fetcher}
+          resetAfterSubmit
+          onSubmit={() => {
+            disclosure.onClose();
+          }}
+          defaultValues={{
+            id: id,
+            toolId: toolId ?? "",
+            quantity: quantity ?? 1,
+            operationId,
+          }}
+          className="w-full"
+        >
+          <Hidden name="operationId" />
+          <VStack spacing={4}>
+            <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+              <Tool name="toolId" label="Tool" autoFocus />
+              <Number name="quantity" label="Quantity" />
+            </div>
+            <HStack className="w-full justify-end" spacing={2}>
+              <Button variant="secondary" onClick={disclosure.onClose}>
+                Cancel
+              </Button>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                Save
+              </Submit>
+            </HStack>
+          </VStack>
+        </ValidatedForm>
+      ) : (
+        <div className="flex flex-1 justify-between items-center w-full">
+          <HStack spacing={4} className="w-1/2">
+            <HStack spacing={4} className="flex-1">
+              <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+                <LuHammer className="size-4" />
+              </div>
+              <VStack spacing={0}>
+                <span className="text-sm font-medium">{tool.readableId}</span>
+                <span className="text-xs text-muted-foreground">
+                  {tool.name}
+                </span>
+              </VStack>
+              <span className="text-base text-muted-foreground text-right">
+                {quantity}
+              </span>
+            </HStack>
+          </HStack>
+          <div className="flex items-center justify-end gap-2">
+            <HStack spacing={2}>
+              <span className="text-xs text-muted-foreground">
+                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+              </span>
+              <EmployeeAvatar employeeId={person} withName={false} />
+            </HStack>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="Open menu"
+                  icon={<LuMoreVertical />}
+                  variant="ghost"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={disclosure.onOpen}>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={deleteModalDisclosure.onOpen}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      )}
+      {deleteModalDisclosure.isOpen && (
+        <ConfirmDelete
+          action={path.to.deleteQuoteOperationTool(id)}
+          isOpen={deleteModalDisclosure.isOpen}
+          name={tool.readableId}
+          text={`Are you sure you want to delete ${tool.readableId} from this operation? This cannot be undone.`}
+          onCancel={() => {
+            deleteModalDisclosure.onClose();
+          }}
+          onSubmit={() => {
+            deleteModalDisclosure.onClose();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ToolsForm({
+  operationId,
+  isDisabled,
+  tools,
+}: {
+  operationId: string;
+  isDisabled: boolean;
+  tools: OperationTool[];
+}) {
+  const fetcher = useFetcher<typeof newQuoteOperationToolAction>();
+
+  if (isDisabled && isTemporaryId(operationId)) {
+    return (
+      <Alert className="max-w-[420px] mx-auto my-8">
+        <LuAlertTriangle />
+        <AlertTitle>Cannot add tools to unsaved operation</AlertTitle>
+        <AlertDescription>
+          Please save the operation before adding tools.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="p-6 border rounded-lg">
+        <ValidatedForm
+          action={path.to.newQuoteOperationTool}
+          method="post"
+          validator={operationToolValidator}
+          fetcher={fetcher}
+          resetAfterSubmit
+          defaultValues={{
+            id: undefined,
+            toolId: "",
+            quantity: 1,
+            operationId,
+          }}
+          className="w-full"
+        >
+          <Hidden name="operationId" />
+          <VStack spacing={4}>
+            <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+              <Tool name="toolId" label="Tool" autoFocus />
+              <Number name="quantity" label="Quantity" />
+            </div>
+
+            <Submit
+              leftIcon={<LuPlusCircle />}
+              isDisabled={isDisabled || fetcher.state !== "idle"}
+              isLoading={fetcher.state !== "idle"}
+            >
+              Add New
+            </Submit>
+          </VStack>
+        </ValidatedForm>
+      </div>
+
+      {tools.length > 0 && (
+        <div className="border rounded-lg">
+          {tools.map((t, index) => (
+            <ToolsListItem
+              key={t.id}
+              tool={t}
+              operationId={operationId}
+              className={index === tools.length - 1 ? "border-none" : ""}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

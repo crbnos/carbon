@@ -254,6 +254,8 @@ export const path = {
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
     deleteJobMaterial: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
+    deleteJobOperationTool: (id: string) =>
+      generatePath(`${x}/job/methods/operation/tool/delete/${id}`),
     deleteMaterialForm: (id: string) =>
       generatePath(`${x}/items/forms/delete/${id}`),
     deleteMaterialSubstance: (id: string) =>
@@ -290,6 +292,9 @@ export const path = {
       generatePath(
         `${x}/quote/methods/${quoteId}/${lineId}/material/delete/${id}`
       ),
+    deleteQuoteOperationTool: (id: string) =>
+      generatePath(`${x}/quote/methods/operation/tool/delete/${id}`),
+
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/delete/${id}`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/${id}/delete`),
@@ -389,6 +394,8 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/operation/${id}`),
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsOrder: `${x}/job/methods/operation/order`,
+    jobOperationTool: (id: string) =>
+      generatePath(`${x}/job/methods/operation/tool/${id}`),
     jobOperationStatus: `${x}/job/methods/operation/status`,
     jobProductionEvents: (id: string) => generatePath(`${x}/job/${id}/events`),
     jobProductionQuantities: (id: string) =>
@@ -486,6 +493,7 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/material/new`),
     newJobOperation: (jobId: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/new`),
+    newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaterial: `${x}/material/new`,
     newMethodMaterial: `${x}/items/methods/material/new`,
@@ -515,6 +523,7 @@ export const path = {
       generatePath(`${x}/quote/${id}/${lineId}/cost/new`),
     newQuoteOperation: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/new`),
+    newQuoteOperationTool: `${x}/quote/methods/operation/tool/new`,
     newQuoteMaterial: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/new`),
     newReceipt: `${x}/receipt/new`,
@@ -672,6 +681,8 @@ export const path = {
     quoteOperation: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,
+    quoteOperationTool: (id: string) =>
+      generatePath(`${x}/quote/methods/operation/tool/${id}`),
     quotePayment: (id: string) => generatePath(`${x}/quote/${id}/payment`),
     quoteShipment: (id: string) => generatePath(`${x}/quote/${id}/shipment`),
     quoteStatus: (id: string) => generatePath(`${x}/quote/${id}/status`),

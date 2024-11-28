@@ -72,6 +72,7 @@ import {
   operationToolValidator,
   operationTypes,
 } from "~/modules/shared";
+import type { action as editMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.$id";
 import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.new";
 import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -1035,7 +1036,7 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof newMethodOperationToolAction>();
+  const fetcher = useFetcher<typeof editMethodOperationToolAction>();
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
