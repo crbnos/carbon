@@ -15,8 +15,8 @@ CREATE TABLE "methodOperationTool" (
   "updatedBy" TEXT,
 
   CONSTRAINT "methodOperationTool_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "methodOperationTool_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "methodOperation"("id"),
-  CONSTRAINT "methodOperationTool_toolId_fkey" FOREIGN KEY ("toolId") REFERENCES "tool"("itemId"),
+  CONSTRAINT "methodOperationTool_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "methodOperation"("id") ON DELETE CASCADE,
+  CONSTRAINT "methodOperationTool_toolId_fkey" FOREIGN KEY ("toolId") REFERENCES "tool"("itemId") ON DELETE CASCADE,
   CONSTRAINT "methodOperationTool_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
   CONSTRAINT "methodOperationTool_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
   CONSTRAINT "methodOperationTool_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
@@ -66,8 +66,8 @@ CREATE TABLE "quoteOperationTool" (
   "updatedBy" TEXT,
 
   CONSTRAINT "quoteOperationTool_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "quoteOperationTool_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "quoteOperation"("id"),
-  CONSTRAINT "quoteOperationTool_toolId_fkey" FOREIGN KEY ("toolId") REFERENCES "tool"("itemId"),
+  CONSTRAINT "quoteOperationTool_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "quoteOperation"("id") ON DELETE CASCADE,
+  CONSTRAINT "quoteOperationTool_toolId_fkey" FOREIGN KEY ("toolId") REFERENCES "tool"("itemId") ON DELETE CASCADE,
   CONSTRAINT "quoteOperationTool_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
   CONSTRAINT "quoteOperationTool_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
   CONSTRAINT "quoteOperationTool_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
@@ -116,8 +116,8 @@ CREATE TABLE "jobOperationTool" (
   "updatedBy" TEXT,
 
   CONSTRAINT "jobOperationTool_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "jobOperationTool_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "jobOperation"("id"),
-  CONSTRAINT "jobOperationTool_toolId_fkey" FOREIGN KEY ("toolId") REFERENCES "tool"("itemId"),
+  CONSTRAINT "jobOperationTool_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "jobOperation"("id") ON DELETE CASCADE,
+  CONSTRAINT "jobOperationTool_toolId_fkey" FOREIGN KEY ("toolId") REFERENCES "tool"("itemId") ON DELETE CASCADE,
   CONSTRAINT "jobOperationTool_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
   CONSTRAINT "jobOperationTool_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
   CONSTRAINT "jobOperationTool_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
