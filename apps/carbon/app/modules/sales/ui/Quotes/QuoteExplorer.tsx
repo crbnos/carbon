@@ -25,7 +25,7 @@ import {
   LuChevronDown,
   LuCircle,
   LuClock3,
-  LuPlus,
+  LuPlusCircle,
   LuTrash,
   LuXCircle,
 } from "react-icons/lu";
@@ -133,7 +133,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
               {permissions.can("update", "sales") && (
                 <Button
                   isDisabled={isDisabled}
-                  leftIcon={<LuPlus />}
+                  leftIcon={<LuPlusCircle />}
                   variant="secondary"
                   onClick={newQuoteLineDisclosure.onOpen}
                 >
@@ -150,7 +150,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
                 ref={newButtonRef}
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
-                leftIcon={<LuPlus />}
+                leftIcon={<LuPlusCircle />}
                 variant="secondary"
                 onClick={newQuoteLineDisclosure.onOpen}
               >

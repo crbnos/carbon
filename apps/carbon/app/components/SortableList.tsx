@@ -68,7 +68,7 @@ function SortableListItem<T>({
           className={cn(
             "relative z-auto grow",
             "h-full rounded-md bg-card",
-            "border border-border shadow-md",
+            "border border-border shadow-sm",
             "dark:border-0 dark:shadow-[0px_1px_0px_0px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_rgba(0,0,0,.1),0px_2px_2px_0px_rgba(0,0,0,.1),0px_4px_4px_0px_rgba(0,0,0,.1),0px_8px_8px_0px_rgba(0,0,0,.1)]",
             item.checked ? "cursor-not-allowed" : "cursor-grab",
             item.checked && !isDragging ? "w-7/10" : "w-full"

@@ -16,7 +16,7 @@ import {
   getQuote,
   quoteFinalizeValidator,
 } from "~/modules/sales";
-import { getCompany } from "~/modules/settings";
+import { getCompany, getCompanySettings } from "~/modules/settings";
 import { upsertExternalLink } from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
@@ -166,14 +166,18 @@ export async function action(args: ActionFunctionArgs) {
       try {
         if (!customerContactId) throw new Error("Customer contact is required");
 
-        const [company, customer, customerContact, user] = await Promise.all([
-          getCompany(client, companyId),
-          getCustomer(client, quote.data.customerId!),
-          getCustomerContact(client, customerContactId),
-          getUser(client, userId),
-        ]);
+        const [company, companySettings, customer, customerContact, user] =
+          await Promise.all([
+            getCompany(client, companyId),
+            getCompanySettings(client, companyId),
+            getCustomer(client, quote.data.customerId!),
+            getCustomerContact(client, customerContactId),
+            getUser(client, userId),
+          ]);
 
         if (!company.data) throw new Error("Failed to get company");
+        if (!companySettings.data)
+          throw new Error("Failed to get company settings");
         if (!customer.data) throw new Error("Failed to get customer");
         if (!customerContact.data)
           throw new Error("Failed to get customer contact");
@@ -181,6 +185,7 @@ export async function action(args: ActionFunctionArgs) {
 
         const emailTemplate = QuoteEmail({
           company: company.data,
+          companySettings: companySettings.data,
           // @ts-ignore
           quote: quote.data,
           recipient: {

@@ -32,12 +32,6 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
             )}`,
           },
           {
-            name: "Fixtures",
-            to: `${path.to.inventory}?filter=${encodeURIComponent(
-              "type:eq:Fixture"
-            )}`,
-          },
-          {
             name: "Consumables",
             to: `${path.to.inventory}?filter=${encodeURIComponent(
               "type:eq:Consumable"

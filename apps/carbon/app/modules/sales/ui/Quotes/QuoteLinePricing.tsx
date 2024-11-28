@@ -32,7 +32,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuInfo,
-  LuPlus,
+  LuPlusCircle,
   LuRefreshCcw,
   LuTrash,
 } from "react-icons/lu";
@@ -179,7 +179,6 @@ const QuoteLinePricing = ({
     const costs = getLineCosts(quantity);
     const totalCost =
       (costs.consumableCost +
-        costs.fixtureCost +
         costs.laborCost +
         costs.machineCost +
         costs.materialCost +
@@ -395,7 +394,6 @@ const QuoteLinePricing = ({
                       formatOptions={{
                         style: "currency",
                         currency: baseCurrency,
-                        maximumFractionDigits: 4,
                       }}
                       minValue={0}
                       onChange={(value) => {
@@ -479,7 +477,6 @@ const QuoteLinePricing = ({
                       formatOptions={{
                         style: "currency",
                         currency: baseCurrency,
-                        maximumFractionDigits: 4,
                       }}
                       minValue={0}
                       onChange={(value) => {
@@ -624,7 +621,6 @@ const QuoteLinePricing = ({
                       formatOptions={{
                         style: "currency",
                         currency: baseCurrency,
-                        maximumFractionDigits: 4,
                       }}
                       minValue={0}
                       onChange={(value) => {
@@ -715,7 +711,6 @@ const QuoteLinePricing = ({
                               formatOptions={{
                                 style: "currency",
                                 currency: baseCurrency,
-                                maximumFractionDigits: 4,
                               }}
                               onChange={(value) => {
                                 if (
@@ -759,7 +754,7 @@ const QuoteLinePricing = ({
                     <Button
                       className="-ml-3"
                       type="submit"
-                      rightIcon={<LuPlus />}
+                      rightIcon={<LuPlusCircle />}
                       variant="ghost"
                       isLoading={
                         fetcher.formAction ===

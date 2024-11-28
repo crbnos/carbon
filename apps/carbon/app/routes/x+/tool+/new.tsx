@@ -67,6 +67,7 @@ export default function ToolsNewRoute() {
     unitOfMeasureCode: "EA",
     unitCost: 0,
     active: true,
+    tags: [],
   };
 
   return (

@@ -254,12 +254,16 @@ export const path = {
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
     deleteJobMaterial: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
+    deleteJobOperationTool: (id: string) =>
+      generatePath(`${x}/job/methods/operation/tool/delete/${id}`),
     deleteMaterialForm: (id: string) =>
       generatePath(`${x}/items/forms/delete/${id}`),
     deleteMaterialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/delete/${id}`),
     deleteMethodMaterial: (id: string) =>
       generatePath(`${x}/items/methods/material/delete/${id}`),
+    deleteMethodOperationTool: (id: string) =>
+      generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
@@ -288,6 +292,9 @@ export const path = {
       generatePath(
         `${x}/quote/methods/${quoteId}/${lineId}/material/delete/${id}`
       ),
+    deleteQuoteOperationTool: (id: string) =>
+      generatePath(`${x}/quote/methods/operation/tool/delete/${id}`),
+
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/delete/${id}`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/${id}/delete`),
@@ -337,37 +344,6 @@ export const path = {
     externalQuote: (id: string) => generatePath(`/share/quote/${id}`),
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
-    fixture: (id: string) => generatePath(`${x}/fixture/${id}`),
-    fixtures: `${x}/items/fixtures`,
-    fixtureCosting: (id: string) => generatePath(`${x}/fixture/${id}/costing`),
-    fixtureDetails: (id: string) => generatePath(`${x}/fixture/${id}/details`),
-    fixtureInventory: (id: string) =>
-      generatePath(`${x}/fixture/${id}/inventory`),
-    fixtureInventoryLocation: (id: string, locationId: string) =>
-      generatePath(`${x}/fixture/${id}/inventory?location=${locationId}`),
-    fixtureMakeMethod: (id: string) =>
-      generatePath(`${x}/fixture/${id}/manufacturing/method`),
-    fixtureManufacturing: (id: string) =>
-      generatePath(`${x}/fixture/${id}/manufacturing`),
-    fixtureManufacturingMaterial: (
-      itemId: string,
-      makeMethodId: string,
-      methodMaterialId: string
-    ) =>
-      generatePath(
-        `${x}/fixture/${itemId}/manufacturing/${makeMethodId}/${methodMaterialId}`
-      ),
-    fixturePlanning: (id: string) =>
-      generatePath(`${x}/fixture/${id}/planning`),
-    fixturePlanningLocation: (id: string, locationId: string) =>
-      generatePath(`${x}/fixture/${id}/planning?location=${locationId}`),
-    fixturePurchasing: (id: string) =>
-      generatePath(`${x}/fixture/${id}/purchasing`),
-    fixtureRoot: `${x}/fixture`,
-    fixtureSupplier: (itemId: string, id: string) =>
-      generatePath(`${x}/fixture/${itemId}/suppliers/${id}`),
-    fixtureSuppliers: (id: string) =>
-      generatePath(`${x}/fixture/${id}/suppliers`),
     forgotPassword: "/forgot-password",
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),
     groups: `${x}/users/groups`,
@@ -418,6 +394,8 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/operation/${id}`),
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsOrder: `${x}/job/methods/operation/order`,
+    jobOperationTool: (id: string) =>
+      generatePath(`${x}/job/methods/operation/tool/${id}`),
     jobOperationStatus: `${x}/job/methods/operation/status`,
     jobProductionEvents: (id: string) => generatePath(`${x}/job/${id}/events`),
     jobProductionQuantities: (id: string) =>
@@ -469,6 +447,8 @@ export const path = {
       generatePath(`${x}/items/methods/operation/${id}`),
     methodOperations: `${x}/items/methods/operations`,
     methodOperationsOrder: `${x}/items/methods/operation/order`,
+    methodOperationTool: (id: string) =>
+      generatePath(`${x}/items/methods/operation/tool/${id}`),
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
     newAccountingSubcategory: (id: string) =>
@@ -513,10 +493,12 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/material/new`),
     newJobOperation: (jobId: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/new`),
+    newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaterial: `${x}/material/new`,
     newMethodMaterial: `${x}/items/methods/material/new`,
     newMethodOperation: `${x}/items/methods/operation/new`,
+    newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newItemPostingGroup: `${x}/items/groups/new`,
@@ -541,6 +523,7 @@ export const path = {
       generatePath(`${x}/quote/${id}/${lineId}/cost/new`),
     newQuoteOperation: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/new`),
+    newQuoteOperationTool: `${x}/quote/methods/operation/tool/new`,
     newQuoteMaterial: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/new`),
     newReceipt: `${x}/receipt/new`,
@@ -698,6 +681,8 @@ export const path = {
     quoteOperation: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,
+    quoteOperationTool: (id: string) =>
+      generatePath(`${x}/quote/methods/operation/tool/${id}`),
     quotePayment: (id: string) => generatePath(`${x}/quote/${id}/payment`),
     quoteShipment: (id: string) => generatePath(`${x}/quote/${id}/shipment`),
     quoteStatus: (id: string) => generatePath(`${x}/quote/${id}/status`),
@@ -821,6 +806,19 @@ export const path = {
     toolInventory: (id: string) => generatePath(`${x}/tool/${id}/inventory`),
     toolInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/tool/${id}/inventory?location=${locationId}`),
+    toolMakeMethod: (id: string) =>
+      generatePath(`${x}/tool/${id}/manufacturing/method`),
+    toolManufacturing: (id: string) =>
+      generatePath(`${x}/tool/${id}/manufacturing`),
+    toolManufacturingMaterial: (
+      itemId: string,
+      makeMethodId: string,
+      methodMaterialId: string
+    ) =>
+      generatePath(
+        `${x}/tool/${itemId}/manufacturing/${makeMethodId}/${methodMaterialId}`
+      ),
+
     toolPlanning: (id: string) => generatePath(`${x}/tool/${id}/planning`),
     toolPlanningLocation: (id: string, locationId: string) =>
       generatePath(`${x}/tool/${id}/planning?location=${locationId}`),

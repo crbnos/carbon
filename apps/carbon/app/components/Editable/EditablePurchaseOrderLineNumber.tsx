@@ -90,7 +90,6 @@ const EditablePurchaseOrderLineNumber =
         case "Material":
         case "Part":
         case "Tool":
-        case "Fixture":
         case "Consumable":
           const [item, buyMethod, inventory] = await Promise.all([
             client
@@ -218,14 +217,9 @@ const EditablePurchaseOrderLineNumber =
       if (!row.purchaseOrderLineType) return;
 
       if (
-        [
-          "Part",
-          "Service",
-          "Material",
-          "Tool",
-          "Fixture",
-          "Consumable",
-        ].includes(row.purchaseOrderLineType)
+        ["Part", "Service", "Material", "Tool", "Consumable"].includes(
+          row.purchaseOrderLineType
+        )
       ) {
         onItemChange(newValue);
       } else if (row.purchaseOrderLineType === "G/L Account") {
@@ -253,10 +247,9 @@ export default EditablePurchaseOrderLineNumber;
 function getValue(row: PurchaseOrderLine) {
   switch (row.purchaseOrderLineType) {
     case "Part":
-    case "Service":
+    // case "Service":
     case "Material":
     case "Tool":
-    case "Fixture":
     case "Consumable":
       return row.itemId;
 

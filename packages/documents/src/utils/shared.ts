@@ -5,6 +5,5 @@ export const getCurrencyFormatter = (
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: baseCurrencyCode,
-    maximumFractionDigits: 4,
   });
 };

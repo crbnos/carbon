@@ -36,14 +36,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (material.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(request, error(material.error, "Failed to load material"))
     );
   }
 
   if (methodOperations.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(
         request,
         error(methodOperations.error, "Failed to load method operations")
@@ -52,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   if (methodMaterials.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(
         request,
         error(methodMaterials.error, "Failed to load method materials")
@@ -63,7 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const item = await getItem(client, material.data.itemId);
   if (item.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(request, error(item.error, "Failed to load item"))
     );
   }
@@ -106,7 +106,7 @@ export default function MethodMaterialMakePage() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={item.id} type="Fixture" />
+      <MakeMethodTools itemId={item.id} type="Tool" />
       <ItemForm
         key={`item:${itemId}:${makeMethodId}:${materialId}`}
         type={item.type}

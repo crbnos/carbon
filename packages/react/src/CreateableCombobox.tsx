@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
-import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuCheck, LuPlusCircle, LuSettings2, LuX } from "react-icons/lu";
 import {
   Command,
   CommandGroup,
@@ -34,6 +34,7 @@ export type CreatableComboboxProps = Omit<
     value: string,
     options: { value: string; label: string; helper?: string }[]
   ) => React.ReactNode;
+  inlineAddLabel?: string;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
   itemHeight?: number;
@@ -53,6 +54,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       label,
       itemHeight = 40,
       inline,
+      inlineAddLabel,
       onCreateOption,
       ...props
     },
@@ -76,15 +78,22 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             {inline ? (
-              <IconButton
-                size={size ?? "sm"}
-                variant="secondary"
-                aria-label={value ? "Edit" : "Add"}
-                icon={value ? <LuSettings2 /> : <LuPlus />}
-                ref={ref}
-                isDisabled={isReadOnly}
-                onClick={() => setOpen(true)}
-              />
+              <HStack>
+                <IconButton
+                  size={size ?? "sm"}
+                  variant="secondary"
+                  aria-label={value ? "Edit" : "Add"}
+                  icon={value ? <LuSettings2 /> : <LuPlusCircle />}
+                  ref={ref}
+                  isDisabled={isReadOnly}
+                  onClick={() => setOpen(true)}
+                />
+                {!value && inlineAddLabel && (
+                  <span className="text-muted-foreground text-sm">
+                    {inlineAddLabel}
+                  </span>
+                )}
+              </HStack>
             ) : (
               <CommandTrigger
                 size={size}

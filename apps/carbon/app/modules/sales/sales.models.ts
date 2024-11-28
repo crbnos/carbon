@@ -221,18 +221,6 @@ export const quoteMaterialValidator = z
   )
   .refine(
     (data) => {
-      if (data.itemType === "Fixture") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Fixture ID is required",
-      path: ["itemId"],
-    }
-  )
-  .refine(
-    (data) => {
       if (data.itemType === "Tool") {
         return !!data.itemReadableId;
       }
@@ -487,6 +475,7 @@ export const quoteShipmentValidator = z.object({
   locationId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
   receiptRequestedDate: zfd.text(z.string().optional()),
+  shippingCost: zfd.numeric(z.number().optional()),
 });
 
 export const salesOrderLineType = [
@@ -494,7 +483,6 @@ export const salesOrderLineType = [
   // "Service",
   "Material",
   "Tool",
-  "Fixture",
   "Consumable",
   "Comment",
   "Fixed Asset",
@@ -544,6 +532,7 @@ export const salesOrderShipmentValidator = z
     customerLocationId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
     supplierLocationId: zfd.text(z.string().optional()),
+    shippingCost: zfd.numeric(z.number().optional()),
     notes: zfd.text(z.string().optional()),
   })
   .refine(
@@ -586,6 +575,12 @@ export const salesOrderLineValidator = z
     serviceId: zfd.text(z.string().optional()),
     setupPrice: zfd.numeric(z.number().optional()),
     shelfId: zfd.text(z.string().optional()),
+    taxPercent: zfd.numeric(
+      z
+        .number()
+        .min(0)
+        .max(1, { message: "Tax percent must be between 0 and 1" })
+    ),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     unitPrice: zfd.numeric(z.number().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),

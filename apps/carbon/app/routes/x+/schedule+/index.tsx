@@ -23,7 +23,7 @@ import { Link, useLoaderData } from "@remix-run/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuAlertTriangle, LuPlus } from "react-icons/lu";
+import { LuAlertTriangle, LuPlusCircle } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
@@ -333,7 +333,7 @@ export default function ScheduleRoute() {
               <span className="text-xs font-mono font-light text-foreground uppercase">
                 No work centers exist
               </span>
-              <Button leftIcon={<LuPlus />} asChild>
+              <Button leftIcon={<LuPlusCircle />} asChild>
                 <Link to={path.to.newWorkCenter}>Create Work Center</Link>
               </Button>
             </div>
@@ -390,9 +390,9 @@ function useProgressByOperation(items: Item[]) {
     getProductionEvents(items.map((item) => item.id));
   });
 
-  const getProgresss = useCallback(() => {
+  const getProgress = useCallback(() => {
     const timeNow = now(getLocalTimeZone());
-    const progresss: Record<string, Progress> = {};
+    const progress: Record<string, Progress> = {};
 
     Object.entries(productionEventsByOperation).forEach(
       ([operationId, events]) => {
@@ -402,11 +402,11 @@ function useProgressByOperation(items: Item[]) {
           (operation?.laborDuration ?? 0) +
           (operation?.machineDuration ?? 0);
 
-        let progress = 0;
+        let currentProgress = 0;
         let active = false;
         events.forEach((event) => {
           if (event.endTime && event.duration) {
-            progress += event.duration * 1000;
+            currentProgress += event.duration * 1000;
           } else if (event.startTime) {
             active = true;
             const startTime = toZoned(
@@ -416,29 +416,29 @@ function useProgressByOperation(items: Item[]) {
 
             const difference = timeNow.compare(startTime);
             if (difference > 0) {
-              progress += difference;
+              currentProgress += difference;
             }
           }
         });
 
-        progresss[operationId] = {
+        progress[operationId] = {
           totalDuration,
-          progress,
+          progress: currentProgress,
           active,
         };
       }
     );
 
-    return progresss;
+    return progress;
   }, [productionEventsByOperation, items]);
 
   useInterval(() => {
-    setProgressByOperation(getProgresss());
+    setProgressByOperation(getProgress());
   }, 1000);
 
   useEffect(() => {
     if (Object.keys(productionEventsByOperation).length > 0) {
-      setProgressByOperation(getProgresss());
+      setProgressByOperation(getProgress());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productionEventsByOperation]);

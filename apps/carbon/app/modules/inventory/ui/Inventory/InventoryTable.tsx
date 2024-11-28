@@ -11,7 +11,7 @@ import {
   LuGlassWater,
   LuMapPin,
   LuPackage,
-  LuPlus,
+  LuPlusCircle,
   LuRuler,
   LuShapes,
   LuShoppingBag,
@@ -181,9 +181,11 @@ const InventoryTable = memo(
             const unitOfMeasure = unitOfMeasures.find(
               (uom) => uom.code === row.original.unitOfMeasureCode
             );
-            return unitOfMeasure
-              ? unitOfMeasure.name
-              : row.original.unitOfMeasureCode;
+            return (
+              <Enumerable
+                value={unitOfMeasure?.name ?? row.original.unitOfMeasureCode}
+              />
+            );
           },
           meta: {
             icon: <LuRuler />,
@@ -253,7 +255,7 @@ const InventoryTable = memo(
             <span className="text-xs font-mono font-light text-foreground uppercase">
               No inventory items exists
             </span>
-            <Button leftIcon={<LuPlus />} asChild>
+            <Button leftIcon={<LuPlusCircle />} asChild>
               <Link to={path.to.newPart}>New Part</Link>
             </Button>
           </div>

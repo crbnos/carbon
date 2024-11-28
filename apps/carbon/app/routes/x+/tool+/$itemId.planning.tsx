@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -149,14 +150,16 @@ export default function ToolPlanningRoute() {
   if (!sharedToolsData) throw new Error("Could not load shared tools data");
 
   return (
-    <ItemPlanningForm
-      key={toolPlanning.itemId}
-      initialValues={{
-        ...toolPlanning,
-        ...getCustomFields(toolPlanning.customFields),
-      }}
-      locations={sharedToolsData.locations ?? []}
-      type="Tool"
-    />
+    <VStack spacing={2} className="p-2">
+      <ItemPlanningForm
+        key={toolPlanning.itemId}
+        initialValues={{
+          ...toolPlanning,
+          ...getCustomFields(toolPlanning.customFields),
+        }}
+        locations={sharedToolsData.locations ?? []}
+        type="Tool"
+      />
+    </VStack>
   );
 }

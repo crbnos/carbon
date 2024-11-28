@@ -6,7 +6,6 @@ import {
   LuAtom,
   LuCheckCircle,
   LuExternalLink,
-  LuGrip,
   LuHammer,
   LuHardHat,
   LuHeadphones,
@@ -70,8 +69,6 @@ export const MethodItemTypeIcon = ({
       return <LuAtom className={className} />;
     case "Tool":
       return <LuHammer className={className} />;
-    case "Fixture":
-      return <LuGrip className={className} />;
     case "Consumable":
       return <LuPizza className={className} />;
     case "Service":

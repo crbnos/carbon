@@ -2,6 +2,7 @@ import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
@@ -15,6 +16,7 @@ import {
   LuCheckCircle,
   LuChevronDown,
   LuEye,
+  LuFile,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
@@ -79,6 +81,7 @@ const SalesOrderHeader = () => {
                     href={path.to.file.salesOrder(orderId)}
                     rel="noreferrer"
                   >
+                    <DropdownMenuIcon icon={<LuFile />} />
                     PDF
                   </a>
                 </DropdownMenuItem>

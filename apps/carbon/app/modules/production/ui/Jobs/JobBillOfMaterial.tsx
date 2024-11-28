@@ -548,6 +548,7 @@ function MaterialForm({
             name="itemId"
             label={itemType}
             includeInactive
+            validItemTypes={["Consumable", "Material", "Part"]}
             type={itemType}
             onChange={(value) => {
               onItemChange(value?.value as string);
@@ -599,7 +600,6 @@ function MaterialForm({
               formatOptions={{
                 style: "currency",
                 currency: baseCurrency,
-                maximumFractionDigits: 4,
               }}
             />
           )}

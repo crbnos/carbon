@@ -20,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (material.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(request, error(material.error, "Failed to load material"))
     );
   }
@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const item = await getItem(client, material.data.itemId);
   if (item.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(request, error(item.error, "Failed to load item"))
     );
   }

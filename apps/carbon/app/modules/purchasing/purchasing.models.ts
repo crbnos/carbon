@@ -7,7 +7,6 @@ export const purchaseOrderLineType = [
   // "Service",
   "Material",
   "Tool",
-  "Fixture",
   "Consumable",
   "G/L Account",
   "Fixed Asset",

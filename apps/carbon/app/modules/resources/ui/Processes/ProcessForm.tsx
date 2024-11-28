@@ -22,7 +22,7 @@ import {
 import { useFetcher, useNavigate } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { LuPencil, LuPlus, LuTrash } from "react-icons/lu";
+import { LuPencil, LuPlusCircle, LuTrash } from "react-icons/lu";
 import { MdMoreHoriz } from "react-icons/md";
 import type { z } from "zod";
 import { SupplierAvatar } from "~/components";
@@ -213,7 +213,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
         )}
         <Button
           isDisabled={!isEditing}
-          leftIcon={<LuPlus />}
+          leftIcon={<LuPlusCircle />}
           variant="secondary"
           onClick={newSupplierProcessModal.onOpen}
         >

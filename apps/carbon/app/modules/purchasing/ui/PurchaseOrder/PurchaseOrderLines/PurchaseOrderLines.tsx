@@ -122,7 +122,6 @@ const PurchaseOrderLines = () => {
             case "Service":
             case "Material":
             case "Tool":
-            case "Fixture":
             case "Consumable":
               return <span>{row.original.itemReadableId}</span>;
             case "G/L Account":
@@ -207,7 +206,7 @@ const PurchaseOrderLines = () => {
             case "Part":
             case "Material":
             case "Tool":
-            case "Fixture":
+            // case "Fixture":
             case "Consumable":
               return (
                 <span>

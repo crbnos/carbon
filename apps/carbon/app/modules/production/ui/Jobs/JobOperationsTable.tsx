@@ -10,7 +10,12 @@ import {
   HStack,
   IconButton,
 } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useFetchers,
+  useParams,
+  useSubmit,
+} from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuRefreshCcwDot } from "react-icons/lu";
@@ -37,20 +42,25 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
   const isPaused = routeData?.job?.status === "Paused";
 
   const fetcher = useFetcher<{}>();
+  const submit = useSubmit();
   const permissions = usePermissions();
 
   const onOperationStatusChange = useCallback(
-    async (id: string, status: JobOperation["status"]) => {
-      const formData = new FormData();
-      formData.set("id", id);
-      formData.set("status", status);
-
-      return await fetcher.submit(formData, {
-        method: "post",
-        action: path.to.jobOperationStatus,
-      });
+    (id: string, status: JobOperation["status"]) => {
+      submit(
+        {
+          id,
+          status,
+        },
+        {
+          method: "post",
+          action: path.to.jobOperationStatus,
+          navigate: false,
+          fetcherKey: `jobOperation:${id}`,
+        }
+      );
     },
-    [fetcher]
+    [submit]
   );
 
   const columns = useMemo<ColumnDef<JobOperation>[]>(() => {
@@ -175,11 +185,30 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
     };
   }, [onCellEdit]);
 
+  const pendingItems = usePendingItems();
+
+  const optimisticData = useMemo<typeof data>(() => {
+    if (pendingItems.length === 0) return data;
+    return data.map((item) => {
+      const pendingItem = pendingItems.find(
+        (pendingItem) => pendingItem.id === item.id
+      );
+      if (pendingItem) {
+        return {
+          ...item,
+          status: pendingItem.status,
+        };
+      }
+      return item;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingItems.length]);
+
   return (
     <Table<JobOperation>
       count={count}
       columns={columns}
-      data={data}
+      data={optimisticData}
       primaryAction={
         data.length > 0 && permissions.can("update", "production") ? (
           <fetcher.Form action={path.to.jobRecalculate(jobId)} method="post">
@@ -204,3 +233,31 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
 JobOperationsTable.displayName = "JobOperationsTable";
 
 export default JobOperationsTable;
+
+const usePendingItems = () => {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return fetcher.formAction === path.to.jobOperationStatus;
+    })
+    .reduce<{ id: string; status: JobOperation["status"] }[]>(
+      (acc, fetcher) => {
+        const id = fetcher.formData.get("id") as string;
+        const status = fetcher.formData.get("status") as JobOperation["status"];
+
+        if (id && status) {
+          const newItem: { id: string; status: JobOperation["status"] } = {
+            id,
+            status,
+          };
+
+          return [...acc, newItem];
+        }
+        return acc;
+      },
+      []
+    );
+};

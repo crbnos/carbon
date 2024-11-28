@@ -18,7 +18,6 @@ export function useMaterialNavigation() {
     throw new Error("Could not find itemTrackingType in routeData");
 
   const itemTrackingType = routeData.materialSummary.itemTrackingType;
-  console.log({ itemTrackingType });
 
   return [
     {

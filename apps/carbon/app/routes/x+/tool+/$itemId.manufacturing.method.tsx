@@ -18,14 +18,14 @@ export default function MakeMethodRoute() {
     makeMethod: MakeMethod;
     methodMaterials: Material[];
     methodOperations: MethodOperation[];
-  }>(path.to.fixtureManufacturing(itemId));
+  }>(path.to.toolManufacturing(itemId));
 
   const makeMethodId = manufacturingRouteData?.makeMethod?.id;
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={itemId} type="Fixture" />
+      <MakeMethodTools itemId={itemId} type="Tool" />
       <BillOfProcess
         key={`bop:${itemId}:${manufacturingRouteData?.methodOperations?.length}`}
         makeMethodId={makeMethodId}

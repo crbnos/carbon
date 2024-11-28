@@ -162,7 +162,7 @@ const QuotePDF = ({
         <View style={tw("mb-5 text-xs")}>
           <View
             style={tw(
-              "flex flex-row justify-between items-center py-1.5 px-[6px] border-t border-b border-gray-300 text-gray-500 font-bold uppercase"
+              "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 text-gray-500 font-bold uppercase"
             )}
           >
             <View style={tw("w-1/3")}>
@@ -198,7 +198,7 @@ const QuotePDF = ({
             return (
               <View
                 style={tw(
-                  "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300 mb-2"
+                  "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300 mb-2"
                 )}
                 key={line.id}
               >
@@ -325,6 +325,20 @@ const QuotePDF = ({
               </View>
             );
           })}
+          {shipment?.shippingCost && (
+            <View
+              style={tw(
+                "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
+              )}
+            >
+              <Text>Shipping</Text>
+              <Text style={tw("text-black")}>
+                {formatter.format(
+                  (shipment.shippingCost ?? 0) * (exchangeRate ?? 1)
+                )}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
       <View style={tw("flex flex-col gap-4 w-full")}>

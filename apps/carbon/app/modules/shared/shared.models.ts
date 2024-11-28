@@ -14,7 +14,6 @@ export const methodItemType = [
   "Part",
   "Material",
   "Tool",
-  "Fixture",
   "Consumable",
   // "Service",
 ] as const;
@@ -59,6 +58,15 @@ export const feedbackValidator = z.object({
   feedback: z.string().min(1, { message: "" }),
   attachmentPath: z.string().optional(),
   location: z.string(),
+});
+
+export const operationToolValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  operationId: z.string().min(1, { message: "Operation is required" }),
+  toolId: z.string().min(1, { message: "Tool is required" }),
+  quantity: zfd.numeric(
+    z.number().min(0.000001, { message: "Quantity is required" })
+  ),
 });
 
 export const standardFactorType = [

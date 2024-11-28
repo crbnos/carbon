@@ -521,6 +521,7 @@ function MaterialForm({
             label={itemType}
             includeInactive
             type={itemType}
+            validItemTypes={["Consumable", "Material", "Part"]}
             onChange={(value) => {
               onItemChange(value?.value as string);
             }}

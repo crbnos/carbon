@@ -43,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (makeMethod.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(
         request,
         error(makeMethod.error, "Failed to load make method")
@@ -58,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
   if (methodTree?.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(
         request,
         error(methodTree.error, "Failed to load method tree")
@@ -68,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (methodOperations.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(
         request,
         error(methodOperations.error, "Failed to load method operations")
@@ -77,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   if (methodMaterials.error) {
     throw redirect(
-      path.to.fixtureDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(
         request,
         error(methodMaterials.error, "Failed to load method materials")
@@ -106,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
-export default function FixtureManufacturing() {
+export default function ToolManufacturing() {
   const { methods } = useLoaderData<typeof loader>();
 
   const params = useParams();
@@ -127,7 +127,7 @@ export default function FixtureManufacturing() {
               <ScrollArea className="h-[calc(100dvh-99px)]">
                 <div className="grid h-full overflow-hidden p-2">
                   <BoMExplorer
-                    itemType="Fixture"
+                    itemType="Tool"
                     // @ts-ignore
                     methods={methods}
                   />

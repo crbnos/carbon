@@ -59,7 +59,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               formatOptions={{
                 style: "currency",
                 currency: baseCurrency,
-                maximumFractionDigits: 4,
+                
               }}
               isReadOnly={partCostingMethod !== "Standard"}
             /> */}
@@ -70,7 +70,6 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               formatOptions={{
                 style: "currency",
                 currency: baseCurrency,
-                maximumFractionDigits: 4,
               }}
             />
 
@@ -80,7 +79,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               formatOptions={{
                 style: "currency",
                 currency: baseCurrency,
-                maximumFractionDigits: 4,
+                
               }}
               isReadOnly
             />

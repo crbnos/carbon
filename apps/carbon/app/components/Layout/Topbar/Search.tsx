@@ -264,7 +264,6 @@ function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
     case "Part":
     case "Material":
     case "Tool":
-    case "Fixture":
     case "Consumable":
       return (
         <MethodItemTypeIcon

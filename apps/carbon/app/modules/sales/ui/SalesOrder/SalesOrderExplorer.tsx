@@ -20,7 +20,7 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuPlus, LuTrash } from "react-icons/lu";
+import { LuPlusCircle, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import { Empty, ItemThumbnail } from "~/components";
 import {
@@ -107,7 +107,7 @@ export default function SalesOrderExplorer() {
               {permissions.can("update", "sales") && (
                 <Button
                   isDisabled={isDisabled}
-                  leftIcon={<LuPlus />}
+                  leftIcon={<LuPlusCircle />}
                   variant="secondary"
                   onClick={newSalesOrderLineDisclosure.onOpen}
                 >
@@ -124,7 +124,7 @@ export default function SalesOrderExplorer() {
                 ref={newButtonRef}
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
-                leftIcon={<LuPlus />}
+                leftIcon={<LuPlusCircle />}
                 variant="secondary"
                 onClick={newSalesOrderLineDisclosure.onOpen}
               >

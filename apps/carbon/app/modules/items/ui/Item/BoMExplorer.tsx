@@ -220,8 +220,8 @@ function getRootLink(itemType: MethodItemType, itemId: string) {
   switch (itemType) {
     case "Part":
       return path.to.partMakeMethod(itemId);
-    case "Fixture":
-      return path.to.fixtureMakeMethod(itemId);
+    case "Tool":
+      return path.to.toolMakeMethod(itemId);
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }
@@ -240,8 +240,14 @@ function getMaterialLink(
         makeMethodId,
         materialId
       );
-    case "Fixture":
-      return path.to.fixtureManufacturingMaterial(
+    // case "Fixture":
+    //   return path.to.fixtureManufacturingMaterial(
+    //     itemId,
+    //     makeMethodId,
+    //     materialId
+    //   );
+    case "Tool":
+      return path.to.toolManufacturingMaterial(
         itemId,
         makeMethodId,
         materialId

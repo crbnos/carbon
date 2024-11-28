@@ -21,7 +21,7 @@ import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { Link, useFetchers, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuPlus, LuTrash } from "react-icons/lu";
+import { LuPlusCircle, LuTrash } from "react-icons/lu";
 import { MdMoreVert } from "react-icons/md";
 import type { z } from "zod";
 import { Empty, ItemThumbnail } from "~/components";
@@ -142,7 +142,7 @@ export default function SalesRFQExplorer() {
             <Empty>
               {permissions.can("update", "sales") && (
                 <Button
-                  leftIcon={<LuPlus />}
+                  leftIcon={<LuPlusCircle />}
                   isDisabled={isDisabled}
                   variant="secondary"
                   onClick={newSalesRFQLineDisclosure.onOpen}
@@ -160,7 +160,7 @@ export default function SalesRFQExplorer() {
                 ref={newButtonRef}
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
-                leftIcon={<LuPlus />}
+                leftIcon={<LuPlusCircle />}
                 variant="secondary"
                 onClick={newSalesRFQLineDisclosure.onOpen}
               >

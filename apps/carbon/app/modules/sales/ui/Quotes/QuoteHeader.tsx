@@ -40,7 +40,12 @@ import { Copy } from "~/components";
 import { usePanels } from "~/components/Layout";
 
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Quotation, QuotationLine, QuotationPrice } from "~/modules/sales";
+import type {
+  Opportunity,
+  Quotation,
+  QuotationLine,
+  QuotationPrice,
+} from "~/modules/sales";
 import { path } from "~/utils/path";
 import QuoteFinalizeModal from "./QuoteFinalizeModal";
 import QuoteStatus from "./QuoteStatus";
@@ -56,6 +61,7 @@ const QuoteHeader = () => {
   const routeData = useRouteData<{
     quote: Quotation;
     lines: QuotationLine[];
+    opportunity: Opportunity;
     prices: QuotationPrice[];
   }>(path.to.quote(quoteId));
 
@@ -174,6 +180,7 @@ const QuoteHeader = () => {
                 </Button>
               </>
             )}
+
             {routeData?.quote?.status === "Sent" && (
               <>
                 <statusFetcher.Form
@@ -255,31 +262,30 @@ const QuoteHeader = () => {
                 </statusFetcher.Form>
               </>
             )}
-            {["Ordered", "Partial"].includes(
-              routeData?.quote?.status ?? ""
-            ) && (
-              <statusFetcher.Form
-                method="post"
-                action={path.to.quoteStatus(quoteId)}
-              >
-                <input type="hidden" name="status" value="Draft" />
-                <Button
-                  isDisabled={
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "sales")
-                  }
-                  isLoading={
-                    statusFetcher.state !== "idle" &&
-                    statusFetcher.formData?.get("status") === "Draft"
-                  }
-                  leftIcon={<LuRefreshCw />}
-                  type="submit"
-                  variant="secondary"
+            {["Ordered", "Partial"].includes(routeData?.quote?.status ?? "") &&
+              routeData?.opportunity?.salesOrderId === null && (
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.quoteStatus(quoteId)}
                 >
-                  Reopen
-                </Button>
-              </statusFetcher.Form>
-            )}
+                  <input type="hidden" name="status" value="Draft" />
+                  <Button
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "sales")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Draft"
+                    }
+                    leftIcon={<LuRefreshCw />}
+                    type="submit"
+                    variant="secondary"
+                  >
+                    Reopen
+                  </Button>
+                </statusFetcher.Form>
+              )}
             <IconButton
               aria-label="Toggle Properties"
               icon={<LuPanelRight />}

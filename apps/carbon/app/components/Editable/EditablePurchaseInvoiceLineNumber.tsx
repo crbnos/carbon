@@ -85,7 +85,6 @@ const EditablePurchaseInvoiceLineNumber =
         case "Material":
         case "Part":
         case "Tool":
-        case "Fixture":
         case "Consumable":
           const [item, buyMethod, inventory] = await Promise.all([
             client
@@ -211,14 +210,9 @@ const EditablePurchaseInvoiceLineNumber =
       if (!newValue) return;
 
       if (
-        [
-          "Part",
-          "Service",
-          "Material",
-          "Tool",
-          "Fixture",
-          "Consumable",
-        ].includes(row.invoiceLineType)
+        ["Part", "Service", "Material", "Tool", "Consumable"].includes(
+          row.invoiceLineType
+        )
       ) {
         onItemChange(newValue);
       } else if (row.invoiceLineType === "G/L Account") {

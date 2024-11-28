@@ -168,7 +168,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                 label={type}
                 type={type}
                 value={itemData.itemId}
-                validItemTypes={["Part", "Fixture"]}
+                validItemTypes={["Part", "Tool"]}
                 onChange={(value) => {
                   onItemChange(value?.value as string);
                 }}
