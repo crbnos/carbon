@@ -8,7 +8,7 @@ import { Button, ClientOnly, HStack, Spinner } from "@carbon/react";
 import { Link, useLoaderData } from "@remix-run/react";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { useMemo } from "react";
-import { LuAlertTriangle, LuPlus } from "react-icons/lu";
+import { LuAlertTriangle, LuPlusCircle } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
@@ -310,7 +310,7 @@ export default function ScheduleRoute() {
               <span className="text-xs font-mono font-light text-foreground uppercase">
                 No work centers exist
               </span>
-              <Button leftIcon={<LuPlus />} asChild>
+              <Button leftIcon={<LuPlusCircle />} asChild>
                 <Link to={path.to.newWorkCenter}>Create Work Center</Link>
               </Button>
             </div>

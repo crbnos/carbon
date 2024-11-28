@@ -102,6 +102,13 @@ export async function deleteMethodMaterial(
   return client.from("methodMaterial").delete().eq("id", id);
 }
 
+export async function deleteMethodOperationTool(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("methodOperationTool").delete().eq("id", id);
+}
+
 export async function deleteUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string
@@ -617,7 +624,9 @@ export async function getMethodOperationsByMakeMethodId(
 ) {
   return client
     .from("methodOperation")
-    .select("*, methodOperationTool(id, operationId, toolId, quantity)")
+    .select(
+      "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
+    )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
 }
@@ -1515,6 +1524,7 @@ export async function upsertMethodOperationTool(
     | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
         id: string;
         updatedBy: string;
+        updatedAt: string;
       })
 ) {
   if ("createdBy" in methodOperationTool) {

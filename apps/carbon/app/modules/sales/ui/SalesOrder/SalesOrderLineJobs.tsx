@@ -24,7 +24,7 @@ import {
 } from "@carbon/react";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
-import { LuHardHat, LuPlus } from "react-icons/lu";
+import { LuHardHat, LuPlusCircle } from "react-icons/lu";
 import { Assignee, Empty, Hyperlink } from "~/components";
 import {
   DatePicker,
@@ -143,7 +143,10 @@ export function SalesOrderLineJobs({
             </Table>
           ) : (
             <Empty className="pb-12">
-              <Button leftIcon={<LuPlus />} onClick={newJobDisclosure.onOpen}>
+              <Button
+                leftIcon={<LuPlusCircle />}
+                onClick={newJobDisclosure.onOpen}
+              >
                 Make to Order
               </Button>
             </Empty>

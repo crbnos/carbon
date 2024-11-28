@@ -32,7 +32,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuInfo,
-  LuPlus,
+  LuPlusCircle,
   LuRefreshCcw,
   LuTrash,
 } from "react-icons/lu";
@@ -754,7 +754,7 @@ const QuoteLinePricing = ({
                     <Button
                       className="-ml-3"
                       type="submit"
-                      rightIcon={<LuPlus />}
+                      rightIcon={<LuPlusCircle />}
                       variant="ghost"
                       isLoading={
                         fetcher.formAction ===

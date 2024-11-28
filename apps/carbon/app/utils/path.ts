@@ -260,6 +260,8 @@ export const path = {
       generatePath(`${x}/items/substances/delete/${id}`),
     deleteMethodMaterial: (id: string) =>
       generatePath(`${x}/items/methods/material/delete/${id}`),
+    deleteMethodOperationTool: (id: string) =>
+      generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
@@ -438,6 +440,8 @@ export const path = {
       generatePath(`${x}/items/methods/operation/${id}`),
     methodOperations: `${x}/items/methods/operations`,
     methodOperationsOrder: `${x}/items/methods/operation/order`,
+    methodOperationTool: (id: string) =>
+      generatePath(`${x}/items/methods/operation/tool/${id}`),
     newAbility: `${x}/resources/abilities/new`,
     newAccountingCategory: `${x}/accounting/categories/new`,
     newAccountingSubcategory: (id: string) =>

@@ -16,7 +16,7 @@ import {
 
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef } from "react";
-import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuPlusCircle, LuSettings2, LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 
 export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
@@ -162,7 +162,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
                 size={size ?? "sm"}
                 variant="secondary"
                 aria-label={value ? "Edit" : "Add"}
-                icon={value ? <LuSettings2 /> : <LuPlus />}
+                icon={value ? <LuSettings2 /> : <LuPlusCircle />}
                 isDisabled={isReadOnly}
               />
             ) : (

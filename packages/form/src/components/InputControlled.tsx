@@ -15,7 +15,7 @@ import {
 } from "@carbon/react";
 import type { ChangeEvent, ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { LuPlus, LuSettings2 } from "react-icons/lu";
+import { LuPlusCircle, LuSettings2 } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 
 type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
@@ -84,7 +84,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
             <span className="flex-grow text-sm line-clamp-1">{value}</span>
           )}
           <IconButton
-            icon={value ? <LuSettings2 /> : <LuPlus />}
+            icon={value ? <LuSettings2 /> : <LuPlusCircle />}
             aria-label={value ? "Edit" : "Add"}
             size="sm"
             variant="secondary"
