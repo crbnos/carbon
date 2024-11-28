@@ -3,7 +3,7 @@ import { CommandEmpty } from "cmdk";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useId, useMemo, useRef, useState } from "react";
 import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
-import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuPlusCircle, LuSettings2, LuX } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { Button } from "./Button";
@@ -99,7 +99,7 @@ const CreatableMultiSelect = forwardRef<
                 size={size ?? "sm"}
                 variant="secondary"
                 aria-label={hasSelections ? "Edit" : "Add"}
-                icon={hasSelections ? <LuSettings2 /> : <LuPlus />}
+                icon={hasSelections ? <LuSettings2 /> : <LuPlusCircle />}
                 ref={ref}
                 isDisabled={isReadOnly}
                 onClick={() => setOpen(true)}
@@ -312,7 +312,7 @@ function VirtualizedCommand({
                 <div className="flex justify-start items-center gap-1 px-2">
                   {isCreateOption ? (
                     <>
-                      <LuPlus className="mr-1.5" />
+                      <LuPlusCircle className="mr-1.5" />
                       <span>Create</span>
                       <span className="font-bold line-clamp-1">
                         {search.trim() === "" ? label : search}

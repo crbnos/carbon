@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
-import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuCheck, LuPlusCircle, LuSettings2, LuX } from "react-icons/lu";
 import {
   Command,
   CommandGroup,
@@ -76,7 +76,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
                 size={size ?? "sm"}
                 variant="secondary"
                 aria-label={value ? "Edit" : "Add"}
-                icon={value ? <LuSettings2 /> : <LuPlus />}
+                icon={value ? <LuSettings2 /> : <LuPlusCircle />}
                 isDisabled={isReadOnly}
                 ref={ref}
                 onClick={() => setOpen(true)}

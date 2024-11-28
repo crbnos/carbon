@@ -21,7 +21,7 @@ import { forwardRef, useEffect, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronUp,
-  LuPlus,
+  LuPlusCircle,
   LuSettings2,
 } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
@@ -83,7 +83,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
             <span className="flex-grow line-clamp-1">{value}</span>
           )}
           <IconButton
-            icon={value !== undefined ? <LuSettings2 /> : <LuPlus />}
+            icon={value !== undefined ? <LuSettings2 /> : <LuPlusCircle />}
             aria-label={value !== undefined ? "Edit" : "Add"}
             size="sm"
             variant="secondary"

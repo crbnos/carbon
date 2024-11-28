@@ -43,7 +43,12 @@ export type Note = NonNullable<
   Awaited<ReturnType<typeof getNotes>>["data"]
 >[number];
 
-export type OperationTool = z.infer<typeof operationToolValidator>;
+export type OperationTool = z.infer<typeof operationToolValidator> & {
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+};
 
 export type OptimisticFileObject = Omit<
   StorageItem,

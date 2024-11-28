@@ -9,7 +9,7 @@ import {
 } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { useRef } from "react";
-import { LuPlus } from "react-icons/lu";
+import { LuPlusCircle } from "react-icons/lu";
 
 type NewProps = {
   label?: string;
@@ -28,7 +28,7 @@ const New = ({ label, to }: NewProps) => {
   return (
     <Tooltip>
       <TooltipTrigger>
-        <Button asChild leftIcon={<LuPlus />} ref={buttonRef}>
+        <Button asChild leftIcon={<LuPlusCircle />} ref={buttonRef}>
           <Link to={to} prefetch="intent">
             New
           </Link>
