@@ -900,7 +900,6 @@ const Quote = ({
       new Intl.NumberFormat(locale, {
         style: "currency",
         currency: quote.currencyCode ?? "USD",
-        maximumFractionDigits: 4,
       }),
     [locale, quote.currencyCode]
   );

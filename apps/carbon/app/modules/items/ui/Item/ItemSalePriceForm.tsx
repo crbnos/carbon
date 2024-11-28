@@ -48,7 +48,6 @@ const ItemSalePriceForm = ({ initialValues }: ItemSalePriceFormProps) => {
               formatOptions={{
                 style: "currency",
                 currency,
-                maximumFractionDigits: 4,
               }}
             />
             <Currency

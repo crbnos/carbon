@@ -12,7 +12,6 @@ export function useCurrencyFormatter(currencyCode?: string) {
       new Intl.NumberFormat(locale, {
         style: "currency",
         currency: currency,
-        maximumFractionDigits: 4,
       }),
     [locale, currency]
   );

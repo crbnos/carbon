@@ -600,7 +600,6 @@ function MaterialForm({
               formatOptions={{
                 style: "currency",
                 currency: baseCurrency,
-                maximumFractionDigits: 4,
               }}
             />
           )}

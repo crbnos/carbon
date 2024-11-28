@@ -179,7 +179,6 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                     formatOptions={{
                       style: "currency",
                       currency: baseCurrency,
-                      maximumFractionDigits: 4,
                     }}
                     minValue={0}
                   />

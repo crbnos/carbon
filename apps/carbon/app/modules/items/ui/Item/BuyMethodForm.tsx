@@ -91,7 +91,6 @@ const BuyMethodForm = ({ initialValues, type }: BuyMethodFormProps) => {
                 formatOptions={{
                   style: "currency",
                   currency: baseCurrency,
-                  maximumFractionDigits: 4,
                 }}
               />
               <UnitOfMeasure
