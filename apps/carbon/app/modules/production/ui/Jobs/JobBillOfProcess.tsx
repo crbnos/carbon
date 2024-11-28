@@ -529,7 +529,7 @@ const JobBillOfProcess = ({
       },
       {
         id: 3,
-        label: "Realtime Events",
+        label: "Events",
         content: (
           <div className="flex w-full flex-col pr-2 py-6 min-h-[300px]">
             <motion.div
@@ -775,15 +775,9 @@ function OperationForm({
     userId,
   ]);
 
-  const [showMachine, setShowMachine] = useState(
-    (item.data.machineTime ?? 0) > 0
-  );
-  const [showLabor, setShowLabor] = useState((item.data.laborTime ?? 0) > 0);
-  const [showSetup, setShowSetup] = useState(
-    (item.data.setupTime ?? 0) > 0 ||
-      (showLabor === false && showMachine === false)
-  );
-
+  const [showMachine, setShowMachine] = useState(false);
+  const [showLabor, setShowLabor] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
   const [showCost, setShowCost] = useState(false);
 
   const [processData, setProcessData] = useState<{
@@ -1104,19 +1098,27 @@ function OperationForm({
                 <TimeTypeIcon type="Setup" />
                 <Label>Setup</Label>
               </HStack>
-              <IconButton
-                icon={<LuChevronDown />}
-                aria-label={showSetup ? "Collapse Setup" : "Expand Setup"}
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowSetup(!showSetup);
-                }}
-                className={`transition-transform ${
-                  showSetup ? "rotate-180" : ""
-                }`}
-              />
+              <HStack>
+                {(processData.setupTime ?? 0) > 0 && (
+                  <Badge variant="secondary">
+                    <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
+                    {processData.setupTime} {processData.setupUnit}
+                  </Badge>
+                )}
+                <IconButton
+                  icon={<LuChevronDown />}
+                  aria-label={showSetup ? "Collapse Setup" : "Expand Setup"}
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSetup(!showSetup);
+                  }}
+                  className={`transition-transform ${
+                    showSetup ? "rotate-180" : ""
+                  }`}
+                />
+              </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
@@ -1171,19 +1173,27 @@ function OperationForm({
                 <TimeTypeIcon type="Labor" />
                 <Label>Labor</Label>
               </HStack>
-              <IconButton
-                icon={<LuChevronDown />}
-                aria-label={showLabor ? "Collapse Labor" : "Expand Labor"}
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowLabor(!showLabor);
-                }}
-                className={`transition-transform ${
-                  showLabor ? "rotate-180" : ""
-                }`}
-              />
+              <HStack>
+                {(processData.laborTime ?? 0) > 0 && (
+                  <Badge variant="secondary">
+                    <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
+                    {processData.laborTime} {processData.laborUnit}
+                  </Badge>
+                )}
+                <IconButton
+                  icon={<LuChevronDown />}
+                  aria-label={showLabor ? "Collapse Labor" : "Expand Labor"}
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLabor(!showLabor);
+                  }}
+                  className={`transition-transform ${
+                    showLabor ? "rotate-180" : ""
+                  }`}
+                />
+              </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
@@ -1239,19 +1249,29 @@ function OperationForm({
                 <TimeTypeIcon type="Machine" />
                 <Label>Machine</Label>
               </HStack>
-              <IconButton
-                icon={<LuChevronDown />}
-                aria-label={showMachine ? "Collapse Machine" : "Expand Machine"}
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMachine(!showMachine);
-                }}
-                className={`transition-transform ${
-                  showMachine ? "rotate-180" : ""
-                }`}
-              />
+              <HStack>
+                {(processData.machineTime ?? 0) > 0 && (
+                  <Badge variant="secondary">
+                    <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
+                    {processData.machineTime} {processData.machineUnit}
+                  </Badge>
+                )}
+                <IconButton
+                  icon={<LuChevronDown />}
+                  aria-label={
+                    showMachine ? "Collapse Machine" : "Expand Machine"
+                  }
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMachine(!showMachine);
+                  }}
+                  className={`transition-transform ${
+                    showMachine ? "rotate-180" : ""
+                  }`}
+                />
+              </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
@@ -1307,19 +1327,21 @@ function OperationForm({
                 <LuDollarSign />
                 <Label>Costing</Label>
               </HStack>
-              <IconButton
-                icon={<LuChevronDown />}
-                aria-label={showCost ? "Collapse Costing" : "Expand Costing"}
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowCost(!showCost);
-                }}
-                className={`transition-transform ${
-                  showCost ? "rotate-180" : ""
-                }`}
-              />
+              <HStack>
+                <IconButton
+                  icon={<LuChevronDown />}
+                  aria-label={showCost ? "Collapse Costing" : "Expand Costing"}
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCost(!showCost);
+                  }}
+                  className={`transition-transform ${
+                    showCost ? "rotate-180" : ""
+                  }`}
+                />
+              </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${

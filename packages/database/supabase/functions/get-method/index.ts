@@ -86,7 +86,9 @@ serve(async (req: Request) => {
             .eq("makeMethodId", sourceMakeMethod.data.id),
           client
             .from("methodOperation")
-            .select("*")
+            .select(
+              "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
+            )
             .eq("makeMethodId", sourceMakeMethod.data.id),
         ]);
 
@@ -125,17 +127,43 @@ serve(async (req: Request) => {
 
           // Copy operations from source to target
           if (sourceOperations.data && sourceOperations.data.length > 0) {
-            await trx
+            const operationIds = await trx
               .insertInto("methodOperation")
               .values(
-                sourceOperations.data.map((operation) => ({
-                  ...operation,
-                  id: undefined, // Let the database generate a new ID
-                  makeMethodId: targetMakeMethod.data.id,
-                  createdBy: userId,
-                }))
+                sourceOperations.data.map(
+                  ({ methodOperationTool: _tools, ...operation }) => ({
+                    ...operation,
+                    id: undefined, // Let the database generate a new ID
+                    makeMethodId: targetMakeMethod.data.id,
+                    createdBy: userId,
+                  })
+                )
               )
+              .returning(["id"])
               .execute();
+
+            for await (const [
+              index,
+              operation,
+            ] of sourceOperations.data.entries()) {
+              const { methodOperationTool } = operation;
+              const operationId = operationIds[index].id;
+
+              if (operationId && Array.isArray(methodOperationTool)) {
+                await trx
+                  .insertInto("methodOperationTool")
+                  .values(
+                    methodOperationTool.map((tool) => ({
+                      toolId: tool.toolId,
+                      quantity: tool.quantity,
+                      operationId,
+                      companyId,
+                      createdBy: userId,
+                    }))
+                  )
+                  .execute();
+              }
+            }
           }
         });
 
@@ -220,7 +248,9 @@ serve(async (req: Request) => {
           ) {
             const relatedOperations = await client
               .from("methodOperation")
-              .select("*")
+              .select(
+                "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
+              )
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
             const jobOperations =
@@ -258,6 +288,33 @@ serve(async (req: Request) => {
                 .values(jobOperations)
                 .returning(["id"])
                 .execute();
+
+              for (const [index, operation] of (
+                relatedOperations.data ?? []
+              ).entries()) {
+                const operationId = operationIds[index].id;
+
+                if (operationId) {
+                  const { methodOperationTool } = operation;
+                  if (
+                    Array.isArray(methodOperationTool) &&
+                    methodOperationTool.length > 0
+                  ) {
+                    await trx
+                      .insertInto("jobOperationTool")
+                      .values(
+                        methodOperationTool.map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
+                          operationId,
+                          companyId,
+                          createdBy: userId,
+                        }))
+                      )
+                      .execute();
+                  }
+                }
+              }
 
               methodOperationsToJobOperations =
                 relatedOperations.data?.reduce<Record<string, string>>(
