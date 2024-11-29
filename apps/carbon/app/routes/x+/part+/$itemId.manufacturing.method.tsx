@@ -124,7 +124,7 @@ export default function MakeMethodRoute() {
         operations={manufacturingRouteData?.methodOperations ?? []}
       />
       <BillOfMaterial
-        key={`bom:${itemId}:${manufacturingRouteData?.methodMaterials?.length}`}
+        key={`bom:${itemId}`}
         makeMethodId={makeMethodId}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}

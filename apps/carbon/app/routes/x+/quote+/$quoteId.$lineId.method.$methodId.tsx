@@ -86,12 +86,12 @@ export default function QuoteMakeMethodRoute() {
     <VStack spacing={2}>
       <QuoteMakeMethodTools />
       <QuoteBillOfProcess
-        key={`bop:${methodId}:${operations.length}`}
+        key={`bop:${methodId}`}
         quoteMakeMethodId={methodId}
         operations={operations}
       />
       <QuoteBillOfMaterial
-        key={`bom:${methodId}:${materials.length}`}
+        key={`bom:${methodId}`}
         quoteMakeMethodId={methodId}
         materials={materials}
         operations={operations}

@@ -118,12 +118,12 @@ export default function QuoteMakeMethodRoute() {
         operations={operations}
       />
       <QuoteBillOfProcess
-        key={`bop:${methodId}:${operations.length}`}
+        key={`bop:${methodId}`}
         quoteMakeMethodId={methodId}
         operations={operations}
       />
       <QuoteBillOfMaterial
-        key={`bom:${methodId}:${materials.length}`}
+        key={`bom:${methodId}`}
         quoteMakeMethodId={methodId}
         materials={materials}
         operations={operations}

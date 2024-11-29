@@ -12,14 +12,13 @@ import {
   cn,
   HStack,
   toast,
-  useDebounce,
+  useThrottle,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
+import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
@@ -39,6 +38,7 @@ import type {
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
+
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
@@ -60,11 +60,37 @@ type BillOfMaterialProps = {
   operations: Operation[];
 };
 
-function makeItems(materials: Material[]): ItemWithData[] {
-  return materials.map(makeItem);
+type OrderState = {
+  [key: string]: number;
+};
+
+type CheckedState = {
+  [key: string]: boolean;
+};
+
+type TemporaryItems = {
+  [key: string]: Material;
+};
+
+function makeItems(
+  materials: Material[],
+  orderState: OrderState,
+  checkedState: CheckedState
+): ItemWithData[] {
+  return materials.map((material) => {
+    const order = material.id
+      ? orderState[material.id] ?? material.order
+      : material.order;
+    const checked = material.id ? checkedState[material.id] ?? false : false;
+    return makeItem(material, order, checked);
+  });
 }
 
-function makeItem(material: Material): ItemWithData {
+function makeItem(
+  material: Material,
+  order: number,
+  checked: boolean
+): ItemWithData {
   return {
     id: material.id!,
     title: (
@@ -79,7 +105,7 @@ function makeItem(material: Material): ItemWithData {
         )}
       </VStack>
     ),
-    checked: false,
+    checked,
     details: (
       <HStack spacing={2}>
         <Badge variant="secondary">
@@ -92,7 +118,10 @@ function makeItem(material: Material): ItemWithData {
         </Badge>
       </HStack>
     ),
-    data: material,
+    data: {
+      ...material,
+      order,
+    },
   };
 }
 
@@ -108,114 +137,194 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
   unitOfMeasureCode: "EA",
 };
 
+const usePendingMaterials = () => {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        (fetcher.formAction === path.to.newMethodMaterial ||
+          fetcher.formAction?.includes("/items/methods/material/")) ??
+        false
+      );
+    })
+    .reduce<z.infer<typeof methodMaterialValidator>[]>((acc, fetcher) => {
+      const formData = fetcher.formData;
+      const material = methodMaterialValidator.safeParse(
+        Object.fromEntries(formData)
+      );
+
+      if (material.success) {
+        return [...acc, material.data];
+      }
+      return acc;
+    }, []);
+};
+
 const BillOfMaterial = ({
   makeMethodId,
-  materials,
+  materials: initialMaterials,
   operations,
 }: BillOfMaterialProps) => {
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
 
-  const [items, setItems] = useState<ItemWithData[]>(
-    makeItems(materials ?? [])
-  );
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
+  const [checkedState, setCheckedState] = useState<CheckedState>({});
+  const [orderState, setOrderState] = useState<OrderState>(() => {
+    return initialMaterials.reduce((acc, material) => {
+      acc[material.id!] = material.order;
+      return acc;
+    }, {} as OrderState);
+  });
+
+  const materialsById = new Map<string, Material>();
+
+  // Add initial materials to map
+  initialMaterials.forEach((material) => {
+    if (!material.id) return;
+    materialsById.set(material.id, material);
+  });
+
+  const pendingMaterials = usePendingMaterials();
+
+  // Replace existing materials with pending ones
+  pendingMaterials.forEach((pendingMaterial) => {
+    if (!pendingMaterial.id) {
+      materialsById.set("temporary", {
+        ...pendingMaterial,
+        description: "",
+      });
+    } else {
+      materialsById.set(pendingMaterial.id, {
+        ...materialsById.get(pendingMaterial.id)!,
+        ...pendingMaterial,
+      });
+    }
+  });
+
+  // Add temporary items
+  Object.entries(temporaryItems).forEach(([id, material]) => {
+    materialsById.set(id, material);
+  });
+
+  const items = makeItems(
+    Array.from(materialsById.values()),
+    orderState,
+    checkedState
+  ).sort((a, b) => a.data.order - b.data.order);
 
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "parts")) return;
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
-    );
+    setCheckedState((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
-  // we create a temporary item and append it to the list
   const onAddItem = () => {
     if (!permissions.can("update", "parts")) return;
     const temporaryId = Math.random().toString(16).slice(2);
     setSelectedItemId(temporaryId);
-    setItems((prevItems) => {
-      let newOrder = 1;
-      if (prevItems.length) {
-        newOrder = prevItems[prevItems.length - 1].data.order + 1;
-      }
 
-      return [
-        ...prevItems,
-        {
-          title: "",
-          checked: false,
-          id: temporaryId,
-          data: {
-            ...initialMethodMaterial,
-            order: newOrder,
-            makeMethodId,
-          },
-        },
-      ];
-    });
+    let newOrder = 1;
+    if (items.length) {
+      newOrder = Math.max(...items.map((item) => item.data.order)) + 1;
+    }
+
+    setTemporaryItems((prev) => ({
+      ...prev,
+      [temporaryId]: {
+        ...initialMethodMaterial,
+        id: temporaryId,
+        order: newOrder,
+        makeMethodId,
+      } as Material,
+    }));
+
+    setOrderState((prev) => ({
+      ...prev,
+      [temporaryId]: newOrder,
+    }));
   };
 
   const onRemoveItem = async (id: string) => {
     if (!permissions.can("update", "parts")) return;
-    // get the item and it's order in the list
-    const itemIndex = items.findIndex((i) => i.id === id);
-    const item = items[itemIndex];
 
-    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    if (isTemporaryId(id)) {
+      setTemporaryItems((prev) => {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      });
+      return;
+    }
 
     fetcher.submit(new FormData(), {
       method: "post",
-      action: path.to.deleteMethodMaterial(item.id),
+      action: path.to.deleteMethodMaterial(id),
+    });
+
+    // Optimistically remove from state
+    setTemporaryItems((prev) => {
+      const { [id]: _, ...rest } = prev;
+      return rest;
     });
   };
 
-  const onReorder = (reorderedItems: ItemWithData[]) => {
+  const updateSortOrder = useThrottle((updates: Record<string, number>) => {
+    let formData = new FormData();
+    formData.append("updates", JSON.stringify(updates));
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.methodMaterialsOrder,
+    });
+  }, 1000);
+
+  const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "parts")) return;
-    const newItems = reorderedItems.map((item, index) => ({
-      ...item,
-      data: {
-        ...item.data,
-        order: index + 1,
-      },
-    }));
-    const updates = newItems.reduce<Record<string, number>>((acc, item) => {
-      if (!isTemporaryId(item.id)) {
-        acc[item.id] = item.data.order;
+
+    // Create new order state
+    const newOrderState = items.reduce<OrderState>((acc, item, index) => {
+      acc[item.id] = index + 1;
+      return acc;
+    }, {});
+
+    // Update order state immediately
+    setOrderState(newOrderState);
+
+    // Only send non-temporary items to the server
+    const updates = Object.entries(newOrderState).reduce<
+      Record<string, number>
+    >((acc, [id, order]) => {
+      if (!isTemporaryId(id)) {
+        acc[id] = order;
       }
       return acc;
     }, {});
 
-    setItems(reorderedItems);
-    updateSortOrder(updates);
+    if (Object.keys(updates).length > 0) {
+      updateSortOrder(updates);
+    }
   };
 
-  const updateSortOrder = useDebounce(
-    (updates: Record<string, number>) => {
-      let formData = new FormData();
-      formData.append("updates", JSON.stringify(updates));
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.methodMaterialsOrder,
-      });
-    },
-    1000,
-    true
-  );
-
   const onCloseOnDrag = useCallback(() => {
-    setItems((prevItems) => {
-      const updatedItems = prevItems.map((item) =>
-        item.checked ? { ...item, checked: false } : item
-      );
-      return updatedItems.some(
-        (item, index) => item.checked !== prevItems[index].checked
-      )
-        ? updatedItems
-        : prevItems;
+    setCheckedState((prev) => {
+      const newState = { ...prev };
+      let changed = false;
+
+      items.forEach((item) => {
+        if (item.checked) {
+          newState[item.id] = false;
+          changed = true;
+        }
+      });
+
+      return changed ? newState : prev;
     });
-  }, []);
+  }, [items]);
 
   const renderListItem = ({
     item,
@@ -251,11 +360,6 @@ const BillOfMaterial = ({
               onClick={
                 isOpen
                   ? () => {
-                      if (isTemporaryId(item.id)) {
-                        setItems((prevItems) =>
-                          prevItems.filter((i) => i.id !== item.id)
-                        );
-                      }
                       setSelectedItemId(null);
                     }
                   : () => {
@@ -331,9 +435,12 @@ const BillOfMaterial = ({
                         >
                           <MaterialForm
                             item={item}
-                            setItems={setItems}
                             setSelectedItemId={setSelectedItemId}
                             methodOperations={operations}
+                            temporaryItems={temporaryItems}
+                            setTemporaryItems={setTemporaryItems}
+                            orderState={orderState}
+                            setOrderState={setOrderState}
                           />
                         </motion.div>
                       </motion.div>
@@ -388,14 +495,20 @@ function isTemporaryId(id: string) {
 
 function MaterialForm({
   item,
-  setItems,
   setSelectedItemId,
   methodOperations,
+  temporaryItems,
+  setTemporaryItems,
+  orderState,
+  setOrderState,
 }: {
   item: ItemWithData;
-  setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   methodOperations: Operation[];
+  temporaryItems: TemporaryItems;
+  setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
+  orderState: OrderState;
+  setOrderState: Dispatch<SetStateAction<OrderState>>;
 }) {
   const { carbon } = useCarbon();
   const methodMaterialFetcher = useFetcher<{ id: string }>();
@@ -406,25 +519,30 @@ function MaterialForm({
   useEffect(() => {
     // replace the temporary id with the actual id
     if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
-      flushSync(() => {
-        setItems((prevItems) =>
-          prevItems.map((i) =>
-            i.id === item.id
-              ? {
-                  ...i,
-                  id: methodMaterialFetcher.data!.id!,
-                  data: {
-                    ...i.data,
-                    ...methodMaterialFetcher.data,
-                  },
-                }
-              : i
-          )
-        );
-      });
+      if (isTemporaryId(item.id)) {
+        setTemporaryItems((prev) => {
+          const { [item.id]: _, ...rest } = prev;
+          return rest;
+        });
+
+        setOrderState((prev) => {
+          const order = prev[item.id];
+          const { [item.id]: _, ...rest } = prev;
+          return {
+            ...rest,
+            [methodMaterialFetcher.data!.id!]: order,
+          };
+        });
+      }
       setSelectedItemId(null);
     }
-  }, [item.id, methodMaterialFetcher.data, setItems, setSelectedItemId]);
+  }, [
+    item.id,
+    methodMaterialFetcher.data,
+    setTemporaryItems,
+    setOrderState,
+    setSelectedItemId,
+  ]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{
@@ -497,19 +615,13 @@ function MaterialForm({
       validator={methodMaterialValidator}
       className="w-full"
       fetcher={methodMaterialFetcher}
-      onSubmit={(values) => {
-        setItems((prevItems) =>
-          prevItems.map((i) =>
-            i.id === item.id
-              ? {
-                  ...makeItem({ ...values, description: itemData.description }),
-                  id: item.id,
-                }
-              : i
-          )
-        );
+      onSubmit={() => {
+        if (!isTemporaryId(item.id)) {
+          setSelectedItemId(null);
+        }
       }}
     >
+      <Hidden name="id" />
       <Hidden name="makeMethodId" />
       <Hidden name="itemReadableId" value={itemData.itemReadableId} />
       <Hidden name="order" />
