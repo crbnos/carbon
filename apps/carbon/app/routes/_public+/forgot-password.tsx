@@ -57,15 +57,18 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   const { email } = validation.data;
   const user = await getUserByEmail(email);
 
+  console.log({ email, user });
+
   if (user.data && user.data.active) {
     const companies = await getCompaniesForUser(
       getCarbonServiceRole(),
       user.data.id
     );
+    console.log({ companies });
     if (companies.length > 0) {
-      const authSession = await sendMagicLink(email);
-      if (!authSession) {
-        return json(error(authSession, "Failed to send magic link"), {
+      const otpResponse = await sendMagicLink(email);
+      if (!otpResponse) {
+        return json(error(otpResponse, "Failed to send magic link"), {
           status: 500,
         });
       }
