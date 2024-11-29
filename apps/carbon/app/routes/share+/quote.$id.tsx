@@ -686,8 +686,8 @@ const LinePricingOptions = ({
               <Th>{strings.Quantity}</Th>
               <Th>{strings["Unit Price"]}</Th>
               <Th>{strings["Add-Ons"]}</Th>
-              <Th>{strings["Lead Time"]}</Th>
               <Th>{strings.Subtotal}</Th>
+              <Th>{strings["Lead Time"]}</Th>
             </Tr>
           </Thead>
           <Tbody>
