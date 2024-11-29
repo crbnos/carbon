@@ -51,6 +51,7 @@ import {
   LuUpload,
   LuXCircle,
 } from "react-icons/lu";
+import { usePercentFormatter } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
@@ -593,6 +594,7 @@ const LinePricingOptions = ({
   setSelectedLines,
   strings,
 }: LinePricingOptionsProps) => {
+  const percentFormatter = usePercentFormatter();
   const { quote, salesOrderLines } = useLoaderData<typeof loader>().data!;
 
   const hasSalesOrder =
@@ -810,7 +812,8 @@ const LinePricingOptions = ({
 
               <Tr key="tax" className="border-b border-border">
                 <Td>
-                  {strings.Tax} ({selectedLine.taxPercent * 100}%)
+                  {strings.Tax} (
+                  {percentFormatter.format(selectedLine.taxPercent)})
                 </Td>
                 <Td className="text-right">
                   <MotionNumber
