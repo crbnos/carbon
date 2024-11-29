@@ -170,13 +170,6 @@ export default function EditSalesOrderLineRoute() {
         // @ts-ignore
         initialValues={initialValues}
       />
-      <OpportunityLineNotes
-        id={line.id}
-        table="salesOrderLine"
-        title={orderData.salesOrder.salesOrderId ?? ""}
-        subTitle={line.itemReadableId ?? ""}
-        notes={line.notes as JSONContent}
-      />
       {line.methodType === "Make" && (
         <Suspense
           fallback={
@@ -208,6 +201,13 @@ export default function EditSalesOrderLineRoute() {
           </Await>
         </Suspense>
       )}
+      <OpportunityLineNotes
+        id={line.id}
+        table="salesOrderLine"
+        title={orderData.salesOrder.salesOrderId ?? ""}
+        subTitle={line.itemReadableId ?? ""}
+        notes={line.notes as JSONContent}
+      />
       <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
         <Suspense
           fallback={
