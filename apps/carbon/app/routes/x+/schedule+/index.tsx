@@ -444,11 +444,9 @@ function useProgressByOperation(items: Item[]) {
   }, [productionEventsByOperation]);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
-
   useMount(() => {
     if (!channelRef.current && carbon && accessToken) {
       carbon.realtime.setAuth(accessToken);
-
       channelRef.current = carbon
         .channel(`kanban-schedule:${companyId}`)
         .on(
@@ -456,10 +454,33 @@ function useProgressByOperation(items: Item[]) {
           {
             event: "*",
             schema: "public",
+            table: "jobOperation",
+            filter: `id=in.(${items.map((item) => item.id).join(",")})`,
+          },
+          (payload) => {
+            switch (payload.eventType) {
+              case "INSERT":
+                const { new: inserted } = payload;
+                console.log({ inserted });
+                break;
+              case "UPDATE":
+                const { new: updated } = payload;
+                console.log({ updated });
+                break;
+              case "DELETE":
+                const { old: deleted } = payload;
+                console.log({ deleted });
+                break;
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
             table: "productionEvent",
-            filter: `jobOperationId=in.${items
-              .map((item) => item.id)
-              .join(",")}`,
+            filter: `companyId=eq.${companyId}`,
           },
           (payload) => {
             if (payload.eventType === "INSERT") {
@@ -502,13 +523,15 @@ function useProgressByOperation(items: Item[]) {
     return () => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
+        carbon?.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
   });
 
   useEffect(() => {
-    if (carbon && accessToken) carbon.realtime.setAuth(accessToken);
+    if (carbon && accessToken && channelRef.current)
+      carbon.realtime.setAuth(accessToken);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 

@@ -112,6 +112,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             table: "item",
+            filter: `companyId=eq.${companyId}`,
           },
           (payload) => {
             if (
@@ -175,6 +176,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             table: "customer",
+            filter: `companyId=eq.${companyId}`,
           },
           (payload) => {
             if (
@@ -228,6 +230,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             table: "supplier",
+            filter: `companyId=eq.${companyId}`,
           },
           (payload) => {
             if (
@@ -282,6 +285,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             table: "employee",
+            filter: `companyId=eq.${companyId}`,
           },
           async (payload) => {
             if (

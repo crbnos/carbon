@@ -83,6 +83,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           event: "*",
           schema: "public",
           table: "item",
+          filter: `companyId=eq.${companyId}`,
         },
         (payload) => {
           if ("companyId" in payload.new && payload.new.companyId !== companyId)
@@ -144,6 +145,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           event: "*",
           schema: "public",
           table: "employee",
+          filter: `companyId=eq.${companyId}`,
         },
         async (payload) => {
           if ("companyId" in payload.new && payload.new.companyId !== companyId)

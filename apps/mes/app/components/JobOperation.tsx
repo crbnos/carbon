@@ -369,7 +369,7 @@ export const JobOperation = ({
                       <Heading
                         size="h3"
                         className={cn(
-                          "truncate",
+                          "w-full truncate",
                           isOverdue ? "text-red-500" : ""
                         )}
                       >
