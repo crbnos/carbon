@@ -1329,7 +1329,7 @@ function ToolsForm({
 
       {tools.length > 0 && (
         <div className="border rounded-lg">
-          {tools
+          {[...tools]
             .sort((a, b) =>
               String(a.id ?? "").localeCompare(String(b.id ?? ""))
             )

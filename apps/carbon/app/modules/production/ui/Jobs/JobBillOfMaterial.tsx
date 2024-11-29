@@ -15,11 +15,10 @@ import {
   useDebounce,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
+import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { flushSync } from "react-dom";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
@@ -60,11 +59,37 @@ type JobBillOfMaterialProps = {
   operations: Operation[];
 };
 
-function makeItems(materials: Material[]): ItemWithData[] {
-  return materials.map(makeItem);
+type OrderState = {
+  [key: string]: number;
+};
+
+type CheckedState = {
+  [key: string]: boolean;
+};
+
+type TemporaryItems = {
+  [key: string]: Material;
+};
+
+function makeItems(
+  materials: Material[],
+  orderState: OrderState,
+  checkedState: CheckedState
+): ItemWithData[] {
+  return materials.map((material) => {
+    const order = material.id
+      ? orderState[material.id] ?? material.order
+      : material.order;
+    const checked = material.id ? checkedState[material.id] ?? false : false;
+    return makeItem(material, order, checked);
+  });
 }
 
-function makeItem(material: Material): ItemWithData {
+function makeItem(
+  material: Material,
+  order: number,
+  checked: boolean
+): ItemWithData {
   return {
     id: material.id!,
     title: (
@@ -79,7 +104,7 @@ function makeItem(material: Material): ItemWithData {
         )}
       </VStack>
     ),
-    checked: false,
+    checked: checked,
     details: (
       <HStack spacing={2}>
         <Badge variant="secondary">
@@ -92,7 +117,10 @@ function makeItem(material: Material): ItemWithData {
         </Badge>
       </HStack>
     ),
-    data: material,
+    data: {
+      ...material,
+      order,
+    },
   };
 }
 
@@ -109,9 +137,38 @@ const initialMethodMaterial: Omit<Material, "jobMakeMethodId" | "order"> & {
   unitOfMeasureCode: "EA",
 };
 
+const usePendingMaterials = () => {
+  const { jobId } = useParams();
+  if (!jobId) throw new Error("jobId not found");
+
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        (fetcher.formAction === path.to.newJobMaterial(jobId) ||
+          fetcher.formAction?.includes(`/job/${jobId}/material`)) ??
+        false
+      );
+    })
+    .reduce<z.infer<typeof jobMaterialValidator>[]>((acc, fetcher) => {
+      const formData = fetcher.formData;
+      const material = jobMaterialValidator.safeParse(
+        Object.fromEntries(formData)
+      );
+
+      if (material.success) {
+        return [...acc, material.data];
+      }
+      return acc;
+    }, []);
+};
+
 const JobBillOfMaterial = ({
   jobMakeMethodId,
-  materials,
+  materials: initialMaterials,
   operations,
 }: JobBillOfMaterialProps) => {
   const { jobId } = useParams();
@@ -120,10 +177,48 @@ const JobBillOfMaterial = ({
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
 
-  const [items, setItems] = useState<ItemWithData[]>(
-    makeItems(materials ?? [])
-  );
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
+  const [checkedState, setCheckedState] = useState<CheckedState>({});
+  const [orderState, setOrderState] = useState<OrderState>(() => {
+    return initialMaterials.reduce((acc, material) => {
+      acc[material.id!] = material.order;
+      return acc;
+    }, {} as OrderState);
+  });
+
+  const materialsById = new Map<string, Material>();
+
+  initialMaterials.forEach((material) => {
+    if (!material.id) return;
+    materialsById.set(material.id, material);
+  });
+
+  const pendingMaterials = usePendingMaterials();
+
+  pendingMaterials.forEach((pendingMaterial) => {
+    if (!pendingMaterial.id) {
+      materialsById.set("temporary", {
+        ...pendingMaterial,
+        description: "",
+      });
+    } else {
+      materialsById.set(pendingMaterial.id, {
+        ...materialsById.get(pendingMaterial.id)!,
+        ...pendingMaterial,
+      });
+    }
+  });
+
+  Object.entries(temporaryItems).forEach(([id, material]) => {
+    materialsById.set(id, material);
+  });
+
+  const items = makeItems(
+    Array.from(materialsById.values()),
+    orderState,
+    checkedState
+  ).sort((a, b) => a.data.order - b.data.order);
 
   const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const isDisabled = ["Completed", "Cancelled"].includes(
@@ -132,72 +227,82 @@ const JobBillOfMaterial = ({
 
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "production") || isDisabled) return;
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
-    );
+    setCheckedState((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
-  // we create a temporary item and append it to the list
   const onAddItem = () => {
     if (!permissions.can("update", "production") || isDisabled) return;
     const temporaryId = Math.random().toString(16).slice(2);
     setSelectedItemId(temporaryId);
-    setItems((prevItems) => {
-      let newOrder = 1;
-      if (prevItems.length) {
-        newOrder = prevItems[prevItems.length - 1].data.order + 1;
-      }
 
-      return [
-        ...prevItems,
-        {
-          title: "",
-          checked: false,
-          id: temporaryId,
-          data: {
-            ...initialMethodMaterial,
-            order: newOrder,
-            jobMakeMethodId,
-          },
-        },
-      ];
-    });
+    let newOrder = 1;
+    if (items.length) {
+      newOrder = Math.max(...items.map((item) => item.data.order)) + 1;
+    }
+
+    setTemporaryItems((prev) => ({
+      ...prev,
+      [temporaryId]: {
+        ...initialMethodMaterial,
+        id: temporaryId,
+        order: newOrder,
+        jobMakeMethodId,
+      } as Material,
+    }));
+
+    setOrderState((prev) => ({
+      ...prev,
+      [temporaryId]: newOrder,
+    }));
   };
 
   const onRemoveItem = async (id: string) => {
     if (!permissions.can("update", "production") || isDisabled) return;
-    // get the item and it's order in the list
-    const itemIndex = items.findIndex((i) => i.id === id);
-    const item = items[itemIndex];
 
-    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    if (isTemporaryId(id)) {
+      setTemporaryItems((prev) => {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      });
+      return;
+    }
 
     fetcher.submit(new FormData(), {
       method: "post",
-      action: path.to.deleteJobMaterial(jobId, item.id),
+      action: path.to.deleteJobMaterial(jobId, id),
+    });
+
+    setTemporaryItems((prev) => {
+      const { [id]: _, ...rest } = prev;
+      return rest;
     });
   };
 
-  const onReorder = (reorderedItems: ItemWithData[]) => {
+  const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "production") || isDisabled) return;
-    const newItems = reorderedItems.map((item, index) => ({
-      ...item,
-      data: {
-        ...item.data,
-        order: index + 1,
-      },
-    }));
-    const updates = newItems.reduce<Record<string, number>>((acc, item) => {
-      if (!isTemporaryId(item.id)) {
-        acc[item.id] = item.data.order;
+
+    const newOrderState = items.reduce<OrderState>((acc, item, index) => {
+      acc[item.id] = index + 1;
+      return acc;
+    }, {});
+
+    setOrderState(newOrderState);
+
+    const updates = Object.entries(newOrderState).reduce<
+      Record<string, number>
+    >((acc, [id, order]) => {
+      if (!isTemporaryId(id)) {
+        acc[id] = order;
       }
       return acc;
     }, {});
 
-    setItems(reorderedItems);
-    updateSortOrder(updates);
+    if (Object.keys(updates).length > 0) {
+      updateSortOrder(updates);
+    }
   };
 
   const updateSortOrder = useDebounce(
@@ -214,17 +319,20 @@ const JobBillOfMaterial = ({
   );
 
   const onCloseOnDrag = useCallback(() => {
-    setItems((prevItems) => {
-      const updatedItems = prevItems.map((item) =>
-        item.checked ? { ...item, checked: false } : item
-      );
-      return updatedItems.some(
-        (item, index) => item.checked !== prevItems[index].checked
-      )
-        ? updatedItems
-        : prevItems;
+    setCheckedState((prev) => {
+      const newState = { ...prev };
+      let changed = false;
+
+      items.forEach((item) => {
+        if (item.checked) {
+          newState[item.id] = false;
+          changed = true;
+        }
+      });
+
+      return changed ? newState : prev;
     });
-  }, []);
+  }, [items]);
 
   const renderListItem = ({
     item,
@@ -261,9 +369,19 @@ const JobBillOfMaterial = ({
                 isOpen
                   ? () => {
                       if (isTemporaryId(item.id)) {
-                        setItems((prevItems) =>
-                          prevItems.filter((i) => i.id !== item.id)
-                        );
+                        setTemporaryItems((prev) => {
+                          const { [item.id]: _, ...rest } = prev;
+                          return rest;
+                        });
+
+                        setOrderState((prev) => {
+                          const order = prev[item.id];
+                          const { [item.id]: _, ...rest } = prev;
+                          return {
+                            ...rest,
+                            [item.id]: order,
+                          };
+                        });
                       }
                       setSelectedItemId(null);
                     }
@@ -341,9 +459,12 @@ const JobBillOfMaterial = ({
                           <MaterialForm
                             item={item}
                             isDisabled={isDisabled}
-                            setItems={setItems}
                             setSelectedItemId={setSelectedItemId}
                             jobOperations={operations}
+                            temporaryItems={temporaryItems}
+                            setTemporaryItems={setTemporaryItems}
+                            orderState={orderState}
+                            setOrderState={setOrderState}
                           />
                         </motion.div>
                       </motion.div>
@@ -401,15 +522,21 @@ function isTemporaryId(id: string) {
 function MaterialForm({
   item,
   isDisabled,
-  setItems,
   setSelectedItemId,
   jobOperations,
+  temporaryItems,
+  setTemporaryItems,
+  orderState,
+  setOrderState,
 }: {
   item: ItemWithData;
   isDisabled: boolean;
-  setItems: Dispatch<SetStateAction<ItemWithData[]>>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   jobOperations: Operation[];
+  temporaryItems: TemporaryItems;
+  setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
+  orderState: OrderState;
+  setOrderState: Dispatch<SetStateAction<OrderState>>;
 }) {
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
@@ -422,27 +549,31 @@ function MaterialForm({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   useEffect(() => {
-    // replace the temporary id with the actual id
     if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
-      flushSync(() => {
-        setItems((prevItems) =>
-          prevItems.map((i) =>
-            i.id === item.id
-              ? {
-                  ...i,
-                  id: methodMaterialFetcher.data!.id!,
-                  data: {
-                    ...i.data,
-                    ...methodMaterialFetcher.data,
-                  },
-                }
-              : i
-          )
-        );
-      });
+      if (isTemporaryId(item.id)) {
+        setTemporaryItems((prev) => {
+          const { [item.id]: _, ...rest } = prev;
+          return rest;
+        });
+
+        setOrderState((prev) => {
+          const order = prev[item.id];
+          const { [item.id]: _, ...rest } = prev;
+          return {
+            ...rest,
+            [methodMaterialFetcher.data!.id!]: order,
+          };
+        });
+      }
       setSelectedItemId(null);
     }
-  }, [item.id, methodMaterialFetcher.data, setItems, setSelectedItemId]);
+  }, [
+    item.id,
+    methodMaterialFetcher.data,
+    setTemporaryItems,
+    setOrderState,
+    setSelectedItemId,
+  ]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{
@@ -521,19 +652,13 @@ function MaterialForm({
       validator={jobMaterialValidator}
       className="w-full"
       fetcher={methodMaterialFetcher}
-      onSubmit={(values) => {
-        setItems((prevItems) =>
-          prevItems.map((i) =>
-            i.id === item.id
-              ? {
-                  ...makeItem({ ...values, description: itemData.description }),
-                  id: item.id,
-                }
-              : i
-          )
-        );
+      onSubmit={() => {
+        if (!isTemporaryId(item.id)) {
+          setSelectedItemId(null);
+        }
       }}
     >
+      <Hidden name="id" />
       <Hidden name="jobMakeMethodId" />
       <Hidden name="itemReadableId" value={itemData.itemReadableId} />
       <Hidden name="order" />

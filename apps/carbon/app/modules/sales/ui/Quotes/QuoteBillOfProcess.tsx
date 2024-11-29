@@ -1475,14 +1475,18 @@ function ToolsForm({
 
       {tools.length > 0 && (
         <div className="border rounded-lg">
-          {tools.map((t, index) => (
-            <ToolsListItem
-              key={t.id}
-              tool={t}
-              operationId={operationId}
-              className={index === tools.length - 1 ? "border-none" : ""}
-            />
-          ))}
+          {[...tools]
+            .sort((a, b) =>
+              String(a.id ?? "").localeCompare(String(b.id ?? ""))
+            )
+            .map((t, index) => (
+              <ToolsListItem
+                key={t.id}
+                tool={t}
+                operationId={operationId}
+                className={index === tools.length - 1 ? "border-none" : ""}
+              />
+            ))}
         </div>
       )}
     </div>

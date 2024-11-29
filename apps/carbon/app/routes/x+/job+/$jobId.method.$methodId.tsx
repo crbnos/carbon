@@ -100,13 +100,13 @@ export default function JobMakeMethodRoute() {
       <VStack spacing={2} className="p-2">
         <JobMakeMethodTools />
         <JobBillOfProcess
-          key={`bop:${methodId}:${operations.length}:${operations[0]?.workCenterId}`}
+          key={`bop:${methodId}`}
           jobMakeMethodId={methodId}
           operations={operations}
           locationId={routeData?.job?.locationId ?? ""}
         />
         <JobBillOfMaterial
-          key={`bom:${methodId}:${materials.length}`}
+          key={`bom:${methodId}`}
           jobMakeMethodId={methodId}
           materials={materials}
           operations={operations}
