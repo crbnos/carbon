@@ -225,10 +225,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ScheduleRoute() {
-  const { columns, items, processes, salesOrders } =
-    useLoaderData<typeof loader>();
+  const {
+    columns,
+    items: initialItems,
+    processes,
+    salesOrders,
+  } = useLoaderData<typeof loader>();
 
-  const progressByOperation = useProgressByOperation(items);
+  const [items, setItems] = useState<Item[]>(initialItems);
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
+
+  const sortItems = useCallback((items: Item[]) => {
+    return [...items].sort((a, b) => a.priority - b.priority);
+  }, []);
+
+  useEffect(() => {
+    setItems((prevItems) => sortItems(prevItems));
+  }, [sortItems]);
+
+  const progressByOperation = useProgressByOperation(
+    items,
+    setItems,
+    sortItems
+  );
 
   const [params] = useUrlParams();
 
@@ -344,7 +366,11 @@ export default function ScheduleRoute() {
   );
 }
 
-function useProgressByOperation(items: Item[]) {
+function useProgressByOperation(
+  items: Item[],
+  setItems: React.Dispatch<React.SetStateAction<Item[]>>,
+  sortItems: (items: Item[]) => Item[]
+) {
   const {
     company: { id: companyId },
   } = useUser();
@@ -459,18 +485,33 @@ function useProgressByOperation(items: Item[]) {
           },
           (payload) => {
             switch (payload.eventType) {
-              case "INSERT":
-                const { new: inserted } = payload;
-                console.log({ inserted });
-                break;
-              case "UPDATE":
+              case "UPDATE": {
                 const { new: updated } = payload;
-                console.log({ updated });
+                setItems((prevItems: Item[]) =>
+                  sortItems(
+                    prevItems.map((item: Item) => {
+                      if (item.id === updated.id) {
+                        return {
+                          ...item,
+                          columnId: updated.workCenterId,
+                          priority: updated.priority,
+                        };
+                      }
+                      return item;
+                    })
+                  )
+                );
                 break;
-              case "DELETE":
+              }
+              case "DELETE": {
                 const { old: deleted } = payload;
-                console.log({ deleted });
+                setItems((prevItems: Item[]) =>
+                  sortItems(
+                    prevItems.filter((item: Item) => item.id !== deleted.id)
+                  )
+                );
                 break;
+              }
             }
           }
         )
