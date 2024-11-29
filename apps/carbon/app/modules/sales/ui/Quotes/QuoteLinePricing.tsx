@@ -512,6 +512,7 @@ const QuoteLinePricing = ({
                       value={discount}
                       formatOptions={{
                         style: "percent",
+                        maximumFractionDigits: 2,
                       }}
                       minValue={0}
                       maxValue={1}
@@ -811,6 +812,7 @@ const QuoteLinePricing = ({
                       value={taxPercent}
                       formatOptions={{
                         style: "percent",
+                        maximumFractionDigits: 2,
                       }}
                     >
                       <NumberInput

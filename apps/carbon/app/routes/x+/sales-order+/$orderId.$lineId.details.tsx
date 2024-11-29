@@ -208,7 +208,6 @@ export default function EditSalesOrderLineRoute() {
         subTitle={line.itemReadableId ?? ""}
         notes={line.notes as JSONContent}
       />
-
       <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
         <Suspense
           fallback={
