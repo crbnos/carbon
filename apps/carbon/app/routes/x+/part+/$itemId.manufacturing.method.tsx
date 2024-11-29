@@ -118,7 +118,7 @@ export default function MakeMethodRoute() {
         initialValues={manufacturingInitialValues}
       />
       <BillOfProcess
-        key={`bop:${itemId}`}
+        key={`bop:${itemId}:${manufacturingRouteData?.methodOperations?.length}`}
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}

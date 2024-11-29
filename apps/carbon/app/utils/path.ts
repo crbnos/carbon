@@ -447,7 +447,6 @@ export const path = {
       generatePath(`${x}/items/methods/operation/${id}`),
     methodOperations: `${x}/items/methods/operations`,
     methodOperationsOrder: `${x}/items/methods/operation/order`,
-    methodOperationsDelete: `${x}/items/methods/operation/delete`,
     methodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/${id}`),
     newAbility: `${x}/resources/abilities/new`,

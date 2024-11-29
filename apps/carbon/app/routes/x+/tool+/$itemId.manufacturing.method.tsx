@@ -27,13 +27,13 @@ export default function MakeMethodRoute() {
     <VStack spacing={2} className="p-2">
       <MakeMethodTools itemId={itemId} type="Tool" />
       <BillOfProcess
-        key={`bop:${itemId}`}
+        key={`bop:${itemId}:${manufacturingRouteData?.methodOperations?.length}`}
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
       />
       <BillOfMaterial
-        key={`bom:${itemId}`}
+        key={`bom:${itemId}:${manufacturingRouteData?.methodMaterials?.length}`}
         makeMethodId={makeMethodId}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}

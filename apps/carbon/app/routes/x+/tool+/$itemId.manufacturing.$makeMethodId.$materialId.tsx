@@ -113,12 +113,12 @@ export default function MethodMaterialMakePage() {
         initialValues={item}
       />
       <BillOfProcess
-        key={`bop:${itemId}`}
+        key={`bop:${itemId}:${methodOperations.length}`}
         makeMethodId={makeMethodId}
         operations={methodOperations}
       />
       <BillOfMaterial
-        key={`bom:${itemId}`}
+        key={`bom:${itemId}:${methodMaterials.length}`}
         makeMethodId={makeMethodId}
         materials={methodMaterials}
         operations={methodOperations}

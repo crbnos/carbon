@@ -26,15 +26,15 @@ import {
   generateHTML,
   useDebounce,
   useDisclosure,
-  useThrottle,
 } from "@carbon/react";
 import { formatRelativeTime } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { useFetcher, useFetchers } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   LuAlertTriangle,
   LuChevronDown,
@@ -82,33 +82,13 @@ type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
 };
 
-type OperationWithTools = Operation & {
-  methodOperationTool: OperationTool[];
-};
-
 type ItemWithData = Item & {
   data: Operation;
 };
 
 type BillOfProcessProps = {
   makeMethodId: string;
-  operations: OperationWithTools[];
-};
-
-type PendingWorkInstructions = {
-  [key: string]: JSONContent;
-};
-
-type OrderState = {
-  [key: string]: number;
-};
-
-type CheckedState = {
-  [key: string]: boolean;
-};
-
-type TemporaryItems = {
-  [key: string]: Operation;
+  operations: (Operation & { methodOperationTool: OperationTool[] })[];
 };
 
 function makeItems(operations: Operation[]): ItemWithData[] {
@@ -172,167 +152,96 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
   workInstruction: {},
 };
 
-const usePendingOperations = () => {
-  type PendingItem = ReturnType<typeof useFetchers>[number] & {
-    formData: FormData;
-  };
-
-  return useFetchers()
-    .filter((fetcher): fetcher is PendingItem => {
-      return (
-        (fetcher.formAction === path.to.newMethodOperation ||
-          fetcher.formAction?.includes("/items/methods/operation/")) ??
-        false
-      );
-    })
-    .reduce<z.infer<typeof methodOperationValidator>[]>((acc, fetcher) => {
-      const formData = fetcher.formData;
-      const operation = methodOperationValidator.safeParse(
-        Object.fromEntries(formData)
-      );
-
-      if (operation.success) {
-        return [...acc, operation.data];
-      }
-      return acc;
-    }, []);
-};
-
-const BillOfProcess = ({
-  makeMethodId,
-  operations: initialOperations,
-}: BillOfProcessProps) => {
+const BillOfProcess = ({ makeMethodId, operations }: BillOfProcessProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
-  const { id: userId } = useUser();
+  const {
+    id: userId,
+    company: { id: companyId },
+  } = useUser();
 
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
-  const [workInstructions, setWorkInstructions] =
-    useState<PendingWorkInstructions>(() => {
-      return initialOperations.reduce((acc, operation) => {
-        if (operation.workInstruction) {
-          acc[operation.id!] = operation.workInstruction;
-        }
-        return acc;
-      }, {} as PendingWorkInstructions);
-    });
-  const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialOperations.reduce((acc, op) => {
-      acc[op.id!] = op.order;
-      return acc;
-    }, {} as OrderState);
-  });
-
-  const operationsById = new Map<
-    string,
-    Operation & { methodOperationTool: OperationTool[] }
-  >();
-
-  // Add initial operations to map
-  initialOperations.forEach((operation) => {
-    if (!operation.id) return;
-    operationsById.set(operation.id, operation);
-  });
-
-  const pendingOperations = usePendingOperations();
-
-  // Replace existing operations with pending ones
-  pendingOperations.forEach((pendingOperation) => {
-    if (!pendingOperation.id) {
-      operationsById.set("temporary", {
-        ...pendingOperation,
-        workInstruction: {},
-        methodOperationTool: [],
-      });
-      return;
-    }
-
-    // Remove existing operation if it exists
-    operationsById.delete(pendingOperation.id);
-
-    // Add pending operation
-    operationsById.set(pendingOperation.id, {
-      ...pendingOperation,
-      workInstruction: workInstructions[pendingOperation.id] || null,
-      order: orderState[pendingOperation.id] ?? pendingOperation.order,
-      methodOperationTool: [],
-    });
-  });
-
-  // Add temporary items to operations
-  Object.entries(temporaryItems).forEach(([id, operation]) => {
-    if (!operationsById.has(id)) {
-      operationsById.set(id, {
-        ...operation,
-        methodOperationTool: [],
-      });
-    }
-  });
-
-  const operations = Array.from(operationsById.values()).sort(
-    (a, b) => (orderState[a.id!] ?? a.order) - (orderState[b.id!] ?? b.order)
+  const [items, setItems] = useState<ItemWithData[]>(
+    makeItems(operations ?? [])
   );
-
-  const items = makeItems(operations).map((item) => ({
-    ...item,
-    checked: checkedState[item.id] ?? false,
-  }));
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "parts")) return;
-    setCheckedState((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setItems((prevItems) =>
+      prevItems.map((i) => (i.id === id ? { ...i, checked: !i.checked } : i))
+    );
   };
 
-  const onUpdateWorkInstruction = useDebounce(
-    async (id: string, content: JSONContent) => {
-      if (!isTemporaryId(id)) {
-        await carbon
-          ?.from("methodOperation")
-          .update({
-            workInstruction: content,
-            updatedAt: today(getLocalTimeZone()).toString(),
-            updatedBy: userId,
-          })
-          .eq("id", id);
+  // we create a temporary item and append it to the list
+  const onAddItem = () => {
+    const temporaryId = Math.random().toString(16).slice(2);
+    setSelectedItemId(temporaryId);
+    setItems((prevItems) => {
+      let newOrder = 1;
+      if (prevItems.length) {
+        newOrder = prevItems[prevItems.length - 1].data.order + 1;
       }
-    },
-    1000,
-    true
-  );
+
+      return [
+        ...prevItems,
+        {
+          title: "",
+          checked: false,
+          id: temporaryId,
+          data: {
+            ...initialOperation,
+            order: newOrder,
+            makeMethodId,
+          },
+        },
+      ];
+    });
+  };
+
+  const onRemoveItem = async (id: string) => {
+    if (!permissions.can("update", "parts")) return;
+    // get the item and it's order in the list
+    const itemIndex = items.findIndex((i) => i.id === id);
+    const item = items[itemIndex];
+
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+
+    const response = await carbon
+      ?.from("methodOperation")
+      .delete()
+      .eq("id", id);
+    if (response?.error) {
+      // add the item back to the list if there was an error
+      setItems((prevItems) => {
+        const updatedItems = [...prevItems];
+        updatedItems.splice(itemIndex, 0, item);
+        return updatedItems;
+      });
+    }
+  };
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "parts")) return;
-
-    // Create new order state
-    const newOrderState = items.reduce<OrderState>((acc, item, index) => {
-      acc[item.id] = index + 1;
-      return acc;
-    }, {});
-
-    // Update order state immediately
-    setOrderState(newOrderState);
-
-    // Only send non-temporary items to the server
-    const updates = Object.entries(newOrderState).reduce<
-      Record<string, number>
-    >((acc, [id, order]) => {
-      if (!isTemporaryId(id)) {
-        acc[id] = order;
+    const newItems = items.map((item, index) => ({
+      ...item,
+      data: {
+        ...item.data,
+        order: index + 1,
+      },
+    }));
+    const updates = newItems.reduce<Record<string, number>>((acc, item) => {
+      if (!isTemporaryId(item.id)) {
+        acc[item.id] = item.data.order;
       }
       return acc;
     }, {});
 
+    setItems(newItems);
     updateSortOrder(updates);
   };
 
-  const updateSortOrder = useThrottle(
+  const updateSortOrder = useDebounce(
     (updates: Record<string, number>) => {
       let formData = new FormData();
       formData.append("updates", JSON.stringify(updates));
@@ -345,59 +254,30 @@ const BillOfProcess = ({
     true
   );
 
-  const onAddItem = () => {
-    const temporaryId = Math.random().toString(16).slice(2);
-
-    let newOrder = 1;
-    if (operations.length) {
-      newOrder = Math.max(...operations.map((op) => op.order)) + 1;
-    }
-
-    const newOperation: Operation = {
-      ...initialOperation,
-      id: temporaryId,
-      order: newOrder,
-      makeMethodId,
-    };
-
-    setTemporaryItems((prev) => ({
-      ...prev,
-      [temporaryId]: newOperation,
-    }));
-    setSelectedItemId(temporaryId);
-  };
-
-  const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "parts")) return;
-
-    const operation = operationsById.get(id);
-    if (!operation) return;
-
-    if (isTemporaryId(id)) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      deleteOperationFetcher.submit(
-        { id },
-        {
-          method: "post",
-          action: path.to.methodOperationsDelete,
-        }
+  const onCloseOnDrag = useCallback(() => {
+    setItems((prevItems) => {
+      const updatedItems = prevItems.map((i) =>
+        i.checked ? { ...i, checked: false } : i
       );
-    }
-
-    setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
+      return updatedItems.some(
+        (i, index) => i.checked !== prevItems[index].checked
+      )
+        ? updatedItems
+        : prevItems;
     });
-  };
+  }, []);
 
-  const {
-    company: { id: companyId },
-  } = useUser();
+  const onUpdateWorkInstruction = useDebounce(async (content: JSONContent) => {
+    if (selectedItemId !== null && !isTemporaryId(selectedItemId))
+      await carbon
+        ?.from("methodOperation")
+        .update({
+          workInstruction: content,
+          updatedAt: today(getLocalTimeZone()).toString(),
+          updatedBy: userId,
+        })
+        .eq("id", selectedItemId!);
+  }, 2000);
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
@@ -448,9 +328,8 @@ const BillOfProcess = ({
             >
               <OperationForm
                 item={item}
-                workInstruction={workInstructions[item.id] ?? {}}
+                setItems={setItems}
                 setSelectedItemId={setSelectedItemId}
-                setTemporaryItems={setTemporaryItems}
               />
             </motion.div>
           </div>
@@ -465,16 +344,25 @@ const BillOfProcess = ({
               {permissions.can("update", "parts") ? (
                 <Editor
                   initialValue={
-                    workInstructions[item.id] ?? ({} as JSONContent)
+                    item.data.workInstruction ?? ({} as JSONContent)
                   }
                   onUpload={onUploadImage}
                   onChange={(content) => {
                     if (!permissions.can("update", "parts")) return;
-                    setWorkInstructions((prev) => ({
-                      ...prev,
-                      [item.id]: content,
-                    }));
-                    onUpdateWorkInstruction(item.id, content);
+                    setItems((prevItems) =>
+                      prevItems.map((i) =>
+                        i.id === selectedItemId
+                          ? {
+                              ...i,
+                              data: {
+                                ...i.data,
+                                workInstruction: content,
+                              },
+                            }
+                          : i
+                      )
+                    );
+                    onUpdateWorkInstruction(content);
                   }}
                   className="py-8"
                 />
@@ -499,8 +387,8 @@ const BillOfProcess = ({
           <div className="flex w-full flex-col py-4">
             <ToolsForm
               tools={
-                initialOperations.find((o) => o.id === item.id)
-                  ?.methodOperationTool ?? []
+                operations.find((o) => o.id === item.id)?.methodOperationTool ??
+                []
               }
               operationId={item.id!}
               isDisabled={
@@ -522,8 +410,8 @@ const BillOfProcess = ({
         onSelectItem={setSelectedItemId}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
-        handleDrag={() => setSelectedItemId(null)}
-        className="my-2"
+        handleDrag={onCloseOnDrag}
+        className="my-2 "
         renderExtra={(item) => (
           <div
             key={`${isOpen}`}
@@ -537,6 +425,11 @@ const BillOfProcess = ({
               onClick={
                 isOpen
                   ? () => {
+                      if (isTemporaryId(item.id)) {
+                        setItems((prevItems) =>
+                          prevItems.filter((i) => i.id !== item.id)
+                        );
+                      }
                       setSelectedItemId(null);
                     }
                   : () => {
@@ -657,19 +550,15 @@ function isTemporaryId(id: string) {
   return id.length < 20;
 }
 
-type OperationFormProps = {
-  item: ItemWithData;
-  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
-  workInstruction: JSONContent;
-  setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
-};
-
 function OperationForm({
   item,
+  setItems,
   setSelectedItemId,
-  workInstruction,
-  setTemporaryItems,
-}: OperationFormProps) {
+}: {
+  item: ItemWithData;
+  setItems: Dispatch<SetStateAction<ItemWithData[]>>;
+  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
+}) {
   const methodOperationFetcher = useFetcher<{ id: string }>();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
@@ -678,35 +567,47 @@ function OperationForm({
   useEffect(() => {
     // replace the temporary id with the actual id
     if (methodOperationFetcher.data && methodOperationFetcher.data.id) {
+      flushSync(() => {
+        setItems((prevItems) =>
+          prevItems.map((i) =>
+            i.id === item.id
+              ? {
+                  ...i,
+                  id: methodOperationFetcher.data!.id!,
+                  data: {
+                    ...i.data,
+                    ...methodOperationFetcher.data,
+                  },
+                }
+              : i
+          )
+        );
+      });
+      // save the work instructions
       if (isTemporaryId(item.id) && carbon) {
         carbon
           .from("methodOperation")
           .update({
-            workInstruction: workInstruction,
+            workInstruction: item.data.workInstruction,
             createdAt: today(getLocalTimeZone()).toString(),
             updatedBy: userId,
           })
           .eq("id", methodOperationFetcher.data.id)
           .then(() => {
             setSelectedItemId(null);
-            // Clear temporary item after successful save
-            setTemporaryItems((prev) => {
-              const { [item.id]: _, ...rest } = prev;
-              return rest;
-            });
           });
       } else {
         setSelectedItemId(null);
       }
     }
   }, [
+    item.data.workInstruction,
     item.id,
     methodOperationFetcher.data,
+    setItems,
     setSelectedItemId,
     carbon,
     userId,
-    workInstruction,
-    setTemporaryItems,
   ]);
 
   const [showMachine, setShowMachine] = useState(false);
@@ -794,13 +695,22 @@ function OperationForm({
       validator={methodOperationValidator}
       className="w-full flex flex-col gap-y-4"
       fetcher={methodOperationFetcher}
-      onSubmit={() => {
-        if (!isTemporaryId(item.id)) {
-          setSelectedItemId(null);
-        }
+      onSubmit={(values) => {
+        setItems((prevItems) =>
+          prevItems.map((i) =>
+            i.id === item.id
+              ? {
+                  ...makeItem({
+                    ...values,
+                    workInstruction: i.data.workInstruction,
+                  }),
+                  id: item.id,
+                }
+              : i
+          )
+        );
       }}
     >
-      <Hidden name="id" />
       <Hidden name="makeMethodId" />
       <Hidden name="order" />
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
@@ -1329,18 +1239,14 @@ function ToolsForm({
 
       {tools.length > 0 && (
         <div className="border rounded-lg">
-          {tools
-            .sort((a, b) =>
-              String(a.id ?? "").localeCompare(String(b.id ?? ""))
-            )
-            .map((t, index) => (
-              <ToolsListItem
-                key={t.id}
-                tool={t}
-                operationId={operationId}
-                className={index === tools.length - 1 ? "border-none" : ""}
-              />
-            ))}
+          {tools.map((t, index) => (
+            <ToolsListItem
+              key={t.id}
+              tool={t}
+              operationId={operationId}
+              className={index === tools.length - 1 ? "border-none" : ""}
+            />
+          ))}
         </div>
       )}
     </div>
