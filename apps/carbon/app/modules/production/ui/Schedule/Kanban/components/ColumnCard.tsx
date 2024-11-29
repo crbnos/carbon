@@ -15,19 +15,27 @@ import { cva } from "class-variance-authority";
 import { useMemo } from "react";
 import { LuGripVertical } from "react-icons/lu";
 import { useUrlParams } from "~/hooks";
-import type { Column, ColumnDragData, DisplaySettings, Item } from "../types";
+import type {
+  Column,
+  ColumnDragData,
+  DisplaySettings,
+  Item,
+  Progress,
+} from "../types";
 import { ItemCard } from "./ItemCard";
 
 type ColumnCardProps = {
   column: Column;
   items: Item[];
   isOverlay?: boolean;
+  progressByItemId: Record<string, Progress>;
 } & DisplaySettings;
 
 export function ColumnCard({
   column,
   items,
   isOverlay,
+  progressByItemId,
   ...displaySettings
 }: ColumnCardProps) {
   const [params] = useUrlParams();
@@ -37,7 +45,10 @@ export function ColumnCard({
   }, [items]);
 
   const totalDuration = items.reduce((acc, item) => {
-    return acc + Math.max((item.duration ?? 0) - (item.progress ?? 0), 0);
+    const progress = progressByItemId[item.id]?.progress ?? 0;
+    const duration = progressByItemId[item.id]?.totalDuration ?? 0;
+    const effectiveDuration = Math.max(duration - progress, 0);
+    return acc + effectiveDuration;
   }, 0);
 
   const {
@@ -76,6 +87,8 @@ export function ColumnCard({
     }
   );
 
+  const isActive = items.some((item) => progressByItemId[item.id]?.active);
+
   return (
     <Card
       ref={setNodeRef}
@@ -91,7 +104,7 @@ export function ColumnCard({
     >
       <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-10 border-b">
         <div className="flex flex-grow items-start space-x-2">
-          {column.active && <PulsingDot />}
+          {isActive && <PulsingDot />}
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>
             {totalDuration > 0 ? (
@@ -118,7 +131,18 @@ export function ColumnCard({
         <CardContent className="flex flex-col gap-2 p-2">
           <SortableContext items={itemsIds}>
             {items.map((item) => (
-              <ItemCard key={item.id} item={item} {...displaySettings} />
+              <ItemCard
+                key={item.id}
+                item={{
+                  ...item,
+                  status: progressByItemId[item.id]?.active
+                    ? "In Progress"
+                    : item.status,
+                  progress: progressByItemId[item.id]?.progress ?? 0,
+                  duration: progressByItemId[item.id]?.totalDuration ?? 0,
+                }}
+                {...displaySettings}
+              />
             ))}
           </SortableContext>
         </CardContent>

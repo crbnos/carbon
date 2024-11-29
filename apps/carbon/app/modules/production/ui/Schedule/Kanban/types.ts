@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ProductionEvent } from "~/modules/production";
 import { deadlineTypes, jobOperationStatus } from "~/modules/production";
 
 export const columnValidator = z.object({
@@ -28,6 +29,11 @@ export type DisplaySettings = {
 
 export type DraggableData = ColumnDragData | ItemDragData;
 
+export type Event = Pick<
+  ProductionEvent,
+  "id" | "jobOperationId" | "duration" | "startTime" | "endTime"
+>;
+
 const itemValidator = z.object({
   id: z.string(),
   columnId: z.string(),
@@ -47,6 +53,9 @@ const itemValidator = z.object({
   salesOrderReadableId: z.string().optional(),
   salesOrderId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
+  setupDuration: z.number().optional(),
+  laborDuration: z.number().optional(),
+  machineDuration: z.number().optional(),
 });
 
 export type Item = z.infer<typeof itemValidator>;
@@ -56,26 +65,8 @@ export interface ItemDragData {
   item: Item;
 }
 
-export enum ItemStatus {
-  Canceled = "CANCELED",
-  Done = "DONE",
-  InProgress = "IN_PROGRESS",
-  Paused = "PAUSED",
-  Ready = "READY",
-  Todo = "TODO",
-  Waiting = "WAITING",
-}
-
-export enum ItemDeadline {
-  ASAP = "ASAP",
-  HardDeadline = "Hard Deadline",
-  SoftDeadline = "Soft Deadline",
-  NoDeadline = "No Deadline",
-}
-
-export enum ItemPriority {
-  ASAP = "ASAP",
-  High = "HIGH",
-  Average = "AVERAGE",
-  Low = "LOW",
-}
+export type Progress = {
+  totalDuration: number;
+  progress: number;
+  active: boolean;
+};

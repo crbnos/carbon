@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import { Spinner, VStack } from "@carbon/react";
 import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -12,6 +13,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
   ItemDocuments,
+  ItemNotes,
   PartForm,
   partValidator,
   upsertPart,
@@ -85,6 +87,12 @@ export default function PartDetailsRoute() {
       <PartForm
         key={JSON.stringify(partInitialValues)}
         initialValues={partInitialValues}
+      />
+      <ItemNotes
+        id={partData.partSummary?.itemId ?? null}
+        title={partData.partSummary?.id ?? ""}
+        subTitle={partData.partSummary?.name ?? ""}
+        notes={partData.partSummary?.notes as JSONContent}
       />
       {permissions.is("employee") && (
         <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2">

@@ -8,6 +8,7 @@ import { FileBadge } from "./FileBadge";
 import ItemCostingForm from "./ItemCostingForm";
 import ItemDocuments from "./ItemDocuments";
 import ItemForm from "./ItemForm";
+import ItemNotes from "./ItemNotes";
 import ItemPlanningForm from "./ItemPlanningForm";
 import ItemPurchasingForm from "./ItemPurchasingForm";
 import ItemSalePriceForm from "./ItemSalePriceForm";
@@ -24,6 +25,7 @@ export {
   ItemCostingForm,
   ItemDocuments,
   ItemForm,
+  ItemNotes,
   ItemPlanningForm,
   ItemPurchasingForm,
   ItemSalePriceForm,

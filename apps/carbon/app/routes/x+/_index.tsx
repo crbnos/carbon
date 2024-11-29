@@ -3,11 +3,13 @@ import { getLocalTimeZone } from "@internationalized/date";
 import { useLocale } from "@react-aria/i18n";
 import { Link } from "@remix-run/react";
 import { useMemo, type ComponentProps } from "react";
+import { LuHardHat } from "react-icons/lu";
 import { useModules, useUser } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 
 export default function AppIndexRoute() {
   const user = useUser();
+  // const permissions = usePermissions();
   const modules = useModules();
   const { locale } = useLocale();
   const date = new Date();
@@ -28,9 +30,25 @@ export default function AppIndexRoute() {
       <Hr />
       <Subheading className="mb-8">Modules</Subheading>
       <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        {/* {permissions.can("view", "production") && (
+          <ModuleCard
+            module={{
+              name: "Schedule",
+              to: path.to.schedule,
+              icon: LuCalendarClock,
+            }}
+          />
+        )} */}
         {modules.map((module) => (
           <ModuleCard key={module.name} module={module} />
         ))}
+        <ModuleCard
+          module={{
+            name: "MES",
+            to: "https://mes.carbonos.dev",
+            icon: LuHardHat,
+          }}
+        />
       </div>
     </div>
   );

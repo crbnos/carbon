@@ -20,7 +20,7 @@ export function useRealtime(table: string, filter?: string) {
           event: "*",
           schema: "public",
           table: table,
-          filter: filter,
+          filter: filter ?? `companyId=eq.${company.id}`,
         },
         (payload) => {
           revalidator.revalidate();

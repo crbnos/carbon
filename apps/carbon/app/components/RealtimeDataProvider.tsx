@@ -1,8 +1,9 @@
 "use client";
 
 import { useCarbon } from "@carbon/auth";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import idb from "localforage";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useUser } from "~/hooks";
 import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
 import type { Item } from "~/stores/items";
@@ -95,206 +96,233 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     );
   };
 
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
   useEffect(() => {
     if (!companyId) return;
     hydrate();
 
-    if (!carbon || !accessToken) return;
-    carbon.realtime.setAuth(accessToken);
-    const channel = carbon
-      .channel("realtime:core")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "item",
-        },
-        (payload) => {
-          if ("companyId" in payload.new && payload.new.companyId !== companyId)
-            return;
-          switch (payload.eventType) {
-            case "INSERT":
-              const { new: inserted } = payload;
+    if (!channelRef.current && carbon && accessToken) {
+      carbon.realtime.setAuth(accessToken);
+      channelRef.current = carbon
+        .channel("realtime:core")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "item",
+            filter: `companyId=eq.${companyId}`,
+          },
+          (payload) => {
+            if (
+              "companyId" in payload.new &&
+              payload.new.companyId !== companyId
+            )
+              return;
+            switch (payload.eventType) {
+              case "INSERT":
+                const { new: inserted } = payload;
 
-              setItems((items) =>
-                [
-                  ...items,
-                  {
-                    id: inserted.id,
-                    name: inserted.name,
-                    readableId: inserted.readableId,
-                    description: inserted.description,
-                    replenishmentSystem: inserted.replenishmentSystem,
-                    type: inserted.type,
-                    active: inserted.active,
-                  },
-                ].sort((a, b) => a.readableId.localeCompare(b.readableId))
-              );
+                setItems((items) =>
+                  [
+                    ...items,
+                    {
+                      id: inserted.id,
+                      name: inserted.name,
+                      readableId: inserted.readableId,
+                      description: inserted.description,
+                      replenishmentSystem: inserted.replenishmentSystem,
+                      type: inserted.type,
+                      active: inserted.active,
+                    },
+                  ].sort((a, b) => a.readableId.localeCompare(b.readableId))
+                );
 
-              break;
-            case "UPDATE":
-              const { new: updated } = payload;
+                break;
+              case "UPDATE":
+                const { new: updated } = payload;
 
-              setItems((items) =>
-                items
-                  .map((i) => {
-                    if (i.id === updated.id) {
-                      return {
-                        ...i,
-                        readableId: updated.readableId,
-                        name: updated.name,
-                        replenishmentSystem: updated.replenishmentSystem,
-                        type: updated.type,
-                        active: updated.active,
-                      };
-                    }
-                    return i;
-                  })
-                  .sort((a, b) => a.readableId.localeCompare(b.readableId))
-              );
-              break;
-            case "DELETE":
-              const { old: deleted } = payload;
-              setItems((items) => items.filter((p) => p.id !== deleted.id));
-              break;
-            default:
-              break;
+                setItems((items) =>
+                  items
+                    .map((i) => {
+                      if (i.id === updated.id) {
+                        return {
+                          ...i,
+                          readableId: updated.readableId,
+                          name: updated.name,
+                          replenishmentSystem: updated.replenishmentSystem,
+                          type: updated.type,
+                          active: updated.active,
+                        };
+                      }
+                      return i;
+                    })
+                    .sort((a, b) => a.readableId.localeCompare(b.readableId))
+                );
+                break;
+              case "DELETE":
+                const { old: deleted } = payload;
+                setItems((items) => items.filter((p) => p.id !== deleted.id));
+                break;
+              default:
+                break;
+            }
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "customer",
-        },
-        (payload) => {
-          if ("companyId" in payload.new && payload.new.companyId !== companyId)
-            return;
-          switch (payload.eventType) {
-            case "INSERT":
-              const { new: inserted } = payload;
-              setCustomers((customers) =>
-                [
-                  ...customers,
-                  {
-                    id: inserted.id,
-                    name: inserted.name,
-                  },
-                ].sort((a, b) => a.name.localeCompare(b.name))
-              );
-              break;
-            case "UPDATE":
-              const { new: updated } = payload;
-              setCustomers((customers) =>
-                customers
-                  .map((p) => {
-                    if (p.id === updated.id) {
-                      return {
-                        ...p,
-                        name: updated.name,
-                      };
-                    }
-                    return p;
-                  })
-                  .sort((a, b) => a.name.localeCompare(b.name))
-              );
-              break;
-            case "DELETE":
-              const { old: deleted } = payload;
-              setCustomers((customers) =>
-                customers.filter((p) => p.id !== deleted.id)
-              );
-              break;
-            default:
-              break;
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "customer",
+            filter: `companyId=eq.${companyId}`,
+          },
+          (payload) => {
+            if (
+              "companyId" in payload.new &&
+              payload.new.companyId !== companyId
+            )
+              return;
+            switch (payload.eventType) {
+              case "INSERT":
+                const { new: inserted } = payload;
+                setCustomers((customers) =>
+                  [
+                    ...customers,
+                    {
+                      id: inserted.id,
+                      name: inserted.name,
+                    },
+                  ].sort((a, b) => a.name.localeCompare(b.name))
+                );
+                break;
+              case "UPDATE":
+                const { new: updated } = payload;
+                setCustomers((customers) =>
+                  customers
+                    .map((p) => {
+                      if (p.id === updated.id) {
+                        return {
+                          ...p,
+                          name: updated.name,
+                        };
+                      }
+                      return p;
+                    })
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                );
+                break;
+              case "DELETE":
+                const { old: deleted } = payload;
+                setCustomers((customers) =>
+                  customers.filter((p) => p.id !== deleted.id)
+                );
+                break;
+              default:
+                break;
+            }
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "supplier",
-        },
-        (payload) => {
-          if ("companyId" in payload.new && payload.new.companyId !== companyId)
-            return;
-          switch (payload.eventType) {
-            case "INSERT":
-              const { new: inserted } = payload;
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "supplier",
+            filter: `companyId=eq.${companyId}`,
+          },
+          (payload) => {
+            if (
+              "companyId" in payload.new &&
+              payload.new.companyId !== companyId
+            )
+              return;
+            switch (payload.eventType) {
+              case "INSERT":
+                const { new: inserted } = payload;
 
-              setSuppliers((suppliers) =>
-                [
-                  ...suppliers,
-                  {
-                    id: inserted.id,
-                    name: inserted.name,
-                  },
-                ].sort((a, b) => a.name.localeCompare(b.name))
-              );
-              break;
-            case "UPDATE":
-              const { new: updated } = payload;
-              setSuppliers((suppliers) =>
-                suppliers
-                  .map((p) => {
-                    if (p.id === updated.id) {
-                      return {
-                        ...p,
-                        name: updated.name,
-                      };
-                    }
-                    return p;
-                  })
-                  .sort((a, b) => a.name.localeCompare(b.name))
-              );
-              break;
-            case "DELETE":
-              const { old: deleted } = payload;
-              setSuppliers((suppliers) =>
-                suppliers.filter((p) => p.id !== deleted.id)
-              );
-              break;
-            default:
-              break;
+                setSuppliers((suppliers) =>
+                  [
+                    ...suppliers,
+                    {
+                      id: inserted.id,
+                      name: inserted.name,
+                    },
+                  ].sort((a, b) => a.name.localeCompare(b.name))
+                );
+                break;
+              case "UPDATE":
+                const { new: updated } = payload;
+                setSuppliers((suppliers) =>
+                  suppliers
+                    .map((p) => {
+                      if (p.id === updated.id) {
+                        return {
+                          ...p,
+                          name: updated.name,
+                        };
+                      }
+                      return p;
+                    })
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                );
+                break;
+              case "DELETE":
+                const { old: deleted } = payload;
+                setSuppliers((suppliers) =>
+                  suppliers.filter((p) => p.id !== deleted.id)
+                );
+                break;
+              default:
+                break;
+            }
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "employee",
-        },
-        async (payload) => {
-          if ("companyId" in payload.new && payload.new.companyId !== companyId)
-            return;
-          // TODO: there's a cleaner way of doing this, but since customers and suppliers
-          // are also in the users table, we can't automatically add/update/delete them
-          // from our list of employees. So for now we just refetch.
-          const { data } = await carbon
-            .from("employees")
-            .select("id, name, avatarUrl")
-            .eq("companyId", companyId)
-            .order("name");
-          if (data) {
-            // @ts-ignore
-            setPeople(data);
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "employee",
+            filter: `companyId=eq.${companyId}`,
+          },
+          async (payload) => {
+            if (
+              "companyId" in payload.new &&
+              payload.new.companyId !== companyId
+            )
+              return;
+            // TODO: there's a cleaner way of doing this, but since customers and suppliers
+            // are also in the users table, we can't automatically add/update/delete them
+            // from our list of employees. So for now we just refetch.
+            const { data } = await carbon
+              .from("employees")
+              .select("id, name, avatarUrl")
+              .eq("companyId", companyId)
+              .order("name");
+            if (data) {
+              // @ts-ignore
+              setPeople(data);
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    }
 
     return () => {
-      if (channel) carbon?.removeChannel(channel);
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carbon, accessToken, companyId]);
+  }, [companyId]);
+
+  useEffect(() => {
+    if (carbon && accessToken) carbon.realtime.setAuth(accessToken);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
 
   return <>{children}</>;
 };

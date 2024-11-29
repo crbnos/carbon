@@ -129,6 +129,13 @@ export function ItemCard({
       ? new Date(item.dueDate) < new Date()
       : false;
 
+  console.log({
+    value:
+      item.progress && item.duration
+        ? (item.progress / item.duration) * 100
+        : 0,
+  });
+
   return (
     <Card
       ref={setNodeRef}
@@ -186,10 +193,17 @@ export function ItemCard({
         </div>
 
         {showProgress &&
-          ["Paused", "Done", "In Progress"].includes(item.status!) && (
+          Number.isFinite(item?.progress) &&
+          Number.isFinite(item?.duration) &&
+          Number(item?.progress) >= 0 &&
+          Number(item?.duration) >= 0 && (
             <Progress
               indicatorClassName={
-                item.status === "Paused" ? "bg-yellow-500" : ""
+                (item.progress ?? 0) > (item.duration ?? 0)
+                  ? "bg-destructive"
+                  : item.status === "Paused"
+                  ? "bg-yellow-500"
+                  : ""
               }
               numerator={
                 item.progress ? formatDurationMilliseconds(item.progress) : ""
@@ -197,11 +211,12 @@ export function ItemCard({
               denominator={
                 item.duration ? formatDurationMilliseconds(item.duration) : ""
               }
-              value={
+              value={Math.min(
                 item.progress && item.duration
                   ? (item.progress / item.duration) * 100
-                  : 0
-              }
+                  : 0,
+                100
+              )}
             />
           )}
       </CardHeader>

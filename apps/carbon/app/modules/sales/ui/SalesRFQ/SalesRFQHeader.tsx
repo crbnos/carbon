@@ -48,6 +48,8 @@ const SalesRFQHeader = () => {
     opportunity: Opportunity;
   }>(path.to.salesRfq(rfqId));
 
+  console.log(routeData?.opportunity);
+
   const status = routeData?.rfqSummary?.status ?? "Draft";
 
   const statusFetcher = useFetcher<{}>();
