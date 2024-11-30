@@ -5,11 +5,13 @@ import {
   error,
   getCarbonServiceRole,
 } from "@carbon/auth";
+import { refreshAccessToken } from "@carbon/auth/auth.server";
+import { setCompanyId } from "@carbon/auth/company.server";
 import {
-  commitAuthSession,
   destroyAuthSession,
   flash,
   getAuthSession,
+  setAuthSession,
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
@@ -18,7 +20,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useEffect, useRef, useState } from "react";
 
-import { refreshAccessToken } from "@carbon/auth/auth.server";
 import {
   Alert,
   AlertDescription,
@@ -75,12 +76,15 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 
   const user = await getUserByEmail(authSession.email);
   if (user?.data) {
+    const sessionCookie = await setAuthSession(request, {
+      authSession,
+    });
+    const companyIdCookie = setCompanyId(authSession.companyId);
     return redirect(path.to.resetPassword, {
-      headers: {
-        "Set-Cookie": await commitAuthSession(request, {
-          authSession,
-        }),
-      },
+      headers: [
+        ["Set-Cookie", sessionCookie],
+        ["Set-Cookie", companyIdCookie],
+      ],
     });
   } else {
     return redirect(

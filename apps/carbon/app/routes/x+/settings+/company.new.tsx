@@ -1,5 +1,6 @@
 import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
@@ -82,9 +83,13 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Fatal: failed to insert job");
   }
 
+  const sessionCookie = await updateCompanySession(request, companyId);
+  const companyIdCookie = setCompanyId(companyId);
+
   throw redirect(path.to.authenticatedRoot, {
-    headers: {
-      "Set-Cookie": await updateCompanySession(request, companyId),
-    },
+    headers: [
+      ["Set-Cookie", sessionCookie],
+      ["Set-Cookie", companyIdCookie],
+    ],
   });
 }

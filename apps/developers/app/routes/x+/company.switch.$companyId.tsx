@@ -1,5 +1,6 @@
 import { error, getCompanies } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { setCompanyId } from "@carbon/auth/company.server";
 import {
   destroyAuthSession,
   flash,
@@ -32,9 +33,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await destroyAuthSession(request);
   }
 
+  const sessionCookie = await updateCompanySession(request, companyId!);
+  const companyIdCookie = setCompanyId(companyId!);
+
   throw redirect(path.to.authenticatedRoot, {
-    headers: {
-      "Set-Cookie": await updateCompanySession(request, companyId!),
-    },
+    headers: [
+      ["Set-Cookie", sessionCookie],
+      ["Set-Cookie", companyIdCookie],
+    ],
   });
 }
