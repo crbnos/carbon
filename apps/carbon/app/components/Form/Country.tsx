@@ -8,7 +8,7 @@ import { path } from "~/utils/path";
 type CountrySelectProps = Omit<ComboboxProps, "options">;
 
 const Country = (props: CountrySelectProps) => {
-  const options = useCountry();
+  const options = useCountries();
 
   return <Combobox options={options} label="Country" {...props} />;
 };
@@ -17,7 +17,7 @@ Country.displayName = "Country";
 
 export default Country;
 
-export const useCountry = () => {
+export const useCountries = () => {
   const countryFetcher = useFetcher<Awaited<ReturnType<typeof getCountries>>>();
 
   useMount(() => {
