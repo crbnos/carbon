@@ -13,6 +13,7 @@ import type { AuthSession, Result } from "../types";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
 import { path } from "../utils/path";
 import { refreshAccessToken, verifyAuthSession } from "./auth.server";
+import { setCompanyId } from "./company.server";
 import { getPermissionCacheKey } from "./users";
 
 async function assertAuthSession(
@@ -42,7 +43,7 @@ const sessionStorage = createCookieSessionStorage({
   },
 });
 
-export async function commitAuthSession(
+export async function setAuthSession(
   request: Request,
   {
     authSession,
@@ -62,10 +63,14 @@ export async function commitAuthSession(
 export async function destroyAuthSession(request: Request) {
   const session = await getSession(request);
 
+  const sessionCookie = await sessionStorage.destroySession(session);
+  const companyIdCookie = setCompanyId(null);
+
   return redirect(path.to.login, {
-    headers: {
-      "Set-Cookie": await sessionStorage.destroySession(session),
-    },
+    headers: [
+      ["Set-Cookie", sessionCookie],
+      ["Set-Cookie", companyIdCookie],
+    ],
   });
 }
 
@@ -148,22 +153,30 @@ export async function refreshAuthSession(
   if (!refreshedAuthSession) {
     const redirectUrl = `${path.to.login}?${makeRedirectToFromHere(request)}`;
 
+    const sessionCookie = await setAuthSession(request, {
+      authSession: null,
+    });
+    const companyIdCookie = setCompanyId(null);
+
     throw redirect(redirectUrl, {
-      headers: {
-        "Set-Cookie": await commitAuthSession(request, {
-          authSession: null,
-        }),
-      },
+      headers: [
+        ["Set-Cookie", sessionCookie],
+        ["Set-Cookie", companyIdCookie],
+      ],
     });
   }
 
   if (isGet(request)) {
+    const sessionCookie = await setAuthSession(request, {
+      authSession: refreshedAuthSession,
+    });
+    const companyIdCookie = setCompanyId(refreshedAuthSession.companyId);
+
     throw redirect(getCurrentPath(request), {
-      headers: {
-        "Set-Cookie": await commitAuthSession(request, {
-          authSession: refreshedAuthSession,
-        }),
-      },
+      headers: [
+        ["Set-Cookie", sessionCookie],
+        ["Set-Cookie", companyIdCookie],
+      ],
     });
   }
 

@@ -1,5 +1,6 @@
 import { error, getCompanies } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { setCompanyId } from "@carbon/auth/company.server";
 import {
   destroyAuthSession,
   flash,
@@ -33,27 +34,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const sessionCookie = await updateCompanySession(request, companyId!);
+  const companyIdCookie = setCompanyId(companyId!);
   const storedLocations = await getLocation(request, client, {
     userId,
     companyId: companyId!,
   });
 
   if (storedLocations.updated) {
-    const workCenterLocationCookie = await setLocation(
+    const locationCookie = await setLocation(
       companyId!,
       storedLocations.location
     );
 
     throw redirect(path.to.authenticatedRoot, {
-      headers: {
-        "Set-Cookie": `${sessionCookie} ${workCenterLocationCookie}`,
-      },
+      headers: [
+        ["Set-Cookie", sessionCookie],
+        ["Set-Cookie", companyIdCookie],
+        ["Set-Cookie", locationCookie],
+      ],
     });
   }
 
   throw redirect(path.to.authenticatedRoot, {
-    headers: {
-      "Set-Cookie": sessionCookie,
-    },
+    headers: [
+      ["Set-Cookie", sessionCookie],
+      ["Set-Cookie", companyIdCookie],
+    ],
   });
 }

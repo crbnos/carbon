@@ -6,11 +6,12 @@ import {
   getCarbonServiceRole,
 } from "@carbon/auth";
 import { refreshAccessToken } from "@carbon/auth/auth.server";
+import { setCompanyId } from "@carbon/auth/company.server";
 import {
-  commitAuthSession,
   destroyAuthSession,
   flash,
   getAuthSession,
+  setAuthSession,
 } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useFetcher } from "@remix-run/react";
@@ -63,12 +64,16 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const sessionCookie = await setAuthSession(request, {
+    authSession,
+  });
+  const companyIdCookie = setCompanyId(authSession.companyId);
+
   return redirect(path.to.authenticatedRoot, {
-    headers: {
-      "Set-Cookie": await commitAuthSession(request, {
-        authSession,
-      }),
-    },
+    headers: [
+      ["Set-Cookie", sessionCookie],
+      ["Set-Cookie", companyIdCookie],
+    ],
   });
 }
 

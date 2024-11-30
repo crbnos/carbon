@@ -1,15 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ClientLoaderFunctionArgs } from "@remix-run/react";
-import { queryOptions } from "@tanstack/react-query";
 import type { LoaderFunctionArgs, SerializeFrom } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { getCountries } from "~/modules/shared";
-import { queryClient } from "~/utils/react-query";
-
-const countriesQuery = () =>
-  queryOptions({
-    queryKey: ["countries"],
-  });
+import { countriesQuery, queryClient } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});

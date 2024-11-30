@@ -5,7 +5,8 @@ import {
   safeRedirect,
 } from "@carbon/auth";
 import { signInWithEmail, verifyAuthSession } from "@carbon/auth/auth.server";
-import { commitAuthSession, getAuthSession } from "@carbon/auth/session.server";
+import { setCompanyId } from "@carbon/auth/company.server";
+import { getAuthSession, setAuthSession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Alert,
@@ -25,6 +26,7 @@ import posthog from "posthog-js";
 import { LuAlertCircle } from "react-icons/lu";
 
 import { Hidden, Input, Password, Submit } from "~/components/Form";
+
 import type { FormActionData, Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -63,12 +65,16 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
     });
   }
 
+  const sessionCookie = await setAuthSession(request, {
+    authSession,
+  });
+  const companyIdCookie = setCompanyId(authSession.companyId);
+
   throw redirect(safeRedirect(redirectTo), {
-    headers: {
-      "Set-Cookie": await commitAuthSession(request, {
-        authSession,
-      }),
-    },
+    headers: [
+      ["Set-Cookie", sessionCookie],
+      ["Set-Cookie", companyIdCookie],
+    ],
   });
 }
 
