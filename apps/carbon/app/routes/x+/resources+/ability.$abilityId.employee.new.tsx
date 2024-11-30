@@ -19,7 +19,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const { abilityId } = params;
   if (!abilityId) throw new Error("abilityId is not found");
 
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "resources",
   });
 
@@ -38,6 +38,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
     abilityId,
     trainingCompleted: trainingStatus === AbilityEmployeeStatus.Complete,
     trainingDays: trainingDays || 0,
+    companyId,
   });
 
   if (insertEmployeeAbility.error) {

@@ -2650,6 +2650,9 @@ export default {
             $ref: "#/parameters/rowFilter.quotes.digitalQuoteAcceptedByEmail",
           },
           {
+            $ref: "#/parameters/rowFilter.quotes.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.quotes.locationName",
           },
           {
@@ -2666,6 +2669,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quotes.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quotes.shippingCost",
           },
           {
             $ref: "#/parameters/select",
@@ -3703,6 +3709,177 @@ export default {
           },
         },
         tags: ["supplierPayment"],
+      },
+    },
+    "/methodOperationTool": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/methodOperationTool",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["methodOperationTool"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.methodOperationTool",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["methodOperationTool"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["methodOperationTool"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.methodOperationTool",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["methodOperationTool"],
       },
     },
     "/currencyCode": {
@@ -5971,6 +6148,9 @@ export default {
             $ref: "#/parameters/rowFilter.item.thumbnailPath",
           },
           {
+            $ref: "#/parameters/rowFilter.item.notes",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -6087,6 +6267,9 @@ export default {
             $ref: "#/parameters/rowFilter.item.thumbnailPath",
           },
           {
+            $ref: "#/parameters/rowFilter.item.notes",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6155,6 +6338,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.item.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.item.notes",
           },
           {
             $ref: "#/parameters/body.item",
@@ -8758,9 +8944,6 @@ export default {
             $ref: "#/parameters/rowFilter.companies.baseCurrencyCode",
           },
           {
-            $ref: "#/parameters/rowFilter.companies.digitalQuoteEnabled",
-          },
-          {
             $ref: "#/parameters/rowFilter.companies.logoDarkIcon",
           },
           {
@@ -8771,9 +8954,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companies.logoLight",
-          },
-          {
-            $ref: "#/parameters/rowFilter.companies.digitalQuoteNotificationGroup",
           },
           {
             $ref: "#/parameters/rowFilter.companies.userId",
@@ -9310,9 +9490,6 @@ export default {
             $ref: "#/parameters/rowFilter.company.baseCurrencyCode",
           },
           {
-            $ref: "#/parameters/rowFilter.company.digitalQuoteEnabled",
-          },
-          {
             $ref: "#/parameters/rowFilter.company.logoDarkIcon",
           },
           {
@@ -9323,9 +9500,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.logoLight",
-          },
-          {
-            $ref: "#/parameters/rowFilter.company.digitalQuoteNotificationGroup",
           },
           {
             $ref: "#/parameters/select",
@@ -9432,9 +9606,6 @@ export default {
             $ref: "#/parameters/rowFilter.company.baseCurrencyCode",
           },
           {
-            $ref: "#/parameters/rowFilter.company.digitalQuoteEnabled",
-          },
-          {
             $ref: "#/parameters/rowFilter.company.logoDarkIcon",
           },
           {
@@ -9445,9 +9616,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.logoLight",
-          },
-          {
-            $ref: "#/parameters/rowFilter.company.digitalQuoteNotificationGroup",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -9508,9 +9676,6 @@ export default {
             $ref: "#/parameters/rowFilter.company.baseCurrencyCode",
           },
           {
-            $ref: "#/parameters/rowFilter.company.digitalQuoteEnabled",
-          },
-          {
             $ref: "#/parameters/rowFilter.company.logoDarkIcon",
           },
           {
@@ -9521,9 +9686,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.logoLight",
-          },
-          {
-            $ref: "#/parameters/rowFilter.company.digitalQuoteNotificationGroup",
           },
           {
             $ref: "#/parameters/body.company",
@@ -9538,6 +9700,177 @@ export default {
           },
         },
         tags: ["company"],
+      },
+    },
+    "/jobOperationTool": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationTool",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobOperationTool"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobOperationTool",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["jobOperationTool"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationTool"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.jobOperationTool",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationTool"],
       },
     },
     "/userAttributeCategory": {
@@ -11977,6 +12310,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderShipment.assignee",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.shippingCost",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -12093,6 +12429,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderShipment.assignee",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.shippingCost",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -12161,6 +12500,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderShipment.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.shippingCost",
           },
           {
             $ref: "#/parameters/body.salesOrderShipment",
@@ -13538,6 +13880,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.consumables.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.notes",
           },
           {
             $ref: "#/parameters/rowFilter.consumables.id",
@@ -15623,6 +15968,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.dropShipment",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrders.shippingCost",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.locationName",
@@ -19639,6 +19987,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteShipment.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingCost",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -19722,6 +20073,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteShipment.updatedAt",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingCost",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -19757,6 +20111,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteShipment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.shippingCost",
           },
           {
             $ref: "#/parameters/body.quoteShipment",
@@ -21152,6 +21509,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.parts.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.parts.notes",
           },
           {
             $ref: "#/parameters/rowFilter.parts.thumbnailPath",
@@ -23061,6 +23421,177 @@ export default {
         tags: ["externalLink"],
       },
     },
+    "/quoteOperationTool": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/quoteOperationTool",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["quoteOperationTool"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.quoteOperationTool",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["quoteOperationTool"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteOperationTool"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.toolId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationTool.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.quoteOperationTool",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteOperationTool"],
+      },
+    },
     "/supplierContact": {
       get: {
         parameters: [
@@ -24933,6 +25464,132 @@ export default {
         tags: ["salesRfqLines"],
       },
     },
+    "/companySettings": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.companySettings.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteEnabled",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteIncludesPurchaseOrders",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/companySettings",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["companySettings"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.companySettings",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["companySettings"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.companySettings.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteEnabled",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteIncludesPurchaseOrders",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["companySettings"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.companySettings.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteEnabled",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.digitalQuoteIncludesPurchaseOrders",
+          },
+          {
+            $ref: "#/parameters/body.companySettings",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["companySettings"],
+      },
+    },
     "/externalLinkMessage": {
       get: {
         parameters: [
@@ -26209,6 +26866,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeAbility.trainingCompleted",
           },
           {
+            $ref: "#/parameters/rowFilter.employeeAbility.companyId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -26289,6 +26949,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeAbility.trainingCompleted",
           },
           {
+            $ref: "#/parameters/rowFilter.employeeAbility.companyId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -26321,6 +26984,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employeeAbility.trainingCompleted",
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeAbility.companyId",
           },
           {
             $ref: "#/parameters/body.employeeAbility",
@@ -29293,6 +29959,9 @@ export default {
             $ref: "#/parameters/rowFilter.materials.unitOfMeasureCode",
           },
           {
+            $ref: "#/parameters/rowFilter.materials.notes",
+          },
+          {
             $ref: "#/parameters/rowFilter.materials.id",
           },
           {
@@ -31226,6 +31895,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tools.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.notes",
           },
           {
             $ref: "#/parameters/rowFilter.tools.id",
@@ -33469,6 +34141,9 @@ export default {
             $ref: "#/parameters/rowFilter.productionEvent.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.productionEvent.notes",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -33567,6 +34242,9 @@ export default {
             $ref: "#/parameters/rowFilter.productionEvent.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.productionEvent.notes",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -33617,6 +34295,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.productionEvent.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.notes",
           },
           {
             $ref: "#/parameters/body.productionEvent",
@@ -37877,6 +38558,102 @@ export default {
         tags: ["(rpc) create_rfq_from_model_v1"],
       },
     },
+    "/rpc/create_rfq_from_models_v1": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "email",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "sequence_number",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "json[]",
+            in: "query",
+            name: "model_data",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_rfq_from_models_v1"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                email: {
+                  format: "text",
+                  type: "string",
+                },
+                model_data: {
+                  format: "json[]",
+                  items: {},
+                  type: "array",
+                },
+                sequence_number: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [
+                "company_id",
+                "email",
+                "sequence_number",
+                "model_data",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_rfq_from_models_v1"],
+      },
+    },
     "/rpc/get_item_quantities": {
       get: {
         parameters: [
@@ -39291,6 +40068,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
         locationName: {
           format: "text",
           type: "string",
@@ -39318,6 +40102,10 @@ export default {
             "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
           format: "text",
           type: "string",
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -39525,8 +40313,6 @@ export default {
           type: "string",
         },
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -39665,6 +40451,72 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    methodOperationTool: {
+      required: [
+        "id",
+        "operationId",
+        "toolId",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `methodOperation.id`.<fk table='methodOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        toolId: {
+          description:
+            "Note:\nThis is a Foreign Key to `tool.itemId`.<fk table='tool' column='itemId'/>",
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          default: 1,
+          format: "integer",
+          type: "integer",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -41031,6 +41883,9 @@ export default {
           format: "text",
           type: "string",
         },
+        notes: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -42318,10 +43173,6 @@ export default {
           format: "text",
           type: "string",
         },
-        digitalQuoteEnabled: {
-          format: "boolean",
-          type: "boolean",
-        },
         logoDarkIcon: {
           format: "text",
           type: "string",
@@ -42337,13 +43188,6 @@ export default {
         logoLight: {
           format: "text",
           type: "string",
-        },
-        digitalQuoteNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
         },
         userId: {
           description:
@@ -42661,13 +43505,7 @@ export default {
       type: "object",
     },
     company: {
-      required: [
-        "id",
-        "name",
-        "baseCurrencyCode",
-        "digitalQuoteEnabled",
-        "digitalQuoteNotificationGroup",
-      ],
+      required: ["id", "name", "baseCurrencyCode"],
       properties: {
         id: {
           default: "public.xid()",
@@ -42735,11 +43573,6 @@ export default {
           format: "text",
           type: "string",
         },
-        digitalQuoteEnabled: {
-          default: false,
-          format: "boolean",
-          type: "boolean",
-        },
         logoDarkIcon: {
           format: "text",
           type: "string",
@@ -42756,12 +43589,71 @@ export default {
           format: "text",
           type: "string",
         },
-        digitalQuoteNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
+      },
+      type: "object",
+    },
+    jobOperationTool: {
+      required: [
+        "id",
+        "operationId",
+        "toolId",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        toolId: {
+          description:
+            "Note:\nThis is a Foreign Key to `tool.itemId`.<fk table='tool' column='itemId'/>",
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          default: 1,
+          format: "integer",
+          type: "integer",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -43920,6 +44812,11 @@ export default {
           format: "text",
           type: "string",
         },
+        shippingCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -44503,14 +45400,15 @@ export default {
           format: "text",
           type: "string",
         },
+        notes: {
+          format: "jsonb",
+        },
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
         },
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -45245,8 +46143,6 @@ export default {
           type: "string",
         },
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -45637,6 +46533,10 @@ export default {
         dropShipment: {
           format: "boolean",
           type: "boolean",
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number",
         },
         locationName: {
           format: "text",
@@ -47403,6 +48303,11 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        shippingCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -48140,6 +49045,9 @@ export default {
           format: "text",
           type: "string",
         },
+        notes: {
+          format: "jsonb",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -48171,8 +49079,6 @@ export default {
           type: "string",
         },
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -49019,6 +49925,72 @@ export default {
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    quoteOperationTool: {
+      required: [
+        "id",
+        "operationId",
+        "toolId",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quoteOperation.id`.<fk table='quoteOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        toolId: {
+          description:
+            "Note:\nThis is a Foreign Key to `tool.itemId`.<fk table='tool' column='itemId'/>",
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          default: 1,
+          format: "integer",
+          type: "integer",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -49915,6 +50887,39 @@ export default {
       },
       type: "object",
     },
+    companySettings: {
+      required: [
+        "id",
+        "digitalQuoteEnabled",
+        "digitalQuoteNotificationGroup",
+        "digitalQuoteIncludesPurchaseOrders",
+      ],
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        digitalQuoteEnabled: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        digitalQuoteNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        digitalQuoteIncludesPurchaseOrders: {
+          default: true,
+          format: "boolean",
+          type: "boolean",
+        },
+      },
+      type: "object",
+    },
     externalLinkMessage: {
       required: ["id", "externalLinkId", "message", "createdAt", "companyId"],
       properties: {
@@ -50207,8 +51212,6 @@ export default {
           type: "string",
         },
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -50363,7 +51366,14 @@ export default {
       type: "object",
     },
     employeeAbility: {
-      required: ["id", "employeeId", "abilityId", "active", "trainingDays"],
+      required: [
+        "id",
+        "employeeId",
+        "abilityId",
+        "active",
+        "trainingDays",
+        "companyId",
+      ],
       properties: {
         id: {
           default: "public.xid()",
@@ -50372,8 +51382,6 @@ export default {
           type: "string",
         },
         employeeId: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -50401,6 +51409,12 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -51487,8 +52501,6 @@ export default {
           type: "string",
         },
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -51636,14 +52648,15 @@ export default {
           format: "text",
           type: "string",
         },
+        notes: {
+          format: "jsonb",
+        },
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
         },
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -52458,14 +53471,15 @@ export default {
           format: "text",
           type: "string",
         },
+        notes: {
+          format: "jsonb",
+        },
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
         },
         itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -53893,6 +54907,10 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        notes: {
           format: "text",
           type: "string",
         },
@@ -56287,6 +57305,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.quotes.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.quotes.locationName": {
       name: "locationName",
       required: false,
@@ -56326,6 +57351,13 @@ export default {
       name: "salesOrderId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quotes.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -56779,6 +57811,78 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.methodOperationTool": {
+      name: "methodOperationTool",
+      description: "methodOperationTool",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/methodOperationTool",
+      },
+    },
+    "rowFilter.methodOperationTool.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationTool.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationTool.toolId": {
+      name: "toolId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationTool.quantity": {
+      name: "quantity",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationTool.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationTool.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationTool.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationTool.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationTool.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -58514,6 +59618,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.item.notes": {
+      name: "notes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.receipt": {
       name: "receipt",
       description: "receipt",
@@ -60106,13 +61217,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.companies.digitalQuoteEnabled": {
-      name: "digitalQuoteEnabled",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.companies.logoDarkIcon": {
       name: "logoDarkIcon",
       required: false,
@@ -60138,13 +61242,6 @@ export default {
       name: "logoLight",
       required: false,
       format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.companies.digitalQuoteNotificationGroup": {
-      name: "digitalQuoteNotificationGroup",
-      required: false,
-      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -60679,13 +61776,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.company.digitalQuoteEnabled": {
-      name: "digitalQuoteEnabled",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.company.logoDarkIcon": {
       name: "logoDarkIcon",
       required: false,
@@ -60714,10 +61804,75 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.company.digitalQuoteNotificationGroup": {
-      name: "digitalQuoteNotificationGroup",
+    "body.jobOperationTool": {
+      name: "jobOperationTool",
+      description: "jobOperationTool",
       required: false,
-      format: "text[]",
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationTool",
+      },
+    },
+    "rowFilter.jobOperationTool.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationTool.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationTool.toolId": {
+      name: "toolId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationTool.quantity": {
+      name: "quantity",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationTool.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationTool.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationTool.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationTool.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationTool.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -62203,6 +63358,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderShipment.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "body.employeeSummary": {
       name: "employeeSummary",
       description: "employeeSummary",
@@ -62946,6 +64108,13 @@ export default {
       name: "unitOfMeasureCode",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.notes": {
+      name: "notes",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -64559,6 +65728,13 @@ export default {
       name: "dropShipment",
       required: false,
       format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrders.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -66781,6 +67957,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.quoteShipment.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "body.modelUpload": {
       name: "modelUpload",
       description: "modelUpload",
@@ -67771,6 +68954,13 @@ export default {
       name: "unitOfMeasureCode",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.parts.notes": {
+      name: "notes",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -68930,6 +70120,78 @@ export default {
     },
     "rowFilter.externalLink.companyId": {
       name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.quoteOperationTool": {
+      name: "quoteOperationTool",
+      description: "quoteOperationTool",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/quoteOperationTool",
+      },
+    },
+    "rowFilter.quoteOperationTool.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationTool.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationTool.toolId": {
+      name: "toolId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationTool.quantity": {
+      name: "quantity",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationTool.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationTool.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationTool.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationTool.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationTool.updatedBy": {
+      name: "updatedBy",
       required: false,
       format: "text",
       in: "query",
@@ -70135,6 +71397,43 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.companySettings": {
+      name: "companySettings",
+      description: "companySettings",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/companySettings",
+      },
+    },
+    "rowFilter.companySettings.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.digitalQuoteEnabled": {
+      name: "digitalQuoteEnabled",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.digitalQuoteNotificationGroup": {
+      name: "digitalQuoteNotificationGroup",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.digitalQuoteIncludesPurchaseOrders": {
+      name: "digitalQuoteIncludesPurchaseOrders",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
     "body.externalLinkMessage": {
       name: "externalLinkMessage",
       description: "externalLinkMessage",
@@ -70787,6 +72086,13 @@ export default {
       name: "trainingCompleted",
       required: false,
       format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.employeeAbility.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -72357,6 +73663,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materials.notes": {
+      name: "notes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.materials.id": {
       name: "id",
       required: false,
@@ -73421,6 +74734,13 @@ export default {
       name: "unitOfMeasureCode",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.notes": {
+      name: "notes",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -75344,6 +76664,13 @@ export default {
     },
     "rowFilter.productionEvent.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.productionEvent.notes": {
+      name: "notes",
       required: false,
       format: "text",
       in: "query",

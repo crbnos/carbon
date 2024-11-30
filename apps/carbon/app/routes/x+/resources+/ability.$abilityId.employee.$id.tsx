@@ -51,7 +51,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
   if (!abilityId) throw new Error("abilityId is not found");
   if (!id) throw new Error("id is not found");
 
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "resources",
   });
 
@@ -71,6 +71,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
     abilityId,
     trainingCompleted: trainingStatus === AbilityEmployeeStatus.Complete,
     trainingDays: trainingDays || 0,
+    companyId,
   });
 
   if (updateEmployeeAbility.error) {
@@ -102,12 +103,8 @@ export default function EmployeeAbilityRoute() {
     weeks: number;
   }>(path.to.ability(abilityId));
 
-  if (Array.isArray(employeeAbility?.user)) {
-    throw new Error("employeeAbility.user is an array");
-  }
-
   const initialValues = {
-    employeeId: employeeAbility?.user?.id ?? "",
+    employeeId: employeeAbility?.employeeId ?? "",
     trainingStatus: getTrainingStatus(employeeAbility) ?? "",
     trainingPercent: getTrainingPercent(
       employeeAbility?.trainingDays,

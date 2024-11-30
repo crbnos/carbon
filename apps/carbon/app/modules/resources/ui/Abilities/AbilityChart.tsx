@@ -125,7 +125,7 @@ const AbilityChart = ({
               id="diagonalLines"
               height={6}
               width={6}
-              stroke={zinc[600]}
+              stroke={`hsl(var(--muted-foreground))`}
               strokeWidth={1}
               orientation={["diagonal"]}
             />

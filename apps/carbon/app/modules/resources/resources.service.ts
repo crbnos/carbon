@@ -81,13 +81,12 @@ export async function getAbilities(
 ) {
   let query = client
     .from("ability")
-    .select(`*, employeeAbility(user(id, fullName, avatarUrl))`, {
+    .select(`*, employeeAbility(employeeId)`, {
       count: "exact",
     })
     .eq("companyId", companyId)
     .eq("active", true)
-    .eq("employeeAbility.active", true)
-    .eq("employeeAbility.user.active", true);
+    .eq("employeeAbility.active", true);
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
@@ -117,7 +116,7 @@ export async function getAbility(
   return client
     .from("ability")
     .select(
-      `*, employeeAbility(id, user(id, fullName, avatarUrl, active), lastTrainingDate, trainingDays, trainingCompleted)`,
+      `*, employeeAbility(id, employeeId, lastTrainingDate, trainingDays, trainingCompleted)`,
       {
         count: "exact",
       }
@@ -125,7 +124,6 @@ export async function getAbility(
     .eq("id", abilityId)
     .eq("active", true)
     .eq("employeeAbility.active", true)
-    .eq("employeeAbility.user.active", true)
     .single();
 }
 
@@ -403,11 +401,13 @@ export async function insertAbility(
 export async function insertEmployeeAbilities(
   client: SupabaseClient<Database>,
   abilityId: string,
-  employeeIds: string[]
+  employeeIds: string[],
+  companyId: string
 ) {
   const employeeAbilities = employeeIds.map((employeeId) => ({
     abilityId,
     employeeId,
+    companyId,
     trainingCompleted: true,
   }));
 
@@ -499,6 +499,7 @@ export async function upsertEmployeeAbility(
     employeeId: string;
     trainingCompleted: boolean;
     trainingDays?: number;
+    companyId: string;
   }
 ) {
   const { id, ...update } = employeeAbility;

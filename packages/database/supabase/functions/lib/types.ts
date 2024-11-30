@@ -4748,6 +4748,7 @@ export type Database = {
         Row: {
           abilityId: string
           active: boolean
+          companyId: string
           employeeId: string
           id: string
           lastTrainingDate: string | null
@@ -4757,6 +4758,7 @@ export type Database = {
         Insert: {
           abilityId: string
           active?: boolean
+          companyId: string
           employeeId: string
           id?: string
           lastTrainingDate?: string | null
@@ -4766,6 +4768,7 @@ export type Database = {
         Update: {
           abilityId?: string
           active?: boolean
+          companyId?: string
           employeeId?: string
           id?: string
           lastTrainingDate?: string | null
@@ -4781,39 +4784,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employeeAbilities_employeeId_fkey"
-            columns: ["employeeId"]
+            foreignKeyName: "employeeAbilities_companyId_fkey"
+            columns: ["companyId"]
             isOneToOne: false
-            referencedRelation: "employees"
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employeeAbilities_employeeId_fkey"
-            columns: ["employeeId"]
+            foreignKeyName: "employeeAbilities_companyId_fkey"
+            columns: ["companyId"]
             isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
+            referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employeeAbilities_employeeId_fkey"
-            columns: ["employeeId"]
+            foreignKeyName: "employeeAbilities_companyId_fkey"
+            columns: ["companyId"]
             isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "employeeAbilities_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
           },
           {
             foreignKeyName: "employeeAbilities_employeeId_fkey"
-            columns: ["employeeId"]
+            columns: ["employeeId", "companyId"]
             isOneToOne: false
-            referencedRelation: "user"
+            referencedRelation: "employee"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "employeeAbility_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employeeAbilities_employeeId_fkey"
-            columns: ["employeeId"]
+            foreignKeyName: "employeeAbility_companyId_fkey"
+            columns: ["companyId"]
             isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeeAbility_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "employeeAbility_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
           },
         ]
       }
@@ -28570,14 +28601,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

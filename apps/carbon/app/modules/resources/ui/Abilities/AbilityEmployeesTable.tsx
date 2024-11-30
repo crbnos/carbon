@@ -9,7 +9,7 @@ import { useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
-import { Avatar, New, Table } from "~/components";
+import { EmployeeAvatar, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import { AbilityEmployeeStatus, type AbilityEmployees } from "../../types";
 
@@ -34,31 +34,27 @@ const AbilityEmployeesTable = ({
   const rows = useMemo(
     () =>
       Array.isArray(employees)
-        ? employees
-            .filter((employee) => {
-              // @ts-ignore
-              return employee.user?.active === true;
-            })
-            .map((employee) => {
-              if (Array.isArray(employee.user)) {
-                throw new Error("AbilityEmployeesTable: user is an array");
-              }
+        ? employees.map((employee) => {
+            if (Array.isArray(employee)) {
+              throw new Error("AbilityEmployeesTable: user is an array");
+            }
 
-              return {
-                id: employee.id,
-                name: employee.user?.fullName ?? "",
-                avatarUrl: employee.user?.avatarUrl ?? null,
-                status: employee.trainingCompleted
-                  ? AbilityEmployeeStatus.Complete
-                  : employee.trainingDays
-                  ? AbilityEmployeeStatus.InProgress
-                  : AbilityEmployeeStatus.NotStarted,
-                percentage: (employee.trainingDays / 5 / weeks) * 100,
-              };
-            })
+            return {
+              id: employee.id,
+              employeeId: employee.employeeId,
+              status: employee.trainingCompleted
+                ? AbilityEmployeeStatus.Complete
+                : employee.trainingDays
+                ? AbilityEmployeeStatus.InProgress
+                : AbilityEmployeeStatus.NotStarted,
+              percentage: (employee.trainingDays / 5 / weeks) * 100,
+            };
+          })
         : [],
     [employees, weeks]
   );
+
+  console.log();
 
   const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
     return [
@@ -67,13 +63,7 @@ const AbilityEmployeesTable = ({
         header: "Name",
         cell: ({ row }) => (
           <HStack>
-            <Avatar
-              size="sm"
-              name={row.original.name}
-              path={row.original.avatarUrl}
-            />
-
-            <span>{row.original.name}</span>
+            <EmployeeAvatar employeeId={row.original.employeeId} />
           </HStack>
         ),
       },

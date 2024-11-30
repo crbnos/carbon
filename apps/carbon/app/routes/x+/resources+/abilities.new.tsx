@@ -82,7 +82,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const createEmployeeAbilities = await insertEmployeeAbilities(
       client,
       abilityId,
-      employees
+      employees,
+      companyId
     );
 
     if (createEmployeeAbilities.error) {

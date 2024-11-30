@@ -1,11 +1,4 @@
-import {
-  AvatarGroup,
-  AvatarGroupList,
-  AvatarOverflowIndicator,
-  Badge,
-  MenuIcon,
-  MenuItem,
-} from "@carbon/react";
+import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -17,7 +10,7 @@ import {
   LuTrendingUp,
   LuUsers,
 } from "react-icons/lu";
-import { Avatar, New, Table } from "~/components";
+import { EmployeeAvatarGroup, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Abilities, AbilityDatum } from "../../types";
@@ -40,35 +33,9 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
     weeks: row.curve?.data.at(-1).week,
     curve: row.curve as { data: AbilityDatum[] },
     shadowWeeks: row.shadowWeeks,
-    employees: Array.isArray(row.employeeAbility)
-      ? row.employeeAbility.reduce<
-          { name: string; avatarUrl: string | null }[]
-        >((acc, curr) => {
-          if (curr.user) {
-            if (Array.isArray(curr.user)) {
-              curr.user.forEach((user) => {
-                acc.push({
-                  name: user.fullName ?? "",
-                  avatarUrl: user.avatarUrl,
-                });
-              });
-            } else {
-              acc.push({
-                name: curr.user.fullName ?? "",
-                avatarUrl: curr.user.avatarUrl,
-              });
-            }
-          }
-          return acc;
-        }, [])
-      : // @ts-expect-error
-      row.employeeAbility?.user && Array.isArray(row.employeeAbility?.user)
-      ? // @ts-expect-error
-        row.employeeAbility.user.map((user) => ({
-          name: user.fullName ?? "",
-          avatarUrl: user.avatarUrl,
-        }))
-      : [],
+    employees: row.employeeAbility?.map(
+      (employeeAbility) => employeeAbility.employeeId
+    ),
   }));
 
   const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
@@ -93,20 +60,11 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         header: "Employees",
         // accessorKey: undefined, // makes the column unsortable
         cell: ({ row }) => (
-          <AvatarGroup limit={5}>
-            <AvatarGroupList>
-              {/* @ts-ignore */}
-              {row.original.employees.map((employee, index: number) => (
-                <Avatar
-                  key={index}
-                  name={employee.name ?? undefined}
-                  title={employee.name ?? undefined}
-                  path={employee.avatarUrl}
-                />
-              ))}
-            </AvatarGroupList>
-            <AvatarOverflowIndicator />
-          </AvatarGroup>
+          <EmployeeAvatarGroup
+            employeeIds={row.original.employees}
+            size="xs"
+            limit={3}
+          />
         ),
         meta: {
           icon: <LuUsers />,
