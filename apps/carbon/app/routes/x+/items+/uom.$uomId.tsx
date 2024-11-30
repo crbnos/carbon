@@ -2,6 +2,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -13,6 +14,7 @@ import {
 } from "~/modules/items";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
+import { getCompanyId, queryClient, uomsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -67,6 +69,16 @@ export async function action({ request }: ActionFunctionArgs) {
     `${path.to.uoms}?${getParams(request)}`,
     await flash(request, success("Updated unit of measure"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  const companyId = getCompanyId();
+  if (!companyId) {
+    return await serverAction();
+  }
+
+  queryClient.invalidateQueries({ queryKey: uomsQuery(companyId).queryKey });
+  return await serverAction();
 }
 
 export default function EditUnitOfMeasuresRoute() {

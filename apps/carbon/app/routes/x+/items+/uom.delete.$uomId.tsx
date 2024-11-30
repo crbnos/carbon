@@ -1,12 +1,14 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteUnitOfMeasure, getUnitOfMeasure } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
+import { getCompanyId, queryClient, uomsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -58,6 +60,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.uoms,
     await flash(request, success("Successfully deleted unit of measure"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  const companyId = getCompanyId();
+  if (!companyId) {
+    return await serverAction();
+  }
+
+  queryClient.invalidateQueries({ queryKey: uomsQuery(companyId).queryKey });
+  return await serverAction();
 }
 
 export default function DeleteUnitOfMeasureRoute() {

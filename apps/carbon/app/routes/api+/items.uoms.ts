@@ -11,12 +11,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json(await getUnitOfMeasuresList(client, companyId));
 }
 
-export async function clientLoader({
-  serverLoader,
-  params,
-}: ClientLoaderFunctionArgs) {
+export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
   const companyId = getCompanyId();
-  console.log("companyId", companyId);
+
   if (!companyId) {
     return await serverLoader<typeof loader>();
   }
