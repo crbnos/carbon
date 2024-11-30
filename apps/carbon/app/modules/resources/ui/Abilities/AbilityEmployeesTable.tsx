@@ -35,10 +35,6 @@ const AbilityEmployeesTable = ({
     () =>
       Array.isArray(employees)
         ? employees.map((employee) => {
-            if (Array.isArray(employee)) {
-              throw new Error("AbilityEmployeesTable: user is an array");
-            }
-
             return {
               id: employee.id,
               employeeId: employee.employeeId,
@@ -53,8 +49,6 @@ const AbilityEmployeesTable = ({
         : [],
     [employees, weeks]
   );
-
-  console.log();
 
   const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
     return [
