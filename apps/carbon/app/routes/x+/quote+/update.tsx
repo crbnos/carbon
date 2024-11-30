@@ -33,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
           currencyCode = customer.data.currencyCode;
           return json(
             await client
-              .from("salesOrder")
+              .from("quote")
               .update({
                 customerId: value ?? undefined,
                 currencyCode: currencyCode ? currencyCode : undefined,
@@ -47,7 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       return json(
         await client
-          .from("salesOrder")
+          .from("quote")
           .update({
             customerId: value ?? undefined,
             updatedBy: userId,
