@@ -34,13 +34,12 @@ import {
   formatRelativeTime,
 } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { useFetcher, useParams } from "@remix-run/react";
+import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
 import {
   LuAlertTriangle,
   LuChevronDown,
@@ -181,22 +180,64 @@ const initialOperation: Omit<
   workInstruction: {},
 };
 
+type PendingWorkInstructions = {
+  [key: string]: JSONContent;
+};
+
+type OrderState = {
+  [key: string]: number;
+};
+
+type CheckedState = {
+  [key: string]: boolean;
+};
+
+type TemporaryItems = {
+  [key: string]: Operation;
+};
+
+const usePendingOperations = () => {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+  const { jobId } = useParams();
+  if (!jobId) throw new Error("jobId not found");
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        (fetcher.formAction === path.to.newJobOperation(jobId) ||
+          fetcher.formAction?.includes(`/job/methods/${jobId}/operation`)) ??
+        false
+      );
+    })
+    .reduce<z.infer<typeof jobOperationValidator>[]>((acc, fetcher) => {
+      const formData = fetcher.formData;
+      const operation = jobOperationValidator.safeParse(
+        Object.fromEntries(formData)
+      );
+
+      if (operation.success) {
+        return [...acc, operation.data];
+      }
+      return acc;
+    }, []);
+};
+
 const JobBillOfProcess = ({
   jobMakeMethodId,
   locationId,
-  operations,
+  operations: initialOperations,
 }: JobBillOfProcessProps) => {
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
+  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
   const permissions = usePermissions();
   const {
     id: userId,
     company: { id: companyId },
   } = useUser();
 
-  const [items, setItems] = useState<ItemWithData[]>(
-    makeItems(operations ?? [])
-  );
   const [params] = useUrlParams();
   const selected = params.get("selectedOperation");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(
@@ -206,66 +247,135 @@ const JobBillOfProcess = ({
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
   const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
+  const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
+  const [workInstructions, setWorkInstructions] =
+    useState<PendingWorkInstructions>(() => {
+      return initialOperations.reduce((acc, operation) => {
+        if (operation.workInstruction) {
+          acc[operation.id!] = operation.workInstruction;
+        }
+        return acc;
+      }, {} as PendingWorkInstructions);
+    });
+  const [checkedState, setCheckedState] = useState<CheckedState>({});
+  const [orderState, setOrderState] = useState<OrderState>(() => {
+    return initialOperations.reduce((acc, op) => {
+      acc[op.id!] = op.order;
+      return acc;
+    }, {} as OrderState);
+  });
+
+  const operationsById = new Map<
+    string,
+    Operation & { jobOperationTool: OperationTool[] }
+  >();
+
+  // Add initial operations to map
+  initialOperations.forEach((operation) => {
+    if (!operation.id) return;
+    operationsById.set(operation.id, operation);
+  });
+
+  const pendingOperations = usePendingOperations();
+
+  // Replace existing operations with pending ones
+  pendingOperations.forEach((pendingOperation) => {
+    if (!pendingOperation.id) {
+      operationsById.set("temporary", {
+        ...pendingOperation,
+        status: "Todo",
+        workInstruction: {},
+        jobOperationTool: [],
+      });
+    } else {
+      operationsById.set(pendingOperation.id, {
+        ...operationsById.get(pendingOperation.id)!,
+        ...pendingOperation,
+      });
+    }
+  });
+
+  // Add temporary items
+  Object.entries(temporaryItems).forEach(([id, operation]) => {
+    operationsById.set(id, {
+      ...operation,
+      jobOperationTool: [],
+    });
+  });
+
+  const operations = Array.from(operationsById.values()).sort(
+    (a, b) => (orderState[a.id!] ?? a.order) - (orderState[b.id!] ?? b.order)
+  );
+
+  const items = makeItems(operations).map((item) => ({
+    ...item,
+    checked: checkedState[item.id] ?? false,
+  }));
 
   const isDisabled = ["Completed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
-    setItems((prevItems) =>
-      prevItems.map((i) => (i.id === id ? { ...i, checked: !i.checked } : i))
-    );
+    if (!permissions.can("update", "parts")) return;
+    setCheckedState((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
-  // we create a temporary item and append it to the list
   const onAddItem = () => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
     const temporaryId = Math.random().toString(16).slice(2);
-    setSelectedItemId(temporaryId);
-    setItems((prevItems) => {
-      let newOrder = 1;
-      if (prevItems.length) {
-        newOrder = prevItems[prevItems.length - 1].data.order + 1;
-      }
 
-      return [
-        ...prevItems,
-        {
-          title: "",
-          checked: false,
-          id: temporaryId,
-          data: {
-            ...initialOperation,
-            order: newOrder,
-            jobMakeMethodId,
-          },
-        },
-      ];
-    });
+    let newOrder = 1;
+    if (operations.length) {
+      newOrder = Math.max(...operations.map((op) => op.order)) + 1;
+    }
+
+    const newOperation: Operation = {
+      ...initialOperation,
+      id: temporaryId,
+      order: newOrder,
+      jobMakeMethodId,
+    };
+
+    setTemporaryItems((prev) => ({
+      ...prev,
+      [temporaryId]: newOperation,
+    }));
+    setSelectedItemId(temporaryId);
   };
 
   const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
-    // get the item and it's order in the list
-    const itemIndex = items.findIndex((i) => i.id === id);
-    const item = items[itemIndex];
+    if (!permissions.can("update", "production")) return;
 
-    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    const operation = operationsById.get(id);
+    if (!operation) return;
 
-    const response = await carbon?.from("jobOperation").delete().eq("id", id);
-    if (response?.error) {
-      // add the item back to the list if there was an error
-      setItems((prevItems) => {
-        const updatedItems = [...prevItems];
-        updatedItems.splice(itemIndex, 0, item);
-        return updatedItems;
+    if (isTemporaryId(id)) {
+      setTemporaryItems((prev) => {
+        const { [id]: _, ...rest } = prev;
+        return rest;
       });
+    } else {
+      deleteOperationFetcher.submit(
+        { id },
+        {
+          method: "post",
+          action: path.to.jobOperationsDelete,
+        }
+      );
     }
+
+    setSelectedItemId(null);
+    setOrderState((prev) => {
+      const { [id]: _, ...rest } = prev;
+      return rest;
+    });
   };
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "sales") || isDisabled) return;
+    if (!permissions.can("update", "production") || isDisabled) return;
     const newItems = items.map((item, index) => ({
       ...item,
       data: {
@@ -280,7 +390,10 @@ const JobBillOfProcess = ({
       return acc;
     }, {});
 
-    setItems(newItems);
+    setOrderState((prev) => ({
+      ...prev,
+      ...updates,
+    }));
     updateSortOrder(updates);
   };
 
@@ -298,16 +411,7 @@ const JobBillOfProcess = ({
   );
 
   const onCloseOnDrag = useCallback(() => {
-    setItems((prevItems) => {
-      const updatedItems = prevItems.map((item) =>
-        item.checked ? { ...item, checked: false } : item
-      );
-      return updatedItems.some(
-        (item, index) => item.checked !== prevItems[index].checked
-      )
-        ? updatedItems
-        : prevItems;
-    });
+    setCheckedState({});
   }, []);
 
   const onUpdateWorkInstruction = useDebounce(
@@ -353,8 +457,15 @@ const JobBillOfProcess = ({
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    if (!channelRef.current && carbon && accessToken) {
+    if (
+      !channelRef.current &&
+      carbon &&
+      accessToken &&
+      selectedItemId &&
+      !isTemporaryId(selectedItemId)
+    ) {
       carbon.realtime.setAuth(accessToken);
+
       channelRef.current = carbon
         .channel(`production-events:${selectedItemId}`)
         .on(
@@ -401,6 +512,7 @@ const JobBillOfProcess = ({
     return () => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
+        carbon?.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
@@ -408,7 +520,8 @@ const JobBillOfProcess = ({
   }, [selectedItemId]);
 
   useEffect(() => {
-    if (carbon && accessToken) carbon.realtime.setAuth(accessToken);
+    if (carbon && accessToken && channelRef.current)
+      carbon.realtime.setAuth(accessToken);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 
@@ -465,9 +578,11 @@ const JobBillOfProcess = ({
               <OperationForm
                 item={item}
                 isDisabled={isDisabled}
-                setItems={setItems}
-                setSelectedItemId={setSelectedItemId}
                 locationId={locationId}
+                workInstruction={workInstructions[item.id] ?? {}}
+                setWorkInstructions={setWorkInstructions}
+                setSelectedItemId={setSelectedItemId}
+                setTemporaryItems={setTemporaryItems}
               />
             </motion.div>
           </div>
@@ -482,24 +597,15 @@ const JobBillOfProcess = ({
               {permissions.can("update", "parts") ? (
                 <Editor
                   initialValue={
-                    item.data.workInstruction ?? ({} as JSONContent)
+                    workInstructions[item.id] ?? ({} as JSONContent)
                   }
                   onUpload={onUploadImage}
                   onChange={(content) => {
-                    if (!permissions.can("update", "parts")) return;
-                    setItems((prevItems) =>
-                      prevItems.map((i) =>
-                        i.id === selectedItemId
-                          ? {
-                              ...i,
-                              data: {
-                                ...i.data,
-                                workInstruction: content,
-                              },
-                            }
-                          : i
-                      )
-                    );
+                    if (!permissions.can("update", "production")) return;
+                    setWorkInstructions((prev) => ({
+                      ...prev,
+                      [item.id]: content,
+                    }));
                     onUpdateWorkInstruction(content);
                   }}
                   className="py-8"
@@ -587,11 +693,6 @@ const JobBillOfProcess = ({
               onClick={
                 isOpen
                   ? () => {
-                      if (isTemporaryId(item.id)) {
-                        setItems((prevItems) =>
-                          prevItems.filter((i) => i.id !== item.id)
-                        );
-                      }
                       setSelectedItemId(null);
                     }
                   : () => {
@@ -685,7 +786,7 @@ const JobBillOfProcess = ({
           <Button
             variant="secondary"
             isDisabled={
-              !permissions.can("update", "sales") ||
+              !permissions.can("update", "production") ||
               selectedItemId !== null ||
               isDisabled
             }
@@ -717,15 +818,19 @@ function isTemporaryId(id: string) {
 function OperationForm({
   item,
   isDisabled,
-  setItems,
-  setSelectedItemId,
   locationId,
+  workInstruction,
+  setWorkInstructions,
+  setTemporaryItems,
+  setSelectedItemId,
 }: {
   item: ItemWithData;
   isDisabled: boolean;
-  setItems: Dispatch<SetStateAction<ItemWithData[]>>;
-  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   locationId: string;
+  workInstruction: JSONContent;
+  setWorkInstructions: Dispatch<SetStateAction<PendingWorkInstructions>>;
+  setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
+  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
 }) {
   const { jobId } = useParams();
   const { id: userId, company } = useUser();
@@ -733,41 +838,34 @@ function OperationForm({
 
   const fetcher = useFetcher<{ id: string }>();
   const { carbon } = useCarbon();
-
+  const addingWorkInstruction = useRef(false);
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   useEffect(() => {
     // replace the temporary id with the actual id
     if (fetcher.data && fetcher.data.id) {
-      flushSync(() => {
-        setItems((prevItems) =>
-          prevItems.map((i) =>
-            i.id === item.id
-              ? {
-                  ...i,
-                  id: fetcher.data!.id!,
-                  data: {
-                    ...i.data,
-                    ...fetcher.data,
-                  },
-                }
-              : i
-          )
-        );
-      });
-
-      // save the work instructions
-      if (isTemporaryId(item.id) && carbon) {
+      if (isTemporaryId(item.id) && carbon && !addingWorkInstruction.current) {
+        addingWorkInstruction.current = true;
         carbon
           .from("jobOperation")
           .update({
-            workInstruction: item.data.workInstruction,
+            workInstruction: workInstruction,
             createdAt: today(getLocalTimeZone()).toString(),
             updatedBy: userId,
           })
-          .eq("jobOperationId", fetcher.data.id)
+          .eq("id", fetcher.data.id)
           .then(() => {
+            setWorkInstructions((prev) => ({
+              ...prev,
+              [fetcher.data?.id!]: workInstruction,
+            }));
             setSelectedItemId(null);
+            // Clear temporary item after successful save
+            setTemporaryItems((prev) => {
+              const { [item.id]: _, ...rest } = prev;
+              return rest;
+            });
+            addingWorkInstruction.current = false;
           });
       } else {
         setSelectedItemId(null);
@@ -776,11 +874,13 @@ function OperationForm({
   }, [
     item.id,
     fetcher.data,
-    setItems,
     setSelectedItemId,
     item.data.workInstruction,
     carbon,
     userId,
+    workInstruction,
+    setWorkInstructions,
+    setTemporaryItems,
   ]);
 
   const [showMachine, setShowMachine] = useState(false);
@@ -882,7 +982,7 @@ function OperationForm({
       operationUnitCost:
         supplierProcesses.data && supplierProcesses.data.length > 0
           ? supplierProcesses.data.reduce((acc, sp) => {
-              return (acc += sp.unitCost ?? 0);
+              return (acc += sp.minimumCost ?? 0);
             }, 0) / supplierProcesses.data.length
           : p.operationUnitCost,
       operationLeadTime:
@@ -937,7 +1037,7 @@ function OperationForm({
     setProcessData((d) => ({
       ...d,
       operationMinimumCost: data?.minimumCost ?? 0,
-      operationUnitCost: data?.unitCost ?? 0,
+      operationUnitCost: data?.minimumCost ?? 0,
       operationLeadTime: data?.leadTime ?? 0,
     }));
   };
@@ -954,23 +1054,13 @@ function OperationForm({
       validator={jobOperationValidator}
       className="w-full flex flex-col gap-y-4"
       fetcher={fetcher}
-      onSubmit={async (values) => {
-        setItems((prevItems) =>
-          prevItems.map((i) =>
-            i.id === item.id
-              ? {
-                  ...makeItem({
-                    ...values,
-                    workInstruction: i.data.workInstruction,
-                    status: i.data.status,
-                  }),
-                  id: item.id,
-                }
-              : i
-          )
-        );
+      onSubmit={() => {
+        if (!isTemporaryId(item.id)) {
+          setSelectedItemId(null);
+        }
       }}
     >
+      <Hidden name="id" />
       <Hidden name="jobMakeMethodId" />
       <Hidden name="order" />
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
@@ -1527,7 +1617,7 @@ function ToolsListItem({
         >
           <Hidden name="operationId" />
           <VStack spacing={4}>
-            <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               <Tool name="toolId" label="Tool" autoFocus />
               <Number name="quantity" label="Quantity" />
             </div>
@@ -1652,7 +1742,7 @@ function ToolsForm({
         >
           <Hidden name="operationId" />
           <VStack spacing={4}>
-            <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <Tool name="toolId" label="Tool" autoFocus />
               <Number name="quantity" label="Quantity" />
             </div>
