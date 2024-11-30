@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
