@@ -394,6 +394,7 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/operation/${id}`),
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsOrder: `${x}/job/methods/operation/order`,
+    jobOperationsDelete: `${x}/job/methods/operation/delete`,
     jobOperationTool: (id: string) =>
       generatePath(`${x}/job/methods/operation/tool/${id}`),
     jobOperationStatus: `${x}/job/methods/operation/status`,
@@ -682,6 +683,7 @@ export const path = {
     quoteOperation: (quoteId: string, lineId: string, id: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,
+    quoteOperationsDelete: `${x}/quote/methods/operation/delete`,
     quoteOperationTool: (id: string) =>
       generatePath(`${x}/quote/methods/operation/tool/${id}`),
     quotePayment: (id: string) => generatePath(`${x}/quote/${id}/payment`),

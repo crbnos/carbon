@@ -282,14 +282,6 @@ const BillOfProcess = ({
     checked: checkedState[item.id] ?? false,
   }));
 
-  const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "parts")) return;
-    setCheckedState((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
   const onUpdateWorkInstruction = useDebounce(
     async (id: string, content: JSONContent) => {
       if (!isTemporaryId(id)) {
@@ -306,6 +298,35 @@ const BillOfProcess = ({
     1000,
     true
   );
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
+    const result = await carbon?.storage
+      .from("private")
+      .upload(fileName, file, {
+        upsert: true,
+        cacheControl: "3600",
+      });
+
+    if (result?.error) {
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return getPrivateUrl(result.data.path);
+  };
+
+  const onToggleItem = (id: string) => {
+    if (!permissions.can("update", "parts")) return;
+    setCheckedState((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "parts")) return;
@@ -399,27 +420,6 @@ const BillOfProcess = ({
     company: { id: companyId },
   } = useUser();
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const result = await carbon?.storage
-      .from("private")
-      .upload(fileName, file, {
-        upsert: true,
-        cacheControl: "3600",
-      });
-
-    if (result?.error) {
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
-
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
     item,
@@ -449,6 +449,7 @@ const BillOfProcess = ({
               <OperationForm
                 item={item}
                 workInstruction={workInstructions[item.id] ?? {}}
+                setWorkInstructions={setWorkInstructions}
                 setSelectedItemId={setSelectedItemId}
                 setTemporaryItems={setTemporaryItems}
               />
@@ -659,8 +660,9 @@ function isTemporaryId(id: string) {
 
 type OperationFormProps = {
   item: ItemWithData;
-  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   workInstruction: JSONContent;
+  setWorkInstructions: Dispatch<SetStateAction<PendingWorkInstructions>>;
+  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
 };
 
@@ -668,17 +670,20 @@ function OperationForm({
   item,
   setSelectedItemId,
   workInstruction,
+  setWorkInstructions,
   setTemporaryItems,
 }: OperationFormProps) {
   const methodOperationFetcher = useFetcher<{ id: string }>();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
+  const addingWorkInstruction = useRef(false);
 
   useEffect(() => {
     // replace the temporary id with the actual id
     if (methodOperationFetcher.data && methodOperationFetcher.data.id) {
-      if (isTemporaryId(item.id) && carbon) {
+      if (isTemporaryId(item.id) && carbon && !addingWorkInstruction.current) {
+        addingWorkInstruction.current = true;
         carbon
           .from("methodOperation")
           .update({
@@ -688,12 +693,17 @@ function OperationForm({
           })
           .eq("id", methodOperationFetcher.data.id)
           .then(() => {
+            setWorkInstructions((prev) => ({
+              ...prev,
+              [methodOperationFetcher.data?.id!]: workInstruction,
+            }));
             setSelectedItemId(null);
             // Clear temporary item after successful save
             setTemporaryItems((prev) => {
               const { [item.id]: _, ...rest } = prev;
               return rest;
             });
+            addingWorkInstruction.current = false;
           });
       } else {
         setSelectedItemId(null);
@@ -707,6 +717,7 @@ function OperationForm({
     userId,
     workInstruction,
     setTemporaryItems,
+    setWorkInstructions,
   ]);
 
   const [showMachine, setShowMachine] = useState(false);
@@ -1186,7 +1197,7 @@ function ToolsListItem({
         >
           <Hidden name="operationId" />
           <VStack spacing={4}>
-            <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <Tool name="toolId" label="Tool" autoFocus />
               <Number name="quantity" label="Quantity" />
             </div>
@@ -1311,7 +1322,7 @@ function ToolsForm({
         >
           <Hidden name="operationId" />
           <VStack spacing={4}>
-            <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-start">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <Tool name="toolId" label="Tool" autoFocus />
               <Number name="quantity" label="Quantity" />
             </div>
