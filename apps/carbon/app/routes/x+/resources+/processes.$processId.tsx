@@ -2,6 +2,7 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -13,6 +14,7 @@ import {
 } from "~/modules/resources";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -72,6 +74,14 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return modal ? json(createProcess) : redirect(path.to.processes);
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.queryClient?.setQueryData(
+    processesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function ProcessRoute() {
