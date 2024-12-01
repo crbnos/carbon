@@ -39,7 +39,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.queryClient?.setQueryData(
+  window.clientCache?.setQueryData(
     workCentersQuery(getCompanyId()).queryKey,
     null
   );

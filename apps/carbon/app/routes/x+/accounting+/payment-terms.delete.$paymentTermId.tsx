@@ -65,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.queryClient?.setQueryData(
+  window.clientCache?.setQueryData(
     paymentTermsQuery(getCompanyId()).queryKey,
     null
   );

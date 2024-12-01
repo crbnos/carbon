@@ -13,13 +13,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
   const query = currenciesQuery();
-  const data = window?.queryClient?.getQueryData<SerializeFrom<typeof loader>>(
+  const data = window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(
     query.queryKey
   );
 
   if (!data) {
     const serverData = await serverLoader<typeof loader>();
-    window?.queryClient?.setQueryData(query.queryKey, serverData);
+    window?.clientCache?.setQueryData(query.queryKey, serverData);
     return serverData;
   }
 
