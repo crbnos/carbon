@@ -2,6 +2,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -13,6 +14,7 @@ import {
 } from "~/modules/purchasing";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -84,4 +86,18 @@ export default function SupplierLocationsNewRoute() {
       onClose={() => navigate(path.to.supplierLocations(supplierId))}
     />
   );
+}
+
+export async function clientAction({
+  serverAction,
+  params,
+}: ClientActionFunctionArgs) {
+  const { supplierId } = params;
+  if (supplierId) {
+    window.queryClient.setQueryData(
+      supplierLocationsQuery(supplierId).queryKey,
+      null
+    );
+  }
+  return await serverAction();
 }

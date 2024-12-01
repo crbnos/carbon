@@ -20,9 +20,9 @@ export const path = {
       countries: `${api}/countries`,
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
-        generatePath(`${api}/sales/customer-contacts?customerId=${id}`),
+        generatePath(`${api}/sales/customer-contacts/${id}`),
       customerLocations: (id: string) =>
-        generatePath(`${api}/sales/customer-locations?customerId=${id}`),
+        generatePath(`${api}/sales/customer-locations/${id}`),
       customerStatuses: `${api}/sales/customer-statuses`,
       customerTypes: `${api}/sales/customer-types`,
       departments: `${api}/people/departments`,
@@ -56,9 +56,9 @@ export const path = {
       shelves: (id: string) =>
         generatePath(`${api}/inventory/shelves?locationId=${id}`),
       supplierContacts: (id: string) =>
-        generatePath(`${api}/purchasing/supplier-contacts?supplierId=${id}`),
+        generatePath(`${api}/purchasing/supplier-contacts/${id}`),
       supplierLocations: (id: string) =>
-        generatePath(`${api}/purchasing/supplier-locations?supplierId=${id}`),
+        generatePath(`${api}/purchasing/supplier-locations/${id}`),
       supplierProcesses: (id?: string) =>
         generatePath(`${api}/purchasing/supplier-processes?processId=${id}`),
       supplierStatuses: `${api}/purchasing/supplier-statuses`,

@@ -1,4 +1,5 @@
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -14,6 +15,7 @@ import {
 } from "~/modules/accounting";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
+import { currenciesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -69,6 +71,11 @@ export async function action({ request }: ActionFunctionArgs) {
     `${path.to.currencies}?${getParams(request)}`,
     await flash(request, success("Updated currency"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.queryClient.setQueryData(currenciesQuery().queryKey, null);
+  return await serverAction();
 }
 
 export default function EditCurrencysRoute() {

@@ -1,8 +1,4 @@
-import { remember } from "@epic-web/remember";
-import { QueryClient, queryOptions } from "@tanstack/react-query";
 import * as cookie from "cookie";
-
-export const queryClient = remember("react-query", () => new QueryClient());
 
 enum RefreshRate {
   Never = Infinity,
@@ -17,14 +13,52 @@ export const getCompanyId = () => {
   return parsed;
 };
 
-export const countriesQuery = () =>
-  queryOptions({
-    queryKey: ["countries"],
-    staleTime: RefreshRate.Never,
-  });
+export const abilitiesQuery = (companyId: string | null) => ({
+  queryKey: ["abilities", companyId ?? "null"],
+  staleTime: RefreshRate.Low,
+});
 
-export const uomsQuery = (companyId: string) =>
-  queryOptions({
-    queryKey: ["uoms", companyId],
-    staleTime: RefreshRate.Medium,
-  });
+export const countriesQuery = () => ({
+  queryKey: ["countries"],
+  staleTime: RefreshRate.Never,
+});
+
+export const currenciesQuery = () => ({
+  queryKey: ["currencies"],
+  staleTime: RefreshRate.Never,
+});
+
+export const customerContactsQuery = (customerId: string) => ({
+  queryKey: ["customerContacts", customerId],
+  staleTime: RefreshRate.Low,
+});
+
+export const customerLocationsQuery = (customerId: string) => ({
+  queryKey: ["customerLocations", customerId],
+  staleTime: RefreshRate.Low,
+});
+
+export const locationsQuery = (companyId: string | null) => ({
+  queryKey: ["locations", companyId ?? "null"],
+  staleTime: RefreshRate.Low,
+});
+
+export const paymentTermsQuery = (companyId: string | null) => ({
+  queryKey: ["paymentTerms", companyId ?? "null"],
+  staleTime: RefreshRate.Low,
+});
+
+export const supplierContactsQuery = (supplierId: string) => ({
+  queryKey: ["supplierContacts", supplierId],
+  staleTime: RefreshRate.Low,
+});
+
+export const supplierLocationsQuery = (supplierId: string) => ({
+  queryKey: ["supplierLocations", supplierId],
+  staleTime: RefreshRate.Low,
+});
+
+export const uomsQuery = (companyId: string | null) => ({
+  queryKey: ["uoms", companyId ?? "null"],
+  staleTime: RefreshRate.Medium,
+});

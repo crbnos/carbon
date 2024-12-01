@@ -8,6 +8,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -19,6 +20,7 @@ import {
 } from "~/modules/sales";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import { customerLocationsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -89,6 +91,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.customerLocations(customerId),
     await flash(request, success("Customer address updated"))
   );
+}
+
+export async function clientAction({
+  serverAction,
+  params,
+}: ClientActionFunctionArgs) {
+  const { customerId } = params;
+  if (customerId) {
+    window.queryClient.setQueryData(
+      customerLocationsQuery(customerId).queryKey,
+      null
+    );
+  }
+  return await serverAction();
 }
 
 export default function EditCustomerLocationRoute() {

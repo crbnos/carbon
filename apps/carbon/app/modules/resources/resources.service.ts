@@ -14,7 +14,7 @@ import type {
 export async function deleteAbility(
   client: SupabaseClient<Database>,
   abilityId: string,
-  hardDelete = false
+  hardDelete = true
 ) {
   return hardDelete
     ? client.from("ability").delete().eq("id", abilityId)

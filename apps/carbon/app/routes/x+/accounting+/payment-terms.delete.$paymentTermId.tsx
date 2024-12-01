@@ -1,12 +1,14 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
 import { deletePaymentTerm, getPaymentTerm } from "~/modules/accounting";
 import { getParams, path } from "~/utils/path";
+import { getCompanyId, paymentTermsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -60,6 +62,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     `${path.to.paymentTerms}?${getParams(request)}`,
     await flash(request, success("Successfully deleted payment term"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.queryClient.setQueryData(
+    paymentTermsQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function DeletePaymentTermRoute() {

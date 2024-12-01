@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
@@ -12,6 +13,7 @@ import {
   insertEmployeeAbilities,
 } from "~/modules/resources";
 import { path } from "~/utils/path";
+import { abilitiesQuery, getCompanyId } from "~/utils/react-query";
 
 function makeCurve(startingPoint: number, weeks: number) {
   return {
@@ -87,6 +89,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
 
     if (createEmployeeAbilities.error) {
+      console.error(createEmployeeAbilities.error);
       await deleteAbility(client, abilityId, true);
       return json(
         {},
@@ -105,6 +108,14 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.abilities,
     await flash(request, success(`Ability created`))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.queryClient.setQueryData(
+    abilitiesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function NewAbilityRoute() {

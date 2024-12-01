@@ -8,6 +8,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -18,6 +19,7 @@ import {
 } from "~/modules/sales";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import { customerContactsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -72,6 +74,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
         path.to.customerContacts(customerId),
         await flash(request, success("Customer contact created"))
       );
+}
+
+export async function clientAction({
+  serverAction,
+  params,
+}: ClientActionFunctionArgs) {
+  const { customerId } = params;
+
+  if (customerId) {
+    window.queryClient.setQueryData(
+      customerContactsQuery(customerId).queryKey,
+      null
+    );
+  }
+  return await serverAction();
 }
 
 export default function CustomerContactsNewRoute() {

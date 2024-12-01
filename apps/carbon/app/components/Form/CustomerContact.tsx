@@ -37,39 +37,17 @@ const CustomerContactPreview = (
 };
 
 const CustomerContact = (props: CustomerContactSelectProps) => {
-  const customerContactsFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCustomerContacts>>>();
-
   const newContactModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const [firstName, ...lastName] = created.split(" ");
 
-  useEffect(() => {
-    if (props?.customer) {
-      customerContactsFetcher.load(
-        path.to.api.customerContacts(props.customer)
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.customer]);
-
-  const options = useMemo(
-    () =>
-      customerContactsFetcher.data?.data?.map((c) => ({
-        value: c.id,
-        label: c.contact?.fullName ?? c.contact?.email ?? "Unknown",
-      })) ?? [],
-
-    [customerContactsFetcher.data]
-  );
+  const { options, data } = useCustomerContacts(props.customer);
 
   const onChange = (newValue: { label: string; value: string } | null) => {
     const contact =
-      customerContactsFetcher.data?.data?.find(
-        (contact) => contact.id === newValue?.value
-      ) ?? null;
+      data?.data?.find((contact) => contact.id === newValue?.value) ?? null;
 
     props.onChange?.(contact ?? null);
   };
@@ -109,3 +87,27 @@ const CustomerContact = (props: CustomerContactSelectProps) => {
 };
 
 export default CustomerContact;
+
+function useCustomerContacts(customerId?: string) {
+  const customerContactsFetcher =
+    useFetcher<Awaited<ReturnType<typeof getCustomerContacts>>>();
+
+  useEffect(() => {
+    if (customerId) {
+      customerContactsFetcher.load(path.to.api.customerContacts(customerId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerId]);
+
+  const options = useMemo(
+    () =>
+      customerContactsFetcher.data?.data?.map((c) => ({
+        value: c.id,
+        label: c.contact?.fullName ?? c.contact?.email ?? "Unknown",
+      })) ?? [],
+
+    [customerContactsFetcher.data]
+  );
+
+  return { options, data: customerContactsFetcher.data };
+}
