@@ -48,6 +48,11 @@ export const paymentTermsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low,
 });
 
+export const shippingMethodsQuery = (companyId: string | null) => ({
+  queryKey: ["shippingMethods", companyId ?? "null"],
+  staleTime: RefreshRate.Low,
+});
+
 export const supplierContactsQuery = (supplierId: string) => ({
   queryKey: ["supplierContacts", supplierId],
   staleTime: RefreshRate.Low,
