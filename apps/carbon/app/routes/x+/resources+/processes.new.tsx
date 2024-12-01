@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -12,6 +13,7 @@ import {
 } from "~/modules/resources";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -55,6 +57,14 @@ export async function action({ request }: ActionFunctionArgs) {
         path.to.processes,
         await flash(request, success("Process created"))
       );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.queryClient?.setQueryData(
+    processesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function NewProcessRoute() {
