@@ -50,7 +50,7 @@ export async function clientAction({
 }: ClientActionFunctionArgs) {
   const { customerId } = params;
   if (customerId) {
-    window.queryClient.setQueryData(
+    window.queryClient?.setQueryData(
       customerContactsQuery(customerId).queryKey,
       null
     );

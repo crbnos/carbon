@@ -48,6 +48,11 @@ export const paymentTermsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low,
 });
 
+export const processesQuery = (companyId: string | null) => ({
+  queryKey: ["processes", companyId ?? "null"],
+  staleTime: RefreshRate.Low,
+});
+
 export const shippingMethodsQuery = (companyId: string | null) => ({
   queryKey: ["shippingMethods", companyId ?? "null"],
   staleTime: RefreshRate.Low,
@@ -66,4 +71,9 @@ export const supplierLocationsQuery = (supplierId: string) => ({
 export const uomsQuery = (companyId: string | null) => ({
   queryKey: ["uoms", companyId ?? "null"],
   staleTime: RefreshRate.Medium,
+});
+
+export const workCentersQuery = (companyId: string | null) => ({
+  queryKey: ["workCenters", companyId ?? "null"],
+  staleTime: RefreshRate.Low,
 });
