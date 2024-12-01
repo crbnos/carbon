@@ -25942,14 +25942,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -27832,6 +27832,7 @@ export type Database = {
           favorite: boolean | null
           id: string | null
           internalNotes: Json | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
           lines: number | null
           locationId: string | null
           locationName: string | null
@@ -27843,6 +27844,7 @@ export type Database = {
           shippingCost: number | null
           status: Database["public"]["Enums"]["quoteStatus"] | null
           tags: string[] | null
+          thumbnailPath: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -28620,18 +28622,13 @@ export type Database = {
           assignee: string | null
           closedAt: string | null
           closedBy: string | null
-          closedByAvatar: string | null
-          closedByFullName: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
-          createdByAvatar: string | null
-          createdByFullName: string | null
           currencyCode: string | null
           customerContactId: string | null
           customerId: string | null
           customerLocationId: string | null
-          customerName: string | null
           customerReference: string | null
           customFields: Json | null
           dropShipment: boolean | null
@@ -28641,6 +28638,7 @@ export type Database = {
           favorite: boolean | null
           id: string | null
           internalNotes: Json | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
           locationId: string | null
           locationName: string | null
           orderDate: string | null
@@ -28654,10 +28652,9 @@ export type Database = {
           shippingMethodName: string | null
           shippingTermName: string | null
           status: Database["public"]["Enums"]["salesOrderStatus"] | null
+          thumbnailPath: string | null
           updatedAt: string | null
           updatedBy: string | null
-          updatedByAvatar: string | null
-          updatedByFullName: string | null
         }
         Relationships: [
           {
