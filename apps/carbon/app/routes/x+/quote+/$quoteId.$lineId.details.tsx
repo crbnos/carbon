@@ -164,7 +164,7 @@ export default function QuoteLine() {
       <OpportunityLineNotes
         id={line.id}
         table="quoteLine"
-        title={quoteData?.quote.quoteId ?? ""}
+        title="Notes"
         subTitle={line.itemReadableId ?? ""}
         notes={line.notes as JSONContent}
       />

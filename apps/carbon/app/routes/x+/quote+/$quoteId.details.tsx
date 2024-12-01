@@ -21,6 +21,7 @@ import {
   OpportunityState,
   QuotePaymentForm,
   QuoteShipmentForm,
+  QuoteSummary,
   quoteValidator,
   upsertQuote,
 } from "~/modules/sales";
@@ -121,10 +122,11 @@ export default function QuoteDetailsRoute() {
         key={`state-${initialValues.id}`}
         opportunity={quoteData?.opportunity!}
       />
+      <QuoteSummary key={quoteId} />
       <OpportunityNotes
         key={`notes-${initialValues.id}`}
         id={quoteData.quote.id}
-        title={quoteData.quote.quoteId ?? ""}
+        title="Notes"
         table="quote"
         internalNotes={quoteData.quote.internalNotes as JSONContent}
         externalNotes={quoteData.quote.externalNotes as JSONContent}

@@ -83,7 +83,7 @@ export default function SalesRFQDetailsRoute() {
         key={`notes-${rfqId}`}
         id={rfqData.rfqSummary.id}
         table="salesRfq"
-        title={rfqData.rfqSummary.rfqId ?? ""}
+        title="Notes"
         internalNotes={rfqData.rfqSummary.internalNotes as JSONContent}
         externalNotes={rfqData.rfqSummary.externalNotes as JSONContent}
       />

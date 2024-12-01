@@ -9,8 +9,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { Fragment, Suspense } from "react";
 import { CadModel } from "~/components";
-import { usePermissions, useRouteData } from "~/hooks";
-import type { SalesRFQ } from "~/modules/sales";
+import { usePermissions } from "~/hooks";
 import {
   getOpportunityLineDocuments,
   getSalesRFQLine,
@@ -98,10 +97,6 @@ export default function SalesRFQLine() {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const rfqData = useRouteData<{
-    rfqSummary: SalesRFQ;
-  }>(path.to.salesRfq(rfqId));
-
   const initialValues = {
     ...line,
     id: line.id ?? undefined,
@@ -122,7 +117,7 @@ export default function SalesRFQLine() {
       <OpportunityLineNotes
         id={line.id}
         table="salesRfqLine"
-        title={rfqData?.rfqSummary.rfqId ?? ""}
+        title="Notes"
         subTitle={line.customerPartId ?? ""}
         notes={line.internalNotes as JSONContent}
       />

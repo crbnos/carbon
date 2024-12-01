@@ -3,12 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ClientOnly, VStack } from "@carbon/react";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
+import type { SalesOrderLine } from "~/modules/sales";
 import {
-  getCustomer,
   getOpportunityByQuote,
   getOpportunityDocuments,
   getQuote,
@@ -17,6 +18,7 @@ import {
   getQuoteMethodTrees,
   getQuotePayment,
   getQuoteShipment,
+  getSalesOrderLines,
   QuoteExplorer,
   QuoteHeader,
   QuoteProperties,
@@ -88,9 +90,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const customer = quote.data?.customerId
-    ? await getCustomer(serviceRole, quote.data.customerId)
-    : null;
+  let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
+  if (opportunity.data?.salesOrderId) {
+    salesOrderLines = await getSalesOrderLines(
+      serviceRole,
+      opportunity.data.salesOrderId
+    );
+  }
 
   return defer({
     quote: quote.data,
@@ -102,7 +108,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     payment: payment.data,
     opportunity: opportunity.data,
     exchangeRate,
-    customer: customer?.data ?? null,
+    salesOrderLines: salesOrderLines?.data ?? null,
   });
 }
 
