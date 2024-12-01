@@ -22,11 +22,11 @@ export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
 
   const queryKey = abilitiesQuery(companyId).queryKey;
   const data =
-    window?.queryClient?.getQueryData<SerializeFrom<typeof loader>>(queryKey);
+    window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(queryKey);
 
   if (!data) {
     const serverData = await serverLoader<typeof loader>();
-    window?.queryClient?.setQueryData(queryKey, serverData);
+    window?.clientCache?.setQueryData(queryKey, serverData);
     return serverData;
   }
 

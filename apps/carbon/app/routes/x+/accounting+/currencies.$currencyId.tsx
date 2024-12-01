@@ -74,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.queryClient?.setQueryData(currenciesQuery().queryKey, null);
+  window.clientCache?.setQueryData(currenciesQuery().queryKey, null);
   return await serverAction();
 }
 

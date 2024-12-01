@@ -171,8 +171,8 @@ export default function App() {
   const mode = useMode();
 
   useMount(() => {
-    if (!window.queryClient) {
-      window.queryClient = new QueryClient({
+    if (!window.clientCache) {
+      window.clientCache = new QueryClient({
         defaultOptions: {
           queries: {
             staleTime: Infinity,

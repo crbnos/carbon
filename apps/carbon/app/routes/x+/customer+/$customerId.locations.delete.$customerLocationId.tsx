@@ -53,7 +53,7 @@ export async function clientAction({
 }: ClientActionFunctionArgs) {
   const { customerId } = params;
   if (customerId) {
-    window.queryClient?.setQueryData(
+    window.clientCache?.setQueryData(
       customerLocationsQuery(customerId).queryKey,
       null
     );

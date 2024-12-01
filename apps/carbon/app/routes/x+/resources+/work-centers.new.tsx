@@ -55,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.queryClient?.setQueryData(
+  window.clientCache?.setQueryData(
     workCentersQuery(getCompanyId()).queryKey,
     null
   );

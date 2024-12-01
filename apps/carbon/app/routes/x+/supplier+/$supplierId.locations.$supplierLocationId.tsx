@@ -99,7 +99,7 @@ export async function clientAction({
 }: ClientActionFunctionArgs) {
   const { supplierId } = params;
   if (supplierId) {
-    window.queryClient?.setQueryData(
+    window.clientCache?.setQueryData(
       supplierLocationsQuery(supplierId).queryKey,
       null
     );
