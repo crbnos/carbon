@@ -111,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.queryClient.setQueryData(
+  window.queryClient?.setQueryData(
     abilitiesQuery(getCompanyId()).queryKey,
     null
   );

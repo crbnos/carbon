@@ -63,7 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.queryClient.setQueryData(uomsQuery(getCompanyId()).queryKey, null);
+  window.queryClient?.setQueryData(uomsQuery(getCompanyId()).queryKey, null);
   return await serverAction();
 }
 
