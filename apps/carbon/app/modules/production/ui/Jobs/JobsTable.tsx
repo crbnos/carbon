@@ -26,6 +26,7 @@ import {
   CustomerAvatar,
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   New,
   Table,
 } from "~/components";
@@ -96,9 +97,17 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         accessorKey: "jobId",
         header: "Job ID",
         cell: ({ row }) => (
-          <Hyperlink to={path.to.job(row.original.id!)}>
-            {row.original?.jobId}
-          </Hyperlink>
+          <HStack>
+            <ItemThumbnail
+              size="sm"
+              thumbnailPath={row.original.thumbnailPath}
+              // @ts-ignore
+              type={row.original.itemType}
+            />
+            <Hyperlink to={path.to.job(row.original.id!)}>
+              {row.original?.jobId}
+            </Hyperlink>
+          </HStack>
         ),
         meta: {
           icon: <LuBookMarked />,
