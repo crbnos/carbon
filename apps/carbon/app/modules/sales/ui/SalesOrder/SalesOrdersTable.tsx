@@ -26,6 +26,7 @@ import {
   CustomerAvatar,
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   New,
   Table,
 } from "~/components";
@@ -116,6 +117,12 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
               </fetcher.Form>
             )}
 
+            <ItemThumbnail
+              size="sm"
+              thumbnailPath={row.original.thumbnailPath}
+              // @ts-ignore
+              type={row.original.itemType}
+            />
             <Hyperlink to={path.to.salesOrderDetails(row.original.id!)}>
               {row.original.salesOrderId}
             </Hyperlink>
