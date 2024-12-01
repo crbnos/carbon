@@ -4,6 +4,7 @@
     "**/*.ts",
     "**/*.tsx",
     "app/modules/documents/documents.service.ts",
+    "app/types/global.d.ts",
     "trigger.config.ts"
   ],
   "compilerOptions": {

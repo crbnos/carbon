@@ -8,7 +8,7 @@ import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteUnitOfMeasure, getUnitOfMeasure } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, queryClient, uomsQuery } from "~/utils/react-query";
+import { getCompanyId, uomsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -63,12 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-  if (!companyId) {
-    return await serverAction();
-  }
-
-  queryClient.invalidateQueries({ queryKey: uomsQuery(companyId).queryKey });
+  window.queryClient.setQueryData(uomsQuery(getCompanyId()).queryKey, null);
   return await serverAction();
 }
 

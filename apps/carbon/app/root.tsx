@@ -1,7 +1,7 @@
 import { error, getBrowserEnv } from "@carbon/auth";
 import { getSessionFlash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { Button, Heading, toast, Toaster } from "@carbon/react";
+import { Button, Heading, toast, Toaster, useMount } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { themes } from "@carbon/utils";
 import {
@@ -14,6 +14,7 @@ import {
   useLoaderData,
   useRouteError,
 } from "@remix-run/react";
+import { QueryClient } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type {
   ActionFunctionArgs,
@@ -169,6 +170,20 @@ export default function App() {
   const theme = loaderData?.theme ?? "zinc";
   const mode = useMode();
 
+  useMount(() => {
+    if (!window.queryClient) {
+      window.queryClient = new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: Infinity,
+            refetchOnWindowFocus: false,
+            gcTime: Infinity,
+          },
+        },
+      });
+    }
+  });
+
   /* Toast Messages */
   useEffect(() => {
     if (result?.success === true) {
@@ -181,6 +196,7 @@ export default function App() {
   return (
     <Document mode={mode} theme={theme}>
       <Outlet />
+
       <script
         dangerouslySetInnerHTML={{
           __html: `window.env = ${JSON.stringify(env)}`,

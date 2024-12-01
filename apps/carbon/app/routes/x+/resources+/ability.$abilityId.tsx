@@ -14,6 +14,7 @@ import {
   NumberInputStepper,
   useDisclosure,
 } from "@carbon/react";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -34,6 +35,7 @@ import {
 } from "~/modules/resources";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { abilitiesQuery, getCompanyId } from "~/utils/react-query";
 
 export const handle: Handle = {
   breadcrumb: "Abilities",
@@ -132,6 +134,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.ability(abilityId),
     await flash(request, success("Ability updated"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.queryClient.setQueryData(
+    abilitiesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function AbilitiesRoute() {

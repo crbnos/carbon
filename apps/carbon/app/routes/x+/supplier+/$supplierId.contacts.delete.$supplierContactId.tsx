@@ -1,10 +1,12 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { deleteSupplierContact } from "~/modules/purchasing";
 import { path } from "~/utils/path";
+import { supplierContactsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -40,4 +42,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     path.to.supplierContacts(supplierId),
     await flash(request, success("Successfully deleted supplier contact"))
   );
+}
+
+export async function clientAction({
+  serverAction,
+  params,
+}: ClientActionFunctionArgs) {
+  const { supplierId } = params;
+  if (supplierId) {
+    window.queryClient.setQueryData(
+      supplierContactsQuery(supplierId).queryKey,
+      null
+    );
+  }
+  return await serverAction();
 }
