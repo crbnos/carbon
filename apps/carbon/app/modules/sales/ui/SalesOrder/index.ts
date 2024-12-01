@@ -7,6 +7,7 @@ import SalesOrderPaymentForm from "./SalesOrderPaymentForm";
 import SalesOrderProperties from "./SalesOrderProperties";
 import SalesOrderShipmentForm from "./SalesOrderShipmentForm";
 import SalesOrdersTable from "./SalesOrdersTable";
+import SalesOrderSummary from "./SalesOrderSummary";
 import SalesStatus from "./SalesStatus";
 import { useSalesOrderTotals } from "./useSalesOrderTotals";
 
@@ -20,6 +21,7 @@ export {
   SalesOrderProperties,
   SalesOrderShipmentForm,
   SalesOrdersTable,
+  SalesOrderSummary,
   SalesStatus,
   useSalesOrderTotals,
 };

@@ -17,6 +17,7 @@ import {
   OpportunityState,
   SalesOrderPaymentForm,
   SalesOrderShipmentForm,
+  SalesOrderSummary,
   salesOrderValidator,
   upsertSalesOrder,
 } from "~/modules/sales";
@@ -174,12 +175,12 @@ export default function SalesOrderRoute() {
   return (
     <>
       <OpportunityState opportunity={orderData.opportunity} />
-
+      <SalesOrderSummary />
       <OpportunityNotes
         key={`notes-${orderId}`}
         id={orderData.salesOrder.id}
         table="salesOrder"
-        title={orderData.salesOrder.salesOrderId ?? ""}
+        title="Notes"
         internalNotes={orderData.salesOrder.internalNotes as JSONContent}
         externalNotes={orderData.salesOrder.externalNotes as JSONContent}
       />

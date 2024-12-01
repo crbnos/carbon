@@ -204,7 +204,7 @@ export default function EditSalesOrderLineRoute() {
       <OpportunityLineNotes
         id={line.id}
         table="salesOrderLine"
-        title={orderData.salesOrder.salesOrderId ?? ""}
+        title="Notes"
         subTitle={line.itemReadableId ?? ""}
         notes={line.notes as JSONContent}
       />

@@ -13,6 +13,7 @@ import QuoteMaterialForm from "./QuoteMaterialForm";
 import QuotePaymentForm from "./QuotePaymentForm";
 import QuoteProperties from "./QuoteProperties";
 import QuoteShipmentForm from "./QuoteShipmentForm";
+import QuoteSummary from "./QuoteSummary";
 import QuotesTable from "./QuotesTable";
 import { useLineCosts } from "./useLineCosts";
 
@@ -33,5 +34,6 @@ export {
   QuoteProperties,
   QuoteShipmentForm,
   QuotesTable,
+  QuoteSummary,
   useLineCosts,
 };
