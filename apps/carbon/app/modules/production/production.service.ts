@@ -163,16 +163,19 @@ export async function getJobsList(
     .order("jobId");
 }
 
-export async function getJobMaterials(
+export async function getJobMaterialsWithQuantityOnHand(
   client: SupabaseClient<Database>,
   jobId: string,
   args?: { search: string | null } & GenericQueryFilters
 ) {
   let query = client
     .from("jobMaterial")
-    .select("*", {
-      count: "exact",
-    })
+    .select(
+      "*, item(itemTrackingType,itemInventory(quantityOnHand, locationId, shelfId))",
+      {
+        count: "exact",
+      }
+    )
     .eq("jobId", jobId);
 
   if (args?.search) {
