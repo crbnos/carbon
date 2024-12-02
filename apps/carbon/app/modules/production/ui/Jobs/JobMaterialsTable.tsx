@@ -12,6 +12,7 @@ import {
   Th,
   Thead,
   Tr,
+  VStack,
 } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -19,8 +20,8 @@ import { memo, useCallback, useMemo } from "react";
 import { LuCheckCircle, LuFlag, LuRefreshCcwDot } from "react-icons/lu";
 import {
   Hyperlink,
+  ItemThumbnail,
   MethodIcon,
-  MethodItemTypeIcon,
   Table,
   TrackingTypeIcon,
 } from "~/components";
@@ -29,7 +30,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { methodItemType, methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Job, JobMaterial } from "../../types";
 
@@ -56,24 +57,30 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
         header: "Item ID",
         cell: ({ row }) => (
           <HStack className="py-1">
-            <Hyperlink
-              to={path.to.jobMethodMaterial(
-                jobId,
-                row.original.methodType,
-                row.original.jobMakeMethodId,
-                row.original.id
-              )}
-              className="max-w-[260px] truncate"
-            >
-              {row.original.itemReadableId}
-            </Hyperlink>
+            <ItemThumbnail
+              size="sm"
+              // @ts-ignore
+              type={row.original.itemType}
+            />
+
+            <VStack spacing={0}>
+              <Hyperlink
+                to={path.to.jobMethodMaterial(
+                  jobId,
+                  row.original.methodType,
+                  row.original.jobMakeMethodId,
+                  row.original.id
+                )}
+                className="max-w-[260px] truncate"
+              >
+                {row.original.itemReadableId}
+              </Hyperlink>
+              <div className="w-full truncate text-muted-foreground text-xs">
+                {row.original.description}
+              </div>
+            </VStack>
           </HStack>
         ),
-      },
-      {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => row.original.description,
       },
       {
         accessorKey: "methodType",
@@ -95,30 +102,6 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
                   <span>{value}</span>
                 </Badge>
               ),
-            })),
-          },
-        },
-      },
-      {
-        accessorKey: "itemType",
-        header: "Type",
-        cell: ({ row }) => (
-          <Badge variant="secondary">
-            <MethodItemTypeIcon type={row.original.itemType} className="mr-2" />
-            <span>{row.original.itemType}</span>
-          </Badge>
-        ),
-        meta: {
-          filter: {
-            type: "static",
-            options: methodItemType.map((type) => ({
-              label: (
-                <HStack spacing={2}>
-                  <MethodItemTypeIcon type={type} />
-                  <span>{type}</span>
-                </HStack>
-              ),
-              value: type,
             })),
           },
         },
