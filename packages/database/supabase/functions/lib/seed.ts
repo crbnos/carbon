@@ -1746,7 +1746,16 @@ export const sequences = [
   {
     table: "quote",
     name: "Quote",
-    prefix: "QO",
+    prefix: "Q",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1,
+  },
+  {
+    table: "supplierQuote",
+    name: "Supplier Quote",
+    prefix: "SQ",
     suffix: null,
     next: 0,
     size: 6,
