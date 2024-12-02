@@ -10,6 +10,11 @@ import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { convertQuoteToOrder, selectedLinesValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
+// the edge function grows larger than 2MB - so this is a workaround to avoid the edge function limit
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await requirePermissions(request, {

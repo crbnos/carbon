@@ -167,12 +167,12 @@ const LineItems = ({
                       </Td>
                     </Tr>
 
-                    {line.addOnCost && (
+                    {Number(line.addOnCost ?? 0) > 0 && (
                       <Tr>
                         <Td>Additional Charges</Td>
                         <Td className="text-right">
                           <MotionNumber
-                            value={line.addOnCost}
+                            value={line.addOnCost ?? 0}
                             format={{
                               style: "currency",
                               currency: currencyCode,

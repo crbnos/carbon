@@ -34,11 +34,6 @@ import {
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-// the edge function grows larger than 2MB - so this is a workaround to avoid the edge function limit
-export const config = {
-  runtime: "nodejs",
-};
-
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await requirePermissions(request, {
     view: "sales",
