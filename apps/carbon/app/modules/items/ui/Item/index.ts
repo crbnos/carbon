@@ -1,8 +1,8 @@
 import BillOfMaterial from "./BillOfMaterial";
 import BillOfProcess from "./BillOfProcess";
 import BoMExplorer from "./BoMExplorer";
-import BuyMethodForm from "./BuyMethodForm";
-import BuyMethods from "./BuyMethods";
+import SupplierPartForm from "./SupplierPartForm";
+import SupplierParts from "./SupplierParts";
 
 import { FileBadge } from "./FileBadge";
 import ItemCostingForm from "./ItemCostingForm";
@@ -19,8 +19,6 @@ export {
   BillOfMaterial,
   BillOfProcess,
   BoMExplorer,
-  BuyMethodForm,
-  BuyMethods,
   FileBadge,
   ItemCostingForm,
   ItemDocuments,
@@ -31,4 +29,6 @@ export {
   ItemSalePriceForm,
   MakeMethodTools,
   PickMethodForm,
+  SupplierPartForm,
+  SupplierParts,
 };

@@ -33,7 +33,12 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { itemTrackingTypes } from "../../items.models";
-import type { BuyMethod, Consumable, ItemFile, PickMethod } from "../../types";
+import type {
+  Consumable,
+  ItemFile,
+  PickMethod,
+  SupplierPart,
+} from "../../types";
 import { FileBadge } from "../Item";
 
 const ConsumableProperties = () => {
@@ -46,13 +51,13 @@ const ConsumableProperties = () => {
   const routeData = useRouteData<{
     consumableSummary: Consumable;
     files: Promise<ItemFile[]>;
-    buyMethods: BuyMethod[];
+    supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
   }>(path.to.consumable(itemId));
 
   const locations = sharedConsumablesData?.locations ?? [];
-  const buyMethods = routeData?.buyMethods ?? [];
+  const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
   // const optimisticAssignment = useOptimisticAssignment({
@@ -268,7 +273,7 @@ const ConsumableProperties = () => {
         </HStack>
 
         {routeData?.consumableSummary?.replenishmentSystem?.includes("Buy") &&
-          buyMethods.map((method) => (
+          supplierParts.map((method) => (
             <MethodBadge
               key={method.id}
               type="Buy"

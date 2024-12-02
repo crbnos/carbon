@@ -1,9 +1,9 @@
 import { useCarbon } from "@carbon/auth";
 import { useCallback } from "react";
 import { usePermissions } from "~/hooks";
-import type { BuyMethod } from "~/modules/items";
+import type { SupplierPart } from "~/modules/items";
 
-export default function useBuyMethods() {
+export default function useSupplierParts() {
   const { carbon } = useCarbon();
   const permissions = usePermissions();
 
@@ -11,10 +11,10 @@ export default function useBuyMethods() {
   const canDelete = permissions.can("delete", "parts");
 
   const onCellEdit = useCallback(
-    async (id: string, value: unknown, row: BuyMethod) => {
+    async (id: string, value: unknown, row: SupplierPart) => {
       if (!carbon) throw new Error("Carbon client not found");
       return await carbon
-        .from("buyMethod")
+        .from("supplierPart")
         .update({
           [id]: value,
         })

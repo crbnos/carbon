@@ -49,7 +49,7 @@ serve(async (req: Request) => {
 
     const companyId = purchaseInvoice.data.companyId;
 
-    const [costLedgers, buyMethods] = await Promise.all([
+    const [costLedgers, supplierParts] = await Promise.all([
       client
         .from("costLedger")
         .select("*")
@@ -57,7 +57,7 @@ serve(async (req: Request) => {
         .eq("companyId", companyId)
         .gte("postingDate", dateOneYearAgo),
       client
-        .from("buyMethod")
+        .from("supplierPart")
         .select("*")
 
         .eq("supplierId", purchaseInvoice.data?.supplierId ?? "")
@@ -67,9 +67,9 @@ serve(async (req: Request) => {
 
     const itemCostUpdates: Database["public"]["Tables"]["itemCost"]["Update"][] =
       [];
-    const buyMethodInserts: Database["public"]["Tables"]["buyMethod"]["Insert"][] =
+    const supplierPartInserts: Database["public"]["Tables"]["supplierPart"]["Insert"][] =
       [];
-    const buyMethodUpdates: Database["public"]["Tables"]["buyMethod"]["Update"][] =
+    const supplierPartUpdates: Database["public"]["Tables"]["supplierPart"]["Update"][] =
       [];
 
     const historicalPartCosts: Record<
@@ -101,22 +101,22 @@ serve(async (req: Request) => {
           updatedBy: "system",
         });
 
-        const buyMethod = buyMethods.data?.find(
-          (buyMethod) =>
-            buyMethod.itemId === line.itemId &&
-            buyMethod.supplierId === purchaseInvoice.data?.supplierId
+        const supplierPart = supplierParts.data?.find(
+          (supplierPart) =>
+            supplierPart.itemId === line.itemId &&
+            supplierPart.supplierId === purchaseInvoice.data?.supplierId
         );
 
-        if (buyMethod && buyMethod.id) {
-          buyMethodUpdates.push({
-            id: buyMethod.id,
+        if (supplierPart && supplierPart.id) {
+          supplierPartUpdates.push({
+            id: supplierPart.id,
             unitPrice: line.unitPrice,
             conversionFactor: line.conversionFactor ?? 1,
             supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
             updatedBy: "system",
           });
         } else {
-          buyMethodInserts.push({
+          supplierPartInserts.push({
             itemId: line.itemId,
             supplierId: purchaseInvoice.data?.supplierId!,
             unitPrice: line.unitPrice,
@@ -141,16 +141,19 @@ serve(async (req: Request) => {
         }
       }
 
-      if (buyMethodInserts.length > 0) {
-        await trx.insertInto("buyMethod").values(buyMethodInserts).execute();
+      if (supplierPartInserts.length > 0) {
+        await trx
+          .insertInto("supplierPart")
+          .values(supplierPartInserts)
+          .execute();
       }
 
-      if (buyMethodUpdates.length > 0) {
-        for await (const buyMethodUpdate of buyMethodUpdates) {
+      if (supplierPartUpdates.length > 0) {
+        for await (const supplierPartUpdate of supplierPartUpdates) {
           await trx
-            .updateTable("buyMethod")
-            .set(buyMethodUpdate)
-            .where("id", "=", buyMethodUpdate.id!)
+            .updateTable("supplierPart")
+            .set(supplierPartUpdate)
+            .where("id", "=", supplierPartUpdate.id!)
             .execute();
         }
       }

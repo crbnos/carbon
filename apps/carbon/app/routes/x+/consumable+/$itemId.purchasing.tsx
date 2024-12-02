@@ -6,10 +6,10 @@ import { useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
-import type { BuyMethod } from "~/modules/items";
+import type { SupplierPart } from "~/modules/items";
 import {
-  BuyMethods,
   ItemPurchasingForm,
+  SupplierParts,
   getItemReplenishment,
   itemPurchasingValidator,
   upsertItemPurchasing,
@@ -93,10 +93,10 @@ export default function ConsumablePurchasingRoute() {
 
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  const routeData = useRouteData<{ buyMethods: BuyMethod[] }>(
+  const routeData = useRouteData<{ supplierParts: SupplierPart[] }>(
     path.to.consumable(itemId)
   );
-  const buyMethods = routeData?.buyMethods ?? [];
+  const supplierParts = routeData?.supplierParts ?? [];
 
   const initialValues = {
     ...consumablePurchasing,
@@ -114,10 +114,10 @@ export default function ConsumablePurchasingRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
         allowedSuppliers={
-          buyMethods.map((s) => s.supplier?.id).filter(Boolean) as string[]
+          supplierParts.map((s) => s.supplier?.id).filter(Boolean) as string[]
         }
       />
-      <BuyMethods buyMethods={buyMethods} />
+      <SupplierParts supplierParts={supplierParts} />
     </>
   );
 }

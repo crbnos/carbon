@@ -25,15 +25,15 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
-import { buyMethodValidator } from "~/modules/items";
+import { supplierPartValidator } from "~/modules/items";
 import { path } from "~/utils/path";
 
-type BuyMethodFormProps = {
-  initialValues: z.infer<typeof buyMethodValidator>;
+type SupplierPartFormProps = {
+  initialValues: z.infer<typeof supplierPartValidator>;
   type: "Part" | "Service" | "Tool" | "Consumable" | "Material";
 };
 
-const BuyMethodForm = ({ initialValues, type }: BuyMethodFormProps) => {
+const SupplierPartForm = ({ initialValues, type }: SupplierPartFormProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
 
@@ -69,13 +69,15 @@ const BuyMethodForm = ({ initialValues, type }: BuyMethodFormProps) => {
       <DrawerContent>
         <ValidatedForm
           defaultValues={initialValues}
-          validator={buyMethodValidator}
+          validator={supplierPartValidator}
           method="post"
           action={action}
           className="flex flex-col h-full"
         >
           <DrawerHeader>
-            <DrawerTitle>{isEditing ? "Edit" : "New"} Buy Method</DrawerTitle>
+            <DrawerTitle>
+              {isEditing ? "Edit" : "New"} Supplier Part
+            </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
             <Hidden name="id" />
@@ -130,7 +132,7 @@ const BuyMethodForm = ({ initialValues, type }: BuyMethodFormProps) => {
   );
 };
 
-export default BuyMethodForm;
+export default SupplierPartForm;
 
 function getAction(
   isEditing: boolean,

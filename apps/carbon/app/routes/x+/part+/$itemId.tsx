@@ -8,10 +8,10 @@ import { useRealtime } from "~/hooks";
 import {
   PartHeader,
   PartProperties,
-  getBuyMethods,
   getItemFiles,
   getPart,
   getPickMethods,
+  getSupplierParts,
 } from "~/modules/items";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
@@ -32,9 +32,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const serviceRole = await getCarbonServiceRole();
-  const [partSummary, buyMethods, pickMethods, tags] = await Promise.all([
+  const [partSummary, supplierParts, pickMethods, tags] = await Promise.all([
     getPart(serviceRole, itemId, companyId),
-    getBuyMethods(serviceRole, itemId, companyId),
+    getSupplierParts(serviceRole, itemId, companyId),
     getPickMethods(serviceRole, itemId, companyId),
     getTagsList(serviceRole, companyId, "part"),
   ]);
@@ -52,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     partSummary: partSummary.data,
     files: getItemFiles(serviceRole, itemId, companyId),
-    buyMethods: buyMethods.data ?? [],
+    supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     tags: tags.data ?? [],
   });

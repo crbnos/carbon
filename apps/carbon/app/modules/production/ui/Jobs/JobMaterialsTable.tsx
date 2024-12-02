@@ -17,7 +17,15 @@ import {
 import { useFetcher, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuCheckCircle, LuFlag, LuRefreshCcwDot } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCheckCircle,
+  LuFlag,
+  LuHash,
+  LuRefreshCcwDot,
+  LuRuler,
+} from "react-icons/lu";
+import { RxCodesandboxLogo } from "react-icons/rx";
 import {
   Hyperlink,
   ItemThumbnail,
@@ -81,6 +89,9 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
             </VStack>
           </HStack>
         ),
+        meta: {
+          icon: <LuBookMarked />,
+        },
       },
       {
         accessorKey: "methodType",
@@ -104,6 +115,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
               ),
             })),
           },
+          icon: <RxCodesandboxLogo />,
         },
       },
 
@@ -118,21 +130,33 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
             }
           />
         ),
+        meta: {
+          icon: <LuRuler />,
+        },
       },
 
       {
         accessorKey: "quantity",
         header: "Qty. per Parent",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "estimatedQuantity",
         header: "Estimated Qty.",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         id: "quantityOnHand",
         header: "Qty. On Hand",
+        meta: {
+          icon: <LuHash />,
+        },
         cell: ({ row }) => {
           const isInventoried =
             row.original.item?.itemTrackingType === "Inventory";

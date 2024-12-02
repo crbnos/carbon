@@ -7,9 +7,9 @@ import { defer, redirect } from "@vercel/remix";
 import {
   ToolHeader,
   ToolProperties,
-  getBuyMethods,
   getItemFiles,
   getPickMethods,
+  getSupplierParts,
   getTool,
 } from "~/modules/items";
 import { getTagsList } from "~/modules/shared";
@@ -31,9 +31,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const serviceRole = await getCarbonServiceRole();
-  const [toolSummary, buyMethods, pickMethods, tags] = await Promise.all([
+  const [toolSummary, supplierParts, pickMethods, tags] = await Promise.all([
     getTool(serviceRole, itemId, companyId),
-    getBuyMethods(serviceRole, itemId, companyId),
+    getSupplierParts(serviceRole, itemId, companyId),
     getPickMethods(serviceRole, itemId, companyId),
     getTagsList(serviceRole, companyId, "tool"),
   ]);
@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     toolSummary: toolSummary.data,
     files: getItemFiles(serviceRole, itemId, companyId),
-    buyMethods: buyMethods.data ?? [],
+    supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     tags: tags.data ?? [],
   });

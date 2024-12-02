@@ -8,10 +8,10 @@ import { defer, redirect } from "@vercel/remix";
 import {
   ConsumableHeader,
   ConsumableProperties,
-  getBuyMethods,
   getConsumable,
   getItemFiles,
   getPickMethods,
+  getSupplierParts,
 } from "~/modules/items";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
@@ -33,12 +33,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [consumableSummary, buyMethods, pickMethods, tags] = await Promise.all([
-    getConsumable(serviceRole, itemId, companyId),
-    getBuyMethods(serviceRole, itemId, companyId),
-    getPickMethods(serviceRole, itemId, companyId),
-    getTagsList(serviceRole, companyId, "consumable"),
-  ]);
+  const [consumableSummary, supplierParts, pickMethods, tags] =
+    await Promise.all([
+      getConsumable(serviceRole, itemId, companyId),
+      getSupplierParts(serviceRole, itemId, companyId),
+      getPickMethods(serviceRole, itemId, companyId),
+      getTagsList(serviceRole, companyId, "consumable"),
+    ]);
 
   if (consumableSummary.error) {
     throw redirect(
@@ -53,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     consumableSummary: consumableSummary.data,
     files: getItemFiles(serviceRole, itemId, companyId),
-    buyMethods: buyMethods.data ?? [],
+    supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     tags: tags.data ?? [],
   });

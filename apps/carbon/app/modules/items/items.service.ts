@@ -8,7 +8,6 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { operationToolValidator } from "../shared";
 import type {
-  buyMethodValidator,
   consumableValidator,
   customerPartValidator,
   getMethodValidator,
@@ -27,6 +26,7 @@ import type {
   partValidator,
   pickMethodValidator,
   serviceValidator,
+  supplierPartValidator,
   toolValidator,
   unitOfMeasureValidator,
 } from "./items.models";
@@ -116,13 +116,13 @@ export async function deleteUnitOfMeasure(
   return client.from("unitOfMeasure").delete().eq("id", id);
 }
 
-export async function getBuyMethods(
+export async function getSupplierParts(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
 ) {
   return client
-    .from("buyMethod")
+    .from("supplierPart")
     .select(
       `
       id, supplier(id, name),
@@ -1356,27 +1356,31 @@ export async function upsertItemPostingGroup(
   );
 }
 
-export async function upsertBuyMethod(
+export async function upsertSupplierPart(
   client: SupabaseClient<Database>,
-  buyMethod:
-    | (Omit<z.infer<typeof buyMethodValidator>, "id"> & {
+  supplierPart:
+    | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof buyMethodValidator>, "id"> & {
+    | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in buyMethod) {
-    return client.from("buyMethod").insert([buyMethod]).select("id").single();
+  if ("createdBy" in supplierPart) {
+    return client
+      .from("supplierPart")
+      .insert([supplierPart])
+      .select("id")
+      .single();
   }
   return client
-    .from("buyMethod")
-    .update(sanitize(buyMethod))
-    .eq("id", buyMethod.id)
+    .from("supplierPart")
+    .update(sanitize(supplierPart))
+    .eq("id", supplierPart.id)
     .select("id")
     .single();
 }

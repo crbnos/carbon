@@ -1,6 +1,5 @@
 import type { Database } from "@carbon/database";
 import type {
-  getBuyMethods,
   getConsumable,
   getConsumables,
   getFixtures,
@@ -23,14 +22,15 @@ import type {
   getParts,
   getPickMethods,
   getServices,
+  getSupplierParts,
   getTool,
   getTools,
   getUnitOfMeasure,
   getUnitOfMeasuresList,
 } from "./items.service";
 
-export type BuyMethod = NonNullable<
-  Awaited<ReturnType<typeof getBuyMethods>>["data"]
+export type SupplierPart = NonNullable<
+  Awaited<ReturnType<typeof getSupplierParts>>["data"]
 >[number];
 
 export type Consumable = NonNullable<

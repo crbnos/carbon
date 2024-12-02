@@ -77,6 +77,7 @@ export default function ConsumablesNewRoute() {
     unitOfMeasureCode: "EA",
     unitCost: 0,
     active: true,
+    tags: [],
   };
 
   return (
