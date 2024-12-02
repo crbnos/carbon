@@ -91,7 +91,7 @@ const EditablePurchaseOrderLineNumber =
         case "Part":
         case "Tool":
         case "Consumable":
-          const [item, buyMethod, inventory] = await Promise.all([
+          const [item, supplierPart, inventory] = await Promise.all([
             client
               .from("item")
               .select(
@@ -102,7 +102,7 @@ const EditablePurchaseOrderLineNumber =
               .single(),
 
             client
-              .from("buyMethod")
+              .from("supplierPart")
               .select("*")
               .eq("itemId", itemId)
               .eq("companyId", row.companyId!)
@@ -120,7 +120,7 @@ const EditablePurchaseOrderLineNumber =
           const itemCost = item?.data?.itemCost?.[0];
           const itemReplenishment = item?.data?.itemReplenishment;
 
-          if (item.error || buyMethod.error || inventory.error) {
+          if (item.error || supplierPart.error || inventory.error) {
             onError();
             return;
           }
@@ -130,8 +130,8 @@ const EditablePurchaseOrderLineNumber =
             itemReadableId: item.data?.readableId,
             locationId: options.defaultLocationId,
             description: item.data?.name ?? "",
-            purchaseQuantity: buyMethod?.data?.minimumOrderQuantity ?? 1,
-            unitPrice: buyMethod?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+            purchaseQuantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
+            unitPrice: supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
             purchaseUnitOfMeasureCode:
               itemReplenishment?.purchasingUnitOfMeasureCode ??
               item.data?.unitOfMeasureCode ??
@@ -149,9 +149,9 @@ const EditablePurchaseOrderLineNumber =
                 itemReadableId: item.data?.readableId,
                 locationId: options.defaultLocationId,
                 description: item.data?.name ?? "",
-                purchaseQuantity: buyMethod?.data?.minimumOrderQuantity ?? 1,
+                purchaseQuantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
                 unitPrice:
-                  buyMethod?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+                  supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
                 purchaseUnitOfMeasureCode:
                   itemReplenishment?.purchasingUnitOfMeasureCode ??
                   item.data?.unitOfMeasureCode ??

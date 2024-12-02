@@ -138,7 +138,7 @@ const PurchaseOrderLineForm = ({
       case "Material":
       case "Part":
       case "Tool":
-        const [item, buyMethod, inventory] = await Promise.all([
+        const [item, supplierPart, inventory] = await Promise.all([
           carbon
             .from("item")
             .select(
@@ -148,7 +148,7 @@ const PurchaseOrderLineForm = ({
             .eq("companyId", company.id)
             .single(),
           carbon
-            .from("buyMethod")
+            .from("supplierPart")
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", company.id)
@@ -170,8 +170,8 @@ const PurchaseOrderLineForm = ({
           itemId: itemId,
           itemReadableId: item.data?.readableId ?? "",
           description: item.data?.name ?? "",
-          purchaseQuantity: buyMethod?.data?.minimumOrderQuantity ?? 1,
-          unitPrice: buyMethod?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+          purchaseQuantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
+          unitPrice: supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
           purchaseUom:
             itemReplenishment?.purchasingUnitOfMeasureCode ??
             item.data?.unitOfMeasureCode ??

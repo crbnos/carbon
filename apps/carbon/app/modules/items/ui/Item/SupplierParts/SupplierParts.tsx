@@ -19,23 +19,23 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import Grid from "~/components/Grid";
 import { useCurrencyFormatter } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { BuyMethod } from "~/modules/items";
-import useBuyMethods from "./useBuyMethods";
+import type { SupplierPart } from "~/modules/items";
+import useSupplierParts from "./useSupplierParts";
 
-type BuyMethodsProps = {
-  buyMethods: BuyMethod[];
+type SupplierPartsProps = {
+  supplierParts: SupplierPart[];
 };
 
-const BuyMethods = ({ buyMethods }: BuyMethodsProps) => {
+const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
   const navigate = useNavigate();
-  const { canEdit, onCellEdit } = useBuyMethods();
+  const { canEdit, onCellEdit } = useSupplierParts();
 
   const formatter = useCurrencyFormatter();
   const unitOfMeasureOptions = useUnitOfMeasure();
-  const customColumns = useCustomColumns<BuyMethod>("buyMethod");
+  const customColumns = useCustomColumns<SupplierPart>("supplierPart");
 
-  const columns = useMemo<ColumnDef<BuyMethod>[]>(() => {
-    const defaultColumns: ColumnDef<BuyMethod>[] = [
+  const columns = useMemo<ColumnDef<SupplierPart>[]>(() => {
+    const defaultColumns: ColumnDef<SupplierPart>[] = [
       {
         accessorKey: "supplier.id",
         header: "Supplier",
@@ -107,13 +107,13 @@ const BuyMethods = ({ buyMethods }: BuyMethodsProps) => {
       <Card className="w-full h-full min-h-[50vh]">
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>Buy Methods</CardTitle>
+            <CardTitle>Supplier Parts</CardTitle>
           </CardHeader>
           <CardAction>{canEdit && <New to="new" />}</CardAction>
         </HStack>
         <CardContent>
-          <Grid<BuyMethod>
-            data={buyMethods}
+          <Grid<SupplierPart>
+            data={supplierParts}
             columns={columns}
             canEdit={canEdit}
             editableComponents={editableComponents}
@@ -126,4 +126,4 @@ const BuyMethods = ({ buyMethods }: BuyMethodsProps) => {
   );
 };
 
-export default BuyMethods;
+export default SupplierParts;

@@ -8,10 +8,10 @@ import { defer, redirect } from "@vercel/remix";
 import {
   MaterialHeader,
   MaterialProperties,
-  getBuyMethods,
   getItemFiles,
   getMaterial,
   getPickMethods,
+  getSupplierParts,
 } from "~/modules/items";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
@@ -33,12 +33,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [materialSummary, buyMethods, pickMethods, tags] = await Promise.all([
-    getMaterial(serviceRole, itemId, companyId),
-    getBuyMethods(serviceRole, itemId, companyId),
-    getPickMethods(serviceRole, itemId, companyId),
-    getTagsList(serviceRole, companyId, "material"),
-  ]);
+  const [materialSummary, supplierParts, pickMethods, tags] = await Promise.all(
+    [
+      getMaterial(serviceRole, itemId, companyId),
+      getSupplierParts(serviceRole, itemId, companyId),
+      getPickMethods(serviceRole, itemId, companyId),
+      getTagsList(serviceRole, companyId, "material"),
+    ]
+  );
 
   if (materialSummary.error) {
     throw redirect(
@@ -53,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     materialSummary: materialSummary.data,
     files: getItemFiles(serviceRole, itemId, companyId),
-    buyMethods: buyMethods.data ?? [],
+    supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     tags: tags.data ?? [],
   });

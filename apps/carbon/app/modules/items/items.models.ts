@@ -72,7 +72,7 @@ export const itemValidator = z.object({
   active: zfd.checkbox(),
 });
 
-export const buyMethodValidator = z.object({
+export const supplierPartValidator = z.object({
   id: zfd.text(z.string().optional()),
   itemId: z.string().min(1, { message: "Item ID is required" }),
   supplierId: z.string().min(36, { message: "Supplier ID is required" }),

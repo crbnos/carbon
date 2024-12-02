@@ -33,7 +33,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { itemTrackingTypes } from "../../items.models";
-import type { BuyMethod, ItemFile, Material, PickMethod } from "../../types";
+import type { ItemFile, Material, PickMethod, SupplierPart } from "../../types";
 import { FileBadge } from "../Item";
 
 const MaterialProperties = () => {
@@ -46,13 +46,13 @@ const MaterialProperties = () => {
   const routeData = useRouteData<{
     materialSummary: Material;
     files: Promise<ItemFile[]>;
-    buyMethods: BuyMethod[];
+    supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
   }>(path.to.material(itemId));
 
   const locations = sharedMaterialsData?.locations ?? [];
-  const buyMethods = routeData?.buyMethods ?? [];
+  const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
   // const optimisticAssignment = useOptimisticAssignment({
@@ -296,7 +296,7 @@ const MaterialProperties = () => {
         </HStack>
 
         {routeData?.materialSummary?.replenishmentSystem?.includes("Buy") &&
-          buyMethods.map((method) => (
+          supplierParts.map((method) => (
             <MethodBadge
               key={method.id}
               type="Buy"

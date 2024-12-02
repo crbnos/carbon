@@ -8,6 +8,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type { Ability } from "~/modules/resources";
 import { deleteEmployeeAbility } from "~/modules/resources";
+import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -39,6 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteEmployeeAbilityRoute() {
   const navigate = useNavigate();
   const { abilityId, id } = useParams();
+  const [people] = usePeople();
 
   if (!id) throw new Error("id is not found");
   if (!abilityId) throw new Error("abilityId is not found");
@@ -56,11 +58,9 @@ export default function DeleteEmployeeAbilityRoute() {
 
   const onCancel = () => navigate(path.to.ability(abilityId));
 
-  const name =
-    (Array.isArray(employee?.user)
-      ? employee?.user[0].fullName
-      : employee?.user?.fullName) ?? "this employee";
+  const person = people?.find((p) => p.id === employee?.employeeId);
 
+  const name = person ? person.name : "this employee";
   return (
     <ConfirmDelete
       action={path.to.deleteEmployeeAbility(abilityId, id)}

@@ -35544,56 +35544,56 @@ export default {
         tags: ["employee"],
       },
     },
-    "/buyMethod": {
+    "/supplierPart": {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.buyMethod.id",
+            $ref: "#/parameters/rowFilter.supplierPart.id",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.itemId",
+            $ref: "#/parameters/rowFilter.supplierPart.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierId",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierPartId",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierPartId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierUnitOfMeasureCode",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierUnitOfMeasureCode",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.minimumOrderQuantity",
+            $ref: "#/parameters/rowFilter.supplierPart.minimumOrderQuantity",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.conversionFactor",
+            $ref: "#/parameters/rowFilter.supplierPart.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.active",
+            $ref: "#/parameters/rowFilter.supplierPart.active",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.companyId",
+            $ref: "#/parameters/rowFilter.supplierPart.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.createdBy",
+            $ref: "#/parameters/rowFilter.supplierPart.createdBy",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.createdAt",
+            $ref: "#/parameters/rowFilter.supplierPart.createdAt",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.updatedBy",
+            $ref: "#/parameters/rowFilter.supplierPart.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.updatedAt",
+            $ref: "#/parameters/rowFilter.supplierPart.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.customFields",
+            $ref: "#/parameters/rowFilter.supplierPart.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.unitPrice",
+            $ref: "#/parameters/rowFilter.supplierPart.unitPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.tags",
+            $ref: "#/parameters/rowFilter.supplierPart.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -35622,7 +35622,7 @@ export default {
             description: "OK",
             schema: {
               items: {
-                $ref: "#/definitions/buyMethod",
+                $ref: "#/definitions/supplierPart",
               },
               type: "array",
             },
@@ -35631,12 +35631,12 @@ export default {
             description: "Partial Content",
           },
         },
-        tags: ["buyMethod"],
+        tags: ["supplierPart"],
       },
       post: {
         parameters: [
           {
-            $ref: "#/parameters/body.buyMethod",
+            $ref: "#/parameters/body.supplierPart",
           },
           {
             $ref: "#/parameters/select",
@@ -35650,57 +35650,57 @@ export default {
             description: "Created",
           },
         },
-        tags: ["buyMethod"],
+        tags: ["supplierPart"],
       },
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.buyMethod.id",
+            $ref: "#/parameters/rowFilter.supplierPart.id",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.itemId",
+            $ref: "#/parameters/rowFilter.supplierPart.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierId",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierPartId",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierPartId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierUnitOfMeasureCode",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierUnitOfMeasureCode",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.minimumOrderQuantity",
+            $ref: "#/parameters/rowFilter.supplierPart.minimumOrderQuantity",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.conversionFactor",
+            $ref: "#/parameters/rowFilter.supplierPart.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.active",
+            $ref: "#/parameters/rowFilter.supplierPart.active",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.companyId",
+            $ref: "#/parameters/rowFilter.supplierPart.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.createdBy",
+            $ref: "#/parameters/rowFilter.supplierPart.createdBy",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.createdAt",
+            $ref: "#/parameters/rowFilter.supplierPart.createdAt",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.updatedBy",
+            $ref: "#/parameters/rowFilter.supplierPart.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.updatedAt",
+            $ref: "#/parameters/rowFilter.supplierPart.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.customFields",
+            $ref: "#/parameters/rowFilter.supplierPart.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.unitPrice",
+            $ref: "#/parameters/rowFilter.supplierPart.unitPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.tags",
+            $ref: "#/parameters/rowFilter.supplierPart.tags",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -35711,60 +35711,60 @@ export default {
             description: "No Content",
           },
         },
-        tags: ["buyMethod"],
+        tags: ["supplierPart"],
       },
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.buyMethod.id",
+            $ref: "#/parameters/rowFilter.supplierPart.id",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.itemId",
+            $ref: "#/parameters/rowFilter.supplierPart.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierId",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierPartId",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierPartId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.supplierUnitOfMeasureCode",
+            $ref: "#/parameters/rowFilter.supplierPart.supplierUnitOfMeasureCode",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.minimumOrderQuantity",
+            $ref: "#/parameters/rowFilter.supplierPart.minimumOrderQuantity",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.conversionFactor",
+            $ref: "#/parameters/rowFilter.supplierPart.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.active",
+            $ref: "#/parameters/rowFilter.supplierPart.active",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.companyId",
+            $ref: "#/parameters/rowFilter.supplierPart.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.createdBy",
+            $ref: "#/parameters/rowFilter.supplierPart.createdBy",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.createdAt",
+            $ref: "#/parameters/rowFilter.supplierPart.createdAt",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.updatedBy",
+            $ref: "#/parameters/rowFilter.supplierPart.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.updatedAt",
+            $ref: "#/parameters/rowFilter.supplierPart.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.customFields",
+            $ref: "#/parameters/rowFilter.supplierPart.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.unitPrice",
+            $ref: "#/parameters/rowFilter.supplierPart.unitPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.buyMethod.tags",
+            $ref: "#/parameters/rowFilter.supplierPart.tags",
           },
           {
-            $ref: "#/parameters/body.buyMethod",
+            $ref: "#/parameters/body.supplierPart",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -35775,7 +35775,7 @@ export default {
             description: "No Content",
           },
         },
-        tags: ["buyMethod"],
+        tags: ["supplierPart"],
       },
     },
     "/itemPostingGroup": {
@@ -55385,7 +55385,7 @@ export default {
       },
       type: "object",
     },
-    buyMethod: {
+    supplierPart: {
       required: [
         "id",
         "itemId",
@@ -77299,121 +77299,121 @@ export default {
       in: "query",
       type: "string",
     },
-    "body.buyMethod": {
-      name: "buyMethod",
-      description: "buyMethod",
+    "body.supplierPart": {
+      name: "supplierPart",
+      description: "supplierPart",
       required: false,
       in: "body",
       schema: {
-        $ref: "#/definitions/buyMethod",
+        $ref: "#/definitions/supplierPart",
       },
     },
-    "rowFilter.buyMethod.id": {
+    "rowFilter.supplierPart.id": {
       name: "id",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.itemId": {
+    "rowFilter.supplierPart.itemId": {
       name: "itemId",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.supplierId": {
+    "rowFilter.supplierPart.supplierId": {
       name: "supplierId",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.supplierPartId": {
+    "rowFilter.supplierPart.supplierPartId": {
       name: "supplierPartId",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.supplierUnitOfMeasureCode": {
+    "rowFilter.supplierPart.supplierUnitOfMeasureCode": {
       name: "supplierUnitOfMeasureCode",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.minimumOrderQuantity": {
+    "rowFilter.supplierPart.minimumOrderQuantity": {
       name: "minimumOrderQuantity",
       required: false,
       format: "integer",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.conversionFactor": {
+    "rowFilter.supplierPart.conversionFactor": {
       name: "conversionFactor",
       required: false,
       format: "numeric",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.active": {
+    "rowFilter.supplierPart.active": {
       name: "active",
       required: false,
       format: "boolean",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.companyId": {
+    "rowFilter.supplierPart.companyId": {
       name: "companyId",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.createdBy": {
+    "rowFilter.supplierPart.createdBy": {
       name: "createdBy",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.createdAt": {
+    "rowFilter.supplierPart.createdAt": {
       name: "createdAt",
       required: false,
       format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.updatedBy": {
+    "rowFilter.supplierPart.updatedBy": {
       name: "updatedBy",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.updatedAt": {
+    "rowFilter.supplierPart.updatedAt": {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.customFields": {
+    "rowFilter.supplierPart.customFields": {
       name: "customFields",
       required: false,
       format: "jsonb",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.unitPrice": {
+    "rowFilter.supplierPart.unitPrice": {
       name: "unitPrice",
       required: false,
       format: "numeric",
       in: "query",
       type: "string",
     },
-    "rowFilter.buyMethod.tags": {
+    "rowFilter.supplierPart.tags": {
       name: "tags",
       required: false,
       format: "text[]",

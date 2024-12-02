@@ -6,9 +6,9 @@ import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import {
-  BuyMethodForm,
-  buyMethodValidator,
-  upsertBuyMethod,
+  SupplierPartForm,
+  supplierPartValidator,
+  upsertSupplierPart,
 } from "~/modules/items";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  const validation = await validator(buyMethodValidator).validate(formData);
+  const validation = await validator(supplierPartValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createPartSupplier = await upsertBuyMethod(client, {
+  const createPartSupplier = await upsertSupplierPart(client, {
     ...data,
     companyId,
     createdBy: userId,
@@ -66,5 +66,5 @@ export default function NewPartSupplierRoute() {
     conversionFactor: 1,
   };
 
-  return <BuyMethodForm type="Part" initialValues={initialValues} />;
+  return <SupplierPartForm type="Part" initialValues={initialValues} />;
 }

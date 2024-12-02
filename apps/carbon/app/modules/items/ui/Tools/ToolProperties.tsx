@@ -33,7 +33,7 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { itemTrackingTypes } from "../../items.models";
-import type { BuyMethod, ItemFile, PickMethod, Tool } from "../../types";
+import type { ItemFile, PickMethod, SupplierPart, Tool } from "../../types";
 import { FileBadge } from "../Item";
 
 const ToolProperties = () => {
@@ -46,13 +46,13 @@ const ToolProperties = () => {
   const routeData = useRouteData<{
     toolSummary: Tool;
     files: Promise<ItemFile[]>;
-    buyMethods: BuyMethod[];
+    supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
   }>(path.to.tool(itemId));
 
   const locations = sharedToolsData?.locations ?? [];
-  const buyMethods = routeData?.buyMethods ?? [];
+  const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
   // const optimisticAssignment = useOptimisticAssignment({
@@ -266,7 +266,7 @@ const ToolProperties = () => {
         </HStack>
 
         {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") &&
-          buyMethods.map((method) => (
+          supplierParts.map((method) => (
             <MethodBadge
               key={method.id}
               type="Buy"

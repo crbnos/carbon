@@ -18,7 +18,16 @@ import {
 } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuRefreshCcwDot } from "react-icons/lu";
+import { AiOutlinePartition } from "react-icons/ai";
+import {
+  LuAlertTriangle,
+  LuCheckCircle2,
+  LuClipboardList,
+  LuHash,
+  LuRefreshCcwDot,
+  LuRotateCcw,
+  LuWrench,
+} from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import { Enumerable } from "~/components/Enumerable";
@@ -114,12 +123,18 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
             </Hyperlink>
           </HStack>
         ),
+        meta: {
+          icon: <LuClipboardList />,
+        },
       },
       {
         id: "item",
         header: "Item",
         cell: ({ row }) => {
           return row.original.jobMakeMethod?.item?.readableId;
+        },
+        meta: {
+          icon: <AiOutlinePartition />,
         },
       },
       {
@@ -134,6 +149,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
               label: <Enumerable value={value ?? null} />,
             })),
           },
+          icon: <LuWrench />,
         },
       },
 
@@ -141,21 +157,33 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         accessorKey: "operationQuantity",
         header: "Quantity",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuHash />,
+        },
       },
       {
         accessorKey: "quantityComplete",
         header: "Qty. Complete",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuCheckCircle2 />,
+        },
       },
       {
         accessorKey: "quantityScrapped",
         header: "Qty. Scrapped",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuAlertTriangle />,
+        },
       },
       {
         accessorKey: "quantityReworked",
         header: "Qty. Reworked",
         cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuRotateCcw />,
+        },
       },
     ];
   }, [isPaused, jobId, onOperationStatusChange]);

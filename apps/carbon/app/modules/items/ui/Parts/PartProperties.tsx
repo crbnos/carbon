@@ -36,7 +36,12 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes,
 } from "../../items.models";
-import type { BuyMethod, ItemFile, PartSummary, PickMethod } from "../../types";
+import type {
+  ItemFile,
+  PartSummary,
+  PickMethod,
+  SupplierPart,
+} from "../../types";
 import { FileBadge } from "../Item";
 
 const PartProperties = () => {
@@ -49,13 +54,13 @@ const PartProperties = () => {
   const routeData = useRouteData<{
     partSummary: PartSummary;
     files: Promise<ItemFile[]>;
-    buyMethods: BuyMethod[];
+    supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
   }>(path.to.part(itemId));
 
   const locations = sharedPartsData?.locations ?? [];
-  const buyMethods = routeData?.buyMethods ?? [];
+  const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 
   // const optimisticAssignment = useOptimisticAssignment({
@@ -315,7 +320,7 @@ const PartProperties = () => {
           />
         )}
         {routeData?.partSummary?.replenishmentSystem?.includes("Buy") &&
-          buyMethods.map((method) => (
+          supplierParts.map((method) => (
             <MethodBadge
               key={method.id}
               type="Buy"
