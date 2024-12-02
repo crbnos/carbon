@@ -20,7 +20,6 @@ import {
 import { formatDate } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
-import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -128,13 +127,7 @@ const LineItems = ({
         }
 
         return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="border-b border-input py-6 w-full"
-          >
+          <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {line.thumbnailPath ? (
                 <img
@@ -170,14 +163,6 @@ const LineItems = ({
                       </Link>
                     </HStack>
                     <HStack spacing={4}>
-                      {/* <span className="font-medium text-xl">
-                        {formatter.format(
-                          (selectedLines[line.id!]?.convertedNetUnitPrice ??
-                            0) *
-                            (selectedLines[line.id!]?.quantity ?? 0) +
-                            (selectedLines[line.id!]?.convertedAddOn ?? 0)
-                        )}
-                      </span> */}
                       <MotionNumber
                         className="font-bold text-xl"
                         value={
@@ -194,14 +179,16 @@ const LineItems = ({
                         }}
                         locales={locale}
                       />
-                      <motion.div
-                        animate={{
-                          rotate: openItems.includes(line.id) ? 180 : 0,
+                      <div
+                        style={{
+                          transform: `rotate(${
+                            openItems.includes(line.id) ? "180deg" : "0deg"
+                          })`,
+                          transition: "transform 0.3s",
                         }}
-                        transition={{ duration: 0.3 }}
                       >
                         <LuChevronDown size={24} />
-                      </motion.div>
+                      </div>
                     </HStack>
                   </div>
                   <span className="text-muted-foreground text-base truncate">
@@ -211,15 +198,15 @@ const LineItems = ({
               </VStack>
             </HStack>
 
-            <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 },
+            <div
+              style={{
+                height: openItems.includes(line.id) ? "auto" : 0,
+                opacity: openItems.includes(line.id) ? 1 : 0,
+                marginTop: openItems.includes(line.id) ? 16 : 0,
+                overflow: "hidden",
+                transition: "all 0.3s",
               }}
-              transition={{ duration: 0.3 }}
-              className="w-full overflow-hidden"
+              className="w-full"
             >
               <LinePricingOptions
                 formatter={formatter}
@@ -232,8 +219,8 @@ const LineItems = ({
                 selectedLine={selectedLines[line.id!]}
                 setSelectedLines={setSelectedLines}
               />
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         );
       })}
     </VStack>
