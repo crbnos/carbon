@@ -1,15 +1,37 @@
 import { useCarbon } from "@carbon/auth";
-import { Badge, Button, HStack } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  HStack,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Table as TableBase,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+} from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuRefreshCcwDot } from "react-icons/lu";
-import { Hyperlink, MethodIcon, MethodItemTypeIcon, Table } from "~/components";
+import { LuCheckCircle, LuFlag, LuRefreshCcwDot } from "react-icons/lu";
+import {
+  Hyperlink,
+  MethodIcon,
+  MethodItemTypeIcon,
+  Table,
+  TrackingTypeIcon,
+} from "~/components";
 import { EditableNumber, EditableText } from "~/components/Editable";
-import { usePermissions, useUser } from "~/hooks";
+import { Enumerable } from "~/components/Enumerable";
+import { useLocations } from "~/components/Form/Location";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { methodItemType, methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import type { JobMaterial } from "../../types";
+import type { Job, JobMaterial } from "../../types";
 
 type JobMaterialsTableProps = {
   data: JobMaterial[];
@@ -19,8 +41,13 @@ type JobMaterialsTableProps = {
 const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Job ID is required");
+  const routeData = useRouteData<{
+    job: Job;
+  }>(path.to.job(jobId));
 
   const fetcher = useFetcher<{}>();
+  const unitsOfMeasure = useUnitOfMeasure();
+  const locations = useLocations();
 
   const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
     return [
@@ -100,7 +127,14 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
       {
         accessorKey: "unitOfMeasureCode",
         header: "UoM",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <Enumerable
+            value={
+              unitsOfMeasure.find((u) => u.value === item.getValue())?.label ??
+              null
+            }
+          />
+        ),
       },
 
       {
@@ -110,11 +144,81 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
       },
       {
         accessorKey: "estimatedQuantity",
-        header: "Estimated Qty",
+        header: "Estimated Qty.",
         cell: (item) => item.getValue(),
       },
+      {
+        id: "quantityOnHand",
+        header: "Qty. On Hand",
+        cell: ({ row }) => {
+          const isInventoried =
+            row.original.item?.itemTrackingType === "Inventory";
+          if (!isInventoried)
+            return (
+              <Badge variant="secondary">
+                <TrackingTypeIcon type="Non-Inventory" className="mr-2" />
+                <span>Non-Inventory</span>
+              </Badge>
+            );
+
+          const quantityOnHand =
+            row.original.item?.itemInventory?.reduce<number>((acc, curr) => {
+              if (curr.locationId === routeData?.job.locationId)
+                return acc + curr.quantityOnHand;
+              return acc;
+            }, 0) ?? 0;
+
+          if (quantityOnHand < (row.original.estimatedQuantity ?? 0))
+            return (
+              <Popover>
+                <PopoverTrigger>
+                  <Badge variant="destructive">
+                    <LuFlag className="mr-2" />
+                    <span className="group-hover:hidden">Insufficient</span>
+                    <span className="hidden group-hover:block">
+                      {quantityOnHand}
+                    </span>
+                  </Badge>
+                </PopoverTrigger>
+                <PopoverContent className="w-[360px]">
+                  <TableBase>
+                    <Thead>
+                      <Tr>
+                        <Th>Location</Th>
+                        <Th>Shelf</Th>
+                        <Th>Qty.</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {row.original.item?.itemInventory?.map((i) => (
+                        <Tr key={`${i.locationId}-${i.shelfId}`}>
+                          <Td>
+                            {
+                              locations.find((l) => l.value === i.locationId)
+                                ?.label
+                            }
+                          </Td>
+                          <Td>{i.shelfId}</Td>
+                          <Td>{i.quantityOnHand}</Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </TableBase>
+                </PopoverContent>
+              </Popover>
+            );
+
+          return (
+            <Badge variant="green">
+              <LuCheckCircle className="mr-2" />
+              <span className="group-hover:hidden">In Stock</span>
+              <span className="hidden group-hover:block">{quantityOnHand}</span>
+            </Badge>
+          );
+        },
+      },
     ];
-  }, [jobId]);
+  }, [jobId, locations, routeData?.job.locationId, unitsOfMeasure]);
 
   const permissions = usePermissions();
   const { carbon } = useCarbon();

@@ -75,7 +75,7 @@ Location.displayName = "Location";
 
 export default Location;
 
-const useLocations = () => {
+export const useLocations = () => {
   const locationFetcher =
     useFetcher<Awaited<ReturnType<typeof getLocationsList>>>();
 

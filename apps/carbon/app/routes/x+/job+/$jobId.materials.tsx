@@ -7,7 +7,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
   getJob,
-  getJobMaterials,
+  getJobMaterialsWithQuantityOnHand,
   JobMaterialsTable,
 } from "~/modules/production";
 import { path } from "~/utils/path";
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const materials = await getJobMaterials(client, jobId, {
+  const materials = await getJobMaterialsWithQuantityOnHand(client, jobId, {
     search,
     limit,
     offset,
@@ -63,6 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function JobMaterialsRoute() {
   const { count, materials } = useLoaderData<typeof loader>();
 
+  console.log("XXX", { materials });
   return (
     <VStack spacing={0} className="h-[calc(100dvh-99px)]">
       <JobMaterialsTable data={materials} count={count} />

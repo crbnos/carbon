@@ -1,6 +1,6 @@
 import type {
   getJob,
-  getJobMaterials,
+  getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
   getJobOperations,
   getProductionEvents,
@@ -11,7 +11,7 @@ import type {
 export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
 
 export type JobMaterial = NonNullable<
-  Awaited<ReturnType<typeof getJobMaterials>>["data"]
+  Awaited<ReturnType<typeof getJobMaterialsWithQuantityOnHand>>["data"]
 >[number];
 
 export type JobMethod = NonNullable<
