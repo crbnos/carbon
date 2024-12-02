@@ -108,7 +108,7 @@ export function ResizablePanels({
         {!isExplorerCollapsed && explorer}
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel order={2} className="z-1">
+      <ResizablePanel order={2} className="z-1 relative">
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           {content}
           {!isPropertiesCollapsed && properties}

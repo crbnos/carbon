@@ -18,6 +18,9 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
 } from "@carbon/react";
 
@@ -78,7 +81,7 @@ const QuoteHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px]">
+      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide">
         <HStack className="w-full justify-between">
           <HStack>
             <IconButton
@@ -95,101 +98,149 @@ const QuoteHeader = () => {
             <QuoteStatus status={routeData?.quote?.status} />
           </HStack>
           <HStack>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  leftIcon={<LuEye />}
-                  variant="secondary"
-                  rightIcon={<LuChevronDown />}
-                >
-                  Preview
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {routeData?.quote.externalLinkId && (
+            {routeData?.quote.externalLinkId &&
+            routeData?.quote.status === "Sent" ? (
+              <Button
+                onClick={shareModal.onOpen}
+                leftIcon={<LuShare />}
+                variant="secondary"
+              >
+                Share
+              </Button>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<LuEye />}
+                    variant="secondary"
+                    rightIcon={<LuChevronDown />}
+                  >
+                    Preview
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {routeData?.quote.externalLinkId && (
+                    <DropdownMenuItem asChild>
+                      <a
+                        target="_blank"
+                        href={path.to.externalQuote(
+                          routeData.quote.externalLinkId
+                        )}
+                        rel="noreferrer"
+                      >
+                        <DropdownMenuIcon icon={<LuExternalLink />} />
+                        Digital Quote
+                      </a>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <a
                       target="_blank"
-                      href={path.to.externalQuote(
-                        routeData.quote.externalLinkId
-                      )}
+                      href={path.to.file.quote(quoteId)}
                       rel="noreferrer"
                     >
-                      <DropdownMenuIcon icon={<LuExternalLink />} />
-                      Digital Quote
+                      <DropdownMenuIcon icon={<LuFile />} />
+                      PDF
                     </a>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <a
-                    target="_blank"
-                    href={path.to.file.quote(quoteId)}
-                    rel="noreferrer"
-                  >
-                    <DropdownMenuIcon icon={<LuFile />} />
-                    PDF
-                  </a>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {routeData?.quote.externalLinkId &&
-              routeData?.quote.status === "Sent" && (
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            <Button
+              onClick={finalizeModal.onOpen}
+              isLoading={finalizeFetcher.state !== "idle"}
+              isDisabled={
+                routeData?.quote?.status !== "Draft" ||
+                finalizeFetcher.state !== "idle" ||
+                !permissions.can("update", "sales") ||
+                !eligibleLines?.length
+              }
+              variant={
+                routeData?.quote?.status === "Draft" ? "primary" : "secondary"
+              }
+              leftIcon={<LuCheckCheck />}
+            >
+              Finalize
+            </Button>
+
+            <Button
+              isDisabled={
+                routeData?.quote?.status !== "Sent" ||
+                !permissions.can("update", "sales")
+              }
+              leftIcon={<LuTrophy />}
+              variant={
+                ["Sent", "Ordered", "Partial"].includes(
+                  routeData?.quote?.status ?? ""
+                )
+                  ? "primary"
+                  : "secondary"
+              }
+              onClick={convertToOrderModal.onOpen}
+            >
+              Won
+            </Button>
+
+            <statusFetcher.Form
+              method="post"
+              action={path.to.quoteStatus(quoteId)}
+            >
+              <input type="hidden" name="status" value="Lost" />
+              <Button
+                isDisabled={
+                  routeData?.quote?.status !== "Sent" ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "sales")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Lost"
+                }
+                leftIcon={<LuXCircle />}
+                type="submit"
+                variant={
+                  ["Sent", "Lost"].includes(routeData?.quote?.status ?? "")
+                    ? "destructive"
+                    : "secondary"
+                }
+              >
+                Lost
+              </Button>
+            </statusFetcher.Form>
+
+            {routeData?.quote?.status === "Draft" ? (
+              <statusFetcher.Form
+                method="post"
+                action={path.to.quoteStatus(quoteId)}
+              >
+                <input type="hidden" name="status" value="Cancelled" />
                 <Button
-                  onClick={shareModal.onOpen}
-                  leftIcon={<LuShare />}
+                  isDisabled={
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "sales")
+                  }
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") === "Cancelled"
+                  }
+                  leftIcon={<LuStopCircle />}
+                  type="submit"
                   variant="secondary"
                 >
-                  Share
+                  Cancel
                 </Button>
-              )}
-
-            {routeData?.quote?.status === "Draft" && (
-              <>
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.quoteStatus(quoteId)}
-                >
-                  <input type="hidden" name="status" value="Cancelled" />
+              </statusFetcher.Form>
+            ) : (
+              <statusFetcher.Form
+                method="post"
+                action={path.to.quoteStatus(quoteId)}
+              >
+                <input type="hidden" name="status" value="Draft" />
+                {routeData?.opportunity?.salesOrderId === null ? (
                   <Button
                     isDisabled={
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "sales")
-                    }
-                    isLoading={
-                      statusFetcher.state !== "idle" &&
-                      statusFetcher.formData?.get("status") === "Cancelled"
-                    }
-                    leftIcon={<LuStopCircle />}
-                    type="submit"
-                    variant="secondary"
-                  >
-                    Cancel
-                  </Button>
-                </statusFetcher.Form>
-                <Button
-                  onClick={finalizeModal.onOpen}
-                  isLoading={finalizeFetcher.state !== "idle"}
-                  isDisabled={
-                    finalizeFetcher.state !== "idle" ||
-                    !permissions.can("update", "sales") ||
-                    !eligibleLines?.length
-                  }
-                  leftIcon={<LuCheckCheck />}
-                >
-                  Finalize
-                </Button>
-              </>
-            )}
-
-            {routeData?.quote?.status === "Sent" && (
-              <>
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.quoteStatus(quoteId)}
-                >
-                  <input type="hidden" name="status" value="Draft" />
-                  <Button
-                    isDisabled={
+                      routeData?.opportunity?.salesOrderId !== null ||
                       statusFetcher.state !== "idle" ||
                       !permissions.can("update", "sales")
                     }
@@ -203,89 +254,26 @@ const QuoteHeader = () => {
                   >
                     Reopen
                   </Button>
-                </statusFetcher.Form>
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.quoteStatus(quoteId)}
-                >
-                  <input type="hidden" name="status" value="Lost" />
-                  <Button
-                    isDisabled={
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "sales")
-                    }
-                    isLoading={
-                      statusFetcher.state !== "idle" &&
-                      statusFetcher.formData?.get("status") === "Lost"
-                    }
-                    leftIcon={<LuXCircle />}
-                    type="submit"
-                    variant="destructive"
-                  >
-                    Lost
-                  </Button>
-                </statusFetcher.Form>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button
+                        leftIcon={<LuRefreshCw />}
+                        isDisabled
+                        variant="secondary"
+                      >
+                        Reopen
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Quote is linked to a Sales Order. Delete the sales order
+                      to reopen.
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </statusFetcher.Form>
+            )}
 
-                <Button
-                  leftIcon={<LuTrophy />}
-                  variant="primary"
-                  onClick={convertToOrderModal.onOpen}
-                >
-                  Won
-                </Button>
-              </>
-            )}
-            {["Cancelled", "Expired", "Lost"].includes(
-              routeData?.quote?.status ?? ""
-            ) && (
-              <>
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.quoteStatus(quoteId)}
-                >
-                  <input type="hidden" name="status" value="Draft" />
-                  <Button
-                    isDisabled={
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "sales")
-                    }
-                    isLoading={
-                      statusFetcher.state !== "idle" &&
-                      statusFetcher.formData?.get("status") === "Draft"
-                    }
-                    leftIcon={<LuRefreshCw />}
-                    type="submit"
-                    variant="secondary"
-                  >
-                    Reopen
-                  </Button>
-                </statusFetcher.Form>
-              </>
-            )}
-            {["Ordered", "Partial"].includes(routeData?.quote?.status ?? "") &&
-              routeData?.opportunity?.salesOrderId === null && (
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.quoteStatus(quoteId)}
-                >
-                  <input type="hidden" name="status" value="Draft" />
-                  <Button
-                    isDisabled={
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "sales")
-                    }
-                    isLoading={
-                      statusFetcher.state !== "idle" &&
-                      statusFetcher.formData?.get("status") === "Draft"
-                    }
-                    leftIcon={<LuRefreshCw />}
-                    type="submit"
-                    variant="secondary"
-                  >
-                    Reopen
-                  </Button>
-                </statusFetcher.Form>
-              )}
             <IconButton
               aria-label="Toggle Properties"
               icon={<LuPanelRight />}

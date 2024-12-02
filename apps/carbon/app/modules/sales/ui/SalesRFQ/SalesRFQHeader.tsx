@@ -13,6 +13,9 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
 } from "@carbon/react";
 
@@ -20,6 +23,7 @@ import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
 import {
   LuAlertTriangle,
+  LuCheckCircle,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
@@ -48,14 +52,12 @@ const SalesRFQHeader = () => {
     opportunity: Opportunity;
   }>(path.to.salesRfq(rfqId));
 
-  console.log(routeData?.opportunity);
-
   const status = routeData?.rfqSummary?.status ?? "Draft";
 
   const statusFetcher = useFetcher<{}>();
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px]">
+    <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] scrollbar-hide overflow-x-auto">
       <HStack className="w-full justify-between">
         <HStack>
           <IconButton
@@ -72,45 +74,97 @@ const SalesRFQHeader = () => {
           <SalesRFQStatus status={routeData?.rfqSummary?.status} />
         </HStack>
         <HStack>
-          {status === "Draft" &&
-            (routeData?.rfqSummary?.customerId ? (
-              <statusFetcher.Form
-                method="post"
-                action={path.to.salesRfqStatus(rfqId)}
-              >
-                <input type="hidden" name="status" value="Ready for Quote" />
-                <Button
-                  isDisabled={
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "sales")
-                  }
-                  isLoading={
-                    statusFetcher.state !== "idle" &&
-                    statusFetcher.formData?.get("status") === "Ready for Quote"
-                  }
-                  leftIcon={<LuRefreshCw />}
-                  type="submit"
-                >
-                  Ready for Quote
-                </Button>
-              </statusFetcher.Form>
-            ) : (
+          {routeData?.rfqSummary?.customerId ? (
+            <statusFetcher.Form
+              method="post"
+              action={path.to.salesRfqStatus(rfqId)}
+            >
+              <input type="hidden" name="status" value="Ready for Quote" />
               <Button
-                onClick={requiresCustomerAlert.onOpen}
-                leftIcon={<LuRefreshCw />}
+                isDisabled={
+                  status !== "Draft" ||
+                  routeData?.lines?.length === 0 ||
+                  !permissions.can("update", "sales")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Ready for Quote"
+                }
+                leftIcon={<LuCheckCircle />}
+                variant={status === "Draft" ? "primary" : "secondary"}
+                type="submit"
               >
                 Ready for Quote
               </Button>
-            ))}
+            </statusFetcher.Form>
+          ) : (
+            <Button
+              isDisabled={
+                status !== "Ready for Quote" ||
+                routeData?.lines?.length === 0 ||
+                !permissions.can("update", "sales")
+              }
+              leftIcon={<LuCheckCircle />}
+              variant={status === "Draft" ? "primary" : "secondary"}
+              onClick={requiresCustomerAlert.onOpen}
+            >
+              Ready for Quote
+            </Button>
+          )}
 
-          {["Ready for Quote", "Closed"].includes(status) && (
-            <statusFetcher.Form
-              method="post"
-              action={path.to.salesRfqStatus(rfqId)}
+          <Button
+            isDisabled={
+              status !== "Ready for Quote" ||
+              routeData?.lines?.length === 0 ||
+              !permissions.can("create", "sales")
+            }
+            leftIcon={<RiProgress4Line />}
+            type="submit"
+            variant={
+              ["Ready for Quote", "Quoted"].includes(status)
+                ? "primary"
+                : "secondary"
+            }
+            onClick={convertToQuoteModal.onOpen}
+          >
+            Quote
+          </Button>
+          <statusFetcher.Form
+            method="post"
+            action={path.to.salesRfqStatus(rfqId)}
+          >
+            <input type="hidden" name="status" value="Closed" />
+            <Button
+              isDisabled={
+                status !== "Ready for Quote" ||
+                statusFetcher.state !== "idle" ||
+                !permissions.can("update", "sales")
+              }
+              isLoading={
+                statusFetcher.state !== "idle" &&
+                statusFetcher.formData?.get("status") === "Closed"
+              }
+              leftIcon={<LuXCircle />}
+              type="submit"
+              variant={
+                ["Ready for Quote", "Closed"].includes(status)
+                  ? "destructive"
+                  : "secondary"
+              }
             >
-              <input type="hidden" name="status" value="Draft" />
+              No Quote
+            </Button>
+          </statusFetcher.Form>
+
+          <statusFetcher.Form
+            method="post"
+            action={path.to.salesRfqStatus(rfqId)}
+          >
+            <input type="hidden" name="status" value="Draft" />
+            {routeData?.opportunity?.quoteId === null ? (
               <Button
                 isDisabled={
+                  !["Ready for Quote", "Closed"].includes(status) ||
                   statusFetcher.state !== "idle" ||
                   !permissions.can("update", "sales")
                 }
@@ -124,68 +178,24 @@ const SalesRFQHeader = () => {
               >
                 Reopen
               </Button>
-            </statusFetcher.Form>
-          )}
-          {status === "Quoted" && routeData?.opportunity?.quoteId === null && (
-            <statusFetcher.Form
-              method="post"
-              action={path.to.salesRfqStatus(rfqId)}
-            >
-              <input type="hidden" name="status" value="Draft" />
-              <Button
-                isDisabled={
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Draft"
-                }
-                leftIcon={<LuRefreshCw />}
-                type="submit"
-                variant="secondary"
-              >
-                Reopen
-              </Button>
-            </statusFetcher.Form>
-          )}
-          {status === "Ready for Quote" && (
-            <>
-              <statusFetcher.Form
-                method="post"
-                action={path.to.salesRfqStatus(rfqId)}
-              >
-                <input type="hidden" name="status" value="Closed" />
-                <Button
-                  isDisabled={
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "sales")
-                  }
-                  isLoading={
-                    statusFetcher.state !== "idle" &&
-                    statusFetcher.formData?.get("status") === "Closed"
-                  }
-                  leftIcon={<LuXCircle />}
-                  type="submit"
-                  variant="destructive"
-                >
-                  No Quote
-                </Button>
-              </statusFetcher.Form>
-              <Button
-                isDisabled={
-                  routeData?.lines?.length === 0 ||
-                  !permissions.can("create", "sales")
-                }
-                leftIcon={<RiProgress4Line />}
-                type="submit"
-                variant="primary"
-                onClick={convertToQuoteModal.onOpen}
-              >
-                Quote
-              </Button>
-            </>
-          )}
+            ) : (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    leftIcon={<LuRefreshCw />}
+                    isDisabled
+                    variant="secondary"
+                  >
+                    Reopen
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  RFQ is linked to a Quote. Delete the quote to reopen.
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </statusFetcher.Form>
+
           <IconButton
             aria-label="Toggle Properties"
             icon={<LuPanelRight />}

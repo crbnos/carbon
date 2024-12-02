@@ -94,7 +94,7 @@ const JobHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px]">
+      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide">
         <HStack>
           <IconButton
             aria-label="Toggle Explorer"
@@ -166,57 +166,7 @@ const JobHeader = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {["Cancelled", "Completed"].includes(status ?? "") && (
-            <>
-              <statusFetcher.Form
-                method="post"
-                action={path.to.jobStatus(jobId)}
-              >
-                <input
-                  type="hidden"
-                  name="status"
-                  value={status === "Cancelled" ? "Draft" : "In Progress"}
-                />
-                <Button
-                  isLoading={
-                    statusFetcher.state !== "idle" &&
-                    ["Draft", "In Progress"].includes(
-                      (statusFetcher.formData?.get("status") as string) ?? ""
-                    )
-                  }
-                  isDisabled={
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "production")
-                  }
-                  leftIcon={<LuRefreshCw />}
-                  type="submit"
-                  variant="secondary"
-                >
-                  Reopen
-                </Button>
-              </statusFetcher.Form>
-            </>
-          )}
-
-          {!["Cancelled", "Completed"].includes(status ?? "") && (
-            <Button
-              onClick={cancelModal.onOpen}
-              isLoading={
-                statusFetcher.state !== "idle" &&
-                statusFetcher.formData?.get("status") === "Cancelled"
-              }
-              isDisabled={
-                statusFetcher.state !== "idle" ||
-                !permissions.can("update", "production")
-              }
-              leftIcon={<LuStopCircle />}
-              variant="secondary"
-            >
-              Cancel
-            </Button>
-          )}
-
-          {["Ready", "In Progress"].includes(status ?? "") && (
+          {status !== "Paused" ? (
             <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
               <input type="hidden" name="status" value="Paused" />
               <Button
@@ -225,6 +175,7 @@ const JobHeader = () => {
                   statusFetcher.formData?.get("status") === "Paused"
                 }
                 isDisabled={
+                  !["Ready", "In Progress"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
                   !permissions.can("update", "production")
                 }
@@ -235,9 +186,7 @@ const JobHeader = () => {
                 Pause
               </Button>
             </statusFetcher.Form>
-          )}
-
-          {status === "Paused" && (
+          ) : (
             <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
               <input type="hidden" name="status" value="Ready" />
               <Button
@@ -257,44 +206,82 @@ const JobHeader = () => {
             </statusFetcher.Form>
           )}
 
-          {status === "Draft" && (
-            <>
-              <Button
-                onClick={releaseModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Ready"
-                }
-                isDisabled={
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "production") ||
-                  (routeData?.job?.quantity === 0 &&
-                    routeData?.job?.scrapQuantity === 0)
-                }
-                leftIcon={<LuPlayCircle />}
-              >
-                Release
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={releaseModal.onOpen}
+            isLoading={
+              statusFetcher.state !== "idle" &&
+              statusFetcher.formData?.get("status") === "Ready"
+            }
+            isDisabled={
+              status !== "Draft" ||
+              statusFetcher.state !== "idle" ||
+              !permissions.can("update", "production") ||
+              (routeData?.job?.quantity === 0 &&
+                routeData?.job?.scrapQuantity === 0)
+            }
+            leftIcon={<LuPlayCircle />}
+            variant={status === "Draft" ? "primary" : "secondary"}
+          >
+            Release
+          </Button>
 
-          {!["Cancelled", "Draft"].includes(status ?? "") && (
+          <Button
+            onClick={completeModal.onOpen}
+            isLoading={
+              statusFetcher.state !== "idle" &&
+              statusFetcher.formAction === path.to.jobComplete(jobId)
+            }
+            isDisabled={
+              ["Completed", "Cancelled", "Draft"].includes(status ?? "") ||
+              statusFetcher.state !== "idle" ||
+              !permissions.can("update", "production")
+            }
+            leftIcon={<LuCheckCircle />}
+            variant={status === "Completed" ? "primary" : "secondary"}
+          >
+            Complete
+          </Button>
+          <Button
+            onClick={cancelModal.onOpen}
+            isLoading={
+              statusFetcher.state !== "idle" &&
+              statusFetcher.formData?.get("status") === "Cancelled"
+            }
+            isDisabled={
+              ["Cancelled", "Completed"].includes(status ?? "") ||
+              statusFetcher.state !== "idle" ||
+              !permissions.can("update", "production")
+            }
+            leftIcon={<LuStopCircle />}
+            variant="secondary"
+          >
+            Cancel
+          </Button>
+          <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
+            <input
+              type="hidden"
+              name="status"
+              value={status === "Cancelled" ? "Draft" : "In Progress"}
+            />
             <Button
-              onClick={completeModal.onOpen}
               isLoading={
                 statusFetcher.state !== "idle" &&
-                statusFetcher.formAction === path.to.jobComplete(jobId)
+                ["Draft", "In Progress"].includes(
+                  (statusFetcher.formData?.get("status") as string) ?? ""
+                )
               }
               isDisabled={
+                !["Cancelled", "Completed"].includes(status ?? "") ||
                 statusFetcher.state !== "idle" ||
                 !permissions.can("update", "production")
               }
-              leftIcon={<LuCheckCircle />}
+              leftIcon={<LuRefreshCw />}
+              type="submit"
               variant="secondary"
             >
-              Complete
+              Reopen
             </Button>
-          )}
+          </statusFetcher.Form>
 
           <IconButton
             aria-label="Toggle Properties"
@@ -487,7 +474,10 @@ function JobStartModal({
               >
                 <input type="hidden" name="status" value="Ready" />
                 <Button
-                  isLoading={fetcher.state !== "idle"}
+                  isLoading={
+                    fetcher.state !== "idle" &&
+                    fetcher.formData?.get("status") === "Ready"
+                  }
                   isDisabled={
                     fetcher.state !== "idle" || !eachAssemblyHasAnOperation
                   }
