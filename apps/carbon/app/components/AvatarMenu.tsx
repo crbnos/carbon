@@ -152,7 +152,7 @@ const AvatarMenu = () => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+        <DropdownMenuItem asChild>
           <Form method="post" action={path.to.logout}>
             <button type="submit" className="w-full flex items-center">
               <DropdownMenuIcon icon={<LuLogOut />} />
