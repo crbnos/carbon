@@ -790,6 +790,10 @@ export const path = {
       generatePath(`${x}/supplier/${id}/processes`),
     supplierShipping: (id: string) =>
       generatePath(`${x}/supplier/${id}/shipping`),
+    supplierQuotes: `${x}/purchasing/quotes`,
+    supplierQuoteFavorite: `${x}/purchasing/quotes/favorite`,
+    supplierQuoteDetails: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/details`),
     supplierRoot: `${x}/supplier`,
     supplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/${id}`),

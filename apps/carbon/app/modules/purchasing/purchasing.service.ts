@@ -364,6 +364,53 @@ export async function getSupplierProcessesBySupplier(
     .eq("supplierId", supplierId);
 }
 
+export async function getSupplierQuote(
+  client: SupabaseClient<Database>,
+  supplierQuoteId: string
+) {
+  return client
+    .from("supplierQuotes")
+    .select("*")
+    .eq("id", supplierQuoteId)
+    .single();
+}
+
+export async function getSupplierQuotes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("supplierQuotes")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `supplierQuoteId.ilike.%${args.search}%,name.ilike.%${args.search}%,supplierReference.ilike%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "favorite", ascending: false },
+    { column: "id", ascending: false },
+  ]);
+  return query;
+}
+
+export async function getSupplierQuotesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("supplierQuote")
+    .select("id, supplierQuoteId")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
 export async function getSupplierShipping(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -793,6 +840,28 @@ export async function updateSupplierPayment(
     .from("supplierPayment")
     .update(sanitize(supplierPayment))
     .eq("supplierId", supplierPayment.supplierId);
+}
+
+export async function updateSupplierQuoteFavorite(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    favorite: boolean;
+    userId: string;
+  }
+) {
+  const { id, favorite, userId } = args;
+  if (!favorite) {
+    return client
+      .from("supplierQuoteFavorite")
+      .delete()
+      .eq("supplierQuoteId", id)
+      .eq("userId", userId);
+  } else {
+    return client
+      .from("supplierQuoteFavorite")
+      .insert({ supplierQuoteId: id, userId: userId });
+  }
 }
 
 export async function updateSupplierShipping(

@@ -229,3 +229,10 @@ export const supplierStatusValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
 });
+
+export const supplierQuoteStatusType = [
+  "Draft",
+  "Submitted",
+  "Accepted",
+  "Rejected",
+] as const;

@@ -131,3 +131,71 @@ CREATE TABLE "supplierQuoteLinePrice" (
 
 CREATE INDEX "supplierQuoteLinePrice_supplierQuoteId_idx" ON "supplierQuoteLinePrice" ("supplierQuoteId");
 
+
+CREATE TABLE "supplierQuoteFavorite" (
+  "supplierQuoteId" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+
+  CONSTRAINT "supplierQuoteFavorites_pkey" PRIMARY KEY ("supplierQuoteId", "userId"),
+  CONSTRAINT "supplierQuoteFavorites_supplierQuoteId_fkey" FOREIGN KEY ("supplierQuoteId") REFERENCES "supplierQuote"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplierQuoteFavorites_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE
+);
+
+CREATE INDEX "supplierQuoteFavorites_userId_idx" ON "supplierQuoteFavorite" ("userId");
+CREATE INDEX "supplierQuoteFavorites_supplierQuoteId_idx" ON "supplierQuoteFavorite" ("supplierQuoteId");
+
+ALTER TABLE "supplierQuoteFavorite" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own supplier quote favorites" ON "supplierQuoteFavorite" 
+  FOR SELECT USING (
+    auth.uid()::text = "userId"
+  );
+
+CREATE POLICY "Users can create their own supplier quote favorites" ON "supplierQuoteFavorite" 
+  FOR INSERT WITH CHECK (
+    auth.uid()::text = "userId"
+  );
+
+CREATE POLICY "Users can delete their own supplier quote favorites" ON "supplierQuoteFavorite"
+  FOR DELETE USING (
+    auth.uid()::text = "userId"
+  ); 
+
+DROP VIEW IF EXISTS "supplierQuotes";
+CREATE OR REPLACE VIEW
+  "supplierQuotes"
+WITH
+  (SECURITY_INVOKER = true) AS
+SELECT
+  q.*,
+  ql."thumbnailPath",
+  ql."itemType",
+  EXISTS (
+    SELECT
+      1
+    FROM
+      "supplierQuoteFavorite" pf
+    WHERE
+      pf."supplierQuoteId" = q.id
+      AND pf."userId" = auth.uid()::text
+  ) AS favorite
+FROM
+  "supplierQuote" q
+  LEFT JOIN (
+    SELECT
+      "supplierQuoteId",
+      MIN(
+        CASE
+          WHEN i."thumbnailPath" IS NULL
+          AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+          ELSE i."thumbnailPath"
+        END
+      ) AS "thumbnailPath",
+      MIN(i."type") AS "itemType"
+    FROM
+      "supplierQuoteLine"
+      INNER JOIN "item" i ON i."id" = "supplierQuoteLine"."itemId"
+      LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+    GROUP BY
+      "supplierQuoteId"
+  ) ql ON ql."supplierQuoteId" = q.id;
