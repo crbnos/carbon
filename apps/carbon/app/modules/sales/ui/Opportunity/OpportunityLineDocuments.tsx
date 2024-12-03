@@ -123,6 +123,38 @@ const useOpportunityLineDocuments = ({
     [carbon, revalidator]
   );
 
+  const downloadModel = useCallback(
+    async (model: ModelUpload) => {
+      if (!model.modelPath || !model.modelName) {
+        toast.error("Model data is missing");
+        return;
+      }
+
+      const result = await carbon?.storage
+        .from("private")
+        .download(model.modelPath);
+
+      if (!result || result.error) {
+        toast.error(result?.error?.message || "Error downloading file");
+        return;
+      }
+
+      const a = document.createElement("a");
+      document.body.appendChild(a);
+      const url = window.URL.createObjectURL(result.data);
+      a.href = url;
+      a.download = model.modelName;
+      a.click();
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 0);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   const download = useCallback(
     async (file: ItemFile) => {
       const result = await carbon?.storage
@@ -146,7 +178,8 @@ const useOpportunityLineDocuments = ({
         document.body.removeChild(a);
       }, 0);
     },
-    [carbon?.storage, getPath]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const getModelPath = useCallback((model: ModelUpload) => {
@@ -221,6 +254,7 @@ const useOpportunityLineDocuments = ({
     deleteFile,
     deleteModel,
     download,
+    downloadModel,
     getPath,
     getModelPath,
     upload,
@@ -245,6 +279,7 @@ const OpportunityLineDocuments = ({
   const {
     canDelete,
     download,
+    downloadModel,
     deleteFile,
     deleteModel,
     getPath,
@@ -333,6 +368,11 @@ const OpportunityLineDocuments = ({
                         <DropdownMenuContent>
                           <DropdownMenuItem asChild>
                             <Link to={getModelPath(modelUpload)}>View</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => downloadModel(modelUpload)}
+                          >
+                            Download
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={!canDelete}
