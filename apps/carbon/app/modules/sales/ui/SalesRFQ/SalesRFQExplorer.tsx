@@ -21,8 +21,7 @@ import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { Link, useFetchers, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuPlusCircle, LuTrash } from "react-icons/lu";
-import { MdMoreVert } from "react-icons/md";
+import { LuMoreVertical, LuPlusCircle, LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import { Empty, ItemThumbnail } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
@@ -306,7 +305,7 @@ function SalesRFQLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
-                  icon={<MdMoreVert />}
+                  icon={<LuMoreVertical />}
                   variant="ghost"
                   onClick={(e) => e.stopPropagation()}
                 />

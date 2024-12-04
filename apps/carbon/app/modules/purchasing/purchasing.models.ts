@@ -236,3 +236,19 @@ export const supplierQuoteStatusType = [
   "Accepted",
   "Rejected",
 ] as const;
+
+export const supplierQuoteValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  supplierQuoteId: zfd.text(z.string().optional()),
+  supplierId: z.string().min(36, { message: "Customer is required" }),
+  supplierLocationId: zfd.text(z.string().optional()),
+  supplierContactId: zfd.text(z.string().optional()),
+  supplierReference: zfd.text(z.string().optional()),
+  status: z.enum(supplierQuoteStatusType).optional(),
+  notes: z.any().optional(),
+  dueDate: zfd.text(z.string().optional()),
+  expirationDate: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  exchangeRateUpdatedAt: zfd.text(z.string().optional()),
+});

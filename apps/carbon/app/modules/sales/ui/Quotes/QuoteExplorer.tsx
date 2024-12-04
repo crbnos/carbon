@@ -25,11 +25,11 @@ import {
   LuChevronDown,
   LuCircle,
   LuClock3,
+  LuMoreVertical,
   LuPlusCircle,
   LuTrash,
   LuXCircle,
 } from "react-icons/lu";
-import { MdMoreVert } from "react-icons/md";
 import { Empty, ItemThumbnail } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
@@ -272,7 +272,7 @@ function QuoteLineItem({
             <DropdownMenuTrigger asChild>
               <IconButton
                 aria-label="More"
-                icon={<MdMoreVert />}
+                icon={<LuMoreVertical />}
                 size="sm"
                 variant="ghost"
                 onClick={(e) => e.stopPropagation()}

@@ -543,8 +543,6 @@ const QuoteSummary = () => {
     salesOrderLines: SalesOrderLine[];
   }>(path.to.quote(quoteId));
 
-  console.log({ routeData });
-
   const { locale } = useLocale();
   const formatter = useMemo(
     () =>

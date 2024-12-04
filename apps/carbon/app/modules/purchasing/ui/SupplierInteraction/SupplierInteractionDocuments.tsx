@@ -22,7 +22,6 @@ import {
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
-import { useDndContext, useDraggable } from "@dnd-kit/core";
 import {
   Outlet,
   useFetchers,
@@ -33,7 +32,6 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import {
-  LuGripVertical,
   LuMoreVertical,
   LuRadioTower,
   LuShoppingCart,
@@ -44,25 +42,24 @@ import { usePermissions, useUser } from "~/hooks";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
-import type { Opportunity } from "../../types";
-import { useOptimisticDocumentDrag } from "../SalesRFQ/useOptimiticDocumentDrag";
+import type { SupplierInteraction } from "../../types";
 
-type OpportunityDocumentsProps = {
+type SupplierInteractionDocumentsProps = {
   attachments: FileObject[];
-  opportunity: Opportunity;
+  interaction: SupplierInteraction;
   id: string;
-  type: "Sales Order" | "Request for Quote" | "Quote";
+  type: "Supplier Quote" | "Purchase Order";
 };
 
-const OpportunityDocuments = ({
+const SupplierInteractionDocuments = ({
   attachments,
-  opportunity,
+  interaction,
   id,
   type,
-}: OpportunityDocumentsProps) => {
+}: SupplierInteractionDocumentsProps) => {
   const { canDelete, download, deleteAttachment, getPath, upload } =
-    useOpportunityDocuments({
-      opportunityId: opportunity.id,
+    useSupplierInteractionDocuments({
+      interactionId: interaction.id,
       id,
       type,
     });
@@ -74,22 +71,6 @@ const OpportunityDocuments = ({
     [upload]
   );
 
-  const optimisticDrags = useOptimisticDocumentDrag();
-
-  const attachmentsByName = new Map<string, FileObject | OptimisticFileObject>(
-    attachments.map((file) => [file.name, file])
-  );
-  const pendingItems = usePendingItems();
-  for (let pendingItem of pendingItems) {
-    let item = attachmentsByName.get(pendingItem.name);
-    let merged = item ? { ...item, ...pendingItem } : pendingItem;
-    attachmentsByName.set(pendingItem.name, merged);
-  }
-
-  const attachmentsToRender = Array.from(attachmentsByName.values())
-    .filter((d) => !optimisticDrags?.find((o) => o.id === d.id))
-    .sort((a, b) => a.name.localeCompare(b.name)) as FileObject[];
-
   return (
     <>
       <Card>
@@ -98,8 +79,8 @@ const OpportunityDocuments = ({
             <CardTitle>Files</CardTitle>
           </CardHeader>
           <CardAction>
-            <OpportunityDocumentForm
-              opportunityId={opportunity.id}
+            <SupplierInteractionDocumentForm
+              interactionId={interaction.id}
               id={id}
               type={type}
             />
@@ -115,15 +96,45 @@ const OpportunityDocuments = ({
               </Tr>
             </Thead>
             <Tbody>
-              {attachmentsToRender.length ? (
-                attachmentsToRender.map((attachment) => (
+              {attachments.length ? (
+                attachments.map((attachment) => (
                   <Tr key={attachment.id}>
-                    <DraggableCell
-                      attachment={attachment}
-                      opportunity={opportunity}
-                      download={download}
-                      getPath={getPath}
-                    />
+                    <Td>
+                      <HStack>
+                        <DocumentIcon type={getDocumentType(attachment.name)} />
+                        <span
+                          className="font-medium"
+                          onClick={() => download(attachment)}
+                        >
+                          {["PDF", "Image"].includes(
+                            getDocumentType(attachment.name)
+                          ) ? (
+                            <DocumentPreview
+                              bucket="private"
+                              pathToFile={getPath(attachment)}
+                              // @ts-ignore
+                              type={getDocumentType(attachment.name)}
+                            >
+                              {attachment.name}
+                            </DocumentPreview>
+                          ) : (
+                            attachment.name
+                          )}
+                        </span>
+                        {interaction?.salesOrderDocumentPath ===
+                          getPath(attachment) && (
+                          <Badge variant="secondary">
+                            <LuShoppingCart />
+                          </Badge>
+                        )}
+                        {interaction?.quoteDocumentPath ===
+                          getPath(attachment) && (
+                          <Badge variant="secondary">
+                            <LuRadioTower />
+                          </Badge>
+                        )}
+                      </HStack>
+                    </Td>
                     <Td className="text-xs font-mono">
                       {convertKbToString(
                         Math.floor((attachment.metadata?.size ?? 0) / 1024)
@@ -178,85 +189,17 @@ const OpportunityDocuments = ({
   );
 };
 
-const DraggableCell = ({
-  attachment,
-  opportunity,
-  download,
-  getPath,
-}: {
-  attachment: FileObject;
-  opportunity: Opportunity;
-  download: (attachment: FileObject) => void;
-  getPath: (attachment: FileObject) => string;
-}) => {
-  const context = useDndContext();
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: attachment.id,
-    data: {
-      ...attachment,
-      size: attachment.metadata?.size,
-      path: getPath(attachment),
-    },
-  });
-
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 1000,
-      }
-    : undefined;
-
-  const isPreviewable = ["PDF", "Image"].includes(
-    getDocumentType(attachment.name)
-  );
-
-  return (
-    <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <HStack>
-        {context.droppableContainers.size > 0 && (
-          <LuGripVertical className="w-4 h-4 flex-shrink-0" />
-        )}
-        <DocumentIcon type={getDocumentType(attachment.name)} />
-        <span className="font-medium" onClick={() => download(attachment)}>
-          {isPreviewable ? (
-            <DocumentPreview
-              bucket="private"
-              pathToFile={getPath(attachment)}
-              // @ts-ignore
-              type={getDocumentType(attachment.name)}
-            >
-              {attachment.name}
-            </DocumentPreview>
-          ) : (
-            attachment.name
-          )}
-        </span>
-        {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
-          <Badge variant="secondary">
-            <LuShoppingCart />
-          </Badge>
-        )}
-        {opportunity?.requestForQuoteDocumentPath === getPath(attachment) && (
-          <Badge variant="secondary">
-            <LuRadioTower />
-          </Badge>
-        )}
-      </HStack>
-    </Td>
-  );
-};
-
-type OpportunityDocumentFormProps = {
-  opportunityId: string;
+type SupplierInteractionDocumentFormProps = {
+  interactionId: string;
   id: string;
-  type: "Sales Order" | "Request for Quote" | "Quote";
+  type: "Supplier Quote" | "Purchase Order";
 };
 
-export const useOpportunityDocuments = ({
+export const useSupplierInteractionDocuments = ({
   id,
-  opportunityId,
+  interactionId,
   type,
-}: OpportunityDocumentFormProps) => {
+}: SupplierInteractionDocumentFormProps) => {
   const permissions = usePermissions();
   const { company } = useUser();
   const { carbon } = useCarbon();
@@ -269,11 +212,11 @@ export const useOpportunityDocuments = ({
     (attachment: { name: string }) => {
       return `${
         company.id
-      }/opportunity/${opportunityId}/${stripSpecialCharacters(
+      }/supplier-interaction/${interactionId}/${stripSpecialCharacters(
         attachment.name
       )}`;
     },
-    [company.id, opportunityId]
+    [company.id, interactionId]
   );
 
   const deleteAttachment = useCallback(
@@ -340,7 +283,7 @@ export const useOpportunityDocuments = ({
         method: "post",
         action: path.to.newDocument,
         navigate: false,
-        fetcherKey: `opportunity:${name}`,
+        fetcherKey: `interaction:${name}`,
       });
     },
     [id, submit, type]
@@ -389,12 +332,14 @@ export const useOpportunityDocuments = ({
   };
 };
 
-const OpportunityDocumentForm = (props: OpportunityDocumentFormProps) => {
+const SupplierInteractionDocumentForm = (
+  props: SupplierInteractionDocumentFormProps
+) => {
   const { company } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
 
-  const { upload } = useOpportunityDocuments(props);
+  const { upload } = useSupplierInteractionDocuments(props);
 
   const uploadFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon && company) {
@@ -414,7 +359,7 @@ const OpportunityDocumentForm = (props: OpportunityDocumentFormProps) => {
   );
 };
 
-export default OpportunityDocuments;
+export default SupplierInteractionDocuments;
 
 type OptimisticFileObject = Omit<
   FileObject,

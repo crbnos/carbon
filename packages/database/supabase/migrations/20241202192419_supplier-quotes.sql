@@ -42,7 +42,6 @@ CREATE TABLE "supplierQuote" (
   "supplierContactId" TEXT,
   "supplierReference" TEXT,
   "assignee" TEXT,
-  "externalLinkId" UUID,
   "currencyCode" TEXT,
   "exchangeRate" NUMERIC(10,4),
   "exchangeRateUpdatedAt" TIMESTAMP WITH TIME ZONE,
@@ -199,3 +198,7 @@ FROM
     GROUP BY
       "supplierQuoteId"
   ) ql ON ql."supplierQuoteId" = q.id;
+
+ALTER TABLE "purchaseOrder" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "purchaseOrder" ADD COLUMN "externalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "purchaseOrderLine" ADD COLUMN "notes" JSON DEFAULT '{}'::JSON;

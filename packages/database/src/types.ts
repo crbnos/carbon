@@ -13286,7 +13286,9 @@ export type Database = {
           customFields: Json | null;
           exchangeRate: number | null;
           exchangeRateUpdatedAt: string | null;
+          externalNotes: Json | null;
           id: string;
+          internalNotes: Json | null;
           notes: string | null;
           orderDate: string;
           purchaseOrderId: string;
@@ -13312,7 +13314,9 @@ export type Database = {
           customFields?: Json | null;
           exchangeRate?: number | null;
           exchangeRateUpdatedAt?: string | null;
+          externalNotes?: Json | null;
           id?: string;
+          internalNotes?: Json | null;
           notes?: string | null;
           orderDate?: string;
           purchaseOrderId: string;
@@ -13338,7 +13342,9 @@ export type Database = {
           customFields?: Json | null;
           exchangeRate?: number | null;
           exchangeRateUpdatedAt?: string | null;
+          externalNotes?: Json | null;
           id?: string;
+          internalNotes?: Json | null;
           notes?: string | null;
           orderDate?: string;
           purchaseOrderId?: string;
@@ -13841,6 +13847,7 @@ export type Database = {
           itemId: string | null;
           itemReadableId: string | null;
           locationId: string | null;
+          notes: Json | null;
           purchaseOrderId: string;
           purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"];
           purchaseQuantity: number | null;
@@ -13873,6 +13880,7 @@ export type Database = {
           itemId?: string | null;
           itemReadableId?: string | null;
           locationId?: string | null;
+          notes?: Json | null;
           purchaseOrderId: string;
           purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"];
           purchaseQuantity?: number | null;
@@ -13905,6 +13913,7 @@ export type Database = {
           itemId?: string | null;
           itemReadableId?: string | null;
           locationId?: string | null;
+          notes?: Json | null;
           purchaseOrderId?: string;
           purchaseOrderLineType?: Database["public"]["Enums"]["purchaseOrderLineType"];
           purchaseQuantity?: number | null;
@@ -20379,6 +20388,103 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "userDefaults";
             referencedColumns: ["userId"];
+          }
+        ];
+      };
+      supplierInteraction: {
+        Row: {
+          companyId: string;
+          id: string;
+          purchaseOrderCompletedDate: string | null;
+          purchaseOrderId: string | null;
+          quoteDocumentPath: string | null;
+          salesOrderDocumentPath: string | null;
+          supplierQuoteCompletedDate: string | null;
+          supplierQuoteId: string | null;
+        };
+        Insert: {
+          companyId: string;
+          id?: string;
+          purchaseOrderCompletedDate?: string | null;
+          purchaseOrderId?: string | null;
+          quoteDocumentPath?: string | null;
+          salesOrderDocumentPath?: string | null;
+          supplierQuoteCompletedDate?: string | null;
+          supplierQuoteId?: string | null;
+        };
+        Update: {
+          companyId?: string;
+          id?: string;
+          purchaseOrderCompletedDate?: string | null;
+          purchaseOrderId?: string | null;
+          quoteDocumentPath?: string | null;
+          salesOrderDocumentPath?: string | null;
+          supplierQuoteCompletedDate?: string | null;
+          supplierQuoteId?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "supplierInteraction_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierInteraction_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "company";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierInteraction_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "customFieldTables";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "supplierInteraction_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "integrations";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "supplierInteraction_purchaseOrderId_fkey";
+            columns: ["purchaseOrderId"];
+            isOneToOne: false;
+            referencedRelation: "purchaseOrder";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierInteraction_purchaseOrderId_fkey";
+            columns: ["purchaseOrderId"];
+            isOneToOne: false;
+            referencedRelation: "purchaseOrderLocations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierInteraction_purchaseOrderId_fkey";
+            columns: ["purchaseOrderId"];
+            isOneToOne: false;
+            referencedRelation: "purchaseOrders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierInteraction_supplierQuoteId_fkey";
+            columns: ["supplierQuoteId"];
+            isOneToOne: false;
+            referencedRelation: "supplierQuote";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierInteraction_supplierQuoteId_fkey";
+            columns: ["supplierQuoteId"];
+            isOneToOne: false;
+            referencedRelation: "supplierQuotes";
+            referencedColumns: ["id"];
           }
         ];
       };

@@ -315,6 +315,8 @@ export const path = {
       generatePath(`${x}/supplier/${supplierId}/locations/delete/${id}`),
     deleteSupplierProcess: (supplierId: string, id: string) =>
       generatePath(`${x}/supplier/${supplierId}/processes/delete/${id}`),
+    deleteSupplierQuote: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/delete`),
     deleteSupplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/delete/${id}`),
     deleteSupplierType: (id: string) =>
@@ -549,6 +551,7 @@ export const path = {
       generatePath(`${x}/supplier/${id}/locations/new`),
     newSupplierProcess: (id: string) =>
       generatePath(`${x}/supplier/${id}/processes/new`),
+    newSupplierQuote: `${x}/supplier-quote/new`,
     newSupplierStatus: `${x}/purchasing/supplier-statuses/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
     newTag: `${x}/settings/tags/new`,
@@ -790,6 +793,7 @@ export const path = {
       generatePath(`${x}/supplier/${id}/processes`),
     supplierShipping: (id: string) =>
       generatePath(`${x}/supplier/${id}/shipping`),
+    supplierQuote: (id: string) => generatePath(`${x}/supplier-quote/${id}`),
     supplierQuotes: `${x}/purchasing/quotes`,
     supplierQuoteFavorite: `${x}/purchasing/quotes/favorite`,
     supplierQuoteDetails: (id: string) =>

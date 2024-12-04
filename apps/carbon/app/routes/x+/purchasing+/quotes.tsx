@@ -12,7 +12,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: "Supplier Quotes",
-  to: path.to.quotes,
+  to: path.to.supplierQuotes,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

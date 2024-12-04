@@ -17,17 +17,16 @@ import {
   Th,
   Thead,
   Tr,
-  VStack,
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
 import { LuMoreVertical, LuUpload } from "react-icons/lu";
-import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
+import { DocumentPreview, FileDropzone } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { ItemFile } from "~/modules/items";
 
-import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
+import { useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
@@ -35,17 +34,16 @@ import { path } from "~/utils/path";
 import { useCarbon } from "@carbon/auth";
 import { useCallback } from "react";
 import type { OptimisticFileObject } from "~/modules/shared";
-import type { ModelUpload } from "~/types";
 import { stripSpecialCharacters } from "~/utils/string";
 
-const useOpportunityLineDocuments = ({
+const useSupplierInteractionLineDocuments = ({
   id,
   lineId,
   type,
 }: {
   id: string;
   lineId: string;
-  type: "Request for Quote" | "Sales Order" | "Quote";
+  type: "Supplier Quote" | "Purchase Order";
 }) => {
   const permissions = usePermissions();
   const revalidator = useRevalidator();
@@ -58,7 +56,9 @@ const useOpportunityLineDocuments = ({
 
   const getPath = useCallback(
     (file: { name: string }) => {
-      return `${company.id}/opportunity-line/${lineId}/${stripSpecialCharacters(
+      return `${
+        company.id
+      }/supplier-interaction-line/${lineId}/${stripSpecialCharacters(
         file.name
       )}`;
     },
@@ -80,78 +80,6 @@ const useOpportunityLineDocuments = ({
       revalidator.revalidate();
     },
     [getPath, carbon?.storage, revalidator]
-  );
-
-  const deleteModel = useCallback(
-    async (lineId: string) => {
-      if (!lineId || !carbon) return;
-
-      const [salesRfqLineResult, quoteLineResult, salesOrderLineResult] =
-        await Promise.all([
-          carbon
-            .from("salesRfqLine")
-            .update({ modelUploadId: null })
-            .eq("id", lineId),
-          carbon
-            .from("quoteLine")
-            .update({ modelUploadId: null })
-            .eq("id", lineId),
-          carbon
-            .from("salesOrderLine")
-            .update({ modelUploadId: null })
-            .eq("id", lineId),
-        ]);
-
-      if (salesRfqLineResult.error) {
-        toast.error("Error removing model from RFQ line");
-        return;
-      }
-
-      if (quoteLineResult.error) {
-        toast.error("Error removing model from quote line");
-        return;
-      }
-
-      if (salesOrderLineResult.error) {
-        toast.error("Error removing model from sales order line");
-        return;
-      }
-      toast.success("Model removed from line");
-      revalidator.revalidate();
-    },
-    [carbon, revalidator]
-  );
-
-  const downloadModel = useCallback(
-    async (model: ModelUpload) => {
-      if (!model.modelPath || !model.modelName) {
-        toast.error("Model data is missing");
-        return;
-      }
-
-      const result = await carbon?.storage
-        .from("private")
-        .download(model.modelPath);
-
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error downloading file");
-        return;
-      }
-
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      const url = window.URL.createObjectURL(result.data);
-      a.href = url;
-      a.download = model.modelName;
-      a.click();
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }, 0);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
   );
 
   const download = useCallback(
@@ -177,16 +105,8 @@ const useOpportunityLineDocuments = ({
         document.body.removeChild(a);
       }, 0);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [carbon?.storage, getPath]
   );
-
-  const getModelPath = useCallback((model: ModelUpload) => {
-    if (!model?.modelId) {
-      return "";
-    }
-    return path.to.file.cadModel(model.modelId);
-  }, []);
 
   const createDocumentRecord = useCallback(
     ({
@@ -209,7 +129,7 @@ const useOpportunityLineDocuments = ({
         method: "post",
         action: path.to.newDocument,
         navigate: false,
-        fetcherKey: `opportunity-line:${name}`,
+        fetcherKey: `supplier-interaction-line:${name}`,
       });
     },
     [id, submit, type]
@@ -251,44 +171,32 @@ const useOpportunityLineDocuments = ({
     canDelete,
     canUpdate,
     deleteFile,
-    deleteModel,
     download,
-    downloadModel,
     getPath,
-    getModelPath,
+
     upload,
   };
 };
 
-type OpportunityLineDocumentsProps = {
+type SupplierInteractionLineDocumentsProps = {
   files: FileObject[];
   id: string;
   lineId: string;
-  type: "Request for Quote" | "Sales Order" | "Quote";
-  modelUpload?: ModelUpload;
+  type: "Supplier Quote" | "Purchase Order";
 };
 
-const OpportunityLineDocuments = ({
+const SupplierInteractionLineDocuments = ({
   files,
   id,
   lineId,
-  modelUpload,
   type,
-}: OpportunityLineDocumentsProps) => {
-  const {
-    canDelete,
-    download,
-    downloadModel,
-    deleteFile,
-    deleteModel,
-    getPath,
-    getModelPath,
-    upload,
-  } = useOpportunityLineDocuments({
-    id,
-    lineId,
-    type,
-  });
+}: SupplierInteractionLineDocumentsProps) => {
+  const { canDelete, download, deleteFile, getPath, upload } =
+    useSupplierInteractionLineDocuments({
+      id,
+      lineId,
+      type,
+    });
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -319,7 +227,11 @@ const OpportunityLineDocuments = ({
             <CardTitle>Files</CardTitle>
           </CardHeader>
           <CardAction>
-            <OpportunityLineDocumentForm id={id} type={type} lineId={lineId} />
+            <SupplierInteractionLineDocumentForm
+              id={id}
+              type={type}
+              lineId={lineId}
+            />
           </CardAction>
         </HStack>
         <CardContent>
@@ -332,59 +244,6 @@ const OpportunityLineDocuments = ({
               </Tr>
             </Thead>
             <Tbody>
-              {modelUpload?.modelName && (
-                <Tr>
-                  <Td>
-                    <HStack>
-                      <DocumentIcon type="Model" />
-                      <VStack>
-                        <Hyperlink
-                          target="_blank"
-                          to={getModelPath(modelUpload)}
-                        >
-                          {modelUpload.modelName}
-                        </Hyperlink>
-                      </VStack>
-                    </HStack>
-                  </Td>
-                  <Td>
-                    {modelUpload.modelSize
-                      ? convertKbToString(
-                          Math.floor((modelUpload.modelSize ?? 0) / 1024)
-                        )
-                      : "--"}
-                  </Td>
-                  <Td>
-                    <div className="flex justify-end w-full">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            aria-label="More"
-                            icon={<LuMoreVertical />}
-                            variant="secondary"
-                          />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem asChild>
-                            <Link to={getModelPath(modelUpload)}>View</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => downloadModel(modelUpload)}
-                          >
-                            Download
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            disabled={!canDelete}
-                            onClick={() => deleteModel(lineId)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </Td>
-                </Tr>
-              )}
               {allFiles.map((file) => {
                 const type = getDocumentType(file.name);
                 return (
@@ -443,7 +302,7 @@ const OpportunityLineDocuments = ({
                   </Tr>
                 );
               })}
-              {allFiles.length === 0 && !modelUpload && (
+              {allFiles.length === 0 && (
                 <Tr>
                   <Td
                     colSpan={24}
@@ -462,21 +321,21 @@ const OpportunityLineDocuments = ({
   );
 };
 
-export default OpportunityLineDocuments;
+export default SupplierInteractionLineDocuments;
 
-type OpportunityLineDocumentFormProps = {
+type SupplierInteractionLineDocumentFormProps = {
   id: string;
   lineId: string;
-  type: "Request for Quote" | "Sales Order" | "Quote";
+  type: "Supplier Quote" | "Purchase Order";
 };
 
-const OpportunityLineDocumentForm = ({
+const SupplierInteractionLineDocumentForm = ({
   id,
   lineId,
   type,
-}: OpportunityLineDocumentFormProps) => {
+}: SupplierInteractionLineDocumentFormProps) => {
   const permissions = usePermissions();
-  const { upload } = useOpportunityLineDocuments({ id, lineId, type });
+  const { upload } = useSupplierInteractionLineDocuments({ id, lineId, type });
 
   const uploadFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

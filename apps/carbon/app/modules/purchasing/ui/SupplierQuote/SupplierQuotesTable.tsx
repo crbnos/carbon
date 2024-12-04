@@ -300,14 +300,14 @@ const SupplierQuotesTable = memo(
           }}
           primaryAction={
             permissions.can("create", "purchasing") && (
-              <New label="Quote" to={path.to.newQuote} />
+              <New label="SupplierQuote" to={path.to.newSupplierQuote} />
             )
           }
           renderContextMenu={renderContextMenu}
         />
         {selectedSupplierQuote && selectedSupplierQuote.id && (
           <ConfirmDelete
-            action={path.to.deleteQuote(selectedSupplierQuote.id)}
+            action={path.to.deleteSupplierQuote(selectedSupplierQuote.id)}
             isOpen={deleteSupplierQuoteModal.isOpen}
             name={selectedSupplierQuote.supplierQuoteId!}
             text={`Are you sure you want to delete ${selectedSupplierQuote.supplierQuoteId!}? This cannot be undone.`}
