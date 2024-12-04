@@ -8,6 +8,8 @@ import type {
   getSupplierInteractionByQuote,
   getSupplierLocations,
   getSupplierProcessesBySupplier,
+  getSupplierQuoteLinePricesByQuoteId,
+  getSupplierQuoteLines,
   getSupplierQuotes,
   getSuppliers,
   getSupplierStatuses,
@@ -65,6 +67,14 @@ export type SupplierProcess = NonNullable<
 
 export type SupplierQuote = NonNullable<
   Awaited<ReturnType<typeof getSupplierQuotes>>["data"]
+>[number];
+
+export type SupplierQuoteLine = NonNullable<
+  Awaited<ReturnType<typeof getSupplierQuoteLines>>["data"]
+>[number];
+
+export type SupplierQuoteLinePrice = NonNullable<
+  Awaited<ReturnType<typeof getSupplierQuoteLinePricesByQuoteId>>["data"]
 >[number];
 
 export type SupplierStatus = NonNullable<

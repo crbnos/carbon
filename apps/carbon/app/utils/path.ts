@@ -317,6 +317,8 @@ export const path = {
       generatePath(`${x}/supplier/${supplierId}/processes/delete/${id}`),
     deleteSupplierQuote: (id: string) =>
       generatePath(`${x}/supplier-quote/${id}/delete`),
+    deleteSupplierQuoteLine: (id: string, lineId: string) =>
+      generatePath(`${x}/supplier-quote/${id}/${lineId}/delete`),
     deleteSupplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/delete/${id}`),
     deleteSupplierType: (id: string) =>
@@ -798,6 +800,8 @@ export const path = {
     supplierQuoteFavorite: `${x}/purchasing/quotes/favorite`,
     supplierQuoteDetails: (id: string) =>
       generatePath(`${x}/supplier-quote/${id}/details`),
+    supplierQuoteLine: (id: string, lineId: string) =>
+      generatePath(`${x}/supplier-quote/${id}/${lineId}/details`),
     supplierRoot: `${x}/supplier`,
     supplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/${id}`),

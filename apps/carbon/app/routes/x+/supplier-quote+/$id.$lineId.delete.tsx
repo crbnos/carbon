@@ -4,7 +4,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { deleteQuoteLine } from "~/modules/sales";
+import { deleteSupplierQuoteLine } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -13,15 +13,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "sales",
   });
 
-  const { quoteId, lineId: quoteLineId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
-  if (!quoteLineId) throw new Error("Could not find quoteLineId");
+  const { id, lineId } = params;
+  if (!id) throw new Error("Could not find quoteId");
+  if (!lineId) throw new Error("Could not find quoteLineId");
 
-  const deleteLine = await deleteQuoteLine(client, quoteLineId);
+  const deleteLine = await deleteSupplierQuoteLine(client, lineId);
 
   if (deleteLine.error) {
     return json(
-      path.to.quoteLine(quoteId, quoteLineId),
+      path.to.supplierQuoteLine(id, lineId),
       await flash(
         request,
         error(deleteLine.error, "Failed to update quote line")
@@ -29,5 +29,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.quote(quoteId));
+  throw redirect(path.to.supplierQuote(id));
 }

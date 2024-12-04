@@ -143,6 +143,13 @@ export async function deleteSupplierQuote(
   return quote;
 }
 
+export async function deleteSupplierQuoteLine(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("supplierQuoteLine").delete().eq("id", id);
+}
+
 export async function deleteSupplierStatus(
   client: SupabaseClient<Database>,
   supplierStatusId: string
@@ -479,7 +486,7 @@ export async function getSupplierQuoteLines(
   supplierQuoteId: string
 ) {
   return client
-    .from("supplierQuoteLine")
+    .from("supplierQuoteLines")
     .select("*")
     .eq("supplierQuoteId", supplierQuoteId);
 }

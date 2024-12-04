@@ -21907,6 +21907,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "supplierQuoteLinePrice_supplierQuoteLineId_fkey";
+            columns: ["supplierQuoteLineId"];
+            isOneToOne: false;
+            referencedRelation: "supplierQuoteLines";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "supplierQuoteLinePrice_updatedBy_fkey";
             columns: ["updatedBy"];
             isOneToOne: false;
@@ -30231,6 +30238,166 @@ export type Database = {
           },
           {
             foreignKeyName: "supplierProcess_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          }
+        ];
+      };
+      supplierQuoteLines: {
+        Row: {
+          companyId: string | null;
+          conversionFactor: number | null;
+          createdBy: string | null;
+          customFields: Json | null;
+          description: string | null;
+          id: string | null;
+          inventoryUnitOfMeasureCode: string | null;
+          itemId: string | null;
+          itemReadableId: string | null;
+          notes: Json | null;
+          purchaseUnitOfMeasureCode: string | null;
+          supplierPartId: string | null;
+          supplierPartRevision: string | null;
+          supplierQuoteId: string | null;
+          supplierQuoteRevisionId: number | null;
+          tags: string[] | null;
+          taxPercent: number | null;
+          thumbnailPath: string | null;
+          unitCost: number | null;
+          updatedAt: string | null;
+          updatedBy: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "supplierQuoteLine_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "company";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "customFieldTables";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "integrations";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_inventoryUnitOfMeasureCode_fkey";
+            columns: ["inventoryUnitOfMeasureCode", "companyId"];
+            isOneToOne: false;
+            referencedRelation: "unitOfMeasure";
+            referencedColumns: ["code", "companyId"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey";
+            columns: ["itemId"];
+            isOneToOne: false;
+            referencedRelation: "item";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_purchaseUnitOfMeasureCode_fkey";
+            columns: ["purchaseUnitOfMeasureCode", "companyId"];
+            isOneToOne: false;
+            referencedRelation: "unitOfMeasure";
+            referencedColumns: ["code", "companyId"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_supplierQuoteId_fkey";
+            columns: ["supplierQuoteId"];
+            isOneToOne: false;
+            referencedRelation: "supplierQuote";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_supplierQuoteId_fkey";
+            columns: ["supplierQuoteId"];
+            isOneToOne: false;
+            referencedRelation: "supplierQuotes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_updatedBy_fkey";
             columns: ["updatedBy"];
             isOneToOne: false;
             referencedRelation: "userDefaults";

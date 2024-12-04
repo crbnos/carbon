@@ -161,8 +161,7 @@ CREATE POLICY "Users can delete their own supplier quote favorites" ON "supplier
   ); 
 
 DROP VIEW IF EXISTS "supplierQuotes";
-CREATE OR REPLACE VIEW
-  "supplierQuotes"
+CREATE OR REPLACE VIEW "supplierQuotes"
 WITH
   (SECURITY_INVOKER = true) AS
 SELECT
@@ -202,3 +201,15 @@ FROM
 ALTER TABLE "purchaseOrder" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
 ALTER TABLE "purchaseOrder" ADD COLUMN "externalNotes" JSON DEFAULT '{}'::JSON;
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "notes" JSON DEFAULT '{}'::JSON;
+
+
+DROP VIEW IF EXISTS "supplierQuoteLines";
+CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
+  SELECT
+    ql.*,
+    i."thumbnailPath",
+    ic."unitCost" as "unitCost"
+  FROM "supplierQuoteLine" ql
+  INNER JOIN "item" i ON i.id = ql."itemId"
+  LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
+);
