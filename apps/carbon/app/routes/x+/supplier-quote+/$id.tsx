@@ -6,7 +6,7 @@ import { Outlet, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { PanelProvider } from "~/components/Layout/Panels";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
 import type { PurchaseOrderLine } from "~/modules/purchasing";
 import {
@@ -17,6 +17,7 @@ import {
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines,
 } from "~/modules/purchasing";
+import SupplierQuoteExplorer from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -95,24 +96,22 @@ export default function SupplierQuoteRoute() {
     <PanelProvider>
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
         {/* <SupplierQuoteHeader />
+         */}
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
-            
-                <ResizablePanels
-                  explorer={<SupplierQuoteExplorer />}
-                  content={
-                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full"> */}
-        <VStack spacing={2} className="p-2">
-          <Outlet />
-        </VStack>
-        {/* </div>
-                  }
-                  properties={<SupplierQuoteProperties />}
-                /> 
-             
+            <ResizablePanels
+              explorer={<SupplierQuoteExplorer />}
+              content={
+                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={2} className="p-2">
+                    <Outlet />
+                  </VStack>
+                </div>
+              }
+              properties={null}
+            />
           </div>
         </div>
-                */}
       </div>
     </PanelProvider>
   );

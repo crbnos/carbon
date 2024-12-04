@@ -177,7 +177,6 @@ const PurchaseOrderLineForm = ({
             item.data?.unitOfMeasureCode ??
             "EA",
           inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-
           conversionFactor: itemReplenishment?.conversionFactor ?? 1,
           shelfId: inventory.data?.defaultShelfId ?? null,
         });

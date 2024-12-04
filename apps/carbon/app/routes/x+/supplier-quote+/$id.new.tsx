@@ -5,24 +5,25 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import {
-  quoteLineValidator,
-  upsertQuoteLine,
-  upsertQuoteLineMethod,
-} from "~/modules/sales";
+  supplierQuoteLineValidator,
+  upsertSupplierQuoteLine,
+} from "~/modules/purchasing";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await requirePermissions(request, {
-    create: "sales",
+    create: "purchasing",
   });
 
-  const { quoteId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
+  const { id: supplierQuoteId } = params;
+  if (!supplierQuoteId) throw new Error("Could not find supplierQuoteId");
 
   const formData = await request.formData();
-  const validation = await validator(quoteLineValidator).validate(formData);
+  const validation = await validator(supplierQuoteLineValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
@@ -31,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id, ...data } = validation.data;
 
   const serviceRole = getCarbonServiceRole();
-  const createQuotationLine = await upsertQuoteLine(serviceRole, {
+  const createQuotationLine = await upsertSupplierQuoteLine(serviceRole, {
     ...data,
     companyId,
     createdBy: userId,
@@ -40,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createQuotationLine.error) {
     throw redirect(
-      path.to.quote(quoteId),
+      path.to.supplierQuote(supplierQuoteId),
       await flash(
         request,
         error(createQuotationLine.error, "Failed to create quote line.")
@@ -49,25 +50,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const quoteLineId = createQuotationLine.data.id;
-  if (data.methodType === "Make") {
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-      quoteId,
-      quoteLineId,
-      itemId: data.itemId,
-      companyId,
-      userId,
-    });
 
-    if (upsertMethod.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(upsertMethod.error, "Failed to create quote line method.")
-        )
-      );
-    }
-  }
-
-  throw redirect(path.to.quoteLine(quoteId, quoteLineId));
+  throw redirect(path.to.supplierQuoteLine(supplierQuoteId, quoteLineId));
 }

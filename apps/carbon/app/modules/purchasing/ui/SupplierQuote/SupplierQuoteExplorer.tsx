@@ -40,11 +40,14 @@ export default function SupplierQuoteExplorer() {
 
   const supplierQuoteLineInitialValues = {
     supplierQuoteId: id,
-    supplierQuoteLineType: "Part" as const,
-    saleQuantity: 1,
-    unitPrice: 0,
-    addOnCost: 0,
-    shippingCost: 0,
+    status: "Draft" as const,
+    itemType: "Part" as const,
+    description: "",
+    itemId: "",
+    quantity: [1],
+    taxPercent: 0,
+    inventoryUnitOfMeasureCode: "",
+    purchaseUnitOfMeasureCode: "",
   };
 
   const newSupplierQuoteLineDisclosure = useDisclosure();
@@ -131,8 +134,14 @@ export default function SupplierQuoteExplorer() {
           onClose={newSupplierQuoteLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteSupplierQuoteLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLineDisclosure.isOpen && deleteLine?.id && (
+        <DeleteSupplierQuoteLine
+          line={{
+            itemReadableId: deleteLine?.itemReadableId ?? "",
+            id: deleteLine.id,
+          }}
+          onCancel={onDeleteCancel}
+        />
       )}
     </>
   );

@@ -72,6 +72,7 @@ CREATE TABLE "supplierQuoteLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "supplierQuoteId" TEXT NOT NULL,
   "supplierQuoteRevisionId" INTEGER NOT NULL DEFAULT 0,
+  "quantity" NUMERIC(20, 2)[] DEFAULT ARRAY[1]::NUMERIC(20, 2)[],
   "itemId" TEXT NOT NULL,
   "itemReadableId" TEXT,
   "description" TEXT NOT NULL,
@@ -100,6 +101,7 @@ CREATE TABLE "supplierQuoteLine" (
 );
 
 CREATE INDEX "supplierQuoteLine_supplierQuoteId_idx" ON "supplierQuoteLine" ("supplierQuoteId");
+
 
 CREATE TABLE "supplierQuoteLinePrice" (
   "supplierQuoteId" TEXT NOT NULL,

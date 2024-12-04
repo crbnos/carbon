@@ -14,8 +14,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { id, lineId } = params;
-  if (!id) throw new Error("Could not find quoteId");
-  if (!lineId) throw new Error("Could not find quoteLineId");
+  if (!id) throw new Error("Could not find supplierQuoteId");
+  if (!lineId) throw new Error("Could not find supplierQuoteLineId");
 
   const deleteLine = await deleteSupplierQuoteLine(client, lineId);
 
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.supplierQuoteLine(id, lineId),
       await flash(
         request,
-        error(deleteLine.error, "Failed to update quote line")
+        error(deleteLine.error, "Failed to delete quote line")
       )
     );
   }

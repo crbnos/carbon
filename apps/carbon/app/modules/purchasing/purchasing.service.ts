@@ -16,6 +16,7 @@ import type {
   supplierContactValidator,
   supplierPaymentValidator,
   supplierProcessValidator,
+  supplierQuoteLineValidator,
   supplierQuoteValidator,
   supplierShippingValidator,
   supplierStatusValidator,
@@ -1251,6 +1252,35 @@ export async function upsertSupplierQuote(
       })
       .eq("id", supplierQuote.id);
   }
+}
+
+export async function upsertSupplierQuoteLine(
+  client: SupabaseClient<Database>,
+  supplierQuoteLine:
+    | (Omit<z.infer<typeof supplierQuoteLineValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof supplierQuoteLineValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in supplierQuoteLine) {
+    return client
+      .from("supplierQuoteLine")
+      .update(sanitize(supplierQuoteLine))
+      .eq("id", supplierQuoteLine.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("supplierQuoteLine")
+    .insert([supplierQuoteLine])
+    .select("id")
+    .single();
 }
 
 export async function upsertSupplierStatus(

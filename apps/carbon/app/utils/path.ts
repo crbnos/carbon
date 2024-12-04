@@ -554,6 +554,8 @@ export const path = {
     newSupplierProcess: (id: string) =>
       generatePath(`${x}/supplier/${id}/processes/new`),
     newSupplierQuote: `${x}/supplier-quote/new`,
+    newSupplierQuoteLine: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/new`),
     newSupplierStatus: `${x}/purchasing/supplier-statuses/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
     newTag: `${x}/settings/tags/new`,

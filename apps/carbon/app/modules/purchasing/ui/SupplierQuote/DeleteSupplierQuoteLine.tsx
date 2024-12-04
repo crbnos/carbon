@@ -1,13 +1,12 @@
 import { useParams } from "@remix-run/react";
 import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
-import type { SupplierQuoteLine } from "../../types";
 
 export default function DeleteSupplierQuoteLine({
   line,
   onCancel,
 }: {
-  line: SupplierQuoteLine;
+  line: { itemReadableId: string; id: string };
   onCancel: () => void;
 }) {
   const { id } = useParams();

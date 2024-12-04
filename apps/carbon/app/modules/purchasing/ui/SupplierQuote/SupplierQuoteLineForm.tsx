@@ -21,7 +21,7 @@ import {
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
-import { TextArea, ValidatedForm } from "@carbon/form";
+import { ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -29,134 +29,109 @@ import { LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import {
   ArrayNumeric,
+  ConversionFactor,
   CustomFormFields,
   Hidden,
   InputControlled,
   Item,
   Number,
-  Select,
-  SelectControlled,
   Submit,
+  UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { Quotation, QuotationLine } from "~/modules/sales";
+import type { SupplierQuote } from "~/modules/purchasing";
 import {
-  DeleteQuoteLine,
-  quoteLineStatusType,
-  quoteLineValidator,
-} from "~/modules/sales";
-import { methodType } from "~/modules/shared";
+  DeleteSupplierQuoteLine,
+  supplierQuoteLineValidator,
+} from "~/modules/purchasing";
+import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
-type QuoteLineFormProps = {
-  initialValues: z.infer<typeof quoteLineValidator>;
+type SupplierQuoteLineFormProps = {
+  initialValues: z.infer<typeof supplierQuoteLineValidator> & {
+    itemType: MethodItemType;
+  };
   type?: "card" | "modal";
   onClose?: () => void;
 };
 
-const QuoteLineForm = ({
+const SupplierQuoteLineForm = ({
   initialValues,
   type,
   onClose,
-}: QuoteLineFormProps) => {
+}: SupplierQuoteLineFormProps) => {
   const permissions = usePermissions();
   const { company } = useUser();
   const { carbon } = useCarbon();
 
-  const { quoteId } = useParams();
+  const { id } = useParams();
 
-  if (!quoteId) throw new Error("quoteId not found");
+  if (!id) throw new Error("id not found");
 
   const routeData = useRouteData<{
-    quote: Quotation;
-  }>(path.to.quote(quoteId));
+    quote: SupplierQuote;
+  }>(path.to.supplierQuote(id));
 
-  const isEditable = ["Draft", "To Review"].includes(
+  const isEditable = ["Draft", "Submitted"].includes(
     routeData?.quote?.status ?? ""
   );
 
   const isEditing = initialValues.id !== undefined;
 
+  const [itemType, setItemType] = useState(initialValues.itemType);
   const [itemData, setItemData] = useState<{
-    customerPartId: string;
-    customerPartRevision: string;
+    supplierPartId: string;
     description: string;
     itemId: string;
     itemReadableId: string;
-    methodType: string;
-    modelUploadId: string | null;
-    uom: string;
+    inventoryUom: string;
+    purchaseUom: string;
+    conversionFactor: number;
   }>({
-    customerPartId: initialValues.customerPartId ?? "",
-    customerPartRevision: initialValues.customerPartRevision ?? "",
+    supplierPartId: initialValues.supplierPartId ?? "",
     itemId: initialValues.itemId ?? "",
     itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
-    methodType: initialValues.methodType ?? "",
-    uom: initialValues.unitOfMeasureCode ?? "",
-    modelUploadId: initialValues.modelUploadId ?? null,
+    inventoryUom: initialValues.inventoryUnitOfMeasureCode ?? "",
+    purchaseUom: initialValues.purchaseUnitOfMeasureCode ?? "",
+    conversionFactor: initialValues.conversionFactor ?? 1,
   });
 
-  const onCustomerPartChange = async (customerPartId: string) => {
-    if (!carbon || !routeData?.quote?.customerId) return;
+  const onSupplierPartChange = async (supplierPartId: string) => {
+    if (!carbon || !routeData?.quote?.supplierId) return;
 
-    const customerPart = await carbon
-      .from("customerPartToItem")
-      .select("itemId")
-      .eq("customerPartId", customerPartId)
-      .eq("customerPartRevision", itemData.customerPartRevision ?? "")
-      .eq("customerId", routeData?.quote?.customerId!)
+    const supplierPart = await carbon
+      .from("supplierPart")
+      .select("supplierPartId, itemId")
+      .eq("supplierPartId", supplierPartId)
+      .eq("supplierId", routeData?.quote?.supplierId!)
       .maybeSingle();
 
-    if (customerPart.error) {
-      toast.error("Failed to load customer part details");
+    if (supplierPart.error) {
+      toast.error("Failed to load supplier part details");
       return;
     }
 
-    if (customerPart.data && customerPart.data.itemId && !itemData.itemId) {
-      onItemChange(customerPart.data.itemId);
-    }
-  };
-
-  const onCustomerPartRevisionChange = async (customerPartRevision: string) => {
-    if (!carbon || !routeData?.quote?.customerId || !itemData.customerPartId)
-      return;
-
-    const customerPart = await carbon
-      .from("customerPartToItem")
-      .select("itemId")
-      .eq("customerPartId", itemData.customerPartId)
-      .eq("customerPartRevision", customerPartRevision ?? "")
-      .eq("customerId", routeData?.quote?.customerId!)
-      .maybeSingle();
-
-    if (customerPart.error) {
-      toast.error("Failed to load customer part details");
-      return;
-    }
-
-    if (customerPart.data && customerPart.data.itemId && !itemData.itemId) {
-      onItemChange(customerPart.data.itemId);
+    if (supplierPart.data && supplierPart.data.itemId && !itemData.itemId) {
+      onItemChange(supplierPart.data.itemId);
     }
   };
 
   const onItemChange = async (itemId: string) => {
     if (!carbon) return;
 
-    const [item, customerPart] = await Promise.all([
+    const [item, supplierPart] = await Promise.all([
       carbon
         .from("item")
-        .select(
-          "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
-        )
+        .select("name, readableId, unitOfMeasureCode")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
       carbon
-        .from("customerPartToItem")
-        .select("customerPartId, customerPartRevision")
+        .from("supplierPart")
+        .select("supplierPartId, supplierUnitOfMeasureCode, conversionFactor")
         .eq("itemId", itemId)
-        .eq("customerId", routeData?.quote?.customerId!)
+        .eq("supplierId", routeData?.quote?.supplierId!)
         .maybeSingle(),
     ]);
 
@@ -170,15 +145,16 @@ const QuoteLineForm = ({
       itemId,
       itemReadableId: item.data?.readableId ?? "",
       description: item.data?.name ?? "",
-      methodType: item.data?.defaultMethodType ?? "",
-      uom: item.data?.unitOfMeasureCode ?? "",
-      modelUploadId: item.data?.modelUploadId ?? null,
+      inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
+      purchaseUom:
+        supplierPart.data?.supplierUnitOfMeasureCode ??
+        item.data?.unitOfMeasureCode ??
+        "EA",
+      conversionFactor: supplierPart.data?.conversionFactor ?? 1,
     };
 
-    if (customerPart.data && !itemData.customerPartId) {
-      newItemData.customerPartId = customerPart.data.customerPartId;
-      newItemData.customerPartRevision =
-        customerPart.data.customerPartRevision ?? "";
+    if (supplierPart.data && !itemData.supplierPartId) {
+      newItemData.supplierPartId = supplierPart.data.supplierPartId ?? "";
     }
 
     setItemData(newItemData);
@@ -193,12 +169,12 @@ const QuoteLineForm = ({
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               defaultValues={initialValues}
-              validator={quoteLineValidator}
+              validator={supplierQuoteLineValidator}
               method="post"
               action={
                 isEditing
-                  ? path.to.quoteLine(quoteId, initialValues.id!)
-                  : path.to.newQuoteLine(quoteId)
+                  ? path.to.supplierQuoteLine(id, initialValues.id!)
+                  : path.to.newSupplierQuoteLine(id)
               }
               className="w-full"
               onSubmit={() => {
@@ -209,8 +185,8 @@ const QuoteLineForm = ({
                 <ModalCardHeader>
                   <ModalCardTitle>
                     {isEditing
-                      ? itemData?.itemReadableId ?? "Quote Line"
-                      : "New Quote Line"}
+                      ? itemData?.itemReadableId ?? "Supplier Quote Line"
+                      : "New Supplier Quote Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
                     {isEditing
@@ -218,7 +194,7 @@ const QuoteLineForm = ({
                       : "A quote line contains pricing and lead times for a particular part"}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                {isEditing && permissions.can("update", "sales") && (
+                {isEditing && permissions.can("update", "purchasing") && (
                   <CardAction>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -240,15 +216,14 @@ const QuoteLineForm = ({
               </HStack>
               <ModalCardBody>
                 <Hidden name="id" />
-                <Hidden name="quoteId" />
+                <Hidden name="supplierQuoteId" />
                 <Hidden
                   name="itemReadableId"
                   value={itemData?.itemReadableId}
                 />
-                <Hidden name="unitOfMeasureCode" value={itemData?.uom} />
                 <Hidden
-                  name="modelUploadId"
-                  value={itemData?.modelUploadId ?? undefined}
+                  name="inventoryUnitOfMeasureCode"
+                  value={itemData?.inventoryUom}
                 />
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
@@ -257,11 +232,25 @@ const QuoteLineForm = ({
                         autoFocus
                         name="itemId"
                         label="Part"
-                        type="Part"
+                        type={itemType}
                         value={itemData.itemId}
                         includeInactive
+                        replenishmentSystem="Buy"
                         onChange={(value) => {
                           onItemChange(value?.value as string);
+                        }}
+                        onTypeChange={(type) => {
+                          setItemType(type);
+                          setItemData({
+                            ...itemData,
+                            itemId: "",
+                            itemReadableId: "",
+                            description: "",
+                            inventoryUom: "",
+                            purchaseUom: "",
+                            conversionFactor: 1,
+                            supplierPartId: "",
+                          });
                         }}
                       />
 
@@ -271,59 +260,42 @@ const QuoteLineForm = ({
                         value={itemData.description}
                       />
 
-                      <SelectControlled
-                        name="methodType"
-                        label="Method"
-                        options={
-                          methodType.map((m) => ({
-                            label: m,
-                            value: m,
-                          })) ?? []
-                        }
-                        value={itemData.methodType}
+                      <InputControlled
+                        name="supplierPartId"
+                        label="Supplier Part Number"
+                        value={itemData.supplierPartId}
                         onChange={(newValue) => {
-                          if (newValue)
+                          setItemData((d) => ({
+                            ...d,
+                            supplierPartId: newValue,
+                          }));
+                        }}
+                        onBlur={(e) => onSupplierPartChange(e.target.value)}
+                      />
+                      <UnitOfMeasure
+                        name="purchaseUnitOfMeasureCode"
+                        label="Unit of Measure"
+                        value={itemData.purchaseUom}
+                        onChange={(newValue) => {
+                          if (newValue) {
                             setItemData((d) => ({
                               ...d,
-                              methodType: newValue?.value,
+                              purchaseUom: newValue?.value as string,
                             }));
+                          }
                         }}
                       />
-
-                      <Select
-                        name="status"
-                        label="Line Status"
-                        options={quoteLineStatusType.map((s) => ({
-                          label: s,
-                          value: s,
-                        }))}
-                      />
-
-                      <InputControlled
-                        name="customerPartId"
-                        label="Customer Part Number"
-                        value={itemData.customerPartId}
-                        onChange={(newValue) => {
+                      <ConversionFactor
+                        name="conversionFactor"
+                        purchasingCode={itemData.purchaseUom}
+                        inventoryCode={itemData.inventoryUom}
+                        value={itemData.conversionFactor}
+                        onChange={(value) => {
                           setItemData((d) => ({
                             ...d,
-                            customerPartId: newValue,
+                            conversionFactor: value,
                           }));
                         }}
-                        onBlur={(e) => onCustomerPartChange(e.target.value)}
-                      />
-                      <InputControlled
-                        name="customerPartRevision"
-                        label="Customer Part Revision"
-                        value={itemData.customerPartRevision}
-                        onChange={(newValue) => {
-                          setItemData((d) => ({
-                            ...d,
-                            customerPartRevision: newValue,
-                          }));
-                        }}
-                        onBlur={(e) =>
-                          onCustomerPartRevisionChange(e.target.value)
-                        }
                       />
                       <Number
                         name="taxPercent"
@@ -338,13 +310,7 @@ const QuoteLineForm = ({
                         }}
                       />
 
-                      <CustomFormFields table="quoteLine" />
-                      {initialValues.status === "No Quote" && (
-                        <TextArea
-                          name="noQuoteReason"
-                          label="No Quote Reason"
-                        />
-                      )}
+                      <CustomFormFields table="supplierQuoteLine" />
                     </div>
                     <div className="flex gap-y-4">
                       <ArrayNumeric
@@ -362,8 +328,8 @@ const QuoteLineForm = ({
                   isDisabled={
                     !isEditable ||
                     (isEditing
-                      ? !permissions.can("update", "sales")
-                      : !permissions.can("create", "sales"))
+                      ? !permissions.can("update", "purchasing")
+                      : !permissions.can("create", "purchasing"))
                   }
                 >
                   Save
@@ -373,9 +339,12 @@ const QuoteLineForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-      {isEditing && deleteDisclosure.isOpen && (
-        <DeleteQuoteLine
-          line={initialValues as QuotationLine}
+      {isEditing && deleteDisclosure.isOpen && initialValues.id && (
+        <DeleteSupplierQuoteLine
+          line={{
+            itemReadableId: itemData.itemReadableId ?? "",
+            id: initialValues.id,
+          }}
           onCancel={deleteDisclosure.onClose}
         />
       )}
@@ -383,4 +352,4 @@ const QuoteLineForm = ({
   );
 };
 
-export default QuoteLineForm;
+export default SupplierQuoteLineForm;
