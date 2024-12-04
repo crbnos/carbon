@@ -199,7 +199,7 @@ export const JobOperation = ({
         key={operation.id}
         value={activeTab}
         onValueChange={setActiveTab}
-        className="w-full h-full bg-card"
+        className="w-full h-screen bg-card relative"
         style={
           { "--controls-height": `${controlsHeight}px` } as React.CSSProperties
         }
