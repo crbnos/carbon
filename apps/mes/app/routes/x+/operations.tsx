@@ -240,73 +240,76 @@ export default function Operations() {
   }, [processes, workCenters]);
 
   return (
-    <>
+    <div className="flex flex-col h-full w-full">
       <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
         <div className="flex items-center gap-2 px-2">
           <SidebarTrigger />
           <Heading size="h4">Schedule</Heading>
         </div>
       </header>
-      <main className="flex flex-1 w-full h-[calc(100vh-var(--header-height))] overflow-hidden">
-        <div className="flex flex-col h-full max-h-full w-full overflow-x-auto relative">
-          <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
+      <div className="flex flex-col h-full max-h-full  overflow-auto relative">
+        <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
+          <HStack>
+            <SearchFilter param="search" size="sm" placeholder="Search" />
+
+            <Filter filters={filters} />
+          </HStack>
+        </HStack>
+        {currentFilters.length > 0 && (
+          <HStack className="px-4 py-1.5 justify-between bg-card border-b border-border w-full">
             <HStack>
-              <SearchFilter param="search" size="sm" placeholder="Search" />
-              <Filter filters={filters} />
+              <ActiveFilters filters={filters} />
             </HStack>
           </HStack>
-          {currentFilters.length > 0 && (
-            <HStack className="h-[var(--filters-height)] px-4 py-1.5 justify-between bg-card border-b border-border w-full">
-              <HStack>
-                <ActiveFilters filters={filters} />
-              </HStack>
-            </HStack>
-          )}
-          {columns.length > 0 ? (
-            <ClientOnly
-              fallback={
-                <div className="flex h-full w-full items-center justify-center">
-                  <Spinner className="h-8 w-8" />
+        )}
+        <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
+          <div className="flex flex-1 min-h-0 w-full relative">
+            {columns.length > 0 ? (
+              <ClientOnly
+                fallback={
+                  <div className="flex w-full h-full items-center justify-center">
+                    <Spinner className="h-8 w-8" />
+                  </div>
+                }
+              >
+                {() => (
+                  <Kanban
+                    columns={columns}
+                    items={items}
+                    showCustomer
+                    showDescription
+                    showDueDate
+                    showDuration
+                    showEmployee
+                    showProgress
+                    showStatus
+                    showSalesOrder
+                  />
+                )}
+              </ClientOnly>
+            ) : hasFilters ? (
+              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+                <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+                  <LuAlertTriangle className="h-6 w-6" />
                 </div>
-              }
-            >
-              {() => (
-                <Kanban
-                  columns={columns}
-                  items={items}
-                  showCustomer
-                  showDescription
-                  showDueDate
-                  showDuration
-                  showEmployee
-                  showProgress={false}
-                  showStatus
-                  showSalesOrder
-                />
-              )}
-            </ClientOnly>
-          ) : hasFilters ? (
-            <div className="flex flex-col w-full h-full items-center justify-center gap-4">
-              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                <LuAlertTriangle className="h-6 w-6" />
+                <span className="text-xs font-mono font-light text-foreground uppercase">
+                  No results
+                </span>
+                <Button onClick={clearFilters}>Clear Filters</Button>
               </div>
-              <span className="text-xs font-mono font-light text-foreground uppercase">
-                No results
-              </span>
-              <Button onClick={clearFilters}>Clear Filters</Button>
-            </div>
-          ) : (
-            <div className="flex flex-col w-full h-full items-center justify-center gap-4">
-              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                <LuAlertTriangle className="h-6 w-6" />
+            ) : (
+              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+                <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+                  <LuAlertTriangle className="h-6 w-6" />
+                </div>
+                <span className="text-xs font-mono font-light text-foreground uppercase">
+                  No work centers exist
+                </span>
               </div>
-              <span className="text-xs font-mono font-light text-foreground uppercase">
-                No operations are scheduled
-              </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </main>
-    </>
+      </div>
+    </div>
   );
 }

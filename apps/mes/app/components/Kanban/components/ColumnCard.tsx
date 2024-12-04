@@ -31,7 +31,7 @@ export function ColumnCard({
   ...displaySettings
 }: ColumnCardProps) {
   const [params] = useUrlParams();
-  const currentFilters = params.getAll("filter");
+  const currentFilters = params.getAll("filter").filter(Boolean);
   const itemsIds = useMemo(() => {
     return items.map((item) => item.id);
   }, [items]);
@@ -130,7 +130,7 @@ export function ColumnCard({
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
 
-  const variations = cva("px-0 flex lg:justify-center", {
+  const variations = cva("relative px-0 flex lg:justify-center", {
     variants: {
       dragging: {
         default: "snap-x snap-mandatory",

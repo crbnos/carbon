@@ -3,7 +3,7 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import { SidebarInset, SidebarProvider, TooltipProvider } from "@carbon/react";
+import { SidebarProvider, TooltipProvider } from "@carbon/react";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
@@ -126,9 +126,7 @@ export default function AuthenticatedRoute() {
                 location={location}
                 locations={locations}
               />
-              <SidebarInset className="bg-card">
-                <Outlet />
-              </SidebarInset>
+              <Outlet />
             </TooltipProvider>
           </SidebarProvider>
         </RealtimeDataProvider>
