@@ -4,9 +4,7 @@ import { json } from "@vercel/remix";
 import { getScrapReasonsList } from "~/services/operations.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-  });
+  const { client, companyId } = await requirePermissions(request, {});
 
   return json(await getScrapReasonsList(client, companyId));
 }
