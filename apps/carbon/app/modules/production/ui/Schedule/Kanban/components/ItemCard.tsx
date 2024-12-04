@@ -129,13 +129,6 @@ export function ItemCard({
       ? new Date(item.dueDate) < new Date()
       : false;
 
-  console.log({
-    value:
-      item.progress && item.duration
-        ? (item.progress / item.duration) * 100
-        : 0,
-  });
-
   return (
     <Card
       ref={setNodeRef}

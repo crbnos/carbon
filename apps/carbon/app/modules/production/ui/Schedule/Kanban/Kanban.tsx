@@ -248,8 +248,6 @@ const Kanban = ({
                       ? "In Progress"
                       : activeItem.status,
                     progress: progressByItemId[activeItem.id]?.progress ?? 0,
-                    duration:
-                      progressByItemId[activeItem.id]?.totalDuration ?? 0,
                   }}
                   isOverlay
                   {...displaySettings}

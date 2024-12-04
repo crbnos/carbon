@@ -199,7 +199,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         subtitle: op.itemReadableId,
         description: op.description,
         dueDate: op.jobDueDate,
-        duration: 0, // set in the client
+        duration:
+          operation.setupDuration +
+          operation.laborDuration +
+          operation.machineDuration, // set in the client
         progress: 0, // set in the client
         deadlineType: op.jobDeadlineType,
         customerId: op.jobCustomerId,

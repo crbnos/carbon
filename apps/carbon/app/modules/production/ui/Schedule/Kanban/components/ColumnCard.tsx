@@ -46,7 +46,7 @@ export function ColumnCard({
 
   const totalDuration = items.reduce((acc, item) => {
     const progress = progressByItemId[item.id]?.progress ?? 0;
-    const duration = progressByItemId[item.id]?.totalDuration ?? 0;
+    const duration = item.duration ?? 0;
     const effectiveDuration = Math.max(duration - progress, 0);
     return acc + effectiveDuration;
   }, 0);
@@ -139,7 +139,6 @@ export function ColumnCard({
                     ? "In Progress"
                     : item.status,
                   progress: progressByItemId[item.id]?.progress ?? 0,
-                  duration: progressByItemId[item.id]?.totalDuration ?? 0,
                 }}
                 {...displaySettings}
               />
