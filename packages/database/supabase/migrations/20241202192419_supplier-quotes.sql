@@ -209,6 +209,7 @@ DROP VIEW IF EXISTS "supplierQuoteLines";
 CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
   SELECT
     ql.*,
+    i."type" as "itemType",
     i."thumbnailPath",
     ic."unitCost" as "unitCost"
   FROM "supplierQuoteLine" ql

@@ -165,6 +165,19 @@ export default function QuoteLine() {
   return (
     <Fragment key={lineId}>
       <QuoteLineForm key={lineId} initialValues={initialValues} />
+      {line.status !== "No Quote" && (
+        <QuoteLinePricing
+          line={line}
+          pricesByQuantity={pricesByQuantity}
+          getLineCosts={getLineCosts}
+        />
+      )}
+      {line.methodType === "Make" && line.status !== "No Quote" && (
+        <QuoteLineCosting
+          quantities={line.quantity ?? [1]}
+          getLineCosts={getLineCosts}
+        />
+      )}
       <OpportunityLineNotes
         id={line.id}
         table="quoteLine"
@@ -206,19 +219,6 @@ export default function QuoteLine() {
         />
       </div>
 
-      {line.methodType === "Make" && line.status !== "No Quote" && (
-        <QuoteLineCosting
-          quantities={line.quantity ?? [1]}
-          getLineCosts={getLineCosts}
-        />
-      )}
-      {line.status !== "No Quote" && (
-        <QuoteLinePricing
-          line={line}
-          pricesByQuantity={pricesByQuantity}
-          getLineCosts={getLineCosts}
-        />
-      )}
       <Outlet />
     </Fragment>
   );

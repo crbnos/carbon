@@ -8,19 +8,19 @@ import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { Fragment, Suspense } from "react";
-import { CadModel } from "~/components";
-import { usePermissions } from "~/hooks";
 import type { SupplierQuoteLinePrice } from "~/modules/purchasing";
 import {
   getSupplierInteractionLineDocuments,
+  getSupplierQuoteLine,
   getSupplierQuoteLinePrices,
-  getSupplierQuoteLines,
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes,
   SupplierQuoteLineForm,
+  SupplierQuoteLinePricing,
   supplierQuoteLineValidator,
   upsertSupplierQuoteLine,
 } from "~/modules/purchasing";
+import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -40,13 +40,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const serviceRole = await getCarbonServiceRole();
 
   const [line, prices] = await Promise.all([
-    getSupplierQuoteLines(serviceRole, lineId),
+    getSupplierQuoteLine(serviceRole, lineId),
     getSupplierQuoteLinePrices(serviceRole, lineId),
   ]);
 
   if (line.error) {
     throw redirect(
-      path.to.quote(id),
+      path.to.supplierQuote(id),
       await flash(request, error(line.error, "Failed to load line"))
     );
   }
@@ -94,20 +94,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (updateSupplierQuoteLine.error) {
     throw redirect(
-      path.to.quoteLine(id, lineId),
+      path.to.supplierQuoteLine(id, lineId),
       await flash(
         request,
-        error(updateSupplierQuoteLine.error, "Failed to update quote line")
+        error(
+          updateSupplierQuoteLine.error,
+          "Failed to update supplierQuote line"
+        )
       )
     );
   }
 
-  throw redirect(path.to.quoteLine(id, lineId));
+  throw redirect(path.to.supplierQuoteLine(id, lineId));
 }
 
-export default function QuoteLine() {
+export default function SupplierQuoteLine() {
   const { line, files, pricesByQuantity } = useLoaderData<typeof loader>();
-  const permissions = usePermissions();
+
   const { id, lineId } = useParams();
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
@@ -115,25 +118,27 @@ export default function QuoteLine() {
   const initialValues = {
     ...line,
     id: line.id ?? undefined,
-    purchasingQuoteId: line.purchasingQuoteId ?? "",
-    customerPartId: line.customerPartId ?? "",
-    customerPartRevision: line.customerPartRevision ?? "",
+    supplierQuoteId: line.supplierQuoteId ?? "",
+    supplierPartId: line.supplierPartId ?? "",
+    supplierPartRevision: line.supplierPartRevision ?? "",
     description: line.description ?? "",
-    estimatorId: line.estimatorId ?? "",
     itemId: line.itemId ?? "",
     itemReadableId: line.itemReadableId ?? "",
-    methodType: line.methodType ?? "Make",
-    modelUploadId: line.modelUploadId ?? undefined,
-    noQuoteReason: line.noQuoteReason ?? undefined,
-    status: line.status ?? "Not Started",
     quantity: line.quantity ?? [1],
-    unitOfMeasureCode: line.unitOfMeasureCode ?? "",
+    inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode ?? "",
+    purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode ?? "",
+    conversionFactor: line.conversionFactor ?? undefined,
     taxPercent: line.taxPercent ?? 0,
+    itemType: (line.itemType ?? "Part") as MethodItemType,
   };
 
   return (
     <Fragment key={lineId}>
       <SupplierQuoteLineForm key={lineId} initialValues={initialValues} />
+      <SupplierQuoteLinePricing
+        line={line}
+        pricesByQuantity={pricesByQuantity}
+      />
       <SupplierInteractionLineNotes
         id={line.id}
         table="supplierQuoteLine"
@@ -141,40 +146,25 @@ export default function QuoteLine() {
         subTitle={line.itemReadableId ?? ""}
         notes={line.notes as JSONContent}
       />
-      <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
-        <Suspense
-          fallback={
-            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
-              <Spinner className="h-10 w-10" />
-            </div>
-          }
-        >
-          <Await resolve={files}>
-            {(resolvedFiles) => (
-              <SupplierInteractionLineDocuments
-                files={resolvedFiles ?? []}
-                id={id}
-                lineId={lineId}
-                type="Supplier Quote"
-              />
-            )}
-          </Await>
-        </Suspense>
 
-        <CadModel
-          isReadOnly={!permissions.can("update", "purchasing")}
-          metadata={{
-            quoteLineId: line.id ?? undefined,
-            itemId: line.itemId ?? undefined,
-          }}
-          modelPath={line?.modelPath ?? null}
-          title="CAD Model"
-          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
-          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
-        />
-      </div>
-
-      <QuoteLinePricing line={line} pricesByQuantity={pricesByQuantity} />
+      <Suspense
+        fallback={
+          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
+        }
+      >
+        <Await resolve={files}>
+          {(resolvedFiles) => (
+            <SupplierInteractionLineDocuments
+              files={resolvedFiles ?? []}
+              id={id}
+              lineId={lineId}
+              type="Supplier Quote"
+            />
+          )}
+        </Await>
+      </Suspense>
 
       <Outlet />
     </Fragment>

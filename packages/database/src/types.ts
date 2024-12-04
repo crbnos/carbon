@@ -21601,6 +21601,7 @@ export type Database = {
           itemReadableId: string | null;
           notes: Json | null;
           purchaseUnitOfMeasureCode: string | null;
+          quantity: number[] | null;
           supplierPartId: string | null;
           supplierPartRevision: string | null;
           supplierQuoteId: string;
@@ -21622,6 +21623,7 @@ export type Database = {
           itemReadableId?: string | null;
           notes?: Json | null;
           purchaseUnitOfMeasureCode?: string | null;
+          quantity?: number[] | null;
           supplierPartId?: string | null;
           supplierPartRevision?: string | null;
           supplierQuoteId: string;
@@ -21643,6 +21645,7 @@ export type Database = {
           itemReadableId?: string | null;
           notes?: Json | null;
           purchaseUnitOfMeasureCode?: string | null;
+          quantity?: number[] | null;
           supplierPartId?: string | null;
           supplierPartRevision?: string | null;
           supplierQuoteId?: string;
@@ -30256,8 +30259,10 @@ export type Database = {
           inventoryUnitOfMeasureCode: string | null;
           itemId: string | null;
           itemReadableId: string | null;
+          itemType: Database["public"]["Enums"]["itemType"] | null;
           notes: Json | null;
           purchaseUnitOfMeasureCode: string | null;
+          quantity: number[] | null;
           supplierPartId: string | null;
           supplierPartRevision: string | null;
           supplierQuoteId: string | null;

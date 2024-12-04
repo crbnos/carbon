@@ -482,6 +482,17 @@ export async function getSupplierQuotes(
   return query;
 }
 
+export async function getSupplierQuoteLine(
+  client: SupabaseClient<Database>,
+  supplierQuoteLineId: string
+) {
+  return client
+    .from("supplierQuoteLines")
+    .select("*")
+    .eq("id", supplierQuoteLineId)
+    .single();
+}
+
 export async function getSupplierQuoteLines(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -490,6 +501,16 @@ export async function getSupplierQuoteLines(
     .from("supplierQuoteLines")
     .select("*")
     .eq("supplierQuoteId", supplierQuoteId);
+}
+
+export async function getSupplierQuoteLinePrices(
+  client: SupabaseClient<Database>,
+  supplierQuoteLineId: string
+) {
+  return client
+    .from("supplierQuoteLinePrice")
+    .select("*")
+    .eq("supplierQuoteLineId", supplierQuoteLineId);
 }
 
 export async function getSupplierQuoteLinePricesByQuoteId(
