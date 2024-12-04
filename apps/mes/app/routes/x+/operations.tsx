@@ -280,10 +280,10 @@ export default function Operations() {
                     showDescription
                     showDueDate
                     showDuration
-                    showEmployee
-                    showProgress
+                    showEmployee={false}
+                    showProgress={false}
                     showStatus
-                    showSalesOrder
+                    showSalesOrder={false}
                   />
                 )}
               </ClientOnly>
