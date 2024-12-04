@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (quote.error) {
     throw redirect(
-      path.to.quotes,
+      path.to.supplierQuotes,
       await flash(request, error(quote.error, "Failed to load quote"))
     );
   }

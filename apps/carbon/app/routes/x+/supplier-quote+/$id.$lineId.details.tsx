@@ -7,30 +7,20 @@ import { Spinner } from "@carbon/react";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { Fragment, Suspense, useMemo } from "react";
+import { Fragment, Suspense } from "react";
 import { CadModel } from "~/components";
-import type { Tree } from "~/components/TreeView";
-import { usePermissions, useRealtime, useRouteData } from "~/hooks";
-import type {
-  Quotation,
-  QuotationOperation,
-  QuotationPrice,
-  QuoteMethod,
-} from "~/modules/sales";
+import { usePermissions } from "~/hooks";
+import type { SupplierQuoteLinePrice } from "~/modules/purchasing";
 import {
-  getOpportunityLineDocuments,
-  getQuoteLine,
-  getQuoteLinePrices,
-  getQuoteOperationsByLine,
-  OpportunityLineDocuments,
-  OpportunityLineNotes,
-  QuoteLineCosting,
-  QuoteLineForm,
-  QuoteLinePricing,
-  quoteLineValidator,
-  upsertQuoteLine,
-  useLineCosts,
-} from "~/modules/sales";
+  getSupplierInteractionLineDocuments,
+  getSupplierQuoteLinePrices,
+  getSupplierQuoteLines,
+  SupplierInteractionLineDocuments,
+  SupplierInteractionLineNotes,
+  SupplierQuoteLineForm,
+  supplierQuoteLineValidator,
+  upsertSupplierQuoteLine,
+} from "~/modules/purchasing";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -40,34 +30,32 @@ export const config = {
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await requirePermissions(request, {
-    view: "sales",
+    view: "purchasing",
   });
 
-  const { quoteId, lineId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
+  const { id, lineId } = params;
+  if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
   const serviceRole = await getCarbonServiceRole();
 
-  const [line, operations, prices] = await Promise.all([
-    getQuoteLine(serviceRole, lineId),
-    getQuoteOperationsByLine(serviceRole, lineId),
-    getQuoteLinePrices(serviceRole, lineId),
+  const [line, prices] = await Promise.all([
+    getSupplierQuoteLines(serviceRole, lineId),
+    getSupplierQuoteLinePrices(serviceRole, lineId),
   ]);
 
   if (line.error) {
     throw redirect(
-      path.to.quote(quoteId),
+      path.to.quote(id),
       await flash(request, error(line.error, "Failed to load line"))
     );
   }
 
   return defer({
     line: line.data,
-    operations: operations?.data ?? [],
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId),
+    files: getSupplierInteractionLineDocuments(serviceRole, companyId, lineId),
     pricesByQuantity: (prices?.data ?? []).reduce<
-      Record<number, QuotationPrice>
+      Record<number, SupplierQuoteLinePrice>
     >((acc, price) => {
       acc[price.quantity] = price;
       return acc;
@@ -78,75 +66,56 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await requirePermissions(request, {
-    create: "sales",
+    create: "purchasing",
   });
 
-  const { quoteId, lineId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
+  const { id, lineId } = params;
+  if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
   const formData = await request.formData();
 
-  const validation = await validator(quoteLineValidator).validate(formData);
+  const validation = await validator(supplierQuoteLineValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const { id, ...data } = validation.data;
+  const { id: _id, ...data } = validation.data;
 
-  const updateQuotationLine = await upsertQuoteLine(client, {
+  const updateSupplierQuoteLine = await upsertSupplierQuoteLine(client, {
     id: lineId,
     ...data,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (updateQuotationLine.error) {
+  if (updateSupplierQuoteLine.error) {
     throw redirect(
-      path.to.quoteLine(quoteId, lineId),
+      path.to.quoteLine(id, lineId),
       await flash(
         request,
-        error(updateQuotationLine.error, "Failed to update quote line")
+        error(updateSupplierQuoteLine.error, "Failed to update quote line")
       )
     );
   }
 
-  throw redirect(path.to.quoteLine(quoteId, lineId));
+  throw redirect(path.to.quoteLine(id, lineId));
 }
 
 export default function QuoteLine() {
-  const { line, operations, files, pricesByQuantity } =
-    useLoaderData<typeof loader>();
+  const { line, files, pricesByQuantity } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const { quoteId, lineId } = useParams();
-  if (!quoteId) throw new Error("Could not find quoteId");
+  const { id, lineId } = useParams();
+  if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
-
-  // useRealtime("quoteLine", `id=eq.${lineId}`);
-  useRealtime("quoteMaterial", `quoteLineId=eq.${lineId}`);
-  useRealtime("quoteOperation", `quoteLineId=eq.${lineId}`);
-
-  const quoteData = useRouteData<{
-    methods: Tree<QuoteMethod>[];
-    quote: Quotation;
-  }>(path.to.quote(quoteId));
-
-  const methodTree = useMemo(
-    () => quoteData?.methods?.find((m) => m.data.quoteLineId === line.id),
-    [quoteData, line.id]
-  );
-
-  const getLineCosts = useLineCosts({
-    methodTree,
-    operations: operations as QuotationOperation[],
-    unitCost: line.unitCost ?? 0,
-  });
 
   const initialValues = {
     ...line,
     id: line.id ?? undefined,
-    quoteId: line.quoteId ?? "",
+    purchasingQuoteId: line.purchasingQuoteId ?? "",
     customerPartId: line.customerPartId ?? "",
     customerPartRevision: line.customerPartRevision ?? "",
     description: line.description ?? "",
@@ -164,10 +133,10 @@ export default function QuoteLine() {
 
   return (
     <Fragment key={lineId}>
-      <QuoteLineForm key={lineId} initialValues={initialValues} />
-      <OpportunityLineNotes
+      <SupplierQuoteLineForm key={lineId} initialValues={initialValues} />
+      <SupplierInteractionLineNotes
         id={line.id}
-        table="quoteLine"
+        table="supplierQuoteLine"
         title="Notes"
         subTitle={line.itemReadableId ?? ""}
         notes={line.notes as JSONContent}
@@ -182,19 +151,18 @@ export default function QuoteLine() {
         >
           <Await resolve={files}>
             {(resolvedFiles) => (
-              <OpportunityLineDocuments
+              <SupplierInteractionLineDocuments
                 files={resolvedFiles ?? []}
-                id={quoteId}
+                id={id}
                 lineId={lineId}
-                modelUpload={line ?? undefined}
-                type="Quote"
+                type="Supplier Quote"
               />
             )}
           </Await>
         </Suspense>
 
         <CadModel
-          isReadOnly={!permissions.can("update", "sales")}
+          isReadOnly={!permissions.can("update", "purchasing")}
           metadata={{
             quoteLineId: line.id ?? undefined,
             itemId: line.itemId ?? undefined,
@@ -206,19 +174,8 @@ export default function QuoteLine() {
         />
       </div>
 
-      {line.methodType === "Make" && line.status !== "No Quote" && (
-        <QuoteLineCosting
-          quantities={line.quantity ?? [1]}
-          getLineCosts={getLineCosts}
-        />
-      )}
-      {line.status !== "No Quote" && (
-        <QuoteLinePricing
-          line={line}
-          pricesByQuantity={pricesByQuantity}
-          getLineCosts={getLineCosts}
-        />
-      )}
+      <QuoteLinePricing line={line} pricesByQuantity={pricesByQuantity} />
+
       <Outlet />
     </Fragment>
   );
