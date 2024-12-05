@@ -85,7 +85,6 @@ export async function deleteSupplierContact(
     }
     return supplierContactDelete;
   }
-
   return supplierContact;
 }
 
