@@ -8,6 +8,10 @@ export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Supplier Quote" }];
 };
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export const handle: Handle = {
   breadcrumb: "Purchasing",
   to: path.to.supplierQuotes,
