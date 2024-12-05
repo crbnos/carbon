@@ -54,8 +54,8 @@ CREATE TABLE "supplierQuote" (
   CONSTRAINT "supplierQuote_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "supplierQuote_quoteId_key" UNIQUE ("supplierQuoteId", "companyId"),
   CONSTRAINT "supplierQuote_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "supplierQuote_supplierLocationId_fkey" FOREIGN KEY ("supplierLocationId") REFERENCES "supplierLocation" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT "supplierQuote_supplierContactId_fkey" FOREIGN KEY ("supplierContactId") REFERENCES "supplierContact" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "supplierQuote_supplierLocationId_fkey" FOREIGN KEY ("supplierLocationId") REFERENCES "supplierLocation" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "supplierQuote_supplierContactId_fkey" FOREIGN KEY ("supplierContactId") REFERENCES "supplierContact" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "supplierQuote_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "supplierQuote_currencyCode_fkey" FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "supplierQuote_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -106,16 +106,13 @@ CREATE TABLE "supplierQuoteLinePrice" (
   "supplierQuoteLineId" TEXT NOT NULL,
   "quantity" NUMERIC(10,5) NOT NULL DEFAULT 1,
   "leadTime" NUMERIC(10,5) NOT NULL DEFAULT 0,
-  "discountPercent" NUMERIC(10,5) NOT NULL DEFAULT 0,
-  "unitPrice" NUMERIC(10,5) NOT NULL DEFAULT 0,
+  "supplierUnitPrice" NUMERIC(10,5) NOT NULL DEFAULT 0,
   "exchangeRate" NUMERIC(10,4) DEFAULT 1,
-  "convertedUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate") STORED,
-  "netUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * (1 - "discountPercent")) STORED,
-  "convertedNetUnitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate" * (1 - "discountPercent")) STORED,
-  "netExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * (1 - "discountPercent") * "quantity") STORED,
-  "convertedNetExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("unitPrice" * "exchangeRate" * (1 - "discountPercent") * "quantity") STORED,
-  "shippingCost" NUMERIC(10,5) NOT NULL DEFAULT 0,
-  "convertedShippingCost" NUMERIC(10,5) GENERATED ALWAYS AS ("shippingCost" * "exchangeRate") STORED,
+  "unitPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("supplierUnitPrice" * "exchangeRate") STORED,
+  "supplierExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("supplierUnitPrice" * "quantity") STORED,
+  "extendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS ("supplierUnitPrice" * "exchangeRate" * "quantity") STORED,
+  "supplierShippingCost" NUMERIC(10,5) NOT NULL DEFAULT 0,
+  "shippingCost" NUMERIC(10,5) GENERATED ALWAYS AS ("supplierShippingCost" * "exchangeRate") STORED,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
@@ -214,3 +211,21 @@ CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
   INNER JOIN "item" i ON i.id = ql."itemId"
   LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
 );
+
+CREATE OR REPLACE FUNCTION update_supplier_quote_line_price_exchange_rate()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE "supplierQuoteLinePrice"
+  SET "exchangeRate" = NEW."exchangeRate"
+  WHERE "supplierQuoteId" = NEW."id";
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER update_supplier_quote_line_price_exchange_rate_trigger
+AFTER UPDATE OF "exchangeRate" ON "supplierQuote"
+FOR EACH ROW
+WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
+EXECUTE FUNCTION update_supplier_quote_line_price_exchange_rate();
+

@@ -21790,62 +21790,53 @@ export type Database = {
       }
       supplierQuoteLinePrice: {
         Row: {
-          convertedNetExtendedPrice: number | null
-          convertedNetUnitPrice: number | null
-          convertedShippingCost: number | null
-          convertedUnitPrice: number | null
           createdAt: string
           createdBy: string
-          discountPercent: number
           exchangeRate: number | null
+          extendedPrice: number | null
           leadTime: number
-          netExtendedPrice: number | null
-          netUnitPrice: number | null
           quantity: number
-          shippingCost: number
+          shippingCost: number | null
+          supplierExtendedPrice: number | null
           supplierQuoteId: string
           supplierQuoteLineId: string
-          unitPrice: number
+          supplierShippingCost: number
+          supplierUnitPrice: number
+          unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
-          convertedNetExtendedPrice?: number | null
-          convertedNetUnitPrice?: number | null
-          convertedShippingCost?: number | null
-          convertedUnitPrice?: number | null
           createdAt?: string
           createdBy: string
-          discountPercent?: number
           exchangeRate?: number | null
+          extendedPrice?: number | null
           leadTime?: number
-          netExtendedPrice?: number | null
-          netUnitPrice?: number | null
           quantity?: number
-          shippingCost?: number
+          shippingCost?: number | null
+          supplierExtendedPrice?: number | null
           supplierQuoteId: string
           supplierQuoteLineId: string
-          unitPrice?: number
+          supplierShippingCost?: number
+          supplierUnitPrice?: number
+          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
-          convertedNetExtendedPrice?: number | null
-          convertedNetUnitPrice?: number | null
-          convertedShippingCost?: number | null
-          convertedUnitPrice?: number | null
           createdAt?: string
           createdBy?: string
-          discountPercent?: number
           exchangeRate?: number | null
+          extendedPrice?: number | null
           leadTime?: number
-          netExtendedPrice?: number | null
-          netUnitPrice?: number | null
           quantity?: number
-          shippingCost?: number
+          shippingCost?: number | null
+          supplierExtendedPrice?: number | null
           supplierQuoteId?: string
           supplierQuoteLineId?: string
-          unitPrice?: number
+          supplierShippingCost?: number
+          supplierUnitPrice?: number
+          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }

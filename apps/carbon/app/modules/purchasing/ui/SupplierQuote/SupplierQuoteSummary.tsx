@@ -22,7 +22,8 @@ import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuExternalLink, LuImage } from "react-icons/lu";
 import { SupplierAvatar } from "~/components";
-import { useRouteData, useUser } from "~/hooks";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { useCurrencyFormatter, useRouteData, useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
   PurchaseOrderLine,
@@ -43,13 +44,16 @@ const LineItems = ({
   const { company } = useUser();
   const { id } = useParams();
   if (!id) throw new Error("Could not find quote id");
+
   const routeData = useRouteData<{
     quote: SupplierQuote;
     lines: SupplierQuoteLine[];
     prices: SupplierQuoteLinePrice[];
   }>(path.to.supplierQuote(id));
 
-  const [openItems, setOpenItems] = useState<string[]>([]);
+  const [openItems, setOpenItems] = useState<string[]>(
+    routeData?.lines.map((line) => line.id!) ?? []
+  );
 
   const pricingByLine = useMemo(
     () =>
@@ -187,14 +191,12 @@ type LinePricingOptionsProps = {
 const LinePricingOptions = ({
   line,
   options,
-  quoteCurrency,
-  shouldConvertCurrency,
-  quoteExchangeRate,
   locale,
   formatter,
 }: LinePricingOptionsProps) => {
   const { id } = useParams();
   if (!id) throw new Error("Could not find quote id");
+  const unitOfMeasures = useUnitOfMeasure();
 
   return (
     <VStack spacing={4} className="w-full">
@@ -204,7 +206,8 @@ const LinePricingOptions = ({
             <Th>Quantity</Th>
             <Th>Unit Price</Th>
             <Th>Lead Time</Th>
-            <Th>Subtotal</Th>
+
+            <Th className="text-right">Total</Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -220,9 +223,45 @@ const LinePricingOptions = ({
                 (line?.quantity?.includes(option.quantity) ||
                   option.quantity === 0) && (
                   <Tr key={index}>
-                    <Td>{option.quantity}</Td>
                     <Td>
-                      {formatter.format(option.convertedNetUnitPrice ?? 0)}
+                      <div className="flex items-center gap-x-2 justify-between">
+                        <VStack spacing={0}>
+                          <span>
+                            {option.quantity}{" "}
+                            {
+                              unitOfMeasures.find(
+                                (uom) =>
+                                  uom.value === line.purchaseUnitOfMeasureCode
+                              )?.label
+                            }
+                          </span>
+                          {line.conversionFactor !== 1 && (
+                            <span className="text-muted-foreground text-xs">
+                              {option.quantity * (line.conversionFactor ?? 1)}{" "}
+                              {
+                                unitOfMeasures.find(
+                                  (uom) =>
+                                    uom.value ===
+                                    line.inventoryUnitOfMeasureCode
+                                )?.label
+                              }
+                            </span>
+                          )}
+                        </VStack>
+                      </div>
+                    </Td>
+                    <Td>
+                      <VStack spacing={0}>
+                        <span>{formatter.format(option.unitPrice ?? 0)}</span>
+                        {line.conversionFactor !== 1 && (
+                          <span className="text-muted-foreground text-xs">
+                            {formatter.format(
+                              (option.unitPrice ?? 0) /
+                                (line.conversionFactor ?? 1)
+                            )}
+                          </span>
+                        )}
+                      </VStack>
                     </Td>
 
                     <Td>
@@ -231,10 +270,12 @@ const LinePricingOptions = ({
                         unit: "day",
                       }).format(option.leadTime)}
                     </Td>
-                    <Td>
+
+                    <Td className="text-right">
                       {formatter.format(
-                        (option.convertedNetUnitPrice ?? 0) * option.quantity +
-                          (option.convertedShippingCost ?? 0)
+                        ((option.unitPrice ?? 0) * option.quantity +
+                          (option.shippingCost ?? 0)) *
+                          (1 + (line.taxPercent ?? 0))
                       )}
                     </Td>
                   </Tr>
@@ -258,14 +299,7 @@ const SupplierQuoteSummary = () => {
   }>(path.to.supplierQuote(id));
 
   const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: routeData?.quote.currencyCode ?? "USD",
-      }),
-    [locale, routeData?.quote.currencyCode]
-  );
+  const formatter = useCurrencyFormatter();
 
   return (
     <Card>

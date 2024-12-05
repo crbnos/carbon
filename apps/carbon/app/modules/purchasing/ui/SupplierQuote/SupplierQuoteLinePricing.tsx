@@ -77,15 +77,8 @@ const SupplierQuoteLinePricing = ({
     routeData?.quote?.currencyCode ?? baseCurrency
   );
 
-  const netPricesByQuantity = quantities.map((quantity, index) => {
-    const price = prices[quantity]?.unitPrice ?? 0;
-    const discount = prices[quantity]?.discountPercent ?? 0;
-    const netPrice = price * (1 - discount);
-    return netPrice;
-  });
-
   const onUpdatePrice = async (
-    key: "leadTime" | "unitPrice" | "shippingCost",
+    key: "leadTime" | "supplierUnitPrice" | "supplierShippingCost",
     quantity: number,
     value: number
   ) => {
@@ -105,10 +98,9 @@ const SupplierQuoteLinePricing = ({
         supplierQuoteLineId: lineId,
         quantity,
         leadTime: 0,
-        unitPrice: 0,
-        discountPercent: 0,
         exchangeRate: supplierQuoteExchangeRate.data?.exchangeRate ?? 1,
-        shippingCost: 0,
+        supplierUnitPrice: 0,
+        supplierShippingCost: 0,
         createdBy: userId,
       } as unknown as SupplierQuoteLinePrice;
     }
@@ -198,7 +190,8 @@ const SupplierQuoteLinePricing = ({
             <Tr>
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
-                  <span>Unit Price</span>
+                  <span>Supplier Unit Price</span>
+
                   <Enumerable
                     value={
                       unitOfMeasures.find(
@@ -209,19 +202,20 @@ const SupplierQuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
-                const price = prices[quantity]?.unitPrice;
+                const price = prices[quantity]?.supplierUnitPrice ?? 0;
                 return (
                   <Td key={quantity.toString()}>
                     <NumberField
                       value={price}
                       formatOptions={{
                         style: "currency",
-                        currency: baseCurrency,
+                        currency:
+                          routeData?.quote?.currencyCode ?? baseCurrency,
                       }}
                       minValue={0}
                       onChange={(value) => {
                         if (Number.isFinite(value) && value !== price) {
-                          onUpdatePrice("unitPrice", quantity, value);
+                          onUpdatePrice("supplierUnitPrice", quantity, value);
                         }
                       }}
                     >
@@ -240,7 +234,7 @@ const SupplierQuoteLinePricing = ({
             <Tr className="[&>td]:bg-muted/60">
               <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
-                  <span>Net Unit Price</span>
+                  <span>Unit Price</span>
                   <Enumerable
                     value={
                       unitOfMeasures.find(
@@ -250,7 +244,10 @@ const SupplierQuoteLinePricing = ({
                   />
                 </HStack>
               </Td>
-              {netPricesByQuantity.map((price, index) => {
+              {quantities.map((quantity, index) => {
+                const price =
+                  (prices[quantity]?.supplierUnitPrice ?? 0) *
+                  (prices[quantity]?.exchangeRate ?? 1);
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
@@ -270,19 +267,25 @@ const SupplierQuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
-                const shippingCost = prices[quantity]?.shippingCost;
+                const shippingCost =
+                  prices[quantity]?.supplierShippingCost ?? 0;
                 return (
                   <Td key={quantity.toString()}>
                     <NumberField
                       value={shippingCost}
                       formatOptions={{
                         style: "currency",
-                        currency: baseCurrency,
+                        currency:
+                          routeData?.quote?.currencyCode ?? baseCurrency,
                       }}
                       minValue={0}
                       onChange={(value) => {
                         if (Number.isFinite(value) && value !== shippingCost) {
-                          onUpdatePrice("shippingCost", quantity, value);
+                          onUpdatePrice(
+                            "supplierShippingCost",
+                            quantity,
+                            value
+                          );
                         }
                       }}
                     >
@@ -318,6 +321,7 @@ const SupplierQuoteLinePricing = ({
                       <NumberInput
                         className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
                         size="sm"
+                        isDisabled
                       />
                     </NumberField>
                   </Td>
@@ -327,19 +331,20 @@ const SupplierQuoteLinePricing = ({
             <Tr className="font-bold [&>td]:bg-muted/60">
               <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
-                  <span>Total Price</span>
+                  <span>Supplier Total Price</span>
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
                 const subtotal =
-                  (netPricesByQuantity[index] ?? 0) * quantity +
-                  (prices[quantity]?.shippingCost ?? 0);
+                  (prices[quantity]?.supplierUnitPrice ?? 0) * quantity +
+                  (prices[quantity]?.supplierShippingCost ?? 0);
                 const tax = subtotal * (line.taxPercent ?? 0);
                 const price = subtotal + tax;
+
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
-                      <span>{formatter.format(price)}</span>
+                      <span>{presentationCurrencyFormatter.format(price)}</span>
                     </VStack>
                   </Td>
                 );
@@ -367,25 +372,21 @@ const SupplierQuoteLinePricing = ({
                 <Tr className="font-bold [&>td]:bg-muted/60">
                   <Td className="border-r border-border group-hover:bg-muted/50">
                     <HStack className="w-full justify-between ">
-                      <span>Converted Total Price</span>
+                      <span>Total Price</span>
                     </HStack>
                   </Td>
                   {quantities.map((quantity, index) => {
                     const subtotal =
-                      (netPricesByQuantity[index] ?? 0) * quantity +
-                      (prices[quantity]?.shippingCost ?? 0);
+                      ((prices[quantity]?.supplierUnitPrice ?? 0) * quantity +
+                        (prices[quantity]?.supplierShippingCost ?? 0)) *
+                      (prices[quantity]?.exchangeRate ?? 1);
                     const tax = subtotal * (line.taxPercent ?? 0);
                     const price = subtotal + tax;
-                    const exchangeRate = prices[quantity]?.exchangeRate;
-                    const convertedPrice = price * (exchangeRate ?? 1);
+
                     return (
                       <Td key={index} className="group-hover:bg-muted/50">
                         <VStack spacing={0}>
-                          <span>
-                            {presentationCurrencyFormatter.format(
-                              convertedPrice
-                            )}
-                          </span>
+                          <span>{formatter.format(price)}</span>
                         </VStack>
                       </Td>
                     );

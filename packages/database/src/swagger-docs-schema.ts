@@ -26368,34 +26368,25 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.leadTime",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.discountPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierUnitPrice",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.netUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierExtendedPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedNetUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.extendedPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.netExtendedPrice",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedNetExtendedPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierShippingCost",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.shippingCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedShippingCost",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.createdAt",
@@ -26481,34 +26472,25 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.leadTime",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.discountPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierUnitPrice",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.netUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierExtendedPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedNetUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.extendedPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.netExtendedPrice",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedNetExtendedPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierShippingCost",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.shippingCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedShippingCost",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.createdAt",
@@ -26548,34 +26530,25 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.leadTime",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.discountPercent",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierUnitPrice",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.exchangeRate",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.unitPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.netUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierExtendedPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedNetUnitPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.extendedPrice",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.netExtendedPrice",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedNetExtendedPrice",
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierShippingCost",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.shippingCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.convertedShippingCost",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.createdAt",
@@ -52340,9 +52313,8 @@ export default {
         "supplierQuoteLineId",
         "quantity",
         "leadTime",
-        "discountPercent",
-        "unitPrice",
-        "shippingCost",
+        "supplierUnitPrice",
+        "supplierShippingCost",
         "createdAt",
         "createdBy",
       ],
@@ -52370,12 +52342,7 @@ export default {
           format: "numeric",
           type: "number",
         },
-        discountPercent: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        unitPrice: {
+        supplierUnitPrice: {
           default: 0,
           format: "numeric",
           type: "number",
@@ -52385,32 +52352,24 @@ export default {
           format: "numeric",
           type: "number",
         },
-        convertedUnitPrice: {
+        unitPrice: {
           format: "numeric",
           type: "number",
         },
-        netUnitPrice: {
+        supplierExtendedPrice: {
           format: "numeric",
           type: "number",
         },
-        convertedNetUnitPrice: {
+        extendedPrice: {
           format: "numeric",
           type: "number",
         },
-        netExtendedPrice: {
-          format: "numeric",
-          type: "number",
-        },
-        convertedNetExtendedPrice: {
-          format: "numeric",
-          type: "number",
-        },
-        shippingCost: {
+        supplierShippingCost: {
           default: 0,
           format: "numeric",
           type: "number",
         },
-        convertedShippingCost: {
+        shippingCost: {
           format: "numeric",
           type: "number",
         },
@@ -73398,15 +73357,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLinePrice.discountPercent": {
-      name: "discountPercent",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierQuoteLinePrice.unitPrice": {
-      name: "unitPrice",
+    "rowFilter.supplierQuoteLinePrice.supplierUnitPrice": {
+      name: "supplierUnitPrice",
       required: false,
       format: "numeric",
       in: "query",
@@ -73419,36 +73371,29 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLinePrice.convertedUnitPrice": {
-      name: "convertedUnitPrice",
+    "rowFilter.supplierQuoteLinePrice.unitPrice": {
+      name: "unitPrice",
       required: false,
       format: "numeric",
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLinePrice.netUnitPrice": {
-      name: "netUnitPrice",
+    "rowFilter.supplierQuoteLinePrice.supplierExtendedPrice": {
+      name: "supplierExtendedPrice",
       required: false,
       format: "numeric",
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLinePrice.convertedNetUnitPrice": {
-      name: "convertedNetUnitPrice",
+    "rowFilter.supplierQuoteLinePrice.extendedPrice": {
+      name: "extendedPrice",
       required: false,
       format: "numeric",
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLinePrice.netExtendedPrice": {
-      name: "netExtendedPrice",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierQuoteLinePrice.convertedNetExtendedPrice": {
-      name: "convertedNetExtendedPrice",
+    "rowFilter.supplierQuoteLinePrice.supplierShippingCost": {
+      name: "supplierShippingCost",
       required: false,
       format: "numeric",
       in: "query",
@@ -73456,13 +73401,6 @@ export default {
     },
     "rowFilter.supplierQuoteLinePrice.shippingCost": {
       name: "shippingCost",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierQuoteLinePrice.convertedShippingCost": {
-      name: "convertedShippingCost",
       required: false,
       format: "numeric",
       in: "query",
