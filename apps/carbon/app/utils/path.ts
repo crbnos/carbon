@@ -129,6 +129,7 @@ export const path = {
     bulkUpdateQuote: `${x}/quote/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
     bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
+    bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
@@ -802,6 +803,8 @@ export const path = {
     supplierQuoteFavorite: `${x}/purchasing/quotes/favorite`,
     supplierQuoteDetails: (id: string) =>
       generatePath(`${x}/supplier-quote/${id}/details`),
+    supplierQuoteExchangeRate: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/exchange-rate`),
     supplierQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/supplier-quote/${id}/${lineId}/details`),
     supplierRoot: `${x}/supplier`,

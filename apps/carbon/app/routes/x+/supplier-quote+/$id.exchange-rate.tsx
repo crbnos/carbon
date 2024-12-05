@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { getCurrencyByCode } from "~/modules/accounting";
-import { updateQuoteExchangeRate } from "~/modules/sales";
+import { updateSupplierQuoteExchangeRate } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -12,8 +12,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "sales",
   });
 
-  const { quoteId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
+  const { id } = params;
+  if (!id) throw new Error("Could not find id");
 
   const formData = await request.formData();
   const currencyCode = formData.get("currencyCode") as string;
@@ -23,8 +23,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (currency.error || !currency.data.exchangeRate)
     throw new Error("Could not find currency");
 
-  const update = await updateQuoteExchangeRate(client, {
-    id: quoteId,
+  const update = await updateSupplierQuoteExchangeRate(client, {
+    id: id,
     exchangeRate: currency.data.exchangeRate,
   });
 
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return redirect(
-    path.to.quoteDetails(quoteId),
+    path.to.supplierQuoteDetails(id),
     await flash(request, success("Successfully updated exchange rate"))
   );
 }

@@ -188,8 +188,8 @@ const SupplierQuotesTable = memo(
           },
         },
         {
-          accessorKey: "dueDate",
-          header: "Due Date",
+          accessorKey: "quotedDate",
+          header: "Quoted Date",
           cell: (item) => formatDate(item.getValue<string>()),
           meta: {
             icon: <LuCalendar />,

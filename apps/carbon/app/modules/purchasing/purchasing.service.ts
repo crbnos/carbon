@@ -17,6 +17,7 @@ import type {
   supplierPaymentValidator,
   supplierProcessValidator,
   supplierQuoteLineValidator,
+  supplierQuoteStatusType,
   supplierQuoteValidator,
   supplierShippingValidator,
   supplierStatusValidator,
@@ -909,6 +910,22 @@ export async function updateSupplierPayment(
     .eq("supplierId", supplierPayment.supplierId);
 }
 
+export async function updateSupplierQuoteExchangeRate(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    exchangeRate: number;
+  }
+) {
+  const update = {
+    id: data.id,
+    exchangeRate: data.exchangeRate,
+    exchangeRateUpdatedAt: new Date().toISOString(),
+  };
+
+  return client.from("supplierQuote").update(update).eq("id", update.id);
+}
+
 export async function updateSupplierQuoteFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -929,6 +946,18 @@ export async function updateSupplierQuoteFavorite(
       .from("supplierQuoteFavorite")
       .insert({ supplierQuoteId: id, userId: userId });
   }
+}
+
+export async function updateSupplierQuoteStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof supplierQuoteStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  return client.from("supplierQuote").update(update).eq("id", update.id);
 }
 
 export async function updateSupplierShipping(

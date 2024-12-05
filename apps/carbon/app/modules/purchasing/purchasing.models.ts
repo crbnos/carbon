@@ -230,12 +230,7 @@ export const supplierStatusValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
 });
 
-export const supplierQuoteStatusType = [
-  "Draft",
-  "Submitted",
-  "Accepted",
-  "Rejected",
-] as const;
+export const supplierQuoteStatusType = ["Active", "Expired"] as const;
 
 export const supplierQuoteValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -246,7 +241,7 @@ export const supplierQuoteValidator = z.object({
   supplierReference: zfd.text(z.string().optional()),
   status: z.enum(supplierQuoteStatusType).optional(),
   notes: z.any().optional(),
-  dueDate: zfd.text(z.string().optional()),
+  quotedDate: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   exchangeRate: zfd.numeric(z.number().optional()),

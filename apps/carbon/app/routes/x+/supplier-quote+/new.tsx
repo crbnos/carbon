@@ -2,6 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams } from "~/hooks";
@@ -49,6 +50,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  console.log(validation.data);
+
   const createSupplierQuote = await upsertSupplierQuote(client, {
     ...validation.data,
     supplierQuoteId: nextSequence.data,
@@ -80,9 +83,9 @@ export default function SupplierQuoteNewRoute() {
     supplierId: supplierId ?? "",
     supplierReference: "",
     expirationDate: "",
-    dueDate: "",
+    quotedDate: today(getLocalTimeZone()).toString(),
     supplierQuoteId: undefined,
-    status: "Draft" as const,
+    status: "Active" as const,
     currencyCode: undefined,
     exchangeRate: undefined,
     exchangeRateUpdatedAt: "",

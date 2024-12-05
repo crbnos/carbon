@@ -3,19 +3,18 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { Outlet, useParams } from "@remix-run/react";
-import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
-import type { PurchaseOrderLine } from "~/modules/purchasing";
 import {
-  getPurchaseOrderLines,
   getSupplierInteractionByQuote,
   getSupplierInteractionDocuments,
   getSupplierQuote,
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines,
+  SupplierQuoteHeader,
+  SupplierQuoteProperties,
 } from "~/modules/purchasing";
 import SupplierQuoteExplorer from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer";
 import type { Handle } from "~/utils/handle";
@@ -64,14 +63,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  let purchaseOrderLines: PostgrestResponse<PurchaseOrderLine> | null = null;
-  if (interaction.data?.purchaseOrderId) {
-    purchaseOrderLines = await getPurchaseOrderLines(
-      serviceRole,
-      interaction.data.purchaseOrderId
-    );
-  }
-
   return defer({
     quote: quote.data,
     lines: lines.data ?? [],
@@ -83,7 +74,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     prices: prices.data ?? [],
     interaction: interaction.data,
     exchangeRate,
-    purchaseOrderLines: purchaseOrderLines?.data ?? null,
   });
 }
 
@@ -95,8 +85,7 @@ export default function SupplierQuoteRoute() {
   return (
     <PanelProvider>
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-        {/* <SupplierQuoteHeader />
-         */}
+        <SupplierQuoteHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
@@ -108,7 +97,7 @@ export default function SupplierQuoteRoute() {
                   </VStack>
                 </div>
               }
-              properties={null}
+              properties={<SupplierQuoteProperties />}
             />
           </div>
         </div>

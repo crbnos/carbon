@@ -21260,14 +21260,13 @@ export type Database = {
           createdBy: string;
           currencyCode: string | null;
           customFields: Json | null;
-          dueDate: string | null;
           exchangeRate: number | null;
           exchangeRateUpdatedAt: string | null;
           expirationDate: string | null;
-          externalLinkId: string | null;
           externalNotes: Json | null;
           id: string;
           internalNotes: Json | null;
+          quotedDate: string;
           revisionId: number;
           status: Database["public"]["Enums"]["supplierQuoteStatus"];
           supplierContactId: string | null;
@@ -21286,14 +21285,13 @@ export type Database = {
           createdBy: string;
           currencyCode?: string | null;
           customFields?: Json | null;
-          dueDate?: string | null;
           exchangeRate?: number | null;
           exchangeRateUpdatedAt?: string | null;
           expirationDate?: string | null;
-          externalLinkId?: string | null;
           externalNotes?: Json | null;
           id?: string;
           internalNotes?: Json | null;
+          quotedDate?: string;
           revisionId?: number;
           status?: Database["public"]["Enums"]["supplierQuoteStatus"];
           supplierContactId?: string | null;
@@ -21312,14 +21310,13 @@ export type Database = {
           createdBy?: string;
           currencyCode?: string | null;
           customFields?: Json | null;
-          dueDate?: string | null;
           exchangeRate?: number | null;
           exchangeRateUpdatedAt?: string | null;
           expirationDate?: string | null;
-          externalLinkId?: string | null;
           externalNotes?: Json | null;
           id?: string;
           internalNotes?: Json | null;
+          quotedDate?: string;
           revisionId?: number;
           status?: Database["public"]["Enums"]["supplierQuoteStatus"];
           supplierContactId?: string | null;
@@ -27431,14 +27428,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["supplierCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["supplierCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
@@ -30418,16 +30415,15 @@ export type Database = {
           createdBy: string | null;
           currencyCode: string | null;
           customFields: Json | null;
-          dueDate: string | null;
           exchangeRate: number | null;
           exchangeRateUpdatedAt: string | null;
           expirationDate: string | null;
-          externalLinkId: string | null;
           externalNotes: Json | null;
           favorite: boolean | null;
           id: string | null;
           internalNotes: Json | null;
           itemType: Database["public"]["Enums"]["itemType"] | null;
+          quotedDate: string | null;
           revisionId: number | null;
           status: Database["public"]["Enums"]["supplierQuoteStatus"] | null;
           supplierContactId: string | null;
@@ -32074,7 +32070,7 @@ export type Database = {
         | "Finance Charge Memo"
         | "Reminder"
         | "Refund";
-      supplierQuoteStatus: "Draft" | "Submitted" | "Accepted" | "Rejected";
+      supplierQuoteStatus: "Active" | "Expired";
     };
     CompositeTypes: {
       [_ in never]: never;

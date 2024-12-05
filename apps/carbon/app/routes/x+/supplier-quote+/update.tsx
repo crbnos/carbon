@@ -79,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "supplierContactId":
     case "supplierLocationId":
     case "supplierReference":
-    case "dueDate":
+    case "quotedDate":
     case "expirationDate":
       return json(
         await client

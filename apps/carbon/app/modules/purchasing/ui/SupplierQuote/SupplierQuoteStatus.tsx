@@ -1,21 +1,16 @@
 import { Status } from "@carbon/react";
 import type { supplierQuoteStatusType } from "~/modules/purchasing";
 
-type QuoteStatusProps = {
+type SupplierQuoteStatusProps = {
   status?: (typeof supplierQuoteStatusType)[number] | null;
 };
 
-const SupplierQuoteStatus = ({ status }: QuoteStatusProps) => {
+const SupplierQuoteStatus = ({ status }: SupplierQuoteStatusProps) => {
   switch (status) {
-    case "Draft":
-      return <Status color="gray">{status}</Status>;
-    case "Submitted":
-      return <Status color="yellow">{status}</Status>;
-    case "Accepted":
+    case "Active":
       return <Status color="green">{status}</Status>;
-    case "Rejected":
-      return <Status color="red">{status}</Status>;
-
+    case "Expired":
+      return <Status color="yellow">{status}</Status>;
     default:
       return null;
   }

@@ -1,8 +1,6 @@
 CREATE TYPE "supplierQuoteStatus" AS ENUM (
-  'Draft',
-  'Submitted', 
-  'Accepted',
-  'Rejected'
+  'Active',
+  'Expired'
 );
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 
@@ -32,9 +30,9 @@ CREATE TABLE "supplierQuote" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "supplierQuoteId" TEXT NOT NULL,
   "revisionId" INTEGER NOT NULL DEFAULT 0,
-  "dueDate" DATE,
+  "quotedDate" DATE NOT NULL DEFAULT CURRENT_DATE,
   "expirationDate" DATE,
-  "status" "supplierQuoteStatus" NOT NULL DEFAULT 'Draft',
+  "status" "supplierQuoteStatus" NOT NULL DEFAULT 'Active',
   "internalNotes" JSON DEFAULT '{}'::json,
   "externalNotes" JSON DEFAULT '{}'::json,
   "supplierId" TEXT NOT NULL,

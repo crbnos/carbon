@@ -72,9 +72,7 @@ const SupplierQuoteLineForm = ({
     quote: SupplierQuote;
   }>(path.to.supplierQuote(id));
 
-  const isEditable = ["Draft", "Submitted"].includes(
-    routeData?.quote?.status ?? ""
-  );
+  const isEditable = ["Active"].includes(routeData?.quote?.status ?? "");
 
   const isEditing = initialValues.id !== undefined;
 
@@ -274,7 +272,7 @@ const SupplierQuoteLineForm = ({
                       />
                       <UnitOfMeasure
                         name="purchaseUnitOfMeasureCode"
-                        label="Unit of Measure"
+                        label="Purchase Unit of Measure"
                         value={itemData.purchaseUom}
                         onChange={(newValue) => {
                           if (newValue) {

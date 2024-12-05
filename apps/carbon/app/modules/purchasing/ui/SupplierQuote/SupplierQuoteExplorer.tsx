@@ -53,7 +53,7 @@ export default function SupplierQuoteExplorer() {
   const newSupplierQuoteLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<SupplierQuoteLine | null>(null);
-  const isDisabled = routeData?.quote?.status !== "Draft";
+  const isDisabled = routeData?.quote?.status !== "Active";
 
   const onDeleteLine = (line: SupplierQuoteLine) => {
     setDeleteLine(line);

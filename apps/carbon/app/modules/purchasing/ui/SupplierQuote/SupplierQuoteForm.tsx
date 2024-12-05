@@ -48,8 +48,8 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
     id: initialValues.supplierId,
     currencyCode: initialValues.currencyCode,
   });
-  const isSupplier = permissions.is("supplier");
-  const isDisabled = initialValues?.status !== "Draft";
+
+  const isDisabled = initialValues?.status !== "Active";
   const isEditing = initialValues.id !== undefined;
 
   const exchangeRateFetcher = useFetcher<{ exchangeRate: number }>();
@@ -143,16 +143,8 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
                 isOptional
                 supplier={supplier.id}
               />
-              <DatePicker
-                name="dueDate"
-                label="Due Date"
-                isDisabled={isSupplier}
-              />
-              <DatePicker
-                name="expirationDate"
-                label="Expiration Date"
-                isDisabled={isSupplier}
-              />
+              <DatePicker name="quotedDate" label="Quoted Date" />
+              <DatePicker name="expirationDate" label="Expiration Date" />
 
               <Currency
                 name="currencyCode"

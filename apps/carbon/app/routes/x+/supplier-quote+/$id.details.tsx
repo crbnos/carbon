@@ -16,6 +16,7 @@ import {
   supplierQuoteValidator,
   upsertSupplierQuote,
 } from "~/modules/purchasing";
+import SupplierQuoteSummary from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteSummary";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -75,10 +76,10 @@ export default function SupplierQuoteDetailsRoute() {
     supplierLocationId: routeData?.quote?.supplierLocationId ?? "",
     supplierContactId: routeData?.quote?.supplierContactId ?? "",
     supplierReference: routeData?.quote?.supplierReference ?? "",
-    dueDate: routeData?.quote?.dueDate ?? "",
+    quotedDate: routeData?.quote?.quotedDate ?? "",
     expirationDate: routeData?.quote?.expirationDate ?? "",
     supplierQuoteId: routeData?.quote?.supplierQuoteId ?? "",
-    status: routeData?.quote?.status ?? "Draft",
+    status: routeData?.quote?.status ?? "Active",
     currencyCode: routeData?.quote?.currencyCode ?? undefined,
     exchangeRate: routeData?.quote?.exchangeRate ?? undefined,
     exchangeRateUpdatedAt: routeData?.quote?.exchangeRateUpdatedAt ?? "",
@@ -86,6 +87,7 @@ export default function SupplierQuoteDetailsRoute() {
 
   return (
     <>
+      <SupplierQuoteSummary />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}
         id={routeData.quote.id}

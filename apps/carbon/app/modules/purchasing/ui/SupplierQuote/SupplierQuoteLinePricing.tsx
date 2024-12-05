@@ -18,6 +18,8 @@ import {
 } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
+import { Enumerable } from "~/components/Enumerable";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
   usePermissions,
@@ -42,8 +44,6 @@ const SupplierQuoteLinePricing = ({
 
   const quantities = line.quantity ?? [1];
 
-  console.log({ line, pricesByQuantity });
-
   const { id, lineId } = useParams();
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
@@ -59,7 +59,7 @@ const SupplierQuoteLinePricing = ({
   }>(path.to.supplierQuote(id));
   const isEditable =
     permissions.can("update", "purchasing") &&
-    ["Draft"].includes(routeData?.quote?.status ?? "");
+    ["Active"].includes(routeData?.quote?.status ?? "");
 
   const { carbon } = useCarbon();
   const fetcher = useFetcher<{ id?: string; error: string | null }>();
@@ -137,6 +137,8 @@ const SupplierQuoteLinePricing = ({
     }
   };
 
+  const unitOfMeasures = useUnitOfMeasure();
+
   return (
     <Card>
       <CardHeader>
@@ -197,6 +199,13 @@ const SupplierQuoteLinePricing = ({
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
                   <span>Unit Price</span>
+                  <Enumerable
+                    value={
+                      unitOfMeasures.find(
+                        (uom) => uom.value === line.purchaseUnitOfMeasureCode
+                      )?.label ?? null
+                    }
+                  />
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
@@ -232,13 +241,22 @@ const SupplierQuoteLinePricing = ({
               <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Net Unit Price</span>
+                  <Enumerable
+                    value={
+                      unitOfMeasures.find(
+                        (uom) => uom.value === line.inventoryUnitOfMeasureCode
+                      )?.label ?? null
+                    }
+                  />
                 </HStack>
               </Td>
               {netPricesByQuantity.map((price, index) => {
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
-                      <span>{formatter.format(price)}</span>
+                      <span>
+                        {formatter.format(price / (line.conversionFactor ?? 1))}
+                      </span>
                     </VStack>
                   </Td>
                 );
