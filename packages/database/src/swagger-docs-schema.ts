@@ -16714,6 +16714,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.itemType",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrders.orderTotal",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrders.jobs",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrders.shippingMethodName",
           },
           {
@@ -47969,6 +47975,15 @@ export default {
           format: 'public."itemType"',
           type: "string",
         },
+        orderTotal: {
+          format: "numeric",
+          type: "number",
+        },
+        jobs: {
+          format: "json[]",
+          items: {},
+          type: "array",
+        },
         shippingMethodName: {
           format: "text",
           type: "string",
@@ -67691,6 +67706,20 @@ export default {
       name: "itemType",
       required: false,
       format: 'public."itemType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrders.orderTotal": {
+      name: "orderTotal",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrders.jobs": {
+      name: "jobs",
+      required: false,
+      format: "json[]",
       in: "query",
       type: "string",
     },
