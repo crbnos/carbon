@@ -13,9 +13,6 @@
     "tsx": "^4.13.2",
     "turbo": "^1.13.2"
   },
-  "engines": {
-    "node": ">=20"
-  },
   "lint-staged": {
     "(apps|packages)/**/*.{js,ts,jsx,tsx}": [
       "prettier --write",

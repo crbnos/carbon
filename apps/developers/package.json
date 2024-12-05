@@ -54,9 +54,6 @@
     "vite-tsconfig-paths": "^4.3.2",
     "wait-on": "7.2.0"
   },
-  "engines": {
-    "node": ">=20"
-  },
   "private": true,
   "scripts": {
     "build": "remix vite:build",

@@ -105,9 +105,6 @@
     "vite": "^5.3.3",
     "vite-tsconfig-paths": "^4.3.2"
   },
-  "engines": {
-    "node": ">=20"
-  },
   "private": true,
   "scripts": {
     "build": "remix vite:build",
