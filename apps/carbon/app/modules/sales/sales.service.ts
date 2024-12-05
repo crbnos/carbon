@@ -101,11 +101,27 @@ export async function deleteCustomerContact(
   customerId: string,
   customerContactId: string
 ) {
-  return client
+  const customerContact = await client
     .from("customerContact")
-    .delete()
+    .select("contactId")
     .eq("customerId", customerId)
-    .eq("id", customerContactId);
+    .eq("id", customerContactId)
+    .single();
+  if (customerContact.data) {
+    const [contactDelete, customerContactDelete] = await Promise.all([
+      client.from("contact").delete().eq("id", customerContact.data.contactId),
+      client
+        .from("customerContact")
+        .delete()
+        .eq("customerId", customerId)
+        .eq("id", customerContactId),
+    ]);
+
+    if (contactDelete.error) {
+      return contactDelete;
+    }
+    return customerContactDelete;
+  }
 }
 
 export async function deleteCustomerLocation(

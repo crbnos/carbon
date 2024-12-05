@@ -60,11 +60,27 @@ export async function deleteSupplierContact(
   supplierId: string,
   supplierContactId: string
 ) {
-  return client
+  const supplierContact = await client
     .from("supplierContact")
-    .delete()
+    .select("contactId")
     .eq("supplierId", supplierId)
-    .eq("id", supplierContactId);
+    .eq("id", supplierContactId)
+    .single();
+  if (supplierContact.data) {
+    const [contactDelete, supplierContactDelete] = await Promise.all([
+      client.from("contact").delete().eq("id", supplierContact.data.contactId),
+      client
+        .from("supplierContact")
+        .delete()
+        .eq("supplierId", supplierId)
+        .eq("id", supplierContactId),
+    ]);
+
+    if (contactDelete.error) {
+      return contactDelete;
+    }
+    return supplierContactDelete;
+  }
 }
 
 export async function deleteSupplierLocation(

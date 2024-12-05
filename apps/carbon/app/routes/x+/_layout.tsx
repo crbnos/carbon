@@ -133,7 +133,7 @@ export default function AuthenticatedRoute() {
                   <div className="w-full h-full flex-1 overflow-hidden">
                     <main className="h-full flex flex-col flex-1 max-w-[100vw] sm:max-w-[calc(100vw-56px)] overflow-hidden bg-muted">
                       <Topbar />
-                      <main className="flex-1 overflow-hidden h-[calc(100dvh-49px)]">
+                      <main className="flex-1 overflow-y-auto scrollbar-hide h-[calc(100dvh-49px)]">
                         <Outlet />
                       </main>
                     </main>
