@@ -53,23 +53,57 @@ export async function action({ request, params }: ActionFunctionArgs) {
     supplierLocationId,
     customFields: setCustomFields(formData),
   });
+
   if (createSupplierContact.error) {
+    let errorMessage = "Failed to create supplier contact";
+    if (createSupplierContact.error?.message?.includes("duplicate key value")) {
+      const contact = await client
+        .from("contact")
+        .select("id")
+        .eq("email", validation.data.email)
+        .eq("companyId", companyId)
+        .single();
+      if (contact.data) {
+        const supplierContact = await client
+          .from("supplierContact")
+          .select("supplierId")
+          .eq("contactId", contact.data.id)
+          .single();
+        if (supplierContact.data) {
+          const supplier = await client
+            .from("supplier")
+            .select("name")
+            .eq("id", supplierContact.data.supplierId)
+            .single();
+          errorMessage = `Contact ${validation.data.email} already exists for ${supplier.data?.name}`;
+        } else {
+          const customerContact = await client
+            .from("customerContact")
+            .select("customerId")
+            .eq("contactId", contact.data.id)
+            .single();
+          if (customerContact.data) {
+            const customer = await client
+              .from("customer")
+              .select("name")
+              .eq("id", customerContact.data.customerId)
+              .single();
+            errorMessage = `Contact ${validation.data.email} already exists for ${customer.data?.name}`;
+          }
+        }
+      }
+    }
+
     return modal
       ? json(createSupplierContact)
       : redirect(
           path.to.supplierContacts(supplierId),
-          await flash(
-            request,
-            error(
-              createSupplierContact.error,
-              "Failed to create supplier contact"
-            )
-          )
+          await flash(request, error(createSupplierContact.error, errorMessage))
         );
   }
 
   return modal
-    ? json(createSupplierContact)
+    ? json(createSupplierContact, { status: 201 })
     : redirect(
         path.to.supplierContacts(supplierId),
         await flash(request, success("Supplier contact created"))

@@ -54,17 +54,50 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customFields: setCustomFields(formData),
   });
   if (createCustomerContact.error) {
+    let errorMessage = "Failed to create customer contact";
+    if (createCustomerContact.error.message?.includes("duplicate key value")) {
+      const contact = await client
+        .from("contact")
+        .select("id")
+        .eq("email", validation.data.email)
+        .eq("companyId", companyId)
+        .single();
+      if (contact.data) {
+        const customerContact = await client
+          .from("customerContact")
+          .select("customerId")
+          .eq("contactId", contact.data.id)
+          .single();
+        if (customerContact.data) {
+          const customer = await client
+            .from("customer")
+            .select("name")
+            .eq("id", customerContact.data.customerId)
+            .single();
+          errorMessage = `Contact ${validation.data.email} already exists for ${customer.data?.name}`;
+        } else {
+          const supplierContact = await client
+            .from("supplierContact")
+            .select("supplierId")
+            .eq("contactId", contact.data.id)
+            .single();
+          if (supplierContact.data) {
+            const supplier = await client
+              .from("supplier")
+              .select("name")
+              .eq("id", supplierContact.data.supplierId)
+              .single();
+            errorMessage = `Contact ${validation.data.email} already exists for ${supplier.data?.name}`;
+          }
+        }
+      }
+    }
+
     return modal
       ? json(createCustomerContact)
       : redirect(
           path.to.customerContacts(customerId),
-          await flash(
-            request,
-            error(
-              createCustomerContact.error,
-              "Failed to create customer contact"
-            )
-          )
+          await flash(request, error(createCustomerContact.error, errorMessage))
         );
   }
 
