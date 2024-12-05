@@ -25,7 +25,6 @@ SELECT
   "id"
 FROM "company";
 
-
 CREATE TABLE "supplierQuote" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "supplierQuoteId" TEXT NOT NULL,
