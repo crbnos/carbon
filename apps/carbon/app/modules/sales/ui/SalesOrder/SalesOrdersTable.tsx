@@ -6,6 +6,7 @@ import {
   MenuItem,
   Popover,
   PopoverContent,
+  PopoverHeader,
   PopoverTrigger,
   useDisclosure,
 } from "@carbon/react";
@@ -215,7 +216,8 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
                 </Badge>
               </PopoverTrigger>
               <PopoverContent>
-                <div className="flex flex-col w-full gap-2">
+                <PopoverHeader>Jobs</PopoverHeader>
+                <div className="flex flex-col w-full gap-4 text-sm">
                   {(
                     row.original.jobs as {
                       id: string;
