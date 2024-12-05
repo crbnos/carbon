@@ -50,8 +50,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  console.log(validation.data);
-
   const createSupplierQuote = await upsertSupplierQuote(client, {
     ...validation.data,
     supplierQuoteId: nextSequence.data,
