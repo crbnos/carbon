@@ -1,8 +1,12 @@
 import {
+  Badge,
   Checkbox,
   HStack,
   MenuIcon,
   MenuItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -13,6 +17,8 @@ import {
   LuBookMarked,
   LuCalendar,
   LuCreditCard,
+  LuDollarSign,
+  LuExternalLink,
   LuPencil,
   LuPin,
   LuQrCode,
@@ -32,8 +38,9 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { JobStatus } from "~/modules/production";
 import type { SalesOrder } from "~/modules/sales";
 import { SalesStatus, salesOrderStatusType } from "~/modules/sales";
 import { useCustomers, usePeople } from "~/stores";
@@ -47,6 +54,7 @@ type SalesOrdersTableProps = {
 
 const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   const permissions = usePermissions();
+  const currencyFormatter = useCurrencyFormatter();
 
   const [selectedSalesOrder, setSelectedSalesOrder] =
     useState<SalesOrder | null>(null);
@@ -184,7 +192,59 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           icon: <LuCalendar />,
         },
       },
-
+      {
+        accessorKey: "orderTotal",
+        header: "Order Total",
+        cell: (item) => currencyFormatter.format(item.getValue<number>()),
+        meta: {
+          icon: <LuDollarSign />,
+        },
+      },
+      {
+        id: "jobs",
+        header: "Jobs",
+        cell: ({ row }) => {
+          if (row.original.jobs === null || !Array.isArray(row.original.jobs))
+            return null;
+          return (
+            <Popover>
+              <PopoverTrigger>
+                <Badge variant="secondary">
+                  {row.original.jobs.length} Jobs
+                  <LuExternalLink className="w-3 h-3 ml-2" />
+                </Badge>
+              </PopoverTrigger>
+              <PopoverContent>
+                <div className="flex flex-col w-full gap-2">
+                  {(
+                    row.original.jobs as {
+                      id: string;
+                      jobId: string;
+                      status: "Draft";
+                    }[]
+                  ).map((job) => (
+                    <div
+                      key={job.id}
+                      className="flex items-center justify-between gap-2"
+                    >
+                      <Hyperlink
+                        to={path.to.jobDetails(job.id)}
+                        className="flex items-center justify-start gap-1"
+                      >
+                        {job.jobId}
+                        <LuExternalLink className="w-4 h-4" />
+                      </Hyperlink>
+                      <div className="flex items-center justify-end">
+                        <JobStatus status={job.status} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          );
+        },
+      },
       {
         id: "assignee",
         header: "Assignee",
@@ -300,7 +360,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, people, customColumns, fetcher]);
+  }, [customers, people, customColumns, fetcher, currencyFormatter]);
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
