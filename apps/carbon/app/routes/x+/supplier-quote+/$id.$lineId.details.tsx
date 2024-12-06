@@ -8,22 +8,25 @@ import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { Fragment, Suspense } from "react";
-import type { SupplierQuoteLinePrice } from "~/modules/purchasing";
+import { supplierQuoteLineValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierInteractionLineDocuments,
   getSupplierQuoteLine,
   getSupplierQuoteLinePrices,
+  upsertSupplierQuoteLine,
+} from "~/modules/purchasing/purchasing.service";
+import type { SupplierQuoteLinePrice } from "~/modules/purchasing/types";
+import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes,
+} from "~/modules/purchasing/ui/SupplierInteraction";
+import {
   SupplierQuoteLineForm,
   SupplierQuoteLinePricing,
-  supplierQuoteLineValidator,
-  upsertSupplierQuoteLine,
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/ui/SupplierQuote";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
 export const config = {
   runtime: "nodejs",
 };

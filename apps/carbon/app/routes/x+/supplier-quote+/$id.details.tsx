@@ -9,13 +9,16 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import type { SupplierInteraction, SupplierQuote } from "~/modules/purchasing";
+import { supplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
+import { upsertSupplierQuote } from "~/modules/purchasing/purchasing.service";
+import type {
+  SupplierInteraction,
+  SupplierQuote,
+} from "~/modules/purchasing/types";
 import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes,
-  supplierQuoteValidator,
-  upsertSupplierQuote,
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/ui/SupplierInteraction";
 import SupplierQuoteSummary from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteSummary";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

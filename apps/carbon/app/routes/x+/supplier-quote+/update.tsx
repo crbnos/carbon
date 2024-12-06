@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

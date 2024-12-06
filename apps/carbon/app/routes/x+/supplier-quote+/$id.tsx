@@ -5,28 +5,22 @@ import { VStack } from "@carbon/react";
 import { Outlet, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { lazy } from "react";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import {
   getSupplierInteractionByQuote,
   getSupplierInteractionDocuments,
   getSupplierQuote,
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines,
+} from "~/modules/purchasing/purchasing.service";
+import {
   SupplierQuoteHeader,
-} from "~/modules/purchasing";
+  SupplierQuoteProperties,
+} from "~/modules/purchasing/ui/SupplierQuote";
+import SupplierQuoteExplorer from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const SupplierQuoteExplorer = lazy(
-  () => import("~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer")
-);
-const SupplierQuoteProperties = lazy(() =>
-  import("~/modules/purchasing").then((mod) => ({
-    default: mod.SupplierQuoteProperties,
-  }))
-);
 
 export const handle: Handle = {
   breadcrumb: "Supplier Quotes",
