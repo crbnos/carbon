@@ -1369,6 +1369,19 @@ export async function updateQuoteExchangeRate(
   return client.from("quote").update(update).eq("id", update.id);
 }
 
+export async function updateQuoteLinePrecision(
+  client: SupabaseClient<Database>,
+  quoteLineId: string,
+  precision: number
+) {
+  return client
+    .from("quoteLine")
+    .update({ unitPricePrecision: precision })
+    .eq("id", quoteLineId)
+    .select("id")
+    .single();
+}
+
 export async function updateSalesOrderExchangeRate(
   client: SupabaseClient<Database>,
   data: {
