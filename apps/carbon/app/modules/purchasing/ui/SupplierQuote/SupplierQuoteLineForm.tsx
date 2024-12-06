@@ -39,13 +39,12 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { SupplierQuote } from "~/modules/purchasing";
-import {
-  DeleteSupplierQuoteLine,
-  supplierQuoteLineValidator,
-} from "~/modules/purchasing";
-import type { MethodItemType } from "~/modules/shared";
+
+import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
+import { supplierQuoteLineValidator } from "../../purchasing.models";
+import type { SupplierQuote } from "../../types";
+import DeleteSupplierQuoteLine from "./DeleteSupplierQuoteLine";
 
 type SupplierQuoteLineFormProps = {
   initialValues: z.infer<typeof supplierQuoteLineValidator> & {

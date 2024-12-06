@@ -28,8 +28,8 @@ import {
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
 import { usePermissions, useUser } from "~/hooks";
-import { supplierQuoteValidator } from "~/modules/purchasing";
 import { path } from "~/utils/path";
+import { supplierQuoteValidator } from "../../purchasing.models";
 
 type SupplierQuoteFormValues = z.infer<typeof supplierQuoteValidator>;
 

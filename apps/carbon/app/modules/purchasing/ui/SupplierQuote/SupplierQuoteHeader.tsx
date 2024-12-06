@@ -5,14 +5,15 @@ import { LuPanelLeft, LuPanelRight } from "react-icons/lu";
 import { usePanels } from "~/components/Layout";
 
 import { useRouteData } from "~/hooks";
+
+import { path } from "~/utils/path";
+
 import type {
   SupplierInteraction,
   SupplierQuote,
   SupplierQuoteLine,
   SupplierQuoteLinePrice,
-} from "~/modules/purchasing";
-import { path } from "~/utils/path";
-
+} from "../../types";
 import SupplierQuoteStatus from "./SupplierQuoteStatus";
 
 const SupplierQuoteHeader = () => {

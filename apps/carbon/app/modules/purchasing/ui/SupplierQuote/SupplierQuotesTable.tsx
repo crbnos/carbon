@@ -25,15 +25,15 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { SupplierQuote } from "~/modules/purchasing";
-import {
-  SupplierQuoteStatus,
-  supplierQuoteStatusType,
-} from "~/modules/purchasing";
 import { usePeople, useSuppliers } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
-import QuoteStatus from "./SupplierQuoteStatus";
+import { supplierQuoteStatusType } from "../../purchasing.models";
+import type { SupplierQuote } from "../../types";
+import {
+  default as QuoteStatus,
+  default as SupplierQuoteStatus,
+} from "./SupplierQuoteStatus";
 
 type SupplierQuotesTableProps = {
   data: SupplierQuote[];
