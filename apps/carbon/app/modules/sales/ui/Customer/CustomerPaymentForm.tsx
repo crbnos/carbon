@@ -19,7 +19,7 @@ import {
 } from "~/components/Form";
 import PaymentTerm from "~/components/Form/PaymentTerm";
 import { usePermissions } from "~/hooks";
-import { customerPaymentValidator } from "~/modules/sales";
+import { customerPaymentValidator } from "../../sales.models";
 
 type CustomerPaymentFormProps = {
   initialValues: z.infer<typeof customerPaymentValidator>;

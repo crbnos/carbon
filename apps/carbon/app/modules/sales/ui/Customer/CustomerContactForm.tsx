@@ -22,8 +22,8 @@ import {
   TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { customerContactValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { customerContactValidator } from "../../sales.models";
 
 type CustomerContactFormProps = {
   customerId: string;

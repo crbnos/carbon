@@ -24,7 +24,7 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { salesRfqValidator } from "~/modules/sales";
+import { salesRfqValidator } from "../../sales.models";
 
 type SalesRFQFormValues = z.infer<typeof salesRfqValidator>;
 

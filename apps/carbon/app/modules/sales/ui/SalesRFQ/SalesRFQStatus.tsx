@@ -1,5 +1,5 @@
 import { Status } from "@carbon/react";
-import type { salesRFQStatusType } from "~/modules/sales";
+import type { salesRFQStatusType } from "../../sales.models";
 
 type SalesRFQStatusProps = {
   status?: (typeof salesRFQStatusType)[number] | null;

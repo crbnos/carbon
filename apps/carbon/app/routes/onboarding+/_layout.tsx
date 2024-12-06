@@ -10,6 +10,10 @@ import type { ShouldRevalidateFunction } from "@remix-run/react";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "settings",

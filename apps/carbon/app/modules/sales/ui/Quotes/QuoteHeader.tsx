@@ -43,13 +43,13 @@ import { Copy } from "~/components";
 import { usePanels } from "~/components/Layout";
 
 import { usePermissions, useRouteData } from "~/hooks";
+import { path } from "~/utils/path";
 import type {
   Opportunity,
   Quotation,
   QuotationLine,
   QuotationPrice,
-} from "~/modules/sales";
-import { path } from "~/utils/path";
+} from "../../types";
 import QuoteFinalizeModal from "./QuoteFinalizeModal";
 import QuoteStatus from "./QuoteStatus";
 import QuoteToOrderModal from "./QuoteToOrderModal";

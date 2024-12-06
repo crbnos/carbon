@@ -43,14 +43,14 @@ import {
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 
 import { useCarbon } from "@carbon/auth";
+import { methodType } from "~/modules/shared";
+import { path } from "~/utils/path";
+import { salesOrderLineValidator } from "../../sales.models";
 import type {
   SalesOrder,
   SalesOrderLine,
   SalesOrderLineType,
-} from "~/modules/sales";
-import { salesOrderLineValidator } from "~/modules/sales";
-import { methodType } from "~/modules/shared";
-import { path } from "~/utils/path";
+} from "../../types";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
 
 type SalesOrderLineFormProps = {

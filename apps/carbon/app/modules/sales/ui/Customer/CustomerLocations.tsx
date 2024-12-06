@@ -13,8 +13,8 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { Location, New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import type { CustomerLocation } from "~/modules/sales";
 import { path } from "~/utils/path";
+import type { CustomerLocation } from "../../types";
 
 type CustomerLocationsProps = {
   locations: CustomerLocation[];

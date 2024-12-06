@@ -36,12 +36,13 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+
 import {
   deadlineTypes,
-  JobStatus,
   salesOrderToJobValidator,
-  type Job,
-} from "~/modules/production";
+} from "~/modules/production/production.models";
+import type { Job } from "~/modules/production/types";
+import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { path } from "~/utils/path";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
 

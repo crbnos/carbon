@@ -1,6 +1,20 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+export const documentTypes = [
+  "Archive",
+  "Document",
+  "Presentation",
+  "PDF",
+  "Spreadsheet",
+  "Text",
+  "Image",
+  "Video",
+  "Audio",
+  "Model",
+  "Other",
+] as const;
+
 export const tablesWithTags = [
   "consumable",
   "fixture",

@@ -25,8 +25,8 @@ import {
 
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { SalesOrder, SalesOrderLine } from "~/modules/sales";
 import { path } from "~/utils/path";
+import type { SalesOrder, SalesOrderLine } from "../../types";
 
 import SalesStatus from "./SalesStatus";
 

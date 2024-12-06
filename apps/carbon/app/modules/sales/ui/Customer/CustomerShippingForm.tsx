@@ -19,7 +19,7 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { customerShippingValidator } from "~/modules/sales";
+import { customerShippingValidator } from "../../sales.models";
 
 type CustomerShippingFormProps = {
   initialValues: z.infer<typeof customerShippingValidator>;

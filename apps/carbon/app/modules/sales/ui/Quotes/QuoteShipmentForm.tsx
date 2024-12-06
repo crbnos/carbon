@@ -17,9 +17,9 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { Quotation } from "~/modules/sales";
-import { quoteShipmentValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { quoteShipmentValidator } from "../../sales.models";
+import type { Quotation } from "../../types";
 
 type QuoteShipmentFormProps = {
   initialValues: z.infer<typeof quoteShipmentValidator>;

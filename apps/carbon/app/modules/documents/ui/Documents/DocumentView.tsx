@@ -9,11 +9,9 @@ import { useNavigate } from "@remix-run/react";
 import { useState } from "react";
 import { LuDownload, LuX } from "react-icons/lu";
 import { Document, Page, pdfjs } from "react-pdf";
-import {
-  DocumentIcon,
-  type Document as DocumentType,
-} from "~/modules/documents";
+import DocumentIcon from "~/components/DocumentIcon";
 import { path } from "~/utils/path";
+import { type Document as DocumentType } from "../../types";
 import { useDocument } from "./useDocument";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;

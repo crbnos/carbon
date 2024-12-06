@@ -21,15 +21,14 @@ import {
   toast,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
+import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
+import type { ChangeEvent } from "react";
 import { LuMoreVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
-import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import type { ItemFile } from "~/modules/items";
-
-import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
-import type { ChangeEvent } from "react";
+import DocumentIcon from "~/components/DocumentIcon";
 import { usePermissions, useUser } from "~/hooks";
+import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 import { useCarbon } from "@carbon/auth";
@@ -66,7 +65,7 @@ const useOpportunityLineDocuments = ({
   );
 
   const deleteFile = useCallback(
-    async (file: ItemFile) => {
+    async (file: FileObject) => {
       const fileDelete = await carbon?.storage
         .from("private")
         .remove([getPath(file)]);
@@ -155,7 +154,7 @@ const useOpportunityLineDocuments = ({
   );
 
   const download = useCallback(
-    async (file: ItemFile) => {
+    async (file: FileObject) => {
       const result = await carbon?.storage
         .from("private")
         .download(getPath(file));

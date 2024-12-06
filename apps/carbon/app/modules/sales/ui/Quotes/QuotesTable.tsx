@@ -33,11 +33,11 @@ import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Quotation } from "~/modules/sales";
-import { quoteStatusType } from "~/modules/sales";
 import { useCustomers, usePeople } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
+import { quoteStatusType } from "../../sales.models";
+import type { Quotation } from "../../types";
 import QuoteStatus from "./QuoteStatus";
 
 type QuotesTableProps = {

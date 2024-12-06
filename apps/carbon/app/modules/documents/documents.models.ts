@@ -1,20 +1,6 @@
 import { z } from "zod";
 import { methodItemType } from "~/modules/shared";
 
-export const documentTypes = [
-  "Archive",
-  "Document",
-  "Presentation",
-  "PDF",
-  "Spreadsheet",
-  "Text",
-  "Image",
-  "Video",
-  "Audio",
-  "Model",
-  "Other",
-] as const;
-
 export const documentSourceTypes = [
   "Job",
   "Purchase Order",

@@ -31,10 +31,10 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { quoteOperationValidator } from "~/modules/sales";
-import { quoteMaterialValidator } from "~/modules/sales";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import type { quoteOperationValidator } from "../../sales.models";
+import { quoteMaterialValidator } from "../../sales.models";
 
 type QuoteMaterialFormProps = {
   initialValues: z.infer<typeof quoteMaterialValidator> & {

@@ -16,8 +16,8 @@ import { useParams } from "@remix-run/react";
 import { EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useRouteData } from "~/hooks";
-import type { CustomerDetail, CustomerStatus } from "~/modules/sales";
 import { path } from "~/utils/path";
+import type { CustomerDetail, CustomerStatus } from "../../types";
 
 const CustomerHeader = () => {
   const { customerId } = useParams();

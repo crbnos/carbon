@@ -3,7 +3,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
-import { CustomerForm } from "~/modules/sales";
+import CustomerForm from "~/modules/sales/ui/Customer/CustomerForm";
 import { useCustomers } from "~/stores";
 import CustomerAvatar from "../CustomerAvatar";
 

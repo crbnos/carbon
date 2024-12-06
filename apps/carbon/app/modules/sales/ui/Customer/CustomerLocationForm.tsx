@@ -17,8 +17,8 @@ import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { usePermissions } from "~/hooks";
-import { customerLocationValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { customerLocationValidator } from "../../sales.models";
 
 type CustomerLocationFormProps = {
   customerId: string;

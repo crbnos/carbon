@@ -19,8 +19,8 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { salesOrderPaymentValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { salesOrderPaymentValidator } from "../../sales.models";
 
 type SalesOrderPaymentFormProps = {
   initialValues: z.infer<typeof salesOrderPaymentValidator>;
