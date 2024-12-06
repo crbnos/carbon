@@ -38,6 +38,11 @@ export const customerLocationsQuery = (customerId: string) => ({
   staleTime: RefreshRate.Low,
 });
 
+export const docsQuery = () => ({
+  queryKey: ["docs"],
+  staleTime: RefreshRate.Never,
+});
+
 export const locationsQuery = (companyId: string | null) => ({
   queryKey: ["locations", companyId ?? "null"],
   staleTime: RefreshRate.Low,

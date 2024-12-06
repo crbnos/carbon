@@ -1,10 +1,10 @@
-import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { Button } from "@carbon/react";
 import { Outlet, useLocation, useNavigate } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
 import { LuEye, LuTable2 } from "react-icons/lu";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
+import { useSwaggerDocs } from "~/hooks/useSwaggerDocs";
 import type { ValidLang } from "~/modules/api";
 import { useSelectedLang } from "~/modules/api";
 import DocsStyle from "~/styles/docs.css?url";
@@ -97,6 +97,7 @@ const tableBlacklist = new Set([
 ]);
 
 function useApiDocsMenu(): RouteGroup[] {
+  const swaggerDocsSchema = useSwaggerDocs();
   const selectedLang = useSelectedLang();
   const result: RouteGroup[] = [
     {
@@ -110,10 +111,11 @@ function useApiDocsMenu(): RouteGroup[] {
     },
   ];
 
-  const tables = Object.keys(swaggerDocsSchema.definitions).sort();
+  const tables = Object.keys(swaggerDocsSchema?.definitions ?? {}).sort();
   const isTable = (table: string): boolean => {
-    const tableKey = `/${table}` as keyof typeof swaggerDocsSchema.paths;
-    return !!Object.keys(swaggerDocsSchema.paths[tableKey] ?? {})?.some(
+    if (!swaggerDocsSchema?.paths) return false;
+    const tableKey = `/${table}`;
+    return Object.keys(swaggerDocsSchema.paths[tableKey] ?? {}).some(
       (x) => x.toUpperCase() === "POST"
     );
   };

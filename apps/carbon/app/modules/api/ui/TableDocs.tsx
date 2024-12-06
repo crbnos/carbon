@@ -1,9 +1,10 @@
 import { getBrowserEnv } from "@carbon/auth";
-import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { cn } from "@carbon/react";
 import { LuTable2 } from "react-icons/lu";
+import { useSwaggerDocs } from "~/hooks/useSwaggerDocs";
 import type { ValidLang } from "~/modules/api";
 import { CodeSnippet, Snippets } from "~/modules/api";
+import { snakeToCamel } from "~/utils/string";
 
 const { SUPABASE_ANON_PUBLIC } = getBrowserEnv();
 
@@ -11,25 +12,47 @@ type TableDocsProps = {
   endpoint: string;
   selectedLang: ValidLang;
   resourceId: string;
-  resources: Record<
-    string,
-    { id: string; displayName: string; camelCase: string }
-  >;
 };
 
-const TableDocs = ({
-  endpoint,
-  selectedLang,
-  resourceId,
-  resources,
-}: TableDocsProps) => {
-  const { paths, definitions } = swaggerDocsSchema;
-  // @ts-ignore
+const functionPath = "rpc/";
+const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
+  const swaggerDocsSchema = useSwaggerDocs();
+  const { resources } = Object.entries(swaggerDocsSchema?.paths || {}).reduce<{
+    resources: Record<
+      string,
+      { id: string; displayName: string; camelCase: string }
+    >;
+  }>(
+    (a, [name]) => {
+      const trimmedName = name.slice(1);
+      const id = trimmedName.replace(functionPath, "");
 
-  const resourcePaths = paths[`/${resourceId}`];
+      const displayName = id.replace(/_/g, " ");
+      const camelCase = snakeToCamel(id);
+      const enriched = { id, displayName, camelCase };
+
+      if (!trimmedName.length) {
+        return a;
+      }
+
+      return {
+        resources: {
+          ...a.resources,
+          ...(!trimmedName.includes(functionPath)
+            ? {
+                [id]: enriched,
+              }
+            : {}),
+        },
+      };
+    },
+    { resources: {} }
+  );
+
+  const resourcePaths = swaggerDocsSchema?.paths?.[`/${resourceId}`];
+  const resourceDefinition = swaggerDocsSchema?.definitions?.[resourceId];
   // @ts-ignore
-  const resourceDefinition = definitions?.[resourceId];
-  const resourceMeta = resources[resourceId];
+  const resourceMeta = resources?.[resourceId];
   const realtimeEnabled = true; // TODO: realtime is not available for a lot of tables (unless we enable it)
 
   const methods = Object.keys(resourcePaths ?? {}).map((x) => x.toUpperCase());
@@ -41,7 +64,7 @@ const TableDocs = ({
     })
   );
 
-  if (!paths || !definitions) return null;
+  if (!swaggerDocsSchema?.paths || !swaggerDocsSchema?.definitions) return null;
 
   return (
     <>

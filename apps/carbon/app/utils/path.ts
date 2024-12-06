@@ -28,6 +28,7 @@ export const path = {
       departments: `${api}/people/departments`,
       digitalQuote: (id: string) =>
         generatePath(`${api}/sales/digital-quote/${id}`),
+      docs: `${api}/docs`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       generateCsvColumns: (table: string) =>
