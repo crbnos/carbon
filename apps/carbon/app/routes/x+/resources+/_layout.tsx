@@ -17,6 +17,10 @@ export const handle: Handle = {
   module: "resources",
 };
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export default function ResourcesRoute() {
   const { groups } = useResourcesSubmodules();
 

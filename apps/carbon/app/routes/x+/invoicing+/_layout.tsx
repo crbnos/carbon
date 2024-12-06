@@ -12,6 +12,10 @@ export const handle: Handle = {
   module: "invoicing",
 };
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export default function InvoicingRoute() {
   const { groups } = useInvoicingSubmodules();
 

@@ -17,6 +17,10 @@ export const handle: Handle = {
   module: "people",
 };
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export default function PeopleRoute() {
   const { groups } = usePeopleSubmodules();
 

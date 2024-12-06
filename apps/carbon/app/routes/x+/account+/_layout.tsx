@@ -16,6 +16,10 @@ export const handle: Handle = {
   module: "account",
 };
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export default function AccountRoute() {
   const { links } = useAccountSubmodules();
 
