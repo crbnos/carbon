@@ -7,7 +7,6 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   build: {
-    minify: true,
     sourcemap: false,
     rollupOptions: {
       onwarn(warning, defaultHandler) {

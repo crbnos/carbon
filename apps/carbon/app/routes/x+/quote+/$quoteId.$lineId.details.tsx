@@ -163,6 +163,7 @@ export default function QuoteLine() {
       <QuoteLineForm key={lineId} initialValues={initialValues} />
       {line.status !== "No Quote" && (
         <QuoteLinePricing
+          key={lineId}
           line={line}
           pricesByQuantity={pricesByQuantity}
           getLineCosts={getLineCosts}
